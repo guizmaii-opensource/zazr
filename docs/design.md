@@ -412,6 +412,18 @@ Not on `TreeSet` (the two result sides need comparators for `L` and `R`) nor on 
 tuples; use `entries().partitionMap(...)`). Implemented with two builders (3.8.1), one pass, no
 intermediate `Either` list. `Validation.partition` (3.5) is the same idea for validations.
 
+Also new on `Vector` (and `List`, `NonEmptyVector`, since it costs one line each) (decided): `duplicates`,
+the complement of `distinct`:
+
+```java
+Vector<A> duplicates();                                        // elements occurring more than once, each once, in order of first occurrence
+<K> Vector<A> duplicatesBy(Function<? super A, ? extends K> key); // same, keyed; the first occurrence of each duplicated key is returned
+```
+
+`Vector.of(3, 1, 3, 2, 1, 3).duplicates()` is `Vector.of(3, 1)`. One pass with a `HashMap<K, Integer>`
+count (or a seen/reported pair of hash sets), O(n) time, result built with the builder; `isEmpty()` on
+the result is the "all distinct" test, so no separate `isDistinct` is needed (it is deleted with `Value`).
+
 Every positional method on `List` gets a one-line complexity note in its javadoc (`get(i)` is O(i),
 `append` is O(n), `prepend`/`head`/`tail` are O(1)); on `Vector` the same (effectively O(1) for `get`,
 `update`, `append`, `prepend`, `take`, `drop`).
