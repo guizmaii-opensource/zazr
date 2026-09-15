@@ -1,16 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.vavr</groupId>
-    <artifactId>vavr-parent</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <groupId>com.guizmaii</groupId>
+    <artifactId>zazr-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>Vavr Parent</name>
-    <description>Vavr (formerly called Javaslang) is an object-functional language extension to Java 8+.</description>
+    <name>zazr Parent</name>
+    <description>zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
     <modules>
         <module>vavr</module>
     </modules>
-    <url>https://vavr.io</url>
+    <url>https://github.com/guizmaii-opensource/zazr</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -19,12 +19,17 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git@github.com:vavr-io/vavr.git</connection>
-        <developerConnection>scm:git:git@github.com:vavr-io/vavr.git</developerConnection>
-        <url>git@github.com:vavr-io/vavr.git</url>
+        <connection>scm:git:git@github.com:guizmaii-opensource/zazr.git</connection>
+        <developerConnection>scm:git:git@github.com:guizmaii-opensource/zazr.git</developerConnection>
+        <url>https://github.com/guizmaii-opensource/zazr</url>
         <tag>HEAD</tag>
     </scm>
     <developers>
+        <developer>
+            <id>guizmaii</id>
+            <name>Jules Ivanic</name>
+            <email>jules.ivanic@gmail.com</email>
+        </developer>
         <developer>
             <id>pivovarit</id>
             <name>Grzegorz Piwowarek</name>
@@ -40,7 +45,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <assertj.core.version>3.27.7</assertj.core.version>
         <eclipse.lifecycle.mapping.version>1.0.0</eclipse.lifecycle.mapping.version>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
         <jmh.version>1.37</jmh.version>
         <junit.version>6.1.3</junit.version>
         <maven.enforcer.version>3.6.3</maven.enforcer.version>
@@ -341,6 +346,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>3.2.8</version>
+                        <configuration>
+                            <passphraseEnvName>PGP_PASSPHRASE</passphraseEnvName>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
