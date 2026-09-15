@@ -338,7 +338,8 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
         return index;
     }
 
-    /* keeps the receiver's leaf type: a primitive-backed trie is filtered into primitive leaves, without boxing */
+    /* keeps the receiver's leaf type: a primitive-backed trie is filtered into primitive leaves, without boxing.
+     * Vector.filter deliberately uses this rather than the builder: see the comment there. */
     BitMappedTrie<T> filter(Predicate<? super T> predicate) {
         final Object results = type.newInstance(length());
         final int length = this.<T> visit((index, leaf, start, end) -> filter(predicate, results, index, leaf, start, end));
@@ -357,9 +358,6 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
     }
 
     int length() { return length; }
-
-    @SuppressWarnings("ObjectEquality")
-    boolean hasObjectLeaves() { return type == obj(); }
 
     /* for tests: the shift of the root level, 0 for a single leaf */
     int depthShift() { return depthShift; }
