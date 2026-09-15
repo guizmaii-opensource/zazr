@@ -645,6 +645,14 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - **JMH**: the `benchmark` profile exists; add `VectorBuilderBenchmark` (append ×N, `map`, `filter`,
   `flatMap`, `collector`) before and after 3.8 so the builder claim is measured, not asserted.
 - **JaCoCo**: either wire the plugin or delete the README line.
+- **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `com.guizmaii:zazr-core`
+  (parent `com.guizmaii:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
+  Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`
+  (or by dispatching the `release` workflow with that tag): the workflow sets the Maven version from the
+  tag with `versions:set`, signs with the imported PGP key and deploys with `-Pmaven-central-release`.
+  Secrets, at the `guizmaii-opensource` organisation level: `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`,
+  `PGP_SECRET` (armored private key, base64-encoded or plain), `PGP_PASSPHRASE`. The `vavr-match`
+  artifacts stay `io.vavr:*:1.0.0` until PR 3 deletes them.
 - **Changelog**: start `CHANGELOG.md` with this document's section numbers as the first entry.
 - **Documentation lives in the repo (decided).** Vavr's user guide is a separate repository
   (`vavr-io/vavr-docs`, AsciiDoc, published at docs.vavr.io) and is not forked: it teaches `Match`,

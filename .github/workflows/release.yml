@@ -1,21 +1,64 @@
 name: release
 
 on:
+  release:
+    types: [ published ]
   workflow_dispatch:
     inputs:
       release-tag:
-        description: 'Tag to release (must start with "v", e.g., v1.2.3)'
+        description: 'Tag to release (must start with "v", e.g. v0.1.0)'
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   release:
-    uses: vavr-io/workflows/.github/workflows/release.yml@main
-    with:
-      java-version: 25
-      release-tag: ${{ inputs.release-tag }}
-    secrets:
-      CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-      CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
-      MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-      MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.release-tag || github.event.release.tag_name }}
+    name: Release ${{ github.event.inputs.release-tag || github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.release-tag || github.event.release.tag_name }}
+
+      - name: Validate release tag format
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+(\.[0-9]+)*(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid tag '$TAG': must start with 'v' and follow semantic versioning (v0.1.0, v1.2.3-RC1)"
+            exit 1
+          fi
+          if ! git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
+            echo "Tag '$TAG' does not exist in the repository"
+            exit 1
+          fi
+
+      - name: Setup JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+          server-id: central
+          server-username-env-var: SONATYPE_USERNAME
+          server-password-env-var: SONATYPE_PASSWORD
+
+      # PGP_SECRET holds the armored private key, base64-encoded as sbt-ci-release stores it;
+      # a plain armored key works too.
+      - name: Import PGP key
+        run: (printf '%s' "$PGP_SECRET" | base64 -d 2>/dev/null || printf '%s' "$PGP_SECRET") | gpg --batch --import
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+
+      # The version comes from the tag; main stays on a -SNAPSHOT version.
+      - name: Set version from tag
+        run: ./mvnw -B --no-transfer-progress versions:set -DnewVersion="${TAG#v}" -DgenerateBackupPoms=false
+
+      - name: Release
+        run: ./mvnw -B --no-transfer-progress -Pmaven-central-release -DskipTests=true deploy
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
