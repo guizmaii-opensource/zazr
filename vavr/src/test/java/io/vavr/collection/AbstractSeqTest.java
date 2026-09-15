@@ -4,7 +4,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Spliterator;
@@ -27,7 +26,7 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     // -- construction
 
     @Override
-    abstract protected <T> Collector<T, ArrayList<T>, ? extends Seq<T>> collector();
+    abstract protected <T> Collector<T, ?, ? extends Seq<T>> collector();
 
     @Override
     abstract protected <T> Seq<T> empty();

@@ -3,7 +3,6 @@ package io.vavr.collection;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 import static io.vavr.collection.ArrayType.obj;
@@ -72,6 +71,15 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
             t = obj();
         }
         return new BitMappedTrie<>(type, array, 0, size, shift);
+    }
+
+    /**
+     * Wraps node arrays produced by {@link Vector.Builder}: {@code root} is a leaf ({@code depthShift == 0}) or a tree of
+     * {@code Object[]} nodes whose children are left-aligned and truncated to their content, exactly the shape
+     * {@link #ofAll(Object)} produces. The arrays are owned by the returned trie and must not be mutated afterwards.
+     */
+    static <T extends @Nullable Object> BitMappedTrie<T> ofBuilt(Object root, int length, int depthShift) {
+        return new BitMappedTrie<>(obj(), root, 0, length, depthShift);
     }
 
     private BitMappedTrie<T> boxed() { return map(identity()); }
@@ -316,23 +324,6 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
         return globalIndex;
     }
     private int getMin(int start, int index, Object leaf) { return Math.min(type.lengthOf(leaf), start + length - index); }
-
-    BitMappedTrie<T> filter(Predicate<? super T> predicate) {
-        final Object results = type.newInstance(length());
-        final int length = this.<T> visit((index, leaf, start, end) -> filter(predicate, results, index, leaf, start, end));
-        return (this.length == length)
-               ? this
-               : BitMappedTrie.ofAll(type.copyRange(results, 0, length));
-    }
-    private int filter(Predicate<? super T> predicate, Object results, int index, T leaf, int start, int end) {
-        for (int i = start; i < end; i++) {
-            final T value = type.getAt(leaf, i);
-            if (predicate.test(value)) {
-                type.setAt(results, index++, value);
-            }
-        }
-        return index;
-    }
 
     <U extends @Nullable Object> BitMappedTrie<U> map(Function<? super T, ? extends U> mapper) {
         final Object results = obj().newInstance(length);
