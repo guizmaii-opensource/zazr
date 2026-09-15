@@ -1,21 +1,3 @@
-/* ____  ______________  ________________________  __________
- * \   \/   /      \   \/   /   __/   /      \   \/   /      \
- *  \______/___/\___\______/___/_____/___/\___\______/___/\___\
- *
- * Copyright 2014-2026 Vavr, https://vavr.io
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.vavr.collection;
 
 import java.util.ArrayList;
@@ -132,6 +114,25 @@ public class VectorBuilderTest {
         final Vector<Integer> built1024 = Vector.<Integer> newBuilder().addAll(v1024).result();
         assertThat(built1024.trie.depthShift()).isEqualTo(5);
         assertSameShape(built1024, v1024, 1024);
+    }
+
+    @Test
+    public void shouldAddAllSlicedObjectBackedVectorsWhosePartiallyLiveLeavesAreCopiedAndFullyLiveOnesShared() {
+        // drop(k) leaves the first leaf partially live (k % 32 elements dead at its front) when k is not a multiple of 32,
+        // take(n) leaves the last leaf partially live: addLeafRange must copy those and may share only the full ones between
+        final Vector<Integer> source = Vector.ofAll(IntStream.range(0, 4200).boxed().toList());
+        assertThat(source.trie.getLeaf(0)).isInstanceOf(Object[].class);
+        for (int k : new int[] { 1, 5, 31, 32, 33 }) {
+            for (int n : new int[] { 0, 1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 2047, 2048, 2049 }) {
+                final Vector<Integer> slice = source.drop(k).take(n);
+                assertThat(slice.trie.getLeaf(0)).isInstanceOf(Object[].class);
+                final Vector<Integer> expected = Vector.range(k, k + n);
+                assertSameShape(Vector.<Integer> newBuilder().addAll(slice).result(), expected, n);
+                assertSameShape(Vector.<Integer> newBuilder().addAll(slice).add(k + n).result(), Vector.range(k, k + n + 1), n + 1);
+                assertSameShape(Vector.<Integer> newBuilder().add(k - 1).addAll(slice).result(), Vector.range(k - 1, k + n), n + 1);
+                assertSameShape(Vector.<Integer> newBuilder().addAll(slice).addAll(slice).result(), expected.appendAll(expected), 2 * n);
+            }
+        }
     }
 
     @Test
