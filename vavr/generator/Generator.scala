@@ -1,21 +1,3 @@
-/* ____  ______________  ________________________  __________
- * \   \/   /      \   \/   /   __/   /      \   \/   /      \
- *  \______/___/\___\______/___/_____/___/\___\______/___/\___\
- *
- * Copyright 2014-2026 Vavr, https://vavr.io
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 import Generator._
 import JavaGenerator._
 
@@ -4142,33 +4124,14 @@ def generateTestClasses(): Unit = {
 }
 
 /**
- * Adds the Vavr header to generated classes.
+ * Generates a class file (no license header: see NOTICE at the repository root).
  *
  * @param packageName Java package name
  * @param className Simple java class name
  * @param gen A generator which produces a String.
  */
 def genVavrFile(packageName: String, className: String, baseDir: String = TARGET_MAIN)(gen: (ImportManager, String, String) => String, knownSimpleClassNames: List[String] = List()) =
-  genJavaFile(baseDir, packageName, className)(xraw"""
-/* ____  ______________  ________________________  __________
- * \   \/   /      \   \/   /   __/   /      \   \/   /      \
- *  \______/___/\___\______/___/_____/___/\___\______/___/\___\
- *
- * Copyright 2014-2026 Vavr, https://vavr.io
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-  """)((im, pn, cn) => {
+  genJavaFile(baseDir, packageName, className)("")((im, pn, cn) => {
     // Every generated *main* class declares nullable-bounded type parameters (see `nullableBound`),
     // so the JSpecify @Nullable import is always required there. Generated tests declare none.
     if (baseDir == TARGET_MAIN) im.getType("org.jspecify.annotations.Nullable")
@@ -4202,8 +4165,7 @@ object JavaGenerator {
     val classBody = gen.apply(importManager, packageName, className)
 
     genFile(baseDir, dirName, fileName)(xraw"""
-      $classHeader
-      package $packageName;
+      ${classHeader}package $packageName;
 
       /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
          G E N E R A T O R   C R A F T E D
