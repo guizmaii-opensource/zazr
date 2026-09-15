@@ -512,6 +512,19 @@ Keep `BitMappedTrie`'s primitive-leaf specialisation (`ArrayType`) for `ofAll(in
 selecting it by catching `ClassCastException` in `appendAll`/`prependAll` (`BitMappedTrie.java:136-143`):
 the builder always produces `Object[]` leaves, and `ofAll(int[])` is the only primitive entry point.
 
+**Implemented (PR #4), with two corrections measured on the way (decided):**
+- `filter` and `reject` stay on the trie's flat-array filter, not the builder. It keeps primitive leaves
+  unboxed, and the builder version was 2x slower at 1 000 elements on `Object[]` receivers (2.25 vs
+  1.14 µs, 2 forks) and equal at 100 000, whatever the builder's fixed cost. Likewise `ofAll` of any sized,
+  traversable-again source (`Collection`, `Array`, `List`...) keeps the flat-array path (`ofAll(Array)` was
+  2x slower through per-element adds); the builder is for one-shot and unsized sources, where it removes the
+  intermediate `List`/`ArrayList` (`ofAll(Iterator)` 2.7-3.1x, `ofAll(Stream)` 4-7x, `flatMap` 2.1-2.5x).
+  `collect`, `distinct*`, `zip*`, `intersperse`, `scan*` and `unfold*` reach the builder through
+  `ofAll(Iterator)`; nothing else needs routing.
+- The `ClassCastException` catch blocks stay for now: the trie paths this PR keeps (`append`, `prepend`,
+  `update`, `appendAll` of a sized source) rely on them to fall back from primitive leaves. Their removal
+  is deferred to the follow-up that reworks the primitive specialisation to detect the element type up front.
+
 **Decided: builder over the existing `BitMappedTrie` first; finger tree deferred.** Scala's `Vector` since 2.13.2 is a radix-balanced finger tree (`Vector0..Vector6` with
 `prefix1`, `data`, `suffix1`) giving amortised O(1) append *and* prepend without the `offset` trick and
 with much cheaper `tail`/`init`. Porting it is ~2,500 lines of dense code. The builder lands first over the

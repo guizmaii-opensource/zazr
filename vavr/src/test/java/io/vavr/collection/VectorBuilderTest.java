@@ -279,6 +279,58 @@ public class VectorBuilderTest {
     }
 
     @Test
+    public void shouldAddAllObjectBackedVectorsIntoAHintedLeafShorterThan32() {
+        // a hinted leaf shorter than 32 is grown, not closed, inside addLeafRange: the copy loop has to split the source
+        // leaf across the grown leaf and a fresh one, and nothing can be shared until the leaves realign
+        for (int hint : new int[] { 1, 5, 31 }) {
+            for (int size : new int[] { 1, 31, 32, 33, 64, 65, 1023, 1024, 1025 }) {
+                final Vector<Integer> source = Vector.ofAll(IntStream.range(0, size).boxed().toList());
+                for (int prefix : new int[] { 0, 1, hint, hint + 1 }) {
+                    final Vector.Builder<Integer> builder = Vector.newBuilder(hint);
+                    for (int i = 0; i < prefix; i++) {
+                        builder.add(-1 - i);
+                    }
+                    final Vector<Integer> expected = Vector.tabulate(prefix, i -> -1 - i).appendAll(source);
+                    final Vector<Integer> built = builder.addAll(source).addAll(source).result();
+                    assertSameShape(built, expected.appendAll(source), prefix + 2 * size);
+                    if (prefix == 0) {
+                        assertSharesFullLeaves(built, source, 0, size);
+                    } else if (size >= 32) {
+                        // shared only when the prefix realigns the leaves (32 adds into a hinted leaf grown to 32)
+                        if (prefix % 32 == 0) {
+                            assertThat(built.trie.getLeaf(prefix)).isSameAs(source.trie.getLeaf(0));
+                        } else {
+                            assertThat(built.trie.getLeaf(prefix)).isNotSameAs(source.trie.getLeaf(0));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void shouldSurviveJavaSerialisation() {
+        final java.util.List<Integer> list = IntStream.range(0, 1056).boxed().toList();
+        final Vector<Integer> source = Vector.ofAll(list);
+        // shared leaves at two levels, a handed-over single leaf, a hinted leaf, and the empty result
+        final java.util.List<Vector<Integer>> built = java.util.List.of(
+                Vector.<Integer> newBuilder().addAll(source).result(),
+                Vector.<Integer> newBuilder().add(-1).addAll(source).result(),
+                Vector.<Integer> newBuilder().addAll(source.take(32)).result(),
+                Vector.<Integer> newBuilder().addAll(source.take(7)).result(),
+                Vector.<Integer> newBuilder(7).addAll(source.take(7)).result(),
+                Vector.<Integer> newBuilder().result());
+        for (Vector<Integer> vector : built) {
+            final Vector<Integer> copy = io.vavr.Serializables.deserialize(io.vavr.Serializables.serialize(vector));
+            assertSameShape(copy, vector, vector.size());
+            assertThat(copy.hashCode()).isEqualTo(vector.hashCode());
+            if (vector.isEmpty()) {
+                assertThat(copy).isSameAs(Vector.empty());
+            }
+        }
+    }
+
+    @Test
     public void shouldAddAllPrimitiveBackedVector() {
         final Vector<Integer> ints = Vector.ofAll(IntStream.range(0, 1025).toArray());
         assertSameElements(Vector.<Integer> newBuilder().addAll(ints).result(), ints, 1025);
@@ -335,12 +387,13 @@ public class VectorBuilderTest {
     @Test
     public void shouldMatchArrayListOracleUnderRandomMixOfAddAndAddAll() {
         final Random random = new Random(20260915L);
+        final Vector<Integer> boxed3000 = Vector.ofAll(IntStream.range(0, 3000).boxed().toList());
         for (int round = 0; round < 50; round++) {
             final ArrayList<Integer> expected = new ArrayList<>();
             final Vector.Builder<Integer> builder = Vector.newBuilder(random.nextInt(50));
             final int steps = 1 + random.nextInt(200);
             for (int step = 0; step < steps; step++) {
-                switch (random.nextInt(4)) {
+                switch (random.nextInt(5)) {
                     case 0 -> {
                         final int value = random.nextInt();
                         expected.add(value);
@@ -356,6 +409,13 @@ public class VectorBuilderTest {
                         final java.util.List<Integer> list = IntStream.range(0, random.nextInt(70)).boxed().toList();
                         expected.addAll(list);
                         builder.addAll(list);
+                    }
+                    case 3 -> {
+                        // an Object[]-backed sliced source: shared leaves once aligned, copied ones otherwise
+                        final int from = random.nextInt(2000), count = random.nextInt(1100);
+                        final Vector<Integer> vector = boxed3000.slice(from, Math.min(3000, from + count));
+                        expected.addAll(vector.toJavaList());
+                        builder.addAll(vector);
                     }
                     default -> {
                         final Vector<Integer> vector = Vector.ofAll(IntStream.range(0, random.nextInt(100)).toArray());

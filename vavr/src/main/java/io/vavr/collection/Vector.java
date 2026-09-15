@@ -1510,9 +1510,14 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         /* levels 1..6 above the leaves: 32^7 slots, more than any array can hold */
         private static final int LEVELS = 7;
 
+        /* after result(): a zero-length leaf, so that add() falls into growOrCloseLeaf(), which throws; a live leaf is never empty */
+        private static final Object[] DONE = new Object[0];
+
         /* the leaf currently being filled; its capacity is WIDTH, or the size hint when that is smaller */
         private Object[] leaf;
         private int leafLength;
+        /* the number of elements in completed leaves (pushed or shared); size is lenRest + leafLength, as in Scala's VectorBuilder */
+        private int lenRest;
         /* nodes[level] is the partially filled node at that level (children of nodes[level] live at level - 1);
          * allocated on the first completed leaf, so a Vector that fits in one leaf costs one array */
         private Object[] @Nullable [] nodes = EMPTY_NODES;
@@ -1521,7 +1526,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         private static final int[] EMPTY_NODE_LENGTHS = new int[0];
         /* the highest level in use; 0 while everything still fits in one leaf */
         private int depth;
-        private int size;
         private boolean done;
 
         Builder(int leafCapacity) {
@@ -1536,12 +1540,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public Builder<T> add(T element) {
-            checkOpen();
+            // the hot path is one branch and one array store: the open check lives in growOrCloseLeaf(), reached
+            // through the zero-length DONE leaf, and the size is derived, not counted
             if (leafLength == leaf.length) {
                 growOrCloseLeaf();
             }
             leaf[leafLength++] = element;
-            size++;
             return this;
         }
 
@@ -1573,7 +1577,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
          */
         public int size() {
             checkOpen();
-            return size;
+            return lenRest + leafLength;
         }
 
         /**
@@ -1584,8 +1588,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
          */
         public Vector<T> result() {
             checkOpen();
-            done = true;
+            final int size = lenRest + leafLength;
             if (size == 0) {
+                finish();
                 return empty();
             }
             // the current leaf is empty after a shared push (addAll of a Vector ending on a full leaf): it must not be appended
@@ -1618,8 +1623,15 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 depth--;
             }
             final BitMappedTrie<T> trie = BitMappedTrie.ofBuilt(current, size, depth * BitMappedTrie.BRANCHING_BASE);
-            Arrays.fill(nodes, null);
+            finish();
             return new Vector<>(trie);
+        }
+
+        private void finish() {
+            done = true;
+            leaf = DONE;
+            leafLength = 0;
+            Arrays.fill(nodes, null);
         }
 
         private void checkOpen() {
@@ -1629,10 +1641,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         }
 
         private void growOrCloseLeaf() {
+            checkOpen();
             if (leaf.length < WIDTH) {
                 leaf = Arrays.copyOf(leaf, WIDTH);
             } else {
                 push(leaf, 1);
+                lenRest += WIDTH;
                 leaf = new Object[WIDTH];
                 leafLength = 0;
             }
@@ -1681,7 +1695,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 leaf[leafLength++] = mapper.apply(value);
             }
             this.leafLength = leafLength;
-            this.size += end - start;
         }
 
         /* appends n elements f(0) .. f(n - 1) */
@@ -1698,7 +1711,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 leaf[leafLength++] = f.apply(i);
             }
             this.leafLength = leafLength;
-            this.size += Math.max(n, 0);
         }
 
         /* appends the same element n times, one Arrays.fill per leaf */
@@ -1713,7 +1725,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 leafLength += count;
                 remaining -= count;
             }
-            this.size += Math.max(n, 0);
         }
 
         private void addVector(Vector<? extends T> vector) {
@@ -1734,7 +1745,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 if (leafLength == 0 && start == 0 && end == WIDTH && source.length == WIDTH) {
                     // a full, untrimmed leaf of the source: share it, nobody mutates leaves
                     push(source, 1);
-                    size += WIDTH;
+                    lenRest += WIDTH;
                     return;
                 }
                 int from = start, remaining = end - start;
@@ -1747,7 +1758,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                     leafLength += count;
                     from += count;
                     remaining -= count;
-                    size += count;
                 }
             } else {
                 // a primitive leaf (int[], ...): elements are boxed one by one
