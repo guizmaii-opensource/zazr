@@ -424,6 +424,22 @@ Vector<A> duplicates();                                        // elements occur
 count (or a seen/reported pair of hash sets), O(n) time, result built with the builder; `isEmpty()` on
 the result is the "all distinct" test, so no separate `isDistinct` is needed (it is deleted with `Value`).
 
+`flatten` (decided), as a **static** method on every collection and control type, because Java cannot
+type an instance `flatten()`: Scala's needs evidence that the element type is itself a collection
+(`implicit ev: A => IterableOnce[B]`), which a Java method cannot demand of its receiver's type
+parameter. Vavr had an unchecked `<U> Value<U> flatten()` (runtime `ClassCastException` on misuse) and
+removed it in 2015 for that reason.
+
+```java
+static <A> Vector<A>         flatten(Iterable<? extends Iterable<? extends A>> nested);        // Vector.flatten(vectorOfVectors)
+static <A> NonEmptyVector<A> flatten(NonEmptyVector<? extends NonEmptyVector<? extends A>> nested);
+static <A> HashSet<A>        flatten(Iterable<? extends Iterable<? extends A>> nested);        // HashSet, LinkedHashSet likewise
+static <A> Option<A>         flatten(Option<? extends Option<? extends A>> nested);            // Either, Try, Validation likewise
+```
+
+`List`, `Queue`, `LazyList` likewise. Implemented as `flatMap(identity)` over the builder (3.8.1). Misuse
+is a compile error, and the call reads `Vector.flatten(vv)`.
+
 Every positional method on `List` gets a one-line complexity note in its javadoc (`get(i)` is O(i),
 `append` is O(n), `prepend`/`head`/`tail` are O(1)); on `Vector` the same (effectively O(1) for `get`,
 `update`, `append`, `prepend`, `take`, `drop`).
