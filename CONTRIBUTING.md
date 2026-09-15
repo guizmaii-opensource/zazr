@@ -31,7 +31,7 @@ _Source: http://users.ece.utexas.edu/~adnan/pike.html_
 * A package, which is part of the public API, contains a `package-info.java`.
 * Unit tests contain no Javadoc at all (because they introduce no new API and contain no business logic).
 * Running `mvn javadoc:javadoc` results in no javadoc errors.
-* The Apache-2.0 license header, unused imports, import order, and trailing newlines are enforced by the Spotless plugin (`mvn spotless:apply`).
+* Sources carry no license header (the attribution to Vavr is in `NOTICE`). Unused imports, import order, and trailing newlines are enforced by the Spotless plugin (`make fmt` to apply, `make fmt-check` to verify).
 
 ### Packages
 
