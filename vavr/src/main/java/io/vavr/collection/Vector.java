@@ -69,7 +69,8 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
 
     /**
      * Returns a new {@link Builder}: the cheapest way to build a Vector element by element or from a source of unknown
-     * size. Elements are written once, directly into the leaves of the resulting Vector.
+     * size. There is no full-size intermediate buffer: elements go into 32-wide leaf arrays that the resulting Vector
+     * uses as they are, and only a partial final leaf is trimmed once.
      *
      * @param <T> Component type of the Vector.
      * @return an empty builder
@@ -1499,10 +1500,11 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     @Override
     public String toString() { return mkString(stringPrefix() + "(", ", ", ")"); }
     /**
-     * A mutable, single-use accumulator that builds a {@link Vector} element by element without intermediate copies:
-     * every element is written once, directly into the 32-wide leaf array it ends up in, and {@link #result()} hands
-     * the arrays to the Vector as they are. Building a Vector of {@code n} elements allocates {@code n / 32} leaves plus
-     * the internal nodes, whatever the source (an iterator, a stream, a loop).
+     * A mutable, single-use accumulator that builds a {@link Vector} element by element. Its invariant is that there is
+     * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is handed
+     * to the Vector as it is (or, when the elements come from another Vector through {@link #addAll(Iterable)}, its
+     * aligned full leaves are shared instead of copied), and {@link #result()} copies only the final leaf, once, when it
+     * is partially filled. The internal nodes above the leaves are allocated as leaves complete.
      * <p>
      * Not thread-safe. After {@link #result()} has been called, every method throws {@link IllegalStateException};
      * create a new builder instead.
@@ -1557,8 +1559,8 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
          */
         @SuppressWarnings("unchecked")
         public Builder<T> addAll(Iterable<? extends T> elements) {
-            Objects.requireNonNull(elements, "elements is null");
             checkOpen();
+            Objects.requireNonNull(elements, "elements is null");
             if (elements instanceof Vector<?> vector) {
                 addVector((Vector<? extends T>) vector);
             } else {

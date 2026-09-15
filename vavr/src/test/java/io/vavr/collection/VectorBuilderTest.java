@@ -14,12 +14,30 @@ public class VectorBuilderTest {
 
     // sizes around every leaf (32), node (1024) and second-level node (32768) boundary
     private static final int[] SIZES = { 0, 1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 32767, 32768, 32769, 1_000_000 };
+    // the boundary at 32^4 = 1 048 576, where a fourth trie level is pushed and finalised; kept out of SIZES for the tests
+    // that build several Vectors per size
+    private static final int[] LEVEL4_SIZES = { 1_048_575, 1_048_576, 1_048_577 };
 
     @Test
     public void shouldBuildEmptyVector() {
         final Vector<Integer> actual = Vector.<Integer> newBuilder().result();
         assertThat(actual).isEmpty();
         assertThat(actual).isSameAs(Vector.empty());
+    }
+
+    @Test
+    public void shouldPushAndFinaliseAFourthLevel() {
+        for (int size : LEVEL4_SIZES) {
+            final Vector.Builder<Integer> builder = Vector.newBuilder();
+            for (int i = 0; i < size; i++) {
+                builder.add(i);
+            }
+            assertSameShape(builder.result(), Vector.range(0, size), size);
+            // the same boundary reached through shared leaves of an Object[]-backed source
+            final Vector<Integer> boxed = Vector.ofAll(IntStream.range(0, size).boxed().toList());
+            assertSameShape(Vector.<Integer> newBuilder().addAll(boxed).result(), boxed, size);
+            assertSameShape(Vector.<Integer> newBuilder().add(-1).addAll(boxed).result(), Vector.range(-1, size), size + 1);
+        }
     }
 
     @Test
@@ -95,7 +113,9 @@ public class VectorBuilderTest {
             final Vector<Integer> varargs = Vector.of(list.toArray(new Integer[0])); // Object[] leaves via of(T...)
             assertThat(boxed.trie.getLeaf(0)).isInstanceOf(Object[].class);
             for (Vector<Integer> source : java.util.List.of(boxed, varargs)) {
-                assertSameShape(Vector.<Integer> newBuilder().addAll(source).result(), boxed, size);
+                final Vector<Integer> built = Vector.<Integer> newBuilder().addAll(source).result();
+                assertSameShape(built, boxed, size);
+                assertSharesFullLeaves(built, source, 0, size);
                 // shared full leaves followed by more elements, and a prefix before the shared leaves
                 assertSameShape(Vector.<Integer> newBuilder().addAll(source).add(size).result(), Vector.range(0, size + 1), size + 1);
                 assertSameShape(Vector.<Integer> newBuilder().add(-1).addAll(source).result(), Vector.range(-1, size), size + 1);
@@ -127,7 +147,19 @@ public class VectorBuilderTest {
                 final Vector<Integer> slice = source.drop(k).take(n);
                 assertThat(slice.trie.getLeaf(0)).isInstanceOf(Object[].class);
                 final Vector<Integer> expected = Vector.range(k, k + n);
-                assertSameShape(Vector.<Integer> newBuilder().addAll(slice).result(), expected, n);
+                final Vector<Integer> built = Vector.<Integer> newBuilder().addAll(slice).result();
+                assertSameShape(built, expected, n);
+                if (k % 32 != 0 && n > 0) {
+                    // the source's first leaf is only partially live: the builder must copy it, never share it
+                    assertThat(built.trie.getLeaf(0)).isNotSameAs(slice.trie.getLeaf(0));
+                    // and, being copied, the built leaves are not aligned with the source's: nothing can be shared
+                    for (int i = 0; i < n; i += 32) {
+                        assertThat(built.trie.getLeaf(i)).isNotSameAs(slice.trie.getLeaf(i));
+                    }
+                } else {
+                    // aligned: every full leaf is shared, a partially live last leaf is copied
+                    assertSharesFullLeaves(built, slice, 0, n);
+                }
                 assertSameShape(Vector.<Integer> newBuilder().addAll(slice).add(k + n).result(), Vector.range(k, k + n + 1), n + 1);
                 assertSameShape(Vector.<Integer> newBuilder().add(k - 1).addAll(slice).result(), Vector.range(k - 1, k + n), n + 1);
                 assertSameShape(Vector.<Integer> newBuilder().addAll(slice).addAll(slice).result(), expected.appendAll(expected), 2 * n);
@@ -166,6 +198,13 @@ public class VectorBuilderTest {
         assertThatThrownBy(() -> builder.addAll(Vector.of(2))).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
+        // the state check comes before the argument check
+        assertThatThrownBy(() -> builder.addAll(null)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    public void shouldRejectNullIterableWhileOpen() {
+        assertThatThrownBy(() -> Vector.<Integer> newBuilder().addAll(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -236,6 +275,18 @@ public class VectorBuilderTest {
         assertSameElements(range.flatMap(i -> Vector.of(i, i)), Vector.ofAll(list.stream().flatMap(i -> java.util.stream.Stream.of(i, i)).toList()), 2 * size);
         assertSameElements(range.appendAll(Iterator.ofAll(list.iterator())), range.appendAll(range), 2 * size);
         assertThat(range.filter(i -> true)).isSameAs(range);
+    }
+
+    /* every leaf of [from, to) that is full in the source (32 elements from an aligned index) is the same array in the built Vector; a trailing partial leaf is a copy */
+    private static <T> void assertSharesFullLeaves(Vector<T> built, Vector<T> source, int from, int to) {
+        for (int i = from; i < to; i += 32) {
+            final Object sourceLeaf = source.trie.getLeaf(i);
+            if (i + 32 <= to && ((Object[]) sourceLeaf).length == 32) {
+                assertThat(built.trie.getLeaf(i)).as("leaf at %d is shared", i).isSameAs(sourceLeaf);
+            } else {
+                assertThat(built.trie.getLeaf(i)).as("partial leaf at %d is copied", i).isNotSameAs(sourceLeaf);
+            }
+        }
     }
 
     private static <T> void assertSameShape(Vector<T> actual, Vector<T> expected, int size) {
