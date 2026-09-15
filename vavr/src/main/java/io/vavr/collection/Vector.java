@@ -79,9 +79,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     }
 
     /**
-     * Returns a new {@link Builder} for a Vector of about {@code sizeHint} elements. The hint is not a limit: a Vector
-     * of {@code sizeHint} elements or fewer is built without any array copy, a larger one costs the same as with
-     * {@link #newBuilder()}.
+     * Returns a new {@link Builder} for a Vector of about {@code sizeHint} elements. The hint is not a limit. A hint of
+     * {@code 32} or fewer pre-sizes the first leaf, so a Vector of exactly that many elements is built without any
+     * array copy (a smaller result still trims the leaf once); a larger hint currently changes nothing and the builder
+     * costs the same as with {@link #newBuilder()}.
      *
      * @param sizeHint the expected number of elements, {@code >= 0}
      * @param <T>      Component type of the Vector.
@@ -770,8 +771,8 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
             return this;
         }
         if (!io.vavr.collection.Collections.isTraversableAgain(iterable)) {
-            // a one-shot source (an Iterator, a lazy Stream): the builder consumes it directly instead of materialising a List first
-            return Vector.<T> newBuilder().addAll(this).addAll(iterable).result();
+            // a one-shot source (a Vavr Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
+            return appendAll(ofAll(iterable));
         }
         return new Vector<>(trie.appendAll(iterable));
     }
@@ -1570,8 +1571,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
 
         /**
          * @return the number of elements added so far
+         * @throws IllegalStateException if {@link #result()} has already been called
          */
         public int size() {
+            checkOpen();
             return size;
         }
 
@@ -1587,22 +1590,34 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
             if (size == 0) {
                 return empty();
             }
-            Object current = (leafLength == leaf.length) ? leaf : Arrays.copyOf(leaf, leafLength);
+            // the current leaf is empty after a shared push (addAll of a Vector ending on a full leaf): it must not be appended
+            @Nullable Object current = (leafLength == 0)
+                                       ? null
+                                       : (leafLength == leaf.length) ? leaf : Arrays.copyOf(leaf, leafLength);
             for (int level = 1; level <= depth; level++) {
                 Object[] node = nodes[level];
-                if (node != null && nodeLengths[level] == WIDTH) {
+                int nodeLength = nodeLengths[level];
+                if (node != null && nodeLength == WIDTH) {
                     push(node, level + 1);
                     nodes[level] = null;
                     node = null;
+                    nodeLength = 0;
                 }
-                final Object[] combined;
                 if (node == null) {
-                    combined = new Object[] { current };
+                    current = (current == null) ? null : new Object[] { current };
                 } else {
-                    combined = Arrays.copyOf(node, nodeLengths[level] + 1);
-                    combined[nodeLengths[level]] = current;
+                    final Object[] combined = Arrays.copyOf(node, (current == null) ? nodeLength : nodeLength + 1);
+                    if (current != null) {
+                        combined[nodeLength] = current;
+                    }
+                    current = combined;
                 }
-                current = combined;
+            }
+            Objects.requireNonNull(current); // size > 0, so at least one leaf reached the root
+            // a root with a single child adds a level for nothing: drop it, as ofAll never produces one
+            while (depth > 0 && ((Object[]) current).length == 1) {
+                current = ((Object[]) current)[0];
+                depth--;
             }
             final BitMappedTrie<T> trie = BitMappedTrie.ofBuilt(current, size, depth * BitMappedTrie.BRANCHING_BASE);
             Arrays.fill(nodes, null);

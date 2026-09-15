@@ -106,6 +106,35 @@ public class VectorBuilderTest {
     }
 
     @Test
+    public void shouldAddAllObjectBackedVectorsAndKeepTheShapeOfOfAll() {
+        for (int size : new int[] { 1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 32768, 32769 }) {
+            final java.util.List<Integer> list = IntStream.range(0, size).boxed().toList();
+            final Vector<Integer> boxed = Vector.ofAll(list);                 // Object[] leaves via toArray
+            final Vector<Integer> varargs = Vector.of(list.toArray(new Integer[0])); // Object[] leaves via of(T...)
+            assertThat(boxed.trie.getLeaf(0)).isInstanceOf(Object[].class);
+            for (Vector<Integer> source : java.util.List.of(boxed, varargs)) {
+                assertSameShape(Vector.<Integer> newBuilder().addAll(source).result(), boxed, size);
+                // shared full leaves followed by more elements, and a prefix before the shared leaves
+                assertSameShape(Vector.<Integer> newBuilder().addAll(source).add(size).result(), Vector.range(0, size + 1), size + 1);
+                assertSameShape(Vector.<Integer> newBuilder().add(-1).addAll(source).result(), Vector.range(-1, size), size + 1);
+                assertSameShape(Vector.<Integer> newBuilder().addAll(source).addAll(source).result(), boxed.appendAll(boxed), 2 * size);
+            }
+        }
+    }
+
+    @Test
+    public void shouldNotLeaveAnEmptyTrailingLeafAfterSharingFullLeaves() {
+        final Vector<Integer> v32 = Vector.ofAll(IntStream.range(0, 32).boxed().toList());
+        final Vector<Integer> built32 = Vector.<Integer> newBuilder().addAll(v32).result();
+        assertThat(built32.trie.depthShift()).isZero();
+        assertThat(built32.trie.getLeaf(0)).isInstanceOf(Object[].class).satisfies(leaf -> assertThat(((Object[]) leaf).length).isEqualTo(32));
+        final Vector<Integer> v1024 = Vector.ofAll(IntStream.range(0, 1024).boxed().toList());
+        final Vector<Integer> built1024 = Vector.<Integer> newBuilder().addAll(v1024).result();
+        assertThat(built1024.trie.depthShift()).isEqualTo(5);
+        assertSameShape(built1024, v1024, 1024);
+    }
+
+    @Test
     public void shouldAddAllPrimitiveBackedVector() {
         final Vector<Integer> ints = Vector.ofAll(IntStream.range(0, 1025).toArray());
         assertSameElements(Vector.<Integer> newBuilder().addAll(ints).result(), ints, 1025);
@@ -135,6 +164,7 @@ public class VectorBuilderTest {
         assertThatThrownBy(() -> builder.add(2)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.addAll(Vector.of(2))).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -205,6 +235,12 @@ public class VectorBuilderTest {
         assertSameElements(range.flatMap(i -> Vector.of(i, i)), Vector.ofAll(list.stream().flatMap(i -> java.util.stream.Stream.of(i, i)).toList()), 2 * size);
         assertSameElements(range.appendAll(Iterator.ofAll(list.iterator())), range.appendAll(range), 2 * size);
         assertThat(range.filter(i -> true)).isSameAs(range);
+    }
+
+    private static <T> void assertSameShape(Vector<T> actual, Vector<T> expected, int size) {
+        assertSameElements(actual, expected, size);
+        assertThat(actual.trie.depthShift()).as("depthShift for size %d", size).isEqualTo(expected.trie.depthShift());
+        assertThat(actual.trie.depthShift()).isEqualTo(Vector.range(0, size).trie.depthShift());
     }
 
     private static <T> void assertSameElements(Vector<T> actual, Vector<T> expected, int size) {

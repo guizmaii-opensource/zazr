@@ -50,6 +50,7 @@ public class VectorBuilderBenchmark {
 
     private ArrayList<Integer> list;
     private Vector<Integer> vector;
+    private Vector<Integer> large;
 
     @Setup(Level.Trial)
     public void setup() {
@@ -58,6 +59,7 @@ public class VectorBuilderBenchmark {
             list.add(i);
         }
         vector = Vector.ofAll(list);
+        large = Vector.range(0, 1_000_000);
     }
 
     @Benchmark
@@ -88,6 +90,12 @@ public class VectorBuilderBenchmark {
     @Benchmark
     public Vector<Integer> flatMap() {
         return vector.flatMap(i -> Vector.of(i, i));
+    }
+
+    /* independent of size: a three-element one-shot source appended to a million-element Vector */
+    @Benchmark
+    public Vector<Integer> appendAll_smallIteratorToLargeVector() {
+        return large.appendAll(Iterator.of(1, 2, 3));
     }
 
     @Benchmark
