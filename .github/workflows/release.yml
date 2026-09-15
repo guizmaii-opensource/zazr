@@ -12,7 +12,7 @@ jobs:
   release:
     uses: vavr-io/workflows/.github/workflows/release.yml@main
     with:
-      java-version: 21
+      java-version: 25
       release-tag: ${{ inputs.release-tag }}
     secrets:
       CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}

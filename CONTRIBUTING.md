@@ -2,7 +2,7 @@
 
 [Fork](https://help.github.com/articles/fork-a-repo) the GitHub, send a [pull request](https://help.github.com/articles/using-pull-requests) and keep your fork in [sync](https://help.github.com/articles/syncing-a-fork/) with the upstream repository.
 
-Vavr requires JDK 21+ to build. Maven 3.9.9+ is enforced by the build.
+Vavr requires JDK 25+ to build. Maven 3.9.9+ is enforced by the build.
 
 ## AI-assisted contributions
 
