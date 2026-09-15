@@ -3,6 +3,7 @@ package io.vavr.collection;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 import static io.vavr.collection.ArrayType.obj;
@@ -337,7 +338,28 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
         return index;
     }
 
+    /* keeps the receiver's leaf type: a primitive-backed trie is filtered into primitive leaves, without boxing */
+    BitMappedTrie<T> filter(Predicate<? super T> predicate) {
+        final Object results = type.newInstance(length());
+        final int length = this.<T> visit((index, leaf, start, end) -> filter(predicate, results, index, leaf, start, end));
+        return (this.length == length)
+               ? this
+               : BitMappedTrie.ofAll(type.copyRange(results, 0, length));
+    }
+    private int filter(Predicate<? super T> predicate, Object results, int index, T leaf, int start, int end) {
+        for (int i = start; i < end; i++) {
+            final T value = type.getAt(leaf, i);
+            if (predicate.test(value)) {
+                type.setAt(results, index++, value);
+            }
+        }
+        return index;
+    }
+
     int length() { return length; }
+
+    @SuppressWarnings("ObjectEquality")
+    boolean hasObjectLeaves() { return type == obj(); }
 
     /* for tests: the shift of the root level, 0 for a single leaf */
     int depthShift() { return depthShift; }

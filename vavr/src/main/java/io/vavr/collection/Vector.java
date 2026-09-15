@@ -10,6 +10,7 @@ import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
+import static io.vavr.collection.Collections.withSize;
 import static io.vavr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
 import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
 
@@ -148,9 +149,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     public static <T extends @Nullable Object> Vector<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
         final Builder<T> builder = newBuilder(Math.max(n, 0));
-        for (int i = 0; i < n; i++) {
-            builder.add(f.apply(i));
-        }
+        builder.addTabulated(n, f::apply);
         return builder.result();
     }
 
@@ -166,9 +165,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     public static <T extends @Nullable Object> Vector<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
         final Builder<T> builder = newBuilder(Math.max(n, 0));
-        for (int i = 0; i < n; i++) {
-            builder.add(s.get());
-        }
+        builder.addTabulated(n, i -> s.get());
         return builder.result();
     }
 
@@ -182,9 +179,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
      */
     public static <T extends @Nullable Object> Vector<T> fill(int n, T element) {
         final Builder<T> builder = newBuilder(Math.max(n, 0));
-        for (int i = 0; i < n; i++) {
-            builder.add(element);
-        }
+        builder.addRepeated(n, element);
         return builder.result();
     }
 
@@ -212,9 +207,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 && ((ListView<T, ?>) iterable).getDelegate() instanceof Vector) {
             return (Vector<T>) ((ListView<T, ?>) iterable).getDelegate();
         }
-        if (iterable instanceof java.util.Collection<?> collection) {
-            // one bulk copy into a flat array, then grouped into leaves: cheaper than element-wise adds for a sized JDK collection
-            return ofAll(BitMappedTrie.ofAll(collection.toArray()));
+        if (io.vavr.collection.Collections.isTraversableAgain(iterable)) {
+            // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then grouped into
+            // leaves, is cheaper than element-wise adds; the builder pays off for one-shot and unsized sources only
+            return ofAll(BitMappedTrie.ofAll(withSize(iterable).toArray()));
         }
         return Vector.<T> newBuilder().addAll(iterable).result();
     }
@@ -876,9 +872,13 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     @Override
     public Vector<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        if (!trie.hasObjectLeaves()) {
+            // a primitive-backed receiver (Vector.range, ofAll(int[])) keeps its primitive leaves: no boxing
+            return wrap(trie.filter(predicate));
+        }
         final Builder<T> builder = newBuilder(length());
-        trie.<Object> visit((index, leaf, start, end) -> {
-            builder.addFiltered(trie.type, leaf, start, end, predicate);
+        trie.<Object[]> visit((index, leaf, start, end) -> {
+            builder.addFiltered(leaf, start, end, predicate);
             return index + end - start;
         });
         return (builder.size() == length()) ? this : builder.result();
@@ -1520,9 +1520,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         /* the leaf currently being filled; its capacity is WIDTH, or the size hint when that is smaller */
         private Object[] leaf;
         private int leafLength;
-        /* nodes[level] is the partially filled node at that level (children of nodes[level] live at level - 1) */
-        private final Object[] @Nullable [] nodes = new Object[LEVELS][];
-        private final int[] nodeLengths = new int[LEVELS];
+        /* nodes[level] is the partially filled node at that level (children of nodes[level] live at level - 1);
+         * allocated on the first completed leaf, so a Vector that fits in one leaf costs one array */
+        private Object[] @Nullable [] nodes = EMPTY_NODES;
+        private int[] nodeLengths = EMPTY_NODE_LENGTHS;
+        private static final Object[] @Nullable [] EMPTY_NODES = new Object[0][];
+        private static final int[] EMPTY_NODE_LENGTHS = new int[0];
         /* the highest level in use; 0 while everything still fits in one leaf */
         private int depth;
         private int size;
@@ -1644,6 +1647,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
 
         /* appends a completed child (a full leaf or a full node) to the node at the given level, opening it if needed */
         private void push(Object[] child, int level) {
+            if (nodes.length == 0) {
+                nodes = new Object[LEVELS][];
+                nodeLengths = new int[LEVELS];
+            }
             Object[] node = nodes[level];
             if (node == null) {
                 node = new Object[WIDTH];
@@ -1664,7 +1671,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
          */
 
         /* appends mapper(source[i]) for i in [start, end) */
+        @SuppressWarnings("unchecked")
         <S extends @Nullable Object> void addMapped(ArrayType<S> type, Object source, int start, int end, Function<? super S, ? extends T> mapper) {
+            // an Object[] leaf is indexed directly; a primitive leaf goes through its ArrayType (one boxing per element)
+            final Object @Nullable [] objects = (source instanceof Object[] o) ? o : null;
             Object[] leaf = this.leaf;
             int leafLength = this.leafLength;
             for (int i = start; i < end; i++) {
@@ -1674,19 +1684,53 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                     leaf = this.leaf;
                     leafLength = this.leafLength;
                 }
-                leaf[leafLength++] = mapper.apply(type.getAt(source, i));
+                final S value = (objects != null) ? (S) objects[i] : type.getAt(source, i);
+                leaf[leafLength++] = mapper.apply(value);
             }
             this.leafLength = leafLength;
             this.size += end - start;
         }
 
-        /* appends source[i] for i in [start, end) when it satisfies the predicate */
-        void addFiltered(ArrayType<T> type, Object source, int start, int end, Predicate<? super T> predicate) {
+        /* appends n elements f(0) .. f(n - 1) */
+        void addTabulated(int n, IntFunction<? extends T> f) {
+            Object[] leaf = this.leaf;
+            int leafLength = this.leafLength;
+            for (int i = 0; i < n; i++) {
+                if (leafLength == leaf.length) {
+                    this.leafLength = leafLength;
+                    growOrCloseLeaf();
+                    leaf = this.leaf;
+                    leafLength = this.leafLength;
+                }
+                leaf[leafLength++] = f.apply(i);
+            }
+            this.leafLength = leafLength;
+            this.size += Math.max(n, 0);
+        }
+
+        /* appends the same element n times, one Arrays.fill per leaf */
+        void addRepeated(int n, T element) {
+            int remaining = n;
+            while (remaining > 0) {
+                if (leafLength == leaf.length) {
+                    growOrCloseLeaf();
+                }
+                final int count = Math.min(leaf.length - leafLength, remaining);
+                Arrays.fill(leaf, leafLength, leafLength + count, element);
+                leafLength += count;
+                remaining -= count;
+            }
+            this.size += Math.max(n, 0);
+        }
+
+        /* appends source[i] for i in [start, end) when it satisfies the predicate; only Object[] leaves get here */
+        @SuppressWarnings("unchecked")
+        void addFiltered(Object[] source, int start, int end, Predicate<? super T> predicate) {
             Object[] leaf = this.leaf;
             int leafLength = this.leafLength;
             int added = 0;
             for (int i = start; i < end; i++) {
-                final T value = type.getAt(source, i);
+                final T value = (T) source[i];
                 if (predicate.test(value)) {
                     if (leafLength == leaf.length) {
                         this.leafLength = leafLength;
@@ -1713,6 +1757,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         @SuppressWarnings("unchecked")
         private void addLeafRange(ArrayType<?> type, Object sourceLeaf, int start, int end) {
             if (sourceLeaf instanceof Object[] source) {
+                if (leafLength == leaf.length) {
+                    // an exactly full current leaf is pushed lazily on the next write; close it now so a full source leaf can be shared
+                    growOrCloseLeaf();
+                }
                 if (leafLength == 0 && start == 0 && end == WIDTH && source.length == WIDTH) {
                     // a full, untrimmed leaf of the source: share it, nobody mutates leaves
                     push(source, 1);

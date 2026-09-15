@@ -32,6 +32,8 @@ public class VectorBuilderBenchmark {
 
     private ArrayList<Integer> list;
     private Vector<Integer> vector;
+    private Vector<Integer> range;
+    private Array<Integer> array;
     private Vector<Integer> large;
 
     @Setup(Level.Trial)
@@ -41,6 +43,8 @@ public class VectorBuilderBenchmark {
             list.add(i);
         }
         vector = Vector.ofAll(list);
+        range = Vector.range(0, size);
+        array = Array.ofAll(list);
         large = Vector.range(0, 1_000_000);
     }
 
@@ -52,6 +56,26 @@ public class VectorBuilderBenchmark {
     @Benchmark
     public Vector<Integer> ofAll_iterator() {
         return Vector.ofAll(Iterator.ofAll(list.iterator()));
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_array() {
+        return Vector.ofAll(array);
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_stream() {
+        return Vector.ofAll(list.stream());
+    }
+
+    @Benchmark
+    public Vector<Integer> tabulate() {
+        return Vector.tabulate(size, i -> i);
+    }
+
+    @Benchmark
+    public Vector<Integer> fill() {
+        return Vector.fill(size, 7);
     }
 
     @Benchmark
@@ -67,6 +91,17 @@ public class VectorBuilderBenchmark {
     @Benchmark
     public Vector<Integer> filter() {
         return vector.filter(i -> (i & 1) == 0);
+    }
+
+    /* int[]-backed receivers */
+    @Benchmark
+    public Vector<Integer> map_range() {
+        return range.map(i -> i + 1);
+    }
+
+    @Benchmark
+    public Vector<Integer> filter_range() {
+        return range.filter(i -> (i & 1) == 0);
     }
 
     @Benchmark
