@@ -399,6 +399,19 @@ Everything positional or complexity-sensitive moves to the concrete types: `get`
 `Map`/`Set` lose `head`, `tail`, `zipWithIndex`, `sliding`, `scan`, `take`, `drop` etc. (they are
 currently declared on `Map.java:842-857` and `Set.java:265-280` over an undefined iteration order).
 
+New on every sequence and on the hash sets (decided): `partitionMap`, the generalisation of
+`partition(Predicate)` (Scala 2.13, zio-prelude `ForEach`):
+
+```java
+<L, R> Tuple2<Vector<L>, Vector<R>> partitionMap(Function<? super A, Either<L, R>> f);   // Vector, NonEmptyVector (result sides may be empty)
+<L, R> Tuple2<List<L>, List<R>>     partitionMap(...);                                    // List, Queue, LazyList likewise
+<L, R> Tuple2<HashSet<L>, HashSet<R>> partitionMap(...);                                  // HashSet, LinkedHashSet
+```
+
+Not on `TreeSet` (the two result sides need comparators for `L` and `R`) nor on maps (entries are
+tuples; use `entries().partitionMap(...)`). Implemented with two builders (3.8.1), one pass, no
+intermediate `Either` list. `Validation.partition` (3.5) is the same idea for validations.
+
 Every positional method on `List` gets a one-line complexity note in its javadoc (`get(i)` is O(i),
 `append` is O(n), `prepend`/`head`/`tail` are O(1)); on `Vector` the same (effectively O(1) for `get`,
 `update`, `append`, `prepend`, `take`, `drop`).
