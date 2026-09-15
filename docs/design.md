@@ -588,7 +588,16 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   `BinaryOperator<A>` plus a constant. The naming lesson is applied to method names instead
   (`reduce(BinaryOperator)`, `fold(A identity, BinaryOperator)`), and `combine`-style helpers take a
   `BinaryOperator` parameter. Adding a `Semigroup`-by-another-name interface is the abstraction nobody asked for.
-- `ForEach`/`NonEmptyForEach` as generic interfaces: impossible without HKT. Their *operator inventory*
+- `ForEach`/`NonEmptyForEach`/`AssociativeBoth` as generic interfaces, i.e. higher-kinded types. Java *can*
+  encode them (the witness-type encoding: `interface Kind<F, A> {}`, `Option<A> extends Kind<Option.W, A>`
+  with an empty `enum W` as the witness, one unsafe-but-sound `narrow(Kind<W, A>) : Option<A>` per type,
+  typeclass instances passed explicitly; prior art highj, derive4j/hkt, Cyclops, Arrow-kt before 1.0).
+  Rejected (decided): every abstract signature returns `Kind<F, B>` and every call site ends in
+  `narrow(...)`, instances are explicit parameters everywhere, error messages name `Kind<W, ...>`, and
+  Arrow-kt dropped the same encoding in 1.0 for exactly those reasons on a language with better
+  inference than Java. Inside zazr the type set is small and fixed, so per-type generated
+  `forEach`/`collectAll`/`zip` cover the need. If wanted later, it is a `zazr-hkt` module experiment,
+  never a dependency of `zazr-core`. Their *operator inventory*
   (`partitionMap`, `reduceMap`, `mapAccum`, `groupByNonEmpty`, `intersperse`, `maxByOption`...) is the
   checklist for `Vector`/`NonEmptyVector` methods.
 - `Newtype`/`Subtype`, `Derive`, `ZPure`/`State`/`Reader`/`Writer`, `ZSet`/`MultiSet`, the `experimental`
