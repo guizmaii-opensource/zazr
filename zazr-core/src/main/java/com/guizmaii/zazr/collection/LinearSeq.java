@@ -412,14 +412,18 @@ interface LinearSeqModule {
             int index = 0;
             int result = -1;
             final LinearSeq<T> _slice = toLinearSeq(slice);
-            while (source.length() >= _slice.length()) {
-                final Tuple2<LinearSeq<T>, Integer> r = findNextSlice(source, _slice);
+            // lengths once, then counted down: List.length() walks the list
+            final int sliceLength = _slice.length();
+            int remaining = source.length();
+            while (remaining >= sliceLength) {
+                final Tuple2<LinearSeq<T>, Integer> r = findNextSlice(source, _slice, remaining, sliceLength);
                 if (r == null) {
                     return result;
                 }
                 if (index + r._2() <= end) {
                     result = index + r._2();
                     index += r._2() + 1;
+                    remaining -= r._2() + 1;
                     source = r._1().tail();
                 } else {
                     return result;
@@ -432,8 +436,10 @@ interface LinearSeqModule {
             int index = 0;
             final int sliceLength = slice.length();
             // DEV-NOTE: we can't compute the length of an infinite Stream but it may contain a slice
-            final Predicate<LinearSeq<?>> hasMore = source.isLazy() ? LinearSeq::nonEmpty : seq -> seq.length() >= sliceLength;
-            while (hasMore.test(source)) {
+            final boolean lazy = source.isLazy();
+            // length once, then counted down: List.length() walks the list
+            int remaining = lazy ? 0 : source.length();
+            while (lazy ? source.nonEmpty() : remaining >= sliceLength) {
                 if (index >= from && source.startsWith(slice)) {
                     return index;
                 }
@@ -442,18 +448,20 @@ interface LinearSeqModule {
                     return -1;
                 }
                 index++;
+                remaining--;
                 source = source.tail();
             }
             return -1;
         }
 
-        private static <T extends @Nullable Object> @Nullable Tuple2<LinearSeq<T>, Integer> findNextSlice(LinearSeq<T> source, LinearSeq<T> slice) {
+        private static <T extends @Nullable Object> @Nullable Tuple2<LinearSeq<T>, Integer> findNextSlice(LinearSeq<T> source, LinearSeq<T> slice, int remaining, int sliceLength) {
             int index = 0;
-            while (source.length() >= slice.length()) {
+            while (remaining >= sliceLength) {
                 if (source.startsWith(slice)) {
                     return Tuple.of(source, index);
                 }
                 index++;
+                remaining--;
                 source = source.tail();
             }
             return null;

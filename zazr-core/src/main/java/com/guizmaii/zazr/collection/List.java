@@ -29,6 +29,19 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * <li>{@link Cons}, which represents a {@code List} containing one or more elements.</li>
  * </ul>
  *
+ * Both are public records of a sealed interface, so a {@code List} is deconstructed with a record pattern:
+ *
+ * <pre>
+ * {@code
+ * static int sum(List<Integer> list) {
+ *     return switch (list) {
+ *         case Cons(var head, var tail) -> head + sum(tail);
+ *         case Nil() -> 0;
+ *     };
+ * }
+ * }
+ * </pre>
+ *
  * A {@code List} is a {@code Stack} in the sense that it stores elements allowing a last-in-first-out (LIFO) retrieval.
  * <p>
  * Stack API:
@@ -106,7 +119,7 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * @param <T> Component type of the List
  * @author Daniel Dietrich
  */
-public interface List<T extends @Nullable Object> extends LinearSeq<T> {
+public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> permits List.Cons, List.Nil {
 
     /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
@@ -1486,7 +1499,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default List<T> reverse() {
-        return (length() <= 1) ? this : foldLeft(empty(), List::prepend);
+        return (isEmpty() || tail().isEmpty()) ? this : foldLeft(empty(), List::prepend);
     }
 
     @Override
@@ -1827,23 +1840,23 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     /**
-     * Representation of the singleton empty {@code List}.
+     * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new Nil<>()}
+     * is legal, a record constructor is public, and equal to it.
+     * <p>
+     * Equality is that of every {@code List}: a {@code Nil} equals any empty {@code Seq}, not only another {@code Nil},
+     * so {@code equals} and {@code hashCode} are not the record defaults.
      *
      * @param <T> Component type of the List.
      */
-    final class Nil<T extends @Nullable Object> implements List<T> {
+    record Nil<T extends @Nullable Object>() implements List<T> {
 
         private static final Nil<?> INSTANCE = new Nil<>();
 
-        // hidden
-        private Nil() {
-        }
-
         /**
-         * Returns the singleton instance of the linked list.
+         * Returns the shared instance of the empty list.
          *
          * @param <T> Component type of the List
-         * @return the singleton instance of the linked list.
+         * @return the shared instance of the empty list.
          */
         @SuppressWarnings("unchecked")
         public static <T extends @Nullable Object> Nil<T> instance() {
@@ -1884,45 +1897,39 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         public String toString() {
             return stringPrefix() + "()";
         }
-
     }
 
     /**
-     * Non-empty {@code List}, consisting of a {@code head} and a {@code tail}.
+     * A non-empty {@code List}: a {@code head} element and a {@code tail} {@code List}. The head may be {@code null},
+     * as any element of a collection may; the tail may not.
+     * <p>
+     * Equality is that of every {@code List}: a {@code Cons} equals any {@code Seq} with the same elements in the same
+     * order, so {@code equals}, {@code hashCode} and {@code toString} are not the record defaults.
      *
-     * @param <T> Component type of the List.
+     * @param head the first element, may be {@code null}
+     * @param tail the remaining elements, never {@code null}
+     * @param <T>  Component type of the List.
      */
-    final class Cons<T extends @Nullable Object> implements List<T> {
-
-        private final T head;
-        private final List<T> tail;
-        private final int length;
+    record Cons<T extends @Nullable Object>(T head, List<T> tail) implements List<T> {
 
         /**
-         * Creates a List consisting of a head value and a trailing List.
+         * Rejects a {@code null} tail.
          *
-         * @param head The head
-         * @param tail The tail
+         * @throws NullPointerException if {@code tail} is null
          */
-        private Cons(T head, List<T> tail) {
-            this.head = head;
-            this.tail = tail;
-            this.length = 1 + tail.length();
-        }
-
-        @Override
-        public T head() {
-            return head;
+        public Cons {
+            Objects.requireNonNull(tail, "tail is null");
         }
 
         @Override
         public int length() {
+            // Walks the list: a record has no field for a cached length. Scala's List does the same;
+            // a length component would leak into every record pattern and allow inconsistent instances.
+            int length = 0;
+            for (List<T> list = this; !list.isEmpty(); list = list.tail()) {
+                length++;
+            }
             return length;
-        }
-
-        @Override
-        public List<T> tail() {
-            return tail;
         }
 
         @Override
@@ -1944,7 +1951,6 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         public String toString() {
             return mkString(stringPrefix() + "(", ", ", ")");
         }
-
     }
 }
 
