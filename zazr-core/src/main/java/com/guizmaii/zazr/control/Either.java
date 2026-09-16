@@ -20,9 +20,18 @@ import org.jspecify.annotations.Nullable;
  * a success (represented by {@code Right}) or a failure (represented by {@code Left}).
  * <p>
  * This implementation is <strong>right-biased</strong>, meaning that most operations such as
- * {@code map}, {@code flatMap}, {@code filter}, etc., are defined for the {@code Right} projection.
- * This makes {@code Either} behave like a monad over its {@code Right} type, and enables fluent
- * chaining of computations in the successful case.
+ * {@code map}, {@code flatMap}, {@code filter}, etc., are defined for the {@code Right} projection,
+ * so computations chain fluently in the successful case.
+ * <p>
+ * {@code Either} is a sealed interface with two record cases, {@link Left} and {@link Right}, so it is
+ * eliminated with an exhaustive {@code switch}:
+ * <pre>{@code
+ * String s = switch (either) {
+ *     case Left(var error) -> "failed: " + error;
+ *     case Right(var value) -> "got " + value;
+ * };
+ * }</pre>
+ * Neither case holds {@code null}: {@link #left(Object)} and {@link #right(Object)} throw.
  *
  * <h2>Example</h2>
  * <p>
@@ -48,15 +57,16 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich, Grzegorz Piwowarek, Adam Kopeć
  */
-public interface Either<L extends @Nullable Object, R extends @Nullable Object> extends Value<R> {
+public sealed interface Either<L extends @Nullable Object, R extends @Nullable Object> extends Value<R> permits Either.Left, Either.Right {
 
     /**
      * Constructs a new {@link Right} instance containing the given value.
      *
-     * @param right the value to store in the {@code Right}
+     * @param right the value to store in the {@code Right}, must not be {@code null}
      * @param <L>   the type of the left value
      * @param <R>   the type of the right value
      * @return a new {@code Right} instance
+     * @throws NullPointerException if {@code right} is null
      */
     static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> right(R right) {
         return new Right<>(right);
@@ -65,10 +75,11 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
     /**
      * Constructs a new {@link Left} instance containing the given value.
      *
-     * @param left the value to store in the {@code Left}
+     * @param left the value to store in the {@code Left}, must not be {@code null}
      * @param <L>  the type of the left value
      * @param <R>  the type of the right value
      * @return a new {@code Left} instance
+     * @throws NullPointerException if {@code left} is null
      */
     static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> left(L left) {
         return new Left<>(left);
@@ -185,6 +196,8 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      *   <li>If this is a {@link Either.Left}, {@code leftMapper} is applied to the left value.</li>
      *   <li>If this is a {@link Either.Right}, {@code rightMapper} is applied to the right value.</li>
      * </ul>
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
      * @param leftMapper  function to transform the left value if this is a {@code Left}
      * @param rightMapper function to transform the right value if this is a {@code Right}
@@ -413,6 +426,8 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * <p>
      * If this {@code Either} is a {@link Either.Left}, it is returned unchanged. 
      * Otherwise, the {@code mapper} function is applied to the right value, and its result is returned.
+     * <p>
+     * The mapper must return an {@code Either}, never {@code null}; the {@code Either} it builds rejects {@code null} on both sides (design 3.9).
      *
      * @param mapper a function that maps the right value to another {@code Either<L, U>}
      * @param <U>    the type of the right value in the resulting {@code Either}
@@ -443,6 +458,8 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * Either<Integer, String> left = Either.left(1);
      * left.map(String::toUpperCase);
      * }</pre>
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
      * @param mapper a function to transform the right value
      * @param <U>    the type of the right value in the resulting {@code Either}
@@ -474,6 +491,8 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * Either<Integer, String> right = Either.right("a");
      * right.mapLeft(i -> i + 1);
      * }</pre>
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
      * @param leftMapper a function to transform the left value
      * @param <U>        the type of the left value in the resulting {@code Either}
@@ -633,11 +652,6 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
         return this.map(__ -> value);
     }
 
-    @Override
-    default Either<L, @Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>mapTo(null);
-    }
-
     /**
      * Indicates that a right-biased {@code Either} computes its value synchronously.
      *
@@ -706,7 +720,6 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * Returns this as {@code Validation}.
      *
      * @return {@code Validation.valid(get())} if this is right, otherwise {@code Validation.invalid(getLeft())}.
-     * @throws NullPointerException if this is a {@link Either.Left} holding a null value
      */
     default Validation<L, R> toValidation() {
         return isRight() ? Validation.valid(get()) : Validation.invalid(getLeft());
@@ -1319,24 +1332,21 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
     }
 
     /**
-     * The {@code Left} version of an {@code Either}.
+     * The {@code Left} case of an {@code Either}. The value is never {@code null}.
      *
-     * @param <L> left component type
-     * @param <R> right component type
-     *
-     * @author Daniel Dietrich
+     * @param value the left value, never {@code null}
+     * @param <L>   left component type
+     * @param <R>   right component type
      */
-    final class Left<L extends @Nullable Object, R extends @Nullable Object> implements Either<L, R> {
-
-        private final L value;
+    record Left<L extends @Nullable Object, R extends @Nullable Object>(L value) implements Either<L, R> {
 
         /**
-         * Constructs a {@code Left}.
+         * Rejects {@code null}.
          *
-         * @param value a left value
+         * @throws NullPointerException if {@code value} is null
          */
-        private Left(L value) {
-            this.value = value;
+        public Left {
+            Objects.requireNonNull(value, "value is null");
         }
 
         @Override
@@ -1360,16 +1370,6 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
         }
 
         @Override
-        public boolean equals(@Nullable Object obj) {
-            return (obj == this) || (obj instanceof Left && Objects.equals(value, ((Left<?, ?>) obj).value));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(value);
-        }
-
-        @Override
         public String stringPrefix() {
             return "Left";
         }
@@ -1381,24 +1381,21 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
     }
 
     /**
-     * The {@code Right} version of an {@code Either}.
+     * The {@code Right} case of an {@code Either}. The value is never {@code null}.
      *
-     * @param <L> left component type
-     * @param <R> right component type
-     *
-     * @author Daniel Dietrich
+     * @param value the right value, never {@code null}
+     * @param <L>   left component type
+     * @param <R>   right component type
      */
-    final class Right<L extends @Nullable Object, R extends @Nullable Object> implements Either<L, R> {
-
-        private final R value;
+    record Right<L extends @Nullable Object, R extends @Nullable Object>(R value) implements Either<L, R> {
 
         /**
-         * Constructs a {@code Right}.
+         * Rejects {@code null}.
          *
-         * @param value a right value
+         * @throws NullPointerException if {@code value} is null
          */
-        private Right(R value) {
-            this.value = value;
+        public Right {
+            Objects.requireNonNull(value, "value is null");
         }
 
         @Override
@@ -1419,16 +1416,6 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
         @Override
         public boolean isRight() {
             return true;
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            return (obj == this) || (obj instanceof Right && Objects.equals(value, ((Right<?, ?>) obj).value));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(value);
         }
 
         @Override

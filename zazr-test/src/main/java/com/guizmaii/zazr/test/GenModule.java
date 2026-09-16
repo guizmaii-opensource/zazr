@@ -72,9 +72,9 @@ interface GenModule {
     static <T> Gen<T> frequency(int n, java.util.Iterator<Tuple2<Integer, Gen<T>>> iter) {
         do {
             final Tuple2<Integer, Gen<T>> freqGen = iter.next();
-            final int k = freqGen._1;
+            final int k = freqGen._1();
             if (n <= k) {
-                return freqGen._2;
+                return freqGen._2();
             } else {
                 n = n - k;
             }

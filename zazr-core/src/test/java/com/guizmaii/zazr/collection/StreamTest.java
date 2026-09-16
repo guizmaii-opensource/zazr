@@ -352,7 +352,7 @@ public class StreamTest extends AbstractLinearSeqTest {
     class StaticIterateSupplierOptionTests {
         @Test
         public void shouldGenerateInfiniteStreamBasedOnOptionSupplier() {
-            assertThat(Stream.iterate(() -> Option.of(1)).take(5).reduce((i, j) -> i + j)).isEqualTo(5);
+            assertThat(Stream.iterate(() -> Option.some(1)).take(5).reduce((i, j) -> i + j)).isEqualTo(5);
         }
     }
 
@@ -479,8 +479,8 @@ public class StreamTest extends AbstractLinearSeqTest {
                 count.incrementAndGet();
                 return true;
             });
-            assertThat(results._1).isEqualTo(of(1, 2, 3));
-            assertThat(results._2).isEqualTo(of());
+            assertThat(results._1()).isEqualTo(of(1, 2, 3));
+            assertThat(results._2()).isEqualTo(of());
             assertThat(count.get()).isEqualTo(6);
         }
 
@@ -496,10 +496,10 @@ public class StreamTest extends AbstractLinearSeqTest {
                 return i % 2 == 0;
             });
             assertThat(itemsCalled).containsExactly(0, 1);
-            assertThat(results._1.head()).isEqualTo(0);
-            assertThat(results._2.head()).isEqualTo(1);
-            assertThat(results._1.take(3)).isEqualTo(of(0, 2, 4));
-            assertThat(results._2.take(3)).isEqualTo(of(1, 3, 5));
+            assertThat(results._1().head()).isEqualTo(0);
+            assertThat(results._2().head()).isEqualTo(1);
+            assertThat(results._1().take(3)).isEqualTo(of(0, 2, 4));
+            assertThat(results._2().take(3)).isEqualTo(of(1, 3, 5));
             assertThat(itemsCalled).containsExactly(0, 1, 2, 3, 4, 5);
         }
     }
@@ -529,7 +529,7 @@ public class StreamTest extends AbstractLinearSeqTest {
     class AppendselfTests {
         @Test
         public void shouldRecurrentlyCalculateFibonacci() {
-            assertThat(Stream.of(1, 1).appendSelf(self -> self.zip(self.tail()).map(t -> t._1 + t._2)).take(10))
+            assertThat(Stream.of(1, 1).appendSelf(self -> self.zip(self.tail()).map(t -> t._1() + t._2())).take(10))
                     .isEqualTo(Stream.of(1, 1, 2, 3, 5, 8, 13, 21, 34, 55));
         }
 
@@ -723,7 +723,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             Stream.of(vals)
                     .map(v -> Try.run(() -> consumer1.apply(v)))
                     .find(Try::isFailure)
-                    .getOrElse(() -> Try.success(null));
+                    .getOrElse(() -> Try.success(Tuple.empty()));
 
             final StringBuilder expected = new StringBuilder();
             final CheckedFunction1<Integer, Void> consumer2 = doStuff.apply(expected);
@@ -731,7 +731,7 @@ public class StreamTest extends AbstractLinearSeqTest {
                     .map(v -> Try.run(() -> consumer2.apply(v)))
                     .filter(Try::isFailure)
                     .findFirst()
-                    .orElseGet(() -> Try.success(null));
+                    .orElseGet(() -> Try.success(Tuple.empty()));
 
             assertThat(actual.toString()).isEqualTo(expected.toString());
         }
@@ -827,7 +827,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             assertThat(
                     Stream.unfoldRight(10, x -> x == 0
                                                 ? Option.none()
-                                                : Option.of(new Tuple2<>(x, x - 1))))
+                                                : Option.some(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -841,7 +841,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             assertThat(
                     Stream.unfoldLeft(10, x -> x == 0
                                                ? Option.none()
-                                               : Option.of(new Tuple2<>(x - 1, x))))
+                                               : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -855,7 +855,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             assertThat(
                     Stream.unfold(10, x -> x == 0
                                            ? Option.none()
-                                           : Option.of(new Tuple2<>(x - 1, x))))
+                                           : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }

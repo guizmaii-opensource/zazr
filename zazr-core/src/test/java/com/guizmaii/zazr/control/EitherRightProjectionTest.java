@@ -16,7 +16,7 @@ public class EitherRightProjectionTest extends AbstractValueTest {
 
     @Override
     protected <T> Either.RightProjection<?, T> empty() {
-        return Either.<T, T> left(null).right();
+        return Either.<String, T>left("empty").right();
     }
 
     @Override
@@ -28,6 +28,11 @@ public class EitherRightProjectionTest extends AbstractValueTest {
     @Override
     protected final <T> Either.RightProjection<?, T> of(T... elements) {
         return of(elements[0]);
+    }
+
+    @Override
+    protected boolean allowsNull() {
+        return false;
     }
 
     @Override
@@ -140,7 +145,7 @@ public class EitherRightProjectionTest extends AbstractValueTest {
 
         @Test
         public void shouldConvertRightProjectionOfRightToSome() {
-            assertThat(Either.<Integer, String> right("1").right().toOption()).isEqualTo(Option.of("1"));
+            assertThat(Either.<Integer, String> right("1").right().toOption()).isEqualTo(Option.some("1"));
         }
 
         // toEither

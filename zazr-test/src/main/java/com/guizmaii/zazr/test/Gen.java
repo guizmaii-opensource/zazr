@@ -283,7 +283,7 @@ public interface Gen<T> {
         if (filtered.isEmpty()) {
             throw new IllegalArgumentException("no generator with positive weight");
         }
-        final int size = filtered.map(t -> t._1).sum().intValue();
+        final int size = filtered.map(t -> t._1()).sum().intValue();
         return GenModule.chooseInt(1, size).flatMap(n -> GenModule.frequency(n, filtered.iterator()));
     }
 

@@ -11,7 +11,6 @@ import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Stream;
 import java.util.Comparator;
-import java.util.Objects;
 import org.junit.jupiter.api.Test;
 
 public class Tuple6Test {
@@ -31,78 +30,78 @@ public class Tuple6Test {
     @Test
     public void shouldReturnElements() {
         final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6);
-        assertThat(tuple._1).isEqualTo(1);
-        assertThat(tuple._2).isEqualTo(2);
-        assertThat(tuple._3).isEqualTo(3);
-        assertThat(tuple._4).isEqualTo(4);
-        assertThat(tuple._5).isEqualTo(5);
-        assertThat(tuple._6).isEqualTo(6);
+        assertThat(tuple._1()).isEqualTo(1);
+        assertThat(tuple._2()).isEqualTo(2);
+        assertThat(tuple._3()).isEqualTo(3);
+        assertThat(tuple._4()).isEqualTo(4);
+        assertThat(tuple._5()).isEqualTo(5);
+        assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate1() {
       final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update1(42);
-      assertThat(tuple._1).isEqualTo(42);
-      assertThat(tuple._2).isEqualTo(2);
-      assertThat(tuple._3).isEqualTo(3);
-      assertThat(tuple._4).isEqualTo(4);
-      assertThat(tuple._5).isEqualTo(5);
-      assertThat(tuple._6).isEqualTo(6);
+      assertThat(tuple._1()).isEqualTo(42);
+      assertThat(tuple._2()).isEqualTo(2);
+      assertThat(tuple._3()).isEqualTo(3);
+      assertThat(tuple._4()).isEqualTo(4);
+      assertThat(tuple._5()).isEqualTo(5);
+      assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate2() {
       final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update2(42);
-      assertThat(tuple._1).isEqualTo(1);
-      assertThat(tuple._2).isEqualTo(42);
-      assertThat(tuple._3).isEqualTo(3);
-      assertThat(tuple._4).isEqualTo(4);
-      assertThat(tuple._5).isEqualTo(5);
-      assertThat(tuple._6).isEqualTo(6);
+      assertThat(tuple._1()).isEqualTo(1);
+      assertThat(tuple._2()).isEqualTo(42);
+      assertThat(tuple._3()).isEqualTo(3);
+      assertThat(tuple._4()).isEqualTo(4);
+      assertThat(tuple._5()).isEqualTo(5);
+      assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate3() {
       final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update3(42);
-      assertThat(tuple._1).isEqualTo(1);
-      assertThat(tuple._2).isEqualTo(2);
-      assertThat(tuple._3).isEqualTo(42);
-      assertThat(tuple._4).isEqualTo(4);
-      assertThat(tuple._5).isEqualTo(5);
-      assertThat(tuple._6).isEqualTo(6);
+      assertThat(tuple._1()).isEqualTo(1);
+      assertThat(tuple._2()).isEqualTo(2);
+      assertThat(tuple._3()).isEqualTo(42);
+      assertThat(tuple._4()).isEqualTo(4);
+      assertThat(tuple._5()).isEqualTo(5);
+      assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate4() {
       final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update4(42);
-      assertThat(tuple._1).isEqualTo(1);
-      assertThat(tuple._2).isEqualTo(2);
-      assertThat(tuple._3).isEqualTo(3);
-      assertThat(tuple._4).isEqualTo(42);
-      assertThat(tuple._5).isEqualTo(5);
-      assertThat(tuple._6).isEqualTo(6);
+      assertThat(tuple._1()).isEqualTo(1);
+      assertThat(tuple._2()).isEqualTo(2);
+      assertThat(tuple._3()).isEqualTo(3);
+      assertThat(tuple._4()).isEqualTo(42);
+      assertThat(tuple._5()).isEqualTo(5);
+      assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate5() {
       final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update5(42);
-      assertThat(tuple._1).isEqualTo(1);
-      assertThat(tuple._2).isEqualTo(2);
-      assertThat(tuple._3).isEqualTo(3);
-      assertThat(tuple._4).isEqualTo(4);
-      assertThat(tuple._5).isEqualTo(42);
-      assertThat(tuple._6).isEqualTo(6);
+      assertThat(tuple._1()).isEqualTo(1);
+      assertThat(tuple._2()).isEqualTo(2);
+      assertThat(tuple._3()).isEqualTo(3);
+      assertThat(tuple._4()).isEqualTo(4);
+      assertThat(tuple._5()).isEqualTo(42);
+      assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate6() {
       final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update6(42);
-      assertThat(tuple._1).isEqualTo(1);
-      assertThat(tuple._2).isEqualTo(2);
-      assertThat(tuple._3).isEqualTo(3);
-      assertThat(tuple._4).isEqualTo(4);
-      assertThat(tuple._5).isEqualTo(5);
-      assertThat(tuple._6).isEqualTo(42);
+      assertThat(tuple._1()).isEqualTo(1);
+      assertThat(tuple._2()).isEqualTo(2);
+      assertThat(tuple._3()).isEqualTo(3);
+      assertThat(tuple._4()).isEqualTo(4);
+      assertThat(tuple._5()).isEqualTo(5);
+      assertThat(tuple._6()).isEqualTo(42);
     }
 
     @Test
@@ -315,9 +314,24 @@ public class Tuple6Test {
 
     @Test
     public void shouldComputeCorrectHashCode() {
-        final int actual = createTuple().hashCode();
-        final int expected = Objects.hash(null, null, null, null, null, null);
-        assertThat(actual).isEqualTo(expected);
+        assertThat(createTuple().hashCode()).isEqualTo(createTuple().hashCode());
+        assertThat(createIntTuple(0, 0, 0, 0, 0, 0).hashCode()).isEqualTo(createIntTuple(0, 0, 0, 0, 0, 0).hashCode());
+        assertThat(createIntTuple(0, 0, 0, 0, 0, 0).hashCode()).isNotEqualTo(createIntTuple(1, 0, 0, 0, 0, 0).hashCode());
+    }
+
+    @Test
+    public void shouldDeconstructWithRecordPattern() {
+        final Object o = createIntTuple(1, 2, 3, 4, 5, 6);
+        if (o instanceof Tuple6(var v1, var v2, var v3, var v4, var v5, var v6)) {
+            assertThat(v1).isEqualTo(1);
+            assertThat(v2).isEqualTo(2);
+            assertThat(v3).isEqualTo(3);
+            assertThat(v4).isEqualTo(4);
+            assertThat(v5).isEqualTo(5);
+            assertThat(v6).isEqualTo(6);
+        } else {
+            throw new AssertionError("record pattern did not match");
+        }
     }
 
     @Test

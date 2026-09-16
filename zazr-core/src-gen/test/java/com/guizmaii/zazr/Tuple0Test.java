@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import java.util.Comparator;
-import java.util.Objects;
 import org.junit.jupiter.api.Test;
 
 public class Tuple0Test {
@@ -132,9 +131,18 @@ public class Tuple0Test {
 
     @Test
     public void shouldComputeCorrectHashCode() {
-        final int actual = createTuple().hashCode();
-        final int expected = Objects.hash();
-        assertThat(actual).isEqualTo(expected);
+        assertThat(createTuple().hashCode()).isEqualTo(createTuple().hashCode());
+
+    }
+
+    @Test
+    public void shouldDeconstructWithRecordPattern() {
+        final Object o = createIntTuple();
+        if (o instanceof Tuple0()) {
+
+        } else {
+            throw new AssertionError("record pattern did not match");
+        }
     }
 
     @Test

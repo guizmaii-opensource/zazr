@@ -13,15 +13,15 @@ final class Sieve {
     }
 
     private final static List<Function2<Integer, Integer, Option<Integer>>> RULES = List.of(
-            (x, y) -> Option.of((4 * x * x) + (y * y)).filter(n -> n % 12 == 1 || n % 12 == 5),
-            (x, y) -> Option.of((3 * x * x) + (y * y)).filter(n -> n % 12 == 7),
-            (x, y) -> Option.of((3 * x * x) - (y * y)).filter(n -> x > y && n % 12 == 11)
+            (x, y) -> Option.some((4 * x * x) + (y * y)).filter(n -> n % 12 == 1 || n % 12 == 5),
+            (x, y) -> Option.some((3 * x * x) + (y * y)).filter(n -> n % 12 == 7),
+            (x, y) -> Option.some((3 * x * x) - (y * y)).filter(n -> x > y && n % 12 == 11)
     );
 
     private final static List<Function3<Set<Integer>, Integer, Integer, Set<Integer>>> STEPS = List.of(
             (sieve, limit, root) -> Stream.rangeClosed(1, root).crossProduct()
                     .foldLeft(sieve, (xs, xy) ->
-                            RULES.foldLeft(xs, (ss, r) -> r.apply(xy._1, xy._2)
+                            RULES.foldLeft(xs, (ss, r) -> r.apply(xy._1(), xy._2())
                                     .filter(p -> p < limit)
                                     .map(p -> ss.contains(p) ? ss.remove(p) : ss.add(p))
                                     .getOrElse(ss)

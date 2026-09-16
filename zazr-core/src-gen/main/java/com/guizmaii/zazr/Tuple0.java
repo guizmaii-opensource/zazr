@@ -13,27 +13,31 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A tuple of no elements which can be seen as cartesian product of no components.
+ * <p>
+ * A record: {@code equals} and {@code hashCode} are structural, the components are read with
+ * {@code _1()}, {@code _2()}, ... and a tuple is deconstructed with a record pattern, e.g.
+ * {@code case Tuple2(var a, var b)}. Components may be null.
+ *
  *
  * @author Daniel Dietrich
  */
-public final class Tuple0 implements Tuple, Comparable<Tuple0> {
+public record Tuple0() implements Tuple, Comparable<Tuple0> {
 
     /**
      * The singleton instance of Tuple0.
      */
-    private static final Tuple0 INSTANCE = new Tuple0 ();
+    private static final Tuple0 INSTANCE = new Tuple0();
 
     /**
      * The singleton Tuple0 comparator.
      */
     private static final Comparator<Tuple0> COMPARATOR = (t1, t2) -> 0;
 
-    // hidden constructor, internally called
-    private Tuple0 () {
-    }
-
     /**
      * Returns the singleton instance of Tuple0.
+     * <p>
+     * {@code new Tuple0()} is legal (a record constructor is public) but every {@code Tuple0}
+     * equals every other, so the singleton is only an allocation saving.
      *
      * @return The singleton instance of Tuple0.
      */
@@ -95,7 +99,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object> Tuple1<T1> concat(Tuple1<T1> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1);
+        return Tuple.of(tuple._1());
     }
 
     /**
@@ -109,7 +113,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<T1, T2> concat(Tuple2<T1, T2> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2);
+        return Tuple.of(tuple._1(), tuple._2());
     }
 
     /**
@@ -124,7 +128,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<T1, T2, T3> concat(Tuple3<T1, T2, T3> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2, tuple._3);
+        return Tuple.of(tuple._1(), tuple._2(), tuple._3());
     }
 
     /**
@@ -140,7 +144,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<T1, T2, T3, T4> concat(Tuple4<T1, T2, T3, T4> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2, tuple._3, tuple._4);
+        return Tuple.of(tuple._1(), tuple._2(), tuple._3(), tuple._4());
     }
 
     /**
@@ -157,7 +161,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<T1, T2, T3, T4, T5> concat(Tuple5<T1, T2, T3, T4, T5> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2, tuple._3, tuple._4, tuple._5);
+        return Tuple.of(tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5());
     }
 
     /**
@@ -175,7 +179,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<T1, T2, T3, T4, T5, T6> concat(Tuple6<T1, T2, T3, T4, T5, T6> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2, tuple._3, tuple._4, tuple._5, tuple._6);
+        return Tuple.of(tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6());
     }
 
     /**
@@ -194,7 +198,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<T1, T2, T3, T4, T5, T6, T7> concat(Tuple7<T1, T2, T3, T4, T5, T6, T7> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2, tuple._3, tuple._4, tuple._5, tuple._6, tuple._7);
+        return Tuple.of(tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6(), tuple._7());
     }
 
     /**
@@ -214,20 +218,10 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> concat(Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(tuple._1, tuple._2, tuple._3, tuple._4, tuple._5, tuple._6, tuple._7, tuple._8);
+        return Tuple.of(tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6(), tuple._7(), tuple._8());
     }
 
-    // -- Object
-
-    @Override
-    public boolean equals(@Nullable Object o) {
-        return o == this;
-    }
-
-    @Override
-    public int hashCode() {
-        return 1;
-    }
+    // -- Object: equals and hashCode are the record's; toString keeps the Scala-like "(a, b)" form
 
     @Override
     public String toString() {

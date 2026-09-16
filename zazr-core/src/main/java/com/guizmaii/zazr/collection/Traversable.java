@@ -56,13 +56,15 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * @param getKey a function to extract a key from each element
      * @param <K>    the type of keys
      * @return an {@code Option} containing the {@code Map} of elements by key, or {@code None} if keys are not unique
-     * @throws NullPointerException if {@code getKey} is null
+     * @throws NullPointerException if {@code getKey} is null, or if an element is {@code null}: the elements are
+     *                              collected with {@link #singleOption()} and a stored {@code null} cannot be
+     *                              wrapped in {@code Some} (design 3.9)
      * @see #groupBy(Function)
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return Option.of(groupBy(getKey).mapValues(Traversable<T>::singleOption))
-          .filter(map -> !map.exists(kv -> kv._2.isEmpty()))
+        return Option.some(groupBy(getKey).mapValues(Traversable<T>::singleOption))
+          .filter(map -> !map.exists(kv -> kv._2().isEmpty()))
           .map(map -> Map.narrow(map.mapValues(Option::get)));
     }
 
@@ -289,15 +291,15 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * Returns the first element that satisfies the given predicate.
      *
      * @param predicate the condition to test elements
-     * @return {@code Some(element)} if a matching element is found, otherwise {@code None};
-     *         the element may be {@code null}
-     * @throws NullPointerException if {@code predicate} is null
+     * @return {@code Some(element)} if a matching element is found, otherwise {@code None}
+     * @throws NullPointerException if {@code predicate} is null, or if the first matching element is {@code null}:
+     *                              a stored {@code null} cannot be wrapped in {@code Some} (design 3.9)
      */
     default Option<T> find(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         for (T a : this) {
             if (predicate.test(a)) {
-                return Option.some(a); // may be Some(null)
+                return Option.some(a);
             }
         }
         return Option.none();
@@ -309,9 +311,9 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * Equivalent to {@code reverse().find(predicate)} but potentially more efficient.
      *
      * @param predicate the condition to test elements
-     * @return {@code Some(element)} if a matching element is found, otherwise {@code None};
-     *         the element may be {@code null}
-     * @throws NullPointerException if {@code predicate} is null
+     * @return {@code Some(element)} if a matching element is found, otherwise {@code None}
+     * @throws NullPointerException if {@code predicate} is null, or if the last matching element is {@code null}:
+     *                              a stored {@code null} cannot be wrapped in {@code Some} (design 3.9)
      */
     default Option<T> findLast(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -435,6 +437,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
 
     /**
      * Returns the first element of this {@code Traversable} as an {@link Option}.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision). Test {@link #isEmpty()} and use {@link #head()} for such a collection.
      *
      * @return {@code Some(element)} if non-empty, otherwise {@code None}
      */
@@ -616,6 +620,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
 
     /**
      * Returns the last element of this Traversable as an {@code Option}.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision). Test {@link #isEmpty()} and use {@link #last()} for such a collection.
      *
      * @return {@code Some(element)} if not empty, otherwise {@code None}
      */
@@ -649,11 +655,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
         return map(ignored -> value);
     }
 
-    @Override
-    default Traversable<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
     /**
      * Returns the maximum element of this Traversable according to the natural order of its elements.
      * <p>
@@ -667,6 +668,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * List.of(1.0, Double.NaN).max() // = Some(NaN)
      * List.of(1, "a").max()          // throws ClassCastException
      * }</pre>
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @return {@code Some(maximum)} if this Traversable is not empty, otherwise {@code None}
      * @throws NullPointerException if this Traversable contains 2 or more elements and any of them is null
@@ -681,6 +684,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * Returns the maximum element of this Traversable according to the given comparator.
      * <p>
      * If the Traversable is empty, {@code None} is returned.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @param comparator a non-null {@link Comparator} to determine element ordering
      * @return {@code Some(maximum)} if this Traversable is not empty, otherwise {@code None}
@@ -702,6 +707,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * <p>
      * The mapping function {@code f} transforms elements of type {@code T} to a comparable type {@code U},
      * and the element with the largest {@code U} value is returned.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @param f   a non-null function mapping elements to a comparable type
      * @param <U> the type used for comparison, must implement {@link Comparable}
@@ -744,6 +751,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * List.of(1, "a").min()          // throws
      * }
      * </pre>
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @return {@code Some(minimum)} of this elements, or {@code None} if this Traversable is empty
      * @throws NullPointerException if this Traversable contains 2 or more elements and any of them is null
@@ -774,6 +783,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
 
     /**
      * Returns the minimum element of this Traversable according to a given comparator.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @param comparator a non-null comparator used to determine ordering
      * @return {@code Some(minimum)} of this elements, or {@code None} if this Traversable is empty
@@ -791,6 +802,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
 
     /**
      * Returns the element of this Traversable whose mapped value is minimal according to natural order.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @param f   a function mapping elements to a comparable value
      * @param <U> the type of the comparable value
@@ -966,6 +979,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
     /**
      * Reduces the elements of this Traversable from the left using the given binary operation,
      * returning the result wrapped in an {@code Option}.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @param op A binary operation combining two elements of type T
      * @return {@code Some(reduced value)} or {@code None} if this Traversable is empty
@@ -998,6 +1013,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
     /**
      * Reduces the elements of this Traversable from the right using the given binary operation,
      * returning the result wrapped in an {@code Option}.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision).
      *
      * @param op A binary operation combining two elements of type T
      * @return {@code Some(reduced value)} or {@code None} if this Traversable is empty
@@ -1084,11 +1101,21 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * @throws NoSuchElementException if the Traversable is empty or contains more than one element
      */
     default T single() {
-        return singleOption().getOrElseThrow(() -> new NoSuchElementException("Does not contain a single value"));
+        // not singleOption().get(): a null single element cannot be wrapped in Some
+        final Iterator<T> it = iterator();
+        if (it.hasNext()) {
+            final T first = it.next();
+            if (!it.hasNext()) {
+                return first;
+            }
+        }
+        throw new NoSuchElementException("Does not contain a single value");
     }
 
     /**
      * Returns the single element of this Traversable as an {@code Option}.
+     * <p>
+     * Collections accept {@code null} elements but {@code Some(null)} does not exist: if the element to return is {@code null}, this throws {@link NullPointerException} (design 3.9; whether collections keep accepting {@code null} is an open decision). Use {@link #single()} for such a collection.
      *
      * @return {@code Some(element)} if the Traversable contains exactly one element,
      *         or {@code None} otherwise.

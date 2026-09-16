@@ -29,6 +29,19 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * <li>{@link Cons}, which represents a {@code List} containing one or more elements.</li>
  * </ul>
  *
+ * Both are public records of a sealed interface, so a {@code List} is deconstructed with a record pattern:
+ *
+ * <pre>
+ * {@code
+ * static int sum(List<Integer> list) {
+ *     return switch (list) {
+ *         case Cons(var head, var tail) -> head + sum(tail);
+ *         case Nil() -> 0;
+ *     };
+ * }
+ * }
+ * </pre>
+ *
  * A {@code List} is a {@code Stack} in the sense that it stores elements allowing a last-in-first-out (LIFO) retrieval.
  * <p>
  * Stack API:
@@ -106,7 +119,7 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * @param <T> Component type of the List
  * @author Daniel Dietrich
  */
-public interface List<T extends @Nullable Object> extends LinearSeq<T> {
+public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> permits List.Cons, List.Nil {
 
     /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
@@ -767,7 +780,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * List.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x, x-1)));
+     *             : Option.some(new Tuple2<>(x, x-1)));
      * // List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
      * }
      * </pre>
@@ -796,7 +809,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * List.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -826,7 +839,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * List.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -955,10 +968,11 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         if (n <= 0) {
             return this;
         }
-        if (n >= length()) {
+        final int length = length();
+        if (n >= length) {
             return empty();
         }
-        return ofAll(iterator().dropRight(n));
+        return take(length - n);
     }
 
     @Override
@@ -1152,11 +1166,6 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default List<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     default List<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
@@ -1225,6 +1234,8 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
 
     /**
      * Returns the head element without modifying the List.
+     * <p>
+     * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
      *
      * @return {@code None} if this List is empty, otherwise a {@code Some} containing the head element
      */
@@ -1491,7 +1502,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default List<T> reverse() {
-        return (length() <= 1) ? this : foldLeft(empty(), List::prepend);
+        return (isEmpty() || tail().isEmpty()) ? this : foldLeft(empty(), List::prepend);
     }
 
     @Override
@@ -1583,7 +1594,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
     default Tuple2<List<T>, List<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final Tuple2<Iterator<T>, Iterator<T>> itt = iterator().span(predicate);
-        return Tuple.of(ofAll(itt._1), ofAll(itt._2));
+        return Tuple.of(ofAll(itt._1()), ofAll(itt._2()));
     }
 
     @Override
@@ -1608,10 +1619,10 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
             return Tuple.of(empty(), empty());
         } else {
             final Tuple2<List<T>, List<T>> t = SplitAt.splitByPredicateReversed(this, predicate);
-            if (t._2.isEmpty()) {
+            if (t._2().isEmpty()) {
                 return Tuple.of(this, empty());
             } else {
-                return Tuple.of(t._1.reverse(), t._2);
+                return Tuple.of(t._1().reverse(), t._2());
             }
         }
     }
@@ -1622,10 +1633,10 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
             return Tuple.of(empty(), empty());
         } else {
             final Tuple2<List<T>, List<T>> t = SplitAt.splitByPredicateReversed(this, predicate);
-            if (t._2.isEmpty() || t._2.tail().isEmpty()) {
+            if (t._2().isEmpty() || t._2().tail().isEmpty()) {
                 return Tuple.of(this, empty());
             } else {
-                return Tuple.of(t._1.prepend(t._2.head()).reverse(), t._2.tail());
+                return Tuple.of(t._1().prepend(t._2().head()).reverse(), t._2().tail());
             }
         }
     }
@@ -1747,8 +1758,8 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         List<T2> ys = Nil.instance();
         for (T element : this) {
             final Tuple2<? extends T1, ? extends T2> t = unzipper.apply(element);
-            xs = xs.prepend(t._1);
-            ys = ys.prepend(t._2);
+            xs = xs.prepend(t._1());
+            ys = ys.prepend(t._2());
         }
         return Tuple.of(xs.reverse(), ys.reverse());
     }
@@ -1762,9 +1773,9 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         List<T3> zs = Nil.instance();
         for (T element : this) {
             final Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(element);
-            xs = xs.prepend(t._1);
-            ys = ys.prepend(t._2);
-            zs = zs.prepend(t._3);
+            xs = xs.prepend(t._1());
+            ys = ys.prepend(t._2());
+            zs = zs.prepend(t._3());
         }
         return Tuple.of(xs.reverse(), ys.reverse(), zs.reverse());
     }
@@ -1832,23 +1843,23 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     /**
-     * Representation of the singleton empty {@code List}.
+     * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new Nil<>()}
+     * is legal, a record constructor is public, and equal to it.
+     * <p>
+     * Equality is that of every {@code List}: a {@code Nil} equals any empty {@code Seq}, not only another {@code Nil},
+     * so {@code equals} and {@code hashCode} are not the record defaults.
      *
      * @param <T> Component type of the List.
      */
-    final class Nil<T extends @Nullable Object> implements List<T> {
+    record Nil<T extends @Nullable Object>() implements List<T> {
 
         private static final Nil<?> INSTANCE = new Nil<>();
 
-        // hidden
-        private Nil() {
-        }
-
         /**
-         * Returns the singleton instance of the linked list.
+         * Returns the shared instance of the empty list.
          *
          * @param <T> Component type of the List
-         * @return the singleton instance of the linked list.
+         * @return the shared instance of the empty list.
          */
         @SuppressWarnings("unchecked")
         public static <T extends @Nullable Object> Nil<T> instance() {
@@ -1889,45 +1900,39 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         public String toString() {
             return stringPrefix() + "()";
         }
-
     }
 
     /**
-     * Non-empty {@code List}, consisting of a {@code head} and a {@code tail}.
+     * A non-empty {@code List}: a {@code head} element and a {@code tail} {@code List}. The head may be {@code null},
+     * as any element of a collection may; the tail may not.
+     * <p>
+     * Equality is that of every {@code List}: a {@code Cons} equals any {@code Seq} with the same elements in the same
+     * order, so {@code equals}, {@code hashCode} and {@code toString} are not the record defaults.
      *
-     * @param <T> Component type of the List.
+     * @param head the first element, may be {@code null}
+     * @param tail the remaining elements, never {@code null}
+     * @param <T>  Component type of the List.
      */
-    final class Cons<T extends @Nullable Object> implements List<T> {
-
-        private final T head;
-        private final List<T> tail;
-        private final int length;
+    record Cons<T extends @Nullable Object>(T head, List<T> tail) implements List<T> {
 
         /**
-         * Creates a List consisting of a head value and a trailing List.
+         * Rejects a {@code null} tail.
          *
-         * @param head The head
-         * @param tail The tail
+         * @throws NullPointerException if {@code tail} is null
          */
-        private Cons(T head, List<T> tail) {
-            this.head = head;
-            this.tail = tail;
-            this.length = 1 + tail.length();
-        }
-
-        @Override
-        public T head() {
-            return head;
+        public Cons {
+            Objects.requireNonNull(tail, "tail is null");
         }
 
         @Override
         public int length() {
+            // Walks the list: a record has no field for a cached length. Scala's List does the same;
+            // a length component would leak into every record pattern and allow inconsistent instances.
+            int length = 0;
+            for (List<T> list = this; !list.isEmpty(); list = list.tail()) {
+                length++;
+            }
             return length;
-        }
-
-        @Override
-        public List<T> tail() {
-            return tail;
         }
 
         @Override
@@ -1949,7 +1954,6 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
         public String toString() {
             return mkString(stringPrefix() + "(", ", ", ")");
         }
-
     }
 }
 
@@ -1962,7 +1966,7 @@ interface ListModule {
                 return List.of(List.empty());
             } else {
                 return elements.zipWithIndex().flatMap(
-                        t -> apply(elements.drop(t._2 + 1), (k - 1)).map(c -> c.prepend(t._1))
+                        t -> apply(elements.drop(t._2() + 1), (k - 1)).map(c -> c.prepend(t._1()))
                 );
             }
         }

@@ -236,10 +236,10 @@ final class Collections {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMerge, "valueMerge is null");
         return source.foldLeft(zero, (acc, entry) -> {
-            final K2 k2 = keyMapper.apply(entry._1);
-            final V v2 = entry._2;
-            final Option<V> v1 = acc.get(k2);
-            final V v = v1.isDefined() ? valueMerge.apply(v1.get(), v2) : v2;
+            final K2 k2 = keyMapper.apply(entry._1());
+            final V v2 = entry._2();
+            final V v1 = Maps.getOrAbsent(acc, k2);
+            final V v = v1 != Maps.ABSENT ? valueMerge.apply(v1, v2) : v2;
             return (U) acc.put(k2, v);
         });
     }

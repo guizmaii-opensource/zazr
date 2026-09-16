@@ -74,7 +74,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     @Override
     default boolean contains(Tuple2<K, V> element) {
-        return get(element._1).map(v -> Objects.equals(v, element._2)).getOrElse(false);
+        // getOrElse, not get: a stored null value cannot be wrapped in Some
+        final V value = Maps.getOrAbsent(this, element._1());
+        return value != Maps.ABSENT && Objects.equals(value, element._2());
     }
 
     /**
@@ -96,6 +98,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param remappingFunction remapping function
      * @return the {@link Tuple2} of the {@code Some} of the value associated with the specified key
      * (or {@code None} if none), and the current or modified map
+     * @throws NullPointerException if the key is present and {@code remappingFunction} returns {@code null}: the new
+     *                              value is handed back as {@code Some}, which cannot hold {@code null} (design 3.9)
      */
     Tuple2<Option<V>, ? extends Map<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
@@ -215,7 +219,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     default void forEach(BiConsumer<K, V> action) {
         Objects.requireNonNull(action, "action is null");
         for (Tuple2<K, V> t : this) {
-            action.accept(t._1, t._2);
+            action.accept(t._1(), t._2());
         }
     }
 
@@ -227,6 +231,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the {@code Some} of value to which the specified key
      * is mapped, or {@code None} if this map contains no mapping
      * for the key
+     * @throws NullPointerException if the key is mapped to {@code null}: a map may hold null values but
+     *                              {@code Some(null)} does not exist; test {@link #containsKey(Object)} or use
+     *                              {@link #getOrElse(Object, Object)} for such a map
      */
     Option<V> get(K key);
 
@@ -262,7 +269,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <U extends @Nullable Object> Iterator<U> iterator(BiFunction<K, V, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return iterator().map(t -> mapper.apply(t._1, t._2));
+        return iterator().map(t -> mapper.apply(t._1(), t._2()));
     }
 
     /**
@@ -305,11 +312,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     @Override
     default <U extends @Nullable Object> Seq<U> mapTo(U value) {
         return map(ignored -> value);
-    }
-
-    @Override
-    default Seq<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
     }
 
     /**
@@ -399,7 +401,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Map<K, V> put(K key, V value);
 
     /**
-     * Convenience method for {@code put(entry._1, entry._2)}.
+     * Convenience method for {@code put(entry._1(), entry._2())}.
      *
      * @param entry A Tuple2 containing the key and value
      * @return A new Map containing these elements and that entry.
@@ -421,7 +423,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     <U extends V> Map<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge);
 
     /**
-     * Convenience method for {@code put(entry._1, entry._2, merge)}.
+     * Convenience method for {@code put(entry._1(), entry._2(), merge)}.
      *
      * @param <U>   the value type
      * @param entry A Tuple2 containing the key and value
@@ -538,7 +540,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Seq<T1>, Seq<T2>> unzip(BiFunction<? super K, ? super V, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return unzip(entry -> unzipper.apply(entry._1, entry._2));
+        return unzip(entry -> unzipper.apply(entry._1(), entry._2()));
     }
 
     @Override
@@ -563,7 +565,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Seq<T1>, Seq<T2>, Seq<T3>> unzip3(BiFunction<? super K, ? super V, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return unzip3(entry -> unzipper.apply(entry._1, entry._2));
+        return unzip3(entry -> unzipper.apply(entry._1(), entry._2()));
     }
 
     @Override

@@ -18,9 +18,21 @@ import org.jspecify.annotations.Nullable;
  * <a href="http://eed3si9n.com/learning-scalaz/Validation.html">Validation</a> control.
  *
  * <p>
- * The {@code Validation} type is an applicative functor, not a Monad. While a Monad
- * short-circuits on the first error, an applicative functor accumulates all errors,
- * making it particularly useful for validation scenarios where all errors should be reported.
+ * Unlike {@code Either}, which short-circuits on the first error, {@code Validation} accumulates all errors when
+ * validations are combined, which is what a form or a configuration wants: every problem reported at once.
+ * </p>
+ * <p>
+ * {@code Validation} is a sealed interface with two record cases, {@link Valid} and {@link Invalid}, so it is
+ * eliminated with an exhaustive {@code switch}:
+ * </p>
+ * <pre>{@code
+ * String s = switch (validation) {
+ *     case Valid(var value) -> "ok: " + value;
+ *     case Invalid(var error) -> "rejected: " + error;
+ * };
+ * }</pre>
+ * <p>
+ * Neither case holds {@code null}: {@link #valid(Object)} and {@link #invalid(Object)} throw.
  * </p>
  *
  * <pre>
@@ -37,7 +49,7 @@ import org.jspecify.annotations.Nullable;
  *
  * Validation<String, String> valid1 = Validation.valid("John");
  * Validation<String, Integer> valid2 = Validation.valid(5);
- * Validation<String, Option<String>> valid3 = Validation.valid(Option.of("123 Fake St."));
+ * Validation<String, Option<String>> valid3 = Validation.valid(Option.some("123 Fake St."));
  * Function3<String, Integer, Option<String>, Person> f = ...;
  *
  * Validation<Seq<String>, String> result =
@@ -58,15 +70,16 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://github.com/scalaz/scalaz/blob/series/7.3.x/core/src/main/scala/scalaz/Validation.scala">
  *     Scalaz Validation source</a>
  */
-public interface Validation<E extends @Nullable Object, T extends @Nullable Object> extends Value<T> {
+public sealed interface Validation<E extends @Nullable Object, T extends @Nullable Object> extends Value<T> permits Validation.Valid, Validation.Invalid {
 
     /**
      * Creates a {@link Valid} that contains the given {@code value}.
      *
      * @param <E>   type of the error
      * @param <T>   type of the given {@code value}
-     * @param value A value
+     * @param value A value, must not be null
      * @return {@code Valid(value)}
+     * @throws NullPointerException if value is null
      */
     static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> valid(T value) {
         return new Valid<>(value);
@@ -77,12 +90,11 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      *
      * @param <E>   type of the given {@code error}
      * @param <T>   type of the value
-     * @param error An error
+     * @param error An error, must not be null
      * @return {@code Invalid(error)}
      * @throws NullPointerException if error is null
      */
     static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> invalid(@NonNull E error) {
-        Objects.requireNonNull(error, "error is null");
         return new Invalid<>(error);
     }
 
@@ -93,7 +105,7 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      * @param <E>    error type
      * @param <T>    value type
      * @return A {@code Valid(either.get())} if either is a Right, otherwise {@code Invalid(either.getLeft())}.
-     * @throws NullPointerException if either is null, or if it is a Left holding a null value
+     * @throws NullPointerException if either is null
      */
     static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> fromEither(Either<E, T> either) {
         Objects.requireNonNull(either, "either is null");
@@ -534,7 +546,6 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      * Or if this is an Invalid&lt;E,T&gt;, return a Valid&lt;T,E&gt;.
      *
      * @return a flipped instance of Validation
-     * @throws NullPointerException if this is a Valid holding a null value
      */
     default Validation<T, E> swap() {
         if (isInvalid()) {
@@ -546,6 +557,9 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
         }
     }
 
+    /**
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
+     */
     @SuppressWarnings("unchecked")
     @Override
     default <U extends @Nullable Object> Validation<E, U> map(Function<? super T, ? extends U> f) {
@@ -563,6 +577,8 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      * on what type of Validation this is. Without this, you would have to do something like:
      *
      * validation.map(...).mapError(...);
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
      *
      * @param <E2>        type of the mapping result if this is an invalid
      * @param <T2>        type of the mapping result if this is a valid
@@ -586,6 +602,8 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
     /**
      * Applies a function f to the error of this Validation if this is an Invalid. Otherwise does nothing
      * if this is a Valid.
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
      *
      * @param <U> type of the error resulting from the mapping
      * @param f   a function that maps the error in this Invalid
@@ -606,7 +624,6 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      * Applies a validation containing a function to this validation's value. The result is a {@link Validation.Valid}
      * only if both this and the given validation are valid; otherwise it is a {@link Validation.Invalid} accumulating
      * the errors of whichever side(s) are invalid.
-     * This is the applicative functor's ap operation for Validation.
      *
      * @param <U>        type of the result of applying the function
      * @param validation the validation containing the function to apply
@@ -666,6 +683,8 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
 
     /**
      * FlatMaps the value of this Validation if it is valid, otherwise returns this Invalid.
+     * <p>
+     * The mapper must return a {@code Validation}, never {@code null}; the {@code Validation} it builds rejects {@code null} on both sides (design 3.9).
      *
      * @param <U>    type of the returned Validation value
      * @param mapper the mapper function to apply to the value
@@ -718,22 +737,21 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
     }
 
     /**
-     * A valid Validation
+     * A valid Validation. The value is never {@code null}.
      *
-     * @param <E> type of the error of this Validation
-     * @param <T> type of the value of this Validation
+     * @param value the value, never {@code null}
+     * @param <E>   type of the error of this Validation
+     * @param <T>   type of the value of this Validation
      */
-    final class Valid<E extends @Nullable Object, T extends @Nullable Object> implements Validation<E, T> {
-
-        private final T value;
+    record Valid<E extends @Nullable Object, T extends @Nullable Object>(T value) implements Validation<E, T> {
 
         /**
-         * Construct a {@code Valid}
+         * Rejects {@code null}.
          *
-         * @param value The value of this success
+         * @throws NullPointerException if {@code value} is null
          */
-        private Valid(T value) {
-            this.value = value;
+        public Valid {
+            Objects.requireNonNull(value, "value is null");
         }
 
         @Override
@@ -757,16 +775,6 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
         }
 
         @Override
-        public boolean equals(@Nullable Object obj) {
-            return (obj == this) || (obj instanceof Valid && Objects.equals(value, ((Valid<?, ?>) obj).value));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(value);
-        }
-
-        @Override
         public String stringPrefix() {
             return "Valid";
         }
@@ -775,26 +783,24 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
         public String toString() {
             return stringPrefix() + "(" + value + ")";
         }
-
     }
 
     /**
-     * An invalid Validation
+     * An invalid Validation. The error is never {@code null}.
      *
-     * @param <E> type of the error of this Validation
-     * @param <T> type of the value of this Validation
+     * @param error the error, never {@code null}
+     * @param <E>   type of the error of this Validation
+     * @param <T>   type of the value of this Validation
      */
-    final class Invalid<E extends @Nullable Object, T extends @Nullable Object> implements Validation<E, T> {
-
-        private final E error;
+    record Invalid<E extends @Nullable Object, T extends @Nullable Object>(E error) implements Validation<E, T> {
 
         /**
-         * Construct an {@code Invalid}
+         * Rejects {@code null}.
          *
-         * @param error The value of this error
+         * @throws NullPointerException if {@code error} is null
          */
-        private Invalid(E error) {
-            this.error = error;
+        public Invalid {
+            Objects.requireNonNull(error, "error is null");
         }
 
         @Override
@@ -818,16 +824,6 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
         }
 
         @Override
-        public boolean equals(@Nullable Object obj) {
-            return (obj == this) || (obj instanceof Invalid && Objects.equals(error, ((Invalid<?, ?>) obj).error));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(error);
-        }
-
-        @Override
         public String stringPrefix() {
             return "Invalid";
         }
@@ -836,7 +832,6 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
         public String toString() {
             return stringPrefix() + "(" + error + ")";
         }
-
     }
 
     /**

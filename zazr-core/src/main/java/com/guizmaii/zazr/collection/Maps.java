@@ -15,15 +15,26 @@ import org.jspecify.annotations.Nullable;
  */
 final class Maps {
 
+    /**
+     * Marker for "no value stored under this key". Internal lookups use {@link #getOrAbsent(Map, Object)} instead of
+     * {@link Map#get(Object)} because a stored {@code null} value cannot be wrapped in {@code Some}.
+     */
+    static final Object ABSENT = new Object();
+
+    @SuppressWarnings("unchecked")
+    static <K extends @Nullable Object, V extends @Nullable Object> V getOrAbsent(Map<K, V> map, K key) {
+        return map.getOrElse(key, (V) ABSENT);
+    }
+
     private Maps() {
     }
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<V, M> computeIfAbsent(M map, K key, Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction, "mappingFunction is null");
-        final Option<V> value = map.get(key);
-        if (value.isDefined()) {
-            return Tuple.of(value.get(), map);
+        final V value = getOrAbsent(map, key);
+        if (value != ABSENT) {
+            return Tuple.of(value, map);
         } else {
             final V newValue = mappingFunction.apply(key);
             final M newMap = (M) map.put(key, newValue);
@@ -33,9 +44,9 @@ final class Maps {
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<Option<V>, M> computeIfPresent(M map, K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        final Option<V> value = map.get(key);
-        if (value.isDefined()) {
-            final V newValue = remappingFunction.apply(key, value.get());
+        final V value = getOrAbsent(map, key);
+        if (value != ABSENT) {
+            final V newValue = remappingFunction.apply(key, value);
             final M newMap = (M) map.put(key, newValue);
             return Tuple.of(Option.some(newValue), newMap);
         } else {
@@ -95,7 +106,7 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
             BiPredicate<? super K, ? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return filter(map, ofEntries, t -> predicate.test(t._1, t._2));
+        return filter(map, ofEntries, t -> predicate.test(t._1(), t._2()));
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
@@ -107,13 +118,13 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super K> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return filter(map, ofEntries, t -> predicate.test(t._1));
+        return filter(map, ofEntries, t -> predicate.test(t._1()));
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterValues(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return filter(map, ofEntries, t -> predicate.test(t._2));
+        return filter(map, ofEntries, t -> predicate.test(t._2()));
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, C extends @Nullable Object, M extends Map<K, V>> Map<C, M> groupBy(M map, OfEntries<K, V, M> ofEntries,
@@ -138,7 +149,7 @@ final class Maps {
         } else if (that.isEmpty()) {
             return map;
         } else {
-            return that.foldLeft(map, (result, entry) -> !result.containsKey(entry._1) ? put(result, entry) : result);
+            return that.foldLeft(map, (result, entry) -> !result.containsKey(entry._1()) ? put(result, entry) : result);
         }
     }
 
@@ -154,9 +165,10 @@ final class Maps {
             return map;
         } else {
             return that.foldLeft(map, (result, entry) -> {
-                final K key = entry._1;
-                final U value = entry._2;
-                final V newValue = result.get(key).map(v -> (V) collisionResolution.apply(v, value)).getOrElse(value);
+                final K key = entry._1();
+                final U value = entry._2();
+                final V current = getOrAbsent(result, key);
+                final V newValue = current != ABSENT ? collisionResolution.apply(current, value) : value;
                 return (M) result.put(key, newValue);
             });
         }
@@ -203,28 +215,28 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, K key, U value,
             BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
-        final Option<V> currentValue = map.get(key);
-        if (currentValue.isEmpty()) {
+        final V currentValue = getOrAbsent(map, key);
+        if (currentValue == ABSENT) {
             return (M) map.put(key, value);
         } else {
-            return (M) map.put(key, merge.apply(currentValue.get(), value));
+            return (M) map.put(key, merge.apply(currentValue, value));
         }
     }
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M put(M map, Tuple2<? extends K, ? extends V> entry) {
         Objects.requireNonNull(entry, "entry is null");
-        return (M) map.put(entry._1, entry._2);
+        return (M) map.put(entry._1(), entry._2());
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, Tuple2<? extends K, U> entry,
             BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
-        final Option<V> currentValue = map.get(entry._1);
-        if (currentValue.isEmpty()) {
+        final V currentValue = getOrAbsent(map, entry._1());
+        if (currentValue == ABSENT) {
             return put(map, entry);
         } else {
-            return put(map, entry.map2(value -> merge.apply(currentValue.get(), value)));
+            return put(map, entry.map2(value -> merge.apply(currentValue, value)));
         }
     }
 
@@ -261,7 +273,7 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replace(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         Objects.requireNonNull(currentElement, "currentElement is null");
         Objects.requireNonNull(newElement, "newElement is null");
-        return (M) (map.contains(currentElement) ? map.remove(currentElement._1).put(newElement) : map);
+        return (M) (map.contains(currentElement) ? map.remove(currentElement._1()).put(newElement) : map);
     }
 
     @SuppressWarnings("unchecked")
@@ -302,7 +314,7 @@ final class Maps {
             Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final Tuple2<Iterator<Tuple2<K, V>>, Iterator<Tuple2<K, V>>> t = map.iterator().span(predicate);
-        return Tuple.of(ofEntries.apply(t._1), ofEntries.apply(t._2));
+        return Tuple.of(ofEntries.apply(t._1()), ofEntries.apply(t._2()));
     }
 
     @SuppressWarnings("unchecked")

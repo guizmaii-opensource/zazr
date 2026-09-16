@@ -433,10 +433,20 @@ public class TreeSetTest extends AbstractSortedSetTest {
     public void shouldZipAllNonEmptyAndNil() {
     }
 
+    // -- a stored null is returned by the methods that return T, not Option
+
     @Test
-    @Override
-    public void shouldExecuteMapToVoidCorrectly() {
-        assertThat(empty().mapToVoid()).isEqualTo(empty());
-        assertThat(of(1).map(ignored -> null)).isEqualTo(of(1).mapToVoid());
+    public void shouldReturnStoredNullFromHeadLastAndGet() {
+        final TreeSet<Integer> single = of(nullsFirst(Comparators.naturalComparator()), (Integer) null);
+        assertThat(single.head()).isNull();
+        assertThat(single.last()).isNull();
+        assertThat(single.get()).isNull();
+        assertThat(single.init()).isEmpty();
+        assertThat(single.tail()).isEmpty();
+        final TreeSet<Integer> two = this.<Integer>of(nullsFirst(Comparators.naturalComparator()), null, 1);
+        assertThat(two.head()).isNull();
+        assertThat(two.last()).isEqualTo(1);
+        assertThat(two.tail()).isEqualTo(of(nullsFirst(Comparators.naturalComparator()), 1));
+        assertThat(two.init()).isEqualTo(of(nullsFirst(Comparators.naturalComparator()), (Integer) null));
     }
 }

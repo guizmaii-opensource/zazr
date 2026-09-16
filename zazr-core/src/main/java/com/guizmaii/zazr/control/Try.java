@@ -4,7 +4,6 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
-import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -22,6 +21,21 @@ import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
 
 /**
  * A control structure that allows writing safe code without explicitly managing try-catch blocks for exceptions.
+ * <p>
+ * {@code Try} is a sealed interface with two record cases, {@link Success} and {@link Failure}, so it is
+ * eliminated with an exhaustive {@code switch}:
+ * <pre>{@code
+ * String s = switch (Try.of(() -> parse(input))) {
+ *     case Success(var value) -> "parsed " + value;
+ *     case Failure(var cause) -> "failed: " + cause.getMessage();
+ * };
+ * }</pre>
+ * A {@code Success} never holds {@code null}: {@link #success(Object)} throws, and a computation that returns
+ * {@code null} under {@link #of(CheckedFunction0)}, {@link #mapTry(CheckedFunction1)} or
+ * {@link #fromCompletableFuture(CompletableFuture)} is captured, like any other non-fatal outcome, as a
+ * {@code Failure} of a {@link NullPointerException}. A computation that returns nothing is run with
+ * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
+ * {@code Throwable} instance, see {@link Failure}.
  * <p>
  * The following exceptions are considered fatal or non-recoverable:
  * <ul>
@@ -43,24 +57,28 @@ import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
  * @param <T> the type of the value in case of success
  * @author Daniel
  */
-public interface Try<T extends @Nullable Object> extends Value<T> {
+public sealed interface Try<T extends @Nullable Object> extends Value<T> permits Try.Success, Try.Failure {
 
     /**
      * Creates a {@link Try} instance from a {@link CheckedFunction0}.
      * <p>
      * If the supplier executes without throwing an exception, a {@link Success} containing the result is returned.
      * If a non-fatal exception occurs during execution, a {@link Failure} wrapping the thrown exception is returned;
-     * fatal throwables (see the class-level documentation) are rethrown instead.
+     * fatal throwables (see the class-level documentation) are rethrown instead. A {@code Success} cannot hold
+     * {@code null}, so a {@code null} result is captured as a {@link Failure} of a {@link NullPointerException}:
+     * every non-fatal outcome of the computation ends up in the returned {@code Try}.
      *
      * @param supplier the checked supplier to execute
      * @param <T>      the type of the value returned by the supplier
-     * @return a {@link Success} with the supplier's result, or a {@link Failure} if an exception is thrown
+     * @return a {@link Success} with the supplier's result, or a {@link Failure} if an exception is thrown or the
+     *         result is {@code null}
      * @throws NullPointerException if {@code supplier} is {@code null}
      */
     static <T extends @Nullable Object> Try<T> of(CheckedFunction0<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
         try {
-            return new Success<>(supplier.apply());
+            final T value = supplier.apply();
+            return value == null ? TryModule.nullResult("Try.of") : new Success<>(value);
         } catch (Throwable t) {
             return new Failure<>(t);
         }
@@ -103,38 +121,39 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
     /**
      * Creates a {@link Try} instance from a {@link CheckedRunnable}.
      * <p>
-     * If the runnable executes without throwing an exception, a {@link Success} containing {@code null} (representing
-     * the absence of a value) is returned. If a non-fatal exception occurs during execution, a {@link Failure}
-     * wrapping the thrown exception is returned; fatal throwables (see the class-level documentation) are rethrown
-     * instead.
+     * If the runnable executes without throwing an exception, a {@link Success} containing the empty tuple
+     * {@link Tuple0} is returned: a {@code Success} cannot hold {@code null} and Java has no unit type, so the
+     * empty tuple {@code ()} plays that role, as it does in Scala. If a non-fatal exception occurs during execution,
+     * a {@link Failure} wrapping the thrown exception is returned; fatal throwables (see the class-level
+     * documentation) are rethrown instead.
      *
      * @param runnable the checked runnable to execute
-     * @return a {@link Success} with {@code null} if the runnable completes successfully, or a {@link Failure} if an exception is thrown
+     * @return {@code Success(())} if the runnable completes successfully, or a {@link Failure} if an exception is thrown
      * @throws NullPointerException if {@code runnable} is {@code null}
      */
-    static Try<@Nullable Void> run(CheckedRunnable runnable) {
+    static Try<Tuple0> run(CheckedRunnable runnable) {
         Objects.requireNonNull(runnable, "runnable is null");
         try {
             runnable.run();
-            return new Success<@Nullable Void>(null); // null represents the absence of a value, i.e. Void
         } catch (Throwable t) {
             return new Failure<>(t);
         }
+        return new Success<>(Tuple.empty());
     }
 
     /**
      * Creates a {@link Try} instance from a {@link Runnable}.
      * <p>
-     * If the runnable executes without throwing an exception, a {@link Success} containing {@code null} (representing
-     * the absence of a value) is returned. If a non-fatal exception occurs during execution, a {@link Failure}
-     * wrapping the thrown exception is returned; fatal throwables (see the class-level documentation) are rethrown
-     * instead.
+     * If the runnable executes without throwing an exception, a {@link Success} containing the empty tuple
+     * {@link Tuple0} is returned, see {@link #run(CheckedRunnable)}. If a non-fatal exception occurs during
+     * execution, a {@link Failure} wrapping the thrown exception is returned; fatal throwables (see the class-level
+     * documentation) are rethrown instead.
      *
      * @param runnable the runnable to execute
-     * @return a {@link Success} with {@code null} if the runnable completes successfully, or a {@link Failure} if an exception is thrown
+     * @return {@code Success(())} if the runnable completes successfully, or a {@link Failure} if an exception is thrown
      * @throws NullPointerException if {@code runnable} is {@code null}
      */
-    static Try<@Nullable Void> runRunnable(Runnable runnable) {
+    static Try<Tuple0> runRunnable(Runnable runnable) {
         Objects.requireNonNull(runnable, "runnable is null");
         return run(runnable::run);
     }
@@ -188,9 +207,10 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * <p>
      * This is a convenience method equivalent to {@code new Success<>(value)}.
      *
-     * @param value the value to wrap in a {@link Success}
+     * @param value the value to wrap in a {@link Success}, must not be {@code null}
      * @param <T>   the type of the value
      * @return a new {@link Success} containing {@code value}
+     * @throws NullPointerException if {@code value} is {@code null}
      */
     static <T extends @Nullable Object> Try<T> success(T value) {
         return new Success<>(value);
@@ -237,18 +257,27 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * @param future the future to join
      * @param <T>    the type of the future's result
      * @return a {@link Success} with the future's result, or a {@link Failure} describing why it did not complete
+     * A future completed with {@code null} (a {@code CompletableFuture<Void>}, typically) yields a {@link Failure}
+     * of a {@link NullPointerException}, since a {@code Success} cannot hold {@code null}; map it to a value first.
+     *
+     * @param future the future to join
+     * @param <T>    the type of the future's result
+     * @return a {@link Success} with the future's result, or a {@link Failure} describing why it did not complete
+     *         or that it completed with {@code null}
      * @throws NullPointerException if {@code future} is {@code null}
      */
     static <T extends @Nullable Object> Try<T> fromCompletableFuture(CompletableFuture<? extends T> future) {
         Objects.requireNonNull(future, "future is null");
+        final T value;
         try {
-            return new Success<>(future.join());
+            value = future.join();
         } catch (CancellationException e) {
             return new Failure<>(e);
         } catch (CompletionException e) {
             final Throwable cause = e.getCause();
             return new Failure<>(cause != null ? cause : e);
         }
+        return value == null ? TryModule.nullResult("Try.fromCompletableFuture") : new Success<>(value);
     }
 
     /**
@@ -501,6 +530,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * or returns this {@link Failure}.
      * <p>
      * This is a shortcut for {@link #flatMapTry(CheckedFunction1)}.
+     * <p>
+     * The mapper must return a {@code Try}, never {@code null}. A {@code Try} built inside the mapper captures a {@code null} computation result as a {@code Failure}, see {@link #of(CheckedFunction0)}.
      *
      * @param mapper a function mapping the value to another {@code Try}
      * @param <U>    the type of the resulting {@code Try}
@@ -617,6 +648,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
 
     /**
      * Shortcut for {@code mapTry(mapper::apply)}, see {@link #mapTry(CheckedFunction1)}.
+     * <p>
+     * A mapper that returns {@code null} yields a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}; see {@link #mapTry(CheckedFunction1)}.
      *
      * @param <U>    The new component type
      * @param mapper a function to apply to the value
@@ -634,11 +667,6 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
         return map(ignored -> value);
     }
 
-    @Override
-    default Try<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
     /**
      * Applies the given checked function to the value of this {@link Success}, or returns this {@link Failure} unchanged.
      * <p>
@@ -652,6 +680,9 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      *    .mapTry(x -> 1 / x); // division by zero will result in a Failure
      * }</pre>
      *
+     * A {@code null} result is captured as a {@link Failure} of a {@link NullPointerException}, since a
+     * {@code Success} cannot hold {@code null}.
+     *
      * @param <U>    the type of the result
      * @param mapper a checked function to apply to the value
      * @return a new {@code Try} containing the mapped value if this is a {@link Success}, otherwise this {@link Failure}
@@ -664,7 +695,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
             return (Failure<U>) this;
         } else {
             try {
-                return new Success<>(mapper.apply(get()));
+                final U value = mapper.apply(get());
+                return value == null ? TryModule.nullResult("Try.mapTry") : new Success<>(value);
             } catch (Throwable t) {
                 return new Failure<>(t);
             }
@@ -886,6 +918,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * // = Failure(java.lang.ArithmeticException: / by zero)
      * Try.of(() -> 1/0).recover(Error.class, x -> Integer.MAX_VALUE);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param <X>           the type of exception to handle
      * @param exceptionType the specific exception type that should be recovered
@@ -1008,6 +1042,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * // = Failure(java.lang.ArithmeticException: / by zero)
      * Try.of(() -> 1/0).recover(Error.class, Integer.MAX_VALUE);
      * }</pre>
+     * <p>
+     * {@code value} must not be {@code null}: {@code Success} cannot hold {@code null}, so this throws {@link NullPointerException} when the cause matches and {@code value} is {@code null}.
      *
      * @param <X>           the type of exception to handle
      * @param exceptionType the exception type that triggers recovery
@@ -1036,6 +1072,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * // = Success(2147483647)
      * Try.of(() -> 1/0).recover(x -> Integer.MAX_VALUE);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param f A recovery function that takes the underlying exception and returns a value
      * @return a {@code Try} containing either the original success value or the recovered value
@@ -1101,6 +1139,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * Try.of(() -> 1/0)
      *    .recoverAllAndTry(() -> 10);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param recoveryAttempt A checked supplier providing a fallback value in case of failure
      * @return a {@code Try} containing either the original success value or the result of {@code recoveryAttempt}
@@ -1130,6 +1170,8 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * Try.of(() -> 1/0)
      *    .recoverAndTry(NullPointerException.class, () -> 10);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param <X>             The type of the exception that may be recovered
      * @param exceptionType   The specific exception type that triggers the recovery
@@ -1306,10 +1348,7 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
     String toString();
 
     /**
-     * Represents a successful {@link Try} containing a value.
-     * <p>
-     * Instances of this class indicate that the computation completed successfully
-     * and hold the resulting value of type {@code T}.
+     * The successful case of a {@link Try}, holding the resulting value. The value is never {@code null}.
      *
      * <pre>{@code
      * Try<Integer> success = Try.success(42);
@@ -1317,20 +1356,18 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * success.get();       // 42
      * }</pre>
      *
-     * @param <T> the type of the contained value
-     * @author Daniel Dietrich
+     * @param value the value, never {@code null}
+     * @param <T>   the type of the contained value
      */
-    final class Success<T extends @Nullable Object> implements Try<T> {
-
-        private final T value;
+    record Success<T extends @Nullable Object>(T value) implements Try<T> {
 
         /**
-         * Constructs a Success.
+         * Rejects {@code null}.
          *
-         * @param value The value of this Success.
+         * @throws NullPointerException if {@code value} is null
          */
-        private Success(T value) {
-            this.value = value;
+        public Success {
+            Objects.requireNonNull(value, "value is null");
         }
 
         @Override
@@ -1359,16 +1396,6 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
         }
 
         @Override
-        public boolean equals(@Nullable Object obj) {
-            return (obj == this) || (obj instanceof Success && Objects.equals(value, ((Success<?>) obj).value));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(value);
-        }
-
-        @Override
         public String stringPrefix() {
             return "Success";
         }
@@ -1380,10 +1407,7 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
     }
 
     /**
-     * Represents a failed {@link Try} containing a {@link Throwable} as the cause.
-     * <p>
-     * Instances of this class indicate that the computation threw an exception
-     * and do not contain a successful value.
+     * The failed case of a {@link Try}, holding the {@link Throwable} that was thrown.
      *
      * <pre>{@code
      * Try<Integer> failure = Try.failure(new RuntimeException("error"));
@@ -1391,26 +1415,26 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
      * failure.getCause();   // RuntimeException: error
      * }</pre>
      *
-     * @param <T> the type of the value that would have been contained if successful
-     * @author Daniel Dietrich
+     * <strong>Equality.</strong> Two {@code Failure}s are equal when their causes are the same object: the record
+     * default, since {@code Throwable} does not override {@code equals}. Class, message and stack trace are not
+     * compared, because two exceptions are not the same because they print alike. A test that means "failed the
+     * same way" compares {@code getCause().getClass()} or {@code getMessage()} itself.
+     *
+     * @param cause the throwable, never {@code null} and never fatal (see the class-level documentation of {@link Try})
+     * @param <T>   the type of the value that would have been contained if successful
      */
-    final class Failure<T extends @Nullable Object> implements Try<T> {
-
-        private final Throwable cause;
+    record Failure<T extends @Nullable Object>(Throwable cause) implements Try<T> {
 
         /**
-         * Constructs a Failure.
+         * Rejects {@code null} and rethrows a fatal cause sneakily instead of wrapping it.
          *
-         * @param cause A cause of type Throwable, may not be null.
          * @throws NullPointerException if {@code cause} is null
-         * throws Throwable             sneakily, if the given {@code cause} is fatal, i.e. non-recoverable
          */
-        private Failure(Throwable cause) {
+        public Failure {
             Objects.requireNonNull(cause, "cause is null");
             if (isFatal(cause)) {
                 sneakyThrow(cause);
             }
-            this.cause = cause;
         }
 
         @Override
@@ -1439,34 +1463,14 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
         }
 
         @Override
-        public boolean equals(@Nullable Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (!(obj instanceof Failure)) {
-                return false;
-            }
-            Throwable other = ((Failure<?>) obj).cause;
-            return cause.getClass().equals(other.getClass())
-                    && Objects.equals(cause.getMessage(), other.getMessage())
-                    && Arrays.deepEquals(cause.getStackTrace(), other.getStackTrace());
-        }
-
-        @Override
         public String stringPrefix() {
             return "Failure";
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(cause.getClass(), cause.getMessage());
         }
 
         @Override
         public String toString() {
             return stringPrefix() + "(" + cause + ")";
         }
-
     }
 
     // -- try with resources
@@ -1941,6 +1945,11 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
 }
 
 interface TryModule {
+
+    /** The Failure a capturing constructor returns when the computation yields null, which Success cannot hold. */
+    static <T extends @Nullable Object> Try<T> nullResult(String constructor) {
+        return new Try.Failure<>(new NullPointerException(constructor + ": the computation returned null"));
+    }
 
     static boolean isFatal(Throwable throwable) {
         return throwable instanceof InterruptedException

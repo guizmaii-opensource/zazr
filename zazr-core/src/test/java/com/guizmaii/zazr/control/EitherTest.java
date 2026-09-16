@@ -19,7 +19,7 @@ public class EitherTest extends AbstractValueTest {
 
     @Override
     protected <T> Either<?, T> empty() {
-        return Either.<T, T>left(null);
+        return Either.<String, T>left("empty");
     }
 
     @Override
@@ -31,6 +31,11 @@ public class EitherTest extends AbstractValueTest {
     @Override
     protected final <T> Either<?, T> of(T... elements) {
         return of(elements[0]);
+    }
+
+    @Override
+    protected boolean allowsNull() {
+        return false;
     }
 
     @Override

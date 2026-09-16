@@ -194,11 +194,6 @@ public interface IndexedSeq<T extends @Nullable Object> extends Seq<T> {
     }
 
     @Override
-    default IndexedSeq<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     IndexedSeq<T> orElse(Iterable<? extends T> other);
 
     @Override

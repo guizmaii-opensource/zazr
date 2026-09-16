@@ -801,7 +801,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new NoSuchElementException("head of empty TreeSet");
         } else {
-            return tree.min().get();
+            return tree.minimum();
         }
     }
 
@@ -815,7 +815,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty TreeSet");
         } else {
-            return new TreeSet<>(tree.delete(tree.max().get()));
+            return new TreeSet<>(tree.delete(tree.maximum()));
         }
     }
 
@@ -878,7 +878,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new NoSuchElementException("last of empty TreeSet");
         } else {
-            return tree.max().get();
+            return tree.maximum();
         }
     }
 
@@ -916,11 +916,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public <U extends @Nullable Object> TreeSet<U> mapTo(U value) {
         return map(ignored -> value);
-    }
-
-    @Override
-    public TreeSet<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map((o1, o2) -> 0, ignored -> null);
     }
 
     /**
@@ -1045,7 +1040,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("tail of empty TreeSet");
         } else {
-            return new TreeSet<>(tree.delete(tree.min().get()));
+            return new TreeSet<>(tree.delete(tree.minimum()));
         }
     }
 
@@ -1197,7 +1192,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public TreeSet<Tuple2<T, Integer>> zipWithIndex() {
         final Comparator<? super T> component1Comparator = tree.comparator();
-        final Comparator<Tuple2<T, Integer>> tuple2Comparator = (t1, t2) -> component1Comparator.compare(t1._1, t2._1);
+        final Comparator<Tuple2<T, Integer>> tuple2Comparator = (t1, t2) -> component1Comparator.compare(t1._1(), t2._1());
         return TreeSet.ofAll(tuple2Comparator, iterator().zipWithIndex());
     }
 

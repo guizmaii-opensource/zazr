@@ -1121,11 +1121,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     }
 
     @Override
-    default Seq<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     Seq<T> orElse(Iterable<? extends T> other);
 
     @Override

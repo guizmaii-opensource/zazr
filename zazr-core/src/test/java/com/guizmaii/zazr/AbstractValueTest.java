@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation")
@@ -112,6 +113,14 @@ public abstract class AbstractValueTest {
 
     // TODO: Eliminate this method. Switching the behavior of unit tests is evil. Tests should not contain additional logic. Also it seems currently to be used in different semantic contexts.
     abstract protected boolean useIsEqualToInsteadOfIsSameAs();
+
+    /**
+     * Whether {@link #of(Object)} accepts {@code null}. Collections do; the control types reject it
+     * (design 3.9) and their tests override this to {@code false}.
+     */
+    protected boolean allowsNull() {
+        return true;
+    }
 
     // returns the peek result of the specific Traversable implementation
     abstract protected int getPeekNonNilPerformingAnAction();
@@ -213,15 +222,6 @@ public abstract class AbstractValueTest {
         assertThat(of(2).mapTo(1)).isEqualTo(of(3).mapTo(1));
         assertThat(of(2).mapTo(1)).isEqualTo(of(3).map(ignored -> 1));
         assertThat(of(3).mapTo(2)).isEqualTo(of(1).map(ignored -> 2));
-    }
-
-    // -- mapToVoid
-
-    @TestTemplate
-    public void shouldExecuteMapToVoidCorrectly() {
-        assertThat(empty().mapToVoid()).isEqualTo(empty());
-        assertThat(of(1).mapToVoid()).isEqualTo(of(1).mapTo(null));
-        assertThat(of(1).mapToVoid()).isEqualTo(of(1).map(ignored -> null));
     }
 
     // -- forEach
@@ -392,7 +392,7 @@ public abstract class AbstractValueTest {
     @TestTemplate
     public void shouldConvertToOption() {
         assertThat(empty().toOption()).isSameAs(Option.none());
-        assertThat(of(1).toOption()).isEqualTo(Option.of(1));
+        assertThat(of(1).toOption()).isEqualTo(Option.some(1));
     }
 
     @TestTemplate
@@ -652,9 +652,13 @@ public abstract class AbstractValueTest {
 
     @TestTemplate
     public void shouldConvertToJavaArrayWithTypeHintPrimitiveVoid() {
-        final Value<Void> value = of((Void) null);
-        @SuppressWarnings("deprecation") final Void[] array = value.toJavaArray(void.class);
-        assertThat(array).containsOnly((Void) null);
+        if (allowsNull()) {
+            final Value<Void> value = of((Void) null);
+            @SuppressWarnings("deprecation") final Void[] array = value.toJavaArray(void.class);
+            assertThat(array).containsOnly((Void) null);
+        } else {
+            assertThatThrownBy(() -> of((Void) null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
     @TestTemplate

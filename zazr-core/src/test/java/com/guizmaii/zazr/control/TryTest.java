@@ -2,6 +2,8 @@ package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.AbstractValueTest;
 import com.guizmaii.zazr.CheckedPredicate;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.collection.Seq;
 import java.io.IOException;
@@ -37,8 +39,11 @@ public class TryTest extends AbstractValueTest {
 
     @Override
     protected <T> Try<T> empty() {
-        return Try.failure(new NoSuchElementException());
+        // one shared cause: two Failures are equal only when they hold the same Throwable (design 3.9)
+        return Try.failure(EMPTY_CAUSE);
     }
+
+    private static final NoSuchElementException EMPTY_CAUSE = new NoSuchElementException();
 
     @Override
     protected <T> Try<T> of(T element) {
@@ -49,6 +54,11 @@ public class TryTest extends AbstractValueTest {
     @Override
     protected final <T> Try<T> of(T... elements) {
         return of(elements[0]);
+    }
+
+    @Override
+    protected boolean allowsNull() {
+        return false;
     }
 
     @Override
@@ -1203,11 +1213,12 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldConvertFutureCompletedWithNullToSuccessOfNull() {
+        public void shouldCaptureFutureCompletedWithNullAsFailure() {
             final CompletableFuture<String> future = CompletableFuture.completedFuture(null);
             final Try<String> result = Try.fromCompletableFuture(future);
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.get()).isNull();
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(result.getCause().getMessage()).isEqualTo("Try.fromCompletableFuture: the computation returned null");
         }
 
         @Test
@@ -1341,7 +1352,7 @@ public class TryTest extends AbstractValueTest {
     class AndthenTests {
         @Test
         public void shouldComposeFailureWithAndThenWhenFailing() {
-            final Try<Void> actual = Try.run(() -> {
+            final Try<Tuple0> actual = Try.run(() -> {
                 throw new Error("err1");
             }).andThen(() -> {
                 throw new Error("err2");
@@ -1376,7 +1387,8 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldPeekFailure() {
             final List<Object> list = new ArrayList<>();
-            assertThat(failure().peek(list::add)).isEqualTo(failure());
+            final Try<Object> failure = failure();
+            assertThat(failure.peek(list::add)).isSameAs(failure);
             assertThat(list.isEmpty()).isTrue();
         }
 
@@ -1399,8 +1411,15 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldEqualFailure() {
-            assertThat(Try.failure(error())).isEqualTo(Try.failure(error()));
+        public void shouldEqualFailureWhenCauseIsTheSameObject() {
+            final Throwable error = error();
+            assertThat(Try.failure(error)).isEqualTo(Try.failure(error));
+        }
+
+        @Test
+        public void shouldNotEqualFailureWhenCausesAreDifferentObjects() {
+            // same class, same message, still two exceptions: Failure equality is reference equality on the cause
+            assertThat(Try.failure(error())).isNotEqualTo(Try.failure(error()));
         }
 
         @Test
@@ -1421,7 +1440,7 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldHashFailure() {
             final Throwable error = error();
-            assertThat(Try.failure(error).hashCode()).isEqualTo(Objects.hash(error.getClass(), error.getMessage()));
+            assertThat(Try.failure(error).hashCode()).isEqualTo(Try.failure(error).hashCode());
         }
 
         // toString
@@ -1677,7 +1696,7 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldComposeSuccessWithAndThenWhenFailing() {
-            final Try<Void> actual = Try.run(() -> {
+            final Try<Tuple0> actual = Try.run(() -> {
             }).andThen(() -> {
                 throw new Error("failure");
             });
@@ -1686,10 +1705,10 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldComposeSuccessWithAndThenWhenSucceeding() {
-            final Try<Void> actual = Try.run(() -> {
+            final Try<Tuple0> actual = Try.run(() -> {
             }).andThen(() -> {
             });
-            final Try<Void> expected = Try.success(null);
+            final Try<Tuple0> expected = Try.success(Tuple.empty());
             assertThat(actual).isEqualTo(expected);
         }
 
@@ -1774,6 +1793,60 @@ public class TryTest extends AbstractValueTest {
 
     private RuntimeException error() {
         return new RuntimeException("error");
+    }
+
+    @Nested
+    class NullResultTests {
+
+        // A Success cannot hold null, so a computation that returns null is a captured outcome, not a caller error.
+
+        @Test
+        public void shouldCaptureNullResultOfOfAsFailure() {
+            final Try<Object> result = Try.of(() -> null);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(result.getCause().getMessage()).isEqualTo("Try.of: the computation returned null");
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfOfSupplierAsFailure() {
+            assertThat(Try.ofSupplier(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfOfCallableAsFailure() {
+            assertThat(Try.ofCallable(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfMapTryAsFailure() {
+            final Try<Object> result = Try.success(1).mapTry(i -> null);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(result.getCause().getMessage()).isEqualTo("Try.mapTry: the computation returned null");
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfMapAsFailure() {
+            assertThat(Try.success(1).map(i -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfRecoverAsFailure() {
+            assertThat(TryTest.<String>failure().recover(x -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(TryTest.<String>failure().recoverAllAndTry(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldReturnFallbackFromGetOrElseOnNullResult() {
+            assertThat(Try.<String>of(() -> null).getOrElse("fallback")).isEqualTo("fallback");
+            assertThat(Try.success(1).<String>mapTry(i -> null).getOrElse("fallback")).isEqualTo("fallback");
+        }
+
+        @Test
+        public void shouldStillRejectNullInSuccessFactory() {
+            assertThatThrownBy(() -> Try.success(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
     private static <T> Try<T> failure() {

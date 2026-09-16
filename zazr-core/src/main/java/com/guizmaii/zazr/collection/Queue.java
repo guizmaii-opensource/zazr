@@ -644,7 +644,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * {@code
      * Queue.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x, x-1)));
+     *             : Option.some(new Tuple2<>(x, x-1)));
      * // Queue(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
      * }
      * </pre>
@@ -673,7 +673,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * {@code
      * Queue.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // Queue(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -702,7 +702,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * {@code
      * Queue.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // Queue(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -896,18 +896,22 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
-        final int length = front.length();
-        if (index < length) {
-            return front.get(index);
+        // walk the front instead of measuring it: List.length() is O(n)
+        int remaining = index;
+        List<T> list = front;
+        while (remaining > 0 && !list.isEmpty()) {
+            list = list.tail();
+            remaining--;
+        }
+        if (!list.isEmpty()) {
+            return list.head();
+        }
+        final int rearIndex = remaining;
+        final int rearLength = rear.length();
+        if (rearIndex < rearLength) {
+            return rear.get(rearLength - rearIndex - 1);
         } else {
-            final int rearIndex = index - length;
-            final int rearLength = rear.length();
-            if (rearIndex < rearLength) {
-                final int reverseRearIndex = rearLength - rearIndex - 1;
-                return rear.get(reverseRearIndex);
-            } else {
-                throw new IndexOutOfBoundsException("get(" + index + ") on Queue of length " + length());
-            }
+            throw new IndexOutOfBoundsException("get(" + index + ") on Queue of length " + (index - remaining + rearLength));
         }
     }
 
@@ -942,8 +946,9 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
             return frontIndex;
         } else {
             // we need to reverse because we search the first occurrence
-            final int rearIndex = rear.reverse().indexOf(element, from - front.length());
-            return (rearIndex == -1) ? -1 : rearIndex + front.length();
+            final int frontLength = front.length();
+            final int rearIndex = rear.reverse().indexOf(element, from - frontLength);
+            return (rearIndex == -1) ? -1 : rearIndex + frontLength;
         }
     }
 
@@ -1076,11 +1081,6 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public <U extends @Nullable Object> Queue<U> mapTo(U value) {
         return map(ignored -> value);
-    }
-
-    @Override
-    public Queue<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
     }
 
     @Override
@@ -1525,6 +1525,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Returns the first element without modifying the Queue.
+     * <p>
+     * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
      *
      * @return {@code None} if this Queue is empty, otherwise a {@code Some} containing the first element
      */

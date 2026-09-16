@@ -680,7 +680,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * {@code
      * Vector.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x, x-1)));
+     *             : Option.some(new Tuple2<>(x, x-1)));
      * // Vector(10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
      * }
      * </pre>
@@ -709,7 +709,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * {@code
      * Vector.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // Vector(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
      * }
      * </pre>
@@ -738,7 +738,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * {@code
      * Vector.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // Vector(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
      * }
      * </pre>
@@ -1024,11 +1024,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     @Override
     public <U extends @Nullable Object> Vector<U> mapTo(U value) {
         return map(ignored -> value);
-    }
-
-    @Override
-    public Vector<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
     }
 
     @Override
@@ -1409,8 +1404,8 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         Vector<T2> ys = empty();
         for (int i = 0; i < length(); i++) {
             final Tuple2<? extends T1, ? extends T2> t = unzipper.apply(get(i));
-            xs = xs.append(t._1);
-            ys = ys.append(t._2);
+            xs = xs.append(t._1());
+            ys = ys.append(t._2());
         }
         return Tuple.of(xs, ys);
     }
@@ -1423,9 +1418,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         Vector<T3> zs = empty();
         for (int i = 0; i < length(); i++) {
             final Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(get(i));
-            xs = xs.append(t._1);
-            ys = ys.append(t._2);
-            zs = zs.append(t._3);
+            xs = xs.append(t._1());
+            ys = ys.append(t._2());
+            zs = zs.append(t._3());
         }
         return Tuple.of(xs, ys, zs);
     }
@@ -1772,7 +1767,7 @@ interface VectorModule {
             return (k == 0)
                    ? Vector.of(Vector.empty())
                    : elements.zipWithIndex().flatMap(
-                    t -> apply(elements.drop(t._2 + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1)));
+                    t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1())));
         }
     }
 
