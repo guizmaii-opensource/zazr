@@ -5,7 +5,6 @@ import io.vavr.PartialFunction;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -30,11 +29,6 @@ import org.jspecify.annotations.Nullable;
  * @author Ruslan Sennov
  */
 public interface BitSet<T extends @Nullable Object> extends SortedSet<T> {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
 
     /**
      * Builder of the BitSet. Encapsulates the conversion functions for T.
@@ -880,9 +874,7 @@ interface BitSetModule {
     int ADDRESS_BITS_PER_WORD = 6;
     int BITS_PER_WORD = 64;
 
-    abstract class AbstractBitSet<T extends @Nullable Object> implements BitSet<T>, Serializable {
-
-        private static final long serialVersionUID = 1L;
+    abstract class AbstractBitSet<T extends @Nullable Object> implements BitSet<T> {
 
         final Function1<Integer, T> fromInt;
         final Function1<T, Integer> toInt;
@@ -1241,8 +1233,6 @@ interface BitSetModule {
 
     class BitSet1<T extends @Nullable Object> extends AbstractBitSet<T> {
 
-        private static final long serialVersionUID = 1L;
-
         private final long elements;
         private final int len;
 
@@ -1306,8 +1296,6 @@ interface BitSetModule {
     }
 
     class BitSet2<T extends @Nullable Object> extends AbstractBitSet<T> {
-
-        private static final long serialVersionUID = 1L;
 
         private final long elements1, elements2;
         private final int len;
@@ -1384,8 +1372,6 @@ interface BitSetModule {
     }
 
     class BitSetN<T extends @Nullable Object> extends AbstractBitSet<T> {
-
-        private static final long serialVersionUID = 1L;
 
         private final long[] elements;
         private final int len;

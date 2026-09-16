@@ -1,10 +1,8 @@
 package io.vavr.collection;
 
-import io.vavr.Function1;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.Value;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -17,8 +15,6 @@ import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.Serializables.deserialize;
-import static io.vavr.Serializables.serialize;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -73,9 +69,7 @@ public class BitSetTest extends AbstractSortedSetTest {
 
     private <T> BitSet.Builder<T> bsBuilder() {
         final Mapper<T> mapper = new Mapper<>();
-        return BitSet.withRelations(
-                (Function1<Integer, T> & Serializable) mapper::fromInt,
-                (Function1<T, Integer> & Serializable) mapper::toInt);
+        return BitSet.withRelations(mapper::fromInt, mapper::toInt);
     }
 
     @Override
@@ -459,20 +453,6 @@ public class BitSetTest extends AbstractSortedSetTest {
     }
 
     @Test
-    public void shouldSerializeDeserializeNativeBitSet() {
-        final Object actual = deserialize(serialize(BitSet.of(1, 2, 3)));
-        final Object expected = BitSet.of(1, 2, 3);
-        assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    public void shouldSerializeDeserializeEnumBitSet() {
-        final Object actual = deserialize(serialize(BitSet.withEnum(E.class).of(E.V1, E.V2)));
-        final Object expected = BitSet.withEnum(E.class).of(E.V1, E.V2);
-        assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
     public void shouldBehaveExactlyLikeAnotherBitSet() {
         for (int i = 0; i < 10; i++) {
             final Random random = getRandom(123456789);
@@ -589,13 +569,9 @@ public class BitSetTest extends AbstractSortedSetTest {
 
     // -- classes
 
-    private static final class Mapper<T> implements Serializable {
+    private static final class Mapper<T> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final java.util.Map<Integer, T> fromIntMap = new java.util.HashMap<>();
-        @SuppressWarnings("serial") // Conditionally serializable
         private final java.util.Map<T, Integer> toIntMap = new java.util.HashMap<>();
         private int nextValue = 0;
 

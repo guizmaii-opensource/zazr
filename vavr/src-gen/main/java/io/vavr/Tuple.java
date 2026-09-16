@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.collection.Seq;
 import io.vavr.collection.Stream;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -16,9 +15,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich
  */
-public interface Tuple extends Serializable {
-
-    long serialVersionUID = 1L;
+public interface Tuple {
 
     /**
      * The maximum arity of an Tuple.

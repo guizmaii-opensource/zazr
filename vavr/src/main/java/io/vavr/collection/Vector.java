@@ -4,7 +4,6 @@ import io.vavr.*;
 import io.vavr.collection.JavaConverters.ListView;
 import io.vavr.collection.VectorModule.Combinations;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -23,8 +22,7 @@ import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
  * @param <T> Component type of the Vector.
  * @author Ruslan Sennov, Pap Lőrinc
  */
-public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, Serializable {
-    private static final long serialVersionUID = 1L;
+public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     private static final Vector<?> EMPTY = new Vector<>(BitMappedTrie.empty());
 
@@ -1480,8 +1478,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         Objects.requireNonNull(mapper, "mapper is null");
         return ofAll(iterator().zipWithIndex(mapper));
     }
-
-    private Object readResolve() { return isEmpty() ? EMPTY : this; }
 
     @Override
     public boolean equals(@Nullable Object o) {

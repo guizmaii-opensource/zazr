@@ -8,7 +8,6 @@ import static io.vavr.CheckedFunction1Module.sneakyThrow;
 
 import io.vavr.control.Option;
 import io.vavr.control.Try;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -24,12 +23,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 @FunctionalInterface
-public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullable Object> extends Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullable Object>  {
 
     /**
      * Returns a function that always returns the constant

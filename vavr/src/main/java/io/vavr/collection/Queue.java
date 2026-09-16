@@ -39,8 +39,6 @@ import static io.vavr.collection.JavaConverters.ListView;
  */
 public final class Queue<T extends @Nullable Object> extends AbstractQueue<T, Queue<T>> implements LinearSeq<T> {
 
-    private static final long serialVersionUID = 1L;
-
     private static final Queue<?> EMPTY = new Queue<>(io.vavr.collection.List.empty(), io.vavr.collection.List.empty());
 
     private final io.vavr.collection.List<T> front;
@@ -1463,10 +1461,6 @@ public final class Queue<T extends @Nullable Object> extends AbstractQueue<T, Qu
     public <U extends @Nullable Object> Queue<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return ofAll(toList().zipWithIndex(mapper));
-    }
-
-    private Object readResolve() {
-        return isEmpty() ? EMPTY : this;
     }
 
     @Override

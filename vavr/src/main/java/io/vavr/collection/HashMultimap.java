@@ -1,7 +1,6 @@
 package io.vavr.collection;
 
 import io.vavr.Tuple2;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
@@ -19,9 +18,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Ruslan Sennov
  */
-public final class HashMultimap<K extends @Nullable Object, V extends @Nullable Object> extends AbstractMultimap<K, V, HashMultimap<K, V>> implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class HashMultimap<K extends @Nullable Object, V extends @Nullable Object> extends AbstractMultimap<K, V, HashMultimap<K, V>> {
 
     /**
      * Returns a builder for HashMultimap instances where values are stored in a sequence.
@@ -77,9 +74,9 @@ public final class HashMultimap<K extends @Nullable Object, V extends @Nullable 
     public static class Builder<V extends @Nullable Object> {
 
         private final ContainerType containerType;
-        private final SerializableSupplier<Traversable<?>> emptyContainer;
+        private final Supplier<Traversable<?>> emptyContainer;
 
-        private Builder(ContainerType containerType, SerializableSupplier<Traversable<?>> emptyContainer) {
+        private Builder(ContainerType containerType, Supplier<Traversable<?>> emptyContainer) {
             this.containerType = containerType;
             this.emptyContainer = emptyContainer;
         }
@@ -513,7 +510,7 @@ public final class HashMultimap<K extends @Nullable Object, V extends @Nullable 
         return (HashMultimap<K, V>) map;
     }
 
-    private HashMultimap(Map<K, Traversable<V>> back, ContainerType containerType, SerializableSupplier<Traversable<?>> emptyContainer) {
+    private HashMultimap(Map<K, Traversable<V>> back, ContainerType containerType, Supplier<Traversable<?>> emptyContainer) {
         super(back, containerType, emptyContainer);
     }
 

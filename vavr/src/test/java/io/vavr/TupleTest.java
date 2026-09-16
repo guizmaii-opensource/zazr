@@ -59,12 +59,6 @@ public class TupleTest {
         }
 
         @Test
-        public void shouldDeserializeSingletonOfTuple0() {
-            final Object tuple0 = Serializables.deserialize(Serializables.serialize(Tuple0.instance()));
-            assertThat(tuple0 == Tuple0.instance()).isTrue();
-        }
-
-        @Test
         public void shouldReturnComparator() {
             assertThat(Tuple0.comparator().compare(Tuple0.instance(), Tuple0.instance())).isEqualTo(0);
         }
@@ -533,29 +527,6 @@ public class TupleTest {
             final Tuple tupleB = Tuple.of(Tuple.of(1), Tuple.of(2));
 
             assertThat(tupleA.equals(tupleB)).isFalse();
-        }
-    }
-
-    @Nested
-    class SerializableInterfaceTests {
-        @Test
-        public void shouldSerializeDeserializeTuple0() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(Tuple0.instance()));
-            final Object expected = Tuple0.instance();
-            assertThat(actual).isEqualTo(expected);
-        }
-
-        @Test
-        public void shouldPreserveSingletonInstanceOnDeserialization() {
-            final boolean actual = Serializables.deserialize(Serializables.serialize(Tuple0.instance())) == Tuple0.instance();
-            assertThat(actual).isTrue();
-        }
-
-        @Test
-        public void shouldSerializeDeserializeNonEmptyTuple() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(Tuple.of(1, 2, 3)));
-            final Object expected = Tuple.of(1, 2, 3);
-            assertThat(actual).isEqualTo(expected);
         }
     }
 

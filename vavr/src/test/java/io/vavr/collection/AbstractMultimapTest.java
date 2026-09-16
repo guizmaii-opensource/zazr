@@ -1336,11 +1336,6 @@ public abstract class AbstractMultimapTest extends AbstractTraversableTest {
     // -- disabled super tests
 
     @Override
-    public void shouldPreserveSingletonInstanceOnDeserialization() {
-        // The empty Multimap encapsulates a container type and map type and therefore cannot be a singleton
-    }
-
-    @Override
     @TestTemplate
     public void shouldCreateSeqOfSeqUsingCons() {
         // this Traversable test is not suited for Multimaps:

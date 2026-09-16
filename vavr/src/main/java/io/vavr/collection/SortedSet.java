@@ -26,11 +26,6 @@ import org.jspecify.annotations.Nullable;
 public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T> {
 
     /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
-
-    /**
      * Narrows a widened {@code SortedSet<? extends T>} to {@code SortedSet<T>}
      * by performing a type-safe cast. This is eligible because immutable/read-only
      * collections are covariant.

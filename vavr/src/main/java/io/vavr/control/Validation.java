@@ -4,7 +4,6 @@ import io.vavr.*;
 import io.vavr.collection.Iterator;
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -59,12 +58,7 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://github.com/scalaz/scalaz/blob/series/7.3.x/core/src/main/scala/scalaz/Validation.scala">
  *     Scalaz Validation source</a>
  */
-public interface Validation<E extends @Nullable Object, T extends @Nullable Object> extends Value<T>, Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Validation<E extends @Nullable Object, T extends @Nullable Object> extends Value<T> {
 
     /**
      * Creates a {@link Valid} that contains the given {@code value}.
@@ -118,7 +112,6 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
         Objects.requireNonNull(t, "t is null");
         return t.isSuccess() ? valid(t.get()) : invalid(t.getCause());
     }
-
 
     /**
      * Reduces many {@code Validation} instances into a single {@code Validation} by transforming an
@@ -730,11 +723,8 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      * @param <E> type of the error of this Validation
      * @param <T> type of the value of this Validation
      */
-    final class Valid<E extends @Nullable Object, T extends @Nullable Object> implements Validation<E, T>, Serializable {
+    final class Valid<E extends @Nullable Object, T extends @Nullable Object> implements Validation<E, T> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final T value;
 
         /**
@@ -794,11 +784,8 @@ public interface Validation<E extends @Nullable Object, T extends @Nullable Obje
      * @param <E> type of the error of this Validation
      * @param <T> type of the value of this Validation
      */
-    final class Invalid<E extends @Nullable Object, T extends @Nullable Object> implements Validation<E, T>, Serializable {
+    final class Invalid<E extends @Nullable Object, T extends @Nullable Object> implements Validation<E, T> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final E error;
 
         /**

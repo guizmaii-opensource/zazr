@@ -135,11 +135,6 @@ public class PriorityQueueTest extends AbstractTraversableTest {
         // The resulting type would need a comparator
     }
 
-    @Override
-    public void shouldPreserveSingletonInstanceOnDeserialization() {
-        // The empty PriorityQueue encapsulates a comparator and therefore cannot be a singleton
-    }
-
     @Test
     public void shouldScanWithNonComparable() {
         // makes no sense because sorted sets contain ordered elements

@@ -10,9 +10,6 @@ import org.jspecify.annotations.Nullable;
  */
 public class MatchError extends NoSuchElementException {
 
-    private static final long serialVersionUID = 1L;
-
-    @SuppressWarnings("serial") // Conditionally serializable
     private final @Nullable Object obj;
 
     /**

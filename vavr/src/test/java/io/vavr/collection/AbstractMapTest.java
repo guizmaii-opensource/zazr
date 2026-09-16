@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static io.vavr.API.Some;
-import static io.vavr.Serializables.deserialize;
-import static io.vavr.Serializables.serialize;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -1095,20 +1093,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Override
     public void shouldReturnSomeTailWhenCallingTailOptionOnNonNil() {
         assertThat(of(1, 2, 3).tailOption().get()).isEqualTo(Option.some(of(2, 3)).get());
-    }
-
-    @Override
-    public void shouldPreserveSingletonInstanceOnDeserialization() {
-        final Map<?, ?> obj = deserialize(serialize(emptyMap()));
-        final boolean actual = obj == emptyMap();
-        assertThat(actual).isTrue();
-    }
-
-    @Test
-    public void shouldSerializeDeserializeNonEmptyMap() {
-        final Object expected = of('a', 'b', 'c');
-        final Object actual = deserialize(serialize(expected));
-        assertThat(actual).isEqualTo(expected);
     }
 
     @Override

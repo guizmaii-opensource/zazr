@@ -1,7 +1,6 @@
 package io.vavr.collection;
 
 import io.vavr.OutputTester;
-import io.vavr.Serializables;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.JavaConverters.ChangePolicy;
@@ -2301,29 +2300,6 @@ public class CharSeqTest {
         @Test
         public void shouldCalculateDifferentHashCodesForDifferentTraversables() {
             assertThat(CharSeq.of('1', '2').hashCode() != CharSeq.of('2', '3').hashCode()).isTrue();
-        }
-    }
-
-    @Nested
-    class SerializableInterfaceTests {
-        @Test
-        public void shouldSerializeDeserializeNil() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(CharSeq.empty()));
-            final Object expected = CharSeq.empty();
-            assertThat(actual).isEqualTo(expected);
-        }
-
-        @Test
-        public void shouldPreserveSingletonInstanceOnDeserialization() {
-            final boolean actual = Serializables.deserialize(Serializables.serialize(CharSeq.empty())) == CharSeq.empty();
-            assertThat(actual).isTrue();
-        }
-
-        @Test
-        public void shouldSerializeDeserializeNonNil() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(CharSeq.of('1', '2', '3')));
-            final Object expected = CharSeq.of('1', '2', '3');
-            assertThat(actual).isEqualTo(expected);
         }
     }
 

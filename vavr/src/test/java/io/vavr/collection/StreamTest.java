@@ -3,7 +3,6 @@ package io.vavr.collection;
 import io.vavr.*;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
-import java.io.InvalidObjectException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Spliterator;
@@ -866,51 +865,6 @@ public class StreamTest extends AbstractLinearSeqTest {
                                            ? Option.none()
                                            : Option.of(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
-        }
-    }
-
-    @Nested
-    class SerializableTests {
-        @Test
-        public void shouldNotSerializeEnclosingClassOfCons() {
-            assertThrows(InvalidObjectException.class, () -> Serializables.callReadObject(Stream.cons(1, Stream::empty)));
-
-        }
-
-        @Test
-        public void shouldNotDeserializeStreamWithSizeLessThanOne() {
-            assertThrows(InvalidObjectException.class, () -> {
-                try {
-                    /*
-                     * This implementation is stable regarding jvm impl changes of object serialization. The index of the number
-                     * of Stream elements is gathered dynamically.
-                     */
-                    final byte[] listWithOneElement = Serializables.serialize(Stream.of(0));
-                    final byte[] listWithTwoElements = Serializables.serialize(Stream.of(0, 0));
-                    int index = -1;
-                    for (int i = 0; i < listWithOneElement.length && index == -1; i++) {
-                        final byte b1 = listWithOneElement[i];
-                        final byte b2 = listWithTwoElements[i];
-                        if (b1 != b2) {
-                            if (b1 != 1 || b2 != 2) {
-                                throw new IllegalStateException("Difference does not indicate number of elements.");
-                            } else {
-                                index = i;
-                            }
-                        }
-                    }
-                    if (index == -1) {
-                        throw new IllegalStateException("Hack incomplete - index not found");
-                    }
-                    /*
-                     * Hack the serialized data and fake zero elements.
-                     */
-                    listWithOneElement[index] = 0;
-                    Serializables.deserialize(listWithOneElement);
-                } catch (IllegalStateException x) {
-                    throw (x.getCause() != null) ? x.getCause() : x;
-                }
-            });
         }
     }
 

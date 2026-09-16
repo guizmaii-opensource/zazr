@@ -1,12 +1,10 @@
 package io.vavr.collection;
 
-import io.vavr.Serializables;
 import io.vavr.Tuple2;
 import io.vavr.Value;
 import io.vavr.collection.JavaConverters.ChangePolicy;
 import io.vavr.collection.JavaConverters.ListView;
 import io.vavr.control.Option;
-import java.io.InvalidObjectException;
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -352,15 +350,6 @@ public class VectorTest extends AbstractIndexedSeqTest {
         @Test
         public void shouldStringifyNonNil() {
             assertThat(of(null, 1, 2, 3).toString()).isEqualTo("Vector(null, 1, 2, 3)");
-        }
-    }
-
-    @Nested
-    class ConsTestTests {
-        @Test
-        public void shouldNotSerializeEnclosingClass() {
-            assertThrows(InvalidObjectException.class, () -> Serializables.callReadObject(List.of(1)));
-
         }
     }
 

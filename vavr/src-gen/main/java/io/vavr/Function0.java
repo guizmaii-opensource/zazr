@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.control.Option;
 import io.vavr.control.Try;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -19,12 +18,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 @FunctionalInterface
-public interface Function0<R extends @Nullable Object> extends Serializable, Supplier<R> {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Function0<R extends @Nullable Object> extends Supplier<R> {
 
     /**
      * Returns a function that always returns the constant

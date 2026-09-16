@@ -20,12 +20,6 @@ import org.jspecify.annotations.Nullable;
 public interface PartialFunction<T extends @Nullable Object, R extends @Nullable Object> extends Function1<T, R> {
 
     /**
-     * A suggested serial version UID. Java serialization ignores constants inherited from interfaces, so
-     * implementing classes that need a stable UID must redeclare this field themselves.
-     */
-    long serialVersionUID = 1L;
-
-    /**
      * Converts (or "unlifts") a {@code totalFunction} that returns an {@code Option} into a partial function.
      * <p>
      * The provided {@code totalFunction} should be side-effect-free, because it may be invoked twice:
@@ -39,8 +33,6 @@ public interface PartialFunction<T extends @Nullable Object, R extends @Nullable
      */
     static <T extends @Nullable Object, R extends @Nullable Object> PartialFunction<T, R> unlift(Function<? super T, ? extends Option<? extends R>> totalFunction) {
         return new PartialFunction<T, R>() {
-
-            private static final long serialVersionUID = 1L;
 
             @Override
             public R apply(T t) {
@@ -67,8 +59,6 @@ public interface PartialFunction<T extends @Nullable Object, R extends @Nullable
      */
     static <T extends @Nullable Object, V extends Value<T>> PartialFunction<V, T> getIfDefined() {
         return new PartialFunction<V, T>() {
-
-            private static final long serialVersionUID = 1L;
 
             @Override
             public T apply(V v) {

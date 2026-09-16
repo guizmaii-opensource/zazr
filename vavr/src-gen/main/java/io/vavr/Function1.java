@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.control.Option;
 import io.vavr.control.Try;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -23,12 +22,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 @FunctionalInterface
-public interface Function1<T1 extends @Nullable Object, R extends @Nullable Object> extends Serializable, Function<T1, R> {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Function1<T1 extends @Nullable Object, R extends @Nullable Object> extends Function<T1, R> {
 
     /**
      * Returns a function that always returns the constant
@@ -220,8 +214,6 @@ public interface Function1<T1 extends @Nullable Object, R extends @Nullable Obje
         Objects.requireNonNull(isDefinedAt, "isDefinedAt is null");
         final Function1<T1, R> self = this;
         return new PartialFunction<T1, R>() {
-
-            private static final long serialVersionUID = 1L;
 
             @Override
             public boolean isDefinedAt(T1 t1) {

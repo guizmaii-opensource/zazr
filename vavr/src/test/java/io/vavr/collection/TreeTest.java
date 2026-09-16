@@ -2,7 +2,6 @@ package io.vavr.collection;
 
 import io.vavr.*;
 import io.vavr.control.Option;
-import java.io.InvalidObjectException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -366,11 +365,6 @@ public class TreeTest extends AbstractTraversableTest {
         @Test
         public void shouldCreateANodeWithoutChildren() {
             new Tree.Node<>(1, List.empty());
-        }
-
-        @Test
-        public void shouldNotCallReadObjectOnNodeInstance() {
-            assertThrows(InvalidObjectException.class, () -> Serializables.callReadObject(tree));
         }
     }
 
@@ -779,15 +773,6 @@ public class TreeTest extends AbstractTraversableTest {
                     "   └──6\n" +
                     "      ├──8\n" +
                     "      └──9");
-        }
-    }
-
-    @Nested
-    class SerializationTests {
-        @Test
-        public void shouldSerializeDeserializeComplexTree() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(tree));
-            assertThat(actual).isEqualTo(tree);
         }
     }
 

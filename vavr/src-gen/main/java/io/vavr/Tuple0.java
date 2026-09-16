@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -17,9 +16,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich
  */
-public final class Tuple0 implements Tuple, Comparable<Tuple0>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class Tuple0 implements Tuple, Comparable<Tuple0> {
 
     /**
      * The singleton instance of Tuple0.
@@ -29,7 +26,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0>, Serializable {
     /**
      * The singleton Tuple0 comparator.
      */
-    private static final Comparator<Tuple0> COMPARATOR = (Comparator<Tuple0> & Serializable) (t1, t2) -> 0;
+    private static final Comparator<Tuple0> COMPARATOR = (t1, t2) -> 0;
 
     // hidden constructor, internally called
     private Tuple0 () {
@@ -235,18 +232,6 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0>, Serializable {
     @Override
     public String toString() {
         return "()";
-    }
-
-    // -- Serializable implementation
-
-    /**
-     * Instance control for object serialization.
-     *
-     * @return The singleton instance of Tuple0.
-     * @see java.io.Serializable
-     */
-    private Object readResolve() {
-        return INSTANCE;
     }
 
 }

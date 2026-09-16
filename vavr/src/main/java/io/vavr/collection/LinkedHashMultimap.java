@@ -1,7 +1,6 @@
 package io.vavr.collection;
 
 import io.vavr.Tuple2;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
@@ -19,9 +18,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Ruslan Sennov
  */
-public final class LinkedHashMultimap<K extends @Nullable Object, V extends @Nullable Object> extends AbstractMultimap<K, V, LinkedHashMultimap<K, V>> implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class LinkedHashMultimap<K extends @Nullable Object, V extends @Nullable Object> extends AbstractMultimap<K, V, LinkedHashMultimap<K, V>> {
 
     public static <V extends @Nullable Object> Builder<V> withSeq() {
         return new Builder<>(ContainerType.SEQ, List::empty);
@@ -42,9 +39,9 @@ public final class LinkedHashMultimap<K extends @Nullable Object, V extends @Nul
     public static class Builder<V extends @Nullable Object> {
 
         private final ContainerType containerType;
-        private final SerializableSupplier<Traversable<?>> emptyContainer;
+        private final Supplier<Traversable<?>> emptyContainer;
 
-        private Builder(ContainerType containerType, SerializableSupplier<Traversable<?>> emptyContainer) {
+        private Builder(ContainerType containerType, Supplier<Traversable<?>> emptyContainer) {
             this.containerType = containerType;
             this.emptyContainer = emptyContainer;
         }
@@ -478,7 +475,7 @@ public final class LinkedHashMultimap<K extends @Nullable Object, V extends @Nul
         return (LinkedHashMultimap<K, V>) map;
     }
 
-    private LinkedHashMultimap(Map<K, Traversable<V>> back, ContainerType containerType, SerializableSupplier<Traversable<?>> emptyContainer) {
+    private LinkedHashMultimap(Map<K, Traversable<V>> back, ContainerType containerType, Supplier<Traversable<?>> emptyContainer) {
         super(back, containerType, emptyContainer);
     }
 

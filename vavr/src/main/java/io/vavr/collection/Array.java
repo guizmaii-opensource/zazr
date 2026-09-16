@@ -7,7 +7,6 @@ import io.vavr.Tuple3;
 import io.vavr.collection.ArrayModule.Combinations;
 import io.vavr.collection.JavaConverters.ListView;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -33,12 +32,10 @@ import static java.util.Arrays.sort;
  * @param <T> Component type
  * @author Ruslan Sennov, Daniel Dietrich
  */
-public final class Array<T extends @Nullable Object> implements IndexedSeq<T>, Serializable {
-    private static final long serialVersionUID = 1L;
+public final class Array<T extends @Nullable Object> implements IndexedSeq<T> {
 
     private static final Array<?> EMPTY = new Array<>(new Object[0]);
 
-    @SuppressWarnings("serial") // Conditionally serializable
     private final Object[] delegate;
 
     private Array(Object[] delegate) {
@@ -1005,10 +1002,6 @@ public final class Array<T extends @Nullable Object> implements IndexedSeq<T>, S
     @Override
     public boolean isEmpty() {
         return delegate.length == 0;
-    }
-
-    private Object readResolve() {
-        return isEmpty() ? EMPTY : this;
     }
 
     @Override

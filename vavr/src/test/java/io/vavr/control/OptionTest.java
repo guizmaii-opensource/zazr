@@ -4,7 +4,6 @@ import io.vavr.*;
 import io.vavr.AbstractValueTest;
 import io.vavr.Function1;
 import io.vavr.PartialFunction;
-import io.vavr.Serializables;
 import io.vavr.collection.Seq;
 import java.util.*;
 import java.util.List;
@@ -655,15 +654,6 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldConvertNoneToString() {
             assertThat(Option.none().toString()).isEqualTo("None");
-        }
-    }
-
-    @Nested
-    class SerializationTests {
-        @Test
-        public void shouldPreserveSingletonWhenDeserializingNone() {
-            final Object none = Serializables.deserialize(Serializables.serialize(Option.none()));
-            assertThat(none == Option.none()).isTrue();
         }
     }
 

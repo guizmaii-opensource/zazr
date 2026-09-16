@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -18,14 +17,11 @@ import org.jspecify.annotations.Nullable;
  * @param <T1> type of the 1st element
  * @author Daniel Dietrich
  */
-public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Comparable<Tuple1<T1>>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Comparable<Tuple1<T1>> {
 
     /**
      * The 1st element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T1 _1;
 
     /**
@@ -38,7 +34,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
     }
 
     public static <T1 extends @Nullable Object> Comparator<Tuple1<T1>> comparator(Comparator<? super T1> t1Comp) {
-        return (Comparator<Tuple1<T1>> & Serializable) (t1, t2) -> {
+        return (t1, t2) -> {
             final int check1 = t1Comp.compare(t1._1, t2._1);
             if (check1 != 0) {
                 return check1;

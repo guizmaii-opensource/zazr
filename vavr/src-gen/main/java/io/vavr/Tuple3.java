@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -20,26 +19,21 @@ import org.jspecify.annotations.Nullable;
  * @param <T3> type of the 3rd element
  * @author Daniel Dietrich
  */
-public final class Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> implements Tuple, Comparable<Tuple3<T1, T2, T3>>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> implements Tuple, Comparable<Tuple3<T1, T2, T3>> {
 
     /**
      * The 1st element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T1 _1;
 
     /**
      * The 2nd element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T2 _2;
 
     /**
      * The 3rd element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T3 _3;
 
     /**
@@ -56,7 +50,7 @@ public final class Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Obje
     }
 
     public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Comparator<Tuple3<T1, T2, T3>> comparator(Comparator<? super T1> t1Comp, Comparator<? super T2> t2Comp, Comparator<? super T3> t3Comp) {
-        return (Comparator<Tuple3<T1, T2, T3>> & Serializable) (t1, t2) -> {
+        return (t1, t2) -> {
             final int check1 = t1Comp.compare(t1._1, t2._1);
             if (check1 != 0) {
                 return check1;

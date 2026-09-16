@@ -6,7 +6,6 @@ import io.vavr.collection.Seq;
 import io.vavr.collection.Vector;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -228,16 +227,6 @@ public class LazyTest extends AbstractValueTest {
     }
 
     @Nested
-    class SerializationTests {
-        @Test
-        public void shouldSerializeDeserializeNonNil() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(Lazy.of(() -> 1)));
-            final Object expected = Lazy.of(() -> 1);
-            assertThat(actual).isEqualTo(expected);
-        }
-    }
-
-    @Nested
     class ConcurrencyTests {
         @Test
         public void shouldSupportMultithreading() {
@@ -384,9 +373,7 @@ public class LazyTest extends AbstractValueTest {
  * <p>
  * Note: It is no good idea to leak it outside of the test scope into the core library (otherwise Undefined will be the new null).
  */
-final class Undefined<T> implements Value<T>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+final class Undefined<T> implements Value<T> {
 
     static final Undefined<?> INSTANCE = new Undefined<>();
 
@@ -454,15 +441,5 @@ final class Undefined<T> implements Value<T>, Serializable {
     @Override
     public String toString() {
         return "Lazy()";
-    }
-
-    /**
-     * Instance control for object serialization.
-     *
-     * @return The singleton instance of Undefined.
-     * @see java.io.Serializable
-     */
-    private Object readResolve() {
-        return INSTANCE;
     }
 }

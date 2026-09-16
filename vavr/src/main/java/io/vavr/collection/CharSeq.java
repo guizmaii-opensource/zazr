@@ -4,7 +4,6 @@ import io.vavr.*;
 import io.vavr.collection.CharSeqModule.Combinations;
 import io.vavr.collection.JavaConverters.ListView;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -26,9 +25,7 @@ import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
  *
  * @author Ruslan Sennov, Daniel Dietrich
  */
-public final class CharSeq implements CharSequence, IndexedSeq<Character>, Serializable, Comparable<CharSeq> {
-
-    private static final long serialVersionUID = 1L;
+public final class CharSeq implements CharSequence, IndexedSeq<Character>, Comparable<CharSeq> {
 
     private static final CharSeq EMPTY = new CharSeq("");
 
@@ -1366,10 +1363,6 @@ public final class CharSeq implements CharSequence, IndexedSeq<Character>, Seria
     @Override
     public boolean isTraversableAgain() {
         return true;
-    }
-
-    private Object readResolve() {
-        return isEmpty() ? EMPTY : this;
     }
 
     @Override

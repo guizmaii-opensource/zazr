@@ -5,7 +5,6 @@ import io.vavr.PartialFunction;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
@@ -22,12 +21,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> component type
  * @author Daniel Dietrich
  */
-public interface Set<T extends @Nullable Object> extends Traversable<T>, Function1<T, Boolean>, Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Set<T extends @Nullable Object> extends Traversable<T>, Function1<T, Boolean> {
 
     /**
      * Narrows a widened {@code Set<? extends T>} to {@code Set<T>}

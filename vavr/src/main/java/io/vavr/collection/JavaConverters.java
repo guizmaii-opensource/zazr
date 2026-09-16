@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,11 +38,8 @@ class JavaConverters {
      *
      * @param <C> The Vavr collection type
      */
-    private static abstract class HasDelegate<C extends Traversable<?>> implements Serializable {
+    private static abstract class HasDelegate<C extends Traversable<?>> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private C delegate;
         private final boolean mutable;
 
@@ -84,8 +80,6 @@ class JavaConverters {
     }
 
     static class ListView<T extends @Nullable Object, C extends Seq<T>> extends HasDelegate<C> implements java.util.List<T> {
-
-        private static final long serialVersionUID = 1L;
 
         ListView(C delegate, boolean mutable) {
             super(delegate, mutable);
@@ -300,7 +294,6 @@ class JavaConverters {
             return previousElement;
         }
 
-        // DEV-NOTE: Iterator is intentionally not Serializable
         private static class Iterator<T extends @Nullable Object, C extends Seq<T>> implements java.util.Iterator<T> {
 
             ListView<T, C> list;
@@ -371,7 +364,6 @@ class JavaConverters {
             }
         }
 
-        // DEV-NOTE: ListIterator is intentionally not Serializable
         private static class ListIterator<T extends @Nullable Object, C extends Seq<T>> extends ListView.Iterator<T, C> implements java.util.ListIterator<T> {
 
             ListIterator(ListView<T, C> list, int index) {

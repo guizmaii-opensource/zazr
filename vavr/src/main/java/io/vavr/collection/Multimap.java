@@ -2,7 +2,6 @@ package io.vavr.collection;
 
 import io.vavr.*;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
@@ -68,12 +67,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Ruslan Sennov
  */
-public interface Multimap<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>>, PartialFunction<K, Traversable<V>>, Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Multimap<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>>, PartialFunction<K, Traversable<V>> {
 
     /**
      * Defines the type of container used to store values associated with keys in a Multimap.
@@ -120,7 +114,6 @@ public interface Multimap<K extends @Nullable Object, V extends @Nullable Object
             this.remove = remove;
             this.instantiate = instantiate;
         }
-
 
         <T extends @Nullable Object> Traversable<T> add(Traversable<?> container, T elem) {
             return (Traversable<T>) add.apply(container, elem);
@@ -175,7 +168,6 @@ public interface Multimap<K extends @Nullable Object, V extends @Nullable Object
      */
     default PartialFunction<K, Traversable<V>> asPartialFunction() throws IndexOutOfBoundsException {
         return new PartialFunction<K, Traversable<V>>() {
-            private static final long serialVersionUID = 1L;
             @Override
             public Traversable<V> apply(K key) {
                 return get(key).getOrElseThrow(NoSuchElementException::new);
