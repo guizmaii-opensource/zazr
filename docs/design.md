@@ -584,6 +584,14 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   constructor plus JSpecify (`record Some<A extends @NonNull Object>`) is the nearest equivalent. In Java
   `Some(null)` almost always arrives by accident (`Option.some(map.get(k))`), and Vavr's own
   `Option.java:508` documents the value as "may be null" without any caller ever wanting that.
+- **Collections reject null elements, keys and values too (decided 2026-09-16).** Forbidding `Some(null)`
+  while allowing null elements left `find`, `headOption`, `Map.get` and every other `Option`-returning
+  method with no representable answer for a stored null (PR #47 had to make them throw). The JDK's own
+  immutable collections (`List.of`, `Set.of`, `Map.of`) reject null since Java 9, and "absence is an
+  `Option`, not a null" is the library's message. Every constructor, factory, `ofAll`, builder, insertion
+  and update path under `com.guizmaii.zazr.collection` throws `NullPointerException` on a null element,
+  key or value; the entry-level detours and the "throws on a stored null" javadoc from #47 are then
+  removed. Tuples are not collections and keep allowing null components.
   Same for `Right(null)`, `Success(null)`, `Valid(null)`: records with `requireNonNull` in the compact
   constructor. Collections keep allowing null elements (Java's do), but document it.
 - **`Try.Failure` equality** stops comparing stack traces (`Try.java:1482`). Two failures are equal when
