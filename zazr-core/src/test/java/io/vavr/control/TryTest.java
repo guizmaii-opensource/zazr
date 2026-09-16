@@ -1190,6 +1190,44 @@ public class TryTest extends AbstractValueTest {
     }
 
     @Nested
+    class FromcompletablefutureTests {
+        @Test
+        public void shouldConvertCompletedFutureToSuccess() {
+            final CompletableFuture<String> future = CompletableFuture.completedFuture("ok");
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.get()).isEqualTo("ok");
+        }
+
+        @Test
+        public void shouldConvertExceptionallyCompletedFutureToFailureWithUnwrappedCause() {
+            final RuntimeException cause = new RuntimeException("boom");
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(cause);
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldConvertCancelledFutureToFailureWithCancellationException() {
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            future.cancel(true);
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(java.util.concurrent.CancellationException.class);
+        }
+
+        @Test
+        public void shouldRethrowFatalCauseFromExceptionallyCompletedFuture() {
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(new InterruptedException());
+            assertThatThrownBy(() -> Try.fromCompletableFuture(future))
+              .isInstanceOf(InterruptedException.class);
+        }
+    }
+
+    @Nested
     class Tovalidation2Tests {
         @Test
         public void shouldConvertFailureToValidationLeft() {
