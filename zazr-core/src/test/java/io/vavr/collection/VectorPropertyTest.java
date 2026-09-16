@@ -17,7 +17,7 @@ public class VectorPropertyTest {
     @Test
     public void shouldCreateAndGet() {
         for (int i = 0; i < 500; i++) {
-            final Seq<Integer> expected = Array.range(0, i);
+            final Seq<Integer> expected = io.vavr.collection.List.range(0, i);
             final Vector<Integer> actual = Vector.ofAll(expected);
             for (int j = 0; j < actual.size(); j++) {
                 assertThat(expected.get(j)).isEqualTo(actual.get(j));
@@ -86,13 +86,13 @@ public class VectorPropertyTest {
     public void shouldIterate() {
         for (byte depth = 0; depth <= 2; depth++) {
             for (int i = 0; i < 5000; i++) {
-                final Seq<Integer> expected = Array.range(0, i);
+                final Seq<Integer> expected = io.vavr.collection.List.range(0, i);
                 final Vector<Integer> actual = Vector.ofAll(expected);
                 assertAreEqual(actual, expected);
             }
         }
 
-        Seq<Integer> expected = Array.range(0, 1000);
+        Seq<Integer> expected = io.vavr.collection.List.range(0, 1000);
         Vector<Integer> actual = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
             final Iterator<Integer> expectedIterator = expected.iterator();
@@ -110,7 +110,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldPrepend() {
-        Seq<Integer> expected = Array.empty();
+        Seq<Integer> expected = io.vavr.collection.List.empty();
         Vector<Integer> actual = Vector.empty();
 
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
@@ -126,7 +126,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldAppend() {
-        Seq<Integer> expected = Array.empty();
+        Seq<Integer> expected = io.vavr.collection.List.empty();
         Vector<Integer> actual = Vector.empty();
 
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
@@ -148,7 +148,7 @@ public class VectorPropertyTest {
             final int length = 10_000;
 
             for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
-                Seq<Integer> expected = Array.range(0, length);
+                Seq<Integer> expected = io.vavr.collection.List.range(0, length);
                 Vector<Integer> actual = Vector.ofAll(expected);
 
                 expected = expected.drop(drop); // test the `trailing` drops and the internal tree offset
@@ -166,7 +166,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldDrop() {
-        final Seq<Integer> expected = Array.range(0, 2_000);
+        final Seq<Integer> expected = io.vavr.collection.List.range(0, 2_000);
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
@@ -182,7 +182,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldDropRight() {
-        final Seq<Integer> expected = Array.range(0, 2_000);
+        final Seq<Integer> expected = io.vavr.collection.List.range(0, 2_000);
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
@@ -199,7 +199,7 @@ public class VectorPropertyTest {
     @Test
     public void shouldSlice() {
         for (int length = 1, end = 500; length <= end; length++) {
-            Seq<Integer> expected = Array.range(0, length);
+            Seq<Integer> expected = io.vavr.collection.List.range(0, length);
             Vector<Integer> actual = Vector.ofAll(expected);
 
             for (int i = 0; i <= expected.length(); i++) {
@@ -214,13 +214,13 @@ public class VectorPropertyTest {
         final Random random = new Random(13579);
 
         for (int i = 1; i < 10; i++) {
-            Seq<Object> expected = Array.empty();
+            Seq<Object> expected = io.vavr.collection.List.empty();
             Vector<Object> actual = Vector.empty();
             for (int j = 0; j < 20_000; j++) {
-                Seq<Tuple2<Seq<Object>, Vector<Object>>> history = Array.empty();
+                Seq<Tuple2<Seq<Object>, Vector<Object>>> history = io.vavr.collection.List.empty();
 
                 if (percent(random) < 20) {
-                    expected = Array.ofAll(Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
+                    expected = io.vavr.collection.List.ofAll(Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
                     actual = (percent(random) < 30) ? Vector.narrow(Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected))) : Vector.ofAll(expected);
                     assertAreEqual(expected, actual);
                     history = history.append(Tuple(expected, actual));

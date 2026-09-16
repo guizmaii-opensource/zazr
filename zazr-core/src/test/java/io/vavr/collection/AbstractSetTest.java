@@ -126,13 +126,10 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
             // other classes
             assertThat(empty().equals(List.empty())).isFalse();
             assertThat(empty().equals(HashMap.empty())).isFalse();
-            assertThat(empty().equals(HashMultimap.withSeq().empty())).isFalse();
 
             assertThat(empty().equals(LinkedHashMap.empty())).isFalse();
-            assertThat(empty().equals(LinkedHashMultimap.withSeq().empty())).isFalse();
 
             assertThat(empty().equals(TreeMap.empty())).isFalse();
-            assertThat(empty().equals(TreeMultimap.withSeq().empty())).isFalse();
         }
     }
 

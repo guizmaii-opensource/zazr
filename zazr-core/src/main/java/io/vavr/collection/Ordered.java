@@ -8,8 +8,8 @@ import org.jspecify.annotations.Nullable;
  * Implementations expose the {@link Comparator} used to determine that order.
  *
  * @param <T> the type the ordering is defined on: the element type for element-ordered collections
- *            (e.g. {@code SortedSet}, {@code PriorityQueue}), or the key type for key-ordered
- *            collections (e.g. {@code SortedMap}, {@code SortedMultimap})
+ *            (e.g. {@code SortedSet}), or the key type for key-ordered
+ *            collections (e.g. {@code SortedMap})
  * @author Ruslan Sennov, Daniel Dietrich
  */
 public interface Ordered<T extends @Nullable Object> {

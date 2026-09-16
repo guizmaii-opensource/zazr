@@ -2,9 +2,9 @@ package io.vavr.control;
 
 import io.vavr.AbstractValueTest;
 import io.vavr.Value;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
+import io.vavr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -719,9 +719,11 @@ public class ValidationTest extends AbstractValueTest {
         }
 
         private Validation<String, String> validateName(String name) {
-            return CharSeq.of(name).replaceAll(validNameChars, "").transform(seq ->
-                    seq.isEmpty() ? Validation.<String, String> valid(name)
-                                  : Validation.<String, String> invalid("Name contains invalid characters: '" + seq.distinct().sorted() + "'"));
+            final String invalid = name.replaceAll(validNameChars, "");
+            return invalid.isEmpty()
+                    ? Validation.<String, String> valid(name)
+                    : Validation.<String, String> invalid("Name contains invalid characters: '"
+                            + Vector.ofAll(invalid.toCharArray()).distinct().sorted().mkString() + "'");
         }
 
         private Validation<String, Integer> validateAge(int age) {

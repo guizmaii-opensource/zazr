@@ -236,13 +236,13 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * <p>Example for power = 2:</p>
      * <pre>{@code
      * // Result: [(A,A), (A,B), (A,C), ..., (B,A), (B,B), ..., (Z,Y), (Z,Z)]
-     * CharSeq.rangeClosed('A', 'Z').crossProduct(2);
+     * Vector.rangeClosed('A', 'Z').crossProduct(2);
      * }</pre>
      *
      * <p>If {@code power} is negative, the result is an empty iterator:</p>
      * <pre>{@code
      * // Result: ()
-     * CharSeq.rangeClosed('A', 'Z').crossProduct(-1);
+     * Vector.rangeClosed('A', 'Z').crossProduct(-1);
      * }</pre>
      *
      * @param power the number of Cartesian multiplications

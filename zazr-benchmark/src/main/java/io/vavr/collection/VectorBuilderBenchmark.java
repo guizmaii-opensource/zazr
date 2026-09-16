@@ -33,7 +33,6 @@ public class VectorBuilderBenchmark {
     private ArrayList<Integer> list;
     private Vector<Integer> vector;
     private Vector<Integer> range;
-    private Array<Integer> array;
     private Vector<Integer> large;
 
     @Setup(Level.Trial)
@@ -44,7 +43,6 @@ public class VectorBuilderBenchmark {
         }
         vector = Vector.ofAll(list);
         range = Vector.range(0, size);
-        array = Array.ofAll(list);
         large = Vector.range(0, 1_000_000);
     }
 
@@ -56,11 +54,6 @@ public class VectorBuilderBenchmark {
     @Benchmark
     public Vector<Integer> ofAll_iterator() {
         return Vector.ofAll(Iterator.ofAll(list.iterator()));
-    }
-
-    @Benchmark
-    public Vector<Integer> ofAll_array() {
-        return Vector.ofAll(array);
     }
 
     @Benchmark

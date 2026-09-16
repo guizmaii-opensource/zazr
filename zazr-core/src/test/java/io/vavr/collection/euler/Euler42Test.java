@@ -1,9 +1,9 @@
 package io.vavr.collection.euler;
 
 import io.vavr.Function1;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -71,7 +71,7 @@ public class Euler42Test {
     private static final Stream<Integer> TRIANGLE_NUMBERS = Stream.from(1).map(n -> 0.5 * n * (n + 1)).map(Double::intValue);
 
     private static int sumOfAlphabeticalPositions(String word) {
-        return CharSeq.of(word)
+        return Vector.ofAll(word.toCharArray())
                 .map(Euler42Test::alphabeticalPosition)
                 .sum().intValue();
     }

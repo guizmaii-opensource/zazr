@@ -476,13 +476,10 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
             // other classes
             assertThat(empty().equals(io.vavr.collection.List.empty())).isFalse();
-            assertThat(empty().equals(HashMultimap.withSeq().empty())).isFalse();
             assertThat(empty().equals(io.vavr.collection.HashSet.empty())).isFalse();
 
-            assertThat(empty().equals(LinkedHashMultimap.withSeq().empty())).isFalse();
             assertThat(empty().equals(io.vavr.collection.LinkedHashSet.empty())).isFalse();
 
-            assertThat(empty().equals(TreeMultimap.withSeq().empty())).isFalse();
             assertThat(empty().equals(io.vavr.collection.TreeSet.empty())).isFalse();
         }
     }

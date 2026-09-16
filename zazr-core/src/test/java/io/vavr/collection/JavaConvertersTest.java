@@ -14,9 +14,7 @@ import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
 import static io.vavr.collection.JavaConvertersTest.ChangePolicy.IMMUTABLE;
 import static io.vavr.collection.JavaConvertersTest.ChangePolicy.MUTABLE;
-import static io.vavr.collection.JavaConvertersTest.ElementNullability.NON_NULLABLE;
 import static io.vavr.collection.JavaConvertersTest.ElementNullability.NULLABLE;
-import static io.vavr.collection.JavaConvertersTest.ElementType.FIXED;
 import static io.vavr.collection.JavaConvertersTest.ElementType.GENERIC;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,8 +31,6 @@ public class JavaConvertersTest {
           // -- immutable classes
 
           new Data("java.util.Arrays$ArrayList", new ListFactory(java.util.Arrays::asList), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(Array.class.getName(), new ListFactory(ts -> Array.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(CharSeq.class.getName(), new ListFactory(ts -> (java.util.List<Object>) (Object) CharSeq.ofAll((List<Character>) (Object) (List.of(ts))).asJava()), IMMUTABLE, FIXED, NON_NULLABLE),
           new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
           new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
           new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
@@ -47,8 +43,6 @@ public class JavaConvertersTest {
               java.util.Collections.addAll(list, ts);
               return list;
           }), MUTABLE, GENERIC, NULLABLE),
-          new Data(Array.class.getName(), new ListFactory(ts -> Array.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),
-          new Data(CharSeq.class.getName(), new ListFactory(ts -> (java.util.List<Object>) (Object) CharSeq.ofAll((List<Character>) (Object) (List.of(ts))).asJavaMutable()), MUTABLE, FIXED, NON_NULLABLE),
           new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),
           new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),
           new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),

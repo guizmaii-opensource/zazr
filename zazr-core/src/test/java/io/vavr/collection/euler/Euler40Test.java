@@ -1,7 +1,7 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +49,6 @@ public class Euler40Test {
 
     private static final Stream<Character> FIRST_1_000_000_DECIMALS = Stream.from(1)
             .map(i -> i.toString())
-            .flatMap(CharSeq::of)
+            .flatMap(s -> Vector.ofAll(s.toCharArray()))
             .take(1_000_000);
 }

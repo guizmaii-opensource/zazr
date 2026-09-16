@@ -1,7 +1,7 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +33,7 @@ public class Euler20Test {
     }
 
     private static int sumOfFactorialDigits(int n) {
-        return CharSeq.of(factorial(n).toString())
+        return Vector.ofAll(factorial(n).toString().toCharArray())
                 .foldLeft(0, (sum, c) -> sum + Character.digit(c, 10));
     }
 

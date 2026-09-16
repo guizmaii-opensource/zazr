@@ -1,9 +1,9 @@
 package io.vavr.collection.euler;
 
 import io.vavr.Tuple;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +52,7 @@ public class Euler30Test {
     }
 
     private static long sumOfPowersOfDigits(int powers, long num) {
-        return CharSeq.of(Long.toString(num))
+        return Vector.ofAll(Long.toString(num).toCharArray())
                 .map(c -> Character.digit(c, 10))
                 .map(d -> (long) Math.pow(d, powers))
                 .sum().longValue();

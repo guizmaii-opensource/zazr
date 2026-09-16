@@ -1,7 +1,5 @@
 package io.vavr;
 
-import io.vavr.collection.Array;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.HashMap;
 import io.vavr.collection.HashSet;
 import io.vavr.collection.Iterator;
@@ -9,16 +7,13 @@ import io.vavr.collection.LinkedHashMap;
 import io.vavr.collection.LinkedHashSet;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
-import io.vavr.collection.Multimap;
 import io.vavr.collection.Ordered;
-import io.vavr.collection.PriorityQueue;
 import io.vavr.collection.Queue;
 import io.vavr.collection.Set;
 import io.vavr.collection.SortedMap;
 import io.vavr.collection.SortedSet;
 import io.vavr.collection.Stream;
 import io.vavr.collection.Traversable;
-import io.vavr.collection.Tree;
 import io.vavr.collection.TreeMap;
 import io.vavr.collection.TreeSet;
 import io.vavr.collection.Vector;
@@ -463,30 +458,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     Iterator<T> iterator();
 
     // -- conversion methods
-
-    /**
-     * Converts this to a {@link Array}.
-     *
-     * @return An {@link Array} containing the elements of this value.
-     */
-    default Array<T> toArray() {
-        return ValueModule.toTraversable(this, Array.empty(), Array::of, Array::ofAll);
-    }
-
-    /**
-     * Converts this to a {@link CharSeq}.
-     *
-     * @return The {@link CharSeq} obtained by concatenating the string representations of the elements of this value.
-     */
-    default CharSeq toCharSeq() {
-        if (this instanceof CharSeq) {
-            return (CharSeq) this;
-        } else if (isEmpty()) {
-            return CharSeq.empty();
-        } else {
-            return CharSeq.of(iterator().mkString());
-        }
-    }
 
     /**
      * Converts this to a {@link Validation}.
@@ -1124,40 +1095,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     }
 
     /**
-     * Converts this to a {@link PriorityQueue}.
-     * <p>
-     * If this is a {@link SortedSet} or a {@link PriorityQueue}, its comparator is reused. Otherwise the elements
-     * must be comparable and are ordered naturally; in particular, a {@link SortedMap} or
-     * {@link io.vavr.collection.SortedMultimap} is converted using the natural order of its {@link Tuple2} entries,
-     * not its key comparator.
-     *
-     * @return A {@link PriorityQueue} containing the elements of this value.
-     * @throws ClassCastException if items are not comparable
-     */
-    @SuppressWarnings("unchecked")
-    default PriorityQueue<T> toPriorityQueue() {
-        if (this instanceof PriorityQueue<?>) {
-            return (PriorityQueue<T>) this;
-        } else {
-            return toPriorityQueue(ValueModule.comparatorOf(this));
-        }
-    }
-
-    /**
-     * Converts this to a {@link PriorityQueue}.
-     *
-     * @param comparator A comparator that induces an order of the PriorityQueue elements.
-     * @return A {@link PriorityQueue} ordered by {@code comparator}, containing the elements of this value.
-     */
-    default PriorityQueue<T> toPriorityQueue(Comparator<? super T> comparator) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        final PriorityQueue<T> empty = PriorityQueue.empty(comparator);
-        final Function<T, PriorityQueue<T>> of = value -> PriorityQueue.of(comparator, value);
-        final Function<Iterable<T>, PriorityQueue<T>> ofAll = values -> PriorityQueue.ofAll(comparator, values);
-        return ValueModule.toTraversable(this, empty, of, ofAll);
-    }
-
-    /**
      * Converts this to a {@link Either}.
      *
      * @param <L>  left type
@@ -1208,10 +1145,9 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     /**
      * Converts this to a {@link SortedSet}.
      * <p>
-     * If this is a {@link SortedSet} or a {@link PriorityQueue}, its comparator is reused. Otherwise the elements
-     * must be comparable and are ordered naturally; in particular, a {@link SortedMap} or
-     * {@link io.vavr.collection.SortedMultimap} is converted using the natural order of its {@link Tuple2} entries,
-     * not its key comparator.
+     * If this is a {@link SortedSet}, its comparator is reused. Otherwise the elements
+     * must be comparable and are ordered naturally; in particular, a {@link SortedMap} is converted
+     * using the natural order of its {@link Tuple2} entries, not its key comparator.
      *
      * @return A {@link TreeSet} containing the elements of this value.
      * @throws ClassCastException if items are not comparable
@@ -1274,30 +1210,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     default Try<T> toTry(Supplier<? extends Throwable> ifEmpty) {
         Objects.requireNonNull(ifEmpty, "ifEmpty is null");
         return isEmpty() ? Try.failure(ifEmpty.get()) : toTry();
-    }
-
-    /**
-     * Converts this to a {@link Tree}.
-     *
-     * @return A {@link Tree} containing the elements of this value.
-     */
-    default Tree<T> toTree() {
-        return ValueModule.toTraversable(this, Tree.empty(), Tree::of, Tree::ofAll);
-    }
-
-    /**
-     * Builds a forest of {@link Tree.Node}s from the elements of this value, using {@code idMapper} and
-     * {@code parentMapper}.
-     *
-     * @param <ID>         Id type
-     * @param idMapper     A mapper from source item to unique identifier of that item
-     * @param parentMapper A mapper from source item to unique identifier of parent item. Need return null for root items
-     * @return A new, possibly empty {@link List} of root {@link Tree.Node}s, one per element for which
-     * {@code parentMapper} returns null.
-     * @see Tree#build(Iterable, Function, Function)
-     */
-    default <ID extends @Nullable Object> List<Tree.Node<T>> toTree(Function<? super T, ? extends ID> idMapper, Function<? super T, ? extends ID> parentMapper) {
-        return Tree.build(this, idMapper, parentMapper);
     }
 
     /**
@@ -1382,11 +1294,11 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
 interface ValueModule {
 
-    // SortedMap<K, V> and SortedMultimap<K, V> are Ordered<K> but Value<Tuple2<K, V>>: their key comparator
-    // must not be applied to the entries, so only comparators of element-typed Ordered values are reused.
+    // SortedMap<K, V> is Ordered<K> but Value<Tuple2<K, V>>: its key comparator must not be applied to the
+    // entries, so only comparators of element-typed Ordered values are reused.
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> Comparator<T> comparatorOf(Value<T> value) {
-        if (value instanceof Ordered<?> && !(value instanceof Map<?, ?>) && !(value instanceof Multimap<?, ?>)) {
+        if (value instanceof Ordered<?> && !(value instanceof Map<?, ?>)) {
             return ((Ordered<T>) value).comparator();
         } else {
             return (Comparator<T>) Comparator.naturalOrder();

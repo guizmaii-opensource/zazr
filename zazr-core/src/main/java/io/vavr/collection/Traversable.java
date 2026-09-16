@@ -236,21 +236,20 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
     /**
      * Determines whether this collection is equal to the given object.
      * <p>
-     * In Vavr, there are four basic collection types:
+     * In Vavr, there are three basic collection types:
      * <ul>
      *     <li>{@code Seq} – sequential elements</li>
      *     <li>{@code Set} – distinct elements</li>
      *     <li>{@code Map} – key-value pairs</li>
-     *     <li>{@code Multimap} – keys mapped to multiple values</li>
      * </ul>
      * Two collections are considered equal if and only if:
      * <ul>
-     *     <li>They are of the same collection type (Seq, Set, Map, Multimap)</li>
+     *     <li>They are of the same collection type (Seq, Set, Map)</li>
      *     <li>They contain the same elements</li>
      *     <li>For {@code Seq}, the element order is the same</li>
      * </ul>
      * <p>
-     * For {@code Map} and {@code Multimap}, two entries {@code (key1, value1)} and {@code (key2, value2)}
+     * For {@code Map}, two entries {@code (key1, value1)} and {@code (key2, value2)}
      * are equal if both their keys and values are equal.
      * <p>
      * <strong>Additional notes:</strong>
@@ -473,7 +472,7 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * Returns the hash code of this collection.
      *
      * <p>Vavr distinguishes between collections with predictable iteration order (like {@code Seq}) and
-     * collections with arbitrary iteration order (like {@code Set}, {@code Map}, and {@code Multimap}).
+     * collections with arbitrary iteration order (like {@code Set} and {@code Map}).
      * In all cases, the hash of an empty collection is defined as {@code 1}.</p>
      *
      * <p>For collections with predictable iteration order, the hash is computed as:</p>
@@ -842,43 +841,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
             }
             return Option.some(tm);
         }
-    }
-
-    /**
-     * Concatenates the string representations of all elements in this Traversable.
-     * <p>
-     * Equivalent to {@code mkCharSeq("", "", "")}.
-     *
-     * @return a new {@link CharSeq} containing all elements concatenated
-     */
-    default CharSeq mkCharSeq() {
-        return mkCharSeq("", "", "");
-    }
-
-    /**
-     * Concatenates the string representations of all elements in this Traversable, separated by a delimiter.
-     * <p>
-     * Equivalent to {@code mkCharSeq("", delimiter, "")}.
-     *
-     * @param delimiter a string placed between elements
-     * @return a new {@link CharSeq} with elements separated by the delimiter
-     */
-    default CharSeq mkCharSeq(CharSequence delimiter) {
-        return mkCharSeq("", delimiter, "");
-    }
-
-    /**
-     * Concatenates the string representations of all elements in this Traversable with a prefix, delimiter, and suffix.
-     * <p>
-     * Example: {@code List.of("a", "b", "c").mkCharSeq("Chars(", ", ", ")") = CharSeq.of("Chars(a, b, c)")}
-     *
-     * @param prefix    a string prepended to the result
-     * @param delimiter a string placed between elements
-     * @param suffix    a string appended to the result
-     * @return a new {@link CharSeq} containing the formatted concatenation of elements
-     */
-    default CharSeq mkCharSeq(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
-        return CharSeq.of(mkString(prefix, delimiter, suffix));
     }
 
     /**

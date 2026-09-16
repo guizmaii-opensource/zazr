@@ -23,7 +23,7 @@ public interface CheckedConsumer<T extends @Nullable Object> {
      * final Consumer<Value> consumer = checkedConsumer.unchecked();
      *
      * // prints "H", "i" and "!", each on its own line
-     * consumer.accept(CharSeq.of("Hi!"));
+     * consumer.accept(Vector.of('H', 'i', '!'));
      *
      * // may throw an exception
      * consumer.accept(null);

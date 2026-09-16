@@ -1,9 +1,9 @@
 package io.vavr.collection.euler;
 
 import io.vavr.Function1;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
@@ -42,10 +42,10 @@ public class Euler35Test {
     }
 
     private static List<Integer> rotations(int n) {
-        final CharSeq seq = CharSeq.of(String.valueOf(n));
+        final Vector<Character> seq = Vector.ofAll(String.valueOf(n).toCharArray());
         return Stream.range(0, seq.length())
                 .map(i -> seq.drop(i).appendAll(seq.take(i)))
-                .map(s -> Integer.valueOf(s.toString()))
+                .map(s -> Integer.valueOf(s.mkString()))
                 .toList();
     }
 

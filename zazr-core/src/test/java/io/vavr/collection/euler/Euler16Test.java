@@ -1,6 +1,6 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
+import io.vavr.collection.Vector;
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,7 @@ public class Euler16Test {
     }
 
     private static long solve(int n) {
-        return CharSeq.of(BigInteger.valueOf(2).pow(n).toString())
+        return Vector.ofAll(BigInteger.valueOf(2).pow(n).toString().toCharArray())
                 .map(c -> c - '0')
                 .fold(0, (a, b) -> a + b);
     }

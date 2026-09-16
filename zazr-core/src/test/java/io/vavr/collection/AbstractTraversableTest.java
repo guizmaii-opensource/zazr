@@ -328,16 +328,6 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         assertThat(actual).isEqualTo(of("one", "three"));
     }
 
-    @SuppressWarnings("unchecked")
-    @TestTemplate
-    public void shouldCollectUsingMultimap() {
-        if (!isOrdered()) {
-            final Multimap<Integer, String> map = HashMultimap.withSeq().of(1, "one", 1, "un", 3, "three", 3, "trois");
-            final Traversable<Traversable<String>> actual = of(1, 2, 3, 4).collect(map.asPartialFunction());
-            assertThat(actual).isEqualTo(of(List("one", "un"), List("three", "trois")));
-        }
-    }
-
     @TestTemplate
     public void shouldCollectUsingSeq() {
         final Seq<String> map = List("one", "two", "three", "four");
@@ -1093,42 +1083,6 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
     @TestTemplate
     public void shouldMkStringWithDelimiterAndPrefixAndSuffixNonNil() {
         assertThat(of('a', 'b', 'c').mkString("[", ",", "]")).isEqualTo("[a,b,c]");
-    }
-
-    // -- mkCharSeq()
-
-    @TestTemplate
-    public void shouldMkCharSeqNil() {
-        assertThat(empty().mkCharSeq()).isEqualTo(CharSeq.empty());
-    }
-
-    @TestTemplate
-    public void shouldMkCharSeqNonNil() {
-        assertThat(of('a', 'b', 'c').mkCharSeq()).isEqualTo(CharSeq.of("abc"));
-    }
-
-    // -- mkCharSeq(delimiter)
-
-    @TestTemplate
-    public void shouldMkCharSeqWithDelimiterNil() {
-        assertThat(empty().mkCharSeq(",")).isEqualTo(CharSeq.empty());
-    }
-
-    @TestTemplate
-    public void shouldMkCharSeqWithDelimiterNonNil() {
-        assertThat(of('a', 'b', 'c').mkCharSeq(",")).isEqualTo(CharSeq.of("a,b,c"));
-    }
-
-    // -- mkCharSeq(delimiter, prefix, suffix)
-
-    @TestTemplate
-    public void shouldMkCharSeqWithDelimiterAndPrefixAndSuffixNil() {
-        assertThat(empty().mkCharSeq("[", ",", "]")).isEqualTo(CharSeq.of("[]"));
-    }
-
-    @TestTemplate
-    public void shouldMkCharSeqWithDelimiterAndPrefixAndSuffixNonNil() {
-        assertThat(of('a', 'b', 'c').mkCharSeq("[", ",", "]")).isEqualTo(CharSeq.of("[a,b,c]"));
     }
 
     // -- last
@@ -2592,28 +2546,6 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         expected.add(1);
         expected.add(3);
         assertThat(of(1, 2, 2, 3).toJavaSet()).containsExactlyInAnyOrderElementsOf(expected);
-    }
-
-    // toTree
-
-    @TestTemplate
-    public void shouldConvertToTree() {
-        //Value["id:parent")]
-        final Traversable<String> value = of(
-          "1:",
-          "2:1", "3:1",
-          "4:2", "5:2", "6:3",
-          "7:4", "8:6", "9:6"
-        );
-        final Seq<Tree<String>> roots = value
-          .toTree(s -> s.split(":")[0], s -> s.split(":").length == 1 ? null : s.split(":")[1])
-          .map(l -> l.map(s -> s.split(":")[0]));
-        assertThat(roots).hasSize(1);
-        final Tree<String> root = roots.head();
-        if (value.hasDefiniteSize()) {
-            assertThat(root).hasSameSizeAs(value);
-        }
-        assertThat(root.toLispString()).isEqualTo("(1 (2 (4 7) 5) (3 (6 8 9)))");
     }
 
     // ++++++ OBJECT ++++++

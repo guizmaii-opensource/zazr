@@ -1,7 +1,7 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static io.vavr.collection.euler.Utils.MEMOIZED_FACTORIAL;
@@ -36,7 +36,7 @@ public class Euler34Test {
     }
 
     private static int sumOfDigitFactorial(int num) {
-        return CharSeq.of(Integer.toString(num))
+        return Vector.ofAll(Integer.toString(num).toCharArray())
                 .map(c -> Character.digit(c, 10))
                 .map(MEMOIZED_FACTORIAL)
                 .sum().intValue();

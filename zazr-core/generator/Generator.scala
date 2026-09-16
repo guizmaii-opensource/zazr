@@ -165,8 +165,6 @@ def genAPIAliases(im: ImportManager): String = {
   val TryType = im.getType("io.vavr.control.Try")
   val ValidationType = im.getType("io.vavr.control.Validation")
   val NonNullType = im.getType("org.jspecify.annotations.NonNull")
-  val CharSeqType = im.getType("io.vavr.collection.CharSeq")
-  val ArrayType = im.getType("io.vavr.collection.Array")
   val VectorType = im.getType("io.vavr.collection.Vector")
   val ListType = im.getType("io.vavr.collection.List")
   val StreamType = im.getType("io.vavr.collection.Stream")
@@ -174,7 +172,6 @@ def genAPIAliases(im: ImportManager): String = {
   val LinkedHashSetType = im.getType("io.vavr.collection.LinkedHashSet")
   val HashSetType = im.getType("io.vavr.collection.HashSet")
   val TreeSetType = im.getType("io.vavr.collection.TreeSet")
-  val PriorityQueueType = im.getType("io.vavr.collection.PriorityQueue")
   val LinkedHashMapType = im.getType("io.vavr.collection.LinkedHashMap")
   val HashMapType = im.getType("io.vavr.collection.HashMap")
   val TreeMapType = im.getType("io.vavr.collection.TreeMap")
@@ -637,48 +634,10 @@ def genAPIAliases(im: ImportManager): String = {
         return ($ValidationType.Invalid<E, T>) $ValidationType.invalid(error);
     }
 
-    // -- CharSeq
-
-    /$javadoc
-     * Alias for {@link $CharSeqType#of(char)}
-     *
-     * @param character A character.
-     * @return A new {@link $CharSeqType} instance containing the given element
-     */
-    public static $CharSeqType CharSeq(char character) {
-        return $CharSeqType.of(character);
-    }
-
-    /$javadoc
-     * Alias for {@link $CharSeqType#of(char...)}
-     *
-     * @param characters Zero or more characters.
-     * @return A {@link $CharSeqType} containing the given characters in the same order (the empty {@code CharSeq} if none are given).
-     * @throws NullPointerException if {@code characters} is null
-     */
-    public static $CharSeqType CharSeq(char... characters) {
-        return $CharSeqType.of(characters);
-    }
-
-    /$javadoc
-     * Alias for {@link $CharSeqType#of(CharSequence)}
-     *
-     * @param sequence {@code CharSequence} instance.
-     * @return A new {@link $CharSeqType} instance
-     */
-    public static $CharSeqType CharSeq(CharSequence sequence) {
-        return $CharSeqType.of(sequence);
-    }
-
-    // -- TRAVERSABLES
-
-    ${genTraversableAliases(PriorityQueueType, PriorityQueueType, "PriorityQueue", sorted = true)}
-
     // -- SEQUENCES
 
     ${genTraversableAliases(ListType, SeqType, "Seq")}
     ${genTraversableAliases(VectorType, IndexedSeqType, "IndexedSeq")}
-    ${genTraversableAliases(ArrayType, ArrayType, "Array")}
     ${genTraversableAliases(ListType, ListType, "List")}
     ${genTraversableAliases(QueueType, QueueType, "Queue")}
     ${genTraversableAliases(StreamType, StreamType, "Stream")}
@@ -2729,7 +2688,9 @@ def generateMainClasses(): Unit = {
 
           @SuppressWarnings("unchecked")
           static <T $nullableBound> T asPrimitives(Class<?> primitiveClass, Iterable<?> values) {
-              final Object[] array = Array.ofAll(values).toJavaArray();
+              final java.util.List<Object> list = new java.util.ArrayList<>();
+              values.forEach(list::add);
+              final Object[] array = list.toArray();
               final ArrayType<T> type = of((Class<T>) primitiveClass);
               final Object results = type.newInstance(array.length);
               for (int i = 0; i < array.length; i++) {
@@ -2978,13 +2939,6 @@ def generateTestClasses(): Unit = {
 
           ${genSimpleAliasTest("Invalid", "new Error()")}
 
-          ${genMediumAliasTest("Char", "(Iterable<Character>) CharSeq", "'1'")}
-
-          ${genMediumAliasTest("CharArray", "(Iterable<Character>) CharSeq", "'1', '2', '3'")}
-
-          ${genMediumAliasTest("CharSeq", "(Iterable<Character>) CharSeq", "\"123\"")}
-
-          ${genTraversableTests("Array")}
           ${genTraversableTests("Vector")}
           ${genTraversableTests("List")}
           ${genTraversableTests("Stream")}
@@ -2995,7 +2949,6 @@ def generateTestClasses(): Unit = {
           ${genTraversableTests("IndexedSeq")}
 
           ${genSortedTraversableTests("SortedSet")}
-          ${genSortedTraversableTests("PriorityQueue")}
 
           ${genMapTests("LinkedMap")}
           ${genMapTests("Map")}
@@ -3705,9 +3658,6 @@ def generateTestClasses(): Unit = {
     genMapOfEntriesTest("HashMap")
     genMapOfEntriesTest("LinkedHashMap")
     genMapOfEntriesTest("TreeMap")
-    genMapOfEntriesTest("HashMultimap")
-    genMapOfEntriesTest("LinkedHashMultimap")
-    genMapOfEntriesTest("TreeMultimap")
 
   }
 

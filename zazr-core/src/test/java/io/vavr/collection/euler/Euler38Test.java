@@ -1,7 +1,7 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static io.vavr.API.*;
@@ -35,31 +35,31 @@ public class Euler38Test {
      */
     @Test
     public void shouldSolveProblem38() {
-        assertThat(isPandigitalMultiple(CharSeq.of("192384576"))).isTrue();
-        assertThat(isPandigitalMultiple(CharSeq.of("918273645"))).isTrue();
+        assertThat(isPandigitalMultiple(Vector.ofAll("192384576".toCharArray()))).isTrue();
+        assertThat(isPandigitalMultiple(Vector.ofAll("918273645".toCharArray()))).isTrue();
 
         assertThat(largest1To9PandigitalMultiple().mkString()).isEqualTo("932718654");
     }
 
-    private static CharSeq largest1To9PandigitalMultiple() {
-        return CharSeq.of("87654321")
+    private static Vector<Character> largest1To9PandigitalMultiple() {
+        return Vector.ofAll("87654321".toCharArray())
                 .permutations()
-                .map(CharSeq::mkString)
+                .map(Vector::mkString)
                 .map(Integer::valueOf)
                 .sorted()
                 .reverse()
                 .map(i -> "9" + i) // Since 918273645 is known we don't have to investigate numbers not starting with a 9.
-                .map(CharSeq::of)
+                .map(s -> Vector.ofAll(s.toCharArray()))
                 .find(Euler38Test::isPandigitalMultiple)
                 .get();
     }
 
-    private static boolean isPandigitalMultiple(CharSeq pandigital) {
+    private static boolean isPandigitalMultiple(Vector<Character> pandigital) {
         return List.rangeClosed(1, pandigital.length() - 1)
                 .exists(i -> isPandigitalMultipleRest(pandigital.drop(i), Integer.valueOf(pandigital.take(i).mkString()), 2));
     }
 
-    private static boolean isPandigitalMultipleRest(CharSeq pandigitalRest, int multiplicand, int multiplicator) {
+    private static boolean isPandigitalMultipleRest(Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
         return Match(pandigitalRest.length()).of(
                 Case($(0), true),
                 Case($(), length -> List.rangeClosed(1, length)
