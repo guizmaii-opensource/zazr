@@ -748,26 +748,37 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 
 ---
 
-## 5. Suggested order of work
+## 5. Order of work and tickets
 
-Each step compiles and passes tests on its own; the order minimises churn in later steps.
+The plan is tracked on GitHub: tracking issue **#32** (milestone `0.1.0`, label `design-plan`), one issue per
+PR-sized item with its design section, scope, dependencies and done-when. Each item is one PR, stacked on
+the previous item's branch where it depends on it, rebased on `main` before review; the rules are in
+`CLAUDE.md`. Done so far: #1 (this document, JDK 25), #4 (`Vector.Builder`, 3.8), #5 (headers), #7
+(NOTICE), #3/#8 (design additions), #6/#9/#10 (`CLAUDE.md`).
 
-1. JDK 25 baseline (done: `pom.xml`, CI, release workflow). Mono-repo layout: `zazr-core`, `zazr-test`
-   (restored from `da4baffb8^`), `zazr-benchmark`. Rename to `com.guizmaii.zazr` (packages, module, groupId/artifactId). Delete `API.java`, `$.java`, match dependencies, `PartialFunction`,
-   `Predicates`, `Memoized`, `NotImplementedError`, `io.vavr.concurrent` (or park it). Delete the
-   collections in the 3.7 "delete" table. (Pure deletion; largest diff, zero design risk.)
-2. Sealed interfaces + records for `Option`, `Either`, `Try`, `Validation`, `List`; tuples as records.
-   Null-rejecting constructors. Drop `Serializable`. Drop `Function0..2`/`CheckedFunction0` for the JDK types.
-   Javadoc rewritten in Markdown and scrubbed of category-theory prose as each file is touched.
-3. Remove `Value`; add the per-type conversion sets (3.2); apply the naming table (3.3).
-4. `NonEmptyVector` (3.6). Then `Validation` with `NonEmptyVector<E>` and `zip`/`zipWith`/`collectAll`/
-   `forEach`/`partition` (3.5). Generated arity-N `zip` for every control type (3.4).
-5. Collections: delete `Seq`/`IndexedSeq`/`LinearSeq`/`Foldable`/`Ordered`; slim `Traversable`; move
-   positional methods onto `Vector`/`List`/`LazyList`; strip sequence-only methods from `Map`/`Set`; add
-   complexity javadoc. `asJava()` views for sets and maps (`SetView`/`MapView`, `Sequenced*`/`Navigable*`);
-   delete `toJava*` copies and the mutable views.
-6. `Vector.Builder` + rewiring of `map`/`filter`/`flatMap`/`ofAll`/`collector`/`appendAll`; JMH before/after.
-7. `zazr-test` restored and adapted, law suites; changelog; README rewrite (section 4).
+| # | item | design | after |
+|---|---|---|---|
+| #11 | Mono-repo layout: `zazr-core`, `zazr-test`, `zazr-benchmark` | 4 | |
+| #12 | Rename to `com.guizmaii.zazr` | 4 | #11 |
+| #13 | Delete the Match API and its helpers | 3.1 | #12 |
+| #14 | Delete `io.vavr.concurrent` | 3.10 | |
+| #15 | Delete `Array`, `CharSeq`, `Tree`, `BitSet`, `PriorityQueue`, `Multimap*` | 3.7 | |
+| #16 | Sealed interfaces and records; null policy; `Try.Failure` equality | 3.1, 3.9 | #13, #14 |
+| #17 | Drop `Serializable` | 3.9 | #16 |
+| #18 | JDK functional interfaces first | 3.1 | #16 |
+| #19 | Remove `Value`; conversion sets | 3.2 | #16 |
+| #20 | Naming table; vocabulary scrub; CI jargon guard | 3.3, 4 | #19 |
+| #21 | `NonEmptyVector` | 3.6 | #20 |
+| #22 | `Validation` with a `NonEmptyVector` error side | 3.5 | #21 |
+| #23 | Generated `zip`/`zipWith` at arities 2..8 | 3.4 | #22 |
+| #24 | Remove `Seq`; concrete collection APIs; complexity notes | 3.7 | #20 |
+| #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
+| #26 | `asJava` views for sets and maps | 3.1 | #24 |
+| #27 | Builders for the other collections | 3.8.1 | #24 |
+| #28 | Rename `Stream` to `LazyList` | 3.7 | #24 |
+| #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |
+| #30 | `zazr-test` adapted; law suites | 4 | #11 |
+| #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
 
 ---
 
