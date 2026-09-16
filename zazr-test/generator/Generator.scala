@@ -193,7 +193,6 @@ def generateMainClasses(): Unit = {
               val checkedFunctionType = im.getType(s"com.guizmaii.zazr.CheckedFunction$i")
               val optionType = im.getType("com.guizmaii.zazr.control.Option")
               val randomType = im.getType("java.util.Random")
-              val tryType = im.getType("com.guizmaii.zazr.control.Try")
               val checkException = "CheckException"
               val tupleType = im.getType(s"com.guizmaii.zazr.Tuple")
 
@@ -271,16 +270,35 @@ def generateMainClasses(): Unit = {
                           final long startTime = System.currentTimeMillis();
                           try {
                               ${(1 to i).gen(j => {
-                                  s"""final Gen<T$j> gen$j = $tryType.of(() -> a$j.apply(size)).recover(x -> { throw arbitraryError($j, size, x); }).get();"""
+                                  xs"""
+                                    final Gen<T$j> gen$j;
+                                    try {
+                                        gen$j = a$j.apply(size);
+                                    } catch (Throwable x) {
+                                        throw arbitraryError($j, size, x);
+                                    }
+                                  """
                               })("\n")}
                               boolean exhausted = true;
                               for (int i = 1; i <= tries; i++) {
                                   try {
                                       ${(1 to i).gen(j => {
-                                        s"""final T$j val$j = $tryType.of(() -> gen$j.apply(random)).recover(x -> { throw genError($j, size, x); }).get();"""
+                                        xs"""
+                                          final T$j val$j;
+                                          try {
+                                              val$j = gen$j.apply(random);
+                                          } catch (Throwable x) {
+                                              throw genError($j, size, x);
+                                          }
+                                        """
                                       })("\n")}
                                       try {
-                                          final Condition condition = $tryType.of(() -> predicate.apply(${(1 to i).gen(j => s"val$j")(", ")})).recover(x -> { throw predicateError(x); }).get();
+                                          final Condition condition;
+                                          try {
+                                              condition = predicate.apply(${(1 to i).gen(j => s"val$j")(", ")});
+                                          } catch (Throwable x) {
+                                              throw predicateError(x);
+                                          }
                                           if (condition.precondition) {
                                               exhausted = false;
                                               if (!condition.postcondition) {

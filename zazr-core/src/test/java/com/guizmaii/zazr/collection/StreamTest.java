@@ -723,7 +723,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             Stream.of(vals)
                     .map(v -> Try.run(() -> consumer1.apply(v)))
                     .find(Try::isFailure)
-                    .getOrElse(() -> Try.success(null));
+                    .getOrElse(() -> Try.success(Tuple.empty()));
 
             final StringBuilder expected = new StringBuilder();
             final CheckedFunction1<Integer, Void> consumer2 = doStuff.apply(expected);
@@ -731,7 +731,7 @@ public class StreamTest extends AbstractLinearSeqTest {
                     .map(v -> Try.run(() -> consumer2.apply(v)))
                     .filter(Try::isFailure)
                     .findFirst()
-                    .orElseGet(() -> Try.success(null));
+                    .orElseGet(() -> Try.success(Tuple.empty()));
 
             assertThat(actual.toString()).isEqualTo(expected.toString());
         }

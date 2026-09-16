@@ -2,6 +2,8 @@ package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.AbstractValueTest;
 import com.guizmaii.zazr.CheckedPredicate;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.collection.Seq;
 import java.io.IOException;
@@ -37,8 +39,11 @@ public class TryTest extends AbstractValueTest {
 
     @Override
     protected <T> Try<T> empty() {
-        return Try.failure(new NoSuchElementException());
+        // one shared cause: two Failures are equal only when they hold the same Throwable (design 3.9)
+        return Try.failure(EMPTY_CAUSE);
     }
+
+    private static final NoSuchElementException EMPTY_CAUSE = new NoSuchElementException();
 
     @Override
     protected <T> Try<T> of(T element) {
@@ -49,6 +54,11 @@ public class TryTest extends AbstractValueTest {
     @Override
     protected final <T> Try<T> of(T... elements) {
         return of(elements[0]);
+    }
+
+    @Override
+    protected boolean allowsNull() {
+        return false;
     }
 
     @Override
@@ -1203,11 +1213,9 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldConvertFutureCompletedWithNullToSuccessOfNull() {
+        public void shouldRejectFutureCompletedWithNull() {
             final CompletableFuture<String> future = CompletableFuture.completedFuture(null);
-            final Try<String> result = Try.fromCompletableFuture(future);
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.get()).isNull();
+            assertThatThrownBy(() -> Try.fromCompletableFuture(future)).isInstanceOf(NullPointerException.class);
         }
 
         @Test
@@ -1341,7 +1349,7 @@ public class TryTest extends AbstractValueTest {
     class AndthenTests {
         @Test
         public void shouldComposeFailureWithAndThenWhenFailing() {
-            final Try<Void> actual = Try.run(() -> {
+            final Try<Tuple0> actual = Try.run(() -> {
                 throw new Error("err1");
             }).andThen(() -> {
                 throw new Error("err2");
@@ -1376,7 +1384,8 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldPeekFailure() {
             final List<Object> list = new ArrayList<>();
-            assertThat(failure().peek(list::add)).isEqualTo(failure());
+            final Try<Object> failure = failure();
+            assertThat(failure.peek(list::add)).isSameAs(failure);
             assertThat(list.isEmpty()).isTrue();
         }
 
@@ -1399,8 +1408,15 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldEqualFailure() {
-            assertThat(Try.failure(error())).isEqualTo(Try.failure(error()));
+        public void shouldEqualFailureWhenCauseIsTheSameObject() {
+            final Throwable error = error();
+            assertThat(Try.failure(error)).isEqualTo(Try.failure(error));
+        }
+
+        @Test
+        public void shouldNotEqualFailureWhenCausesAreDifferentObjects() {
+            // same class, same message, still two exceptions: Failure equality is reference equality on the cause
+            assertThat(Try.failure(error())).isNotEqualTo(Try.failure(error()));
         }
 
         @Test
@@ -1421,7 +1437,7 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldHashFailure() {
             final Throwable error = error();
-            assertThat(Try.failure(error).hashCode()).isEqualTo(Objects.hash(error.getClass(), error.getMessage()));
+            assertThat(Try.failure(error).hashCode()).isEqualTo(Try.failure(error).hashCode());
         }
 
         // toString
@@ -1677,7 +1693,7 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldComposeSuccessWithAndThenWhenFailing() {
-            final Try<Void> actual = Try.run(() -> {
+            final Try<Tuple0> actual = Try.run(() -> {
             }).andThen(() -> {
                 throw new Error("failure");
             });
@@ -1686,10 +1702,10 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldComposeSuccessWithAndThenWhenSucceeding() {
-            final Try<Void> actual = Try.run(() -> {
+            final Try<Tuple0> actual = Try.run(() -> {
             }).andThen(() -> {
             });
-            final Try<Void> expected = Try.success(null);
+            final Try<Tuple0> expected = Try.success(Tuple.empty());
             assertThat(actual).isEqualTo(expected);
         }
 
