@@ -8,7 +8,9 @@
     <name>zazr Parent</name>
     <description>zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
     <modules>
-        <module>vavr</module>
+        <module>zazr-core</module>
+        <module>zazr-test</module>
+        <module>zazr-benchmark</module>
     </modules>
     <url>https://github.com/guizmaii-opensource/zazr</url>
     <licenses>
@@ -423,102 +425,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>nullaway</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <fork>true</fork>
-                            <compilerArgs combine.children="append">
-                                <arg>-XDcompilePolicy=simple</arg>
-                                <arg>--should-stop=ifError=FLOW</arg>
-                                <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
-                                <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=io.vavr -XepOpt:NullAway:JSpecifyMode=true</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
-                                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-                                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-                            </compilerArgs>
-                            <annotationProcessorPaths combine.self="override">
-                                <path>
-                                    <groupId>io.vavr</groupId>
-                                    <artifactId>vavr-match</artifactId>
-                                    <version>1.0.0</version>
-                                </path>
-                                <path>
-                                    <groupId>io.vavr</groupId>
-                                    <artifactId>vavr-match-processor</artifactId>
-                                    <version>1.0.0</version>
-                                </path>
-                                <path>
-                                    <groupId>com.google.errorprone</groupId>
-                                    <artifactId>error_prone_core</artifactId>
-                                    <version>${error.prone.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>com.uber.nullaway</groupId>
-                                    <artifactId>nullaway</artifactId>
-                                    <version>${nullaway.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- A profile for running the benchmarks -->
-        <profile>
-            <id>benchmark</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>${maven.exec.version}</version>
-                        <executions>
-                            <execution>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <classpathScope>test</classpathScope>
-                                    <executable>java</executable>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <classpath/>
-                                        <argument>io.vavr.JmhRunner</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <version>${maven.surefire.version}</version>
-                            <configuration>
-                                <!-- Fixes "Unable to acquire the JMH lock" error -->
-                                <parallel>none</parallel>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
     </profiles>
 
     <repositories>
