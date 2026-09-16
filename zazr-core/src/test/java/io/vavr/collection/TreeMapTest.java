@@ -13,8 +13,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.List;
-import static io.vavr.API.Tuple;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.nullsFirst;
 
@@ -256,14 +254,14 @@ public class TreeMapTest extends AbstractSortedMapTest {
     class StaticFactoriesTests {
         @Test
         public void shouldCreateOfEntriesUsingNoComparator() {
-            final List<Tuple2<Integer, String>> expected = List(Tuple(1, "a"), Tuple(2, "b"));
+            final List<Tuple2<Integer, String>> expected = List.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             final TreeMap<Integer, String> actual = TreeMap.ofEntries(expected);
             assertThat(actual.toList()).isEqualTo(expected);
         }
 
         @Test
         public void shouldCreateOfEntriesUsingNaturalComparator() {
-            final List<Tuple2<Integer, String>> expected = List(Tuple(1, "a"), Tuple(2, "b"));
+            final List<Tuple2<Integer, String>> expected = List.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             final TreeMap<Integer, String> actual = TreeMap.ofEntries(Comparators.naturalComparator(), expected);
             assertThat(actual.toList()).isEqualTo(expected);
         }
@@ -271,7 +269,7 @@ public class TreeMapTest extends AbstractSortedMapTest {
         @Test
         public void shouldCreateOfEntriesUsingKeyComparator() {
             final TreeMap<Integer, String> actual = TreeMap.ofEntries(Comparators.naturalComparator(), asJavaEntry(1, "a"), asJavaEntry(2, "b"));
-            final List<Tuple2<Integer, String>> expected = List(Tuple(1, "a"), Tuple(2, "b"));
+            final List<Tuple2<Integer, String>> expected = List.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             assertThat(actual.toList()).isEqualTo(expected);
         }
     }
@@ -343,13 +341,13 @@ public class TreeMapTest extends AbstractSortedMapTest {
         public void shouldReturnATreeMapWithCorrectComparatorWhenFlatMappingToEmpty() {
 
             final TreeMap<Integer, String> testee = TreeMap.of(Comparator.naturalOrder(), 1, "1", 2, "2");
-            assertThat(testee.head()).isEqualTo(Tuple(1, "1"));
+            assertThat(testee.head()).isEqualTo(Tuple.of(1, "1"));
 
             final TreeMap<Integer, String> actual = testee.flatMap(Comparator.reverseOrder(), (k, v) -> List.empty());
             assertThat(actual).isEmpty();
 
             final TreeMap<Integer, String> actualSorted = actual.put(1, "1").put(2, "2");
-            assertThat(actualSorted.head()).isEqualTo(Tuple(2, "2"));
+            assertThat(actualSorted.head()).isEqualTo(Tuple.of(2, "2"));
         }
     }
 
@@ -382,7 +380,7 @@ public class TreeMapTest extends AbstractSortedMapTest {
             final TreeMap<Integer, String> testee = TreeMap.of(Comparator.reverseOrder(), 1, "a", 2, "b", 3, "c");
             final TreeMap<Integer, String> actual = testee.replaceAll((k, v) -> v + k);
             assertThat(actual.comparator()).isEqualTo(testee.comparator());
-            assertThat(actual.toList()).isEqualTo(List(Tuple(3, "c3"), Tuple(2, "b2"), Tuple(1, "a1")));
+            assertThat(actual.toList()).isEqualTo(List.of(Tuple.of(3, "c3"), Tuple.of(2, "b2"), Tuple.of(1, "a1")));
         }
     }
 }

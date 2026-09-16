@@ -1,7 +1,6 @@
 package io.vavr.collection;
 
 import io.vavr.Function1;
-import io.vavr.PartialFunction;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Option;
@@ -121,9 +120,6 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Functio
     Set<T> union(Set<? extends T> that);
 
     // -- Adjusted return types of Traversable methods
-
-    @Override
-    <R extends @Nullable Object> Set<R> collect(PartialFunction<? super T, ? extends R> partialFunction);
 
     @Override
     boolean contains(T element);

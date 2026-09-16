@@ -8,8 +8,6 @@ import java.util.Objects;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.API.Tuple;
-
 /**
  * INTERNAL: Common {@code Map} functions (not intended to be public).
  *
@@ -256,7 +254,7 @@ final class Maps {
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replace(M map, K key, V oldValue, V newValue) {
-        return map.contains(Tuple(key, oldValue)) ? (M) map.put(key, newValue) : map;
+        return map.contains(Tuple.of(key, oldValue)) ? (M) map.put(key, newValue) : map;
     }
 
     @SuppressWarnings("unchecked")
@@ -268,7 +266,7 @@ final class Maps {
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, BiFunction<? super K, ? super V, ? extends V> function) {
-        return (M) map.map((k, v) -> Tuple(k, function.apply(k, v)));
+        return (M) map.map((k, v) -> Tuple.of(k, function.apply(k, v)));
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {

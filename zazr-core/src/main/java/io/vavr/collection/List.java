@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import io.vavr.PartialFunction;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
@@ -872,11 +871,6 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
     @Override
     default List<T> asJavaMutable(Consumer<? super java.util.List<T>> action) {
         return Collections.asJava(this, action, MUTABLE);
-    }
-
-    @Override
-    default <R extends @Nullable Object> List<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        return ofAll(iterator().<R> collect(partialFunction));
     }
 
     @Override

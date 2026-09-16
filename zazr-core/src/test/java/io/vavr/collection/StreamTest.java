@@ -664,14 +664,6 @@ public class StreamTest extends AbstractLinearSeqTest {
         }
     }
 
-    @Nested
-    class IsdefinedatTests {
-        @Test
-        public void shouldBeDefinedAtNonNegativeIndexWhenInfinitelyLong() {
-            assertThat(Stream.continually(1).asPartialFunction().isDefinedAt(1)).isTrue();
-        }
-    }
-
     // -- isLazy
 
     @Override

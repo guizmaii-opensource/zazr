@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import io.vavr.PartialFunction;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
@@ -48,25 +47,6 @@ public interface LinearSeq<T extends @Nullable Object> extends Seq<T> {
 
     @Override
     LinearSeq<T> asJavaMutable(Consumer<? super java.util.List<T>> action);
-
-    @Override
-    default PartialFunction<Integer, T> asPartialFunction() throws IndexOutOfBoundsException {
-        return new PartialFunction<Integer, T>() {
-            private static final long serialVersionUID = 1L;
-            @Override
-            public T apply(Integer index) {
-                return get(index);
-            }
-            @Override
-            public boolean isDefinedAt(Integer index) {
-                // we can't use length() because of infinite long sequences
-                return 0 <= index && drop(index).nonEmpty();
-            }
-        };
-    }
-
-    @Override
-    <R extends @Nullable Object> LinearSeq<R> collect(PartialFunction<? super T, ? extends R> partialFunction);
 
     @Override
     LinearSeq<? extends LinearSeq<T>> combinations();
@@ -160,13 +140,6 @@ public interface LinearSeq<T extends @Nullable Object> extends Seq<T> {
 
     @Override
     LinearSeq<T> intersperse(T element);
-
-    @Deprecated
-    @Override
-    default boolean isDefinedAt(Integer index) {
-        // we can't use length() because of infinite long sequences
-        return 0 <= index && drop(index).nonEmpty();
-    }
 
     @Override
     default int lastIndexOfSlice(Iterable<? extends T> that, int end) {

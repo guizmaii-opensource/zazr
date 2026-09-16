@@ -1,6 +1,5 @@
 package io.vavr.control;
 
-import io.vavr.API;
 import io.vavr.AbstractValueTest;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -66,16 +65,16 @@ public class EitherLeftProjectionTest extends AbstractValueTest {
 
         @Test
         public void shouldLeftProjectionOrElseLeftProjection() {
-            final Either.LeftProjection<Integer, Integer> elseProjection = API.<Integer, Integer>Left(2).left();
-            assertThat(API.Left(1).left().orElse(elseProjection).get()).isEqualTo(1);
-            assertThat(API.Right(1).left().orElse(elseProjection).get()).isEqualTo(2);
+            final Either.LeftProjection<Integer, Integer> elseProjection = Either.<Integer, Integer>left(2).left();
+            assertThat(Either.left(1).left().orElse(elseProjection).get()).isEqualTo(1);
+            assertThat(Either.right(1).left().orElse(elseProjection).get()).isEqualTo(2);
         }
 
         @Test
         public void shouldLeftProjectionOrElseLeftProjectionFromSupplier() {
-            final Either.LeftProjection<Integer, Integer> elseProjection = API.<Integer, Integer>Left(2).left();
-            assertThat(API.Left(1).left().orElse(() -> elseProjection).get()).isEqualTo(1);
-            assertThat(API.Right(1).left().orElse(() -> elseProjection).get()).isEqualTo(2);
+            final Either.LeftProjection<Integer, Integer> elseProjection = Either.<Integer, Integer>left(2).left();
+            assertThat(Either.left(1).left().orElse(() -> elseProjection).get()).isEqualTo(1);
+            assertThat(Either.right(1).left().orElse(() -> elseProjection).get()).isEqualTo(2);
         }
 
         // getOrElse

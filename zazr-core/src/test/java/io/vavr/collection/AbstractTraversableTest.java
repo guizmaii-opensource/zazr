@@ -21,10 +21,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import org.junit.jupiter.api.TestTemplate;
 
-import static io.vavr.API.$;
-import static io.vavr.API.Case;
-import static io.vavr.API.List;
-import static io.vavr.API.Map;
 import static io.vavr.OutputTester.failingPrintStream;
 import static io.vavr.OutputTester.failingPrintWriter;
 import static java.lang.System.lineSeparator;
@@ -283,56 +279,6 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
     @TestTemplate
     public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
         assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).average().get()).isNaN();
-    }
-
-    // -- collect
-
-    @TestTemplate
-    public void shouldThrowOnCollectWhenPartialFunctionIsNull() {
-        assertThatThrownBy(() -> empty().collect((PartialFunction<Object, ?>) null))
-          .isExactlyInstanceOf(NullPointerException.class)
-          .hasMessage("partialFunction is null");
-    }
-
-    @TestTemplate
-    public void shouldCollectUsingPartialFunction() {
-        final PartialFunction<Integer, String> pf = new PartialFunction<Integer, String>() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public String apply(Integer i) {
-                return String.valueOf(i);
-            }
-
-            @Override
-            public boolean isDefinedAt(Integer i) {
-                return i % 2 == 1;
-            }
-        };
-        final Traversable<String> actual = of(1, 2, 3).collect(pf);
-        assertThat(actual).isEqualTo(of("1", "3"));
-    }
-
-    @TestTemplate
-    public void shouldCollectUsingCase() {
-        final Traversable<String> actual = of(1, 2, 3).collect(
-          Case($(i -> i % 2 == 1), String::valueOf)
-        );
-        assertThat(actual).isEqualTo(of("1", "3"));
-    }
-
-    @TestTemplate
-    public void shouldCollectUsingMap() {
-        final Map<Integer, String> map = Map(1, "one", 3, "three");
-        final Traversable<String> actual = of(1, 2, 3, 4).collect(map.asPartialFunction());
-        assertThat(actual).isEqualTo(of("one", "three"));
-    }
-
-    @TestTemplate
-    public void shouldCollectUsingSeq() {
-        final Seq<String> map = List("one", "two", "three", "four");
-        final Traversable<String> actual = of(0, 2).collect(map.asPartialFunction());
-        assertThat(actual).isEqualTo(of("one", "three"));
     }
 
     // -- contains

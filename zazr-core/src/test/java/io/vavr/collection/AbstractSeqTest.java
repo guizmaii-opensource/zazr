@@ -248,44 +248,6 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     }
 
     @Nested
-    class AspartialfunctionTests {
-        @Test
-        public void shouldUseSeqAsPartialFunction() {
-            assertThat(of(1, 2, 3).asPartialFunction().apply(1)).isEqualTo(2);
-        }
-
-        @Test
-        public void shouldNotBeDefinedAtNegativeIndexWhenEmpty() {
-            assertThat(empty().asPartialFunction().isDefinedAt(-1)).isFalse();
-        }
-
-        @Test
-        public void shouldNotBeDefinedAtNegativeIndexWhenNonEmpty() {
-            assertThat(of(1).asPartialFunction().isDefinedAt(-1)).isFalse();
-        }
-
-        @Test
-        public void shouldNotBeDefinedAtIndex0WhenEmpty() {
-            assertThat(empty().asPartialFunction().isDefinedAt(0)).isFalse();
-        }
-
-        @Test
-        public void shouldBeDefinedAtIndex0WhenNonEmpty() {
-            assertThat(of(1).asPartialFunction().isDefinedAt(0)).isTrue();
-        }
-
-        @Test
-        public void shouldBeDefinedAtLastIndexWhenNonEmpty() {
-            assertThat(of(1, 2, 3).asPartialFunction().isDefinedAt(2)).isTrue();
-        }
-
-        @Test
-        public void shouldNotBeDefinedAtIndexOutOfBoundsWhenNonEmpty() {
-            assertThat(of(1, 2, 3).asPartialFunction().isDefinedAt(3)).isFalse();
-        }
-    }
-
-    @Nested
     class CombinationsTests {
         @Test
         public void shouldComputeCombinationsOfEmptyList() {

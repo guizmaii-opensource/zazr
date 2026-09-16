@@ -1,7 +1,6 @@
 package io.vavr.control;
 
 import io.vavr.CheckedFunction1;
-import io.vavr.PartialFunction;
 import io.vavr.Value;
 import io.vavr.collection.Iterator;
 import io.vavr.collection.Seq;
@@ -167,29 +166,6 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
     static <T extends @NonNull Object> Option<T> ofOptional(Optional<? extends T> optional) {
         Objects.requireNonNull(optional, "optional is null");
         return optional.<Option<T>>map(Option::of).orElseGet(Option::none);
-    }
-
-    /**
-     * Applies a {@code partialFunction} to the value of this {@code Option} if it is defined for that value,
-     * and wraps the result in a new {@code Option}.
-     * <p>
-     * If the {@code partialFunction} is not defined for the value, {@code None} is returned.
-     *
-     * <pre>{@code
-     * if (partialFunction.isDefinedAt(value)) {
-     *     R newValue = partialFunction.apply(value);
-     *     // wrapped in Some(newValue)
-     * }
-     * }</pre>
-     *
-     * @param partialFunction a function that may not be defined for all input values
-     * @param <R>             the type of the mapped value
-     * @return a new {@code Option} containing the mapped value if defined, otherwise {@code None}
-     * @throws NullPointerException if {@code partialFunction} is null
-     */
-    default <R extends @Nullable Object> Option<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        Objects.requireNonNull(partialFunction, "partialFunction is null");
-        return flatMap(partialFunction.lift()::apply);
     }
 
     /**

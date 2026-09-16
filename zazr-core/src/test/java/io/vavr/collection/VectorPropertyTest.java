@@ -1,6 +1,7 @@
 package io.vavr.collection;
 
 import io.vavr.Function2;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.util.List;
 import java.util.Random;
@@ -9,7 +10,6 @@ import java.util.function.Predicate;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.Tuple;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class VectorPropertyTest {
@@ -223,14 +223,14 @@ public class VectorPropertyTest {
                     expected = io.vavr.collection.List.ofAll(Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
                     actual = (percent(random) < 30) ? Vector.narrow(Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected))) : Vector.ofAll(expected);
                     assertAreEqual(expected, actual);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 50) {
                     final Object value = randomValue(random);
                     expected = expected.append(value);
                     actual = assertAreEqual(actual, value, Vector::append, expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
                 if (percent(random) < 10) {
                     Iterable<Object> values = randomValues(random, random.nextInt(2 * BitMappedTrie.BRANCHING_FACTOR));
@@ -238,14 +238,14 @@ public class VectorPropertyTest {
 
                     values = (percent(random) < 50) ? Iterator.ofAll(values.iterator()) : values;  /* not traversable again */
                     actual = assertAreEqual(actual, values, Vector::appendAll, expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 50) {
                     final Object value = randomValue(random);
                     expected = expected.prepend(value);
                     actual = assertAreEqual(actual, value, Vector::prepend, expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
                 if (percent(random) < 10) {
                     Iterable<Object> values = randomValues(random, random.nextInt(2 * BitMappedTrie.BRANCHING_FACTOR));
@@ -253,14 +253,14 @@ public class VectorPropertyTest {
 
                     values = (percent(random) < 50) ? Iterator.ofAll(values) : values;  /* not traversable again */
                     actual = assertAreEqual(actual, values, Vector::prependAll, expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 30) {
                     final int n = random.nextInt(expected.size() + 1);
                     expected = expected.drop(n);
                     actual = assertAreEqual(actual, n, Vector::drop, expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 10) {
@@ -270,26 +270,26 @@ public class VectorPropertyTest {
 
                     values = (percent(random) < 50) ? Iterator.ofAll(values) : values;  /* not traversable again */
                     actual = assertAreEqual(actual, values, (a, p) -> a.insertAll(index, p), expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 30) {
                     final int n = random.nextInt(expected.size() + 1);
                     expected = expected.take(n);
                     actual = assertAreEqual(actual, n, Vector::take, expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (!expected.isEmpty()) {
                     assertThat(actual.head()).isEqualTo(expected.head());
                     Assertions.assertThat(actual.tail().toJavaList()).isEqualTo(expected.tail().toJavaList());
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (!expected.isEmpty()) {
                     final int index = random.nextInt(expected.size());
                     assertThat(actual.get(index)).isEqualTo(expected.get(index));
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 50) {
@@ -298,7 +298,7 @@ public class VectorPropertyTest {
                         final Object value = randomValue(random);
                         expected = expected.update(index, value);
                         actual = assertAreEqual(actual, null, (a, p) -> a.update(index, value), expected);
-                        history = history.append(Tuple(expected, actual));
+                        history = history.append(Tuple.of(expected, actual));
                     }
                 }
 
@@ -306,14 +306,14 @@ public class VectorPropertyTest {
                     final Function<Object, Object> mapper = val -> (val instanceof Integer) ? ((Integer) val + 1) : val;
                     expected = expected.map(mapper);
                     actual = assertAreEqual(actual, null, (a, p) -> a.map(mapper), expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 30) {
                     final Predicate<Object> filter = val -> (String.valueOf(val).length() % 10) == 0;
                     expected = expected.filter(filter);
                     actual = assertAreEqual(actual, null, (a, p) -> a.filter(filter), expected);
-                    history = history.append(Tuple(expected, actual));
+                    history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 30) {
@@ -323,7 +323,7 @@ public class VectorPropertyTest {
                             final int from = random.nextInt(to + 1);
                             expected = expected.slice(from, to);
                             actual = assertAreEqual(actual, null, (a, p) -> a.slice(from, to), expected);
-                            history = history.append(Tuple(expected, actual));
+                            history = history.append(Tuple.of(expected, actual));
                         }
                     }
                 }

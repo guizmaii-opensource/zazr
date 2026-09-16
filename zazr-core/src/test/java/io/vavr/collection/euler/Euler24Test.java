@@ -1,12 +1,9 @@
 package io.vavr.collection.euler;
 
-import io.vavr.API;
 import io.vavr.Function1;
 import io.vavr.collection.List;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.$;
-import static io.vavr.API.Case;
 import static io.vavr.collection.euler.Utils.factorial;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,15 +53,14 @@ public class Euler24Test {
      * of permutations achievable in each position instead of actually doing the permutations.
      */
     private static String lexicographicPermutation(List<String> stringsToPermutate, int ordinal) {
-        return API.Match(stringsToPermutate.sorted()).of(
-                Case($((List<String> sx) -> sx.length() == 1), sx -> sx.mkString()),
-                Case($(), sx -> {
-                    final int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.length() - 1);
-                    final int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
-                    final int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
-                    return List.of(sx.get(headCharPosition - 1)).mkString() + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);
-                })
-        );
+        final List<String> sx = stringsToPermutate.sorted();
+        if (sx.length() == 1) {
+            return sx.mkString();
+        }
+        final int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.length() - 1);
+        final int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
+        final int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
+        return List.of(sx.get(headCharPosition - 1)).mkString() + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);
     }
 
     private static final Function1<Integer, Integer> memoizedFactorial = Function1.of((Integer i) -> factorial(i).intValue()).memoized();

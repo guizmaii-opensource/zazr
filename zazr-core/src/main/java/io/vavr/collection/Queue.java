@@ -780,11 +780,6 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
-    public <R extends @Nullable Object> Queue<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        return ofAll(iterator().<R> collect(partialFunction));
-    }
-
-    @Override
     public Queue<Queue<T>> combinations() {
         return ofAll(toList().combinations().map(Queue::ofAll));
     }

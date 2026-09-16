@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import io.vavr.PartialFunction;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Option;
@@ -51,24 +50,6 @@ public interface IndexedSeq<T extends @Nullable Object> extends Seq<T> {
 
     @Override
     IndexedSeq<T> asJavaMutable(Consumer<? super java.util.List<T>> action);
-
-    @Override
-    default PartialFunction<Integer, T> asPartialFunction() throws IndexOutOfBoundsException {
-        return new PartialFunction<Integer, T>() {
-            private static final long serialVersionUID = 1L;
-            @Override
-            public T apply(Integer index) {
-                return get(index);
-            }
-            @Override
-            public boolean isDefinedAt(Integer index) {
-                return 0 <= index && index < length();
-            }
-        };
-    }
-
-    @Override
-    <R extends @Nullable Object> IndexedSeq<R> collect(PartialFunction<? super T, ? extends R> partialFunction);
 
     @Override
     IndexedSeq<? extends IndexedSeq<T>> combinations();
@@ -178,12 +159,6 @@ public interface IndexedSeq<T extends @Nullable Object> extends Seq<T> {
 
     @Override
     IndexedSeq<T> intersperse(T element);
-
-    @Deprecated
-    @Override
-    default boolean isDefinedAt(Integer index) {
-        return 0 <= index && index < length();
-    }
 
     @Override
     default T last() {

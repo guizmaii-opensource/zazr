@@ -634,11 +634,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <R extends @Nullable Object> LinkedHashSet<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        return ofAll(iterator().<R> collect(partialFunction));
-    }
-
-    @Override
     public boolean contains(T element) {
         return map.get(element).isDefined();
     }

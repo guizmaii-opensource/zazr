@@ -2,8 +2,6 @@ package io.vavr.control;
 
 import io.vavr.AbstractValueTest;
 import io.vavr.CheckedPredicate;
-import io.vavr.Function1;
-import io.vavr.PartialFunction;
 import io.vavr.Value;
 import io.vavr.collection.Seq;
 import java.io.IOException;
@@ -26,11 +24,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.$;
-import static io.vavr.API.Case;
-import static io.vavr.API.Failure;
-import static io.vavr.API.Success;
-import static io.vavr.Predicates.instanceOf;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -136,45 +129,6 @@ public class TryTest extends AbstractValueTest {
             assertThrows(InterruptedException.class, () ->
               Try.<Object>failure(original).andFinallyTry(() -> { throw new InterruptedException(); }));
             assertThat(original.getSuppressed()).isEmpty();
-        }
-    }
-
-    @Nested
-    class CollectTests {
-        @Test
-        public void shouldCollectDefinedValueUsingPartialFunction() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf)
-              .partial(i -> i % 2 == 1);
-            assertThat(Try.success(3).collect(pf)).isEqualTo(Try.success("3"));
-        }
-
-        @Test
-        public void shouldFilterNotDefinedValueUsingPartialFunction() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf)
-              .partial(i -> i % 2 == 1);
-            assertThat(Try.success(2).collect(pf).isFailure());
-        }
-
-        @Test
-        public void shouldCollectFailureUsingPartialFunction() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf)
-              .partial(i -> i % 2 == 1);
-            assertThat(Try.<Integer>failure(new RuntimeException()).collect(pf).isFailure());
-        }
-
-        @Test
-        public void shouldCollectFailureWhenPartialFunctionThrows() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String>of(String::valueOf)
-              .partial(i -> i % 2 == 1);
-            assertThat(Try.success(3).collect(pf).isFailure());
-        }
-
-        @Test
-        public void shouldThrowExceptionOnNullCollectPartialFunction() {
-            assertThrows(NullPointerException.class, () -> {
-                final PartialFunction<Integer, String> pf = null;
-                Try.success(3).collect(pf);
-            });
         }
     }
 
@@ -422,7 +376,7 @@ public class TryTest extends AbstractValueTest {
     public void shouldCreateSuccessTryWithResources1() {
         final Closeable<Integer> closeable1 = Closeable.of(1);
         final Try<String> actual = Try.withResources(() -> closeable1).of(i1 -> "" + i1.value);
-        assertThat(actual).isEqualTo(Success("1"));
+        assertThat(actual).isEqualTo(Try.success("1"));
         assertThat(closeable1.isClosed).isTrue();
     }
 
@@ -440,7 +394,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable2 = Closeable.of(2);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2)
           .of((i1, i2) -> "" + i1.value + i2.value);
-        assertThat(actual).isEqualTo(Success("12"));
+        assertThat(actual).isEqualTo(Try.success("12"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
     }
@@ -463,7 +417,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable3 = Closeable.of(3);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3)
           .of((i1, i2, i3) -> "" + i1.value + i2.value + i3.value);
-        assertThat(actual).isEqualTo(Success("123"));
+        assertThat(actual).isEqualTo(Try.success("123"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
         assertThat(closeable3.isClosed).isTrue();
@@ -490,7 +444,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable4 = Closeable.of(4);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4)
           .of((i1, i2, i3, i4) -> "" + i1.value + i2.value + i3.value + i4.value);
-        assertThat(actual).isEqualTo(Success("1234"));
+        assertThat(actual).isEqualTo(Try.success("1234"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
         assertThat(closeable3.isClosed).isTrue();
@@ -521,7 +475,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable5 = Closeable.of(5);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5)
           .of((i1, i2, i3, i4, i5) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value);
-        assertThat(actual).isEqualTo(Success("12345"));
+        assertThat(actual).isEqualTo(Try.success("12345"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
         assertThat(closeable3.isClosed).isTrue();
@@ -556,7 +510,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable6 = Closeable.of(6);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6)
           .of((i1, i2, i3, i4, i5, i6) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value + i6.value);
-        assertThat(actual).isEqualTo(Success("123456"));
+        assertThat(actual).isEqualTo(Try.success("123456"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
         assertThat(closeable3.isClosed).isTrue();
@@ -595,7 +549,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable7 = Closeable.of(7);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6, () -> closeable7)
           .of((i1, i2, i3, i4, i5, i6, i7) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value + i6.value + i7.value);
-        assertThat(actual).isEqualTo(Success("1234567"));
+        assertThat(actual).isEqualTo(Try.success("1234567"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
         assertThat(closeable3.isClosed).isTrue();
@@ -638,7 +592,7 @@ public class TryTest extends AbstractValueTest {
         final Closeable<Integer> closeable8 = Closeable.of(8);
         final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6, () -> closeable7, () -> closeable8)
           .of((i1, i2, i3, i4, i5, i6, i7, i8) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value + i6.value + i7.value + i8.value);
-        assertThat(actual).isEqualTo(Success("12345678"));
+        assertThat(actual).isEqualTo(Try.success("12345678"));
         assertThat(closeable1.isClosed).isTrue();
         assertThat(closeable2.isClosed).isTrue();
         assertThat(closeable3.isClosed).isTrue();
@@ -1072,19 +1026,19 @@ public class TryTest extends AbstractValueTest {
     class TransformTests {
         @Test
         public void shouldThrowWhenTransformationIsNull() {
-            assertThrows(NullPointerException.class, () -> Success(1).transform(null));
+            assertThrows(NullPointerException.class, () -> Try.success(1).transform(null));
         }
 
         @Test
         public void shouldTransformSuccess() {
-            final int actual = Success(1).transform(self -> self.get() - 1);
+            final int actual = Try.success(1).transform(self -> self.get() - 1);
             assertThat(actual).isEqualTo(0);
         }
 
         @Test
         public void shouldTransformFailure() {
             final Error error = new Error();
-            final Throwable actual = Failure(error).transform(Try::getCause);
+            final Throwable actual = Try.failure(error).transform(Try::getCause);
             assertThat(actual).isSameAs(error);
         }
     }
@@ -1381,39 +1335,6 @@ public class TryTest extends AbstractValueTest {
           .map(x -> Integer.parseInt("aaa") + x)   //Throws exception.
           .map(x -> x / 2);
         assertThat(actual.toString()).isEqualTo("Failure(java.lang.NumberFormatException: For input string: \"aaa\")");
-    }
-
-    @Nested
-    class MapfailureTests {
-        @SuppressWarnings("unchecked")
-        @Test
-        public void shouldMapFailureWhenSuccess() {
-            final Try<Integer> testee = Success(1);
-            final Try<Integer> actual = testee.mapFailure(
-              Case($(instanceOf(RuntimeException.class)), (Function<RuntimeException, Error>) Error::new)
-            );
-            assertThat(actual).isSameAs(testee);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Test
-        public void shouldMapFailureWhenFailureAndMatches() {
-            final Try<Integer> testee = Failure(new IOException());
-            final Try<Integer> actual = testee.mapFailure(
-              Case($(instanceOf(IOException.class)), (Function<IOException, Error>) Error::new)
-            );
-            assertThat(actual.getCause()).isInstanceOf(Error.class);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Test
-        public void shouldMapFailureWhenFailureButDoesNotMatch() {
-            final Try<Integer> testee = Failure(new IOException());
-            final Try<Integer> actual = testee.mapFailure(
-              Case($(instanceOf(RuntimeException.class)), (Function<RuntimeException, Error>) Error::new)
-            );
-            assertThat(actual).isSameAs(testee);
-        }
     }
 
     @Nested

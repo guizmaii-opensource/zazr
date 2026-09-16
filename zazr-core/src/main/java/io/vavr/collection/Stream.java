@@ -948,11 +948,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default <R extends @Nullable Object> Stream<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        return ofAll(iterator().<R> collect(partialFunction));
-    }
-
-    @Override
     default Stream<Stream<T>> combinations() {
         return Stream.rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity());
     }

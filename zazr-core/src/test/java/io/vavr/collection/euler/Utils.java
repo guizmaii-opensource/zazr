@@ -1,6 +1,5 @@
 package io.vavr.collection.euler;
 
-import io.vavr.API;
 import io.vavr.Function1;
 import io.vavr.collection.Iterator;
 import io.vavr.collection.Stream;
@@ -9,8 +8,6 @@ import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.Scanner;
-
-import static io.vavr.API.$;
 
 final class Utils {
 
@@ -41,14 +38,14 @@ final class Utils {
     }
 
     static boolean isPrime(long val) {
-        return API.Match(val).of(
-                API.Case($(n -> n < 2L), false),
-                API.Case($(2L), true),
-                API.Case($(), n -> {
-                    final double upperLimitToCheck = Math.sqrt(n);
-                    return !PrimeNumbers.primes().takeWhile(d -> d <= upperLimitToCheck).exists(d -> n % d == 0);
-                })
-        );
+        if (val < 2L) {
+            return false;
+        }
+        if (val == 2L) {
+            return true;
+        }
+        final double upperLimitToCheck = Math.sqrt(val);
+        return !PrimeNumbers.primes().takeWhile(d -> d <= upperLimitToCheck).exists(d -> val % d == 0);
     }
 
     static Stream<String> readLines(File file) {

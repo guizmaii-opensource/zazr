@@ -1180,12 +1180,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     // -- Additional methods of Iterator
 
-    @Override
-    default <R extends @Nullable Object> Iterator<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        Objects.requireNonNull(partialFunction, "partialFunction is null");
-        return filter(partialFunction::isDefinedAt).map(partialFunction::apply);
-    }
-
     /**
      * Returns a new {@code Iterator} that yields the elements of this iterator
      * followed by all elements of the specified iterator.

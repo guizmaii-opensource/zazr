@@ -20,19 +20,6 @@
     </licenses>
     <dependencies>
         <dependency>
-            <groupId>io.vavr</groupId>
-            <artifactId>vavr-match</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.vavr</groupId>
-            <artifactId>vavr-match-processor</artifactId>
-            <version>1.0.0</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
             <version>1.0.1</version>
@@ -129,16 +116,6 @@
                                 <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
                             </compilerArgs>
                             <annotationProcessorPaths combine.self="override">
-                                <path>
-                                    <groupId>io.vavr</groupId>
-                                    <artifactId>vavr-match</artifactId>
-                                    <version>1.0.0</version>
-                                </path>
-                                <path>
-                                    <groupId>io.vavr</groupId>
-                                    <artifactId>vavr-match-processor</artifactId>
-                                    <version>1.0.0</version>
-                                </path>
                                 <path>
                                     <groupId>com.google.errorprone</groupId>
                                     <artifactId>error_prone_core</artifactId>
