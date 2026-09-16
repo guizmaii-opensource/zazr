@@ -634,11 +634,6 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
         return map(ignored -> value);
     }
 
-    @Override
-    default Try<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
     /**
      * Applies the given checked function to the value of this {@link Success}, or returns this {@link Failure} unchanged.
      * <p>

@@ -841,11 +841,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public HashSet<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     public String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
         return iterator().mkString(prefix, delimiter, suffix);
     }

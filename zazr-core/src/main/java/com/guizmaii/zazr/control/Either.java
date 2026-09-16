@@ -633,11 +633,6 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
         return this.map(__ -> value);
     }
 
-    @Override
-    default Either<L, @Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>mapTo(null);
-    }
-
     /**
      * Indicates that a right-biased {@code Either} computes its value synchronously.
      *

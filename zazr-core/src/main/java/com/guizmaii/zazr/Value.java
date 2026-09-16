@@ -322,15 +322,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     }
 
     /**
-     * Maps the underlying value to Void
-     *
-     * @return A new value of type Void
-     */
-    default Value<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map((ignored) -> null);
-    }
-
-    /**
      * Checks if this {@code Value} is asynchronously (short: async) computed.
      * <p>
      * Methods of a {@code Value} instance that operate on the underlying value may block the current thread

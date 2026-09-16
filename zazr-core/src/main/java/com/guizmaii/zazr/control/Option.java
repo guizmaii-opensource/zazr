@@ -360,11 +360,6 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
         return map(ignored -> value);
     }
 
-    @Override
-    default Option<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
     /**
      * Converts this {@code Option} to a {@link Try}, then applies the given checked function if this is a {@link Try.Success},
      * passing the contained value to it.

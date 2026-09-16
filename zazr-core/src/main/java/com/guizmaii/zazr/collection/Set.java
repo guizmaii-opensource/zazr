@@ -187,11 +187,6 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Functio
     }
 
     @Override
-    default Set<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     Set<T> orElse(Iterable<? extends T> other);
 
     @Override

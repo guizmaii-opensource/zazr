@@ -192,11 +192,6 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public Seq<Void> mapToVoid() {
-        return map(ignored -> null);
-    }
-
-    @Override
     public IntMap<T> orElse(Iterable<? extends T> other) {
         return unit(original.orElse(List.ofAll(other).zipWithIndex().map(t -> Tuple.of(t._2(), t._1()))));
     }

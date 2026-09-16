@@ -1079,11 +1079,6 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
-    public Queue<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     public Queue<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }

@@ -307,11 +307,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
         return map(ignored -> value);
     }
 
-    @Override
-    default Seq<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
     /**
      * Maps the entries of this {@code Map} to form a new {@code Map}.
      *

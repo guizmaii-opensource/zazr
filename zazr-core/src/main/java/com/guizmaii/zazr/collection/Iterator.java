@@ -1875,11 +1875,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
-    default Iterator<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     default Iterator<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }

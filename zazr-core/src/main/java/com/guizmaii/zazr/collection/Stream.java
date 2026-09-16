@@ -1312,11 +1312,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default Stream<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     default Stream<T> padTo(int length, T element) {
         if (length <= 0) {
             return this;

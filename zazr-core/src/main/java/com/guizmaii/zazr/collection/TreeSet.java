@@ -918,11 +918,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return map(ignored -> value);
     }
 
-    @Override
-    public TreeSet<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map((o1, o2) -> 0, ignored -> null);
-    }
-
     /**
      * Returns this {@code TreeSet} if it is nonempty,
      * otherwise {@code TreeSet} created from iterable, using existing comparator.

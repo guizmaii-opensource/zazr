@@ -215,15 +215,6 @@ public abstract class AbstractValueTest {
         assertThat(of(3).mapTo(2)).isEqualTo(of(1).map(ignored -> 2));
     }
 
-    // -- mapToVoid
-
-    @TestTemplate
-    public void shouldExecuteMapToVoidCorrectly() {
-        assertThat(empty().mapToVoid()).isEqualTo(empty());
-        assertThat(of(1).mapToVoid()).isEqualTo(of(1).mapTo(null));
-        assertThat(of(1).mapToVoid()).isEqualTo(of(1).map(ignored -> null));
-    }
-
     // -- forEach
 
     @TestTemplate

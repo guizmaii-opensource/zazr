@@ -172,11 +172,6 @@ public interface LinearSeq<T extends @Nullable Object> extends Seq<T> {
     }
 
     @Override
-    default LinearSeq<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     LinearSeq<T> orElse(Iterable<? extends T> other);
 
     @Override

@@ -649,11 +649,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
         return map(ignored -> value);
     }
 
-    @Override
-    default Traversable<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
     /**
      * Returns the maximum element of this Traversable according to the natural order of its elements.
      * <p>

@@ -218,11 +218,6 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
     }
 
     @Override
-    public Lazy<@Nullable Void> mapToVoid() {
-        return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    @Override
     public Lazy<T> peek(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         action.accept(get());
