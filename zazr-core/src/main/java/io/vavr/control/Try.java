@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1294,6 +1295,22 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
                 return this;
             }
             return new Failure<>(t);
+        }
+    }
+
+    /**
+     * Converts this to a {@link CompletableFuture}, already completed.
+     *
+     * @return a new {@link CompletableFuture}, completed with the value if this is a {@link Success}, or
+     *         completed exceptionally with the cause if this is a {@link Failure}
+     */
+    default CompletableFuture<T> toCompletableFuture() {
+        if (isSuccess()) {
+            return CompletableFuture.completedFuture(get());
+        } else {
+            final CompletableFuture<T> completableFuture = new CompletableFuture<>();
+            completableFuture.completeExceptionally(getCause());
+            return completableFuture;
         }
     }
 
