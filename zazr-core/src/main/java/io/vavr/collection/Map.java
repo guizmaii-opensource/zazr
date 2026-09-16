@@ -287,15 +287,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     }
 
     /**
-     * Turns this map into a plain function returning an Option result.
-     *
-     * @return a function that takes a key k and returns its value in a Some if found, otherwise a None.
-     */
-    default Function1<K, Option<V>> lift() {
-        return this::get;
-    }
-
-    /**
      * Maps the {@code Map} entries to a sequence of values.
      * <p>
      * Please use {@link #map(BiFunction)} if the result has to be of type {@code Map}.
