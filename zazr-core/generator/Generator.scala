@@ -45,7 +45,7 @@ case class Arity(i: Int) {
   val paramsDecl: String = (1 to i).gen(j => s"T$j t$j")(using ", ") // "T1 t1, T2 t2, T3 t3"
   val params: String = (1 to i).gen(j => s"t$j")(using ", ") // "t1, t2, t3"
   val paramsReversed: String = (1 to i).reverse.gen(j => s"t$j")(using ", ") // "t3, t2, t1"
-  val tupled: String = (1 to i).gen(j => s"t._$j")(using ", ") // "t._1, t._2, t._3"
+  val tupled: String = (1 to i).gen(j => s"t._$j()")(using ", ") // "t._1(), t._2(), t._3()"
   val underscoreParams: String = (1 to i).gen(j => s"_$j")(using ", ") // "_1, _2, _3"
 
   /** Generates @param javadoc tags for type parameters T1..Ti */
@@ -627,7 +627,7 @@ def generateMainClasses(): Unit = {
                 """ else xs"""
                   return (t1, t2) -> {
                       ${(1 to i).gen(j => xs"""
-                        final int check$j = t${j}Comp.compare(t1._$j, t2._$j);
+                        final int check$j = t${j}Comp.compare(t1._$j(), t2._$j());
                         if (check$j != 0) {
                             return check$j;
                         }
@@ -646,7 +646,7 @@ def generateMainClasses(): Unit = {
                   final $className$resultGenerics t2 = ($className$resultGenerics) o2;
 
                   ${(1 to i).gen(j => xs"""
-                    final int check$j = t1._$j.compareTo(t2._$j);
+                    final int check$j = t1._$j().compareTo(t2._$j());
                     if (check$j != 0) {
                         return check$j;
                     }
@@ -817,7 +817,7 @@ def generateMainClasses(): Unit = {
                */
               public <${(i+1 to i+j).gen(k => s"T$k " + nullableBound)(using ", ")}> Tuple${i+j}<${(1 to i+j).gen(k => s"T$k")(using ", ")}> concat(Tuple$j<${(i+1 to i+j).gen(k => s"T$k")(using ", ")}> tuple) {
                   Objects.requireNonNull(tuple, "tuple is null");
-                  return ${im.getType("com.guizmaii.zazr.Tuple")}.of(${(1 to i).gen(k => s"_$k")(using ", ")}${(i > 0).gen(", ")}${(1 to j).gen(k => s"tuple._$k")(using ", ")});
+                  return ${im.getType("com.guizmaii.zazr.Tuple")}.of(${(1 to i).gen(k => s"_$k")(using ", ")}${(i > 0).gen(", ")}${(1 to j).gen(k => s"tuple._$k()")(using ", ")});
               }
             """)(using "\n\n")}
 
@@ -1694,7 +1694,7 @@ def generateTestClasses(): Unit = {
                 @$test
                 public void shouldReturnElements() {
                     final Tuple$i$intGenerics tuple = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")});
-                    ${(1 to i).gen(j => s"$assertThat(tuple._$j).isEqualTo($j);\n")}
+                    ${(1 to i).gen(j => s"$assertThat(tuple._$j()).isEqualTo($j);\n")}
                 }
               """)}
 
@@ -1703,7 +1703,7 @@ def generateTestClasses(): Unit = {
                   @$test
                   public void shouldUpdate$j() {
                     final Tuple$i$intGenerics tuple = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")}).update$j(42);
-                    ${(1 to i).gen(k => s"$assertThat(tuple._$k).isEqualTo(${if (j == k) 42 else k});\n")}
+                    ${(1 to i).gen(k => s"$assertThat(tuple._$k()).isEqualTo(${if (j == k) 42 else k});\n")}
                   }
                 """)(using "\n\n")}
 

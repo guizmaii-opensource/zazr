@@ -41,7 +41,7 @@ public class Euler19Test {
     private static int findNumberOfFirstMonthDaysOnSunday(int startYear, int endYear) {
         return List.rangeClosed(startYear, endYear)
                 .flatMap(year -> List.of(Month.values()).map(month -> Tuple.of(year, month)))
-                .filter(t -> isFirstDayOfMonthSunday(t._1, t._2))
+                .filter(t -> isFirstDayOfMonthSunday(t._1(), t._2()))
                 .length();
     }
 

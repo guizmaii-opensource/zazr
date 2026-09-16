@@ -35,7 +35,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
 
     public static <T1 extends @Nullable Object> Comparator<Tuple1<T1>> comparator(Comparator<? super T1> t1Comp) {
         return (t1, t2) -> {
-            final int check1 = t1Comp.compare(t1._1, t2._1);
+            final int check1 = t1Comp.compare(t1._1(), t2._1());
             if (check1 != 0) {
                 return check1;
             }
@@ -50,7 +50,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
         final Tuple1<U1> t1 = (Tuple1<U1>) o1;
         final Tuple1<U1> t2 = (Tuple1<U1>) o2;
 
-        final int check1 = t1._1.compareTo(t2._1);
+        final int check1 = t1._1().compareTo(t2._1());
         if (check1 != 0) {
             return check1;
         }
@@ -140,7 +140,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object> Tuple2<T1, T2> concat(Tuple1<T2> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1);
+        return Tuple.of(_1, tuple._1());
     }
 
     /**
@@ -154,7 +154,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<T1, T2, T3> concat(Tuple2<T2, T3> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1, tuple._2);
+        return Tuple.of(_1, tuple._1(), tuple._2());
     }
 
     /**
@@ -169,7 +169,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<T1, T2, T3, T4> concat(Tuple3<T2, T3, T4> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1, tuple._2, tuple._3);
+        return Tuple.of(_1, tuple._1(), tuple._2(), tuple._3());
     }
 
     /**
@@ -185,7 +185,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<T1, T2, T3, T4, T5> concat(Tuple4<T2, T3, T4, T5> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1, tuple._2, tuple._3, tuple._4);
+        return Tuple.of(_1, tuple._1(), tuple._2(), tuple._3(), tuple._4());
     }
 
     /**
@@ -202,7 +202,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<T1, T2, T3, T4, T5, T6> concat(Tuple5<T2, T3, T4, T5, T6> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1, tuple._2, tuple._3, tuple._4, tuple._5);
+        return Tuple.of(_1, tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5());
     }
 
     /**
@@ -220,7 +220,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<T1, T2, T3, T4, T5, T6, T7> concat(Tuple6<T2, T3, T4, T5, T6, T7> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1, tuple._2, tuple._3, tuple._4, tuple._5, tuple._6);
+        return Tuple.of(_1, tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6());
     }
 
     /**
@@ -239,7 +239,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
      */
     public <T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> concat(Tuple7<T2, T3, T4, T5, T6, T7, T8> tuple) {
         Objects.requireNonNull(tuple, "tuple is null");
-        return Tuple.of(_1, tuple._1, tuple._2, tuple._3, tuple._4, tuple._5, tuple._6, tuple._7);
+        return Tuple.of(_1, tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6(), tuple._7());
     }
 
     // -- Object
