@@ -213,7 +213,9 @@ public class ArbitraryTest {
 
         final LocalDateTime date = arbitrary.apply(100).apply(predictableRandom);
 
-        assertThat(date).isEqualTo("2063-04-22T01:46:10.312");
+        // pins the value drawn from the predictable RNG; it changed when Gen.choose(long, long) moved from a
+        // double-scaled formula (which could overflow and round past the bounds) to nextLong(bound)
+        assertThat(date).isEqualTo("1960-12-13T18:06:14.709");
     }
 
     @Test
