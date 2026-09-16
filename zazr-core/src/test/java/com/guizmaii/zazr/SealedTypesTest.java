@@ -193,8 +193,9 @@ public class SealedTypesTest {
             assertThatThrownBy(() -> new Success<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
             assertThatThrownBy(() -> new Failure<>(null)).isInstanceOf(NullPointerException.class).hasMessage("cause is null");
             assertThatThrownBy(() -> Try.success(null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> Try.of(() -> null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> Try.success(1).mapTry(i -> null)).isInstanceOf(NullPointerException.class);
+            // a computation that yields null is captured, not thrown: every non-fatal outcome ends up in the Try
+            assertThat(Try.of(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(Try.success(1).mapTry(i -> null).getCause()).isInstanceOf(NullPointerException.class);
         }
 
         @Test

@@ -30,9 +30,11 @@ import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
  *     case Failure(var cause) -> "failed: " + cause.getMessage();
  * };
  * }</pre>
- * A {@code Success} never holds {@code null}: {@link #success(Object)} throws, and so does {@link #of(CheckedFunction0)}
- * when the computation returns {@code null}. A computation that returns nothing is run with {@link #run(CheckedRunnable)},
- * whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
+ * A {@code Success} never holds {@code null}: {@link #success(Object)} throws, and a computation that returns
+ * {@code null} under {@link #of(CheckedFunction0)}, {@link #mapTry(CheckedFunction1)} or
+ * {@link #fromCompletableFuture(CompletableFuture)} is captured, like any other non-fatal outcome, as a
+ * {@code Failure} of a {@link NullPointerException}. A computation that returns nothing is run with
+ * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
  * {@code Throwable} instance, see {@link Failure}.
  * <p>
  * The following exceptions are considered fatal or non-recoverable:
@@ -62,24 +64,24 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * <p>
      * If the supplier executes without throwing an exception, a {@link Success} containing the result is returned.
      * If a non-fatal exception occurs during execution, a {@link Failure} wrapping the thrown exception is returned;
-     * fatal throwables (see the class-level documentation) are rethrown instead. A {@code null} result is not
-     * captured: a {@code Success} cannot hold {@code null}, so the {@link NullPointerException} is thrown to the
-     * caller like {@link #success(Object) success(null)} would.
+     * fatal throwables (see the class-level documentation) are rethrown instead. A {@code Success} cannot hold
+     * {@code null}, so a {@code null} result is captured as a {@link Failure} of a {@link NullPointerException}:
+     * every non-fatal outcome of the computation ends up in the returned {@code Try}.
      *
      * @param supplier the checked supplier to execute
      * @param <T>      the type of the value returned by the supplier
-     * @return a {@link Success} with the supplier's result, or a {@link Failure} if an exception is thrown
-     * @throws NullPointerException if {@code supplier} is {@code null}, or returns {@code null}
+     * @return a {@link Success} with the supplier's result, or a {@link Failure} if an exception is thrown or the
+     *         result is {@code null}
+     * @throws NullPointerException if {@code supplier} is {@code null}
      */
     static <T extends @Nullable Object> Try<T> of(CheckedFunction0<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        final T value;
         try {
-            value = supplier.apply();
+            final T value = supplier.apply();
+            return value == null ? TryModule.nullResult("Try.of") : new Success<>(value);
         } catch (Throwable t) {
             return new Failure<>(t);
         }
-        return new Success<>(value);
     }
 
     /**
@@ -255,9 +257,14 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param future the future to join
      * @param <T>    the type of the future's result
      * @return a {@link Success} with the future's result, or a {@link Failure} describing why it did not complete
-     * @throws NullPointerException if {@code future} is {@code null}, or completed with {@code null} (a
-     *                              {@code Success} cannot hold {@code null}; map a {@code CompletableFuture<Void>}
-     *                              to a value first)
+     * A future completed with {@code null} (a {@code CompletableFuture<Void>}, typically) yields a {@link Failure}
+     * of a {@link NullPointerException}, since a {@code Success} cannot hold {@code null}; map it to a value first.
+     *
+     * @param future the future to join
+     * @param <T>    the type of the future's result
+     * @return a {@link Success} with the future's result, or a {@link Failure} describing why it did not complete
+     *         or that it completed with {@code null}
+     * @throws NullPointerException if {@code future} is {@code null}
      */
     static <T extends @Nullable Object> Try<T> fromCompletableFuture(CompletableFuture<? extends T> future) {
         Objects.requireNonNull(future, "future is null");
@@ -270,7 +277,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
             final Throwable cause = e.getCause();
             return new Failure<>(cause != null ? cause : e);
         }
-        return new Success<>(value);
+        return value == null ? TryModule.nullResult("Try.fromCompletableFuture") : new Success<>(value);
     }
 
     /**
@@ -669,11 +676,13 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      *    .mapTry(x -> 1 / x); // division by zero will result in a Failure
      * }</pre>
      *
+     * A {@code null} result is captured as a {@link Failure} of a {@link NullPointerException}, since a
+     * {@code Success} cannot hold {@code null}.
+     *
      * @param <U>    the type of the result
      * @param mapper a checked function to apply to the value
      * @return a new {@code Try} containing the mapped value if this is a {@link Success}, otherwise this {@link Failure}
-     * @throws NullPointerException if {@code mapper} is {@code null}, or returns {@code null} (a {@code Success}
-     *                              cannot hold {@code null}; the exception is not captured, see {@link #of(CheckedFunction0)})
+     * @throws NullPointerException if {@code mapper} is {@code null}
      */
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Try<U> mapTry(CheckedFunction1<? super T, ? extends U> mapper) {
@@ -681,13 +690,12 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         if (isFailure()) {
             return (Failure<U>) this;
         } else {
-            final U value;
             try {
-                value = mapper.apply(get());
+                final U value = mapper.apply(get());
+                return value == null ? TryModule.nullResult("Try.mapTry") : new Success<>(value);
             } catch (Throwable t) {
                 return new Failure<>(t);
             }
-            return new Success<>(value);
         }
     }
 
@@ -1923,6 +1931,11 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
 }
 
 interface TryModule {
+
+    /** The Failure a capturing constructor returns when the computation yields null, which Success cannot hold. */
+    static <T extends @Nullable Object> Try<T> nullResult(String constructor) {
+        return new Try.Failure<>(new NullPointerException(constructor + ": the computation returned null"));
+    }
 
     static boolean isFatal(Throwable throwable) {
         return throwable instanceof InterruptedException

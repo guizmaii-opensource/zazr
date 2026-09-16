@@ -1213,9 +1213,12 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldRejectFutureCompletedWithNull() {
+        public void shouldCaptureFutureCompletedWithNullAsFailure() {
             final CompletableFuture<String> future = CompletableFuture.completedFuture(null);
-            assertThatThrownBy(() -> Try.fromCompletableFuture(future)).isInstanceOf(NullPointerException.class);
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(result.getCause().getMessage()).isEqualTo("Try.fromCompletableFuture: the computation returned null");
         }
 
         @Test
@@ -1790,6 +1793,60 @@ public class TryTest extends AbstractValueTest {
 
     private RuntimeException error() {
         return new RuntimeException("error");
+    }
+
+    @Nested
+    class NullResultTests {
+
+        // A Success cannot hold null, so a computation that returns null is a captured outcome, not a caller error.
+
+        @Test
+        public void shouldCaptureNullResultOfOfAsFailure() {
+            final Try<Object> result = Try.of(() -> null);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(result.getCause().getMessage()).isEqualTo("Try.of: the computation returned null");
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfOfSupplierAsFailure() {
+            assertThat(Try.ofSupplier(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfOfCallableAsFailure() {
+            assertThat(Try.ofCallable(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfMapTryAsFailure() {
+            final Try<Object> result = Try.success(1).mapTry(i -> null);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(result.getCause().getMessage()).isEqualTo("Try.mapTry: the computation returned null");
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfMapAsFailure() {
+            assertThat(Try.success(1).map(i -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullResultOfRecoverAsFailure() {
+            assertThat(TryTest.<String>failure().recover(x -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(TryTest.<String>failure().recoverAllAndTry(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldReturnFallbackFromGetOrElseOnNullResult() {
+            assertThat(Try.<String>of(() -> null).getOrElse("fallback")).isEqualTo("fallback");
+            assertThat(Try.success(1).<String>mapTry(i -> null).getOrElse("fallback")).isEqualTo("fallback");
+        }
+
+        @Test
+        public void shouldStillRejectNullInSuccessFactory() {
+            assertThatThrownBy(() -> Try.success(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
     private static <T> Try<T> failure() {
