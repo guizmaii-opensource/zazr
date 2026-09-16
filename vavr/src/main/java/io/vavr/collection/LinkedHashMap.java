@@ -3,12 +3,6 @@ package io.vavr.collection;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
@@ -30,9 +24,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Ruslan Sennov, Grzegorz Piwowarek
  */
-public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable Object> implements Map<K, V>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable Object> implements Map<K, V> {
 
     private static final Object TOMBSTONE = new Object();
 
@@ -53,7 +45,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         this.tombstones = tombstones;
     }
 
-    private record Slot<K extends @Nullable Object, V extends @Nullable Object>(Tuple2<K, V> entry, int index) implements Serializable {}
+    private record Slot<K extends @Nullable Object, V extends @Nullable Object>(Tuple2<K, V> entry, int index) {}
 
     @SuppressWarnings("unchecked")
     private static <K extends @Nullable Object> K tombstone() {
@@ -1153,62 +1145,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     // If this method is static with type args <K, V>, the jdk fails to infer types at the call site.
     private LinkedHashMap<K, V> createFromEntries(Iterable<Tuple2<K, V>> tuples) {
         return LinkedHashMap.ofEntries(tuples);
-    }
-
-    // -- Serialization
-
-    @Serial
-    private Object writeReplace() {
-        return new SerializationProxy<>(this);
-    }
-
-    @Serial
-    private void readObject(ObjectInputStream stream) throws InvalidObjectException {
-        throw new InvalidObjectException("Proxy required");
-    }
-
-    private static final class SerializationProxy<K extends @Nullable Object, V extends @Nullable Object> implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private transient LinkedHashMap<K, V> map;
-
-        SerializationProxy(LinkedHashMap<K, V> map) {
-            this.map = map;
-        }
-
-        @Serial
-        private void writeObject(ObjectOutputStream s) throws IOException {
-            s.defaultWriteObject();
-            s.writeInt(map.size());
-            for (Tuple2<K, V> e : map) {
-                s.writeObject(e._1);
-                s.writeObject(e._2);
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        @Serial
-        private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
-            s.defaultReadObject();
-            final int size = s.readInt();
-            if (size < 0) {
-                throw new InvalidObjectException("No elements");
-            }
-            LinkedHashMap<K, V> temp = LinkedHashMap.empty();
-            for (int i = 0; i < size; i++) {
-                final K key = (K) s.readObject();
-                final V value = (V) s.readObject();
-                temp = temp.put(key, value);
-            }
-            map = temp;
-        }
-
-        @Serial
-        private Object readResolve() {
-            return map;
-        }
     }
 
 }

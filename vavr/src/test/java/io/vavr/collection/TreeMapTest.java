@@ -1,11 +1,9 @@
 package io.vavr.collection;
 
-import io.vavr.Serializables;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.function.Function;
@@ -327,13 +325,6 @@ public class TreeMapTest extends AbstractSortedMapTest {
         assertThat(actual.keySet().toList()).isEqualTo(expected);
     }
 
-    @Test
-    public void shouldSerializeDeserializeNonEmptyMap() {
-        final Object expected = TreeMap.ofAll(Collections.singletonMap(0, 1));
-        final Object actual = Serializables.deserialize(Serializables.serialize(expected));
-        assertThat(actual).isEqualTo(expected);
-    }
-
     @Nested
     class FillTests {
         @Test
@@ -393,12 +384,5 @@ public class TreeMapTest extends AbstractSortedMapTest {
             assertThat(actual.comparator()).isEqualTo(testee.comparator());
             assertThat(actual.toList()).isEqualTo(List(Tuple(3, "c3"), Tuple(2, "b2"), Tuple(1, "a1")));
         }
-    }
-
-    // -- obsolete tests
-
-    @Override
-    public void shouldPreserveSingletonInstanceOnDeserialization() {
-        // The empty TreeMap encapsulates a comparator and therefore cannot be a singleton
     }
 }

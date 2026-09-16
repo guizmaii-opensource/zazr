@@ -6,7 +6,6 @@ import io.vavr.Value;
 import io.vavr.collection.Iterator;
 import io.vavr.collection.Seq;
 import io.vavr.collection.Vector;
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,9 +28,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <T> the type of the optional value
  */
-public interface Option<T extends @Nullable Object> extends Value<T>, Serializable {
-
-    long serialVersionUID = 1L;
+public interface Option<T extends @Nullable Object> extends Value<T> {
 
     /**
      * Creates an {@code Option} from the given value.
@@ -476,11 +473,8 @@ public interface Option<T extends @Nullable Object> extends Value<T>, Serializab
      * @param <T> The type of the optional value.
      * @author Daniel Dietrich
      */
-    final class Some<T extends @Nullable Object> implements Option<T>, Serializable {
+    final class Some<T extends @Nullable Object> implements Option<T> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final T value;
 
         /**
@@ -529,9 +523,7 @@ public interface Option<T extends @Nullable Object> extends Value<T>, Serializab
      * @param <T> The type of the optional value.
      * @author Daniel Dietrich
      */
-    final class None<T extends @Nullable Object> implements Option<T>, Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class None<T extends @Nullable Object> implements Option<T> {
 
         /**
          * The singleton instance of None.
@@ -574,16 +566,5 @@ public interface Option<T extends @Nullable Object> extends Value<T>, Serializab
             return stringPrefix();
         }
 
-        // -- Serializable implementation
-
-        /**
-         * Instance control for object serialization.
-         *
-         * @return The singleton instance of None.
-         * @see Serializable
-         */
-        private Object readResolve() {
-            return INSTANCE;
-        }
     }
 }

@@ -2,10 +2,6 @@ package io.vavr.collection;
 
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 
@@ -118,26 +114,4 @@ public class LinkedHashMapRemoveTest {
         assertThat(map.init().keysIterator().toJavaList()).isEqualTo(keys.subList(0, keys.size() - 1));
     }
 
-    // -- serialization must survive interior removals and preserve order
-
-    @Test
-    public void shouldSerializeAndDeserializePreservingOrderAfterRemovals() throws Exception {
-        LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
-        for (int i = 0; i < 100; i++) {
-            map = map.put(i, i);
-        }
-        for (int i = 0; i < 100; i += 4) {
-            map = map.remove(i);
-        }
-        final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
-            out.writeObject(map);
-        }
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-            @SuppressWarnings("unchecked")
-            final LinkedHashMap<Integer, Integer> deserialized = (LinkedHashMap<Integer, Integer>) in.readObject();
-            assertThat(deserialized.keysIterator().toJavaList()).isEqualTo(map.keysIterator().toJavaList());
-            assertThat(deserialized).isEqualTo(map);
-        }
-    }
 }

@@ -5,12 +5,10 @@ import io.vavr.collection.Array;
 import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
 import io.vavr.collection.Traversable;
-import io.vavr.concurrent.Future;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
 import io.vavr.control.Validation;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,15 +29,10 @@ import org.assertj.core.api.StringAssert;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.vavr.API.$;
-import static io.vavr.API.Case;
 import static io.vavr.API.Invalid;
 import static io.vavr.API.Left;
-import static io.vavr.API.Match;
 import static io.vavr.API.Right;
 import static io.vavr.API.Valid;
-import static io.vavr.Predicates.anyOf;
-import static io.vavr.Predicates.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation")
@@ -458,14 +451,6 @@ public abstract class AbstractValueTest {
     }
 
     @TestTemplate
-    public void shouldConvertToPriorityQueueUsingSerializableComparator() {
-        final Value<Integer> value = of(1, 3, 2);
-        final io.vavr.collection.PriorityQueue<Integer> queue = value.toPriorityQueue();
-        final io.vavr.collection.PriorityQueue<Integer> actual = Serializables.deserialize(Serializables.serialize(queue));
-        assertThat(actual).isEqualTo(queue);
-    }
-
-    @TestTemplate
     public void shouldConvertToSet() {
         final Value<Integer> value = of(1, 2, 3);
         final io.vavr.collection.Set<Integer> set = value.toSet();
@@ -526,14 +511,6 @@ public abstract class AbstractValueTest {
         } else {
             assertThat(set).isEqualTo(io.vavr.collection.TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
         }
-    }
-
-    @TestTemplate
-    public void shouldConvertToSortedSetUsingSerializableComparator() {
-        final Value<Integer> value = of(1, 3, 2);
-        final io.vavr.collection.SortedSet<Integer> set = value.toSortedSet();
-        final io.vavr.collection.SortedSet<Integer> actual = Serializables.deserialize(Serializables.serialize(set));
-        assertThat(actual).isEqualTo(set);
     }
 
     @TestTemplate
@@ -996,77 +973,6 @@ public abstract class AbstractValueTest {
             assertThat(actual).contains("1");
         } else {
             assertThat(actual).contains("1", "2");
-        }
-    }
-
-    // -- Serialization
-
-    /**
-     * States whether the specific Value implementation is Serializable.
-     * <p>
-     * Test classes override this method to return false if needed.
-     *
-     * @return true (by default), if the Value is Serializable, false otherwise
-     */
-    private boolean isSerializable() {
-        final Object nonEmpty = of(1);
-        if (empty() instanceof Serializable != nonEmpty instanceof Serializable) {
-            throw new Error("empty and non-empty do not consistently implement Serializable");
-        }
-        final boolean actual = nonEmpty instanceof Serializable;
-        final boolean expected = Match(nonEmpty).of(
-          Case($(anyOf(
-            instanceOf(Either.LeftProjection.class),
-            instanceOf(Either.RightProjection.class),
-            instanceOf(Future.class),
-            instanceOf(io.vavr.collection.Iterator.class)
-          )), false),
-          Case($(anyOf(
-            instanceOf(Either.class),
-            instanceOf(Lazy.class),
-            instanceOf(Option.class),
-            instanceOf(Try.class),
-            instanceOf(Traversable.class),
-            instanceOf(Validation.class)
-          )), true)
-        );
-        assertThat(actual).isEqualTo(expected);
-        return actual;
-    }
-
-    @TestTemplate
-    public void shouldSerializeDeserializeEmpty() {
-        if (isSerializable()) {
-            final Value<?> testee = empty();
-            final Value<?> actual = Serializables.deserialize(Serializables.serialize(testee));
-            assertThat(actual).isEqualTo(testee);
-        }
-    }
-
-    @TestTemplate
-    public void shouldSerializeDeserializeSingleValued() {
-        if (isSerializable()) {
-            final Value<?> testee = of(1);
-            final Value<?> actual = Serializables.deserialize(Serializables.serialize(testee));
-            assertThat(actual).isEqualTo(testee);
-        }
-    }
-
-    @TestTemplate
-    public void shouldSerializeDeserializeMultiValued() {
-        if (isSerializable()) {
-            final Value<?> testee = of(1, 2, 3);
-            final Value<?> actual = Serializables.deserialize(Serializables.serialize(testee));
-            assertThat(actual).isEqualTo(testee);
-        }
-    }
-
-    @TestTemplate
-    public void shouldPreserveSingletonInstanceOnDeserialization() {
-        if (isSerializable() && !useIsEqualToInsteadOfIsSameAs()) {
-            final Value<?> empty = empty();
-            final Value<?> actual = Serializables.deserialize(Serializables.serialize(empty));
-            assertThat(actual).isSameAs(empty);
         }
     }
 

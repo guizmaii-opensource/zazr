@@ -2,7 +2,6 @@ package io.vavr.collection;
 
 import io.vavr.*;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
@@ -20,12 +19,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Daniel Dietrich, Ruslan Sennov, Grzegorz Piwowarek
  */
-public interface Map<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>>, PartialFunction<K, V>, Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Map<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>>, PartialFunction<K, V> {
 
     /**
      * Narrows a widened {@code Map<? extends K, ? extends V>} to {@code Map<K, V>}
@@ -66,7 +60,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
         return Tuple.of(key, value);
     }
 
-
     @Deprecated
     @Override
     default V apply(K key) {
@@ -83,7 +76,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default PartialFunction<K, V> asPartialFunction() throws IndexOutOfBoundsException {
         return new PartialFunction<K, V>() {
-            private static final long serialVersionUID = 1L;
             @Override
             public V apply(K key) {
                 return get(key).getOrElseThrow(() -> new NoSuchElementException(String.valueOf(key)));

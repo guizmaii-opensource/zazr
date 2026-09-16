@@ -1219,8 +1219,6 @@ def genAPIMatch(im: ImportManager): String = {
     public static <T $nullableBound> Pattern0<T> $$(T prototype) {
         return new Pattern0<T>() {
 
-            private static final long serialVersionUID = 1L;
-
             @Override
             public T apply(T obj) {
                 return obj;
@@ -1298,8 +1296,6 @@ def genAPIMatch(im: ImportManager): String = {
     public static <T $nullableBound> Pattern0<T> $$($PredicateType<? super T> predicate) {
         $Objects.requireNonNull(predicate, "predicate is null");
         return new Pattern0<T>() {
-
-            private static final long serialVersionUID = 1L;
 
             @Override
             public T apply(T obj) {
@@ -1381,11 +1377,6 @@ def genAPIMatch(im: ImportManager): String = {
          * @param <R> Return value type
          */
         public interface Case<T $nullableBound, R $nullableBound> extends $PartialFunctionType<T, R> {
-
-            /**
-             * The serial version UID for serialization.
-             */
-            long serialVersionUID = 1L;
         }
 
         /$javadoc
@@ -1396,13 +1387,8 @@ def genAPIMatch(im: ImportManager): String = {
          */
         public static final class Case0<T $nullableBound, R $nullableBound> implements Case<T, R> {
 
-            /$javadoc
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private final Pattern0<T> pattern;
-            private transient final $FunctionType<? super T, ? extends R> f;
+            private final $FunctionType<? super T, ? extends R> f;
 
             private Case0(Pattern0<T> pattern, $FunctionType<? super T, ? extends R> f) {
                 this.pattern = pattern;
@@ -1426,11 +1412,7 @@ def genAPIMatch(im: ImportManager): String = {
           val generics = a.generics
           val genericsDecl = a.genericsDecl
           val functionType = javaFunctionType(i, im)
-          val accessModifier = i match {
-            case 1 => "transient final"
-            case 2 => "transient final"
-            case _ => "final"
-          }
+          val accessModifier = "final"
           val typeDocs = (1 to i).gen(j => s"* @param <T$j> Intermediate type $j\n")
           xs"""
             /$javadoc
@@ -1441,11 +1423,6 @@ def genAPIMatch(im: ImportManager): String = {
              * @param <R>  Return value type
              */
             public static final class Case$i<T $nullableBound, $genericsDecl, R $nullableBound> implements Case<T, R> {
-
-                /$javadoc
-                 * The serial version UID for serialization.
-                 */
-                private static final long serialVersionUID = 1L;
 
                 private final Pattern$i<T, $generics> pattern;
                 private $accessModifier $functionType<$argTypes, ? extends R> f;
@@ -1497,14 +1474,7 @@ def genAPIMatch(im: ImportManager): String = {
          */
         public static abstract class Pattern0<T $nullableBound> implements Pattern<T, T> {
 
-            /$javadoc
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private static final Pattern0<Object> ANY = new Pattern0<Object>() {
-
-                private static final long serialVersionUID = 1L;
 
                 @Override
                 public Object apply(Object obj) {
@@ -1542,11 +1512,6 @@ def genAPIMatch(im: ImportManager): String = {
              */
             public static <T $nullableBound> Pattern0<T> of(Class<? super T> type) {
                 return new Pattern0<T>() {
-
-                    /$javadoc
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @Override
                     public T apply(T obj) {
@@ -1596,11 +1561,6 @@ def genAPIMatch(im: ImportManager): String = {
              */
             public static abstract class Pattern$i<T $nullableBound, ${a.genericsDecl}> implements Pattern<T, $resultType> {
 
-                /$javadoc
-                 * The serial version UID for serialization.
-                 */
-                private static final long serialVersionUID = 1L;
-
                 /**
                  * Static factory for a {@link Pattern$i} based on a {@link Class}, ${if (i >1) s"$i {@link Pattern}s" else "{@link Pattern}"} to decompose
                  * it to and a mapper to aggregate result back into a {@link Tuple$i}
@@ -1614,11 +1574,6 @@ def genAPIMatch(im: ImportManager): String = {
                  */
                 public static <T $nullableBound, $declaredGenerics> Pattern$i<T, $resultGenerics> of(Class<? super T> type, $args, Function<T, $unapplyTupleType> unapply) {
                     return new Pattern$i<T, $resultGenerics>() {
-
-                        /$javadoc
-                         * The serial version UID for serialization.
-                         */
-                        private static final long serialVersionUID = 1L;
 
                         @SuppressWarnings("unchecked")
                         @Override
@@ -1787,13 +1742,13 @@ def generateMainClasses(): Unit = {
 
         val Objects = im.getType("java.util.Objects")
         val Try = if (checked) im.getType("io.vavr.control.Try") else ""
-        val Serializable = im.getType("java.io.Serializable")
         val additionalExtends = (checked, i) match {
-          case (false, 0) => ", " + im.getType("java.util.function.Supplier") + "<R>"
-          case (false, 1) => ", " + im.getType("java.util.function.Function") + "<T1, R>"
-          case (false, 2) => ", " + im.getType("java.util.function.BiFunction") + "<T1, T2, R>"
+          case (false, 0) => im.getType("java.util.function.Supplier") + "<R>"
+          case (false, 1) => im.getType("java.util.function.Function") + "<T1, R>"
+          case (false, 2) => im.getType("java.util.function.BiFunction") + "<T1, T2, R>"
           case _ => ""
         }
+        val extendsClause = if (additionalExtends.isEmpty) "" else s"extends $additionalExtends"
         def fullGenericsTypeF(checked: Boolean, i: Int): String = (checked, i) match {
           case (true, _) => im.getType(s"io.vavr.CheckedFunction$i") + fullWideGenerics
           case (false, 0) => im.getType("java.util.function.Supplier") + "<? extends R>"
@@ -1834,12 +1789,7 @@ def generateMainClasses(): Unit = {
            * @author Daniel Dietrich
            */
           @FunctionalInterface
-          public interface $className$fullGenericsDecl extends $Serializable$additionalExtends {
-
-              /$javadoc
-               * The serial version UID for serialization.
-               */
-              long serialVersionUID = 1L;
+          public interface $className$fullGenericsDecl $extendsClause {
 
               /$javadoc
                * Returns a function that always returns the constant
@@ -2122,8 +2072,6 @@ def generateMainClasses(): Unit = {
                     final Function1<T1, R> self = this;
                     return new PartialFunction<T1, R>() {
 
-                        private static final long serialVersionUID = 1L;
-
                         @Override
                         public boolean isDefinedAt(T1 t1) {
                             return isDefinedAt.test(t1);
@@ -2296,15 +2244,12 @@ def generateMainClasses(): Unit = {
          ${(0 to i).gen(j => if (j == 0) "*" else s"* @param <T$j> type of the ${j.ordinal} element")(using "\n")}
          * @author Daniel Dietrich
          */
-        public final class $className$genericsDecl implements Tuple, Comparable<$className$generics>, ${im.getType("java.io.Serializable")} {
-
-            private static final long serialVersionUID = 1L;
+        public final class $className$genericsDecl implements Tuple, Comparable<$className$generics> {
 
             ${(1 to i).gen(j => xs"""
               /$javadoc
                * The ${j.ordinal} element of this tuple.
                */
-              @SuppressWarnings("serial") // Conditionally serializable
               public final T$j _$j;
             """)(using "\n\n")}
 
@@ -2317,7 +2262,7 @@ def generateMainClasses(): Unit = {
               /$javadoc
                * The singleton Tuple0 comparator.
                */
-              private static final Comparator<Tuple0> COMPARATOR = (Comparator<Tuple0> & Serializable) (t1, t2) -> 0;
+              private static final Comparator<Tuple0> COMPARATOR = (t1, t2) -> 0;
 
               // hidden constructor, internally called
               private Tuple0 () {
@@ -2345,7 +2290,7 @@ def generateMainClasses(): Unit = {
                 ${if (i == 0) xs"""
                   return COMPARATOR;
                 """ else xs"""
-                  return (Comparator<$className$generics> & Serializable) (t1, t2) -> {
+                  return (t1, t2) -> {
                       ${(1 to i).gen(j => xs"""
                         final int check$j = t${j}Comp.compare(t1._$j, t2._$j);
                         if (check$j != 0) {
@@ -2569,20 +2514,6 @@ def generateMainClasses(): Unit = {
                 return ${if (i == 0) "\"()\"" else s""""(" + ${(1 to i).gen(j => s"_$j")(using " + \", \" + ")} + ")""""};
             }
 
-            ${(i == 0).gen(xs"""
-              // -- Serializable implementation
-
-              /$javadoc
-               * Instance control for object serialization.
-               *
-               * @return The singleton instance of Tuple0.
-               * @see java.io.Serializable
-               */
-              private Object readResolve() {
-                  return INSTANCE;
-              }
-            """)}
-
         }
       """
     }
@@ -2680,9 +2611,7 @@ def generateMainClasses(): Unit = {
          *
          * @author Daniel Dietrich
          */
-        public interface Tuple extends ${im.getType("java.io.Serializable")} {
-
-            long serialVersionUID = 1L;
+        public interface Tuple {
 
             /**
              * The maximum arity of an Tuple.
@@ -2768,9 +2697,7 @@ def generateMainClasses(): Unit = {
        *
        * @author Pap Lőrinc
        */
-      interface ArrayType<T $nullableBound> extends Serializable {
-
-          long serialVersionUID = 1L;
+      interface ArrayType<T $nullableBound> {
 
           @SuppressWarnings("unchecked")
           static <T $nullableBound> ArrayType<T> obj() { return (ArrayType<T>) ObjectArrayType.INSTANCE; }
@@ -2894,8 +2821,7 @@ def generateMainClasses(): Unit = {
       val isPrimitive = arrayType != "Object"
 
       xs"""
-        final class $className implements ArrayType<$wrapperType>, ${im.getType("java.io.Serializable")} {
-            private static final long serialVersionUID = 1L;
+        final class $className implements ArrayType<$wrapperType> {
             static final $className INSTANCE = new $className();
             static final $arrayType[] EMPTY = new $arrayType[0];
 

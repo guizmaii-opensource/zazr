@@ -4,9 +4,6 @@ import io.vavr.collection.Iterator;
 import io.vavr.collection.Seq;
 import io.vavr.collection.Vector;
 import io.vavr.control.Option;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Objects;
@@ -43,15 +40,13 @@ import org.jspecify.annotations.Nullable;
  * @param <T> the type of the lazily evaluated value
  * @author Daniel Dietrich
  */
-public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplier<T>, Serializable {
+public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplier<T> {
 
-    private static final long serialVersionUID = 1L;
     private final ReentrantLock lock = new ReentrantLock();
 
     // read http://javarevisited.blogspot.de/2014/05/double-checked-locking-on-singleton-in-java.html
-    private transient volatile @Nullable Supplier<? extends T> supplier;
+    private volatile @Nullable Supplier<? extends T> supplier;
 
-    @SuppressWarnings("serial") // Conditionally serializable
     private volatile @Nullable T value;
 
     // should not be called directly
@@ -268,14 +263,4 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
         return stringPrefix() + "(" + (!isEvaluated() ? "?" : value) + ")";
     }
 
-    /**
-     * Forces the lazy value to be evaluated before it is serialized.
-     *
-     * @param s the object output stream to write to
-     * @throws java.io.IOException if an I/O error occurs during serialization
-     */
-    private void writeObject(ObjectOutputStream s) throws IOException {
-        get(); // evaluates the lazy value if it isn't evaluated yet!
-        s.defaultWriteObject();
-    }
 }

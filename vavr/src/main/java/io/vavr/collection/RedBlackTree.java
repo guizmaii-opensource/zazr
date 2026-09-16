@@ -6,7 +6,6 @@ import io.vavr.Tuple3;
 import io.vavr.collection.RedBlackTreeModule.Empty;
 import io.vavr.collection.RedBlackTreeModule.Node;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -27,9 +26,7 @@ import static io.vavr.collection.RedBlackTree.Color.RED;
  * @param <T> Component type
  * @author Daniel Dietrich
  */
-interface RedBlackTree<T extends @Nullable Object> extends Iterable<T>, Serializable {
-
-    long serialVersionUID = 1L;
+interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
 
     static <T extends @Nullable Object> RedBlackTree<T> empty(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
@@ -328,14 +325,11 @@ interface RedBlackTreeModule {
      *
      * @param <T> Component type
      */
-    final class Node<T extends @Nullable Object> implements RedBlackTree<T>, Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class Node<T extends @Nullable Object> implements RedBlackTree<T> {
 
         final Color color;
         final int blackHeight;
         final RedBlackTree<T> left;
-        @SuppressWarnings("serial")
         final T value;
         final RedBlackTree<T> right;
         final Empty<T> empty;
@@ -809,11 +803,8 @@ interface RedBlackTreeModule {
      *
      * @param <T> Component type
      */
-    final class Empty<T extends @Nullable Object> implements RedBlackTree<T>, Serializable {
+    final class Empty<T extends @Nullable Object> implements RedBlackTree<T> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         final Comparator<T> comparator;
 
         // This is no public API! The RedBlackTree takes care of passing the correct Comparator.

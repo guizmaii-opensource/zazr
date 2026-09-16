@@ -110,12 +110,6 @@ import static io.vavr.collection.JavaConverters.ListView;
 public interface List<T extends @Nullable Object> extends LinearSeq<T> {
 
     /**
-     * The serial version UID for serialization.
-     */
-    @Serial
-    long serialVersionUID = 1L;
-
-    /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
      * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link List}.
      *
@@ -1848,10 +1842,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      *
      * @param <T> Component type of the List.
      */
-    final class Nil<T extends @Nullable Object> implements List<T>, Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    final class Nil<T extends @Nullable Object> implements List<T> {
 
         private static final Nil<?> INSTANCE = new Nil<>();
 
@@ -1905,16 +1896,6 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
             return stringPrefix() + "()";
         }
 
-        /**
-         * Instance control for object serialization.
-         *
-         * @return The singleton instance of Nil.
-         * @see java.io.Serializable
-         */
-        @Serial
-        private Object readResolve() {
-            return INSTANCE;
-        }
     }
 
     /**
@@ -1922,13 +1903,8 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      *
      * @param <T> Component type of the List.
      */
-    // DEV NOTE: class declared final because of serialization proxy pattern (see Effective Java, 2nd ed., p. 315)
-    final class Cons<T extends @Nullable Object> implements List<T>, Serializable {
+    final class Cons<T extends @Nullable Object> implements List<T> {
 
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final T head;
         private final List<T> tail;
         private final int length;
@@ -1980,113 +1956,6 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
             return mkString(stringPrefix() + "(", ", ", ")");
         }
 
-        /**
-         * {@code writeReplace} method for the serialization proxy pattern.
-         * <p>
-         * The presence of this method causes the serialization system to emit a SerializationProxy instance instead of
-         * an instance of the enclosing class.
-         *
-         * @return A SerializationProxy for this enclosing class.
-         */
-        @Serial
-        private Object writeReplace() {
-            return new SerializationProxy<>(this);
-        }
-
-        /**
-         * {@code readObject} method for the serialization proxy pattern.
-         * <p>
-         * Guarantees that the serialization system will never generate a serialized instance of the enclosing class.
-         *
-         * @param stream An object serialization stream.
-         * @throws java.io.InvalidObjectException This method will throw with the message "Proxy required".
-         */
-        @Serial
-        private void readObject(ObjectInputStream stream) throws InvalidObjectException {
-            throw new InvalidObjectException("Proxy required");
-        }
-
-        /**
-         * A serialization proxy which, in this context, is used to deserialize immutable, linked Lists with final
-         * instance fields.
-         *
-         * @param <T> The component type of the underlying list.
-         */
-        // DEV NOTE: The serialization proxy pattern is not compatible with non-final, i.e. extendable,
-        // classes. Also, it may not be compatible with circular object graphs.
-        private static final class SerializationProxy<T extends @Nullable Object> implements Serializable {
-
-            @Serial
-            private static final long serialVersionUID = 1L;
-
-            // the instance to be serialized/deserialized
-            private transient Cons<T> list;
-
-            /**
-             * Constructor for the case of serialization, called by {@link Cons#writeReplace()}.
-             * <p/>
-             * The constructor of a SerializationProxy takes an argument that concisely represents the logical state of
-             * an instance of the enclosing class.
-             *
-             * @param list a Cons
-             */
-            SerializationProxy(Cons<T> list) {
-                this.list = list;
-            }
-
-            /**
-             * Write an object to a serialization stream.
-             *
-             * @param s An object serialization stream.
-             * @throws java.io.IOException If an error occurs writing to the stream.
-             */
-            @Serial
-            private void writeObject(ObjectOutputStream s) throws IOException {
-                s.defaultWriteObject();
-                s.writeInt(list.length());
-                for (List<T> l = list; !l.isEmpty(); l = l.tail()) {
-                    s.writeObject(l.head());
-                }
-            }
-
-            /**
-             * Read an object from a deserialization stream.
-             *
-             * @param s An object deserialization stream.
-             * @throws ClassNotFoundException If the object's class read from the stream cannot be found.
-             * @throws InvalidObjectException If the stream contains no list elements.
-             * @throws IOException            If an error occurs reading from the stream.
-             */
-            @Serial
-            private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
-                s.defaultReadObject();
-                final int size = s.readInt();
-                if (size <= 0) {
-                    throw new InvalidObjectException("No elements");
-                }
-                List<T> temp = Nil.instance();
-                for (int i = 0; i < size; i++) {
-                    @SuppressWarnings("unchecked")
-                    final T element = (T) s.readObject();
-                    temp = temp.prepend(element);
-                }
-                list = (Cons<T>) temp.reverse();
-            }
-
-            /**
-             * {@code readResolve} method for the serialization proxy pattern.
-             * <p>
-             * Returns a logically equivalent instance of the enclosing class. The presence of this method causes the
-             * serialization system to translate the serialization proxy back into an instance of the enclosing class
-             * upon deserialization.
-             *
-             * @return A deserialized instance of the enclosing class.
-             */
-            @Serial
-            private Object readResolve() {
-                return list;
-            }
-        }
     }
 }
 

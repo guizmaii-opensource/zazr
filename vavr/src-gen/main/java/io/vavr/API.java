@@ -10396,8 +10396,6 @@ public final class API {
     public static <T extends @Nullable Object> Pattern0<T> $(T prototype) {
         return new Pattern0<T>() {
 
-            private static final long serialVersionUID = 1L;
-
             @Override
             public T apply(T obj) {
                 return obj;
@@ -10475,8 +10473,6 @@ public final class API {
     public static <T extends @Nullable Object> Pattern0<T> $(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return new Pattern0<T>() {
-
-            private static final long serialVersionUID = 1L;
 
             @Override
             public T apply(T obj) {
@@ -10558,11 +10554,6 @@ public final class API {
          * @param <R> Return value type
          */
         public interface Case<T extends @Nullable Object, R extends @Nullable Object> extends PartialFunction<T, R> {
-
-            /**
-             * The serial version UID for serialization.
-             */
-            long serialVersionUID = 1L;
         }
 
         /**
@@ -10573,13 +10564,8 @@ public final class API {
          */
         public static final class Case0<T extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
 
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private final Pattern0<T> pattern;
-            private transient final Function<? super T, ? extends R> f;
+            private final Function<? super T, ? extends R> f;
 
             private Case0(Pattern0<T> pattern, Function<? super T, ? extends R> f) {
                 this.pattern = pattern;
@@ -10606,13 +10592,8 @@ public final class API {
          */
         public static final class Case1<T extends @Nullable Object, T1 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
 
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private final Pattern1<T, T1> pattern;
-            private transient final Function<? super T1, ? extends R> f;
+            private final Function<? super T1, ? extends R> f;
 
             private Case1(Pattern1<T, T1> pattern, Function<? super T1, ? extends R> f) {
                 this.pattern = pattern;
@@ -10640,13 +10621,8 @@ public final class API {
          */
         public static final class Case2<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
 
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private final Pattern2<T, T1, T2> pattern;
-            private transient final BiFunction<? super T1, ? super T2, ? extends R> f;
+            private final BiFunction<? super T1, ? super T2, ? extends R> f;
 
             private Case2(Pattern2<T, T1, T2> pattern, BiFunction<? super T1, ? super T2, ? extends R> f) {
                 this.pattern = pattern;
@@ -10674,11 +10650,6 @@ public final class API {
          * @param <R>  Return value type
          */
         public static final class Case3<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
-
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
 
             private final Pattern3<T, T1, T2, T3> pattern;
             private final Function3<? super T1, ? super T2, ? super T3, ? extends R> f;
@@ -10710,11 +10681,6 @@ public final class API {
          * @param <R>  Return value type
          */
         public static final class Case4<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
-
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
 
             private final Pattern4<T, T1, T2, T3, T4> pattern;
             private final Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f;
@@ -10748,11 +10714,6 @@ public final class API {
          */
         public static final class Case5<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
 
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private final Pattern5<T, T1, T2, T3, T4, T5> pattern;
             private final Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f;
 
@@ -10785,11 +10746,6 @@ public final class API {
          * @param <R>  Return value type
          */
         public static final class Case6<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
-
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
 
             private final Pattern6<T, T1, T2, T3, T4, T5, T6> pattern;
             private final Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f;
@@ -10825,11 +10781,6 @@ public final class API {
          */
         public static final class Case7<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
 
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private final Pattern7<T, T1, T2, T3, T4, T5, T6, T7> pattern;
             private final Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f;
 
@@ -10864,11 +10815,6 @@ public final class API {
          * @param <R>  Return value type
          */
         public static final class Case8<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> implements Case<T, R> {
-
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
 
             private final Pattern8<T, T1, T2, T3, T4, T5, T6, T7, T8> pattern;
             private final Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f;
@@ -10914,14 +10860,7 @@ public final class API {
          */
         public static abstract class Pattern0<T extends @Nullable Object> implements Pattern<T, T> {
 
-            /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
             private static final Pattern0<Object> ANY = new Pattern0<Object>() {
-
-                private static final long serialVersionUID = 1L;
 
                 @Override
                 public Object apply(Object obj) {
@@ -10955,11 +10894,6 @@ public final class API {
             public static <T extends @Nullable Object> Pattern0<T> of(Class<? super T> type) {
                 return new Pattern0<T>() {
 
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
-
                     @Override
                     public T apply(T obj) {
                         return obj;
@@ -10992,11 +10926,6 @@ public final class API {
         public static abstract class Pattern1<T extends @Nullable Object, T1 extends @Nullable Object> implements Pattern<T, T1> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern1} based on a {@link Class}, {@link Pattern} to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple1}
              *
@@ -11010,11 +10939,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object> Pattern1<T, T1> of(Class<? super T> type, Pattern<T1, ?> p1, Function<T, Tuple1<U1>> unapply) {
                 return new Pattern1<T, T1>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11057,11 +10981,6 @@ public final class API {
         public static abstract class Pattern2<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> implements Pattern<T, Tuple2<T1, T2>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern2} based on a {@link Class}, 2 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple2}
              *
@@ -11078,11 +10997,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object> Pattern2<T, T1, T2> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Function<T, Tuple2<U1, U2>> unapply) {
                 return new Pattern2<T, T1, T2>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11127,11 +11041,6 @@ public final class API {
         public static abstract class Pattern3<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> implements Pattern<T, Tuple3<T1, T2, T3>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern3} based on a {@link Class}, 3 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple3}
              *
@@ -11151,11 +11060,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object, T3 extends U3, U3 extends @Nullable Object> Pattern3<T, T1, T2, T3> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Pattern<T3, ?> p3, Function<T, Tuple3<U1, U2, U3>> unapply) {
                 return new Pattern3<T, T1, T2, T3>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11202,11 +11106,6 @@ public final class API {
         public static abstract class Pattern4<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> implements Pattern<T, Tuple4<T1, T2, T3, T4>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern4} based on a {@link Class}, 4 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple4}
              *
@@ -11229,11 +11128,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object, T3 extends U3, U3 extends @Nullable Object, T4 extends U4, U4 extends @Nullable Object> Pattern4<T, T1, T2, T3, T4> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Pattern<T3, ?> p3, Pattern<T4, ?> p4, Function<T, Tuple4<U1, U2, U3, U4>> unapply) {
                 return new Pattern4<T, T1, T2, T3, T4>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11282,11 +11176,6 @@ public final class API {
         public static abstract class Pattern5<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> implements Pattern<T, Tuple5<T1, T2, T3, T4, T5>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern5} based on a {@link Class}, 5 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple5}
              *
@@ -11312,11 +11201,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object, T3 extends U3, U3 extends @Nullable Object, T4 extends U4, U4 extends @Nullable Object, T5 extends U5, U5 extends @Nullable Object> Pattern5<T, T1, T2, T3, T4, T5> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Pattern<T3, ?> p3, Pattern<T4, ?> p4, Pattern<T5, ?> p5, Function<T, Tuple5<U1, U2, U3, U4, U5>> unapply) {
                 return new Pattern5<T, T1, T2, T3, T4, T5>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11367,11 +11251,6 @@ public final class API {
         public static abstract class Pattern6<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> implements Pattern<T, Tuple6<T1, T2, T3, T4, T5, T6>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern6} based on a {@link Class}, 6 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple6}
              *
@@ -11400,11 +11279,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object, T3 extends U3, U3 extends @Nullable Object, T4 extends U4, U4 extends @Nullable Object, T5 extends U5, U5 extends @Nullable Object, T6 extends U6, U6 extends @Nullable Object> Pattern6<T, T1, T2, T3, T4, T5, T6> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Pattern<T3, ?> p3, Pattern<T4, ?> p4, Pattern<T5, ?> p5, Pattern<T6, ?> p6, Function<T, Tuple6<U1, U2, U3, U4, U5, U6>> unapply) {
                 return new Pattern6<T, T1, T2, T3, T4, T5, T6>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11457,11 +11331,6 @@ public final class API {
         public static abstract class Pattern7<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> implements Pattern<T, Tuple7<T1, T2, T3, T4, T5, T6, T7>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern7} based on a {@link Class}, 7 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple7}
              *
@@ -11493,11 +11362,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object, T3 extends U3, U3 extends @Nullable Object, T4 extends U4, U4 extends @Nullable Object, T5 extends U5, U5 extends @Nullable Object, T6 extends U6, U6 extends @Nullable Object, T7 extends U7, U7 extends @Nullable Object> Pattern7<T, T1, T2, T3, T4, T5, T6, T7> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Pattern<T3, ?> p3, Pattern<T4, ?> p4, Pattern<T5, ?> p5, Pattern<T6, ?> p6, Pattern<T7, ?> p7, Function<T, Tuple7<U1, U2, U3, U4, U5, U6, U7>> unapply) {
                 return new Pattern7<T, T1, T2, T3, T4, T5, T6, T7>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override
@@ -11552,11 +11416,6 @@ public final class API {
         public static abstract class Pattern8<T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> implements Pattern<T, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> {
 
             /**
-             * The serial version UID for serialization.
-             */
-            private static final long serialVersionUID = 1L;
-
-            /**
              * Static factory for a {@link Pattern8} based on a {@link Class}, 8 {@link Pattern}s to decompose
              * it to and a mapper to aggregate result back into a {@link Tuple8}
              *
@@ -11591,11 +11450,6 @@ public final class API {
              */
             public static <T extends @Nullable Object, T1 extends U1, U1 extends @Nullable Object, T2 extends U2, U2 extends @Nullable Object, T3 extends U3, U3 extends @Nullable Object, T4 extends U4, U4 extends @Nullable Object, T5 extends U5, U5 extends @Nullable Object, T6 extends U6, U6 extends @Nullable Object, T7 extends U7, U7 extends @Nullable Object, T8 extends U8, U8 extends @Nullable Object> Pattern8<T, T1, T2, T3, T4, T5, T6, T7, T8> of(Class<? super T> type, Pattern<T1, ?> p1, Pattern<T2, ?> p2, Pattern<T3, ?> p3, Pattern<T4, ?> p4, Pattern<T5, ?> p5, Pattern<T6, ?> p6, Pattern<T7, ?> p7, Pattern<T8, ?> p8, Function<T, Tuple8<U1, U2, U3, U4, U5, U6, U7, U8>> unapply) {
                 return new Pattern8<T, T1, T2, T3, T4, T5, T6, T7, T8>() {
-
-                    /**
-                     * The serial version UID for serialization.
-                     */
-                    private static final long serialVersionUID = 1L;
 
                     @SuppressWarnings("unchecked")
                     @Override

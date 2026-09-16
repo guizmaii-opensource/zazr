@@ -1,11 +1,9 @@
 package io.vavr.collection;
 
-import io.vavr.Serializables;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Value;
 import io.vavr.control.Option;
-import java.io.InvalidObjectException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -394,49 +392,6 @@ public class ListTest extends AbstractLinearSeqTest {
                 : Option.of(new Tuple2<>(x - 1, x))))
               .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
-    }
-
-    // -- Cons test
-
-    @Test
-    public void shouldNotSerializeEnclosingClass() {
-        assertThrows(InvalidObjectException.class, () -> Serializables.callReadObject(List.of(1)));
-    }
-
-    @Test
-    public void shouldNotDeserializeListWithSizeLessThanOne() {
-        assertThrows(InvalidObjectException.class, () -> {
-            try {
-                /*
-                 * This implementation is stable regarding jvm impl changes of object serialization. The index of the number
-                 * of List elements is gathered dynamically.
-                 */
-                final byte[] listWithOneElement = Serializables.serialize(List.of(0));
-                final byte[] listWithTwoElements = Serializables.serialize(List.of(0, 0));
-                int index = -1;
-                for (int i = 0; i < listWithOneElement.length && index == -1; i++) {
-                    final byte b1 = listWithOneElement[i];
-                    final byte b2 = listWithTwoElements[i];
-                    if (b1 != b2) {
-                        if (b1 != 1 || b2 != 2) {
-                            throw new IllegalStateException("Difference does not indicate number of elements.");
-                        } else {
-                            index = i;
-                        }
-                    }
-                }
-                if (index == -1) {
-                    throw new IllegalStateException("Hack incomplete - index not found");
-                }
-                /*
-                 * Hack the serialized data and fake zero elements.
-                 */
-                listWithOneElement[index] = 0;
-                Serializables.deserialize(listWithOneElement);
-            } catch (IllegalStateException x) {
-                throw (x.getCause() != null) ? x.getCause() : x;
-            }
-        });
     }
 
     //fixme: delete, when useIsEqualToInsteadOfIsSameAs() will be eliminated from AbstractValueTest class

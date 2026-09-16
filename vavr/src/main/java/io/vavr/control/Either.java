@@ -4,7 +4,6 @@ import io.vavr.Value;
 import io.vavr.collection.Iterator;
 import io.vavr.collection.Seq;
 import io.vavr.collection.Vector;
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -49,12 +48,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich, Grzegorz Piwowarek, Adam Kopeć
  */
-public interface Either<L extends @Nullable Object, R extends @Nullable Object> extends Value<R>, Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Either<L extends @Nullable Object, R extends @Nullable Object> extends Value<R> {
 
     /**
      * Constructs a new {@link Right} instance containing the given value.
@@ -1342,11 +1336,8 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      *
      * @author Daniel Dietrich
      */
-    final class Left<L extends @Nullable Object, R extends @Nullable Object> implements Either<L, R>, Serializable {
+    final class Left<L extends @Nullable Object, R extends @Nullable Object> implements Either<L, R> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final L value;
 
         /**
@@ -1407,11 +1398,8 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      *
      * @author Daniel Dietrich
      */
-    final class Right<L extends @Nullable Object, R extends @Nullable Object> implements Either<L, R>, Serializable {
+    final class Right<L extends @Nullable Object, R extends @Nullable Object> implements Either<L, R> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final R value;
 
         /**
@@ -1474,9 +1462,6 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
     // it's not possible to use a generic type parameter for the exception type
     class Failure extends Exception {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final Object value;
 
         /**

@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -22,38 +21,31 @@ import org.jspecify.annotations.Nullable;
  * @param <T5> type of the 5th element
  * @author Daniel Dietrich
  */
-public final class Tuple5<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> implements Tuple, Comparable<Tuple5<T1, T2, T3, T4, T5>>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class Tuple5<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> implements Tuple, Comparable<Tuple5<T1, T2, T3, T4, T5>> {
 
     /**
      * The 1st element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T1 _1;
 
     /**
      * The 2nd element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T2 _2;
 
     /**
      * The 3rd element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T3 _3;
 
     /**
      * The 4th element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T4 _4;
 
     /**
      * The 5th element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T5 _5;
 
     /**
@@ -74,7 +66,7 @@ public final class Tuple5<T1 extends @Nullable Object, T2 extends @Nullable Obje
     }
 
     public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Comparator<Tuple5<T1, T2, T3, T4, T5>> comparator(Comparator<? super T1> t1Comp, Comparator<? super T2> t2Comp, Comparator<? super T3> t3Comp, Comparator<? super T4> t4Comp, Comparator<? super T5> t5Comp) {
-        return (Comparator<Tuple5<T1, T2, T3, T4, T5>> & Serializable) (t1, t2) -> {
+        return (t1, t2) -> {
             final int check1 = t1Comp.compare(t1._1, t2._1);
             if (check1 != 0) {
                 return check1;

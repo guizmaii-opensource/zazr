@@ -21,10 +21,7 @@ import static io.vavr.collection.Tree.Order.PRE_ORDER;
  * @param <T> component type of this Tree
  * @author Daniel Dietrich, Grzegorz Piwowarek
  */
-public interface Tree<T extends @Nullable Object> extends Traversable<T>, Serializable {
-
-    @Serial
-    long serialVersionUID = 1L;
+public interface Tree<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
@@ -865,12 +862,8 @@ public interface Tree<T extends @Nullable Object> extends Traversable<T>, Serial
      *
      * @param <T> value type
      */
-    final class Node<T extends @Nullable Object> implements Tree<T>, Serializable {
+    final class Node<T extends @Nullable Object> implements Tree<T> {
 
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final T value;
         private final io.vavr.collection.List<Node<T>> children;
 
@@ -976,105 +969,6 @@ public interface Tree<T extends @Nullable Object> extends Traversable<T>, Serial
             }
         }
 
-        // -- Serializable implementation
-
-        /**
-         * {@code writeReplace} method for the serialization proxy pattern.
-         * <p>
-         * The presence of this method causes the serialization system to emit a SerializationProxy instance instead of
-         * an instance of the enclosing class.
-         *
-         * @return A SerializationProxy for this enclosing class.
-         */
-        @Serial
-        private Object writeReplace() {
-            return new SerializationProxy<>(this);
-        }
-
-        /**
-         * {@code readObject} method for the serialization proxy pattern.
-         * <p>
-         * Guarantees that the serialization system will never generate a serialized instance of the enclosing class.
-         *
-         * @param stream An object serialization stream.
-         * @throws java.io.InvalidObjectException This method will throw with the message "Proxy required".
-         */
-        @Serial
-        private void readObject(ObjectInputStream stream) throws InvalidObjectException {
-            throw new InvalidObjectException("Proxy required");
-        }
-
-        /**
-         * A serialization proxy which, in this context, is used to deserialize immutable nodes with final
-         * instance fields.
-         *
-         * @param <T> The component type of the underlying tree.
-         */
-        // DEV NOTE: The serialization proxy pattern is not compatible with non-final, i.e. extendable,
-        // classes. Also, it may not be compatible with circular object graphs.
-        private static final class SerializationProxy<T extends @Nullable Object> implements Serializable {
-
-            @Serial
-            private static final long serialVersionUID = 1L;
-
-            // the instance to be serialized/deserialized
-            private transient Node<T> node;
-
-            /**
-             * Constructor for the case of serialization, called by {@link Node#writeReplace()}.
-             * <p/>
-             * The constructor of a SerializationProxy takes an argument that concisely represents the logical state of
-             * an instance of the enclosing class.
-             *
-             * @param node a Branch
-             */
-            SerializationProxy(Node<T> node) {
-                this.node = node;
-            }
-
-            /**
-             * Write an object to a serialization stream.
-             *
-             * @param s An object serialization stream.
-             * @throws java.io.IOException If an error occurs writing to the stream.
-             */
-            @Serial
-            private void writeObject(ObjectOutputStream s) throws IOException {
-                s.defaultWriteObject();
-                s.writeObject(node.value);
-                s.writeObject(node.children);
-            }
-
-            /**
-             * Read an object from a deserialization stream.
-             *
-             * @param s An object deserialization stream.
-             * @throws ClassNotFoundException If the object's class read from the stream cannot be found.
-             * @throws IOException            If an error occurs reading from the stream.
-             */
-            @Serial
-            @SuppressWarnings("unchecked")
-            private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
-                s.defaultReadObject();
-                final T value = (T) s.readObject();
-                final io.vavr.collection.List<Node<T>> children = (io.vavr.collection.List<Node<T>>) s.readObject();
-                node = new Node<>(value, children);
-            }
-
-            /**
-             * {@code readResolve} method for the serialization proxy pattern.
-             * <p>
-             * Returns a logically equivalent instance of the enclosing class. The presence of this method causes the
-             * serialization system to translate the serialization proxy back into an instance of the enclosing class
-             * upon deserialization.
-             *
-             * @return A deserialized instance of the enclosing class.
-             */
-            @Serial
-            private Object readResolve() {
-                return node;
-            }
-        }
     }
 
     /**
@@ -1082,10 +976,7 @@ public interface Tree<T extends @Nullable Object> extends Traversable<T>, Serial
      *
      * @param <T> type of the tree's values
      */
-    final class Empty<T extends @Nullable Object> implements Tree<T>, Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    final class Empty<T extends @Nullable Object> implements Tree<T> {
 
         private static final Empty<?> INSTANCE = new Empty<>();
 
@@ -1151,18 +1042,6 @@ public interface Tree<T extends @Nullable Object> extends Traversable<T>, Serial
         @Override
         public String draw() { return "▣"; }
 
-        // -- Serializable implementation
-
-        /**
-         * Instance control for object serialization.
-         *
-         * @return The singleton instance of Empty.
-         * @see java.io.Serializable
-         */
-        @Serial
-        private Object readResolve() {
-            return INSTANCE;
-        }
     }
 
     /**

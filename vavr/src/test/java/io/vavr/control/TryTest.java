@@ -4,7 +4,6 @@ import io.vavr.AbstractValueTest;
 import io.vavr.CheckedPredicate;
 import io.vavr.Function1;
 import io.vavr.PartialFunction;
-import io.vavr.Serializables;
 import io.vavr.Value;
 import io.vavr.collection.Seq;
 import java.io.IOException;
@@ -1482,14 +1481,6 @@ public class TryTest extends AbstractValueTest {
             final Try<Seq<String>> reducedTry = Try.traverse(tries, x -> x.equals("b") ? Try.failure(t) : Try.success(x));
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
-
-        // serialization
-
-        @Test
-        public void shouldSerializeDeserializeFailure() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(Try.failure(error())));
-            assertThat(actual.toString()).isEqualTo(Try.failure(error()).toString());
-        }
     }
 
     @Nested
@@ -1746,14 +1737,6 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldConvertSuccessToString() {
             assertThat(Try.success(1).toString()).isEqualTo("Success(1)");
-        }
-
-        // serialization
-
-        @Test
-        public void shouldSerializeDeserializeSuccess() {
-            final Object actual = Serializables.deserialize(Serializables.serialize(Try.success(1)));
-            assertThat(actual).isEqualTo(Try.success(1));
         }
     }
 

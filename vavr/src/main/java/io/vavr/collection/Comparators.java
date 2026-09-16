@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import java.io.Serializable;
 import java.util.Comparator;
 import org.jspecify.annotations.Nullable;
 
@@ -16,7 +15,6 @@ final class Comparators {
 
     /**
      * Returns the natural comparator for type U, i.e. treating it as {@code Comparable<U>}.
-     * The returned comparator is also {@code java.io.Serializable}.
      * <p>
      * Please note that this will lead to runtime exceptions, if U is not Comparable.
      *
@@ -29,9 +27,7 @@ final class Comparators {
     }
 }
 
-final class NaturalComparator<T extends @Nullable Object> implements Comparator<T>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+final class NaturalComparator<T extends @Nullable Object> implements Comparator<T> {
 
     private static final NaturalComparator<?> INSTANCE = new NaturalComparator<>();
 
@@ -58,16 +54,6 @@ final class NaturalComparator<T extends @Nullable Object> implements Comparator<
     @Override
     public int hashCode() {
         return 1;
-    }
-
-    /**
-     * Instance control for object serialization.
-     *
-     * @return The singleton instance of NaturalComparator.
-     * @see java.io.Serializable
-     */
-    private Object readResolve() {
-        return INSTANCE;
     }
 
 }

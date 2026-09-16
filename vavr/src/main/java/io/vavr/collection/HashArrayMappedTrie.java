@@ -4,7 +4,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.HashArrayMappedTrieModule.EmptyNode;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
@@ -18,9 +17,7 @@ import static java.util.Arrays.copyOf;
  *
  * @author Ruslan Sennov, Grzegorz Piwowarek
  */
-interface HashArrayMappedTrie<K extends @Nullable Object, V extends @Nullable Object> extends Iterable<Tuple2<K, V>>, Serializable {
-
-    static final long serialVersionUID = 1L;
+interface HashArrayMappedTrie<K extends @Nullable Object, V extends @Nullable Object> extends Iterable<Tuple2<K, V>> {
 
     static <K extends @Nullable Object, V extends @Nullable Object> HashArrayMappedTrie<K, V> empty() {
         return EmptyNode.instance();
@@ -152,8 +149,6 @@ interface HashArrayMappedTrieModule {
      */
     abstract class AbstractNode<K extends @Nullable Object, V extends @Nullable Object> implements HashArrayMappedTrie<K, V> {
 
-        private static final long serialVersionUID = 1L;
-
         static final int SIZE = 5;
         static final int BUCKET_SIZE = 1 << SIZE;
         static final int MAX_INDEX_NODE = BUCKET_SIZE >> 1;
@@ -261,9 +256,7 @@ interface HashArrayMappedTrieModule {
      * @param <K> Key type
      * @param <V> Value type
      */
-    final class EmptyNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class EmptyNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> {
 
         private static final EmptyNode<?, ?> INSTANCE = new EmptyNode<>();
 
@@ -312,15 +305,6 @@ interface HashArrayMappedTrieModule {
             return Iterator.empty();
         }
 
-        /**
-         * Instance control for object serialization.
-         *
-         * @return The singleton instance of EmptyNode.
-         * @see Serializable
-         */
-        private Object readResolve() {
-            return INSTANCE;
-        }
     }
 
     /**
@@ -330,8 +314,6 @@ interface HashArrayMappedTrieModule {
      * @param <V> Value type
      */
     abstract class LeafNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> {
-
-        private static final long serialVersionUID = 1L;
 
         abstract K key();
 
@@ -369,14 +351,10 @@ interface HashArrayMappedTrieModule {
      * @param <K> Key type
      * @param <V> Value type
      */
-    final class LeafSingleton<K extends @Nullable Object, V extends @Nullable Object> extends LeafNode<K, V> implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class LeafSingleton<K extends @Nullable Object, V extends @Nullable Object> extends LeafNode<K, V> {
 
         private final int hash;
-        @SuppressWarnings("serial") // Conditionally serializable
         private final K key;
-        @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
 
         LeafSingleton(int hash, K key, V value) {
@@ -447,14 +425,10 @@ interface HashArrayMappedTrieModule {
      * @param <K> Key type
      * @param <V> Value type
      */
-    final class LeafList<K extends @Nullable Object, V extends @Nullable Object> extends LeafNode<K, V> implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class LeafList<K extends @Nullable Object, V extends @Nullable Object> extends LeafNode<K, V> {
 
         private final int hash;
-        @SuppressWarnings("serial") // Conditionally serializable
         private final K key;
-        @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
         private final int size;
         private final LeafNode<K, V> tail;
@@ -606,13 +580,10 @@ interface HashArrayMappedTrieModule {
      * @param <K> Key type
      * @param <V> Value type
      */
-    final class IndexedNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> implements Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class IndexedNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> {
 
         private final int bitmap;
         private final int size;
-        @SuppressWarnings("serial") // Conditionally serializable
         private final Object[] subNodes;
 
         IndexedNode(int bitmap, int size, Object[] subNodes) {
@@ -737,11 +708,8 @@ interface HashArrayMappedTrieModule {
      * @param <K> Key type
      * @param <V> Value type
      */
-    final class ArrayNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> implements Serializable {
+    final class ArrayNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final Object[] subNodes;
         private final int count;
         private final int size;

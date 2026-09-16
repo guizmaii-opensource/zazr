@@ -6,7 +6,6 @@ package io.vavr;
 
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -21,32 +20,26 @@ import org.jspecify.annotations.Nullable;
  * @param <T4> type of the 4th element
  * @author Daniel Dietrich
  */
-public final class Tuple4<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> implements Tuple, Comparable<Tuple4<T1, T2, T3, T4>>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class Tuple4<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> implements Tuple, Comparable<Tuple4<T1, T2, T3, T4>> {
 
     /**
      * The 1st element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T1 _1;
 
     /**
      * The 2nd element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T2 _2;
 
     /**
      * The 3rd element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T3 _3;
 
     /**
      * The 4th element of this tuple.
      */
-    @SuppressWarnings("serial") // Conditionally serializable
     public final T4 _4;
 
     /**
@@ -65,7 +58,7 @@ public final class Tuple4<T1 extends @Nullable Object, T2 extends @Nullable Obje
     }
 
     public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Comparator<Tuple4<T1, T2, T3, T4>> comparator(Comparator<? super T1> t1Comp, Comparator<? super T2> t2Comp, Comparator<? super T3> t3Comp, Comparator<? super T4> t4Comp) {
-        return (Comparator<Tuple4<T1, T2, T3, T4>> & Serializable) (t1, t2) -> {
+        return (t1, t2) -> {
             final int check1 = t1Comp.compare(t1._1, t2._1);
             if (check1 != 0) {
                 return check1;

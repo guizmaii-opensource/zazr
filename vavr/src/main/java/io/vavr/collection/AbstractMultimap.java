@@ -3,7 +3,6 @@ package io.vavr.collection;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
@@ -24,12 +23,10 @@ import static io.vavr.API.Tuple;
  */
 abstract class AbstractMultimap<K extends @Nullable Object, V extends @Nullable Object, M extends Multimap<K, V>> implements Multimap<K, V> {
 
-    private static final long serialVersionUID = 1L;
-
     /** The backing map that stores the key-value pairs. */
     protected final Map<K, Traversable<V>> back;
     /** A supplier that creates empty containers for new key entries. */
-    protected final SerializableSupplier<Traversable<?>> emptyContainer;
+    protected final Supplier<Traversable<?>> emptyContainer;
     private final ContainerType containerType;
     private int size = -1;
 
@@ -40,7 +37,7 @@ abstract class AbstractMultimap<K extends @Nullable Object, V extends @Nullable 
      * @param containerType  The type of container used to store multiple values for a key
      * @param emptyContainer A supplier that creates empty containers for new key entries
      */
-    AbstractMultimap(Map<K, Traversable<V>> back, ContainerType containerType, SerializableSupplier<Traversable<?>> emptyContainer) {
+    AbstractMultimap(Map<K, Traversable<V>> back, ContainerType containerType, Supplier<Traversable<?>> emptyContainer) {
         this.back = back;
         this.containerType = containerType;
         this.emptyContainer = emptyContainer;
@@ -677,7 +674,4 @@ abstract class AbstractMultimap<K extends @Nullable Object, V extends @Nullable 
         return javaMap;
     }
 
-
-    interface SerializableSupplier<T extends @Nullable Object> extends Supplier<T>, Serializable {
-    }
 }

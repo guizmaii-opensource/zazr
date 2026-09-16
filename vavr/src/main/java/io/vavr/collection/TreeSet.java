@@ -2,7 +2,6 @@ package io.vavr.collection;
 
 import io.vavr.*;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -18,9 +17,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 // DEV-NOTE: it is not possible to create an EMPTY TreeSet without a Comparator type in scope
-public final class TreeSet<T extends @Nullable Object> implements SortedSet<T>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     private final RedBlackTree<T> tree;
 

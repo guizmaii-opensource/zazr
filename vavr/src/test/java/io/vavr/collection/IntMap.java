@@ -5,13 +5,12 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.*;
 
-public final class IntMap<T> implements Traversable<T>, Serializable {
+public final class IntMap<T> implements Traversable<T> {
 
     private static final long serialVersionUID = 1L;
 

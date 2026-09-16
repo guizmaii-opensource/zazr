@@ -4,7 +4,6 @@ import io.vavr.*;
 import io.vavr.collection.Iterator;
 import io.vavr.collection.Seq;
 import io.vavr.collection.Vector;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -42,9 +41,7 @@ import static io.vavr.control.TryModule.sneakyThrow;
  * @param <T> the type of the value in case of success
  * @author Daniel
  */
-public interface Try<T extends @Nullable Object> extends Value<T>, Serializable {
-
-    long serialVersionUID = 1L;
+public interface Try<T extends @Nullable Object> extends Value<T> {
 
     /**
      * Creates a {@link Try} instance from a {@link CheckedFunction0}.
@@ -66,7 +63,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
             return new Failure<>(t);
         }
     }
-
 
     /**
      * Creates a {@link Try} instance from a {@link Supplier}.
@@ -140,7 +136,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         Objects.requireNonNull(runnable, "runnable is null");
         return run(runnable::run);
     }
-
 
     /**
      * Transforms an {@link Iterable} of {@link Try} instances into a single {@link Try} containing a {@link Seq}
@@ -245,7 +240,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         return andThenTry(consumer::accept);
     }
 
-
     /**
      * Passes the result of this {@code Try} to the given {@link CheckedConsumer} if this is a {@link Success}.
      * <p>
@@ -293,7 +287,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         Objects.requireNonNull(runnable, "runnable is null");
         return andThenTry(runnable::run);
     }
-
 
     /**
      * Executes the given {@link CheckedRunnable} if this {@code Try} is a {@link Success}; 
@@ -832,7 +825,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         }
     }
 
-
     /**
      * Returns the value of this {@link Success}, or throws a provided exception if this is a {@link Failure}.
      * <p>
@@ -891,7 +883,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         return this;
     }
 
-
     /**
      * Attempts to recover from a failure if the cause is an instance of the specified exception type.
      * <p>
@@ -932,7 +923,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         }
         return this;
     }
-
 
     /**
      * Attempts to recover from a failure by applying the given recovery function if the cause matches the specified exception type.
@@ -980,7 +970,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         return this;
     }
 
-
     /**
      * Recovers this {@code Try} with the given {@code recovered} value if this is a {@link Try.Failure}
      * and the underlying cause is assignable to the specified {@code exceptionType}.
@@ -1016,7 +1005,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
           : this;
     }
 
-
     /**
      * Recovers this {@code Try} with the given {@code value} if this is a {@link Try.Failure}
      * and the underlying cause matches the specified {@code exceptionType}.
@@ -1051,7 +1039,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
           : this;
     }
 
-
     /**
      * Recovers this {@code Try} if it is a {@link Try.Failure} by applying the given recovery function {@code f}
      * to the underlying exception. The result of the function is wrapped in a {@link Try.Success}.
@@ -1079,7 +1066,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
             return this;
         }
     }
-
 
     /**
      * Recovers this {@code Try} if it is a {@link Try.Failure} by applying the given recovery function {@code f}
@@ -1142,7 +1128,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
         return isFailure() ? of(recoveryAttempt) : this;
     }
 
-
     /**
      * Returns {@code this} if it is a {@link Try.Success}, or attempts to recover from a failure when the
      * underlying cause is assignable to the specified {@code exceptionType} by evaluating the given
@@ -1176,7 +1161,6 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
           ? of(recoveryAttempt)
           : this;
     }
-
 
     /**
      * Converts this {@code Try} to an {@link Either}.
@@ -1337,11 +1321,8 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
      * @param <T> the type of the contained value
      * @author Daniel Dietrich
      */
-    final class Success<T extends @Nullable Object> implements Try<T>, Serializable {
+    final class Success<T extends @Nullable Object> implements Try<T> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         private final T value;
 
         /**
@@ -1414,9 +1395,7 @@ public interface Try<T extends @Nullable Object> extends Value<T>, Serializable 
      * @param <T> the type of the value that would have been contained if successful
      * @author Daniel Dietrich
      */
-    final class Failure<T extends @Nullable Object> implements Try<T>, Serializable {
-
-        private static final long serialVersionUID = 1L;
+    final class Failure<T extends @Nullable Object> implements Try<T> {
 
         private final Throwable cause;
 

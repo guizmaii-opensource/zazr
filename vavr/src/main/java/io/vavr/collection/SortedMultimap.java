@@ -17,11 +17,6 @@ import org.jspecify.annotations.Nullable;
 public interface SortedMultimap<K extends @Nullable Object, V extends @Nullable Object> extends Multimap<K, V>, Ordered<K> {
 
     /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
-
-    /**
      * Narrows a widened {@code SortedMultimap<? extends K, ? extends V>} to {@code SortedMultimap<K, V>}
      * by performing a type-safe cast. This is eligible because immutable/read-only
      * collections are covariant.

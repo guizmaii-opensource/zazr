@@ -3,7 +3,6 @@ package io.vavr.collection;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -23,10 +22,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 // DEV-NOTE: prefer entries.min().get() over iterator().next() for better performance
-public final class TreeMap<K extends @Nullable Object, V extends @Nullable Object> implements SortedMap<K, V>, Serializable {
-
-
-    private static final long serialVersionUID = 1L;
+public final class TreeMap<K extends @Nullable Object, V extends @Nullable Object> implements SortedMap<K, V> {
 
     private final RedBlackTree<Tuple2<K, V>> entries;
 
@@ -1571,9 +1567,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // -- internal types
 
-    private interface EntryComparator<K extends @Nullable Object, V extends @Nullable Object> extends Comparator<Tuple2<K, V>>, Serializable {
-
-        long serialVersionUID = 1L;
+    private interface EntryComparator<K extends @Nullable Object, V extends @Nullable Object> extends Comparator<Tuple2<K, V>> {
 
         static <K extends @Nullable Object, V extends @Nullable Object> EntryComparator<K, V> of(Comparator<? super K> keyComparator) {
             Objects.requireNonNull(keyComparator, "keyComparator is null");
@@ -1590,9 +1584,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
         final class Specific<K extends @Nullable Object, V extends @Nullable Object> implements EntryComparator<K, V> {
 
-            private static final long serialVersionUID = 1L;
-
-            @SuppressWarnings("serial") // Conditionally serializable
             private final Comparator<K> keyComparator;
 
             @SuppressWarnings("unchecked")
@@ -1612,8 +1603,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         }
 
         final class Natural<K extends @Nullable Object, V extends @Nullable Object> implements EntryComparator<K, V> {
-
-            private static final long serialVersionUID = 1L;
 
             private static final Natural<?, ?> INSTANCE = new Natural<>();
 
@@ -1649,15 +1638,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                 return 1;
             }
 
-            /**
-             * Instance control for object serialization.
-             *
-             * @return The singleton instance of {@code Natural}.
-             * @see java.io.Serializable
-             */
-            private Object readResolve() {
-                return INSTANCE;
-            }
         }
     }
 }

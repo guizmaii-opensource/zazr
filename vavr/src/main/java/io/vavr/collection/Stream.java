@@ -97,12 +97,6 @@ import static io.vavr.collection.JavaConverters.ListView;
 public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
     /**
-     * The serial version UID for serialization.
-     */
-    @Serial
-    long serialVersionUID = 1L;
-
-    /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
      * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link Stream}.
      *
@@ -1916,10 +1910,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      *
      * @param <T> Component type of the Stream.
      */
-    final class Empty<T extends @Nullable Object> implements Stream<T>, Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    final class Empty<T extends @Nullable Object> implements Stream<T> {
 
         private static final Empty<?> INSTANCE = new Empty<>();
 
@@ -1973,16 +1964,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
             return stringPrefix() + "()";
         }
 
-        /**
-         * Instance control for object serialization.
-         *
-         * @return The singleton instance of Nil.
-         * @see java.io.Serializable
-         */
-        @Serial
-        private Object readResolve() {
-            return INSTANCE;
-        }
     }
 
     /**
@@ -1992,10 +1973,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      */
     abstract class Cons<T extends @Nullable Object> implements Stream<T> {
 
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         final T head;
         final Lazy<Stream<T>> tail;
 
@@ -2054,10 +2031,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
 interface StreamModule {
 
-    final class ConsImpl<T extends @Nullable Object> extends Cons<T> implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    final class ConsImpl<T extends @Nullable Object> extends Cons<T> {
 
         ConsImpl(T head, Supplier<Stream<T>> tail) {
             super(head, tail);
@@ -2068,21 +2042,9 @@ interface StreamModule {
             return tail.get();
         }
 
-        @Serial
-        private Object writeReplace() {
-            return new SerializationProxy<>(this);
-        }
-
-        @Serial
-        private void readObject(ObjectInputStream stream) throws InvalidObjectException {
-            throw new InvalidObjectException("Proxy required");
-        }
     }
 
-    final class AppendElements<T extends @Nullable Object> extends Cons<T> implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    final class AppendElements<T extends @Nullable Object> extends Cons<T> {
 
         private final io.vavr.collection.Queue<T> queue;
 
@@ -2118,98 +2080,6 @@ interface StreamModule {
             }
         }
 
-        @Serial
-        private Object writeReplace() {
-            return new SerializationProxy<>(this);
-        }
-
-        @Serial
-        private void readObject(ObjectInputStream stream) throws InvalidObjectException {
-            throw new InvalidObjectException("Proxy required");
-        }
-    }
-
-    /**
-     * A serialization proxy which, in this context, is used to deserialize immutable, linked Streams with final
-     * instance fields.
-     *
-     * @param <T> The component type of the underlying stream.
-     */
-    // DEV NOTE: The serialization proxy pattern is not compatible with non-final, i.e. extendable,
-    // classes. Also, it may not be compatible with circular object graphs.
-    final class SerializationProxy<T extends @Nullable Object> implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        // the instance to be serialized/deserialized
-        private transient Cons<T> stream;
-
-        /**
-         * Constructor for the case of serialization.
-         * <p>
-         * The constructor of a SerializationProxy takes an argument that concisely represents the logical state of
-         * an instance of the enclosing class.
-         *
-         * @param stream a Cons
-         */
-        SerializationProxy(Cons<T> stream) {
-            this.stream = stream;
-        }
-
-        /**
-         * Write an object to a serialization stream.
-         *
-         * @param s An object serialization stream.
-         * @throws java.io.IOException If an error occurs writing to the stream.
-         */
-        @Serial
-        private void writeObject(ObjectOutputStream s) throws IOException {
-            s.defaultWriteObject();
-            s.writeInt(stream.length());
-            for (Stream<T> l = stream; !l.isEmpty(); l = l.tail()) {
-                s.writeObject(l.head());
-            }
-        }
-
-        /**
-         * Read an object from a deserialization stream.
-         *
-         * @param s An object deserialization stream.
-         * @throws ClassNotFoundException If the object's class read from the stream cannot be found.
-         * @throws InvalidObjectException If the stream contains no stream elements.
-         * @throws IOException            If an error occurs reading from the stream.
-         */
-        @Serial
-        private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
-            s.defaultReadObject();
-            final int size = s.readInt();
-            if (size <= 0) {
-                throw new InvalidObjectException("No elements");
-            }
-            Stream<T> temp = Empty.instance();
-            for (int i = 0; i < size; i++) {
-                @SuppressWarnings("unchecked")
-                final T element = (T) s.readObject();
-                temp = temp.append(element);
-            }
-            // DEV-NOTE: Cons is deserialized
-            stream = (Cons<T>) temp;
-        }
-
-        /**
-         * {@code readResolve} method for the serialization proxy pattern.
-         * <p>
-         * Returns a logically equivalent instance of the enclosing class. The presence of this method causes the
-         * serialization system to translate the serialization proxy back into an instance of the enclosing class
-         * upon deserialization.
-         *
-         * @return A deserialized instance of the enclosing class.
-         */
-        @Serial
-        private Object readResolve() {
-            return stream;
-        }
     }
 
     final class AppendSelf<T extends @Nullable Object> {

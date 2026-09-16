@@ -1,7 +1,6 @@
 package io.vavr.collection;
 
 import io.vavr.*;
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -15,11 +14,8 @@ import static io.vavr.collection.PriorityQueueBase.*;
  * @param <T> Component type
  * @author Pap Lőrinc
  */
-public final class PriorityQueue<T extends @Nullable Object> extends io.vavr.collection.AbstractQueue<T, PriorityQueue<T>> implements Serializable, Ordered<T> {
+public final class PriorityQueue<T extends @Nullable Object> extends io.vavr.collection.AbstractQueue<T, PriorityQueue<T>> implements Ordered<T> {
 
-    private static final long serialVersionUID = 1L;
-
-    @SuppressWarnings("serial") // Conditionally serializable
     private final Comparator<? super T> comparator;
     private final Seq<Node<T>> forest;
     private final int size;
@@ -896,11 +892,8 @@ final class PriorityQueueBase {
     }
 
     /* Based on http://www.brics.dk/RS/96/37/BRICS-RS-96-37.pdf */
-    static final class Node<T extends @Nullable Object> implements Serializable {
+    static final class Node<T extends @Nullable Object> {
 
-        private static final long serialVersionUID = 1L;
-
-        @SuppressWarnings("serial") // Conditionally serializable
         final T root;
         final int rank;
         final Seq<Node<T>> children;

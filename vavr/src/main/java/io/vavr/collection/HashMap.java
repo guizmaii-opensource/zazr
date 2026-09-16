@@ -3,12 +3,6 @@ package io.vavr.collection;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -25,9 +19,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
  */
-public final class HashMap<K extends @Nullable Object, V extends @Nullable Object> implements Map<K, V>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public final class HashMap<K extends @Nullable Object, V extends @Nullable Object> implements Map<K, V> {
 
     private static final HashMap<?, ?> EMPTY = new HashMap<>(HashArrayMappedTrie.empty());
 
@@ -946,14 +938,6 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Collections.hashUnordered(this);
     }
 
-    private Object writeReplace() {
-        return new SerializationProxy<>(this.trie);
-    }
-
-    private void readObject(ObjectInputStream stream) throws InvalidObjectException {
-        throw new InvalidObjectException("Proxy required");
-    }
-
     @Override
     public String stringPrefix() {
         return "HashMap";
@@ -974,51 +958,4 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return HashMap.ofEntries(tuples);
     }
 
-    // DEV NOTE: The serialization proxy pattern is not compatible with non-final, i.e. extendable,
-    // classes. Also, it may not be compatible with circular object graphs.
-    private static final class SerializationProxy<K extends @Nullable Object, V extends @Nullable Object> implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        // the instance to be serialized/deserialized
-        private transient HashArrayMappedTrie<K, V> trie;
-
-        SerializationProxy(HashArrayMappedTrie<K, V> trie) {
-            this.trie = trie;
-        }
-
-        @Serial
-        private void writeObject(ObjectOutputStream s) throws IOException {
-            s.defaultWriteObject();
-            s.writeInt(trie.size());
-            for (Tuple2<K, V> e : trie) {
-                s.writeObject(e._1);
-                s.writeObject(e._2);
-            }
-        }
-
-        @Serial
-        private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
-            s.defaultReadObject();
-            final int size = s.readInt();
-            if (size < 0) {
-                throw new InvalidObjectException("No elements");
-            }
-            HashArrayMappedTrie<K, V> temp = HashArrayMappedTrie.empty();
-            for (int i = 0; i < size; i++) {
-                @SuppressWarnings("unchecked")
-                final K key = (K) s.readObject();
-                @SuppressWarnings("unchecked")
-                final V value = (V) s.readObject();
-                temp = temp.put(key, value);
-            }
-            trie = temp;
-        }
-
-        @Serial
-        private Object readResolve() {
-            return trie.isEmpty() ? HashMap.empty() : new HashMap<>(trie);
-        }
-    }
 }

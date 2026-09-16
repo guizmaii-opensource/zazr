@@ -4,7 +4,6 @@ package io.vavr.collection;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import java.io.Serializable;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
@@ -14,9 +13,7 @@ import java.util.Collection;
  *
  * @author Pap Lőrinc
  */
-interface ArrayType<T extends @Nullable Object> extends Serializable {
-
-    long serialVersionUID = 1L;
+interface ArrayType<T extends @Nullable Object> {
 
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> ArrayType<T> obj() { return (ArrayType<T>) ObjectArrayType.INSTANCE; }
@@ -129,8 +126,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         return (T) results;
     }
 
-    final class BooleanArrayType implements ArrayType<Boolean>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class BooleanArrayType implements ArrayType<Boolean> {
         static final BooleanArrayType INSTANCE = new BooleanArrayType();
         static final boolean[] EMPTY = new boolean[0];
 
@@ -170,8 +166,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class ByteArrayType implements ArrayType<Byte>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class ByteArrayType implements ArrayType<Byte> {
         static final ByteArrayType INSTANCE = new ByteArrayType();
         static final byte[] EMPTY = new byte[0];
 
@@ -211,8 +206,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class CharArrayType implements ArrayType<Character>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class CharArrayType implements ArrayType<Character> {
         static final CharArrayType INSTANCE = new CharArrayType();
         static final char[] EMPTY = new char[0];
 
@@ -252,8 +246,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class DoubleArrayType implements ArrayType<Double>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class DoubleArrayType implements ArrayType<Double> {
         static final DoubleArrayType INSTANCE = new DoubleArrayType();
         static final double[] EMPTY = new double[0];
 
@@ -293,8 +286,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class FloatArrayType implements ArrayType<Float>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class FloatArrayType implements ArrayType<Float> {
         static final FloatArrayType INSTANCE = new FloatArrayType();
         static final float[] EMPTY = new float[0];
 
@@ -334,8 +326,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class IntArrayType implements ArrayType<Integer>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class IntArrayType implements ArrayType<Integer> {
         static final IntArrayType INSTANCE = new IntArrayType();
         static final int[] EMPTY = new int[0];
 
@@ -375,8 +366,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class LongArrayType implements ArrayType<Long>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class LongArrayType implements ArrayType<Long> {
         static final LongArrayType INSTANCE = new LongArrayType();
         static final long[] EMPTY = new long[0];
 
@@ -416,8 +406,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class ShortArrayType implements ArrayType<Short>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class ShortArrayType implements ArrayType<Short> {
         static final ShortArrayType INSTANCE = new ShortArrayType();
         static final short[] EMPTY = new short[0];
 
@@ -457,8 +446,7 @@ interface ArrayType<T extends @Nullable Object> extends Serializable {
         }
     }
 
-    final class ObjectArrayType implements ArrayType<Object>, Serializable {
-        private static final long serialVersionUID = 1L;
+    final class ObjectArrayType implements ArrayType<Object> {
         static final ObjectArrayType INSTANCE = new ObjectArrayType();
         static final Object[] EMPTY = new Object[0];
 

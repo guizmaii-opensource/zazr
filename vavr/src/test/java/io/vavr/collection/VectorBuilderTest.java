@@ -309,28 +309,6 @@ public class VectorBuilderTest {
     }
 
     @Test
-    public void shouldSurviveJavaSerialisation() {
-        final java.util.List<Integer> list = IntStream.range(0, 1056).boxed().toList();
-        final Vector<Integer> source = Vector.ofAll(list);
-        // shared leaves at two levels, a handed-over single leaf, a hinted leaf, and the empty result
-        final java.util.List<Vector<Integer>> built = java.util.List.of(
-                Vector.<Integer> newBuilder().addAll(source).result(),
-                Vector.<Integer> newBuilder().add(-1).addAll(source).result(),
-                Vector.<Integer> newBuilder().addAll(source.take(32)).result(),
-                Vector.<Integer> newBuilder().addAll(source.take(7)).result(),
-                Vector.<Integer> newBuilder(7).addAll(source.take(7)).result(),
-                Vector.<Integer> newBuilder().result());
-        for (Vector<Integer> vector : built) {
-            final Vector<Integer> copy = io.vavr.Serializables.deserialize(io.vavr.Serializables.serialize(vector));
-            assertSameShape(copy, vector, vector.size());
-            assertThat(copy.hashCode()).isEqualTo(vector.hashCode());
-            if (vector.isEmpty()) {
-                assertThat(copy).isSameAs(Vector.empty());
-            }
-        }
-    }
-
-    @Test
     public void shouldAddAllPrimitiveBackedVector() {
         final Vector<Integer> ints = Vector.ofAll(IntStream.range(0, 1025).toArray());
         assertSameElements(Vector.<Integer> newBuilder().addAll(ints).result(), ints, 1025);

@@ -2,7 +2,6 @@ package io.vavr.collection;
 
 import io.vavr.*;
 import io.vavr.control.Option;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.*;
@@ -35,12 +34,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> the element type
  * @author Daniel Dietrich, Grzegorz Piwowarek
  */
-public interface Seq<T extends @Nullable Object> extends Traversable<T>, PartialFunction<Integer, T>, Serializable {
-
-    /**
-     * The serial version UID for serialization.
-     */
-    long serialVersionUID = 1L;
+public interface Seq<T extends @Nullable Object> extends Traversable<T>, PartialFunction<Integer, T> {
 
     /**
      * Narrows a {@code Seq<? extends T>} to {@code Seq<T>} via a safe unchecked cast.
@@ -54,7 +48,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
     static <T extends @Nullable Object> Seq<T> narrow(Seq<? extends T> seq) {
         return (Seq<T>) seq;
     }
-
 
     /**
      * Returns a new sequence with the given element appended at the end.
@@ -75,7 +68,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * @throws NullPointerException if {@code elements} is {@code null}
      */
     Seq<T> appendAll(Iterable<? extends T> elements);
-
 
     /**
      * A {@code Seq} is a partial function which returns the element at the specified index by calling
@@ -110,7 +102,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * @return an immutable {@link java.util.List} view of this sequence
      */
     java.util.List<T> asJava();
-
 
     /**
      * Creates an <strong>immutable</strong> {@link java.util.List} view of this {@code Seq}
@@ -258,7 +249,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * @return an {@link Iterator} over sequences representing the Cartesian power of this sequence
      */
     Iterator<? extends Seq<T>> crossProduct(int power);
-
 
     /**
      * Computes the Cartesian product of this sequence with another iterable,
@@ -700,7 +690,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      */
     Seq<? extends Seq<T>> permutations();
 
-
     /**
      * Returns the length of the longest prefix of this sequence whose elements
      * all satisfy the given predicate.
@@ -975,7 +964,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
         return !j.hasNext();
     }
 
-
     /**
      * Returns a {@code Seq} that is a subsequence of this sequence, starting from the specified {@code beginIndex}
      * and extending to the end of this sequence.
@@ -1025,7 +1013,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      */
     Seq<T> subSequence(int beginIndex, int endIndex);
 
-
     /**
      * Returns a new {@code Seq} with the element at the specified index replaced by the given value.
      *
@@ -1073,7 +1060,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * @throws NullPointerException if {@code comparator} is null
      */
     int search(T element, Comparator<? super T> comparator);
-
 
     // -- Adjusted return types of Traversable methods
 

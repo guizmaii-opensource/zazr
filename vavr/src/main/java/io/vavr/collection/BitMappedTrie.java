@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -24,7 +23,7 @@ import static java.util.function.Function.identity;
  *
  * @author Pap Lőrinc
  */
-final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
+final class BitMappedTrie<T extends @Nullable Object> {
 
     static final int BRANCHING_BASE = 5;
     static final int BRANCHING_FACTOR = 1 << BRANCHING_BASE;
@@ -34,15 +33,12 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
     static int digit(int num, int depthShift) { return lastDigit(firstDigit(num, depthShift)); }
     static int lastDigit(int num) { return num & BRANCHING_MASK; }
 
-    private static final long serialVersionUID = 1L;
-
     private static final BitMappedTrie<?> EMPTY = new BitMappedTrie<>(obj(), obj().empty(), 0, 0, 0);
 
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> BitMappedTrie<T> empty() { return (BitMappedTrie<T>) EMPTY; }
 
     final ArrayType<T> type;
-    @SuppressWarnings("serial") // Conditionally serializable
     private final Object array;
     private final int offset, length;
     private final int depthShift;
