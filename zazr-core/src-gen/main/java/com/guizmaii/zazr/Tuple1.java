@@ -13,25 +13,17 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A tuple of one element which can be seen as cartesian product of one component.
+ * <p>
+ * A record: {@code equals} and {@code hashCode} are structural, the components are read with
+ * {@code _1()}, {@code _2()}, ... and a tuple is deconstructed with a record pattern, e.g.
+ * {@code case Tuple2(var a, var b)}. Components may be null.
  *
  * @param <T1> type of the 1st element
+ *
+ * @param _1 the 1st element
  * @author Daniel Dietrich
  */
-public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Comparable<Tuple1<T1>> {
-
-    /**
-     * The 1st element of this tuple.
-     */
-    public final T1 _1;
-
-    /**
-     * Constructs a tuple of one element.
-     *
-     * @param t1 the 1st element
-     */
-    public Tuple1(T1 t1) {
-        this._1 = t1;
-    }
+public record Tuple1<T1 extends @Nullable Object>(T1 _1) implements Tuple, Comparable<Tuple1<T1>> {
 
     public static <T1 extends @Nullable Object> Comparator<Tuple1<T1>> comparator(Comparator<? super T1> t1Comp) {
         return (t1, t2) -> {
@@ -67,15 +59,6 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
     @Override
     public int compareTo(Tuple1<T1> that) {
         return Tuple1.compareTo(this, that);
-    }
-
-    /**
-     * Getter of the 1st element of this tuple.
-     *
-     * @return the 1st element of this Tuple.
-     */
-    public T1 _1() {
-        return _1;
     }
 
     /**
@@ -242,24 +225,7 @@ public final class Tuple1<T1 extends @Nullable Object> implements Tuple, Compara
         return Tuple.of(_1, tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6(), tuple._7());
     }
 
-    // -- Object
-
-    @Override
-    public boolean equals(@Nullable Object o) {
-        if (o == this) {
-            return true;
-        } else if (!(o instanceof Tuple1)) {
-            return false;
-        } else {
-            final Tuple1<?> that = (Tuple1<?>) o;
-            return Objects.equals(this._1, that._1);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return Tuple.hash(_1);
-    }
+    // -- Object: equals and hashCode are the record's; toString keeps the Scala-like "(a, b)" form
 
     @Override
     public String toString() {

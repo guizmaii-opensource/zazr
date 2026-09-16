@@ -16,33 +16,19 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A tuple of two elements which can be seen as cartesian product of two components.
+ * <p>
+ * A record: {@code equals} and {@code hashCode} are structural, the components are read with
+ * {@code _1()}, {@code _2()}, ... and a tuple is deconstructed with a record pattern, e.g.
+ * {@code case Tuple2(var a, var b)}. Components may be null.
  *
  * @param <T1> type of the 1st element
  * @param <T2> type of the 2nd element
+ *
+ * @param _1 the 1st element
+ * @param _2 the 2nd element
  * @author Daniel Dietrich
  */
-public final class Tuple2<T1 extends @Nullable Object, T2 extends @Nullable Object> implements Tuple, Comparable<Tuple2<T1, T2>> {
-
-    /**
-     * The 1st element of this tuple.
-     */
-    public final T1 _1;
-
-    /**
-     * The 2nd element of this tuple.
-     */
-    public final T2 _2;
-
-    /**
-     * Constructs a tuple of two elements.
-     *
-     * @param t1 the 1st element
-     * @param t2 the 2nd element
-     */
-    public Tuple2(T1 t1, T2 t2) {
-        this._1 = t1;
-        this._2 = t2;
-    }
+public record Tuple2<T1 extends @Nullable Object, T2 extends @Nullable Object>(T1 _1, T2 _2) implements Tuple, Comparable<Tuple2<T1, T2>> {
 
     public static <T1 extends @Nullable Object, T2 extends @Nullable Object> Comparator<Tuple2<T1, T2>> comparator(Comparator<? super T1> t1Comp, Comparator<? super T2> t2Comp) {
         return (t1, t2) -> {
@@ -91,15 +77,6 @@ public final class Tuple2<T1 extends @Nullable Object, T2 extends @Nullable Obje
     }
 
     /**
-     * Getter of the 1st element of this tuple.
-     *
-     * @return the 1st element of this Tuple.
-     */
-    public T1 _1() {
-        return _1;
-    }
-
-    /**
      * Returns a copy of this tuple with the 1st element replaced by the given {@code value}.
      *
      * @param value the new value
@@ -107,15 +84,6 @@ public final class Tuple2<T1 extends @Nullable Object, T2 extends @Nullable Obje
      */
     public Tuple2<T1, T2> update1(T1 value) {
         return new Tuple2<>(value, _2);
-    }
-
-    /**
-     * Getter of the 2nd element of this tuple.
-     *
-     * @return the 2nd element of this Tuple.
-     */
-    public T2 _2() {
-        return _2;
     }
 
     /**
@@ -326,25 +294,7 @@ public final class Tuple2<T1 extends @Nullable Object, T2 extends @Nullable Obje
         return Tuple.of(_1, _2, tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6());
     }
 
-    // -- Object
-
-    @Override
-    public boolean equals(@Nullable Object o) {
-        if (o == this) {
-            return true;
-        } else if (!(o instanceof Tuple2)) {
-            return false;
-        } else {
-            final Tuple2<?, ?> that = (Tuple2<?, ?>) o;
-            return Objects.equals(this._1, that._1)
-                  && Objects.equals(this._2, that._2);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return Tuple.hash(_1, _2);
-    }
+    // -- Object: equals and hashCode are the record's; toString keeps the Scala-like "(a, b)" form
 
     @Override
     public String toString() {

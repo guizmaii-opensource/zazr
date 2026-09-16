@@ -11,7 +11,6 @@ import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Stream;
 import java.util.Comparator;
-import java.util.Objects;
 import org.junit.jupiter.api.Test;
 
 public class Tuple5Test {
@@ -286,9 +285,23 @@ public class Tuple5Test {
 
     @Test
     public void shouldComputeCorrectHashCode() {
-        final int actual = createTuple().hashCode();
-        final int expected = Objects.hash(null, null, null, null, null);
-        assertThat(actual).isEqualTo(expected);
+        assertThat(createTuple().hashCode()).isEqualTo(createTuple().hashCode());
+        assertThat(createIntTuple(0, 0, 0, 0, 0).hashCode()).isEqualTo(createIntTuple(0, 0, 0, 0, 0).hashCode());
+        assertThat(createIntTuple(0, 0, 0, 0, 0).hashCode()).isNotEqualTo(createIntTuple(1, 0, 0, 0, 0).hashCode());
+    }
+
+    @Test
+    public void shouldDeconstructWithRecordPattern() {
+        final Object o = createIntTuple(1, 2, 3, 4, 5);
+        if (o instanceof Tuple5(var v1, var v2, var v3, var v4, var v5)) {
+            assertThat(v1).isEqualTo(1);
+            assertThat(v2).isEqualTo(2);
+            assertThat(v3).isEqualTo(3);
+            assertThat(v4).isEqualTo(4);
+            assertThat(v5).isEqualTo(5);
+        } else {
+            throw new AssertionError("record pattern did not match");
+        }
     }
 
     @Test

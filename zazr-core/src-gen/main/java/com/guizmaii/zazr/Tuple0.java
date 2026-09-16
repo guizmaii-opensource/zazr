@@ -13,27 +13,31 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A tuple of no elements which can be seen as cartesian product of no components.
+ * <p>
+ * A record: {@code equals} and {@code hashCode} are structural, the components are read with
+ * {@code _1()}, {@code _2()}, ... and a tuple is deconstructed with a record pattern, e.g.
+ * {@code case Tuple2(var a, var b)}. Components may be null.
+ *
  *
  * @author Daniel Dietrich
  */
-public final class Tuple0 implements Tuple, Comparable<Tuple0> {
+public record Tuple0() implements Tuple, Comparable<Tuple0> {
 
     /**
      * The singleton instance of Tuple0.
      */
-    private static final Tuple0 INSTANCE = new Tuple0 ();
+    private static final Tuple0 INSTANCE = new Tuple0();
 
     /**
      * The singleton Tuple0 comparator.
      */
     private static final Comparator<Tuple0> COMPARATOR = (t1, t2) -> 0;
 
-    // hidden constructor, internally called
-    private Tuple0 () {
-    }
-
     /**
      * Returns the singleton instance of Tuple0.
+     * <p>
+     * {@code new Tuple0()} is legal (a record constructor is public) but every {@code Tuple0}
+     * equals every other, so the singleton is only an allocation saving.
      *
      * @return The singleton instance of Tuple0.
      */
@@ -217,17 +221,7 @@ public final class Tuple0 implements Tuple, Comparable<Tuple0> {
         return Tuple.of(tuple._1(), tuple._2(), tuple._3(), tuple._4(), tuple._5(), tuple._6(), tuple._7(), tuple._8());
     }
 
-    // -- Object
-
-    @Override
-    public boolean equals(@Nullable Object o) {
-        return o == this;
-    }
-
-    @Override
-    public int hashCode() {
-        return 1;
-    }
+    // -- Object: equals and hashCode are the record's; toString keeps the Scala-like "(a, b)" form
 
     @Override
     public String toString() {
