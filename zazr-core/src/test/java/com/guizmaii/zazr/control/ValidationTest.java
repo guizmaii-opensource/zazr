@@ -38,6 +38,11 @@ public class ValidationTest extends AbstractValueTest {
     }
 
     @Override
+    protected boolean allowsNull() {
+        return false;
+    }
+
+    @Override
     protected boolean useIsEqualToInsteadOfIsSameAs() {
         return true;
     }
