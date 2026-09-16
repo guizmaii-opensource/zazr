@@ -1085,7 +1085,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         HashMap<K, Slot<K, V>> indexed = HashMap.empty();
         int index = 0;
         for (K key : list) {
-            indexed = indexed.put(key, new Slot<>(Tuple.of(key, map.get(key).get()), index++));
+            indexed = indexed.put(key, new Slot<>(map.getEntry(key).get(), index++));
         }
         return new LinkedHashMap<>(list, indexed, 0, 0);
     }

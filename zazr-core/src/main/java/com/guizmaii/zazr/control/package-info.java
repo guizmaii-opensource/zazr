@@ -14,8 +14,8 @@
  * <p>
  * The Option control is a replacement for {@linkplain java.util.Optional}. An Option is either
  * {@linkplain com.guizmaii.zazr.control.Option.Some} value or {@linkplain com.guizmaii.zazr.control.Option.None}.
- * In contrast to Optional, Option supports null values, i.e. {@code Option.some(null)} yields {@code Some(null)}.
- * However, {@code Option.of(null)} results in None.
+ * Like Optional, Option never holds null: {@code Option.some(null)} throws and {@code Option.ofNullable(null)}
+ * is None.
  * <p>
  * <strong>Try</strong>
  * <p>

@@ -252,7 +252,7 @@ public class CheckResultTest {
 
     @Test
     public void shouldHaveSampleWhenIsErroneousWithSample() {
-        final CheckResult.Erroneous erroneous = new CheckResult.Erroneous("test", 1, new Error("test"), Option.of(Tuple.of(1)));
+        final CheckResult.Erroneous erroneous = new CheckResult.Erroneous("test", 1, new Error("test"), Option.ofNullable(Tuple.of(1)));
         assertThat(erroneous.sample().get()).isEqualTo(Tuple.of(1));
     }
 

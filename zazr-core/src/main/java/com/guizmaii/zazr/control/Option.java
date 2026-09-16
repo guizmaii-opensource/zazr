@@ -16,27 +16,37 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A replacement for {@link java.util.Optional}.
+ * A replacement for {@link java.util.Optional}: a value that is either present, {@link Some}, or absent, {@link None}.
  * <p>
- * {@code Option} is a monadic container type representing the presence or absence of a value.
- * An instance is either a {@link Some} holding a value or the singleton {@link None}.
+ * {@code Option} is a sealed interface with two record cases, so it is eliminated with an exhaustive {@code switch}:
+ * <pre>{@code
+ * String s = switch (option) {
+ *     case Some(var value) -> "got " + value;
+ *     case None() -> "nothing";
+ * };
+ * }</pre>
  * <p>
- * The design is similar to {@link java.util.Optional} and related types in
- * <a href="http://hackage.haskell.org/package/base-4.6.0.1/docs/Data-Maybe.html">Haskell</a> and
- * <a href="http://www.scala-lang.org/api/current/#scala.Option">Scala</a>.
+ * {@code Some} never holds {@code null}: {@link #some(Object)} throws and {@link #ofNullable(Object)} is the escape
+ * hatch, as {@link java.util.Optional#of(Object)} and {@link java.util.Optional#ofNullable(Object)} are.
+ * <p>
+ * The design is similar to {@link java.util.Optional} and to
+ * <a href="http://www.scala-lang.org/api/current/#scala.Option">Scala's {@code Option}</a>.
  *
  * @param <T> the type of the optional value
  */
-public interface Option<T extends @Nullable Object> extends Value<T> {
+public sealed interface Option<T extends @Nullable Object> extends Value<T> permits Option.Some, Option.None {
 
     /**
-     * Creates an {@code Option} from the given value.
+     * Creates an {@code Option} from a nullable value: {@code None} for {@code null}, {@code Some(value)} otherwise.
+     * <p>
+     * This is the escape hatch of the null policy, like {@link Optional#ofNullable(Object)}: {@link #some(Object)}
+     * rejects {@code null}.
      *
      * @param value the value to wrap, possibly {@code null}
      * @param <T>   the (non-null) value type
      * @return {@code Some(value)} if the value is non-null, otherwise {@code None}
      */
-    static <T extends @NonNull Object> Option<T> of(@Nullable T value) {
+    static <T extends @NonNull Object> Option<T> ofNullable(@Nullable T value) {
         return (value == null) ? none() : some(value);
     }
 
@@ -88,15 +98,17 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
     /**
      * Creates a {@code Some} containing the given value.
      * <p>
-     * Unlike {@link Option#of(Object)}, this method preserves {@code null}:
+     * {@code null} is rejected, as {@link Optional#of(Object)} does; use {@link #ofNullable(Object)} to turn a
+     * nullable value into {@code None}:
      * <pre>
-     * Option.of(null);   // yields None
-     * Option.some(null); // yields Some(null)
+     * Option.ofNullable(null); // yields None
+     * Option.some(null);       // throws NullPointerException
      * </pre>
      *
-     * @param value the value to wrap, possibly {@code null}
+     * @param value the value to wrap, must not be {@code null}
      * @param <T>   the value type
      * @return a {@code Some} containing {@code value}
+     * @throws NullPointerException if {@code value} is null
      */
     static <T extends @Nullable Object> Option<T> some(T value) {
         return new Some<>(value);
@@ -134,9 +146,9 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
      *
      * @param <T>       the type of the optional value
      * @param condition the condition to test
-     * @param supplier  a supplier of the value, may return {@code null}
+     * @param supplier  a supplier of the value, must not return {@code null}
      * @return {@code Some} of the supplied value if {@code condition} is true, otherwise {@code None}
-     * @throws NullPointerException if {@code supplier} is null
+     * @throws NullPointerException if {@code supplier} is null, or supplies {@code null} when {@code condition} is true
      */
     static <T extends @Nullable Object> Option<T> when(boolean condition, Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
@@ -148,8 +160,9 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
      *
      * @param <T>       the type of the optional value
      * @param condition the condition to test
-     * @param value     the value to wrap, may be {@code null}
+     * @param value     the value to wrap, must not be {@code null} when {@code condition} is true
      * @return {@code Some} of {@code value} if {@code condition} is true, otherwise {@code None}
+     * @throws NullPointerException if {@code value} is null and {@code condition} is true
      */
     static <T extends @Nullable Object> Option<T> when(boolean condition, T value) {
         return condition ? some(value) : none();
@@ -165,7 +178,7 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     static <T extends @NonNull Object> Option<T> ofOptional(Optional<? extends T> optional) {
         Objects.requireNonNull(optional, "optional is null");
-        return optional.<Option<T>>map(Option::of).orElseGet(Option::none);
+        return optional.<Option<T>>map(Option::some).orElseGet(Option::none);
     }
 
     /**
@@ -202,8 +215,6 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
 
     /**
      * Checks whether this {@code Option} contains a value.
-     * <p>
-     * Note that {@code Some(null)} is considered defined.
      *
      * @return {@code true} if this is {@code Some}, {@code false} if this is {@code None}
      */
@@ -437,24 +448,21 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
     String toString();
 
     /**
-     * Some represents a defined {@link Option}. It contains a value which may be null. However, to
-     * create an Option containing null, {@link Option#some(Object) Option.some(null)} has to be called.
-     * In all other cases {@link Option#of(Object)} is sufficient.
+     * A defined {@link Option}. The value is never {@code null}: the constructor and {@link Option#some(Object)}
+     * throw, {@link Option#ofNullable(Object)} turns a nullable value into {@code None}.
      *
-     * @param <T> The type of the optional value.
-     * @author Daniel Dietrich
+     * @param value the value, never {@code null}
+     * @param <T>   The type of the optional value.
      */
-    final class Some<T extends @Nullable Object> implements Option<T> {
-
-        private final T value;
+    record Some<T extends @Nullable Object>(T value) implements Option<T> {
 
         /**
-         * Creates a new Some containing the given value.
+         * Rejects {@code null}.
          *
-         * @param value A value, may be null
+         * @throws NullPointerException if {@code value} is null
          */
-        private Some(T value) {
-            this.value = value;
+        public Some {
+            Objects.requireNonNull(value, "value is null");
         }
 
         @Override
@@ -465,16 +473,6 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
         @Override
         public boolean isEmpty() {
             return false;
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            return (obj == this) || (obj instanceof Some && Objects.equals(value, ((Some<?>) obj).value));
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(value);
         }
 
         @Override
@@ -489,23 +487,14 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
     }
 
     /**
-     * None is a singleton representation of the undefined {@link Option}.
+     * The undefined {@link Option}. {@link Option#none()} returns a shared instance; {@code new None<>()} is legal,
+     * a record constructor is public, and equal to it, since a record without components equals every other.
      *
      * @param <T> The type of the optional value.
-     * @author Daniel Dietrich
      */
-    final class None<T extends @Nullable Object> implements Option<T> {
+    record None<T extends @Nullable Object>() implements Option<T> {
 
-        /**
-         * The singleton instance of None.
-         */
         private static final None<?> INSTANCE = new None<>();
-
-        /**
-         * Hidden constructor.
-         */
-        private None() {
-        }
 
         @Override
         public T get() {
@@ -518,16 +507,6 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
         }
 
         @Override
-        public boolean equals(@Nullable Object o) {
-            return o == this;
-        }
-
-        @Override
-        public int hashCode() {
-            return 1;
-        }
-
-        @Override
         public String stringPrefix() {
             return "None";
         }
@@ -536,6 +515,5 @@ public interface Option<T extends @Nullable Object> extends Value<T> {
         public String toString() {
             return stringPrefix();
         }
-
     }
 }

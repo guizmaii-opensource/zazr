@@ -140,7 +140,7 @@ public class EitherLeftProjectionTest extends AbstractValueTest {
 
         @Test
         public void shouldConvertLeftProjectionOfLeftToSome() {
-            assertThat(Either.left(1).left().toOption()).isEqualTo(Option.of(1));
+            assertThat(Either.left(1).left().toOption()).isEqualTo(Option.ofNullable(1));
         }
 
         @Test

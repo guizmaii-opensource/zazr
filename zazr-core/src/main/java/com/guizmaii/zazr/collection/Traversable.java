@@ -61,7 +61,7 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return Option.of(groupBy(getKey).mapValues(Traversable<T>::singleOption))
+        return Option.ofNullable(groupBy(getKey).mapValues(Traversable<T>::singleOption))
           .filter(map -> !map.exists(kv -> kv._2().isEmpty()))
           .map(map -> Map.narrow(map.mapValues(Option::get)));
     }
@@ -291,13 +291,14 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * @param predicate the condition to test elements
      * @return {@code Some(element)} if a matching element is found, otherwise {@code None};
      *         the element may be {@code null}
-     * @throws NullPointerException if {@code predicate} is null
+     * @throws NullPointerException if {@code predicate} is null, or if the first matching element is {@code null}
+     *                              ({@code Some(null)} does not exist)
      */
     default Option<T> find(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         for (T a : this) {
             if (predicate.test(a)) {
-                return Option.some(a); // may be Some(null)
+                return Option.some(a);
             }
         }
         return Option.none();

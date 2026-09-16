@@ -698,7 +698,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldFindFirstOfNonNil() {
-        assertThat(of(1, 2, 3, 4).find(i -> i % 2 == 0)).isEqualTo(Option.of(2));
+        assertThat(of(1, 2, 3, 4).find(i -> i % 2 == 0)).isEqualTo(Option.ofNullable(2));
     }
 
     // -- findLast
@@ -710,7 +710,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldFindLastOfNonNil() {
-        assertThat(of(1, 2, 3, 4).findLast(i -> i % 2 == 0)).isEqualTo(Option.of(4));
+        assertThat(of(1, 2, 3, 4).findLast(i -> i % 2 == 0)).isEqualTo(Option.ofNullable(4));
     }
 
     // -- flatMap
@@ -828,13 +828,13 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldNilArrangeBy() {
-        assertThat(empty().arrangeBy(Function.identity())).isEqualTo(Option.of(LinkedHashMap.empty()));
+        assertThat(empty().arrangeBy(Function.identity())).isEqualTo(Option.ofNullable(LinkedHashMap.empty()));
     }
 
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
         final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected = Option.of(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        final Option<Map<?, ?>> expected = Option.ofNullable(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1520,7 +1520,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldReduceOptionNonNil() {
-        assertThat(of(1, 2, 3).reduceOption((a, b) -> a + b)).isEqualTo(Option.of(6));
+        assertThat(of(1, 2, 3).reduceOption((a, b) -> a + b)).isEqualTo(Option.ofNullable(6));
     }
 
     // -- reduce
@@ -1554,7 +1554,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldReduceLeftOptionNonNil() {
-        assertThat(of("a", "b", "c").reduceLeftOption((xs, x) -> xs + x)).isEqualTo(Option.of("abc"));
+        assertThat(of("a", "b", "c").reduceLeftOption((xs, x) -> xs + x)).isEqualTo(Option.ofNullable("abc"));
     }
 
     // -- reduceLeft
@@ -1588,7 +1588,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldReduceRightOptionNonNil() {
-        assertThat(of("a", "b", "c").reduceRightOption((x, xs) -> x + xs)).isEqualTo(Option.of("abc"));
+        assertThat(of("a", "b", "c").reduceRightOption((x, xs) -> x + xs)).isEqualTo(Option.ofNullable("abc"));
     }
 
     // -- reduceRight
@@ -2670,7 +2670,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldSingleOptionWork() {
-        assertThat(of(1).singleOption()).isEqualTo(Option.of(1));
+        assertThat(of(1).singleOption()).isEqualTo(Option.ofNullable(1));
     }
 
     @TestTemplate

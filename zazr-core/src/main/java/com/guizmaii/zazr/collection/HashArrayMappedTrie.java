@@ -231,7 +231,8 @@ interface HashArrayMappedTrieModule {
 
         @Override
         public boolean containsKey(K key) {
-            return get(key).isDefined();
+            // not get(key): a null value cannot be wrapped in Some, the entry can
+            return getEntry(key).isDefined();
         }
 
         @Override

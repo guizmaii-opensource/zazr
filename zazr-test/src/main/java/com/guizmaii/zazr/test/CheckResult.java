@@ -275,7 +275,7 @@ public interface CheckResult {
 
         @Override
         public Option<String> message() {
-            return Option.of(message);
+            return Option.ofNullable(message);
         }
 
         @Override

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public abstract class AbstractMapTest extends AbstractTraversableTest {
@@ -1294,29 +1295,32 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         @Test
         public void shouldComputeIfPresent() {
             final Map<Integer, String> map = emptyIntString().put(1, "v");
-            assertThat(map.computeIfPresent(1, (k, v) -> "b")).isEqualTo(Tuple.of(Option.of("b"), emptyIntString().put(1, "b")));
+            assertThat(map.computeIfPresent(1, (k, v) -> "b")).isEqualTo(Tuple.of(Option.ofNullable("b"), emptyIntString().put(1, "b")));
             assertThat(map.computeIfPresent(2, (k, v) -> "n")).isEqualTo(Tuple.of(Option.none(), map));
         }
 
         @Test
-        public void shouldComputeIfPresentWithNullResult() {
+        public void shouldRejectComputeIfPresentWithNullResult() {
+            // Some(null) does not exist (design 3.9), so a remapping to null cannot be reported
             final Map<Integer, String> map = emptyIntString().put(1, "v");
-            assertThat(map.computeIfPresent(1, (k, v) -> null)).isEqualTo(Tuple.of(Option.some(null), emptyIntString().put(1, null)));
+            assertThatThrownBy(() -> map.computeIfPresent(1, (k, v) -> null)).isInstanceOf(NullPointerException.class);
         }
     }
 
     @Nested
     class GetWithNullsTests {
         @Test
-        public void shouldReturnOptionOfNullWhenAccessingKeysSetToNull() {
+        public void shouldRejectGetOfKeySetToNull() {
+            // a map may hold null values, but get(k) cannot return Some(null) (design 3.9)
             final Map<String, String> map = mapOf("1", null);
-            assertThat(map.get("1")).isEqualTo(Option.some(null));
+            assertThat(map.containsKey("1")).isTrue();
+            assertThatThrownBy(() -> map.get("1")).isInstanceOf(NullPointerException.class);
         }
 
         @Test
         public void shouldReturnOptionOfKeyWhenAccessingPresentKeysInAMapWithNulls() {
             final Map<String, String> map = mapOf("1", "a").put("2", null);
-            assertThat(map.get("1")).isEqualTo(Option.of("a"));
+            assertThat(map.get("1")).isEqualTo(Option.ofNullable("a"));
         }
 
         @Test
@@ -1390,15 +1394,17 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldGetAPresentNullValueWhenPutFirstHavingTwoEntries() {
+        public void shouldRejectGetOfPresentNullValueWhenPutFirstHavingTwoEntries() {
             final Map<Integer, String> map = mapOf(1, null, 2, "b");
-            assertThat(map.get(1)).isEqualTo(Option.some(null));
+            assertThatThrownBy(() -> map.get(1)).isInstanceOf(NullPointerException.class);
+            assertThat(map.get(2)).isEqualTo(Option.some("b"));
         }
 
         @Test
-        public void shouldGetAPresentNullValueWhenPutLastHavingTwoEntries() {
+        public void shouldRejectGetOfPresentNullValueWhenPutLastHavingTwoEntries() {
             final Map<Integer, String> map = mapOf(1, "a", 2, null);
-            assertThat(map.get(2)).isEqualTo(Option.some(null));
+            assertThat(map.get(1)).isEqualTo(Option.some("a"));
+            assertThatThrownBy(() -> map.get(2)).isInstanceOf(NullPointerException.class);
         }
     }
 

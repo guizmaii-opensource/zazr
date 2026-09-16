@@ -285,7 +285,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
             assertThat(
                     Vector.unfoldRight(10, x -> x == 0
                                                 ? Option.none()
-                                                : Option.of(new Tuple2<>(x, x - 1))))
+                                                : Option.ofNullable(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -299,7 +299,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
             assertThat(
                     Vector.unfoldLeft(10, x -> x == 0
                                                ? Option.none()
-                                               : Option.of(new Tuple2<>(x - 1, x))))
+                                               : Option.ofNullable(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -313,7 +313,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
             assertThat(
                     Vector.unfold(10, x -> x == 0
                                            ? Option.none()
-                                           : Option.of(new Tuple2<>(x - 1, x))))
+                                           : Option.ofNullable(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }

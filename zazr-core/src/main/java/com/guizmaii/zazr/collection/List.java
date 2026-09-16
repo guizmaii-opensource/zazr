@@ -767,7 +767,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * List.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x, x-1)));
+     *             : Option.ofNullable(new Tuple2<>(x, x-1)));
      * // List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
      * }
      * </pre>
@@ -796,7 +796,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * List.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
      * // List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -826,7 +826,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * List.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
      * // List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>

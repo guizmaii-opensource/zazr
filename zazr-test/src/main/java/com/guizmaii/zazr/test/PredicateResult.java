@@ -53,6 +53,6 @@ public final class PredicateResult {
      * @return the failure message, or none for a successful result
      */
     public Option<String> message() {
-        return Option.of(message);
+        return Option.ofNullable(message);
     }
 }

@@ -800,7 +800,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * Stream.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x, x-1)));
+     *             : Option.ofNullable(new Tuple2<>(x, x-1)));
      * // Stream(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
      * }
      * </pre>
@@ -829,7 +829,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * Stream.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
      * // Stream(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -858,7 +858,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      * {@code
      * Stream.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.of(new Tuple2<>(x-1, x)));
+     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
      * // Stream(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>

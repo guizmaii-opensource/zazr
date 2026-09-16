@@ -227,6 +227,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the {@code Some} of value to which the specified key
      * is mapped, or {@code None} if this map contains no mapping
      * for the key
+     * @throws NullPointerException if the key is mapped to {@code null}: a map may hold null values but
+     *                              {@code Some(null)} does not exist; test {@link #containsKey(Object)} or use
+     *                              {@link #getOrElse(Object, Object)} for such a map
      */
     Option<V> get(K key);
 

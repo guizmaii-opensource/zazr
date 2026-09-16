@@ -36,13 +36,13 @@ public class ValueTest {
 
     @Test
     public void collectWorkAsExpectedSingleValue() {
-        final Value<Double> doubles = Option.of(1.0d);
+        final Value<Double> doubles = Option.ofNullable(1.0d);
         assertThat(doubles.collect(Collectors.toList()).get(0)).isEqualTo(1.0d);
     }
 
     @Test
     public void verboseCollectWorkAsExpectedSingleValue() {
-        final Value<Double> doubles = Option.of(1.0d);
+        final Value<Double> doubles = Option.ofNullable(1.0d);
         assertThat(doubles.collect(ArrayList<Double>::new,
                 ArrayList::add, ArrayList::addAll).get(0)).isEqualTo(1.0d);
     }
