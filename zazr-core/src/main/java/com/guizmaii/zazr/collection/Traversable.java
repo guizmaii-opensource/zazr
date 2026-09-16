@@ -56,7 +56,9 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * @param getKey a function to extract a key from each element
      * @param <K>    the type of keys
      * @return an {@code Option} containing the {@code Map} of elements by key, or {@code None} if keys are not unique
-     * @throws NullPointerException if {@code getKey} is null
+     * @throws NullPointerException if {@code getKey} is null, or if an element is {@code null}: the elements are
+     *                              collected with {@link #singleOption()} and a stored {@code null} cannot be
+     *                              wrapped in {@code Some} (design 3.9)
      * @see #groupBy(Function)
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
@@ -289,10 +291,9 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * Returns the first element that satisfies the given predicate.
      *
      * @param predicate the condition to test elements
-     * @return {@code Some(element)} if a matching element is found, otherwise {@code None};
-     *         the element may be {@code null}
-     * @throws NullPointerException if {@code predicate} is null, or if the first matching element is {@code null}
-     *                              ({@code Some(null)} does not exist)
+     * @return {@code Some(element)} if a matching element is found, otherwise {@code None}
+     * @throws NullPointerException if {@code predicate} is null, or if the first matching element is {@code null}:
+     *                              a stored {@code null} cannot be wrapped in {@code Some} (design 3.9)
      */
     default Option<T> find(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -310,9 +311,9 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
      * Equivalent to {@code reverse().find(predicate)} but potentially more efficient.
      *
      * @param predicate the condition to test elements
-     * @return {@code Some(element)} if a matching element is found, otherwise {@code None};
-     *         the element may be {@code null}
-     * @throws NullPointerException if {@code predicate} is null
+     * @return {@code Some(element)} if a matching element is found, otherwise {@code None}
+     * @throws NullPointerException if {@code predicate} is null, or if the last matching element is {@code null}:
+     *                              a stored {@code null} cannot be wrapped in {@code Some} (design 3.9)
      */
     default Option<T> findLast(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");

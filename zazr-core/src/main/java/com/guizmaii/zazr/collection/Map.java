@@ -98,6 +98,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param remappingFunction remapping function
      * @return the {@link Tuple2} of the {@code Some} of the value associated with the specified key
      * (or {@code None} if none), and the current or modified map
+     * @throws NullPointerException if the key is present and {@code remappingFunction} returns {@code null}: the new
+     *                              value is handed back as {@code Some}, which cannot hold {@code null} (design 3.9)
      */
     Tuple2<Option<V>, ? extends Map<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
