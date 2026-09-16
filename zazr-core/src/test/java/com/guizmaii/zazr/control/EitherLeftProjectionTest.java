@@ -23,7 +23,7 @@ public class EitherLeftProjectionTest extends AbstractValueTest {
 
     @Override
     protected <T> Either.LeftProjection<T, ?> empty() {
-        return Either.<T, T>right(null).left();
+        return Either.<T, String>right("empty").left();
     }
 
     @Override
@@ -35,6 +35,11 @@ public class EitherLeftProjectionTest extends AbstractValueTest {
     @Override
     protected final <T> Either.LeftProjection<T, ?> of(T... elements) {
         return of(elements[0]);
+    }
+
+    @Override
+    protected boolean allowsNull() {
+        return false;
     }
 
     @Override
