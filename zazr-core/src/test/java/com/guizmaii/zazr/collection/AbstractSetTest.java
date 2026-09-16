@@ -1,6 +1,6 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple2;
+import com.guizmaii.zazr.Tuple2;
 import java.math.BigDecimal;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;

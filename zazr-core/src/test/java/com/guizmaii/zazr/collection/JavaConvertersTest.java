@@ -1,4 +1,4 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import java.util.*;
 import java.util.function.Function;
@@ -12,10 +12,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
-import static io.vavr.collection.JavaConvertersTest.ChangePolicy.IMMUTABLE;
-import static io.vavr.collection.JavaConvertersTest.ChangePolicy.MUTABLE;
-import static io.vavr.collection.JavaConvertersTest.ElementNullability.NULLABLE;
-import static io.vavr.collection.JavaConvertersTest.ElementType.GENERIC;
+import static com.guizmaii.zazr.collection.JavaConvertersTest.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.JavaConvertersTest.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementNullability.NULLABLE;
+import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementType.GENERIC;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -1,9 +1,9 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.collection.Stream;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.euler.Utils.factors;
+import static com.guizmaii.zazr.collection.euler.Utils.factors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler12Test {

@@ -1,6 +1,6 @@
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
-import io.vavr.control.Option;
+import com.guizmaii.zazr.control.Option;
 
 import java.util.Objects;
 

@@ -1,7 +1,7 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Tuple;
-import io.vavr.collection.List;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.collection.List;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;

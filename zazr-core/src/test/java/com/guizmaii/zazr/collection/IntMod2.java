@@ -1,4 +1,4 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 /**
  * An Int wrapper that implements equality by comparing int values modulo 2.

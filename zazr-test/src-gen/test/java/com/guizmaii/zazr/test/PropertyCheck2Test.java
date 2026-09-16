@@ -1,5 +1,5 @@
 
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
@@ -9,8 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.vavr.CheckedFunction2;
-import io.vavr.Tuple;
+import com.guizmaii.zazr.CheckedFunction2;
+import com.guizmaii.zazr.Tuple;
 import org.junit.jupiter.api.Test;
 
 public class PropertyCheck2Test {

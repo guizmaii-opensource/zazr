@@ -1,10 +1,10 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple2;
-import io.vavr.Value;
-import io.vavr.collection.JavaConverters.ChangePolicy;
-import io.vavr.collection.JavaConverters.ListView;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Value;
+import com.guizmaii.zazr.collection.JavaConverters.ChangePolicy;
+import com.guizmaii.zazr.collection.JavaConverters.ListView;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;

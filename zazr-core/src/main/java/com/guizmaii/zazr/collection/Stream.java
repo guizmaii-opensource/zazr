@@ -1,19 +1,19 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.collection.Stream.Cons;
-import io.vavr.collection.Stream.Empty;
-import io.vavr.collection.StreamModule.*;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.Stream.Cons;
+import com.guizmaii.zazr.collection.Stream.Empty;
+import com.guizmaii.zazr.collection.StreamModule.*;
+import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
-import static io.vavr.collection.JavaConverters.ListView;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ListView;
 
 /**
  * An immutable {@code Stream} is lazy sequence of elements which may be infinitely long.
@@ -101,7 +101,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link Stream}.
      *
      * @param <T> Component type of the Stream.
-     * @return A io.vavr.collection.Stream Collector.
+     * @return A com.guizmaii.zazr.collection.Stream Collector.
      */
     static <T extends @Nullable Object> Collector<T, ArrayList<T>, Stream<T>> collector() {
         final Supplier<ArrayList<T>> supplier = ArrayList::new;
@@ -330,7 +330,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      */
     static <T extends @Nullable Object> Stream<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return Stream.ofAll(io.vavr.collection.Collections.tabulate(n, f));
+        return Stream.ofAll(com.guizmaii.zazr.collection.Collections.tabulate(n, f));
     }
 
     /**
@@ -344,7 +344,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      */
     static <T extends @Nullable Object> Stream<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return Stream.ofAll(io.vavr.collection.Collections.fill(n, s));
+        return Stream.ofAll(com.guizmaii.zazr.collection.Collections.fill(n, s));
     }
 
     /**
@@ -356,7 +356,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      * @return A Stream of size {@code n}, where each element is the given {@code element}.
      */
     static <T extends @Nullable Object> Stream<T> fill(int n, T element) {
-        return Stream.ofAll(io.vavr.collection.Collections.fillObject(n, element));
+        return Stream.ofAll(com.guizmaii.zazr.collection.Collections.fillObject(n, element));
     }
 
     /**
@@ -784,7 +784,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      * }
      */
     static <T extends @Nullable Object> Stream<Stream<T>> transpose(Stream<Stream<T>> matrix) {
-        return io.vavr.collection.Collections.transpose(matrix, Stream::ofAll, Stream::of);
+        return com.guizmaii.zazr.collection.Collections.transpose(matrix, Stream::ofAll, Stream::of);
     }
 
     /**
@@ -886,7 +886,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default Stream<T> append(T element) {
-        return isEmpty() ? Stream.of(element) : new AppendElements<>(head(), io.vavr.collection.Queue.of(element), this::tail);
+        return isEmpty() ? Stream.of(element) : new AppendElements<>(head(), com.guizmaii.zazr.collection.Queue.of(element), this::tail);
     }
 
     @Override
@@ -959,7 +959,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default Iterator<Stream<T>> crossProduct(int power) {
-        return io.vavr.collection.Collections.crossProduct(Stream.empty(), this, power);
+        return com.guizmaii.zazr.collection.Collections.crossProduct(Stream.empty(), this, power);
     }
 
     /**
@@ -1152,7 +1152,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default <C extends @Nullable Object> Map<C, Stream<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return io.vavr.collection.Collections.groupBy(this, classifier, Stream::ofAll);
+        return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Stream::ofAll);
     }
 
     @Override
@@ -1469,12 +1469,12 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default Stream<T> removeAll(T element) {
-        return io.vavr.collection.Collections.removeAll(this, element);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
     }
 
     @Override
     default Stream<T> removeAll(Iterable<? extends T> elements) {
-        return io.vavr.collection.Collections.removeAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, elements);
     }
 
     @Override
@@ -1511,7 +1511,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
     @Override
     default Stream<T> retainAll(Iterable<? extends T> elements) {
-        return io.vavr.collection.Collections.retainAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
     }
 
     @Override
@@ -1545,18 +1545,18 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     @Override
     default <U extends @Nullable Object> Stream<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         // lazily streams the elements of an iterator
-        return io.vavr.collection.Collections.scanLeft(this, zero, operation, Iterator::toStream);
+        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toStream);
     }
 
     // not lazy!
     @Override
     default <U extends @Nullable Object> Stream<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanRight(this, zero, operation, Iterator::toStream);
+        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toStream);
     }
 
     @Override
     default Stream<T> shuffle() {
-        return io.vavr.collection.Collections.shuffle(this, Stream::ofAll);
+        return com.guizmaii.zazr.collection.Collections.shuffle(this, Stream::ofAll);
     }
 
     @Override
@@ -1946,12 +1946,12 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
         @Override
         public boolean equals(@Nullable Object o) {
-            return io.vavr.collection.Collections.equals(this, o);
+            return com.guizmaii.zazr.collection.Collections.equals(this, o);
         }
 
         @Override
         public int hashCode() {
-            return io.vavr.collection.Collections.hashOrdered(this);
+            return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
         }
 
         @Override
@@ -1994,12 +1994,12 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
         @Override
         public boolean equals(@Nullable Object o) {
-            return io.vavr.collection.Collections.equals(this, o);
+            return com.guizmaii.zazr.collection.Collections.equals(this, o);
         }
 
         @Override
         public int hashCode() {
-            return io.vavr.collection.Collections.hashOrdered(this);
+            return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
         }
 
         @Override
@@ -2041,9 +2041,9 @@ interface StreamModule {
 
     final class AppendElements<T extends @Nullable Object> extends Cons<T> {
 
-        private final io.vavr.collection.Queue<T> queue;
+        private final com.guizmaii.zazr.collection.Queue<T> queue;
 
-        AppendElements(T head, io.vavr.collection.Queue<T> queue, Supplier<Stream<T>> tail) {
+        AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Supplier<Stream<T>> tail) {
             super(head, tail);
             this.queue = queue;
         }
@@ -2113,11 +2113,11 @@ interface StreamModule {
     interface DropRight {
 
         // works with infinite streams by buffering elements
-        static <T extends @Nullable Object> Stream<T> apply(io.vavr.collection.List<T> front, io.vavr.collection.List<T> rear, Stream<T> remaining) {
+        static <T extends @Nullable Object> Stream<T> apply(com.guizmaii.zazr.collection.List<T> front, com.guizmaii.zazr.collection.List<T> rear, Stream<T> remaining) {
             if (remaining.isEmpty()) {
                 return remaining;
             } else if (front.isEmpty()) {
-                return apply(rear.reverse(), io.vavr.collection.List.empty(), remaining);
+                return apply(rear.reverse(), com.guizmaii.zazr.collection.List.empty(), remaining);
             } else {
                 return Stream.cons(front.head(),
                         () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));

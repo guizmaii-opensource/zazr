@@ -1,8 +1,8 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.Stream;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 

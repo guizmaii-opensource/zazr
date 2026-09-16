@@ -1,10 +1,10 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.CheckedFunction1;
-import io.vavr.Value;
-import io.vavr.collection.Iterator;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.CheckedFunction1;
+import com.guizmaii.zazr.Value;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;

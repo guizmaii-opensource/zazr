@@ -1,20 +1,20 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.collection.IteratorModule.ConcatIterator;
-import io.vavr.collection.IteratorModule.DistinctIterator;
-import io.vavr.collection.IteratorModule.GroupedIterator;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.IteratorModule.ConcatIterator;
+import com.guizmaii.zazr.collection.IteratorModule.DistinctIterator;
+import com.guizmaii.zazr.collection.IteratorModule.GroupedIterator;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.IteratorModule.BigDecimalHelper.areEqual;
-import static io.vavr.collection.IteratorModule.BigDecimalHelper.asDecimal;
-import static io.vavr.collection.IteratorModule.CachedIterator;
-import static io.vavr.collection.IteratorModule.EmptyIterator;
+import static com.guizmaii.zazr.collection.IteratorModule.BigDecimalHelper.areEqual;
+import static com.guizmaii.zazr.collection.IteratorModule.BigDecimalHelper.asDecimal;
+import static com.guizmaii.zazr.collection.IteratorModule.CachedIterator;
+import static com.guizmaii.zazr.collection.IteratorModule.EmptyIterator;
 import static java.lang.Double.NEGATIVE_INFINITY;
 import static java.lang.Double.POSITIVE_INFINITY;
 import static java.math.RoundingMode.HALF_UP;
@@ -26,7 +26,7 @@ import static java.math.RoundingMode.HALF_UP;
  * <p><strong>Note:</strong> Iterators maintain an internal mutable state.
  * They are not thread-safe and must not be reused or shared across operations
  * (for example, after passing them to
- * {@linkplain io.vavr.collection.List#ofAll(Iterable)}).
+ * {@linkplain com.guizmaii.zazr.collection.List#ofAll(Iterable)}).
  *
  * <p>The abstraction defines two fundamental operations:
  * {@code hasNext()}, which checks whether another element is available,
@@ -429,7 +429,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      */
     static <T extends @Nullable Object> Iterator<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return io.vavr.collection.Collections.tabulate(n, f);
+        return com.guizmaii.zazr.collection.Collections.tabulate(n, f);
     }
 
     /**
@@ -446,7 +446,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      */
     static <T extends @Nullable Object> Iterator<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return io.vavr.collection.Collections.fill(n, s);
+        return com.guizmaii.zazr.collection.Collections.fill(n, s);
     }
 
     /**
@@ -458,7 +458,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator over {@code n} occurrences of {@code element}
      */
     static <T extends @Nullable Object> Iterator<T> fill(int n, T element) {
-        return io.vavr.collection.Collections.fillObject(n, element);
+        return com.guizmaii.zazr.collection.Collections.fillObject(n, element);
     }
 
     /**
@@ -1472,7 +1472,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            return new DistinctIterator<>(this, io.vavr.collection.HashSet.empty(), Function.identity());
+            return new DistinctIterator<>(this, com.guizmaii.zazr.collection.HashSet.empty(), Function.identity());
         }
     }
 
@@ -1492,7 +1492,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            return new DistinctIterator<>(this, io.vavr.collection.HashSet.empty(), keyExtractor);
+            return new DistinctIterator<>(this, com.guizmaii.zazr.collection.HashSet.empty(), keyExtractor);
         }
     }
 
@@ -1549,7 +1549,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         } else {
             return Collections.reverseIterator(new DistinctIterator<>(
                     Collections.reverseIterator(this),
-                    io.vavr.collection.HashSet.empty(),
+                    com.guizmaii.zazr.collection.HashSet.empty(),
                     keyExtractor));
         }
     }
@@ -1599,7 +1599,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         } else {
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
-                private io.vavr.collection.Queue<T> queue = io.vavr.collection.Queue.empty();
+                private com.guizmaii.zazr.collection.Queue<T> queue = com.guizmaii.zazr.collection.Queue.empty();
 
                 @Override
                 public boolean hasNext() {
@@ -1611,7 +1611,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    final Tuple2<T, io.vavr.collection.Queue<T>> t = queue.append(that.next()).dequeue();
+                    final Tuple2<T, com.guizmaii.zazr.collection.Queue<T>> t = queue.append(that.next()).dequeue();
                     queue = t._2;
                     return t._1;
                 }
@@ -1749,7 +1749,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     @Override
     default <C extends @Nullable Object> Map<C, Iterator<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return io.vavr.collection.Collections.groupBy(this, classifier, Iterator::ofAll);
+        return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Iterator::ofAll);
     }
 
     @Override
@@ -2022,7 +2022,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     @Override
     default Iterator<T> retainAll(Iterable<? extends T> elements) {
-        return io.vavr.collection.Collections.retainAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
     }
 
     @Override
@@ -2079,7 +2079,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (isEmpty()) {
             return of(zero);
         } else {
-            return io.vavr.collection.Collections.scanRight(this, zero, operation, Function.identity());
+            return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Function.identity());
         }
     }
 
@@ -2218,7 +2218,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         } else {
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
-                private io.vavr.collection.Queue<T> queue = io.vavr.collection.Queue.empty();
+                private com.guizmaii.zazr.collection.Queue<T> queue = com.guizmaii.zazr.collection.Queue.empty();
 
                 @Override
                 public boolean hasNext() {
@@ -2233,7 +2233,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    final Tuple2<T, io.vavr.collection.Queue<T>> t = queue.dequeue();
+                    final Tuple2<T, com.guizmaii.zazr.collection.Queue<T>> t = queue.dequeue();
                     queue = t._2;
                     return t._1;
                 }
@@ -2415,7 +2415,7 @@ interface IteratorModule {
     final class DistinctIterator<T extends @Nullable Object, U extends @Nullable Object> extends AbstractIterator<T> {
 
         private final Iterator<? extends T> that;
-        private io.vavr.collection.Set<U> known;
+        private com.guizmaii.zazr.collection.Set<U> known;
         private final Function<? super T, ? extends U> keyExtractor;
         private boolean nextDefined = false;
         private @Nullable T next;

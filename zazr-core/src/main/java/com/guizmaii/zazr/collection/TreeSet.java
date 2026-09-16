@@ -1,7 +1,7 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -32,7 +32,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * The natural comparator is used to compare TreeSet elements.
      *
      * @param <T> Component type of the TreeSet.
-     * @return A io.vavr.collection.TreeSet Collector.
+     * @return A com.guizmaii.zazr.collection.TreeSet Collector.
      */
     public static <T extends Comparable<? super T>> Collector<T, ArrayList<T>, TreeSet<T>> collector() {
         return collector(Comparators.naturalComparator());
@@ -44,7 +44,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      *
      * @param <T>        Component type of the TreeSet.
      * @param comparator An element comparator
-     * @return A io.vavr.collection.TreeSet Collector.
+     * @return A com.guizmaii.zazr.collection.TreeSet Collector.
      */
     public static <T extends @Nullable Object> Collector<T, ArrayList<T>, TreeSet<T>> collector(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");

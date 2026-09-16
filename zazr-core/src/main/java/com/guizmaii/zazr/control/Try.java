@@ -1,9 +1,9 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.*;
-import io.vavr.collection.Iterator;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -17,8 +17,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.control.TryModule.isFatal;
-import static io.vavr.control.TryModule.sneakyThrow;
+import static com.guizmaii.zazr.control.TryModule.isFatal;
+import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
 
 /**
  * A control structure that allows writing safe code without explicitly managing try-catch blocks for exceptions.

@@ -1,13 +1,13 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static io.vavr.CheckedFunction8Module.sneakyThrow;
+import static com.guizmaii.zazr.CheckedFunction8Module.sneakyThrow;
 
-import io.vavr.control.Option;
-import io.vavr.control.Try;
+import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;

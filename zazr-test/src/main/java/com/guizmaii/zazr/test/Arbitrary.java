@@ -1,7 +1,7 @@
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
-import io.vavr.collection.List;
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Stream;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

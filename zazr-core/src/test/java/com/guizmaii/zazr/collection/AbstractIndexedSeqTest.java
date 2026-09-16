@@ -1,4 +1,4 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import java.math.BigDecimal;
 import java.util.Spliterator;

@@ -1,8 +1,8 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Function1;
-import io.vavr.collection.Iterator;
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.Function1;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.Stream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.math.BigInteger;

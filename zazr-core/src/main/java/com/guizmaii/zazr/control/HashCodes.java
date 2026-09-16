@@ -1,4 +1,4 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
 import java.util.List;
 import java.util.Objects;

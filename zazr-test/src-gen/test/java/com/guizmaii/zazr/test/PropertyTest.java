@@ -1,5 +1,5 @@
 
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
@@ -8,9 +8,9 @@ package io.vavr.test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.vavr.CheckedFunction1;
-import io.vavr.Tuple;
-import io.vavr.collection.List;
+import com.guizmaii.zazr.CheckedFunction1;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.collection.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 

@@ -1,8 +1,8 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.collection.List;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 

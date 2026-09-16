@@ -1,13 +1,13 @@
 
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import io.vavr.*;
-import io.vavr.control.Option;
-import io.vavr.control.Try;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
 import java.util.Objects;
 import java.util.Random;
 

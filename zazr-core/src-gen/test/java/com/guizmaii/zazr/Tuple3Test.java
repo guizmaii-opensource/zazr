@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
@@ -7,9 +7,9 @@ package io.vavr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.vavr.collection.List;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Stream;
 import java.util.Comparator;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.collection.List;
-import io.vavr.collection.Seq;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Seq;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

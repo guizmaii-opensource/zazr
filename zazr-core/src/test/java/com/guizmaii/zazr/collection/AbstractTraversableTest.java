@@ -1,7 +1,7 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -21,8 +21,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import org.junit.jupiter.api.TestTemplate;
 
-import static io.vavr.OutputTester.failingPrintStream;
-import static io.vavr.OutputTester.failingPrintWriter;
+import static com.guizmaii.zazr.OutputTester.failingPrintStream;
+import static com.guizmaii.zazr.OutputTester.failingPrintWriter;
 import static java.lang.System.lineSeparator;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
@@ -865,24 +865,24 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
     @TestTemplate
     public void shouldGroupedTraversableWithEqualSizedBlocks() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2), io.vavr.collection.Vector.of(3, 4));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2), com.guizmaii.zazr.collection.Vector.of(3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedTraversableWithRemainder() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2), io.vavr.collection.Vector.of(3, 4), io.vavr.collection.Vector.of(5));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2), com.guizmaii.zazr.collection.Vector.of(3, 4), com.guizmaii.zazr.collection.Vector.of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedWhenTraversableLengthIsSmallerThanBlockSize() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2, 3, 4));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -972,7 +972,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldFullyIterateNonNil() {
-        final io.vavr.collection.Iterator<Integer> iterator = of(1, 2, 3).iterator();
+        final com.guizmaii.zazr.collection.Iterator<Integer> iterator = of(1, 2, 3).iterator();
         int actual;
         for (int i = 1; i <= 3; i++) {
             actual = iterator.next();
@@ -988,7 +988,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingNextTooOftenOnNonEmptyIterator() {
-        final io.vavr.collection.Iterator<Integer> iterator = of(1).iterator();
+        final com.guizmaii.zazr.collection.Iterator<Integer> iterator = of(1).iterator();
         assertThatThrownBy(() -> {
             iterator.next();
             iterator.next();
@@ -1810,40 +1810,40 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
     @TestTemplate
     public void shouldSlideSingularByClassifier() {
         final List<Traversable<Integer>> actual = of(1).slideBy(Function.identity()).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByIdentityClassifier() {
         final List<Traversable<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1), io.vavr.collection.Vector.of(2), io.vavr.collection.Vector.of(3));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1), com.guizmaii.zazr.collection.Vector.of(2), com.guizmaii.zazr.collection.Vector.of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByConstantClassifier() {
         final List<Traversable<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2, 3));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySomeClassifier() {
         final List<Traversable<Integer>> actual = of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(10, 20, 30), io.vavr.collection.Vector.of(42, 52), io.vavr.collection.Vector.of(60), io.vavr.collection.Vector.of(72));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(10, 20, 30), com.guizmaii.zazr.collection.Vector.of(42, 52), com.guizmaii.zazr.collection.Vector.of(60), com.guizmaii.zazr.collection.Vector.of(72));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideByClassifierReturningNull() {
         final List<Traversable<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2, 3));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1876,16 +1876,16 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldSlideNonNilBySize1() {
-        final List<Traversable<Integer>> actual = of(1, 2, 3).sliding(1).toList().map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1), io.vavr.collection.Vector.of(2), io.vavr.collection.Vector.of(3));
+        final List<Traversable<Integer>> actual = of(1, 2, 3).sliding(1).toList().map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1), com.guizmaii.zazr.collection.Vector.of(2), com.guizmaii.zazr.collection.Vector.of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySize2() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2), io.vavr.collection.Vector.of(2, 3), io.vavr.collection.Vector.of(3, 4), io.vavr.collection.Vector.of(4, 5));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2), com.guizmaii.zazr.collection.Vector.of(2, 3), com.guizmaii.zazr.collection.Vector.of(3, 4), com.guizmaii.zazr.collection.Vector.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1914,48 +1914,48 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep3() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2), io.vavr.collection.Vector.of(4, 5));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2), com.guizmaii.zazr.collection.Vector.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep4() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2), io.vavr.collection.Vector.of(5));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2), com.guizmaii.zazr.collection.Vector.of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep5() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide4ElementsBySize5AndStep3() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2, 3, 4));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize1AndStep3() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1), io.vavr.collection.Vector.of(4), io.vavr.collection.Vector.of(7));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1), com.guizmaii.zazr.collection.Vector.of(4), com.guizmaii.zazr.collection.Vector.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize2AndStep3() {
         final List<Traversable<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList()
-          .map(io.vavr.collection.Vector::ofAll);
-        final List<Traversable<Integer>> expected = List.of(io.vavr.collection.Vector.of(1, 2), io.vavr.collection.Vector.of(4, 5), io.vavr.collection.Vector.of(7));
+          .map(com.guizmaii.zazr.collection.Vector::ofAll);
+        final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2), com.guizmaii.zazr.collection.Vector.of(4, 5), com.guizmaii.zazr.collection.Vector.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2571,7 +2571,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldNotThrowStackOverflowErrorWhenCalculatingHashCodeOf1000000Integers() {
-        assertThat(ofAll(io.vavr.collection.Iterator.range(0, 1000000)).hashCode()).isNotNull();
+        assertThat(ofAll(com.guizmaii.zazr.collection.Iterator.range(0, 1000000)).hashCode()).isNotNull();
     }
 
     // -- toString
@@ -2730,7 +2730,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         if (!emptyShouldBeSingleton()) {
             return;
         }
-        assertThat(ofAll(io.vavr.collection.Iterator.empty())).isSameAs(empty());
+        assertThat(ofAll(com.guizmaii.zazr.collection.Iterator.empty())).isSameAs(empty());
     }
 
     private void testCollector(Runnable test) {

@@ -1,9 +1,9 @@
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.List;
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Stream;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Predicate;

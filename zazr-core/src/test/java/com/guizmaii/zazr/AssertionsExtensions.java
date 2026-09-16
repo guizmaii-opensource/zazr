@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import java.lang.reflect.Constructor;
 import org.assertj.core.api.Assertions;

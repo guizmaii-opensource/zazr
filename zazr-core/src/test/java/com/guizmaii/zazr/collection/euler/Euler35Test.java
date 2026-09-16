@@ -1,9 +1,9 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Function1;
-import io.vavr.collection.List;
-import io.vavr.collection.Stream;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.Function1;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 

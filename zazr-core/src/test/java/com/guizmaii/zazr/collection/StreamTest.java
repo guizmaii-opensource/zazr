@@ -1,8 +1,8 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.control.Option;
-import io.vavr.control.Try;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Spliterator;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.Stream.concat;
+import static com.guizmaii.zazr.collection.Stream.concat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StreamTest extends AbstractLinearSeqTest {

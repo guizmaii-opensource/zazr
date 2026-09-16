@@ -1,7 +1,7 @@
 /**
- * The io.vavr package contains core types like (Checked)Functions and Tuples.
+ * The com.guizmaii.zazr package contains core types like (Checked)Functions and Tuples.
  */
 @NullMarked
-package io.vavr;
+package com.guizmaii.zazr;
 
 import org.jspecify.annotations.NullMarked;

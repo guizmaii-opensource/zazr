@@ -1,11 +1,11 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Function2;
-import io.vavr.Function3;
-import io.vavr.collection.List;
-import io.vavr.collection.Set;
-import io.vavr.collection.Stream;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Function2;
+import com.guizmaii.zazr.Function3;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Set;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.control.Option;
 
 final class Sieve {
 

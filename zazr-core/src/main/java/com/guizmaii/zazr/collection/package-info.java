@@ -1,5 +1,5 @@
 /**
- * Purely functional collections based on {@linkplain io.vavr.collection.Traversable}.
+ * Purely functional collections based on {@linkplain com.guizmaii.zazr.collection.Traversable}.
  *
  * <h2>Performance Characteristics of Vavr Collections</h2>
  * <table style="border-collapse: collapse; border: 1px solid; padding: 5px;">
@@ -16,11 +16,11 @@
  * </tr>
  * </thead>
  * <tbody>
- * <tr><td><em>{@linkplain io.vavr.collection.Iterator}</em></td><td><small>const</small></td><td><small>const</small></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
- * <tr><td>{@linkplain io.vavr.collection.List}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.Queue}</td><td><small>const</small></td><td><small>const<sup>a</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>const</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.Stream}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const<sup>lazy</sup></small></td><td><small>const<sup>lazy</sup></small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.Vector}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td></tr>
+ * <tr><td><em>{@linkplain com.guizmaii.zazr.collection.Iterator}</em></td><td><small>const</small></td><td><small>const</small></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.List}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.Queue}</td><td><small>const</small></td><td><small>const<sup>a</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>const</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.Stream}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const<sup>lazy</sup></small></td><td><small>const<sup>lazy</sup></small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.Vector}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td></tr>
  * </tbody>
  * </table>
  * <br>
@@ -36,12 +36,12 @@
  * </tr>
  * </thead>
  * <tbody>
- * <tr><td>{@linkplain io.vavr.collection.HashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.HashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.LinkedHashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.LinkedHashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.TreeMap}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.TreeSet}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.HashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.HashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.LinkedHashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.LinkedHashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.TreeMap}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td></tr>
+ * <tr><td>{@linkplain com.guizmaii.zazr.collection.TreeSet}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td></tr>
  * </tbody>
  * </table>
  * <br>
@@ -55,6 +55,6 @@
  * </ul>
  */
 @NullMarked
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import org.jspecify.annotations.NullMarked;

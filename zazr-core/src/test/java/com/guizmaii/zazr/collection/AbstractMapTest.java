@@ -1,8 +1,8 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -201,47 +201,47 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T extends Comparable<? super T>> IntMap<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(javaStream.iterator()));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(javaStream.iterator()));
     }
 
     @Override
     protected IntMap<Boolean> ofAll(boolean... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Byte> ofAll(byte... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Character> ofAll(char... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Double> ofAll(double... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Float> ofAll(float... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Integer> ofAll(int... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Long> ofAll(long... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
     protected IntMap<Short> ofAll(short... elements) {
-        return ofAll(io.vavr.collection.Iterator.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.Iterator.ofAll(elements));
     }
 
     @Override
@@ -445,18 +445,18 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         public void shouldObeyEqualityConstraints() {
 
             // sequential collections
-            assertThat(emptyMap().equals(io.vavr.collection.HashMap.empty())).isTrue();
-            assertThat(mapOf(1, "a").equals(io.vavr.collection.HashMap.of(1, "a"))).isTrue();
-            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(io.vavr.collection.HashMap.of(1, "a", 2, "b",3, "c"))).isTrue();
-            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(io.vavr.collection.HashMap.of(3, "c", 2, "b",1, "a"))).isTrue();
+            assertThat(emptyMap().equals(com.guizmaii.zazr.collection.HashMap.empty())).isTrue();
+            assertThat(mapOf(1, "a").equals(com.guizmaii.zazr.collection.HashMap.of(1, "a"))).isTrue();
+            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(com.guizmaii.zazr.collection.HashMap.of(1, "a", 2, "b",3, "c"))).isTrue();
+            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(com.guizmaii.zazr.collection.HashMap.of(3, "c", 2, "b",1, "a"))).isTrue();
 
             // other classes
-            assertThat(empty().equals(io.vavr.collection.List.empty())).isFalse();
-            assertThat(empty().equals(io.vavr.collection.HashSet.empty())).isFalse();
+            assertThat(empty().equals(com.guizmaii.zazr.collection.List.empty())).isFalse();
+            assertThat(empty().equals(com.guizmaii.zazr.collection.HashSet.empty())).isFalse();
 
-            assertThat(empty().equals(io.vavr.collection.LinkedHashSet.empty())).isFalse();
+            assertThat(empty().equals(com.guizmaii.zazr.collection.LinkedHashSet.empty())).isFalse();
 
-            assertThat(empty().equals(io.vavr.collection.TreeSet.empty())).isFalse();
+            assertThat(empty().equals(com.guizmaii.zazr.collection.TreeSet.empty())).isFalse();
         }
     }
 
@@ -519,13 +519,13 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRecognizeNotContainedKeyValuePair() {
-            final io.vavr.collection.TreeMap<String, Integer> testee = io.vavr.collection.TreeMap.of(Tuple.of("one", 1));
+            final com.guizmaii.zazr.collection.TreeMap<String, Integer> testee = com.guizmaii.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 0))).isFalse();
         }
 
         @Test
         public void shouldRecognizeContainedKeyValuePair() {
-            final io.vavr.collection.TreeMap<String, Integer> testee = io.vavr.collection.TreeMap.of(Tuple.of("one", 1));
+            final com.guizmaii.zazr.collection.TreeMap<String, Integer> testee = com.guizmaii.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 1))).isTrue();
         }
     }
@@ -537,7 +537,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         public void shouldFlatMapUsingBiFunction() {
             final Map<Integer, Integer> testee = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33));
             final Map<String, String> actual = testee
-                    .flatMap((k, v) -> io.vavr.collection.List.of(Tuple.of(String.valueOf(k), String.valueOf(v)),
+                    .flatMap((k, v) -> com.guizmaii.zazr.collection.List.of(Tuple.of(String.valueOf(k), String.valueOf(v)),
                             Tuple.of(String.valueOf(k * 10), String.valueOf(v * 10))));
             final Map<String, String> expected = mapOfTuples(Tuple.of("1", "11"), Tuple.of("10", "110"), Tuple.of("2", "22"),
                     Tuple.of("20", "220"), Tuple.of("3", "33"), Tuple.of("30", "330"));
@@ -550,15 +550,15 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnKeySet() {
-            final io.vavr.collection.Set<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).keySet();
-            assertThat(actual).isEqualTo(io.vavr.collection.HashSet.of(1, 2, 3));
+            final com.guizmaii.zazr.collection.Set<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).keySet();
+            assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.HashSet.of(1, 2, 3));
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnKeysIterator() {
             final Iterator<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).keysIterator();
-            assertThat(actual).isEqualTo(io.vavr.collection.Iterator.of(1, 2, 3));
+            assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.Iterator.of(1, 2, 3));
         }
     }
 
@@ -568,14 +568,14 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         public void shouldReturnValuesSeq() {
             final Seq<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).values();
-            assertThat(actual).isEqualTo(io.vavr.collection.Iterator.of(11, 22, 33));
+            assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.Iterator.of(11, 22, 33));
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnValuesIterator() {
             final Iterator<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).valuesIterator();
-            assertThat(actual).isEqualTo(io.vavr.collection.Iterator.of(11, 22, 33));
+            assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.Iterator.of(11, 22, 33));
         }
     }
 
@@ -583,7 +583,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldBiMapEmpty() {
-        assertThat(emptyInt().bimap(i -> i + 1, o -> o)).isEqualTo(io.vavr.collection.Vector.empty());
+        assertThat(emptyInt().bimap(i -> i + 1, o -> o)).isEqualTo(com.guizmaii.zazr.collection.Vector.empty());
     }
 
     @Test
@@ -615,24 +615,24 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapEmpty() {
-        assertThat(emptyInt().map(Tuple2::_1)).isEqualTo(io.vavr.collection.Vector.empty());
+        assertThat(emptyInt().map(Tuple2::_1)).isEqualTo(com.guizmaii.zazr.collection.Vector.empty());
     }
 
     @Test
     public void shouldMapNonEmpty() {
-        final Seq<Integer> expected = io.vavr.collection.Vector.of(1, 2);
+        final Seq<Integer> expected = com.guizmaii.zazr.collection.Vector.of(1, 2);
         final Seq<Integer> actual = emptyInt().put(1, "1").put(2, "2").map(Tuple2::_1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnEmptySetWhenAskedForTuple2SetOfAnEmptyMap() {
-        assertThat(emptyMap().toSet()).isEqualTo(io.vavr.collection.HashSet.empty());
+        assertThat(emptyMap().toSet()).isEqualTo(com.guizmaii.zazr.collection.HashSet.empty());
     }
 
     @Test
     public void shouldReturnTuple2SetOfANonEmptyMap() {
-        assertThat(emptyInt().put(1, "1").put(2, "2").toSet()).isEqualTo(io.vavr.collection.HashSet.of(Tuple.of(1, "1"), Tuple.of(2, "2")));
+        assertThat(emptyInt().put(1, "1").put(2, "2").toSet()).isEqualTo(com.guizmaii.zazr.collection.HashSet.of(Tuple.of(1, "1"), Tuple.of(2, "2")));
     }
 
     @Test
@@ -688,7 +688,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         final Map<Integer, String> actual = emptyIntString()
                 .put(1, "1").put(2, "2").put(3, "3")
                 .mapKeys(k -> k * 118).mapKeys(Integer::toHexString).mapKeys(AbstractMapTest::md5)//Unique key mappers
-                .mapKeys(String::length, (v1, v2) -> io.vavr.collection.List.of(v1.split("#")).append(v2).sorted().mkString("#"));
+                .mapKeys(String::length, (v1, v2) -> com.guizmaii.zazr.collection.List.of(v1.split("#")).append(v2).sorted().mkString("#"));
         final Map<Integer, String> expected = emptyIntString().put(32, "1#2#3");
         assertThat(actual).isEqualTo(expected);
     }
@@ -700,7 +700,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnListWithMappedValues() {
-        assertThat(emptyIntInt().put(1, 1).put(2, 2).iterator((a, b) -> a + b).toList()).isEqualTo(io.vavr.collection.List.of(2, 4));
+        assertThat(emptyIntInt().put(1, 1).put(2, 2).iterator((a, b) -> a + b).toList()).isEqualTo(com.guizmaii.zazr.collection.List.of(2, 4));
     }
 
     // -- merge(Map)
@@ -826,21 +826,21 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         @Test
         public void shouldRemoveAllKeys() {
             final Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
-            assertThat(src.removeAll(io.vavr.collection.List.of(1, 3))).isEqualTo(emptyInt().put(2, 'b'));
-            assertThat(src.removeAll(io.vavr.collection.List.of(33))).isSameAs(src);
-            assertThat(src.removeAll(io.vavr.collection.List.empty())).isSameAs(src);
+            assertThat(src.removeAll(com.guizmaii.zazr.collection.List.of(1, 3))).isEqualTo(emptyInt().put(2, 'b'));
+            assertThat(src.removeAll(com.guizmaii.zazr.collection.List.of(33))).isSameAs(src);
+            assertThat(src.removeAll(com.guizmaii.zazr.collection.List.empty())).isSameAs(src);
         }
 
         @Test
         public void shouldReturnSameMapWhenNonEmptyRemoveAllEmpty() {
             final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-            assertThat(map.removeAll(io.vavr.collection.List.empty())).isSameAs(map);
+            assertThat(map.removeAll(com.guizmaii.zazr.collection.List.empty())).isSameAs(map);
         }
 
         @Test
         public void shouldReturnSameMapWhenEmptyRemoveAllNonEmpty() {
             final Map<Integer, String> empty = emptyMap();
-            assertThat(empty.removeAll(io.vavr.collection.List.of(1, 2, 3))).isSameAs(empty);
+            assertThat(empty.removeAll(com.guizmaii.zazr.collection.List.of(1, 2, 3))).isSameAs(empty);
         }
     }
 
@@ -902,19 +902,19 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipNils() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zip(io.vavr.collection.List.empty());
+        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zip(com.guizmaii.zazr.collection.List.empty());
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipEmptyAndNonNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Integer>> actual = emptyInt().zip(io.vavr.collection.List.of(1));
+        final Seq<Tuple2<Tuple2<Integer, Object>, Integer>> actual = emptyInt().zip(com.guizmaii.zazr.collection.List.of(1));
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipNonEmptyAndNil() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, Object>> actual = emptyIntInt().put(0, 1).zip(io.vavr.collection.List.empty());
+        final Seq<Tuple2<Tuple2<Integer, Integer>, Object>> actual = emptyIntInt().put(0, 1).zip(com.guizmaii.zazr.collection.List.empty());
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
@@ -923,7 +923,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         final Seq<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
                 .put(0, 0)
                 .put(1, 1)
-                .zip(io.vavr.collection.List.of(5, 6, 7));
+                .zip(com.guizmaii.zazr.collection.List.of(5, 6, 7));
         assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(0, 0), 5), Tuple.of(Tuple.of(1, 1), 6)));
     }
 
@@ -933,7 +933,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
                 .put(0, 0)
                 .put(1, 1)
                 .put(2, 2)
-                .zip(io.vavr.collection.List.of(5, 6));
+                .zip(com.guizmaii.zazr.collection.List.of(5, 6));
         assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(0, 0), 5), Tuple.of(Tuple.of(1, 1), 6)));
     }
 
@@ -943,7 +943,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
                 .put(0, 0)
                 .put(1, 1)
                 .put(2, 2)
-                .zip(io.vavr.collection.List.of(5, 6, 7));
+                .zip(com.guizmaii.zazr.collection.List.of(5, 6, 7));
         assertThat(actual).isEqualTo(
                 Stream.of(Tuple.of(Tuple.of(0, 0), 5), Tuple.of(Tuple.of(1, 1), 6), Tuple.of(Tuple.of(2, 2), 7)));
     }
@@ -981,7 +981,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllEmptyAndNonNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(io.vavr.collection.List.of(1), null, null);
+        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), null, null);
         assertThat(actual).isEqualTo(Stream.of(Tuple.of(null, 1)));
     }
 
@@ -1071,7 +1071,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Override
     public void shouldFoldRightNonNil() {
         final String actual = of('a', 'b', 'c').foldRight("", (x, xs) -> x + xs);
-        final io.vavr.collection.List<String> expected = io.vavr.collection.List.of('a', 'b', 'c').permutations().map(io.vavr.collection.List::mkString);
+        final com.guizmaii.zazr.collection.List<String> expected = com.guizmaii.zazr.collection.List.of('a', 'b', 'c').permutations().map(com.guizmaii.zazr.collection.List::mkString);
         assertThat(actual).isIn(expected);
     }
 
@@ -1480,7 +1480,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Test
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected = io.vavr.collection.LinkedHashMap.empty().put('a', mapOf(0, 'a')).put('b', mapOf(1,'b'))
+        final Map<?, ?> expected = com.guizmaii.zazr.collection.LinkedHashMap.empty().put('a', mapOf(0, 'a')).put('b', mapOf(1,'b'))
                 .put('c', mapOf(2,'c'));
         assertThat(actual).isEqualTo(expected);
     }

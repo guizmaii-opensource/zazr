@@ -1,11 +1,11 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.collection.Stream;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.euler.Utils.file;
-import static io.vavr.collection.euler.Utils.readLines;
+import static com.guizmaii.zazr.collection.euler.Utils.file;
+import static com.guizmaii.zazr.collection.euler.Utils.readLines;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

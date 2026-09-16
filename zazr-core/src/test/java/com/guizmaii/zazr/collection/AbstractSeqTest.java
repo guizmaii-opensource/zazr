@@ -1,8 +1,8 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Comparator;

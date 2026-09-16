@@ -1,18 +1,18 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
-import io.vavr.collection.RedBlackTreeModule.Empty;
-import io.vavr.collection.RedBlackTreeModule.Node;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.collection.RedBlackTreeModule.Empty;
+import com.guizmaii.zazr.collection.RedBlackTreeModule.Node;
+import com.guizmaii.zazr.control.Option;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.RedBlackTree.Color.BLACK;
-import static io.vavr.collection.RedBlackTree.Color.RED;
+import static com.guizmaii.zazr.collection.RedBlackTree.Color.BLACK;
+import static com.guizmaii.zazr.collection.RedBlackTree.Color.RED;
 
 /**
  * Purely functional Red/Black Tree, inspired by <a href="https://github.com/kazu-yamamoto/llrbtree/blob/master/Data/Set/RBTree.hs">Kazu Yamamoto's Haskell implementation</a>.

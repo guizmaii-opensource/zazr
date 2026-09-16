@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 interface Memoized {
 }

@@ -1,4 +1,4 @@
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;

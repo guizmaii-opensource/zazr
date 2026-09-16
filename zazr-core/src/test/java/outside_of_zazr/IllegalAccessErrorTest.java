@@ -1,7 +1,7 @@
-package outside_of_vavr;
+package outside_of_zazr;
 
-import io.vavr.collection.HashMap;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.collection.HashMap;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Test;
 

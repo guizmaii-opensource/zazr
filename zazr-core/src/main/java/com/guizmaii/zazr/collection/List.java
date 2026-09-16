@@ -1,21 +1,21 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
-import io.vavr.collection.List.Nil;
-import io.vavr.collection.ListModule.Combinations;
-import io.vavr.collection.ListModule.SplitAt;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.collection.List.Nil;
+import com.guizmaii.zazr.collection.ListModule.Combinations;
+import com.guizmaii.zazr.collection.ListModule.SplitAt;
+import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
-import static io.vavr.collection.JavaConverters.ListView;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ListView;
 
 /**
  * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent programming.
@@ -113,7 +113,7 @@ public interface List<T extends @Nullable Object> extends LinearSeq<T> {
      * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link List}.
      *
      * @param <T> Component type of the List.
-     * @return A io.vavr.collection.List Collector.
+     * @return A com.guizmaii.zazr.collection.List Collector.
      */
     static <T extends @Nullable Object> Collector<T, ArrayList<T>, List<T>> collector() {
         final Supplier<ArrayList<T>> supplier = ArrayList::new;

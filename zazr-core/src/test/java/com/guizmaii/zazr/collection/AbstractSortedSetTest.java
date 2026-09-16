@@ -1,4 +1,4 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.TestComparators.toStringComparator;
+import static com.guizmaii.zazr.TestComparators.toStringComparator;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.reverseOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;

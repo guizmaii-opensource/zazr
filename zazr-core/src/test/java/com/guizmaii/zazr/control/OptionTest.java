@@ -1,8 +1,8 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.*;
-import io.vavr.AbstractValueTest;
-import io.vavr.collection.Seq;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.collection.Seq;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;

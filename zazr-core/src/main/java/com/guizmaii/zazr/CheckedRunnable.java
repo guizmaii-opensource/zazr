@@ -1,8 +1,8 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.CheckedRunnableModule.sneakyThrow;
+import static com.guizmaii.zazr.CheckedRunnableModule.sneakyThrow;
 
 /**
  * A {@linkplain Runnable} that is allowed to throw checked exceptions.

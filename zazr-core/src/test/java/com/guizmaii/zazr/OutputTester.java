@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import java.io.IOException;
 import java.io.OutputStream;

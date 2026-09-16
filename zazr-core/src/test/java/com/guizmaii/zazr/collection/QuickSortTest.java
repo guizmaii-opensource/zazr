@@ -1,4 +1,4 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import java.util.function.IntFunction;
 import org.assertj.core.api.Assertions;

@@ -1,7 +1,7 @@
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
-import io.vavr.Tuple;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.control.Option;
 import java.util.Objects;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

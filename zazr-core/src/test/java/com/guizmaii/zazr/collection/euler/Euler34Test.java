@@ -1,10 +1,10 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.collection.Stream;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.euler.Utils.MEMOIZED_FACTORIAL;
+import static com.guizmaii.zazr.collection.euler.Utils.MEMOIZED_FACTORIAL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler34Test {

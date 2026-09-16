@@ -35,7 +35,7 @@ _Source: http://users.ece.utexas.edu/~adnan/pike.html_
 
 ### Packages
 
-* There is only one first-level package: io.vavr.
+* There is only one first-level package: com.guizmaii.zazr.
 * The maximum package depth is two.
 * Package names are denoted in the singular.
 * Packages are sliced by domain (no util or tool packages).

@@ -1,6 +1,6 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.control.Option;
+import com.guizmaii.zazr.control.Option;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.BiFunction;

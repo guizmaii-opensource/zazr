@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
@@ -7,7 +7,7 @@ package io.vavr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.vavr.control.Try;
+import com.guizmaii.zazr.control.Try;
 import java.lang.CharSequence;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

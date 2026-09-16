@@ -1,9 +1,9 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.euler.Utils.factorial;
+import static com.guizmaii.zazr.collection.euler.Utils.factorial;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler15Test {

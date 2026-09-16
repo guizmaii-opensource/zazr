@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;

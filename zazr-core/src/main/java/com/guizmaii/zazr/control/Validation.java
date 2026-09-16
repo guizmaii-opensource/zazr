@@ -1,9 +1,9 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.*;
-import io.vavr.collection.Iterator;
-import io.vavr.collection.List;
-import io.vavr.collection.Seq;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Seq;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;

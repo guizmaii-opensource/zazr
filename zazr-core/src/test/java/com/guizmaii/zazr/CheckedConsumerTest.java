@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;

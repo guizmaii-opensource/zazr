@@ -1,14 +1,14 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.ArrayType.obj;
-import static io.vavr.collection.Collections.withSize;
-import static io.vavr.collection.NodeModifier.COPY_NODE;
-import static io.vavr.collection.NodeModifier.IDENTITY;
+import static com.guizmaii.zazr.collection.ArrayType.obj;
+import static com.guizmaii.zazr.collection.Collections.withSize;
+import static com.guizmaii.zazr.collection.NodeModifier.COPY_NODE;
+import static com.guizmaii.zazr.collection.NodeModifier.IDENTITY;
 import static java.util.function.Function.identity;
 
 /**

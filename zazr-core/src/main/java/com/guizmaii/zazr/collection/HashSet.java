@@ -1,7 +1,7 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,7 +43,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link HashSet}.
      *
      * @param <T> Component type of the HashSet.
-     * @return A io.vavr.collection.HashSet Collector.
+     * @return A com.guizmaii.zazr.collection.HashSet Collector.
      */
     public static <T extends @Nullable Object> Collector<T, ArrayList<T>, HashSet<T>> collector() {
         final Supplier<ArrayList<T>> supplier = ArrayList::new;

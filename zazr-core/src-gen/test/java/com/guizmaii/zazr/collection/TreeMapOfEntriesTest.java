@@ -1,10 +1,10 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static io.vavr.collection.Comparators.naturalComparator;
+import static com.guizmaii.zazr.collection.Comparators.naturalComparator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

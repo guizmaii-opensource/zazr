@@ -1,11 +1,11 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import io.vavr.collection.List;
-import io.vavr.collection.Seq;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Seq;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;

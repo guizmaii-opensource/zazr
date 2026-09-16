@@ -1,9 +1,9 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -23,13 +23,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.Iterator.concat;
-import static io.vavr.collection.Iterator.continually;
-import static io.vavr.collection.Iterator.from;
-import static io.vavr.collection.Iterator.iterate;
-import static io.vavr.collection.Iterator.narrow;
-import static io.vavr.collection.Iterator.rangeBy;
-import static io.vavr.collection.Iterator.rangeClosedBy;
+import static com.guizmaii.zazr.collection.Iterator.concat;
+import static com.guizmaii.zazr.collection.Iterator.continually;
+import static com.guizmaii.zazr.collection.Iterator.from;
+import static com.guizmaii.zazr.collection.Iterator.iterate;
+import static com.guizmaii.zazr.collection.Iterator.narrow;
+import static com.guizmaii.zazr.collection.Iterator.rangeBy;
+import static com.guizmaii.zazr.collection.Iterator.rangeClosedBy;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -804,8 +804,8 @@ public class IteratorTest extends AbstractTraversableTest {
     public void shouldNotDeadlockOnConcurrentClassInitialization() {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
             final ExecutorService executorService = Executors.newFixedThreadPool(2);
-            executorService.execute(new ClassInitializer("io.vavr.collection.Iterator"));
-            executorService.execute(new ClassInitializer("io.vavr.collection.AbstractIterator"));
+            executorService.execute(new ClassInitializer("com.guizmaii.zazr.collection.Iterator"));
+            executorService.execute(new ClassInitializer("com.guizmaii.zazr.collection.AbstractIterator"));
             executorService.shutdown();
             // try to access Vavr Iterator and it will hang
             Iterator.empty().iterator();

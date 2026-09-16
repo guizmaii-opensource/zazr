@@ -1,6 +1,6 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
-import io.vavr.collection.List;
+import com.guizmaii.zazr.collection.List;
 import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.Objects;

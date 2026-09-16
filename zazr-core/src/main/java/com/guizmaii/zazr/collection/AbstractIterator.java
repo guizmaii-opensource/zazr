@@ -1,4 +1,4 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
 import java.util.NoSuchElementException;
 import org.jspecify.annotations.Nullable;

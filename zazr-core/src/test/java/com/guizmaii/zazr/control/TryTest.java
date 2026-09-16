@@ -1,9 +1,9 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.AbstractValueTest;
-import io.vavr.CheckedPredicate;
-import io.vavr.Value;
-import io.vavr.collection.Seq;
+import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.CheckedPredicate;
+import com.guizmaii.zazr.Value;
+import com.guizmaii.zazr.collection.Seq;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;

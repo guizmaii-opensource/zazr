@@ -1,17 +1,17 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.collection.JavaConverters.ListView;
-import io.vavr.collection.VectorModule.Combinations;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.JavaConverters.ListView;
+import com.guizmaii.zazr.collection.VectorModule.Combinations;
+import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.Collections.withSize;
-import static io.vavr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.Collections.withSize;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
 
 /**
  * Vector is the default Seq implementation that provides effectively constant time access to any element.
@@ -195,7 +195,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> Vector<T> ofAll(Iterable<? extends T> iterable) {
         Objects.requireNonNull(iterable, "iterable is null");
-        if (iterable instanceof Traversable && io.vavr.collection.Collections.isEmpty(iterable)) {
+        if (iterable instanceof Traversable && com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
             return empty();
         }
         if (iterable instanceof Vector) {
@@ -205,7 +205,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                 && ((ListView<T, ?>) iterable).getDelegate() instanceof Vector) {
             return (Vector<T>) ((ListView<T, ?>) iterable).getDelegate();
         }
-        if (io.vavr.collection.Collections.isTraversableAgain(iterable)) {
+        if (com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
             // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then grouped into
             // leaves, is cheaper than element-wise adds; the builder pays off for one-shot and unsized sources only
             return ofAll(BitMappedTrie.ofAll(withSize(iterable).toArray()));
@@ -664,7 +664,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * }
      */
     public static <T extends @Nullable Object> Vector<Vector<T>> transpose(Vector<Vector<T>> matrix) {
-        return io.vavr.collection.Collections.transpose(matrix, Vector::ofAll, Vector::of);
+        return com.guizmaii.zazr.collection.Collections.transpose(matrix, Vector::ofAll, Vector::of);
     }
 
     /**
@@ -754,7 +754,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public Vector<T> append(T element) { return appendAll(io.vavr.collection.List.of(element)); }
+    public Vector<T> append(T element) { return appendAll(com.guizmaii.zazr.collection.List.of(element)); }
 
     @Override
     public Vector<T> appendAll(Iterable<? extends T> iterable) {
@@ -762,10 +762,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (io.vavr.collection.Collections.isEmpty(iterable)){
+        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)){
             return this;
         }
-        if (!io.vavr.collection.Collections.isTraversableAgain(iterable)) {
+        if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
             // a one-shot source (a Vavr Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
             return appendAll(ofAll(iterable));
         }
@@ -799,7 +799,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     public Vector<Vector<T>> combinations(int k) { return Combinations.apply(this, Math.max(k, 0)); }
 
     @Override
-    public Iterator<Vector<T>> crossProduct(int power) { return io.vavr.collection.Collections.crossProduct(empty(), this, power); }
+    public Iterator<Vector<T>> crossProduct(int power) { return com.guizmaii.zazr.collection.Collections.crossProduct(empty(), this, power); }
 
     @Override
     public Vector<T> distinct() { return distinctBy(Function.identity()); }
@@ -837,7 +837,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> dropUntil(Predicate<? super T> predicate) {
-        return io.vavr.collection.Collections.dropUntil(this, predicate);
+        return com.guizmaii.zazr.collection.Collections.dropUntil(this, predicate);
     }
 
     @Override
@@ -853,7 +853,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> dropRightUntil(Predicate<? super T> predicate) {
-        return io.vavr.collection.Collections.dropRightUntil(this, predicate);
+        return com.guizmaii.zazr.collection.Collections.dropRightUntil(this, predicate);
     }
 
     @Override
@@ -909,7 +909,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return io.vavr.collection.Collections.groupBy(this, classifier, Vector::ofAll); }
+    public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Vector::ofAll); }
 
     @Override
     public Iterator<Vector<T>> grouped(int size) { return sliding(size, size); }
@@ -1109,7 +1109,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public Vector<T> prepend(T element) { return prependAll(io.vavr.collection.List.of(element)); }
+    public Vector<T> prepend(T element) { return prependAll(com.guizmaii.zazr.collection.List.of(element)); }
 
     @Override
     public Vector<T> prependAll(Iterable<? extends T> iterable) {
@@ -1117,7 +1117,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (io.vavr.collection.Collections.isEmpty(iterable)){
+        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)){
             return this;
         }
         return new Vector<>(trie.prependAll(iterable));
@@ -1170,12 +1170,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> removeAll(T element) {
-        return io.vavr.collection.Collections.removeAll(this, element);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
     }
 
     @Override
     public Vector<T> removeAll(Iterable<? extends T> elements) {
-        return io.vavr.collection.Collections.removeAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, elements);
     }
 
     @Override
@@ -1207,7 +1207,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> retainAll(Iterable<? extends T> elements) {
-        return io.vavr.collection.Collections.retainAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
     }
 
     @Override
@@ -1232,17 +1232,17 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public <U extends @Nullable Object> Vector<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanLeft(this, zero, operation, Iterator::toVector);
+        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toVector);
     }
 
     @Override
     public <U extends @Nullable Object> Vector<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanRight(this, zero, operation, Iterator::toVector);
+        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toVector);
     }
 
     @Override
     public Vector<T> shuffle() {
-        return io.vavr.collection.Collections.shuffle(this, Vector::ofAll);
+        return com.guizmaii.zazr.collection.Collections.shuffle(this, Vector::ofAll);
     }
 
     @Override
@@ -1364,7 +1364,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> takeUntil(Predicate<? super T> predicate) {
-        return io.vavr.collection.Collections.takeUntil(this, predicate);
+        return com.guizmaii.zazr.collection.Collections.takeUntil(this, predicate);
     }
 
     @Override
@@ -1380,7 +1380,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> takeRightUntil(Predicate<? super T> predicate) {
-        return io.vavr.collection.Collections.takeRightUntil(this, predicate);
+        return com.guizmaii.zazr.collection.Collections.takeRightUntil(this, predicate);
     }
 
     @Override
@@ -1476,12 +1476,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public boolean equals(@Nullable Object o) {
-        return io.vavr.collection.Collections.equals(this, o);
+        return com.guizmaii.zazr.collection.Collections.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return io.vavr.collection.Collections.hashOrdered(this);
+        return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
     }
 
     @Override

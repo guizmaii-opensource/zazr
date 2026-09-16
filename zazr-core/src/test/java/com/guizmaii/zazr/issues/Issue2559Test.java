@@ -1,8 +1,8 @@
-package io.vavr.issues;
+package com.guizmaii.zazr.issues;
 
-import io.vavr.Tuple2;
-import io.vavr.collection.HashSet;
-import io.vavr.collection.Set;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.HashSet;
+import com.guizmaii.zazr.collection.Set;
 import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

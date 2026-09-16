@@ -1,8 +1,8 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.euler.Utils.fibonacci;
+import static com.guizmaii.zazr.collection.euler.Utils.fibonacci;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

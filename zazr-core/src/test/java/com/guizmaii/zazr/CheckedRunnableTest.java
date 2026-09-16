@@ -1,4 +1,4 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;

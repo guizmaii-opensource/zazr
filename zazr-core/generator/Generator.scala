@@ -15,7 +15,7 @@ val javadoc = "**"
 /**
  * The implicit bound every generated type-parameter *declaration* must carry.
  *
- * The io.vavr packages are `@NullMarked`, which makes a bare `<T>` mean `<T extends Object>`
+ * The com.guizmaii.zazr packages are `@NullMarked`, which makes a bare `<T>` mean `<T extends Object>`
  * (non-null). Vavr containers deliberately accept null elements, so declarations widen to
  * `<T extends @Nullable Object>`. Type-parameter *usages* are unaffected.
  */
@@ -86,22 +86,22 @@ def generateMainClasses(): Unit = {
 
     (0 to N).foreach(i => {
 
-      genVavrFile("io.vavr", s"CheckedFunction$i")(genFunction("CheckedFunction", checked = true))
-      genVavrFile("io.vavr", s"Function$i")(genFunction("Function", checked = false))
+      genVavrFile("com.guizmaii.zazr", s"CheckedFunction$i")(genFunction("CheckedFunction", checked = true))
+      genVavrFile("com.guizmaii.zazr", s"Function$i")(genFunction("Function", checked = false))
 
       def genFunction(name: String, checked: Boolean)(im: ImportManager, packageName: String, className: String): String = {
 
         val a = Arity(i)
         import a.{generics, genericsDecl, fullGenerics, fullGenericsDecl, wideGenerics, fullWideGenerics, genericsReversed, genericsTuple, genericsFunction, genericsReversedFunction, paramsDecl, params, paramsReversed, tupled}
-        val genericsOptionReturnType = s"<${genericsFunction}${im.getType("io.vavr.control.Option")}<R>>"
-        val genericsTryReturnType = s"<${genericsFunction}${im.getType("io.vavr.control.Try")}<R>>"
+        val genericsOptionReturnType = s"<${genericsFunction}${im.getType("com.guizmaii.zazr.control.Option")}<R>>"
+        val genericsTryReturnType = s"<${genericsFunction}${im.getType("com.guizmaii.zazr.control.Try")}<R>>"
         val curried = if (i == 0) "v" else (1 to i).gen(j => s"t$j")(using " -> ")
         val compositionType = if(checked) "CheckedFunction1" else im.getType("java.util.function.Function")
 
         // imports
 
         val Objects = im.getType("java.util.Objects")
-        val Try = if (checked) im.getType("io.vavr.control.Try") else ""
+        val Try = if (checked) im.getType("com.guizmaii.zazr.control.Try") else ""
         val additionalExtends = (checked, i) match {
           case (false, 0) => im.getType("java.util.function.Supplier") + "<R>"
           case (false, 1) => im.getType("java.util.function.Function") + "<T1, R>"
@@ -110,11 +110,11 @@ def generateMainClasses(): Unit = {
         }
         val extendsClause = if (additionalExtends.isEmpty) "" else s"extends $additionalExtends"
         def fullGenericsTypeF(checked: Boolean, i: Int): String = (checked, i) match {
-          case (true, _) => im.getType(s"io.vavr.CheckedFunction$i") + fullWideGenerics
+          case (true, _) => im.getType(s"com.guizmaii.zazr.CheckedFunction$i") + fullWideGenerics
           case (false, 0) => im.getType("java.util.function.Supplier") + "<? extends R>"
           case (false, 1) => im.getType("java.util.function.Function") + "<? super T1, ? extends R>"
           case (false, 2) => im.getType("java.util.function.BiFunction") + "<? super T1, ? super T2, ? extends R>"
-          case (false, _) => im.getType(s"io.vavr.Function$i") + fullWideGenerics
+          case (false, _) => im.getType(s"com.guizmaii.zazr.Function$i") + fullWideGenerics
         }
         val fullGenericsType = fullGenericsTypeF(checked, i)
         val refApply = i match {
@@ -138,7 +138,7 @@ def generateMainClasses(): Unit = {
         }
 
         if (checked) {
-          im.getStatic(s"io.vavr.${className}Module.sneakyThrow")
+          im.getStatic(s"com.guizmaii.zazr.${className}Module.sneakyThrow")
         }
 
         xs"""
@@ -197,16 +197,16 @@ def generateMainClasses(): Unit = {
                ${(0 to i).gen(j => if (j == 0) "* @param <R> return type" else s"* @param <T$j> ${j.ordinal} argument")(using "\n")}
                * @return a function that applies arguments to the given {@code partialFunction} and returns {@code Some(result)}
                *         if the function is defined for the given arguments, and {@code None} if it throws a non-fatal
-               *         throwable. Fatal throwables (see {@link ${im.getType("io.vavr.control.Try")}}) are rethrown
+               *         throwable. Fatal throwables (see {@link ${im.getType("com.guizmaii.zazr.control.Try")}}) are rethrown
                *         instead of being turned into {@code None}.
                */
-              static $fullGenericsDecl ${im.getType(s"io.vavr.Function$i")}$genericsOptionReturnType lift($fullGenericsType partialFunction) {
+              static $fullGenericsDecl ${im.getType(s"com.guizmaii.zazr.Function$i")}$genericsOptionReturnType lift($fullGenericsType partialFunction) {
                   ${
                     val func = "partialFunction"
                     val supplier = if (!checked && i == 0) s"$func::get" else if (checked && i == 0) s"$func::apply" else s"() -> $func.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
-                      return $lambdaArgs -> ${im.getType("io.vavr.control.Try")}.<R>of($supplier).toOption();
+                      return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.<R>of($supplier).toOption();
                     """
                   }
               }
@@ -218,15 +218,15 @@ def generateMainClasses(): Unit = {
                ${(0 to i).gen(j => if (j == 0) "* @param <R> return type" else s"* @param <T$j> ${j.ordinal} argument")(using "\n")}
                * @return a function that applies arguments to the given {@code partialFunction} and returns {@code Success(result)}
                *         if the function is defined for the given arguments, and {@code Failure(throwable)} if it throws a
-               *         non-fatal throwable. Fatal throwables (see {@link ${im.getType("io.vavr.control.Try")}}) are rethrown
+               *         non-fatal throwable. Fatal throwables (see {@link ${im.getType("com.guizmaii.zazr.control.Try")}}) are rethrown
                *         instead of being wrapped.
                */
-              static $fullGenericsDecl ${im.getType(s"io.vavr.Function$i")}$genericsTryReturnType liftTry($fullGenericsType partialFunction) {
+              static $fullGenericsDecl ${im.getType(s"com.guizmaii.zazr.Function$i")}$genericsTryReturnType liftTry($fullGenericsType partialFunction) {
                   ${
                     val supplier = if (!checked && i == 0) "partialFunction::get" else if (checked && i == 0) "partialFunction::apply" else s"() -> partialFunction.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
-                      return $lambdaArgs -> ${im.getType("io.vavr.control.Try")}.of($supplier);
+                      return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.of($supplier);
                     """
                   }
               }
@@ -534,14 +534,14 @@ def generateMainClasses(): Unit = {
   }
 
   /**
-   * Generator of io.vavr.Tuple*
+   * Generator of com.guizmaii.zazr.Tuple*
    */
   def genTuples(): Unit = {
 
-    genVavrFile("io.vavr", "Tuple")(genBaseTuple)
+    genVavrFile("com.guizmaii.zazr", "Tuple")(genBaseTuple)
 
     (0 to N).foreach { i =>
-      genVavrFile("io.vavr", s"Tuple$i")(genTuple(i))
+      genVavrFile("com.guizmaii.zazr", s"Tuple$i")(genTuple(i))
     }
 
     /*
@@ -566,8 +566,8 @@ def generateMainClasses(): Unit = {
       val functionType = javaFunctionType(i, im)
       val Comparator = im.getType("java.util.Comparator")
       val Objects = im.getType("java.util.Objects")
-      val Seq = im.getType("io.vavr.collection.Seq")
-      val List = im.getType("io.vavr.collection.List")
+      val Seq = im.getType("com.guizmaii.zazr.collection.Seq")
+      val List = im.getType("com.guizmaii.zazr.collection.List")
       if(i==2){
         im.getType("java.util.Map")
         im.getType("java.util.AbstractMap")
@@ -745,7 +745,7 @@ def generateMainClasses(): Unit = {
                */
               public $resultGenericsDecl $className$resultGenerics map(${(1 to i).gen(j => s"${im.getType("java.util.function.Function")}<? super T$j, ? extends U$j> f$j")(using ", ")}) {
                   ${(1 to i).gen(j => s"""Objects.requireNonNull(f$j, "f$j is null");""")(using "\n")}
-                  return ${im.getType("io.vavr.Tuple")}.of(${(1 to i).gen(j => s"f$j.apply(_$j)")(using ", ")});
+                  return ${im.getType("com.guizmaii.zazr.Tuple")}.of(${(1 to i).gen(j => s"f$j.apply(_$j)")(using ", ")});
               }
             """)}
 
@@ -802,7 +802,7 @@ def generateMainClasses(): Unit = {
                * @return a new Tuple with the value appended
                */
               public <T${i+1} $nullableBound> Tuple${i+1}<${(1 to i+1).gen(j => s"T$j")(using ", ")}> append(T${i+1} t${i+1}) {
-                  return ${im.getType("io.vavr.Tuple")}.of(${(1 to i).gen(k => s"_$k")(using ", ")}${(i > 0).gen(", ")}t${i+1});
+                  return ${im.getType("com.guizmaii.zazr.Tuple")}.of(${(1 to i).gen(k => s"_$k")(using ", ")}${(i > 0).gen(", ")}t${i+1});
               }
             """)}
 
@@ -817,7 +817,7 @@ def generateMainClasses(): Unit = {
                */
               public <${(i+1 to i+j).gen(k => s"T$k " + nullableBound)(using ", ")}> Tuple${i+j}<${(1 to i+j).gen(k => s"T$k")(using ", ")}> concat(Tuple$j<${(i+1 to i+j).gen(k => s"T$k")(using ", ")}> tuple) {
                   Objects.requireNonNull(tuple, "tuple is null");
-                  return ${im.getType("io.vavr.Tuple")}.of(${(1 to i).gen(k => s"_$k")(using ", ")}${(i > 0).gen(", ")}${(1 to j).gen(k => s"tuple._$k")(using ", ")});
+                  return ${im.getType("com.guizmaii.zazr.Tuple")}.of(${(1 to i).gen(k => s"_$k")(using ", ")}${(i > 0).gen(", ")}${(1 to j).gen(k => s"tuple._$k")(using ", ")});
               }
             """)(using "\n\n")}
 
@@ -860,7 +860,7 @@ def generateMainClasses(): Unit = {
 
       val Map = im.getType("java.util.Map")
       val Objects = im.getType("java.util.Objects")
-      val Seq = im.getType("io.vavr.collection.Seq")
+      val Seq = im.getType("com.guizmaii.zazr.collection.Seq")
 
       def genFactoryMethod(i: Int) = {
         val a = Arity(i)
@@ -922,7 +922,7 @@ def generateMainClasses(): Unit = {
         val a = Arity(i)
         import a.{generics, genericsDecl}
         val seqs = (1 to i).gen(j => s"Seq<T$j>")(using ", ")
-        val Stream = im.getType("io.vavr.collection.Stream")
+        val Stream = im.getType("com.guizmaii.zazr.collection.Stream")
         val widenedGenerics = a.covariantGenerics
         xs"""
             /**
@@ -1008,7 +1008,7 @@ def generateMainClasses(): Unit = {
   }
 
   /**
-   * Generator of io.vavr.collection.*ArrayType
+   * Generator of com.guizmaii.zazr.collection.*ArrayType
    */
   def genArrayTypes(): Unit = {
 
@@ -1024,7 +1024,7 @@ def generateMainClasses(): Unit = {
       "Object" -> "Object" // fallback
     ) // note: there is no void[] in Java
 
-    genVavrFile("io.vavr.collection", "ArrayType")((im: ImportManager, packageName: String, className: String) => xs"""
+    genVavrFile("com.guizmaii.zazr.collection", "ArrayType")((im: ImportManager, packageName: String, className: String) => xs"""
       import java.util.Collection;
 
       /**
@@ -1220,8 +1220,8 @@ def generateTestClasses(): Unit = {
 
     (0 to N).foreach(i => {
 
-      genVavrFile("io.vavr", s"CheckedFunction${i}Test", baseDir = TARGET_TEST)(genFunctionTest("CheckedFunction", checked = true))
-      genVavrFile("io.vavr", s"Function${i}Test", baseDir = TARGET_TEST)(genFunctionTest("Function", checked = false))
+      genVavrFile("com.guizmaii.zazr", s"CheckedFunction${i}Test", baseDir = TARGET_TEST)(genFunctionTest("CheckedFunction", checked = true))
+      genVavrFile("com.guizmaii.zazr", s"Function${i}Test", baseDir = TARGET_TEST)(genFunctionTest("Function", checked = false))
 
       def genFunctionTest(name: String, checked: Boolean)(im: ImportManager, packageName: String, className: String): String = {
 
@@ -1380,7 +1380,7 @@ def generateTestClasses(): Unit = {
                     $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> divByZero = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> 10 / integer.get();
                     $name$i<${(1 to i).gen(j => "Integer, ")(using "")}Try<Integer>> divByZeroTry = $name$i.liftTry(divByZero);
 
-                    ${im.getType("io.vavr.control.Try")}<Integer> res = divByZeroTry.apply(${(1 to i).gen(j => s"0")(using ", ")});
+                    ${im.getType("com.guizmaii.zazr.control.Try")}<Integer> res = divByZeroTry.apply(${(1 to i).gen(j => s"0")(using ", ")});
                     assertThat(res.isFailure()).isTrue();
                     assertThat(res.getCause()).isNotNull();
                     assertThat(res.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
@@ -1419,7 +1419,7 @@ def generateTestClasses(): Unit = {
                       assertThat(md5.getDigestLength()).isEqualTo(16);
 
                       integer.incrementAndGet();
-                      ${im.getType("io.vavr.control.Try")}<MessageDigest> unknown = Function$i.liftTry(recover).apply();
+                      ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = Function$i.liftTry(recover).apply();
                       assertThat(unknown).isNotNull();
                       assertThat(unknown.isFailure()).isTrue();
                       assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -1450,14 +1450,14 @@ def generateTestClasses(): Unit = {
                       final $AtomicInteger integer = new $AtomicInteger();
                       $name$i<MessageDigest> digest = () -> ${im.getType("java.security.MessageDigest")}.getInstance(integer.get() == 0 ? "MD5" : "Unknown");
                       Function$i<Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
-                      ${im.getType("io.vavr.control.Try")}<MessageDigest> md5 = liftTry.apply();
+                      ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> md5 = liftTry.apply();
                       assertThat(md5.isSuccess()).isTrue();
                       assertThat(md5.get()).isNotNull();
                       assertThat(md5.get().getAlgorithm()).isEqualToIgnoringCase("MD5");
                       assertThat(md5.get().getDigestLength()).isEqualTo(16);
 
                       integer.incrementAndGet();
-                      ${im.getType("io.vavr.control.Try")}<MessageDigest> unknown = liftTry.apply();
+                      ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = liftTry.apply();
                       assertThat(unknown.isFailure()).isTrue();
                       assertThat(unknown.getCause()).isNotNull();
                       assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
@@ -1488,7 +1488,7 @@ def generateTestClasses(): Unit = {
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.getDigestLength()).isEqualTo(16);
-                          final ${im.getType("io.vavr.control.Try")}<MessageDigest> unknown = Function$i.liftTry(recover).apply(${toArgList("Unknown")});
+                          final ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = Function$i.liftTry(recover).apply(${toArgList("Unknown")});
                           assertThat(unknown).isNotNull();
                           assertThat(unknown.isFailure()).isTrue();
                           assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -1515,12 +1515,12 @@ def generateTestClasses(): Unit = {
                       @$test
                       public void shouldLiftTryPartialFunction() {
                           final Function$i<${(1 to i).gen(j => "String")(using ", ")}, Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
-                          final ${im.getType("io.vavr.control.Try")}<MessageDigest> md5 = liftTry.apply(${toArgList("MD5")});
+                          final ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> md5 = liftTry.apply(${toArgList("MD5")});
                           assertThat(md5.isSuccess()).isTrue();
                           assertThat(md5.get()).isNotNull();
                           assertThat(md5.get().getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.get().getDigestLength()).isEqualTo(16);
-                          final ${im.getType("io.vavr.control.Try")}<MessageDigest> unknown = liftTry.apply(${toArgList("Unknown")});
+                          final ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = liftTry.apply(${toArgList("Unknown")});
                           assertThat(unknown.isFailure()).isTrue();
                           assertThat(unknown.getCause()).isNotNull();
                           assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
@@ -1604,8 +1604,8 @@ def generateTestClasses(): Unit = {
       val test = im.getType("org.junit.jupiter.api.Test")
       val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
       val assertThrows = im.getStatic("org.junit.jupiter.api.Assertions.assertThrows")
-      val naturalComparator = if (builderComparator || keyComparator) im.getStatic(s"io.vavr.collection.Comparators.naturalComparator") else null
-      val map = im.getType(s"io.vavr.collection.$mapName")
+      val naturalComparator = if (builderComparator || keyComparator) im.getStatic(s"com.guizmaii.zazr.collection.Comparators.naturalComparator") else null
+      val map = im.getType(s"com.guizmaii.zazr.collection.$mapName")
       (1 to VARARGS).gen(arity => xs"""
         @$test
         public void shouldConstructFrom${arity}Entries${if(builderComparator) "WithBuilderComparator" else ""}${if(keyComparator) "WithKeyComparator" else ""}${mapBuilder.capitalize}() {
@@ -1614,7 +1614,7 @@ def generateTestClasses(): Unit = {
             .of(${if(keyComparator) s"$naturalComparator(), " else ""}${(1 to arity).gen(j => s"""$j, "$j"""")(using ", ")});
           $assertThat(map.size()).isEqualTo($arity);
           ${(1 to arity).gen(j => {
-            s"""${if (mapBuilder.isEmpty) "" else s"$assertThat(map.get($j).get() instanceof ${im.getType(s"io.vavr.collection.${mapBuilder.substring(4)}")}).isTrue();\n"}$assertThat(map.get($j).get()${if (mapName.contains("Multimap")) ".head()" else ""}).isEqualTo("$j");"""
+            s"""${if (mapBuilder.isEmpty) "" else s"$assertThat(map.get($j).get() instanceof ${im.getType(s"com.guizmaii.zazr.collection.${mapBuilder.substring(4)}")}).isTrue();\n"}$assertThat(map.get($j).get()${if (mapName.contains("Multimap")) ".head()" else ""}).isEqualTo("$j");"""
           })(using "\n")}
         }
       """)(using "\n\n")
@@ -1623,7 +1623,7 @@ def generateTestClasses(): Unit = {
     def genMapOfEntriesTest(mapName: String): Unit = {
       val mapBuilders:List[String] = if (mapName.contains("Multimap")) List("withSeq", "withSet", "withSortedSet") else List("")
       val keyComparators:List[Boolean] = if (mapName.startsWith("Tree")) List(true, false) else List(false)
-      genVavrFile("io.vavr.collection", s"${mapName}OfEntriesTest", baseDir = TARGET_TEST) ((im: ImportManager, packageName, className) => {
+      genVavrFile("com.guizmaii.zazr.collection", s"${mapName}OfEntriesTest", baseDir = TARGET_TEST) ((im: ImportManager, packageName, className) => {
         xs"""
         public class ${mapName}OfEntriesTest {
           ${mapBuilders.flatMap(mapBuilder => {
@@ -1656,13 +1656,13 @@ def generateTestClasses(): Unit = {
 
     (0 to N).foreach(i => {
 
-      genVavrFile("io.vavr", s"Tuple${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+      genVavrFile("com.guizmaii.zazr", s"Tuple${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
         val test = im.getType("org.junit.jupiter.api.Test")
         val assertThrows = im.getStatic("org.junit.jupiter.api.Assertions.assertThrows")
-        val seq = im.getType("io.vavr.collection.Seq")
-        val list = im.getType("io.vavr.collection.List")
-        val stream = if (i == 0) "" else im.getType("io.vavr.collection.Stream")
+        val seq = im.getType("com.guizmaii.zazr.collection.Seq")
+        val list = im.getType("com.guizmaii.zazr.collection.List")
+        val stream = if (i == 0) "" else im.getType("com.guizmaii.zazr.collection.Stream")
         val comparator = im.getType("java.util.Comparator")
         val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
         val generics = if (i == 0) "" else s"<${(1 to i).gen(j => s"Object")(using ", ")}>"

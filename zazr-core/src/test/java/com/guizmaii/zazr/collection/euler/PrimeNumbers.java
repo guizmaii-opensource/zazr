@@ -1,10 +1,10 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Tuple;
-import io.vavr.collection.HashMap;
-import io.vavr.collection.Set;
-import io.vavr.collection.Stream;
-import io.vavr.collection.TreeSet;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.collection.HashMap;
+import com.guizmaii.zazr.collection.Set;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.TreeSet;
 
 final class PrimeNumbers {
 

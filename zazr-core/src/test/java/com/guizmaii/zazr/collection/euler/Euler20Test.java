@@ -1,7 +1,7 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.collection.Stream;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 

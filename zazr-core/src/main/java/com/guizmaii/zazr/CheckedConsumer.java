@@ -1,10 +1,10 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.CheckedConsumerModule.sneakyThrow;
+import static com.guizmaii.zazr.CheckedConsumerModule.sneakyThrow;
 
 /**
  * A {@linkplain java.util.function.Consumer} that is allowed to throw checked exceptions.

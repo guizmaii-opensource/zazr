@@ -1,9 +1,9 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
 import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.CheckedPredicateModule.sneakyThrow;
+import static com.guizmaii.zazr.CheckedPredicateModule.sneakyThrow;
 
 /**
  * A {@linkplain java.util.function.Predicate} that is allowed to throw checked exceptions.

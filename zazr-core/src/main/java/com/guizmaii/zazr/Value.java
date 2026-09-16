@@ -1,26 +1,26 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
-import io.vavr.collection.HashMap;
-import io.vavr.collection.HashSet;
-import io.vavr.collection.Iterator;
-import io.vavr.collection.LinkedHashMap;
-import io.vavr.collection.LinkedHashSet;
-import io.vavr.collection.List;
-import io.vavr.collection.Map;
-import io.vavr.collection.Ordered;
-import io.vavr.collection.Queue;
-import io.vavr.collection.Set;
-import io.vavr.collection.SortedMap;
-import io.vavr.collection.SortedSet;
-import io.vavr.collection.Stream;
-import io.vavr.collection.Traversable;
-import io.vavr.collection.TreeMap;
-import io.vavr.collection.TreeSet;
-import io.vavr.collection.Vector;
-import io.vavr.control.Either;
-import io.vavr.control.Option;
-import io.vavr.control.Try;
-import io.vavr.control.Validation;
+import com.guizmaii.zazr.collection.HashMap;
+import com.guizmaii.zazr.collection.HashSet;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.LinkedHashMap;
+import com.guizmaii.zazr.collection.LinkedHashSet;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Map;
+import com.guizmaii.zazr.collection.Ordered;
+import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.collection.Set;
+import com.guizmaii.zazr.collection.SortedMap;
+import com.guizmaii.zazr.collection.SortedSet;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Traversable;
+import com.guizmaii.zazr.collection.TreeMap;
+import com.guizmaii.zazr.collection.TreeSet;
+import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.control.Either;
+import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
+import com.guizmaii.zazr.control.Validation;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -445,7 +445,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     // -- Adjusted return types of Iterable
 
     /**
-     * Returns a rich {@code io.vavr.collection.Iterator}.
+     * Returns a rich {@code com.guizmaii.zazr.collection.Iterator}.
      *
      * @return An {@link Iterator} over the element(s) of this value
      */

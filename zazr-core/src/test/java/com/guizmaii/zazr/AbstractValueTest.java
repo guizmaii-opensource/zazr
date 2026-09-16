@@ -1,11 +1,11 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
-import io.vavr.collection.Stream;
-import io.vavr.collection.Traversable;
-import io.vavr.control.Either;
-import io.vavr.control.Option;
-import io.vavr.control.Try;
-import io.vavr.control.Validation;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Traversable;
+import com.guizmaii.zazr.control.Either;
+import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
+import com.guizmaii.zazr.control.Validation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -291,77 +291,77 @@ public abstract class AbstractValueTest {
     @TestTemplate
     public void shouldConvertToList() {
         final Value<Integer> value = of(1, 2, 3);
-        final io.vavr.collection.List<Integer> list = value.toList();
+        final com.guizmaii.zazr.collection.List<Integer> list = value.toList();
         if (value.isSingleValued()) {
-            assertThat(list).isEqualTo(io.vavr.collection.List.of(1));
+            assertThat(list).isEqualTo(com.guizmaii.zazr.collection.List.of(1));
         } else {
-            assertThat(list).isEqualTo(io.vavr.collection.List.of(1, 2, 3));
+            assertThat(list).isEqualTo(com.guizmaii.zazr.collection.List.of(1, 2, 3));
         }
     }
 
     @TestTemplate
     public void shouldConvertToHashMap() {
         final Value<Integer> value = of(9, 5, 1);
-        final io.vavr.collection.Map<Integer, Integer> map = value.toMap(i -> Tuple.of(i, i));
+        final com.guizmaii.zazr.collection.Map<Integer, Integer> map = value.toMap(i -> Tuple.of(i, i));
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.HashMap.of(9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.HashMap.of(9, 9));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.HashMap.of(1, 1, 5, 5, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.HashMap.of(1, 1, 5, 5, 9, 9));
         }
     }
 
     @TestTemplate
     public void shouldConvertToHashMapTwoFunctions() {
         final Value<Integer> value = of(9, 5, 1);
-        final io.vavr.collection.Map<Integer, Integer> map = value.toMap(Function.identity(), Function.identity());
+        final com.guizmaii.zazr.collection.Map<Integer, Integer> map = value.toMap(Function.identity(), Function.identity());
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.HashMap.of(9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.HashMap.of(9, 9));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.HashMap.of(1, 1, 5, 5, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.HashMap.of(1, 1, 5, 5, 9, 9));
         }
     }
 
     @TestTemplate
     public void shouldConvertToLinkedMap() {
         final Value<Integer> value = of(1, 5, 9);
-        final io.vavr.collection.Map<Integer, Integer> map = value.toLinkedMap(i -> Tuple.of(i, i));
+        final com.guizmaii.zazr.collection.Map<Integer, Integer> map = value.toLinkedMap(i -> Tuple.of(i, i));
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.LinkedHashMap.of(1, 1));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.LinkedHashMap.of(1, 1));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.LinkedHashMap.of(1, 1, 5, 5, 9, 9));
         }
     }
 
     @TestTemplate
     public void shouldConvertToLinkedMapTwoFunctions() {
         final Value<Integer> value = of(1, 5, 9);
-        final io.vavr.collection.Map<Integer, Integer> map = value.toLinkedMap(Function.identity(), Function.identity());
+        final com.guizmaii.zazr.collection.Map<Integer, Integer> map = value.toLinkedMap(Function.identity(), Function.identity());
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.LinkedHashMap.of(1, 1));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.LinkedHashMap.of(1, 1));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.LinkedHashMap.of(1, 1, 5, 5, 9, 9));
         }
     }
 
     @TestTemplate
     public void shouldConvertToSortedMap() {
         final Value<Integer> value = of(9, 5, 1);
-        final io.vavr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(i -> Tuple.of(i, i));
+        final com.guizmaii.zazr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(i -> Tuple.of(i, i));
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(9, 9));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(1, 1, 5, 5, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(1, 1, 5, 5, 9, 9));
         }
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctions() {
         final Value<Integer> value = of(9, 5, 1);
-        final io.vavr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(Function.identity(), Function.identity());
+        final com.guizmaii.zazr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(Function.identity(), Function.identity());
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(9, 9));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(1, 1, 5, 5, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(1, 1, 5, 5, 9, 9));
         }
     }
 
@@ -369,11 +369,11 @@ public abstract class AbstractValueTest {
     public void shouldConvertToSortedMapWithComparator() {
         final Value<Integer> value = of(9, 5, 1);
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        final io.vavr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(comparator, i -> Tuple.of(i, i));
+        final com.guizmaii.zazr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(comparator, i -> Tuple.of(i, i));
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(comparator, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(comparator, 9, 9));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
         }
     }
 
@@ -381,11 +381,11 @@ public abstract class AbstractValueTest {
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
         final Value<Integer> value = of(9, 5, 1);
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        final io.vavr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(comparator, Function.identity(), Function.identity());
+        final com.guizmaii.zazr.collection.SortedMap<Integer, Integer> map = value.toSortedMap(comparator, Function.identity(), Function.identity());
         if (value.isSingleValued()) {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(comparator, 9, 9));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(comparator, 9, 9));
         } else {
-            assertThat(map).isEqualTo(io.vavr.collection.TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+            assertThat(map).isEqualTo(com.guizmaii.zazr.collection.TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
         }
     }
 
@@ -412,50 +412,50 @@ public abstract class AbstractValueTest {
     @TestTemplate
     public void shouldConvertToQueue() {
         final Value<Integer> value = of(1, 2, 3);
-        final io.vavr.collection.Queue<Integer> queue = value.toQueue();
+        final com.guizmaii.zazr.collection.Queue<Integer> queue = value.toQueue();
         if (value.isSingleValued()) {
-            assertThat(queue).isEqualTo(io.vavr.collection.Queue.of(1));
+            assertThat(queue).isEqualTo(com.guizmaii.zazr.collection.Queue.of(1));
         } else {
-            assertThat(queue).isEqualTo(io.vavr.collection.Queue.of(1, 2, 3));
+            assertThat(queue).isEqualTo(com.guizmaii.zazr.collection.Queue.of(1, 2, 3));
         }
     }
 
     @TestTemplate
     public void shouldConvertToSet() {
         final Value<Integer> value = of(1, 2, 3);
-        final io.vavr.collection.Set<Integer> set = value.toSet();
+        final com.guizmaii.zazr.collection.Set<Integer> set = value.toSet();
         if (value.isSingleValued()) {
-            assertThat(set).isEqualTo(io.vavr.collection.HashSet.of(1));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.HashSet.of(1));
         } else {
-            assertThat(set).isEqualTo(io.vavr.collection.HashSet.of(1, 2, 3));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.HashSet.of(1, 2, 3));
         }
     }
 
     @TestTemplate
     public void shouldConvertToLinkedSet() {
         final Value<Integer> value = of(3, 7, 1, 15, 0);
-        final io.vavr.collection.Set<Integer> set = value.toLinkedSet();
+        final com.guizmaii.zazr.collection.Set<Integer> set = value.toLinkedSet();
         if (value.isSingleValued()) {
-            assertThat(set).isEqualTo(io.vavr.collection.LinkedHashSet.of(3));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.LinkedHashSet.of(3));
         } else {
-            final io.vavr.collection.List<Integer> itemsInOrder;
+            final com.guizmaii.zazr.collection.List<Integer> itemsInOrder;
             if (value instanceof Traversable && !((Traversable) value).isTraversableAgain()) {
-                itemsInOrder = io.vavr.collection.List.of(3, 7, 1, 15, 0);
+                itemsInOrder = com.guizmaii.zazr.collection.List.of(3, 7, 1, 15, 0);
             } else {
                 itemsInOrder = value.toList();
             }
-            assertThat(set).isEqualTo(itemsInOrder.foldLeft(io.vavr.collection.LinkedHashSet.empty(), io.vavr.collection.LinkedHashSet::add));
+            assertThat(set).isEqualTo(itemsInOrder.foldLeft(com.guizmaii.zazr.collection.LinkedHashSet.empty(), com.guizmaii.zazr.collection.LinkedHashSet::add));
         }
     }
 
     @TestTemplate
     public void shouldConvertToSortedSetWithoutComparatorOnComparable() {
         final Value<Integer> value = of(3, 7, 1, 15, 0);
-        final io.vavr.collection.SortedSet<Integer> set = value.toSortedSet();
+        final com.guizmaii.zazr.collection.SortedSet<Integer> set = value.toSortedSet();
         if (value.isSingleValued()) {
-            assertThat(set).isEqualTo(io.vavr.collection.TreeSet.of(3));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.TreeSet.of(3));
         } else {
-            assertThat(set).isEqualTo(io.vavr.collection.TreeSet.of(0, 1, 3, 7, 15));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.TreeSet.of(0, 1, 3, 7, 15));
         }
     }
 
@@ -463,7 +463,7 @@ public abstract class AbstractValueTest {
     public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
         assertThrows(ClassCastException.class, () -> {
             final Value<Object> value = of(new Object(), new Object());
-            final io.vavr.collection.SortedSet<Object> set = value.toSortedSet();
+            final com.guizmaii.zazr.collection.SortedSet<Object> set = value.toSortedSet();
             if (value.isSingleValued()) {
                 // Comparator wasn't used on of(...)
                 set.add(new Object());
@@ -475,11 +475,11 @@ public abstract class AbstractValueTest {
     public void shouldConvertToSortedSet() {
         final Value<Integer> value = of(3, 7, 1, 15, 0);
         final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
-        final io.vavr.collection.SortedSet<Integer> set = value.toSortedSet(comparator.reversed());
+        final com.guizmaii.zazr.collection.SortedSet<Integer> set = value.toSortedSet(comparator.reversed());
         if (value.isSingleValued()) {
-            assertThat(set).isEqualTo(io.vavr.collection.TreeSet.of(3));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.TreeSet.of(3));
         } else {
-            assertThat(set).isEqualTo(io.vavr.collection.TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+            assertThat(set).isEqualTo(com.guizmaii.zazr.collection.TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
         }
     }
 
@@ -521,11 +521,11 @@ public abstract class AbstractValueTest {
     @TestTemplate
     public void shouldConvertToVector() {
         final Value<Integer> value = of(1, 2, 3);
-        final io.vavr.collection.Vector<Integer> vector = value.toVector();
+        final com.guizmaii.zazr.collection.Vector<Integer> vector = value.toVector();
         if (value.isSingleValued()) {
-            assertThat(vector).isEqualTo(io.vavr.collection.Vector.of(1));
+            assertThat(vector).isEqualTo(com.guizmaii.zazr.collection.Vector.of(1));
         } else {
-            assertThat(vector).isEqualTo(io.vavr.collection.Vector.of(1, 2, 3));
+            assertThat(vector).isEqualTo(com.guizmaii.zazr.collection.Vector.of(1, 2, 3));
         }
     }
 
@@ -757,10 +757,10 @@ public abstract class AbstractValueTest {
         //noinspection Duplicates
         if (value.isSingleValued()) {
             final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1);
-            assertThat(io.vavr.collection.List.ofAll(s1::iterator)).isEqualTo(io.vavr.collection.List.ofAll(s2::iterator));
+            assertThat(com.guizmaii.zazr.collection.List.ofAll(s1::iterator)).isEqualTo(com.guizmaii.zazr.collection.List.ofAll(s2::iterator));
         } else {
             final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
-            assertThat(io.vavr.collection.List.ofAll(s1::iterator)).isEqualTo(io.vavr.collection.List.ofAll(s2::iterator));
+            assertThat(com.guizmaii.zazr.collection.List.ofAll(s1::iterator)).isEqualTo(com.guizmaii.zazr.collection.List.ofAll(s2::iterator));
         }
     }
 
@@ -772,10 +772,10 @@ public abstract class AbstractValueTest {
         //noinspection Duplicates
         if (value.isSingleValued()) {
             final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1);
-            assertThat(io.vavr.collection.List.ofAll(s1::iterator)).isEqualTo(io.vavr.collection.List.ofAll(s2::iterator));
+            assertThat(com.guizmaii.zazr.collection.List.ofAll(s1::iterator)).isEqualTo(com.guizmaii.zazr.collection.List.ofAll(s2::iterator));
         } else {
             final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
-            assertThat(io.vavr.collection.List.ofAll(s1::iterator)).isEqualTo(io.vavr.collection.List.ofAll(s2::iterator));
+            assertThat(com.guizmaii.zazr.collection.List.ofAll(s1::iterator)).isEqualTo(com.guizmaii.zazr.collection.List.ofAll(s2::iterator));
         }
     }
 

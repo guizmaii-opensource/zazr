@@ -1,6 +1,6 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Value;
+import com.guizmaii.zazr.Value;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.TestComparators.toStringComparator;
+import static com.guizmaii.zazr.TestComparators.toStringComparator;
 import static java.util.Comparator.nullsFirst;
 
 public class TreeSetTest extends AbstractSortedSetTest {

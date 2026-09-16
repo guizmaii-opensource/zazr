@@ -1,9 +1,9 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
-import io.vavr.collection.Iterator;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Vector;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.control.Option;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Objects;

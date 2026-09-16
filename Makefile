@@ -51,7 +51,7 @@ fmt-check: ## fail if sources are not formatted (spotless check)
 nullness: ## NullAway / JSpecify nullness check
 	$(MVN) -Pnullaway compile
 
-bench: ## run the JMH benchmarks (io.vavr.JmhRunner, zazr-benchmark module)
+bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
 javadoc: ## build the javadoc (doclint)

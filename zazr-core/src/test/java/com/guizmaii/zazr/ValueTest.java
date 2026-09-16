@@ -1,9 +1,9 @@
-package io.vavr;
+package com.guizmaii.zazr;
 
-import io.vavr.collection.List;
-import io.vavr.collection.TreeMap;
-import io.vavr.collection.TreeSet;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.TreeMap;
+import com.guizmaii.zazr.collection.TreeSet;
+import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.stream.Collectors;

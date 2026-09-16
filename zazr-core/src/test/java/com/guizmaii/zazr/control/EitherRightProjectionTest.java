@@ -1,8 +1,8 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.AbstractValueTest;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
+import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
 import java.util.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

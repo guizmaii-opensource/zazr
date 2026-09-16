@@ -28,11 +28,11 @@ def generateMainClasses(): Unit = {
   genPropertyChecks()
 
   /**
-   * Generator of io.vavr.test.Property
+   * Generator of com.guizmaii.zazr.test.Property
    */
   def genPropertyChecks(): Unit = {
 
-    genVavrFile("io.vavr.test", "Property")(genProperty)
+    genVavrFile("com.guizmaii.zazr.test", "Property")(genProperty)
 
     def genProperty(im: ImportManager, packageName: String, className: String): String = xs"""
       /**
@@ -165,8 +165,8 @@ def generateMainClasses(): Unit = {
                        * @param predicate A $i-ary predicate
                        * @return a new {@code Property$i} of $i variables.
                        */
-                      public Property$i<$generics> suchThat(${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> predicate) {
-                          final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Condition> proposition = (${params("t")}) -> new Condition(true, predicate.apply(${params("t")}));
+                      public Property$i<$generics> suchThat(${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> predicate) {
+                          final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Condition> proposition = (${params("t")}) -> new Condition(true, predicate.apply(${params("t")}));
                           return new Property$i<>(name, ${params("a")}, proposition);
                       }
 
@@ -179,9 +179,9 @@ def generateMainClasses(): Unit = {
                        * @return a new {@code Property$i} of $i variables
                        * @throws NullPointerException if predicate is null
                        */
-                      public Property$i<$generics> suchThatResult(${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, PredicateResult> predicate) {
+                      public Property$i<$generics> suchThatResult(${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, PredicateResult> predicate) {
                           ${im.getType("java.util.Objects")}.requireNonNull(predicate, "predicate is null");
-                          final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Condition> proposition = (${params("t")}) -> new Condition(true, predicate.apply(${params("t")}));
+                          final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Condition> proposition = (${params("t")}) -> new Condition(true, predicate.apply(${params("t")}));
                           return new Property$i<>(name, ${params("a")}, proposition);
                       }
                   }
@@ -190,12 +190,12 @@ def generateMainClasses(): Unit = {
 
           ${(1 to N).gen(i => {
 
-              val checkedFunctionType = im.getType(s"io.vavr.CheckedFunction$i")
-              val optionType = im.getType("io.vavr.control.Option")
+              val checkedFunctionType = im.getType(s"com.guizmaii.zazr.CheckedFunction$i")
+              val optionType = im.getType("com.guizmaii.zazr.control.Option")
               val randomType = im.getType("java.util.Random")
-              val tryType = im.getType("io.vavr.control.Try")
+              val tryType = im.getType("com.guizmaii.zazr.control.Try")
               val checkException = "CheckException"
-              val tupleType = im.getType(s"io.vavr.Tuple")
+              val tupleType = im.getType(s"com.guizmaii.zazr.Tuple")
 
               val generics = (1 to i).gen(j => s"T$j")(", ")
               val params = (paramName: String) => (1 to i).gen(j => s"$paramName$j")(", ")
@@ -366,13 +366,13 @@ def generateTestClasses(): Unit = {
    * Generator of Property-check tests
    */
   def genPropertyCheckTests(): Unit = {
-    genVavrFile("io.vavr.test", "PropertyTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+    genVavrFile("com.guizmaii.zazr.test", "PropertyTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
       // main classes
-      val list = im.getType("io.vavr.collection.List")
-      val predicate = im.getType("io.vavr.CheckedFunction1")
+      val list = im.getType("com.guizmaii.zazr.collection.List")
+      val predicate = im.getType("com.guizmaii.zazr.CheckedFunction1")
       val random = im.getType("java.util.Random")
-      val tuple = im.getType("io.vavr.Tuple")
+      val tuple = im.getType("com.guizmaii.zazr.Tuple")
 
       // test classes
       val test = im.getType("org.junit.jupiter.api.Test")
@@ -594,7 +594,7 @@ def generateTestClasses(): Unit = {
     })
 
     for (i <- 1 to N) {
-      genVavrFile("io.vavr.test", s"PropertyCheck${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+      genVavrFile("com.guizmaii.zazr.test", s"PropertyCheck${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
         val generics = (1 to i).gen(j => "Object")(", ")
         val arbitraries = (1 to i).gen(j => "OBJECTS")(", ")
@@ -606,7 +606,7 @@ def generateTestClasses(): Unit = {
         val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
         val assertThrows = im.getStatic("org.junit.jupiter.api.Assertions.assertThrows")
         val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
-        val tupleType = im.getType("io.vavr.Tuple")
+        val tupleType = im.getType("com.guizmaii.zazr.Tuple")
         val woops = "yay! (this is a negative test)"
 
         xs"""
@@ -623,7 +623,7 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldApplySuchThatOfArity$i() {
                   final Property.ForAll$i<$generics> forAll = Property.def("test").forAll($arbitraries);
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> true;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> true;
                   final Property.Property$i<$generics> suchThat = forAll.suchThat(predicate);
                   $assertThat(suchThat).isNotNull();
               }
@@ -631,7 +631,7 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldCheckTrueProperty$i() {
                   final Property.ForAll$i<$generics> forAll = Property.def("test").forAll($arbitraries);
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> true;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> true;
                   final CheckResult result = forAll.suchThat(predicate).check();
                   $assertThat(result.isSatisfied()).isTrue();
                   $assertThat(result.isExhausted()).isFalse();
@@ -640,7 +640,7 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldCheckFalseProperty$i() {
                   final Property.ForAll$i<$generics> forAll = Property.def("test").forAll($arbitraries);
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> false;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> false;
                   final CheckResult result = forAll.suchThat(predicate).check();
                   $assertThat(result.isFalsified()).isTrue();
                   $assertThat(result.message().isEmpty()).isTrue();
@@ -782,7 +782,7 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldCheckErroneousProperty$i() {
                   final Property.ForAll$i<$generics> forAll = Property.def("test").forAll($arbitraries);
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> { throw new RuntimeException("$woops"); };
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> predicate = ($args) -> { throw new RuntimeException("$woops"); };
                   final CheckResult result = forAll.suchThat(predicate).check();
                   $assertThat(result.isErroneous()).isTrue();
               }
@@ -790,8 +790,8 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldCheckProperty${i}ImplicationWithTruePrecondition() {
                   final Property.ForAll$i<$generics> forAll = Property.def("test").forAll($arbitraries);
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> p1 = ($args) -> true;
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> p2 = ($args) -> true;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> p1 = ($args) -> true;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> p2 = ($args) -> true;
                   final CheckResult result = forAll.suchThat(p1).implies(p2).check();
                   $assertThat(result.isSatisfied()).isTrue();
                   $assertThat(result.isExhausted()).isFalse();
@@ -800,8 +800,8 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldCheckProperty${i}ImplicationWithFalsePrecondition() {
                   final Property.ForAll$i<$generics> forAll = Property.def("test").forAll($arbitraries);
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> p1 = ($args) -> false;
-                  final ${im.getType(s"io.vavr.CheckedFunction$i")}<$generics, Boolean> p2 = ($args) -> true;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> p1 = ($args) -> false;
+                  final ${im.getType(s"com.guizmaii.zazr.CheckedFunction$i")}<$generics, Boolean> p2 = ($args) -> true;
                   final CheckResult result = forAll.suchThat(p1).implies(p2).check();
                   $assertThat(result.isSatisfied()).isTrue();
                   $assertThat(result.isExhausted()).isTrue();

@@ -1,14 +1,14 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.HashArrayMappedTrieModule.EmptyNode;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.HashArrayMappedTrieModule.EmptyNode;
+import com.guizmaii.zazr.control.Option;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.HashArrayMappedTrieModule.Action.PUT;
-import static io.vavr.collection.HashArrayMappedTrieModule.Action.REMOVE;
+import static com.guizmaii.zazr.collection.HashArrayMappedTrieModule.Action.PUT;
+import static com.guizmaii.zazr.collection.HashArrayMappedTrieModule.Action.REMOVE;
 import static java.lang.Integer.bitCount;
 import static java.util.Arrays.copyOf;
 

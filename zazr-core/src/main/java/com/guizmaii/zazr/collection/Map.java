@@ -1,7 +1,7 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
@@ -270,7 +270,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      *
      * @return {@code Set} of the keys contained in this map.
      */
-    io.vavr.collection.Set<K> keySet();
+    com.guizmaii.zazr.collection.Set<K> keySet();
 
     /**
      * Returns the keys contained in this map as an iterator.
@@ -483,12 +483,12 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     @Override
     default <U extends @Nullable Object> Seq<U> scanLeft(U zero, BiFunction<? super U, ? super Tuple2<K, V>, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanLeft(this, zero, operation, io.vavr.collection.Iterator::toVector);
+        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toVector);
     }
 
     @Override
     default <U extends @Nullable Object> Seq<U> scanRight(U zero, BiFunction<? super Tuple2<K, V>, ? super U, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanRight(this, zero, operation, io.vavr.collection.Iterator::toVector);
+        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toVector);
     }
 
     @Override
@@ -661,7 +661,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     <C extends @Nullable Object> Map<C, ? extends Map<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier);
 
     @Override
-    io.vavr.collection.Iterator<? extends Map<K, V>> grouped(int size);
+    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> grouped(int size);
 
     @Override
     default boolean isDistinct() {
@@ -727,13 +727,13 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
                    BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation);
 
     @Override
-    io.vavr.collection.Iterator<? extends Map<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier);
+    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier);
 
     @Override
-    io.vavr.collection.Iterator<? extends Map<K, V>> sliding(int size);
+    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> sliding(int size);
 
     @Override
-    io.vavr.collection.Iterator<? extends Map<K, V>> sliding(int size, int step);
+    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> sliding(int size, int step);
 
     @Override
     Tuple2<? extends Map<K, V>, ? extends Map<K, V>> span(Predicate<? super Tuple2<K, V>> predicate);

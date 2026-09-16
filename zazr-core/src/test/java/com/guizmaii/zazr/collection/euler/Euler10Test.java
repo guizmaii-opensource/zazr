@@ -1,4 +1,4 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
 import org.junit.jupiter.api.Test;
 

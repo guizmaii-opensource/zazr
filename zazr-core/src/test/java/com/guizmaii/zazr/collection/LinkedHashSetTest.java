@@ -1,6 +1,6 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Value;
+import com.guizmaii.zazr.Value;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Spliterator;

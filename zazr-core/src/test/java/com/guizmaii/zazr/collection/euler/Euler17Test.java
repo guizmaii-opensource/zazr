@@ -1,14 +1,14 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.List;
-import io.vavr.collection.Map;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Map;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.collection.Stream.rangeClosed;
+import static com.guizmaii.zazr.collection.Stream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler17Test {

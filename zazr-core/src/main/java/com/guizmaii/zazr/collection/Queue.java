@@ -1,15 +1,15 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.*;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static io.vavr.collection.JavaConverters.ChangePolicy.MUTABLE;
-import static io.vavr.collection.JavaConverters.ListView;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.JavaConverters.ListView;
 
 /**
  * An immutable {@code Queue} stores elements allowing a first-in-first-out (FIFO) retrieval.
@@ -39,10 +39,10 @@ import static io.vavr.collection.JavaConverters.ListView;
  */
 public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
-    private static final Queue<?> EMPTY = new Queue<>(io.vavr.collection.List.empty(), io.vavr.collection.List.empty());
+    private static final Queue<?> EMPTY = new Queue<>(com.guizmaii.zazr.collection.List.empty(), com.guizmaii.zazr.collection.List.empty());
 
-    private final io.vavr.collection.List<T> front;
-    private final io.vavr.collection.List<T> rear;
+    private final com.guizmaii.zazr.collection.List<T> front;
+    private final com.guizmaii.zazr.collection.List<T> rear;
 
     /**
      * Creates a Queue consisting of a front List and a rear List.
@@ -53,7 +53,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * @param front A List of front elements, in correct order.
      * @param rear  A List of rear elements, in reverse order.
      */
-    private Queue(io.vavr.collection.List<T> front, io.vavr.collection.List<T> rear) {
+    private Queue(com.guizmaii.zazr.collection.List<T> front, com.guizmaii.zazr.collection.List<T> rear) {
         final boolean frontIsEmpty = front.isEmpty();
         this.front = frontIsEmpty ? rear.reverse() : front;
         this.rear = frontIsEmpty ? front : rear;
@@ -65,7 +65,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * .
      *
      * @param <T> Component type of the Queue.
-     * @return A io.vavr.collection.Queue Collector.
+     * @return A com.guizmaii.zazr.collection.Queue Collector.
      */
     public static <T extends @Nullable Object> Collector<T, ArrayList<T>, Queue<T>> collector() {
         final Supplier<ArrayList<T>> supplier = ArrayList::new;
@@ -111,7 +111,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * @return A new Queue instance containing the given element
      */
     public static <T extends @Nullable Object> Queue<T> of(T element) {
-        return ofAll(io.vavr.collection.List.of(element));
+        return ofAll(com.guizmaii.zazr.collection.List.of(element));
     }
 
     /**
@@ -126,7 +126,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @SafeVarargs
     public static <T extends @Nullable Object> Queue<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.of(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.of(elements));
     }
 
     /**
@@ -147,10 +147,10 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
             return (Queue<T>) ((ListView<T, ?>) elements).getDelegate();
         } else if (!elements.iterator().hasNext()) {
             return empty();
-        } else if (elements instanceof io.vavr.collection.List) {
-            return new Queue<>((io.vavr.collection.List<T>) elements, io.vavr.collection.List.empty());
+        } else if (elements instanceof com.guizmaii.zazr.collection.List) {
+            return new Queue<>((com.guizmaii.zazr.collection.List<T>) elements, com.guizmaii.zazr.collection.List.empty());
         } else {
-            return new Queue<>(io.vavr.collection.List.ofAll(elements), io.vavr.collection.List.empty());
+            return new Queue<>(com.guizmaii.zazr.collection.List.ofAll(elements), com.guizmaii.zazr.collection.List.empty());
         }
     }
 
@@ -163,7 +163,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static <T extends @Nullable Object> Queue<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
-        return new Queue<>(io.vavr.collection.List.ofAll(javaStream), io.vavr.collection.List.empty());
+        return new Queue<>(com.guizmaii.zazr.collection.List.ofAll(javaStream), com.guizmaii.zazr.collection.List.empty());
     }
 
     /**
@@ -175,7 +175,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Boolean> ofAll(boolean ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -187,7 +187,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Byte> ofAll(byte ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -199,7 +199,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Character> ofAll(char ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -211,7 +211,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Double> ofAll(double ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -223,7 +223,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Float> ofAll(float ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -235,7 +235,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Integer> ofAll(int ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -247,7 +247,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Long> ofAll(long ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -259,7 +259,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static Queue<Short> ofAll(short ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(io.vavr.collection.List.ofAll(elements));
+        return ofAll(com.guizmaii.zazr.collection.List.ofAll(elements));
     }
 
     /**
@@ -274,7 +274,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static <T extends @Nullable Object> Queue<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return io.vavr.collection.Collections.tabulate(n, f, empty(), Queue::of);
+        return com.guizmaii.zazr.collection.Collections.tabulate(n, f, empty(), Queue::of);
     }
 
     /**
@@ -288,7 +288,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      */
     public static <T extends @Nullable Object> Queue<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return io.vavr.collection.Collections.fill(n, s, empty(), Queue::of);
+        return com.guizmaii.zazr.collection.Collections.fill(n, s, empty(), Queue::of);
     }
 
     /**
@@ -300,7 +300,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * @return An Queue of size {@code n}, where each element is the given {@code element}.
      */
     public static <T extends @Nullable Object> Queue<T> fill(int n, T element) {
-        return io.vavr.collection.Collections.fillObject(n, element, empty(), Queue::of);
+        return com.guizmaii.zazr.collection.Collections.fillObject(n, element, empty(), Queue::of);
     }
 
     /**
@@ -602,7 +602,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * }
      */
     public static <T extends @Nullable Object> Queue<Queue<T>> transpose(Queue<Queue<T>> matrix) {
-        return io.vavr.collection.Collections.transpose(matrix, Queue::ofAll, Queue::of);
+        return com.guizmaii.zazr.collection.Collections.transpose(matrix, Queue::ofAll, Queue::of);
     }
 
     /**
@@ -743,7 +743,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         if (isEmpty() && elements instanceof Queue) {
             return (Queue<T>) elements;
         } else {
-            return io.vavr.collection.List.ofAll(elements).foldLeft(this, Queue::enqueue);
+            return com.guizmaii.zazr.collection.List.ofAll(elements).foldLeft(this, Queue::enqueue);
         }
     }
 
@@ -791,7 +791,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     @Override
     public Iterator<Queue<T>> crossProduct(int power) {
-        return io.vavr.collection.Collections.crossProduct(empty(), this, power);
+        return com.guizmaii.zazr.collection.Collections.crossProduct(empty(), this, power);
     }
 
     @Override
@@ -867,7 +867,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public Queue<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final io.vavr.collection.List<T> filtered = toList().filter(predicate);
+        final com.guizmaii.zazr.collection.List<T> filtered = toList().filter(predicate);
 
         if (filtered.isEmpty()) {
             return empty();
@@ -884,7 +884,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            return new Queue<>(toList().flatMap(mapper), io.vavr.collection.List.empty());
+            return new Queue<>(toList().flatMap(mapper), com.guizmaii.zazr.collection.List.empty());
         }
     }
 
@@ -913,7 +913,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     @Override
     public <C extends @Nullable Object> Map<C, Queue<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return io.vavr.collection.Collections.groupBy(this, classifier, Queue::ofAll);
+        return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Queue::ofAll);
     }
 
     @Override
@@ -990,7 +990,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
             if (isEmpty() && elements instanceof Queue) {
                 return (Queue<T>) elements;
             } else {
-                final io.vavr.collection.List<T> newFront = front.insertAll(index, elements);
+                final com.guizmaii.zazr.collection.List<T> newFront = front.insertAll(index, elements);
                 return (newFront == front) ? this : new Queue<>(newFront, rear);
             }
         } else {
@@ -998,7 +998,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
             final int rearLength = rear.length();
             if (rearIndex <= rearLength) {
                 final int reverseRearIndex = rearLength - rearIndex;
-                final io.vavr.collection.List<T> newRear = rear.insertAll(reverseRearIndex, io.vavr.collection.List.ofAll(elements).reverse());
+                final com.guizmaii.zazr.collection.List<T> newRear = rear.insertAll(reverseRearIndex, com.guizmaii.zazr.collection.List.ofAll(elements).reverse());
                 return (newRear == rear) ? this : new Queue<>(front, newRear);
             } else {
                 throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on Queue of length " + length());
@@ -1126,12 +1126,12 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return toList().partition(predicate).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().partition(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
     public Queue<Queue<T>> permutations() {
-        return ofAll(toList().permutations().map(io.vavr.collection.List::toQueue));
+        return ofAll(toList().permutations().map(com.guizmaii.zazr.collection.List::toQueue));
     }
 
     @Override
@@ -1146,26 +1146,26 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         if (isEmpty() && elements instanceof Queue) {
             return (Queue<T>) elements;
         } else {
-            final io.vavr.collection.List<T> newFront = front.prependAll(elements);
+            final com.guizmaii.zazr.collection.List<T> newFront = front.prependAll(elements);
             return (newFront == front) ? this : new Queue<>(newFront, rear);
         }
     }
 
     @Override
     public Queue<T> remove(T element) {
-        final io.vavr.collection.List<T> removed = toList().remove(element);
+        final com.guizmaii.zazr.collection.List<T> removed = toList().remove(element);
         return ofAll(removed.length() == length() ? this : removed);
     }
 
     @Override
     public Queue<T> removeFirst(Predicate<T> predicate) {
-        final io.vavr.collection.List<T> removed = toList().removeFirst(predicate);
+        final com.guizmaii.zazr.collection.List<T> removed = toList().removeFirst(predicate);
         return ofAll(removed.length() == length() ? this : removed);
     }
 
     @Override
     public Queue<T> removeLast(Predicate<T> predicate) {
-        final io.vavr.collection.List<T> removed = toList().removeLast(predicate);
+        final com.guizmaii.zazr.collection.List<T> removed = toList().removeLast(predicate);
         return ofAll(removed.length() == length() ? this : removed);
     }
 
@@ -1176,17 +1176,17 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     @Override
     public Queue<T> removeAll(T element) {
-        return io.vavr.collection.Collections.removeAll(this, element);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
     }
 
     @Override
     public Queue<T> replace(T currentElement, T newElement) {
-        final io.vavr.collection.List<T> newFront = front.replace(currentElement, newElement);
+        final com.guizmaii.zazr.collection.List<T> newFront = front.replace(currentElement, newElement);
         if (newFront != front) {
             return new Queue<>(newFront, rear);
         }
-        final io.vavr.collection.List<T> rearInOrder = rear.reverse();
-        final io.vavr.collection.List<T> newRearInOrder = rearInOrder.replace(currentElement, newElement);
+        final com.guizmaii.zazr.collection.List<T> rearInOrder = rear.reverse();
+        final com.guizmaii.zazr.collection.List<T> newRearInOrder = rearInOrder.replace(currentElement, newElement);
         if (newRearInOrder == rearInOrder) {
             return this;
         }
@@ -1195,8 +1195,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     @Override
     public Queue<T> replaceAll(T currentElement, T newElement) {
-        final io.vavr.collection.List<T> newFront = front.replaceAll(currentElement, newElement);
-        final io.vavr.collection.List<T> newRear = rear.replaceAll(currentElement, newElement);
+        final com.guizmaii.zazr.collection.List<T> newFront = front.replaceAll(currentElement, newElement);
+        final com.guizmaii.zazr.collection.List<T> newRear = rear.replaceAll(currentElement, newElement);
         return newFront.size() + newRear.size() == 0 ? empty()
                                                      : newFront == front && newRear == rear ? this
                                                                                             : new Queue<>(newFront, newRear);
@@ -1224,17 +1224,17 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     @Override
     public <U extends @Nullable Object> Queue<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
+        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
     }
 
     @Override
     public <U extends @Nullable Object> Queue<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return io.vavr.collection.Collections.scanRight(this, zero, operation, Iterator::toQueue);
+        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toQueue);
     }
 
     @Override
     public Queue<T> shuffle() {
-        return io.vavr.collection.Collections.shuffle(this, Queue::ofAll);
+        return com.guizmaii.zazr.collection.Collections.shuffle(this, Queue::ofAll);
     }
 
     @Override
@@ -1281,22 +1281,22 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public Tuple2<Queue<T>, Queue<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return toList().span(predicate).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().span(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
     public Tuple2<Queue<T>, Queue<T>> splitAt(int n) {
-        return toList().splitAt(n).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().splitAt(n).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
     public Tuple2<Queue<T>, Queue<T>> splitAt(Predicate<? super T> predicate) {
-        return toList().splitAt(predicate).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().splitAt(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
     public Tuple2<Queue<T>, Queue<T>> splitAtInclusive(Predicate<? super T> predicate) {
-        return toList().splitAtInclusive(predicate).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().splitAtInclusive(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
@@ -1344,9 +1344,9 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
         final int frontLength = front.length();
         if (n < frontLength) {
-            return new Queue<>(front.take(n), io.vavr.collection.List.empty());
+            return new Queue<>(front.take(n), com.guizmaii.zazr.collection.List.empty());
         } else if (n == frontLength) {
-            return new Queue<>(front, io.vavr.collection.List.empty());
+            return new Queue<>(front, com.guizmaii.zazr.collection.List.empty());
         } else {
             return new Queue<>(front, rear.takeRight(n - frontLength));
         }
@@ -1355,7 +1355,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public Queue<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final io.vavr.collection.List<T> taken = toList().takeUntil(predicate);
+        final com.guizmaii.zazr.collection.List<T> taken = toList().takeUntil(predicate);
         return taken.length() == length() ? this : ofAll(taken);
     }
 
@@ -1369,9 +1369,9 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
         final int rearLength = rear.length();
         if (n < rearLength) {
-            return new Queue<>(rear.take(n).reverse(), io.vavr.collection.List.empty());
+            return new Queue<>(rear.take(n).reverse(), com.guizmaii.zazr.collection.List.empty());
         } else if (n == rearLength) {
-            return new Queue<>(rear.reverse(), io.vavr.collection.List.empty());
+            return new Queue<>(rear.reverse(), com.guizmaii.zazr.collection.List.empty());
         } else {
             return new Queue<>(front.takeRight(n - rearLength), rear);
         }
@@ -1380,7 +1380,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public Queue<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final io.vavr.collection.List<T> taken = toList().takeRightUntil(predicate);
+        final com.guizmaii.zazr.collection.List<T> taken = toList().takeRightUntil(predicate);
         return taken.length() == length() ? this : ofAll(taken);
     }
 
@@ -1407,13 +1407,13 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Queue<T1>, Queue<T2>> unzip(
       Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().unzip(unzipper).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().unzip(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Queue<T1>, Queue<T2>, Queue<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().unzip3(unzipper).map(io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue, io.vavr.collection.List::toQueue);
+        return toList().unzip3(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     @Override
@@ -1464,12 +1464,12 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     @Override
     public boolean equals(@Nullable Object o) {
-        return io.vavr.collection.Collections.equals(this, o);
+        return com.guizmaii.zazr.collection.Collections.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return io.vavr.collection.Collections.hashOrdered(this);
+        return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
     }
 
     /**
@@ -1506,7 +1506,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @SuppressWarnings("unchecked")
     public Queue<T> enqueue(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return enqueueAll(io.vavr.collection.List.of(elements));
+        return enqueueAll(com.guizmaii.zazr.collection.List.of(elements));
     }
 
     /**

@@ -1,13 +1,13 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
-import io.vavr.collection.List;
-import io.vavr.collection.Map;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Map;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.control.Option.some;
+import static com.guizmaii.zazr.control.Option.some;
 import static java.lang.Math.floor;
 import static java.lang.Math.hypot;
 import static org.assertj.core.api.Assertions.assertThat;

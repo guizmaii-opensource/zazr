@@ -1,12 +1,12 @@
-package io.vavr.collection.euler;
+package com.guizmaii.zazr.collection.euler;
 
-import io.vavr.Function1;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.collection.List;
-import io.vavr.collection.Stream;
-import io.vavr.collection.Vector;
-import io.vavr.control.Option;
+import com.guizmaii.zazr.Function1;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
-package io.vavr.collection;
+package com.guizmaii.zazr.collection;
 
-import io.vavr.Tuple2;
+import com.guizmaii.zazr.Tuple2;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -24,7 +24,7 @@ import org.openjdk.jmh.infra.Blackhole;
  * <p>{@code removeDrain*}/{@code removeSingle} cover the improved operations; {@code put*},
  * {@code getHits} and {@code iterate} guard the operations that must not regress.
  *
- * <p>Run via {@code io.vavr.JmhRunner}.
+ * <p>Run via {@code com.guizmaii.zazr.JmhRunner}.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)

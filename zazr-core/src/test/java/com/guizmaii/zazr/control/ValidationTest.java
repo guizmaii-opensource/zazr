@@ -1,10 +1,10 @@
-package io.vavr.control;
+package com.guizmaii.zazr.control;
 
-import io.vavr.AbstractValueTest;
-import io.vavr.Value;
-import io.vavr.collection.List;
-import io.vavr.collection.Seq;
-import io.vavr.collection.Vector;
+import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.Value;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Spliterator;

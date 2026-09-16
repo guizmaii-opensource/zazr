@@ -1,10 +1,10 @@
-package io.vavr.test;
+package com.guizmaii.zazr.test;
 
-import io.vavr.Function1;
-import io.vavr.Tuple;
-import io.vavr.collection.Iterator;
-import io.vavr.collection.List;
-import io.vavr.collection.Stream;
+import com.guizmaii.zazr.Function1;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Stream;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
