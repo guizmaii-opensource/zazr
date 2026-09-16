@@ -85,8 +85,9 @@ compiles; Markdown javadoc (`///`, JEP 467) so the whole doc rewrite is written 
 constructor bodies (JEP 513) for validation before `super()`; `Stream.gather` and
 `Gatherers.windowFixed/windowSliding/fold/scan` (JEP 485), the JDK's own `grouped`/`sliding`/`scan`;
 module import declarations; `ScopedValue` (final) for anything `Future` keeps; and `StableValue`
-(preview, JEP 502), the JDK's own `Lazy` and the natural future implementation of ours. Preview features
-are not used in main code until they are final.
+(preview, JEP 502), the JDK's own `Lazy` and the natural future implementation of ours. Preview features are
+used when they remove code from the library (decided; see `CLAUDE.md` for the JDK-pinning cost): `Lazy` is
+implemented over `StableValue` (JEP 502) as its first use, ticket #34.
 
 **Sealed interfaces + records for every sum type.**
 
