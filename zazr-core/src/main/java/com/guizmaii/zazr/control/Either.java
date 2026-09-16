@@ -196,6 +196,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      *   <li>If this is a {@link Either.Left}, {@code leftMapper} is applied to the left value.</li>
      *   <li>If this is a {@link Either.Right}, {@code rightMapper} is applied to the right value.</li>
      * </ul>
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
      * @param leftMapper  function to transform the left value if this is a {@code Left}
      * @param rightMapper function to transform the right value if this is a {@code Right}
@@ -424,6 +426,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * <p>
      * If this {@code Either} is a {@link Either.Left}, it is returned unchanged. 
      * Otherwise, the {@code mapper} function is applied to the right value, and its result is returned.
+     * <p>
+     * The mapper must return an {@code Either}, never {@code null}; the {@code Either} it builds rejects {@code null} on both sides (design 3.9).
      *
      * @param mapper a function that maps the right value to another {@code Either<L, U>}
      * @param <U>    the type of the right value in the resulting {@code Either}
@@ -454,6 +458,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Either<Integer, String> left = Either.left(1);
      * left.map(String::toUpperCase);
      * }</pre>
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
      * @param mapper a function to transform the right value
      * @param <U>    the type of the right value in the resulting {@code Either}
@@ -485,6 +491,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Either<Integer, String> right = Either.right("a");
      * right.mapLeft(i -> i + 1);
      * }</pre>
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
      * @param leftMapper a function to transform the left value
      * @param <U>        the type of the left value in the resulting {@code Either}

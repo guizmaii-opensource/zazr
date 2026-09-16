@@ -392,7 +392,7 @@ public abstract class AbstractValueTest {
     @TestTemplate
     public void shouldConvertToOption() {
         assertThat(empty().toOption()).isSameAs(Option.none());
-        assertThat(of(1).toOption()).isEqualTo(Option.ofNullable(1));
+        assertThat(of(1).toOption()).isEqualTo(Option.some(1));
     }
 
     @TestTemplate

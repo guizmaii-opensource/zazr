@@ -254,7 +254,7 @@ public class QueueTest extends AbstractLinearSeqTest {
         @Test
         public void shouldReturnPeekOption() {
             assertThat(Queue.empty().peekOption()).isEqualTo(Option.none());
-            assertThat(Queue.of(1).peekOption()).isEqualTo(Option.ofNullable(1));
+            assertThat(Queue.of(1).peekOption()).isEqualTo(Option.some(1));
         }
     }
 
@@ -273,7 +273,7 @@ public class QueueTest extends AbstractLinearSeqTest {
         @Test
         public void shouldDequeueOption() {
             assertThat(Queue.empty().dequeueOption()).isEqualTo(Option.none());
-            assertThat(Queue.of(1, 2, 3).dequeueOption()).isEqualTo(Option.ofNullable(Tuple.of(1, Queue.of(2, 3))));
+            assertThat(Queue.of(1, 2, 3).dequeueOption()).isEqualTo(Option.some(Tuple.of(1, Queue.of(2, 3))));
         }
     }
 
@@ -407,7 +407,7 @@ public class QueueTest extends AbstractLinearSeqTest {
         @Test
         public void shouldUnfoldRightSimpleQueue() {
             assertThat(Queue.unfoldRight(10, x ->
-              x == 0 ? Option.none() : Option.ofNullable(new Tuple2<>(x, x - 1)))
+              x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1)))
             ).isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -419,7 +419,7 @@ public class QueueTest extends AbstractLinearSeqTest {
         @Test
         public void shouldUnfoldLeftSimpleQueue() {
             assertThat(Queue.unfoldLeft(10, x ->
-              x == 0 ? Option.none() : Option.ofNullable(new Tuple2<>(x - 1, x)))
+              x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x)))
             ).isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -431,7 +431,7 @@ public class QueueTest extends AbstractLinearSeqTest {
         @Test
         public void shouldUnfoldSimpleQueue() {
             assertThat(Queue.unfold(10, x ->
-              x == 0 ? Option.none() : Option.ofNullable(new Tuple2<>(x - 1, x)))
+              x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x)))
             ).isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }

@@ -125,6 +125,9 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] { type }, handler);
     }
 
+    /**
+     * Returns {@code Some} of the value if it satisfies the predicate, otherwise {@code None}. A {@code null} value that satisfies the predicate throws {@link NullPointerException}: {@code Some} cannot hold {@code null} (design 3.9).
+     */
     public Option<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final T v = get();
@@ -206,6 +209,9 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
         return Iterator.of(get());
     }
 
+    /**
+     * A {@code Lazy} may hold {@code null}, so the mapper may return it; converting a {@code null} value with {@link #toOption()}, {@link #toEither(Object)}, {@link #toValidation(Object)} or {@link #filter(Predicate)} then throws {@link NullPointerException} and {@link #toTry()} yields a {@code Failure}, since none of those types holds {@code null} (design 3.9).
+     */
     @Override
     public <U extends @Nullable Object> Lazy<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");

@@ -49,7 +49,7 @@ import org.jspecify.annotations.Nullable;
  *
  * Validation<String, String> valid1 = Validation.valid("John");
  * Validation<String, Integer> valid2 = Validation.valid(5);
- * Validation<String, Option<String>> valid3 = Validation.valid(Option.ofNullable("123 Fake St."));
+ * Validation<String, Option<String>> valid3 = Validation.valid(Option.some("123 Fake St."));
  * Function3<String, Integer, Option<String>, Person> f = ...;
  *
  * Validation<Seq<String>, String> result =
@@ -557,6 +557,9 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         }
     }
 
+    /**
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
+     */
     @SuppressWarnings("unchecked")
     @Override
     default <U extends @Nullable Object> Validation<E, U> map(Function<? super T, ? extends U> f) {
@@ -574,6 +577,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      * on what type of Validation this is. Without this, you would have to do something like:
      *
      * validation.map(...).mapError(...);
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
      *
      * @param <E2>        type of the mapping result if this is an invalid
      * @param <T2>        type of the mapping result if this is a valid
@@ -597,6 +602,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     /**
      * Applies a function f to the error of this Validation if this is an Invalid. Otherwise does nothing
      * if this is a Valid.
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
      *
      * @param <U> type of the error resulting from the mapping
      * @param f   a function that maps the error in this Invalid
@@ -676,6 +683,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
 
     /**
      * FlatMaps the value of this Validation if it is valid, otherwise returns this Invalid.
+     * <p>
+     * The mapper must return a {@code Validation}, never {@code null}; the {@code Validation} it builds rejects {@code null} on both sides (design 3.9).
      *
      * @param <U>    type of the returned Validation value
      * @param mapper the mapper function to apply to the value

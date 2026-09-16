@@ -680,7 +680,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * {@code
      * Vector.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.ofNullable(new Tuple2<>(x, x-1)));
+     *             : Option.some(new Tuple2<>(x, x-1)));
      * // Vector(10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
      * }
      * </pre>
@@ -709,7 +709,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * {@code
      * Vector.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // Vector(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
      * }
      * </pre>
@@ -738,7 +738,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
      * {@code
      * Vector.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // Vector(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
      * }
      * </pre>

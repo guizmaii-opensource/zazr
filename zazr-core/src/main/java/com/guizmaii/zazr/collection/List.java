@@ -780,7 +780,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * {@code
      * List.unfoldRight(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.ofNullable(new Tuple2<>(x, x-1)));
+     *             : Option.some(new Tuple2<>(x, x-1)));
      * // List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
      * }
      * </pre>
@@ -809,7 +809,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * {@code
      * List.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -839,7 +839,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * {@code
      * List.unfold(10, x -> x == 0
      *             ? Option.none()
-     *             : Option.ofNullable(new Tuple2<>(x-1, x)));
+     *             : Option.some(new Tuple2<>(x-1, x)));
      * // List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
@@ -968,7 +968,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         if (n <= 0) {
             return this;
         }
-        if (n >= length()) {
+        final int length = length();
+        if (n >= length) {
             return empty();
         }
         return take(length - n);
@@ -1233,6 +1234,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Returns the head element without modifying the List.
+     * <p>
+     * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
      *
      * @return {@code None} if this List is empty, otherwise a {@code Some} containing the head element
      */

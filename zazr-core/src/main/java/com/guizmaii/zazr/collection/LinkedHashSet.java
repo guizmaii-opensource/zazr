@@ -635,7 +635,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public boolean contains(T element) {
-        return map.get(element).isDefined();
+        // containsKey, not get: a null element cannot be wrapped in Some
+        return map.containsKey(element);
     }
 
     @Override

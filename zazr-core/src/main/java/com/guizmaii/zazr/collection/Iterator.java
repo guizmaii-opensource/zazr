@@ -1375,7 +1375,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * <pre>{@code
      * Iterator.unfold(10, x -> x == 0
      *   ? Option.none()
-     *   : Option.ofNullable(new Tuple2<>(x-1, x)));
+     *   : Option.some(new Tuple2<>(x-1, x)));
      * // yields 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
      * }
      * </pre>
@@ -1402,7 +1402,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * <pre>{@code
      * Iterator.unfoldLeft(10, x -> x == 0
      *   ? Option.none()
-     *   : Option.ofNullable(new Tuple2<>(x-1, x)));
+     *   : Option.some(new Tuple2<>(x-1, x)));
      * // yields 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
      * }
      * </pre>
@@ -1433,7 +1433,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * <pre>{@code
      * Iterator.unfoldRight(10, x -> x == 0
      *   ? Option.none()
-     *   : Option.ofNullable(new Tuple2<>(x, x-1)));
+     *   : Option.some(new Tuple2<>(x, x-1)));
      * // yields 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
      * }
      * </pre>
@@ -1656,23 +1656,29 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
-                Option<T> next = Option.none();
+                // a flag and a field, not an Option: a null element cannot be wrapped in Some
+                private boolean nextDefined = false;
+                private @Nullable T next;
 
                 @Override
                 public boolean hasNext() {
-                    while (next.isEmpty() && that.hasNext()) {
+                    while (!nextDefined && that.hasNext()) {
                         final T candidate = that.next();
                         if (predicate.test(candidate)) {
-                            next = Option.some(candidate);
+                            next = candidate;
+                            nextDefined = true;
                         }
                     }
-                    return next.isDefined();
+                    return nextDefined;
                 }
 
                 @Override
+                // hasNext() sets `next` whenever it sets `nextDefined`
+                @SuppressWarnings("NullAway")
                 public T getNext() {
-                    final T result = next.get();
-                    next = Option.none();
+                    final T result = next;
+                    nextDefined = false;
+                    next = null;
                     return result;
                 }
             };
@@ -2216,6 +2222,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
                 private com.guizmaii.zazr.collection.Queue<T> queue = com.guizmaii.zazr.collection.Queue.empty();
+                private int size = 0; // queue.length() walks the queue's lists, so the size is counted here
 
                 @Override
                 public boolean hasNext() {
@@ -2224,7 +2231,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                         if (size < n) {
                             size++;
                         } else {
-                private int size = 0; // queue.length() walks the queue's lists, so the size is counted here
                             queue = queue.dequeue()._2();
                         }
                     }

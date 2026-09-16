@@ -470,7 +470,7 @@ public class ValidationTest extends AbstractValueTest {
         public void shouldBuildUpForSuccessCombine() {
             Validation<String, String> v1 = Validation.valid("John Doe");
             Validation<String, Integer> v2 = Validation.valid(39);
-            Validation<String, Option<String>> v3 = Validation.valid(Option.ofNullable("address"));
+            Validation<String, Option<String>> v3 = Validation.valid(Option.some("address"));
             Validation<String, Option<String>> v4 = Validation.valid(Option.none());
             Validation<String, String> v5 = Validation.valid("111-111-1111");
             Validation<String, String> v6 = Validation.valid("alt1");
@@ -509,7 +509,7 @@ public class ValidationTest extends AbstractValueTest {
         public void shouldBuildUpForSuccessMapN() {
             Validation<String, String> v1 = Validation.valid("John Doe");
             Validation<String, Integer> v2 = Validation.valid(39);
-            Validation<String, Option<String>> v3 = Validation.valid(Option.ofNullable("address"));
+            Validation<String, Option<String>> v3 = Validation.valid(Option.some("address"));
             Validation<String, Option<String>> v4 = Validation.valid(Option.none());
             Validation<String, String> v5 = Validation.valid("111-111-1111");
             Validation<String, String> v6 = Validation.valid("alt1");
@@ -547,7 +547,7 @@ public class ValidationTest extends AbstractValueTest {
         public void shouldBuildUpForFailure() {
             Validation<String, String> v1 = Validation.valid("John Doe");
             Validation<String, Integer> v2 = Validation.valid(39);
-            Validation<String, Option<String>> v3 = Validation.valid(Option.ofNullable("address"));
+            Validation<String, Option<String>> v3 = Validation.valid(Option.some("address"));
 
             Validation<String, String> e1 = Validation.invalid("error2");
             Validation<String, Integer> e2 = Validation.invalid("error1");

@@ -260,8 +260,8 @@ public class ListTest extends AbstractLinearSeqTest {
         @Test
         public void shouldPeekOption() {
             assertThat(empty().peekOption()).isSameAs(Option.none());
-            assertThat(of(1).peekOption()).isEqualTo(Option.ofNullable(1));
-            assertThat(of(1, 2).peekOption()).isEqualTo(Option.ofNullable(1));
+            assertThat(of(1).peekOption()).isEqualTo(Option.some(1));
+            assertThat(of(1, 2).peekOption()).isEqualTo(Option.some(1));
         }
     }
 
@@ -284,8 +284,8 @@ public class ListTest extends AbstractLinearSeqTest {
         @Test
         public void shouldPopOption() {
             assertThat(empty().popOption()).isSameAs(Option.none());
-            assertThat(of(1).popOption()).isEqualTo(Option.ofNullable(empty()));
-            assertThat(of(1, 2).popOption()).isEqualTo(Option.ofNullable(of(2)));
+            assertThat(of(1).popOption()).isEqualTo(Option.some(empty()));
+            assertThat(of(1, 2).popOption()).isEqualTo(Option.some(of(2)));
         }
     }
 
@@ -308,8 +308,8 @@ public class ListTest extends AbstractLinearSeqTest {
         @Test
         public void shouldPop2Option() {
             assertThat(empty().pop2Option()).isSameAs(Option.none());
-            assertThat(of(1).pop2Option()).isEqualTo(Option.ofNullable(Tuple.of(1, empty())));
-            assertThat(of(1, 2).pop2Option()).isEqualTo(Option.ofNullable(Tuple.of(1, of(2))));
+            assertThat(of(1).pop2Option()).isEqualTo(Option.some(Tuple.of(1, empty())));
+            assertThat(of(1, 2).pop2Option()).isEqualTo(Option.some(Tuple.of(1, of(2))));
         }
     }
 
@@ -361,7 +361,7 @@ public class ListTest extends AbstractLinearSeqTest {
             assertThat(
               List.unfoldRight(10, x -> x == 0
                 ? Option.none()
-                : Option.ofNullable(new Tuple2<>(x, x - 1))))
+                : Option.some(new Tuple2<>(x, x - 1))))
               .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -375,7 +375,7 @@ public class ListTest extends AbstractLinearSeqTest {
             assertThat(
               List.unfoldLeft(10, x -> x == 0
                 ? Option.none()
-                : Option.ofNullable(new Tuple2<>(x - 1, x))))
+                : Option.some(new Tuple2<>(x - 1, x))))
               .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -389,7 +389,7 @@ public class ListTest extends AbstractLinearSeqTest {
             assertThat(
               List.unfold(10, x -> x == 0
                 ? Option.none()
-                : Option.ofNullable(new Tuple2<>(x - 1, x))))
+                : Option.some(new Tuple2<>(x - 1, x))))
               .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }

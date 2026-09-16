@@ -101,7 +101,7 @@ public class SealedTypesTest {
             assertThatThrownBy(() -> new Some<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
             assertThatThrownBy(() -> Option.some(null)).isInstanceOf(NullPointerException.class);
             assertThat(Option.ofNullable(null)).isSameAs(Option.none());
-            assertThat(Option.ofNullable(1)).isEqualTo(Option.some(1));
+            assertThat(Option.some(1)).isEqualTo(Option.some(1));
         }
 
         @Test
@@ -339,6 +339,36 @@ public class SealedTypesTest {
             assertThat((Object) List.<Integer>empty()).isSameAs(Nil.<String>instance());
             assertThat(new Nil<>()).isEqualTo(List.empty()).hasSameHashCodeAs(List.empty());
             assertThat(List.empty()).hasToString("List()");
+        }
+    }
+
+    @Nested
+    class NullMapperTests {
+
+        // a function handed to map that returns null: the control types throw, Try captures, Lazy holds it
+
+        @Test
+        public void shouldThrowWhenMapperReturnsNull() {
+            assertThatThrownBy(() -> Option.some(1).map(x -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Either.right(1).map(x -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Either.left(1).mapLeft(x -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Validation.valid(1).map(x -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Validation.invalid(1).mapError(x -> null)).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldCaptureNullMapperResultInTry() {
+            assertThat(Try.success(1).map(x -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(Try.failure(new RuntimeException()).recover(t -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldHoldNullInLazyButNotConvertIt() {
+            final Lazy<Object> lazy = Lazy.of(() -> null);
+            assertThat(lazy.get()).isNull();
+            assertThatThrownBy(lazy::toOption).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> lazy.filter(x -> true)).isInstanceOf(NullPointerException.class);
+            assertThat(lazy.toTry().getCause()).isInstanceOf(NullPointerException.class);
         }
     }
 

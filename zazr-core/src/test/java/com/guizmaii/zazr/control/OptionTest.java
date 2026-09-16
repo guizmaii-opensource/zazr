@@ -54,7 +54,7 @@ public class OptionTest extends AbstractValueTest {
     class NarrowTests {
         @Test
         public void shouldNarrowOption() {
-            final Option<Integer> option = Option.ofNullable(42);
+            final Option<Integer> option = Option.some(42);
             final Option<Number> narrow = Option.narrow(option);
             assertThat(narrow.get()).isEqualTo(42);
         }
@@ -69,7 +69,7 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldMapNonNullToSome() {
-            final Option<?> option = Option.ofNullable(new Object());
+            final Option<?> option = Option.some(new Object());
             assertThat(option.isDefined()).isTrue();
         }
 
@@ -116,7 +116,7 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldWrapSomeOptional() {
-            assertThat(Option.ofOptional(Optional.of(1))).isEqualTo(Option.ofNullable(1));
+            assertThat(Option.ofOptional(Optional.of(1))).isEqualTo(Option.some(1));
         }
 
         @Test
@@ -129,7 +129,7 @@ public class OptionTest extends AbstractValueTest {
     class SequenceTests {
         @Test
         public void shouldConvertListOfNonEmptyOptionsToOptionOfList() {
-            final List<Option<String>> options = Arrays.asList(Option.ofNullable("a"), Option.ofNullable("b"), Option.ofNullable("c"));
+            final List<Option<String>> options = Arrays.asList(Option.some("a"), Option.some("b"), Option.some("c"));
             final Option<Seq<String>> reducedOption = Option.sequence(options);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
@@ -145,7 +145,7 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldConvertListOfMixedOptionsToOptionOfList() {
-            final List<Option<String>> options = Arrays.asList(Option.ofNullable("a"), Option.none(), Option.ofNullable("c"));
+            final List<Option<String>> options = Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
             final Option<Seq<String>> option = Option.sequence(options);
             assertThat(option instanceof Option.None).isTrue();
         }
@@ -156,7 +156,7 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldTraverseListOfNonEmptyOptionsToOptionOfList() {
             final List<String> options = Arrays.asList("a", "b", "c");
-            final Option<Seq<String>> reducedOption = Option.traverse(options, Option::ofNullable);
+            final Option<Seq<String>> reducedOption = Option.traverse(options, Option::some);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
@@ -173,7 +173,7 @@ public class OptionTest extends AbstractValueTest {
         public void shouldTraverseListOfMixedOptionsToOptionOfList() {
             final List<String> options = Arrays.asList("a", "b", "c");
             final Option<Seq<String>> option =
-                Option.traverse(options, x -> x.equals("b") ? Option.none() : Option.ofNullable(x));
+                Option.traverse(options, x -> x.equals("b") ? Option.none() : Option.some(x));
             assertThat(option instanceof Option.None).isTrue();
         }
     }
@@ -182,7 +182,7 @@ public class OptionTest extends AbstractValueTest {
     class GetTests {
         @Test
         public void shouldSucceedOnGetWhenValueIsPresent() {
-            assertThat(Option.ofNullable(1).get()).isEqualTo(1);
+            assertThat(Option.some(1).get()).isEqualTo(1);
         }
 
         @Test
@@ -195,25 +195,25 @@ public class OptionTest extends AbstractValueTest {
     class OrelseTests {
         @Test
         public void shouldReturnSelfOnOrElseIfValueIsPresent() {
-            final Option<Integer> opt = Option.ofNullable(42);
-            assertThat(opt.orElse(Option.ofNullable(0))).isSameAs(opt);
+            final Option<Integer> opt = Option.some(42);
+            assertThat(opt.orElse(Option.some(0))).isSameAs(opt);
         }
 
         @Test
         public void shouldReturnSelfOnOrElseSupplierIfValueIsPresent() {
-            final Option<Integer> opt = Option.ofNullable(42);
-            assertThat(opt.orElse(() -> Option.ofNullable(0))).isSameAs(opt);
+            final Option<Integer> opt = Option.some(42);
+            assertThat(opt.orElse(() -> Option.some(0))).isSameAs(opt);
         }
 
         @Test
         public void shouldReturnAlternativeOnOrElseIfValueIsNotDefined() {
-            final Option<Integer> opt = Option.ofNullable(42);
+            final Option<Integer> opt = Option.some(42);
             assertThat(Option.none().orElse(opt)).isSameAs(opt);
         }
 
         @Test
         public void shouldReturnAlternativeOnOrElseSupplierIfValueIsNotDefined() {
-            final Option<Integer> opt = Option.ofNullable(42);
+            final Option<Integer> opt = Option.some(42);
             assertThat(Option.none().orElse(() -> opt)).isSameAs(opt);
         }
     }
@@ -222,7 +222,7 @@ public class OptionTest extends AbstractValueTest {
     class GetorelseTests {
         @Test
         public void shouldGetValueOnGetOrElseWhenValueIsPresent() {
-            assertThat(Option.ofNullable(1).getOrElse(2)).isEqualTo(1);
+            assertThat(Option.some(1).getOrElse(2)).isEqualTo(1);
         }
 
         @Test
@@ -235,7 +235,7 @@ public class OptionTest extends AbstractValueTest {
     class Getorelse2Tests {
         @Test
         public void shouldGetValueOnGetOrElseGetWhenValueIsPresent() {
-            assertThat(Option.ofNullable(1).getOrElse(() -> 2)).isEqualTo(1);
+            assertThat(Option.some(1).getOrElse(() -> 2)).isEqualTo(1);
         }
 
         @Test
@@ -248,7 +248,7 @@ public class OptionTest extends AbstractValueTest {
     class GetorelsethrowTests {
         @Test
         public void shouldGetValueOnGetOrElseThrowWhenValueIsPresent() {
-            assertThat(Option.ofNullable(1).getOrElseThrow(() -> new RuntimeException("none"))).isEqualTo(1);
+            assertThat(Option.some(1).getOrElseThrow(() -> new RuntimeException("none"))).isEqualTo(1);
         }
 
         @Test
@@ -276,7 +276,7 @@ public class OptionTest extends AbstractValueTest {
     class IsdefinedTests {
         @Test
         public void shouldBePresentOnIsDefinedWhenValueIsDefined() {
-            assertThat(Option.ofNullable(1).isDefined()).isTrue();
+            assertThat(Option.some(1).isDefined()).isTrue();
         }
 
         @Test
@@ -294,7 +294,7 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldBePresentOnIsEmptyWhenValue() {
-            assertThat(Option.ofNullable(1).isEmpty()).isFalse();
+            assertThat(Option.some(1).isEmpty()).isFalse();
         }
     }
 
@@ -336,12 +336,12 @@ public class OptionTest extends AbstractValueTest {
     class FilterTests {
         @Test
         public void shouldReturnSomeOnFilterWhenValueIsDefinedAndPredicateMatches() {
-            assertThat(Option.ofNullable(1).filter(i -> i == 1)).isEqualTo(Option.ofNullable(1));
+            assertThat(Option.some(1).filter(i -> i == 1)).isEqualTo(Option.some(1));
         }
 
         @Test
         public void shouldReturnNoneOnFilterWhenValueIsDefinedAndPredicateNotMatches() {
-            assertThat(Option.ofNullable(1).filter(i -> i == 2)).isEqualTo(Option.none());
+            assertThat(Option.some(1).filter(i -> i == 2)).isEqualTo(Option.none());
         }
 
         @Test
@@ -354,7 +354,7 @@ public class OptionTest extends AbstractValueTest {
     class MapTests {
         @Test
         public void shouldMapSome() {
-            assertThat(Option.ofNullable(1).map(String::valueOf)).isEqualTo(Option.ofNullable("1"));
+            assertThat(Option.some(1).map(String::valueOf)).isEqualTo(Option.some("1"));
         }
 
         @Test
@@ -367,7 +367,7 @@ public class OptionTest extends AbstractValueTest {
     class MapTry {
         @Test
         public void shouldMapTrySome() {
-            assertThat(Option.ofNullable(1).mapTry(String::valueOf)).isEqualTo(Try.success("1"));
+            assertThat(Option.some(1).mapTry(String::valueOf)).isEqualTo(Try.success("1"));
         }
 
         @Test
@@ -380,7 +380,7 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldMapTryCheckedException() {
-            Try<Integer> result = Option.ofNullable("a")
+            Try<Integer> result = Option.some("a")
                     .mapTry(this::checkedFunction);
             assertThat(result.isFailure()).isTrue();
             assertThat(result.getCause().getClass()).isEqualTo(Exception.class);
@@ -396,24 +396,24 @@ public class OptionTest extends AbstractValueTest {
     class FlatmapTests {
         @Test
         public void shouldFlatMapSome() {
-            assertThat(Option.ofNullable(1).flatMap(i -> Option.ofNullable(String.valueOf(i)))).isEqualTo(Option.ofNullable("1"));
+            assertThat(Option.some(1).flatMap(i -> Option.some(String.valueOf(i)))).isEqualTo(Option.some("1"));
         }
 
         @Test
         public void shouldFlatMapNone() {
-            assertThat(Option.<Integer> none().flatMap(i -> Option.ofNullable(String.valueOf(i)))).isEqualTo(Option.none());
+            assertThat(Option.<Integer> none().flatMap(i -> Option.some(String.valueOf(i)))).isEqualTo(Option.none());
         }
 
         @Test
         public void shouldFlatMapNonEmptyIterable() {
             final Option<Integer> option = Option.some(2);
-            assertThat(Option.ofNullable(1).flatMap(i -> option)).isEqualTo(Option.ofNullable(2));
+            assertThat(Option.some(1).flatMap(i -> option)).isEqualTo(Option.some(2));
         }
 
         @Test
         public void shouldFlatMapEmptyIterable() {
             final Option<Integer> option = Option.none();
-            assertThat(Option.ofNullable(1).flatMap(i -> option)).isEqualTo(Option.none());
+            assertThat(Option.some(1).flatMap(i -> option)).isEqualTo(Option.none());
         }
     }
 
@@ -458,7 +458,7 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldConsumePresentValueOnForEachWhenValueIsDefined() {
             final int[] actual = new int[] { -1 };
-            Option.ofNullable(1).forEach(i -> actual[0] = i);
+            Option.some(1).forEach(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(1);
         }
 
@@ -511,9 +511,9 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldConsumePresentValueOnPeekWhenValueIsDefined() {
             final int[] actual = new int[] { -1 };
-            final Option<Integer> testee = Option.ofNullable(1).peek(i -> actual[0] = i);
+            final Option<Integer> testee = Option.some(1).peek(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(1);
-            assertThat(testee).isEqualTo(Option.ofNullable(1));
+            assertThat(testee).isEqualTo(Option.some(1));
         }
 
         @Test

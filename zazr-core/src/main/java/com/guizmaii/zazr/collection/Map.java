@@ -74,7 +74,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     @Override
     default boolean contains(Tuple2<K, V> element) {
-        return get(element._1()).map(v -> Objects.equals(v, element._2())).getOrElse(false);
+        // getOrElse, not get: a stored null value cannot be wrapped in Some
+        final V value = Maps.getOrAbsent(this, element._1());
+        return value != Maps.ABSENT && Objects.equals(value, element._2());
     }
 
     /**

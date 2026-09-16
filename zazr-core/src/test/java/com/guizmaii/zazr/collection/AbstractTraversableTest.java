@@ -2,6 +2,7 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -698,7 +699,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldFindFirstOfNonNil() {
-        assertThat(of(1, 2, 3, 4).find(i -> i % 2 == 0)).isEqualTo(Option.ofNullable(2));
+        assertThat(of(1, 2, 3, 4).find(i -> i % 2 == 0)).isEqualTo(Option.some(2));
     }
 
     // -- findLast
@@ -710,7 +711,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldFindLastOfNonNil() {
-        assertThat(of(1, 2, 3, 4).findLast(i -> i % 2 == 0)).isEqualTo(Option.ofNullable(4));
+        assertThat(of(1, 2, 3, 4).findLast(i -> i % 2 == 0)).isEqualTo(Option.some(4));
     }
 
     // -- flatMap
@@ -828,13 +829,13 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldNilArrangeBy() {
-        assertThat(empty().arrangeBy(Function.identity())).isEqualTo(Option.ofNullable(LinkedHashMap.empty()));
+        assertThat(empty().arrangeBy(Function.identity())).isEqualTo(Option.some(LinkedHashMap.empty()));
     }
 
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
         final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected = Option.ofNullable(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1520,7 +1521,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldReduceOptionNonNil() {
-        assertThat(of(1, 2, 3).reduceOption((a, b) -> a + b)).isEqualTo(Option.ofNullable(6));
+        assertThat(of(1, 2, 3).reduceOption((a, b) -> a + b)).isEqualTo(Option.some(6));
     }
 
     // -- reduce
@@ -1554,7 +1555,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldReduceLeftOptionNonNil() {
-        assertThat(of("a", "b", "c").reduceLeftOption((xs, x) -> xs + x)).isEqualTo(Option.ofNullable("abc"));
+        assertThat(of("a", "b", "c").reduceLeftOption((xs, x) -> xs + x)).isEqualTo(Option.some("abc"));
     }
 
     // -- reduceLeft
@@ -1588,7 +1589,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldReduceRightOptionNonNil() {
-        assertThat(of("a", "b", "c").reduceRightOption((x, xs) -> x + xs)).isEqualTo(Option.ofNullable("abc"));
+        assertThat(of("a", "b", "c").reduceRightOption((x, xs) -> x + xs)).isEqualTo(Option.some("abc"));
     }
 
     // -- reduceRight
@@ -2670,7 +2671,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldSingleOptionWork() {
-        assertThat(of(1).singleOption()).isEqualTo(Option.ofNullable(1));
+        assertThat(of(1).singleOption()).isEqualTo(Option.some(1));
     }
 
     @TestTemplate
@@ -2782,5 +2783,36 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         public String toString() {
             return value;
         }
+    }
+
+    // -- null elements: methods returning T return the stored null; methods returning Option throw (Some(null) does not exist)
+
+    @TestTemplate
+    public void shouldReturnStoredNullFromMethodsReturningT() {
+        assertThat(of((Integer) null).head()).isNull();
+        assertThat(of((Integer) null).last()).isNull();
+        assertThat(of((Integer) null).single()).isNull();
+        assertThat(of((Integer) null).get()).isNull();
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenWrappingNullElementInOption() {
+        assertThrows(NullPointerException.class, () -> of((Integer) null).headOption());
+        assertThrows(NullPointerException.class, () -> of((Integer) null).lastOption());
+        assertThrows(NullPointerException.class, () -> of((Integer) null).singleOption());
+        assertThrows(NullPointerException.class, () -> of((Integer) null).reduceLeftOption((a, b) -> a));
+        assertThrows(NullPointerException.class, () -> of((Integer) null).reduceRightOption((a, b) -> a));
+        assertThrows(NullPointerException.class, () -> of((Integer) null).find(x -> true));
+        assertThrows(NullPointerException.class, () -> of((Integer) null).maxBy(Comparator.nullsFirst(Comparator.<Integer>naturalOrder())));
+        assertThrows(NullPointerException.class, () -> of((Integer) null).toOption());
+        assertThrows(NullPointerException.class, () -> of((Integer) null).toEither("left"));
+        assertThrows(NullPointerException.class, () -> of((Integer) null).toValidation("invalid"));
+    }
+
+    @TestTemplate
+    public void shouldCaptureNullElementInToTry() {
+        final Try<Integer> result = of((Integer) null).toTry();
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
     }
 }

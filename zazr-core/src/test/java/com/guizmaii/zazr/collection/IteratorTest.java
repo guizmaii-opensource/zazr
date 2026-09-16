@@ -585,9 +585,9 @@ public class IteratorTest extends AbstractTraversableTest {
         multipleHasNext(() -> Iterator.iterate(1, i -> i + 1), 5);
         multipleHasNext(() -> Iterator.iterate(new OptionSupplier(1)), 5);
         multipleHasNext(() -> Iterator.tabulate(10, i -> i + 1));
-        multipleHasNext(() -> Iterator.unfold(10, x -> x == 0 ? Option.none() : Option.ofNullable(new Tuple2<>(x - 1, x))));
-        multipleHasNext(() -> Iterator.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.ofNullable(new Tuple2<>(x - 1, x))));
-        multipleHasNext(() -> Iterator.unfoldRight(10, x -> x == 0 ? Option.none() : Option.ofNullable(new Tuple2<>(x, x - 1))));
+        multipleHasNext(() -> Iterator.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))));
+        multipleHasNext(() -> Iterator.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))));
+        multipleHasNext(() -> Iterator.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))));
 
         multipleHasNext(() -> Iterator.range('a', 'd'));
         multipleHasNext(() -> Iterator.range(1, 4));
@@ -765,7 +765,7 @@ public class IteratorTest extends AbstractTraversableTest {
             assertThat(
                     Iterator.unfoldRight(10, x -> x == 0
                                                   ? Option.none()
-                                                  : Option.ofNullable(new Tuple2<>(x, x - 1))))
+                                                  : Option.some(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -779,7 +779,7 @@ public class IteratorTest extends AbstractTraversableTest {
             assertThat(
                     Iterator.unfoldLeft(10, x -> x == 0
                                                  ? Option.none()
-                                                 : Option.ofNullable(new Tuple2<>(x - 1, x))))
+                                                 : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -793,7 +793,7 @@ public class IteratorTest extends AbstractTraversableTest {
             assertThat(
                     Iterator.unfold(10, x -> x == 0
                                              ? Option.none()
-                                             : Option.ofNullable(new Tuple2<>(x - 1, x))))
+                                             : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }
@@ -989,4 +989,11 @@ public class IteratorTest extends AbstractTraversableTest {
         assertThat(result).isEqualTo(Option.none());
     }
 
+    // -- distinct with null elements goes through a HashSet, whose contains must not use Option
+
+    @Test
+    public void shouldDistinctNullElements() {
+        assertThat(Iterator.<Integer>of(null, null).distinct().toList()).isEqualTo(List.of((Integer) null));
+        assertThat(Iterator.<Integer>of(null, 1, null, 1).distinct().toList()).isEqualTo(List.of(null, 1));
+    }
 }

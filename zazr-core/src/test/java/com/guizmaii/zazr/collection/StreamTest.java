@@ -352,7 +352,7 @@ public class StreamTest extends AbstractLinearSeqTest {
     class StaticIterateSupplierOptionTests {
         @Test
         public void shouldGenerateInfiniteStreamBasedOnOptionSupplier() {
-            assertThat(Stream.iterate(() -> Option.ofNullable(1)).take(5).reduce((i, j) -> i + j)).isEqualTo(5);
+            assertThat(Stream.iterate(() -> Option.some(1)).take(5).reduce((i, j) -> i + j)).isEqualTo(5);
         }
     }
 
@@ -827,7 +827,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             assertThat(
                     Stream.unfoldRight(10, x -> x == 0
                                                 ? Option.none()
-                                                : Option.ofNullable(new Tuple2<>(x, x - 1))))
+                                                : Option.some(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -841,7 +841,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             assertThat(
                     Stream.unfoldLeft(10, x -> x == 0
                                                ? Option.none()
-                                               : Option.ofNullable(new Tuple2<>(x - 1, x))))
+                                               : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -855,7 +855,7 @@ public class StreamTest extends AbstractLinearSeqTest {
             assertThat(
                     Stream.unfold(10, x -> x == 0
                                            ? Option.none()
-                                           : Option.ofNullable(new Tuple2<>(x - 1, x))))
+                                           : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }

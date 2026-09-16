@@ -13,9 +13,9 @@ final class Sieve {
     }
 
     private final static List<Function2<Integer, Integer, Option<Integer>>> RULES = List.of(
-            (x, y) -> Option.ofNullable((4 * x * x) + (y * y)).filter(n -> n % 12 == 1 || n % 12 == 5),
-            (x, y) -> Option.ofNullable((3 * x * x) + (y * y)).filter(n -> n % 12 == 7),
-            (x, y) -> Option.ofNullable((3 * x * x) - (y * y)).filter(n -> x > y && n % 12 == 11)
+            (x, y) -> Option.some((4 * x * x) + (y * y)).filter(n -> n % 12 == 1 || n % 12 == 5),
+            (x, y) -> Option.some((3 * x * x) + (y * y)).filter(n -> n % 12 == 7),
+            (x, y) -> Option.some((3 * x * x) - (y * y)).filter(n -> x > y && n % 12 == 11)
     );
 
     private final static List<Function3<Set<Integer>, Integer, Integer, Set<Integer>>> STEPS = List.of(

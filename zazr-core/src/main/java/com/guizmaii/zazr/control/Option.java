@@ -339,6 +339,8 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
     /**
      * Transforms the value of this {@code Option} using the given mapper if it is a {@code Some}.
      * Returns {@code None} if this is {@code None}.
+     * <p>
+     * This is how a value maps to absence: the mapper returns {@link #none()} or {@link #ofNullable(Object)}. The mapper must return an {@code Option}, never {@code null}.
      *
      * @param mapper a function to transform the contained value
      * @param <U>    the type of the resulting {@code Option}'s value
@@ -354,6 +356,8 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
     /**
      * Transforms the value of this {@code Some} using the given mapper and wraps it in a new {@code Some}.
      * Returns {@code None} if this is {@code None}.
+     * <p>
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: {@code Some} cannot hold {@code null} (design 3.9). Map to absence with {@link #flatMap(Function)} and {@link #ofNullable(Object)} instead.
      *
      * @param mapper a function to transform the contained value
      * @param <U>    the type of the resulting {@code Some}'s value

@@ -530,6 +530,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * or returns this {@link Failure}.
      * <p>
      * This is a shortcut for {@link #flatMapTry(CheckedFunction1)}.
+     * <p>
+     * The mapper must return a {@code Try}, never {@code null}. A {@code Try} built inside the mapper captures a {@code null} computation result as a {@code Failure}, see {@link #of(CheckedFunction0)}.
      *
      * @param mapper a function mapping the value to another {@code Try}
      * @param <U>    the type of the resulting {@code Try}
@@ -646,6 +648,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
 
     /**
      * Shortcut for {@code mapTry(mapper::apply)}, see {@link #mapTry(CheckedFunction1)}.
+     * <p>
+     * A mapper that returns {@code null} yields a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}; see {@link #mapTry(CheckedFunction1)}.
      *
      * @param <U>    The new component type
      * @param mapper a function to apply to the value
@@ -914,6 +918,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * // = Failure(java.lang.ArithmeticException: / by zero)
      * Try.of(() -> 1/0).recover(Error.class, x -> Integer.MAX_VALUE);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param <X>           the type of exception to handle
      * @param exceptionType the specific exception type that should be recovered
@@ -1036,6 +1042,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * // = Failure(java.lang.ArithmeticException: / by zero)
      * Try.of(() -> 1/0).recover(Error.class, Integer.MAX_VALUE);
      * }</pre>
+     * <p>
+     * {@code value} must not be {@code null}: {@code Success} cannot hold {@code null}, so this throws {@link NullPointerException} when the cause matches and {@code value} is {@code null}.
      *
      * @param <X>           the type of exception to handle
      * @param exceptionType the exception type that triggers recovery
@@ -1064,6 +1072,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * // = Success(2147483647)
      * Try.of(() -> 1/0).recover(x -> Integer.MAX_VALUE);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param f A recovery function that takes the underlying exception and returns a value
      * @return a {@code Try} containing either the original success value or the recovered value
@@ -1129,6 +1139,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * Try.of(() -> 1/0)
      *    .recoverAllAndTry(() -> 10);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param recoveryAttempt A checked supplier providing a fallback value in case of failure
      * @return a {@code Try} containing either the original success value or the result of {@code recoveryAttempt}
@@ -1158,6 +1170,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * Try.of(() -> 1/0)
      *    .recoverAndTry(NullPointerException.class, () -> 10);
      * }</pre>
+     * <p>
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
      *
      * @param <X>             The type of the exception that may be recovered
      * @param exceptionType   The specific exception type that triggers the recovery

@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
 
     @Override
@@ -268,6 +270,52 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
         @Test
         public void shouldReturnSizeWhenSpliterator() {
             assertThat(of(1, 2, 3).spliterator().getExactSizeIfKnown()).isEqualTo(3);
+        }
+    }
+
+    // -- null elements: presence checks must not go through Option, since Some(null) does not exist
+
+    @Nested
+    class NullElementTests {
+
+        @Test
+        public void shouldContainNullElement() {
+            final Set<Integer> set = AbstractSetTest.this.<Integer>emptyWithNull().add(null);
+            assertThat(set.contains(null)).isTrue();
+            assertThat(set.contains(1)).isFalse();
+            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().contains(null)).isFalse();
+        }
+
+        @Test
+        public void shouldAddNullOnce() {
+            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(null)).hasSize(1);
+        }
+
+        @Test
+        public void shouldEqualWithNullElementsInBothDirections() {
+            final Set<Integer> a = AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(1);
+            final Set<Integer> b = AbstractSetTest.this.<Integer>emptyWithNull().add(1).add(null);
+            assertThat(a).isEqualTo(b);
+            assertThat(b).isEqualTo(a);
+            assertThat(a.hashCode()).isEqualTo(b.hashCode());
+            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().add(null)).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
+            assertThat(a).isNotEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(1));
+            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().add(1)).isNotEqualTo(a);
+        }
+
+        @Test
+        public void shouldFilterDiffAndIntersectWithNullElement() {
+            final Set<Integer> set = AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(1);
+            assertThat(set.filter(x -> true)).isEqualTo(set);
+            assertThat(set.diff(AbstractSetTest.this.<Integer>emptyWithNull().add(1))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
+            assertThat(set.intersect(AbstractSetTest.this.<Integer>emptyWithNull().add(null))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
+        }
+
+        @Test
+        public void shouldRemoveAllAndRetainAllWithNullElement() {
+            final Set<Integer> set = AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(1);
+            assertThat(set.removeAll(List.of((Integer) null))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(1));
+            assertThat(set.retainAll(List.of((Integer) null))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
         }
     }
 }

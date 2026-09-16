@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 
 import static java.util.Comparator.comparingInt;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -2369,5 +2370,21 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
 
     enum SecondEnum implements SomeInterface {
         A1, A2, A3;
+    }
+
+    // -- removeAll / retainAll with null elements go through a HashSet, whose contains must not use Option
+
+    @Nested
+    class NullElementRemoveAllTests {
+
+        @Test
+        public void shouldRemoveAllNullElements() {
+            assertThat(AbstractSeqTest.this.<Integer>of(null, 1).removeAll(List.of((Integer) null))).isEqualTo(of(1));
+        }
+
+        @Test
+        public void shouldRetainAllNullElements() {
+            assertThat(AbstractSeqTest.this.<Integer>of(null, 1).retainAll(List.of((Integer) null))).isEqualTo(of((Integer) null));
+        }
     }
 }

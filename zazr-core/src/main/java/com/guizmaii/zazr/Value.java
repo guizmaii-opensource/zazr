@@ -828,6 +828,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to a {@link Either}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param <R>   right type
      * @param right An instance of a right value
@@ -843,6 +845,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to a {@link Either}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param <R>   right type
      * @param right A supplier of a right value
@@ -990,6 +994,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to an {@link Option}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @return this instance if it already is an {@link Option}, otherwise {@link Option#none()} if this value is
      * empty, or a new {@link Option} wrapping the value.
@@ -1004,6 +1010,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to an {@link Either}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param left A left value for the {@link Either}
      * @param <L>  Either left component type
@@ -1020,6 +1028,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to an {@link Either}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param leftSupplier A {@link Supplier} for the left value for the {@link Either}
      * @param <L>          Either left component type
@@ -1038,6 +1048,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to an {@link Validation}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param invalid An invalid value for the {@link Validation}
      * @param <E>     Validation error component type
@@ -1055,6 +1067,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to an {@link Validation}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param invalidSupplier A {@link Supplier} for the invalid value for the {@link Validation}
      * @param <E>             Validation error component type
@@ -1082,6 +1096,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to a {@link Either}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param <L>  left type
      * @param left An instance of a left value
@@ -1096,6 +1112,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Converts this to a {@link Either}.
+     * <p>
+     * A non-empty value holding {@code null} cannot be converted and throws {@link NullPointerException}: {@code Some}, {@code Left}, {@code Right} and {@code Valid} reject {@code null} (design 3.9).
      *
      * @param <L>  left type
      * @param left A supplier of a left value
@@ -1173,6 +1191,8 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * If this is already a {@link Try}, this instance is returned unchanged. Otherwise, if this value is empty,
      * a new {@code Failure} wrapping the exception thrown by {@link #get()} is returned (typically a
      * {@link java.util.NoSuchElementException}); otherwise a new {@code Success(get())} is returned.
+     * <p>
+     * A non-empty value holding {@code null} yields a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
      *
      * @return A {@link Try} representing this value.
      */

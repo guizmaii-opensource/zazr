@@ -1039,7 +1039,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public V getOrElse(K key, V defaultValue) {
-        return get(key).getOrElse(defaultValue);
+        // through the entry, not get(): a stored null value cannot be wrapped in Some
+        final Option<Tuple2<K, V>> entry = entries.find(TreeMap.<K, V>lookupEntry(key));
+        return entry.isDefined() ? entry.get()._2() : defaultValue;
     }
 
     @Override

@@ -610,7 +610,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public boolean contains(T element) {
-        return tree.get(element).isDefined();
+        // containsKey, not get: a null element cannot be wrapped in Some
+        return tree.containsKey(element);
     }
 
     @Override

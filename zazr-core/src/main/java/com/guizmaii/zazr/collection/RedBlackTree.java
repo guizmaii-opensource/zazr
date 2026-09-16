@@ -198,6 +198,32 @@ interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
     }
 
     /**
+     * The maximum element of this non-empty tree. Unlike {@link #max()} it returns a stored {@code null} as is.
+     *
+     * @return the maximum element
+     * @throws NoSuchElementException if this tree is empty
+     */
+    default T maximum() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("maximum of empty tree");
+        }
+        return Node.maximum((Node<T>) this);
+    }
+
+    /**
+     * The minimum element of this non-empty tree. Unlike {@link #min()} it returns a stored {@code null} as is.
+     *
+     * @return the minimum element
+     * @throws NoSuchElementException if this tree is empty
+     */
+    default T minimum() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("minimum of empty tree");
+        }
+        return Node.minimum((Node<T>) this);
+    }
+
+    /**
      * Returns the right child if this is a non-empty node, otherwise throws.
      *
      * @return The right child.
