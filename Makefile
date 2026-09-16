@@ -52,7 +52,7 @@ nullness: ## NullAway / JSpecify nullness check
 	$(MVN) -Pnullaway compile
 
 bench: ## run the JMH benchmarks (io.vavr.JmhRunner, zazr-benchmark module)
-	$(MVN) -Pbenchmark -pl zazr-benchmark -am test
+	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
 javadoc: ## build the javadoc (doclint)
 	$(MVN) javadoc:javadoc
