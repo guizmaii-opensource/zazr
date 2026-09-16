@@ -13,7 +13,12 @@ section 5 order. When a new rule or decision is given, record it in `docs/design
 
 - JDK 25+ only. Use modern Java wherever it fits: sealed interfaces, records, record patterns,
   pattern-matching `switch`, unnamed patterns, Markdown javadoc (`///`), `SequencedCollection`,
-  `Callable`, `java.util.function.*`. No preview features in main code.
+  `Callable`, `java.util.function.*`. Preview features are allowed in main code when they remove code
+  from the library (decided 2026-09-16; first case: `Lazy` over `StableValue`, JEP 502). Accepted cost,
+  stated so nobody is surprised: preview class files are tied to the exact JDK feature release and
+  require `--enable-preview` from every consumer, so zazr tracks one JDK release at a time (currently
+  25), its users run with `--enable-preview`, and each JDK release gets a rebuild. The build passes
+  `--enable-preview` to javac, surefire and javadoc; the README states the requirement.
 - No category-theory vocabulary anywhere, code or comments: no Monad, Functor, Applicative, Semigroup,
   Monoid, `ap`, `pure`, `traverse`/`sequence`. Use the ZIO names (`zip`, `zipWith`, `collectAll`,
   `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`).
