@@ -363,6 +363,37 @@ public class VectorBuilderTest {
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         // the state check comes before the argument check
         assertThatThrownBy(() -> builder.addAll(null)).isInstanceOf(IllegalStateException.class);
+        // the bulk loops too, even for zero elements, where no leaf boundary would be crossed
+        assertThatThrownBy(() -> builder.addTabulated(0, i -> i)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.addRepeated(0, 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.addMapped(ArrayType.<Integer> obj(), new Object[0], 0, 0, i -> i)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.addTabulated(5, i -> i)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    public void shouldGrowAHintedLeafInsideTheBulkLoops() {
+        // a hinted leaf shorter than 32 is grown by copy (not closed) when a bulk loop crosses its end: unreachable
+        // from the public API, since tabulate/fill/map size their hint from n, so exercised package-privately
+        for (int n : new int[] { 6, 31, 32, 33, 64, 65, 1025 }) {
+            final Vector.Builder<Integer> tabulated = Vector.newBuilder(5);
+            tabulated.addTabulated(n, i -> i);
+            assertSameShape(tabulated.result(), Vector.range(0, n), n);
+
+            final Vector.Builder<Integer> repeated = Vector.newBuilder(5);
+            repeated.addRepeated(n, 7);
+            assertSameShape(repeated.result(), Vector.fill(n, 7), n);
+
+            final Vector.Builder<Integer> mapped = Vector.newBuilder(5);
+            final Object[] source = IntStream.range(0, n).boxed().toArray();
+            mapped.addMapped(ArrayType.<Integer> obj(), source, 0, n, i -> i + 1);
+            assertSameShape(mapped.result(), Vector.range(1, n + 1), n);
+
+            // and after a partial prefix, so the grown leaf is split between prefix and bulk elements
+            final Vector.Builder<Integer> prefixed = Vector.newBuilder(5);
+            prefixed.add(-1).add(-2);
+            prefixed.addTabulated(n, i -> i);
+            assertSameShape(prefixed.result(), Vector.of(-1, -2).appendAll(Vector.range(0, n)), n + 2);
+        }
     }
 
     @Test

@@ -1014,6 +1014,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     @Override
     public <U extends @Nullable Object> Vector<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
+        if (trie.hasObjectLeaves()) {
+            // measured (3 forks, two independent runs): on Object[] receivers the flat-array map is on par with the
+            // builder at 100 000 elements and 1.2x faster at 1 000, so it keeps the trie's path
+            return ofAll(trie.map(mapper));
+        }
+        // a primitive-backed receiver (Vector.range, ofAll(int[])): the builder is 1.5x faster at 100 000 (351 -> 227 µs)
         final Builder<U> builder = newBuilder(length());
         trie.<Object> visit((index, leaf, start, end) -> {
             builder.addMapped(trie.type, leaf, start, end, mapper);
@@ -1550,8 +1556,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         }
 
         /**
-         * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} copies whole leaf
-         * arrays (and shares full ones) instead of iterating.
+         * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} with {@code Object[]}
+         * leaves copies whole leaf arrays and shares aligned full ones instead of iterating; a primitive-backed Vector
+         * ({@code Vector.range}, {@code ofAll(int[])}) is boxed one element at a time.
          *
          * @param elements the elements to append
          * @return this builder
@@ -1677,11 +1684,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
          * open-check on every element, which is what separates it from writing into a flat array.
          */
 
-        /* appends mapper(source[i]) for i in [start, end) */
-        @SuppressWarnings("unchecked")
+        /* appends mapper(source[i]) for i in [start, end); source is a leaf read through its ArrayType (one boxing per element for a primitive leaf) */
         <S extends @Nullable Object> void addMapped(ArrayType<S> type, Object source, int start, int end, Function<? super S, ? extends T> mapper) {
-            // an Object[] leaf is indexed directly; a primitive leaf goes through its ArrayType (one boxing per element)
-            final Object @Nullable [] objects = (source instanceof Object[] o) ? o : null;
+            checkOpen();
             Object[] leaf = this.leaf;
             int leafLength = this.leafLength;
             for (int i = start; i < end; i++) {
@@ -1691,14 +1696,14 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                     leaf = this.leaf;
                     leafLength = this.leafLength;
                 }
-                final S value = (objects != null) ? (S) objects[i] : type.getAt(source, i);
-                leaf[leafLength++] = mapper.apply(value);
+                leaf[leafLength++] = mapper.apply(type.getAt(source, i));
             }
             this.leafLength = leafLength;
         }
 
         /* appends n elements f(0) .. f(n - 1) */
         void addTabulated(int n, Function<? super Integer, ? extends T> f) {
+            checkOpen();
             Object[] leaf = this.leaf;
             int leafLength = this.leafLength;
             for (int i = 0; i < n; i++) {
@@ -1715,6 +1720,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
 
         /* appends the same element n times, one Arrays.fill per leaf */
         void addRepeated(int n, T element) {
+            checkOpen();
             int remaining = n;
             while (remaining > 0) {
                 if (leafLength == leaf.length) {

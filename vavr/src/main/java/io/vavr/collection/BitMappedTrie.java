@@ -359,6 +359,9 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
 
     int length() { return length; }
 
+    @SuppressWarnings("ObjectEquality")
+    boolean hasObjectLeaves() { return type == obj(); }
+
     /* for tests: the shift of the root level, 0 for a single leaf */
     int depthShift() { return depthShift; }
 }
