@@ -72,7 +72,12 @@ public interface Gen<T> {
         } else {
             final int _min = Math.min(min, max);
             final int _max = Math.max(min, max);
-            return rng -> rng.nextInt(Math.abs(_max - _min) + 1) + _min;
+            final long range = (long) _max - _min + 1; // computed in long: the full int range does not fit in an int
+            if (range <= Integer.MAX_VALUE) {
+                final int bound = (int) range;
+                return rng -> rng.nextInt(bound) + _min;
+            }
+            return rng -> (int) (_min + rng.nextLong(range));
         }
     }
 
@@ -90,11 +95,19 @@ public interface Gen<T> {
         if (min == max) {
             return ignored -> min;
         } else {
-            return random -> {
-                final double d = random.nextDouble();
-                final long _min = Math.min(min, max);
-                final long _max = Math.max(min, max);
-                return (long) ((d * _max) + ((1.0 - d) * _min) + d);
+            final long _min = Math.min(min, max);
+            final long _max = Math.max(min, max);
+            final long range = _max - _min + 1; // overflows to a non-positive value when the interval exceeds Long.MAX_VALUE
+            if (range > 0) {
+                return rng -> _min + rng.nextLong(range);
+            }
+            // interval wider than Long.MAX_VALUE: draw full longs and keep the ones inside (acceptance rate is at least 1/2)
+            return rng -> {
+                long r;
+                do {
+                    r = rng.nextLong();
+                } while (r < _min || r > _max);
+                return r;
             };
         }
     }

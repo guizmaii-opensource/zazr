@@ -76,6 +76,22 @@ public class GenTest {
         assertForAll(() -> Gen.choose(0, 0).apply(RANDOM), i -> i == 0);
     }
 
+    @Test
+    public void shouldChooseIntWhenRangeCrossesIntegerBoundary() {
+        assertForAll(() -> Gen.choose(Integer.MIN_VALUE, 0).apply(RANDOM), i -> i >= Integer.MIN_VALUE && i <= 0);
+    }
+
+    @Test
+    public void shouldChooseIntBetweenFullIntRange() {
+        assertForAllDiverse(() -> Gen.choose(Integer.MIN_VALUE, Integer.MAX_VALUE).apply(RANDOM),
+                i -> i >= Integer.MIN_VALUE && i <= Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void shouldChooseIntWhenBoundsAreReversed() {
+        assertForAll(() -> Gen.choose(1, -1).apply(RANDOM), i -> i >= -1 && i <= 1);
+    }
+
     // -- choose(long, long)
 
     @Test
@@ -86,6 +102,17 @@ public class GenTest {
     @Test
     public void shouldChooseLongWhenMinEqualsMax() {
         assertForAll(() -> Gen.choose(0L, 0L).apply(RANDOM), l -> l == 0L);
+    }
+
+    @Test
+    public void shouldChooseLongWhenRangeCrossesLongBoundary() {
+        assertForAll(() -> Gen.choose(Long.MIN_VALUE, 0L).apply(RANDOM), l -> l >= Long.MIN_VALUE && l <= 0L);
+    }
+
+    @Test
+    public void shouldChooseLongBetweenFullLongRange() {
+        assertForAllDiverse(() -> Gen.choose(Long.MIN_VALUE, Long.MAX_VALUE).apply(RANDOM),
+                l -> l >= Long.MIN_VALUE && l <= Long.MAX_VALUE);
     }
 
     // -- choose(double, double)
@@ -152,6 +179,12 @@ public class GenTest {
     @Test
     public void shouldChooseCharWhenMinEqualsMax() {
         assertForAll(() -> Gen.choose('a', 'a').apply(RANDOM), c -> c == 'a');
+    }
+
+    @Test
+    public void shouldChooseCharBetweenFullCharRange() {
+        assertForAll(() -> Gen.choose(Character.MIN_VALUE, Character.MAX_VALUE).apply(RANDOM),
+                c -> c >= Character.MIN_VALUE && c <= Character.MAX_VALUE);
     }
 
     // -- choose(array)
@@ -408,6 +441,22 @@ public class GenTest {
             if (!property.test(element)) {
                 throw new AssertionError("predicate did not hold for " + element);
             }
+        }
+    }
+
+    // like assertForAll, but also asserts the generator produces more than a couple of distinct
+    // values over TRIES draws, catching an overflow that silently narrows a wide range down to it
+    <T> void assertForAllDiverse(Supplier<T> supplier, Predicate<T> property) {
+        final java.util.Set<T> seen = new java.util.HashSet<>();
+        for (int i = 0; i < TRIES; i++) {
+            final T element = supplier.get();
+            if (!property.test(element)) {
+                throw new AssertionError("predicate did not hold for " + element);
+            }
+            seen.add(element);
+        }
+        if (seen.size() < 50) {
+            throw new AssertionError("expected a diverse spread of generated values but got only " + seen.size() + " distinct values: " + seen);
         }
     }
 }
