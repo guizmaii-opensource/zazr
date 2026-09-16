@@ -8,6 +8,9 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -221,6 +224,32 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> Try<T> narrow(Try<? extends T> t) {
         return (Try<T>) t;
+    }
+
+    /**
+     * Creates a {@link Try} from a {@link CompletableFuture}, joining it on the calling thread.
+     * <p>
+     * If the future completes normally, a {@link Success} containing its result is returned. If the future
+     * completed exceptionally, a {@link Failure} wrapping the cause is returned, with the wrapping
+     * {@link CompletionException} unwrapped to expose the original cause. If the future was cancelled, a
+     * {@link Failure} wrapping a {@link CancellationException} is returned. A fatal throwable (see the
+     * class-level documentation) is rethrown instead of being wrapped.
+     *
+     * @param future the future to join
+     * @param <T>    the type of the future's result
+     * @return a {@link Success} with the future's result, or a {@link Failure} describing why it did not complete
+     * @throws NullPointerException if {@code future} is {@code null}
+     */
+    static <T extends @Nullable Object> Try<T> fromCompletableFuture(CompletableFuture<? extends T> future) {
+        Objects.requireNonNull(future, "future is null");
+        try {
+            return new Success<>(future.join());
+        } catch (CancellationException e) {
+            return new Failure<>(e);
+        } catch (CompletionException e) {
+            final Throwable cause = e.getCause();
+            return new Failure<>(cause != null ? cause : e);
+        }
     }
 
     /**
@@ -1294,6 +1323,22 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
                 return this;
             }
             return new Failure<>(t);
+        }
+    }
+
+    /**
+     * Converts this to a {@link CompletableFuture}, already completed.
+     *
+     * @return a new {@link CompletableFuture}, completed with the value if this is a {@link Success}, or
+     *         completed exceptionally with the cause if this is a {@link Failure}
+     */
+    default CompletableFuture<T> toCompletableFuture() {
+        if (isSuccess()) {
+            return CompletableFuture.completedFuture(get());
+        } else {
+            final CompletableFuture<T> completableFuture = new CompletableFuture<>();
+            completableFuture.completeExceptionally(getCause());
+            return completableFuture;
         }
     }
 

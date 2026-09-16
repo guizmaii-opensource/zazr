@@ -1,7 +1,6 @@
 package io.vavr;
 
 import io.vavr.collection.List;
-import io.vavr.concurrent.Future;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -45,11 +44,6 @@ class $ {
     static <T extends @Nullable Object> Tuple2<T, List<T>> Cons(List.Cons<T> cons) { return Tuple.of(cons.head(), cons.tail()); }
     @Unapply
     static <T extends @Nullable Object> Tuple0 Nil(List.Nil<T> nil) { return Tuple.empty(); }
-
-    // -- io.vavr.concurrent
-
-    @Unapply
-    static <T extends @Nullable Object> Tuple1<Option<Try<T>>> Future(Future<T> future) { return Tuple.of(future.getValue()); }
 
     // -- io.vavr.control
 

@@ -7,7 +7,6 @@ import io.vavr.PartialFunction;
 import io.vavr.collection.Seq;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -654,25 +653,6 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldConvertNoneToString() {
             assertThat(Option.none().toString()).isEqualTo("None");
-        }
-    }
-
-    @Nested
-    class TocompletablefutureTests {
-        @Test
-        public void shouldConvertSomeToCompletableFuture() {
-            final String some = "some";
-            final CompletableFuture<String> future = API.Option(some).toCompletableFuture();
-            assertThat(future.isDone());
-            assertThat(Try.of(future::get).get()).isEqualTo(some);
-        }
-
-        @Test
-        public void shouldConvertNoneToFailedCompletableFuture() {
-
-            final CompletableFuture<Object> future = API.None().toCompletableFuture();
-            assertThat(future.isDone());
-            assertThat(future.isCompletedExceptionally());
         }
     }
 

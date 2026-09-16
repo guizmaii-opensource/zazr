@@ -35,7 +35,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -347,7 +346,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Methods of a {@code Value} instance that operate on the underlying value may block the current thread
      * until the value is present and the computation can be performed.
      *
-     * @return true if this {@code Value} is async (like {@link io.vavr.concurrent.Future}), false otherwise.
+     * @return true if this {@code Value} is async, false otherwise.
      */
     boolean isAsync();
 
@@ -385,8 +384,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Performs the given {@code action} on the element(s) of this {@code Value}. Most implementations, including
      * {@link Lazy}, apply it immediately. {@link Stream} applies it to the head immediately and to the remaining
      * elements as they are evaluated. {@link Iterator} defers the action for every element, including the first,
-     * until that element is consumed. {@link io.vavr.concurrent.Future} applies it asynchronously upon successful
-     * completion.
+     * until that element is consumed.
      *
      * @param action The action that will be performed on the element(s).
      * @return this instance
@@ -491,21 +489,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     }
 
     /**
-     * Converts this to a {@link CompletableFuture}
-     *
-     * @return A new {@link CompletableFuture}, completed with the value if present, or completed exceptionally
-     * with the exception thrown by {@link #get()} otherwise (e.g. a {@link java.util.NoSuchElementException} if
-     * this value is empty).
-     */
-    default CompletableFuture<T> toCompletableFuture() {
-        final CompletableFuture<T> completableFuture = new CompletableFuture<>();
-        Try.of(this::get)
-                .onSuccess(completableFuture::complete)
-                .onFailure(completableFuture::completeExceptionally);
-        return completableFuture;
-    }
-
-    /**
      * Converts this to a {@link Validation}.
      *
      * @param <U>   value type of a {@code Valid}
@@ -540,10 +523,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Converts this to a Java array with component type {@code Object}
      *
      * <pre>{@code
-     * // = [] of type Object[]
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaArray()
-     *
      * // = [ok] of type Object[]
      * Try.of(() -> "ok")
      *    .toJavaArray()
@@ -571,10 +550,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Converts this to a Java array having an accurate component type.
      *
      * <pre>{@code
-     * // = [] of type String[]
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaArray(String.class)
-     *
      * // = [ok] of type String[]
      * Try.of(() -> "ok")
      *    .toJavaArray(String.class)
@@ -614,10 +589,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Converts this to a Java array having an accurate component type.
      *
      * <pre>{@code
-     * // = [] of type String[]
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaArray(String[]::new)
-     *
      * // = [ok] of type String[]
      * Try.of(() -> "ok")
      *    .toJavaArray(String[]::new)
@@ -643,10 +614,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.Collection#add(Object)}.
      *
      * <pre>{@code
-     * // = []
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaCollection(java.util.HashSet::new)
-     *
      * // = [ok]
      * Try.of(() -> "ok")
      *    .toJavaCollection(java.util.HashSet::new)
@@ -669,10 +636,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.List#add(Object)}.
      *
      * <pre>{@code
-     * // = []
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaList()
-     * 
      * // = [ok]
      * Try.of(() -> "ok")
      *    .toJavaList()
@@ -693,10 +656,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.List#add(Object)}.
      *
      * <pre>{@code
-     * // = []
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaList(java.util.ArrayList::new)
-     * 
      * // = [ok]
      * Try.of(() -> "ok")
      *    .toJavaList(java.util.ArrayList::new)
@@ -723,10 +682,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.Map#put(Object, Object)}.
      *
      * <pre>{@code
-     * // = {}
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaMap(s -> Tuple.of(s, s.length()))
-     * 
      * // = {ok=2}
      * Try.of(() -> "ok")
      *    .toJavaMap(s -> Tuple.of(s, s.length()))
@@ -750,10 +705,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.Map#put(Object, Object)}.
      *
      * <pre>{@code
-     * // = {}
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaMap(java.util.HashMap::new, s -> s, String::length)
-     * 
      * // = {ok=2}
      * Try.of(() -> "ok")
      *    .toJavaMap(java.util.TreeMap::new, s -> s, String::length)
@@ -782,10 +733,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.Map#put(Object, Object)}.
      *
      * <pre>{@code
-     * // = {}
-     * Future.<String> of(() -> { throw new Error(); })
-     *       .toJavaMap(java.util.HashMap::new, s -> Tuple.of(s, s.length()))
-     * 
      * // = {ok=2}
      * Try.of(() -> "ok")
      *     .toJavaMap(java.util.TreeMap::new, s -> Tuple.of(s, s.length()))
@@ -823,10 +770,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Converts this to an {@link java.util.Optional}.
      *
      * <pre>{@code
-     * // = Optional.empty
-     * Future.of(() -> { throw new Error(); })
-     *       .toJavaOptional()
-     *
      * // = Optional[ok]
      * Try.of(() -> "ok")
      *     .toJavaOptional()
@@ -847,10 +790,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.Set#add(Object)}.
      *
      * <pre>{@code
-     * // = []
-     * Future.of(() -> { throw new Error(); })
-     *       .toJavaSet()
-     * 
      * // = [ok]
      * Try.of(() -> "ok")
      *     .toJavaSet()
@@ -871,10 +810,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * Elements are added by calling {@link java.util.Set#add(Object)}.
      *
      * <pre>{@code
-     * // = []
-     * Future.of(() -> { throw new Error(); })
-     *       .toJavaSet(java.util.HashSet::new)
-     * 
      * // = [ok]
      * Try.of(() -> "ok")
      *     .toJavaSet(java.util.HashSet::new)
@@ -897,10 +832,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * {@code StreamSupport.stream(this.spliterator(), false)}.
      *
      * <pre>{@code
-     * // empty Stream
-     * Future.of(() -> { throw new Error(); })
-     *       .toJavaStream()
-     *
      * // Stream containing "ok"
      * Try.of(() -> "ok")
      *    .toJavaStream()
@@ -922,10 +853,6 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * {@code StreamSupport.stream(this.spliterator(), true)}.
      *
      * <pre>{@code
-     * // empty Stream
-     * Future.of(() -> { throw new Error(); })
-     *       .toJavaParallelStream()
-     *
      * // Stream containing "ok"
      * Try.of(() -> "ok")
      *    .toJavaParallelStream()
@@ -1323,8 +1250,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * <p>
      * If this is already a {@link Try}, this instance is returned unchanged. Otherwise, if this value is empty,
      * a new {@code Failure} wrapping the exception thrown by {@link #get()} is returned (typically a
-     * {@link java.util.NoSuchElementException}, or the original cause for a failed
-     * {@link io.vavr.concurrent.Future}); otherwise a new {@code Success(get())} is returned.
+     * {@link java.util.NoSuchElementException}); otherwise a new {@code Success(get())} is returned.
      *
      * @return A {@link Try} representing this value.
      */

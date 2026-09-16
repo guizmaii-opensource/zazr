@@ -1190,6 +1190,90 @@ public class TryTest extends AbstractValueTest {
     }
 
     @Nested
+    class FromcompletablefutureTests {
+        @Test
+        public void shouldConvertCompletedFutureToSuccess() {
+            final CompletableFuture<String> future = CompletableFuture.completedFuture("ok");
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.get()).isEqualTo("ok");
+        }
+
+        @Test
+        public void shouldConvertExceptionallyCompletedFutureToFailureWithUnwrappedCause() {
+            final RuntimeException cause = new RuntimeException("boom");
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(cause);
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldConvertCancelledFutureToFailureWithCancellationException() {
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            future.cancel(true);
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(java.util.concurrent.CancellationException.class);
+        }
+
+        @Test
+        public void shouldRethrowFatalCauseFromExceptionallyCompletedFuture() {
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            future.completeExceptionally(new InterruptedException());
+            assertThatThrownBy(() -> Try.fromCompletableFuture(future))
+              .isInstanceOf(InterruptedException.class);
+        }
+
+        @Test
+        public void shouldBlockUntilPendingFutureIsCompletedFromAnotherThread() throws InterruptedException {
+            final CompletableFuture<String> future = new CompletableFuture<>();
+            final long delayMillis = 200;
+            final Thread completer = new Thread(() -> {
+                try {
+                    Thread.sleep(delayMillis);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                future.complete("done");
+            });
+            completer.start();
+            final long startNanos = System.nanoTime();
+            final Try<String> result = Try.fromCompletableFuture(future);
+            final long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
+            completer.join();
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.get()).isEqualTo("done");
+            assertThat(elapsedMillis).isGreaterThanOrEqualTo(delayMillis);
+        }
+
+        @Test
+        public void shouldConvertFutureCompletedWithNullToSuccessOfNull() {
+            final CompletableFuture<String> future = CompletableFuture.completedFuture(null);
+            final Try<String> result = Try.fromCompletableFuture(future);
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.get()).isNull();
+        }
+
+        @Test
+        public void shouldRoundTripSuccessThroughToCompletableFuture() {
+            final Try<String> t = Try.success("ok");
+            final Try<String> result = Try.fromCompletableFuture(t.toCompletableFuture());
+            assertThat(result).isEqualTo(t);
+        }
+
+        @Test
+        public void shouldRoundTripFailureThroughToCompletableFutureWithSameCauseInstance() {
+            final RuntimeException cause = new RuntimeException("boom");
+            final Try<String> t = Try.<String>failure(cause);
+            final Try<String> result = Try.fromCompletableFuture(t.toCompletableFuture());
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+    }
+
+    @Nested
     class Tovalidation2Tests {
         @Test
         public void shouldConvertFailureToValidationLeft() {

@@ -13,14 +13,12 @@ import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.collection.Seq;
 import io.vavr.collection.Stream;
-import io.vavr.concurrent.Future;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
 import io.vavr.control.Validation;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -254,34 +252,6 @@ public class APITest {
         @Test
         public void shouldLeftReturnNotNull() {
             assertThat(Left(null)).isNotNull();
-        }
-
-        @Test
-        public void shouldFutureWithSupplierReturnNotNull() {
-            final Future<?> future = Future(() -> 1).await();
-            assertThat(future).isNotNull();
-            assertThat(future.isSuccess()).isTrue();
-        }
-
-        @Test
-        public void shouldFutureWithinExecutorWithSupplierReturnNotNull() {
-            final Future<?> future = Future(Executors.newSingleThreadExecutor(), () -> 1).await();
-            assertThat(future).isNotNull();
-            assertThat(future.isSuccess()).isTrue();
-        }
-
-        @Test
-        public void shouldFutureWithValueReturnNotNull() {
-            final Future<?> future = Future(1).await();
-            assertThat(future).isNotNull();
-            assertThat(future.isSuccess()).isTrue();
-        }
-
-        @Test
-        public void shouldFutureWithinExecutorWithValueReturnNotNull() {
-            final Future<?> future = Future(Executors.newSingleThreadExecutor(), 1).await();
-            assertThat(future).isNotNull();
-            assertThat(future.isSuccess()).isTrue();
         }
 
         @Test
@@ -1714,98 +1684,6 @@ public class APITest {
             // This forms a sequence rₙ = 2ⁿ - 1, and the yield sums all rᵢ.
             // Hence total = Σ(2ⁱ - 1) for i = 1..n = (2ⁿ⁺¹ - 2) - n
             assertThat(result.get()).isEqualTo((1 << (8 + 1)) - 2 - 8);
-        }
-
-        @Test
-        public void shouldIterateForFuture1() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1)
-            ).yield(i1 -> i1);
-            assertThat(result.get()).isEqualTo(1);
-        }
-
-        @Test
-        public void shouldIterateForFuture2() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2)
-            ).yield((i1, i2) -> i1 + i2);
-            assertThat(result.get()).isEqualTo(3);
-        }
-
-        @Test
-        public void shouldIterateForFuture3() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2),
-                Future.of(() -> 3)
-            ).yield((i1, i2, i3) -> i1 + i2 + i3);
-            assertThat(result.get()).isEqualTo(6);
-        }
-
-        @Test
-        public void shouldIterateForFuture4() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2),
-                Future.of(() -> 3),
-                Future.of(() -> 4)
-            ).yield((i1, i2, i3, i4) -> i1 + i2 + i3 + i4);
-            assertThat(result.get()).isEqualTo(10);
-        }
-
-        @Test
-        public void shouldIterateForFuture5() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2),
-                Future.of(() -> 3),
-                Future.of(() -> 4),
-                Future.of(() -> 5)
-            ).yield((i1, i2, i3, i4, i5) -> i1 + i2 + i3 + i4 + i5);
-            assertThat(result.get()).isEqualTo(15);
-        }
-
-        @Test
-        public void shouldIterateForFuture6() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2),
-                Future.of(() -> 3),
-                Future.of(() -> 4),
-                Future.of(() -> 5),
-                Future.of(() -> 6)
-            ).yield((i1, i2, i3, i4, i5, i6) -> i1 + i2 + i3 + i4 + i5 + i6);
-            assertThat(result.get()).isEqualTo(21);
-        }
-
-        @Test
-        public void shouldIterateForFuture7() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2),
-                Future.of(() -> 3),
-                Future.of(() -> 4),
-                Future.of(() -> 5),
-                Future.of(() -> 6),
-                Future.of(() -> 7)
-            ).yield((i1, i2, i3, i4, i5, i6, i7) -> i1 + i2 + i3 + i4 + i5 + i6 + i7);
-            assertThat(result.get()).isEqualTo(28);
-        }
-
-        @Test
-        public void shouldIterateForFuture8() {
-            final Future<Integer> result = For(
-                Future.of(() -> 1),
-                Future.of(() -> 2),
-                Future.of(() -> 3),
-                Future.of(() -> 4),
-                Future.of(() -> 5),
-                Future.of(() -> 6),
-                Future.of(() -> 7),
-                Future.of(() -> 8)
-            ).yield((i1, i2, i3, i4, i5, i6, i7, i8) -> i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8);
-            assertThat(result.get()).isEqualTo(36);
         }
 
         @Test

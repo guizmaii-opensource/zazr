@@ -161,7 +161,6 @@ def genAPIAliases(im: ImportManager): String = {
 
   val OptionType = im.getType("io.vavr.control.Option")
   val EitherType = im.getType("io.vavr.control.Either")
-  val FutureType = im.getType("io.vavr.concurrent.Future")
   val CheckedFunction0Type = im.getType("io.vavr.CheckedFunction0")
   val TryType = im.getType("io.vavr.control.Try")
   val ValidationType = im.getType("io.vavr.control.Validation")
@@ -187,7 +186,6 @@ def genAPIAliases(im: ImportManager): String = {
   val SortedSetType = im.getType("io.vavr.collection.SortedSet")
   val JavaComparatorType = im.getType("java.util.Comparator")
   val JavaMapType = im.getType("java.util.Map")
-  val ExecutorType = im.getType("java.util.concurrent.Executor")
   val SupplierType = im.getType("java.util.function.Supplier")
 
   def genTraversableAliases(traversableType: String, returnType: String, name: String, sorted: Boolean = false) = {
@@ -521,57 +519,6 @@ def genAPIAliases(im: ImportManager): String = {
         return ($EitherType.Left<L, R>) $EitherType.left(left);
     }
 
-    // -- Future
-
-    /$javadoc
-     * Alias for {@link $FutureType#of($CheckedFunction0Type)}
-     *
-     * @param <T>         Type of the computation result.
-     * @param computation A computation.
-     * @return A new {@link $FutureType} instance.
-     * @throws NullPointerException if computation is null.
-     */
-    public static <T $nullableBound> $FutureType<T> Future($CheckedFunction0Type<? extends T> computation) {
-        return $FutureType.of(computation);
-    }
-
-    /$javadoc
-     * Alias for {@link $FutureType#of($ExecutorType, $CheckedFunction0Type)}
-     *
-     * @param <T>             Type of the computation result.
-     * @param executorService An {@link $ExecutorType} used to run the computation.
-     * @param computation     A computation.
-     * @return A new {@link $FutureType} instance.
-     * @throws NullPointerException if one of executorService or computation is null.
-     */
-    public static <T $nullableBound> $FutureType<T> Future($ExecutorType executorService, $CheckedFunction0Type<? extends T> computation) {
-        return $FutureType.of(executorService, computation);
-    }
-
-    /$javadoc
-     * Alias for {@link $FutureType#successful(Object)}
-     *
-     * @param <T>    The value type of a successful result.
-     * @param result The result.
-     * @return A succeeded {@link $FutureType}.
-     */
-    public static <T $nullableBound> $FutureType<T> Future(T result) {
-        return $FutureType.successful(result);
-    }
-
-    /$javadoc
-     * Alias for {@link $FutureType#successful($ExecutorType, Object)}
-     *
-     * @param <T>             The value type of a successful result.
-     * @param executorService An {@link $ExecutorType} used to run the future's callbacks.
-     * @param result          The result.
-     * @return A succeeded {@link $FutureType}.
-     * @throws NullPointerException if executorService is null
-     */
-    public static <T $nullableBound> $FutureType<T> Future($ExecutorType executorService, T result) {
-        return $FutureType.successful(executorService, result);
-    }
-
     // -- Lazy
 
     /$javadoc
@@ -783,14 +730,13 @@ def genAPIForComprehensions(im: ImportManager, isLazy: Boolean): String = {
   val OptionType = im.getType("io.vavr.control.Option")
   val IteratorType = im.getType("io.vavr.collection.Iterator")
   val EitherType = im.getType("io.vavr.control.Either")
-  val FutureType = im.getType("io.vavr.concurrent.Future")
   val TryType = im.getType("io.vavr.control.Try")
   val ListType = im.getType("io.vavr.collection.List")
   val ValidationType = im.getType("io.vavr.control.Validation")
   val Objects = im.getType("java.util.Objects")
   im.getType("java.util.function.BiFunction")
 
-  val monadicTypesFor = List("Iterable", OptionType, FutureType, TryType, ListType, EitherType, ValidationType)
+  val monadicTypesFor = List("Iterable", OptionType, TryType, ListType, EitherType, ValidationType)
   val monadicTypesThatNeedParameter = List(EitherType, ValidationType)
 
   // Either has a left-hand side, Validation has an error side
@@ -826,15 +772,9 @@ def genAPIForComprehensions(im: ImportManager, isLazy: Boolean): String = {
          * <p>The first argument ({@code ts1}) is the initial ${mtype}. Each subsequent
          * argument ({@code ts2} .. {@code ts$i}) is a function that receives all values
          * bound so far and returns the next ${mtype}.
-         ${if (mtype == FutureType) xs"""
-         * This method only constructs the comprehension; the functions {@code ts2} .. {@code ts$i}
-         * are applied as the preceding Futures complete, asynchronously with respect to the call
-         * to {@code yield(...)}. Note that {@code ts1} is an already running Future.</p>
-         """ else xs"""
          * This method only constructs the
          * lazy comprehension; underlying effects are evaluated when {@code yield(...)}
          * is invoked.</p>
-         """}
          *
          ${(0 to i).gen(j => if (j == 0) "*" else if (j == 1) s"* @param ts1 the initial ${mtype}" else if (j == 2) s"* @param ts2 a function of the previously bound value returning the 2nd ${mtype}" else s"* @param ts$j a function of the ${j - 1} previously bound values returning the ${j.ordinal} ${mtype}")(using "\n")}
          ${if (isComplex) s"* @param <L> ${lTypeDoc(mtype)} of all ${mtype}s\n" else ""}
@@ -905,13 +845,8 @@ def genAPIForComprehensions(im: ImportManager, isLazy: Boolean): String = {
          * A lazily evaluated {@code For}-comprehension with ${i.numerus(mtype)}.
          *
          * <p>Constructed via {@code For(...)} and evaluated by calling {@code yield(...)}.
-         ${if (mtype == FutureType) xs"""
-         * Construction is side-effect free; the bound functions are applied as the underlying
-         * Futures complete, once {@code yield(...)} has been invoked.</p>
-         """ else xs"""
          * Construction is side-effect free; underlying ${i.plural(mtype)} are traversed
          * only when {@code yield(...)} is invoked.</p>
-         """}
          *
          ${if (monadicTypesThatNeedParameter.contains(mtype)) s"* @param <L> ${lTypeDoc(mtype)} of all ${mtype}s\n" else ""}
          ${(1 to i).gen(j => s"* @param <T$j> the component type of the ${j.ordinal} ${mtype}")(using "\n")}
@@ -927,21 +862,14 @@ def genAPIForComprehensions(im: ImportManager, isLazy: Boolean): String = {
             /$javadoc
              * Produces results by mapping the Cartesian product of all bound values.
              *
-             ${if (mtype == FutureType) xs"""
-             * <p>Evaluates the comprehension by composing {@code flatMap} and {@code map} on the
-             * underlying Futures; the bound functions and {@code f} are invoked asynchronously
-             * as each Future completes.</p>
-             """ else xs"""
              * <p>Evaluates the comprehension by composing {@code flatMap} and {@code map} on the
              * underlying ${i.plural(mtype)}; the bound functions and {@code f} are invoked eagerly
              * during this call.</p>
-             """}
              *
              * @param f a function mapping a tuple of bound values to a result
              * @param <R> the element type of the resulting {@code $rtype}
              * @return ${
                if (mtype == OptionType) "an {@code Option} containing the mapped result, or {@code None} if any bound Option is empty"
-               else if (mtype == FutureType) "a {@code Future} that completes with the mapped result, or fails with the first failure encountered"
                else if (mtype == TryType) "a {@code Try} containing the mapped result, or the first {@code Failure} encountered"
                else if (mtype == ListType) "a {@code List} of the mapped results (empty if any bound List is empty)"
                else if (mtype == EitherType) "an {@code Either} containing the mapped result, or the first {@code Left} encountered"
@@ -1684,7 +1612,7 @@ def generateMainClasses(): Unit = {
          * }
          * }</pre>
          *
-         * Please note that values like Option, Try, Future, etc. are also iterable.
+         * Please note that values like Option, Try, etc. are also iterable.
          * <p>
          * Given a suitable function
          * f: {@code (v1, v2, ..., vN) -> ...} and {@code 1 <= N <= 8} iterables, the result is a lazily evaluated
@@ -2897,9 +2825,6 @@ def generateTestClasses(): Unit = {
       val OptionType = im.getType("io.vavr.control.Option")
       val EitherType = im.getType("io.vavr.control.Either")
       val ValidationType = im.getType("io.vavr.control.Validation")
-      val FutureType = im.getType("io.vavr.concurrent.Future")
-      val ExecutorsType = im.getType("java.util.concurrent.Executors")
-      val ExecutorService = s"$ExecutorsType.newSingleThreadExecutor()"
       val TryType = im.getType("io.vavr.control.Try")
       val JavaComparatorType = im.getType("java.util.Comparator")
 
@@ -2909,30 +2834,11 @@ def generateTestClasses(): Unit = {
         (EitherType -> ("Object, ", "right")),
         (ValidationType -> ("Object, ", "valid"))
       )
-      val monadicFunctionTypesFor = List(FutureType, TryType)
+      val monadicFunctionTypesFor = List(TryType)
 
       val d = "$"
 
       im.getStatic("io.vavr.API.*")
-
-      def genFutureTests(name: String, value: String, success: Boolean): String = {
-        val check = if (success) "isSuccess" else "isFailure"
-        xs"""
-          @$test
-          public void shouldFutureWith${name}ReturnNotNull() {
-              final $FutureType<?> future = Future($value).await();
-              assertThat(future).isNotNull();
-              assertThat(future.$check()).isTrue();
-          }
-
-          @$test
-          public void shouldFutureWithinExecutorWith${name}ReturnNotNull() {
-              final $FutureType<?> future = Future($ExecutorService, $value).await();
-              assertThat(future).isNotNull();
-              assertThat(future.$check()).isTrue();
-          }
-        """
-      }
 
       def genExtAliasTest(name: String, func: String, value: String, check: String): String = {
         xs"""
@@ -3053,10 +2959,6 @@ def generateTestClasses(): Unit = {
 
             """
           })(using "\n\n")}
-
-          ${genFutureTests("Supplier", "() -> 1", success = true)}
-
-          ${genFutureTests("Value", "1", success = true)}
 
           ${genSimpleAliasTest("Lazy", "() -> 1")}
 
