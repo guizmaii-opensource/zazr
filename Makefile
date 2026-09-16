@@ -3,6 +3,8 @@
 
 MVN := ./mvnw -B
 TEST ?=
+MODULE ?=
+PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
@@ -26,9 +28,9 @@ test-compile: ## compile main and test sources
 test: ## run the whole test suite
 	$(MVN) test
 
-test-one: ## run one test class or method: make test-one TEST=VectorTest  |  TEST='VectorTest#shouldAppend*'
-	@test -n "$(TEST)" || { echo "usage: make test-one TEST=ClassName[#method]"; exit 1; }
-	$(MVN) test -Dtest='$(TEST)' -Dsurefire.failIfNoSpecifiedTests=false
+test-one: ## run one test class or method: make test-one TEST=VectorTest [MODULE=zazr-core]  |  TEST='VectorTest#shouldAppend*'
+	@test -n "$(TEST)" || { echo "usage: make test-one TEST=ClassName[#method] [MODULE=zazr-core]"; exit 1; }
+	$(MVN) $(PL) test -Dtest='$(TEST)' -Dsurefire.failIfNoSpecifiedTests=false
 
 package: ## build the jars (runs tests)
 	$(MVN) package
@@ -49,8 +51,8 @@ fmt-check: ## fail if sources are not formatted (spotless check)
 nullness: ## NullAway / JSpecify nullness check
 	$(MVN) -Pnullaway compile
 
-bench: ## run the JMH benchmarks (io.vavr.JmhRunner)
-	$(MVN) -Pbenchmark test
+bench: ## run the JMH benchmarks (io.vavr.JmhRunner, zazr-benchmark module)
+	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
 javadoc: ## build the javadoc (doclint)
 	$(MVN) javadoc:javadoc
