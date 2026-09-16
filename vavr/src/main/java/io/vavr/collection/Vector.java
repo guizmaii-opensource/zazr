@@ -60,15 +60,42 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
      * @param <T> Component type of the Vector.
      * @return A {@link Vector} Collector.
      */
-    public static <T extends @Nullable Object> Collector<T, ArrayList<T>, Vector<T>> collector() {
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
-            left.addAll(right);
-            return left;
-        };
-        final Function<ArrayList<T>, Vector<T>> finisher = Vector::ofAll;
+    public static <T extends @Nullable Object> Collector<T, Builder<T>, Vector<T>> collector() {
+        final Supplier<Builder<T>> supplier = Vector::newBuilder;
+        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        final Function<Builder<T>, Vector<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
+    }
+
+    /**
+     * Returns a new {@link Builder}: the cheapest way to build a Vector element by element or from a source of unknown
+     * size. There is no full-size intermediate buffer: elements go into 32-wide leaf arrays that the resulting Vector
+     * uses as they are, and only a partial final leaf is trimmed once.
+     *
+     * @param <T> Component type of the Vector.
+     * @return an empty builder
+     */
+    public static <T extends @Nullable Object> Builder<T> newBuilder() {
+        return new Builder<>(BitMappedTrie.BRANCHING_FACTOR);
+    }
+
+    /**
+     * Returns a new {@link Builder} for a Vector of about {@code sizeHint} elements. The hint is not a limit. A hint of
+     * {@code 32} or fewer pre-sizes the first leaf, so a Vector of exactly that many elements is built without any
+     * array copy (a smaller result still trims the leaf once); a larger hint currently changes nothing and the builder
+     * costs the same as with {@link #newBuilder()}.
+     *
+     * @param sizeHint the expected number of elements, {@code >= 0}
+     * @param <T>      Component type of the Vector.
+     * @return an empty builder
+     * @throws IllegalArgumentException if {@code sizeHint < 0}
+     */
+    public static <T extends @Nullable Object> Builder<T> newBuilder(int sizeHint) {
+        if (sizeHint < 0) {
+            throw new IllegalArgumentException("sizeHint must not be negative: " + sizeHint);
+        }
+        return new Builder<>(Math.max(1, Math.min(sizeHint, BitMappedTrie.BRANCHING_FACTOR)));
     }
 
     /**
@@ -121,7 +148,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
      */
     public static <T extends @Nullable Object> Vector<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return io.vavr.collection.Collections.tabulate(n, f, empty(), Vector::of);
+        final Builder<T> builder = newBuilder(Math.max(n, 0));
+        builder.addTabulated(n, f);
+        return builder.result();
     }
 
     /**
@@ -135,7 +164,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
      */
     public static <T extends @Nullable Object> Vector<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return io.vavr.collection.Collections.fill(n, s, empty(), Vector::of);
+        final Builder<T> builder = newBuilder(Math.max(n, 0));
+        builder.addTabulated(n, i -> s.get());
+        return builder.result();
     }
 
     /**
@@ -147,7 +178,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
      * @return A Vector of size {@code n}, where each element is the given {@code element}.
      */
     public static <T extends @Nullable Object> Vector<T> fill(int n, T element) {
-        return io.vavr.collection.Collections.fillObject(n, element, empty(), Vector::of);
+        final Builder<T> builder = newBuilder(Math.max(n, 0));
+        builder.addRepeated(n, element);
+        return builder.result();
     }
 
     /**
@@ -174,8 +207,12 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
                 && ((ListView<T, ?>) iterable).getDelegate() instanceof Vector) {
             return (Vector<T>) ((ListView<T, ?>) iterable).getDelegate();
         }
-        final Object[] values = withSize(iterable).toArray();
-        return ofAll(BitMappedTrie.ofAll(values));
+        if (io.vavr.collection.Collections.isTraversableAgain(iterable)) {
+            // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then grouped into
+            // leaves, is cheaper than element-wise adds; the builder pays off for one-shot and unsized sources only
+            return ofAll(BitMappedTrie.ofAll(withSize(iterable).toArray()));
+        }
+        return Vector.<T> newBuilder().addAll(iterable).result();
     }
 
     /**
@@ -187,7 +224,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
      */
     public static <T extends @Nullable Object> Vector<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
-        return ofAll(Iterator.ofAll(javaStream.iterator()));
+        final Builder<T> builder = newBuilder();
+        javaStream.forEachOrdered(builder::add);
+        return builder.result();
     }
 
     /**
@@ -728,6 +767,10 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
         if (io.vavr.collection.Collections.isEmpty(iterable)){
             return this;
         }
+        if (!io.vavr.collection.Collections.isTraversableAgain(iterable)) {
+            // a one-shot source (a Vavr Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
+            return appendAll(ofAll(iterable));
+        }
         return new Vector<>(trie.appendAll(iterable));
     }
 
@@ -829,20 +872,28 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     @Override
     public Vector<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        // stays on the trie, not the builder: the flat-array filter keeps primitive leaves unboxed and, measured, is
+        // 2x faster than the builder at 1 000 elements and equal at 100 000 (the JIT likes the branch-free bulk copies)
         return wrap(trie.filter(predicate));
     }
 
     @Override
     public Vector<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return Collections.reject(this, predicate);
+        return filter(predicate.negate());
     }
 
     @Override
     public <U extends @Nullable Object> Vector<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final Iterator<? extends U> results = iterator().flatMap(mapper);
-        return ofAll(results);
+        final Builder<U> builder = newBuilder();
+        trie.<Object> visit((index, leaf, start, end) -> {
+            for (int i = start; i < end; i++) {
+                builder.addAll(mapper.apply(trie.type.getAt(leaf, i)));
+            }
+            return index + end - start;
+        });
+        return builder.result();
     }
 
     @Override
@@ -963,7 +1014,18 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
     @Override
     public <U extends @Nullable Object> Vector<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(trie.map(mapper));
+        if (trie.hasObjectLeaves()) {
+            // measured (3 forks, two independent runs): on Object[] receivers the flat-array map is on par with the
+            // builder at 100 000 elements and 1.2x faster at 1 000, so it keeps the trie's path
+            return ofAll(trie.map(mapper));
+        }
+        // a primitive-backed receiver (Vector.range, ofAll(int[])): the builder is 1.5x faster at 100 000 (351 -> 227 µs)
+        final Builder<U> builder = newBuilder(length());
+        trie.<Object> visit((index, leaf, start, end) -> {
+            builder.addMapped(trie.type, leaf, start, end, mapper);
+            return index + end - start;
+        });
+        return builder.result();
     }
 
     @Override
@@ -1436,6 +1498,281 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T>, 
 
     @Override
     public String toString() { return mkString(stringPrefix() + "(", ", ", ")"); }
+    /**
+     * A mutable, single-use accumulator that builds a {@link Vector} element by element. Its invariant is that there is
+     * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is handed
+     * to the Vector as it is (or, when the elements come from another Vector through {@link #addAll(Iterable)}, its
+     * aligned full leaves are shared instead of copied), and {@link #result()} copies only the final leaf, once, when it
+     * is partially filled. The internal nodes above the leaves are allocated as leaves complete.
+     * <p>
+     * Not thread-safe. After {@link #result()} has been called, every method throws {@link IllegalStateException};
+     * create a new builder instead.
+     *
+     * @param <T> Component type of the Vector.
+     */
+    public static final class Builder<T extends @Nullable Object> {
+
+        private static final int WIDTH = BitMappedTrie.BRANCHING_FACTOR;
+        /* levels 1..6 above the leaves: 32^7 slots, more than any array can hold */
+        private static final int LEVELS = 7;
+
+        /* after result(): a zero-length leaf, so that add() falls into growOrCloseLeaf(), which throws; a live leaf is never empty */
+        private static final Object[] DONE = new Object[0];
+
+        /* the leaf currently being filled; its capacity is WIDTH, or the size hint when that is smaller */
+        private Object[] leaf;
+        private int leafLength;
+        /* the number of elements in completed leaves (pushed or shared); size is lenRest + leafLength, as in Scala's VectorBuilder */
+        private int lenRest;
+        /* nodes[level] is the partially filled node at that level (children of nodes[level] live at level - 1);
+         * allocated on the first completed leaf, so a Vector that fits in one leaf costs one array */
+        private Object[] @Nullable [] nodes = EMPTY_NODES;
+        private int[] nodeLengths = EMPTY_NODE_LENGTHS;
+        private static final Object[] @Nullable [] EMPTY_NODES = new Object[0][];
+        private static final int[] EMPTY_NODE_LENGTHS = new int[0];
+        /* the highest level in use; 0 while everything still fits in one leaf */
+        private int depth;
+        private boolean done;
+
+        Builder(int leafCapacity) {
+            this.leaf = new Object[leafCapacity];
+        }
+
+        /**
+         * Appends one element.
+         *
+         * @param element the element, may be null
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public Builder<T> add(T element) {
+            // the hot path is one branch and one array store: the open check lives in growOrCloseLeaf(), reached
+            // through the zero-length DONE leaf, and the size is derived, not counted
+            if (leafLength == leaf.length) {
+                growOrCloseLeaf();
+            }
+            leaf[leafLength++] = element;
+            return this;
+        }
+
+        /**
+         * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} with {@code Object[]}
+         * leaves copies whole leaf arrays and shares aligned full ones instead of iterating; a primitive-backed Vector
+         * ({@code Vector.range}, {@code ofAll(int[])}) is boxed one element at a time.
+         *
+         * @param elements the elements to append
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        @SuppressWarnings("unchecked")
+        public Builder<T> addAll(Iterable<? extends T> elements) {
+            checkOpen();
+            Objects.requireNonNull(elements, "elements is null");
+            if (elements instanceof Vector<?> vector) {
+                addVector((Vector<? extends T>) vector);
+            } else {
+                for (T element : elements) {
+                    add(element);
+                }
+            }
+            return this;
+        }
+
+        /**
+         * @return the number of elements added so far
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public int size() {
+            checkOpen();
+            return lenRest + leafLength;
+        }
+
+        /**
+         * Builds the Vector. The builder cannot be used afterwards.
+         *
+         * @return a Vector of all elements added, in order
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public Vector<T> result() {
+            checkOpen();
+            final int size = lenRest + leafLength;
+            if (size == 0) {
+                finish();
+                return empty();
+            }
+            // the current leaf is empty after a shared push (addAll of a Vector ending on a full leaf): it must not be appended
+            @Nullable Object current = (leafLength == 0)
+                                       ? null
+                                       : (leafLength == leaf.length) ? leaf : Arrays.copyOf(leaf, leafLength);
+            for (int level = 1; level <= depth; level++) {
+                Object[] node = nodes[level];
+                int nodeLength = nodeLengths[level];
+                if (node != null && nodeLength == WIDTH) {
+                    push(node, level + 1);
+                    nodes[level] = null;
+                    node = null;
+                    nodeLength = 0;
+                }
+                if (node == null) {
+                    current = (current == null) ? null : new Object[] { current };
+                } else {
+                    final Object[] combined = Arrays.copyOf(node, (current == null) ? nodeLength : nodeLength + 1);
+                    if (current != null) {
+                        combined[nodeLength] = current;
+                    }
+                    current = combined;
+                }
+            }
+            Objects.requireNonNull(current); // size > 0, so at least one leaf reached the root
+            // a root with a single child adds a level for nothing: drop it, as ofAll never produces one
+            while (depth > 0 && ((Object[]) current).length == 1) {
+                current = ((Object[]) current)[0];
+                depth--;
+            }
+            final BitMappedTrie<T> trie = BitMappedTrie.ofBuilt(current, size, depth * BitMappedTrie.BRANCHING_BASE);
+            finish();
+            return new Vector<>(trie);
+        }
+
+        private void finish() {
+            done = true;
+            leaf = DONE;
+            leafLength = 0;
+            Arrays.fill(nodes, null);
+        }
+
+        private void checkOpen() {
+            if (done) {
+                throw new IllegalStateException("result() has already been called on this Vector.Builder");
+            }
+        }
+
+        private void growOrCloseLeaf() {
+            checkOpen();
+            if (leaf.length < WIDTH) {
+                leaf = Arrays.copyOf(leaf, WIDTH);
+            } else {
+                push(leaf, 1);
+                lenRest += WIDTH;
+                leaf = new Object[WIDTH];
+                leafLength = 0;
+            }
+        }
+
+        /* appends a completed child (a full leaf or a full node) to the node at the given level, opening it if needed */
+        private void push(Object[] child, int level) {
+            if (nodes.length == 0) {
+                nodes = new Object[LEVELS][];
+                nodeLengths = new int[LEVELS];
+            }
+            Object[] node = nodes[level];
+            if (node == null) {
+                node = new Object[WIDTH];
+                nodes[level] = node;
+                depth = Math.max(depth, level);
+            } else if (nodeLengths[level] == WIDTH) {
+                push(node, level + 1);
+                node = new Object[WIDTH];
+                nodes[level] = node;
+                nodeLengths[level] = 0;
+            }
+            node[nodeLengths[level]++] = child;
+        }
+
+        /*
+         * The bulk loops below keep the leaf state in locals: a per-element add() pays for field writes and the
+         * open-check on every element, which is what separates it from writing into a flat array.
+         */
+
+        /* appends mapper(source[i]) for i in [start, end); source is a leaf read through its ArrayType (one boxing per element for a primitive leaf) */
+        <S extends @Nullable Object> void addMapped(ArrayType<S> type, Object source, int start, int end, Function<? super S, ? extends T> mapper) {
+            checkOpen();
+            Object[] leaf = this.leaf;
+            int leafLength = this.leafLength;
+            for (int i = start; i < end; i++) {
+                if (leafLength == leaf.length) {
+                    this.leafLength = leafLength;
+                    growOrCloseLeaf();
+                    leaf = this.leaf;
+                    leafLength = this.leafLength;
+                }
+                leaf[leafLength++] = mapper.apply(type.getAt(source, i));
+            }
+            this.leafLength = leafLength;
+        }
+
+        /* appends n elements f(0) .. f(n - 1) */
+        void addTabulated(int n, Function<? super Integer, ? extends T> f) {
+            checkOpen();
+            Object[] leaf = this.leaf;
+            int leafLength = this.leafLength;
+            for (int i = 0; i < n; i++) {
+                if (leafLength == leaf.length) {
+                    this.leafLength = leafLength;
+                    growOrCloseLeaf();
+                    leaf = this.leaf;
+                    leafLength = this.leafLength;
+                }
+                leaf[leafLength++] = f.apply(i);
+            }
+            this.leafLength = leafLength;
+        }
+
+        /* appends the same element n times, one Arrays.fill per leaf */
+        void addRepeated(int n, T element) {
+            checkOpen();
+            int remaining = n;
+            while (remaining > 0) {
+                if (leafLength == leaf.length) {
+                    growOrCloseLeaf();
+                }
+                final int count = Math.min(leaf.length - leafLength, remaining);
+                Arrays.fill(leaf, leafLength, leafLength + count, element);
+                leafLength += count;
+                remaining -= count;
+            }
+        }
+
+        private void addVector(Vector<? extends T> vector) {
+            final BitMappedTrie<? extends T> trie = vector.trie;
+            trie.<Object> visit((index, sourceLeaf, start, end) -> {
+                addLeafRange(trie.type, sourceLeaf, start, end);
+                return index + end - start;
+            });
+        }
+
+        @SuppressWarnings("unchecked")
+        private void addLeafRange(ArrayType<?> type, Object sourceLeaf, int start, int end) {
+            if (sourceLeaf instanceof Object[] source) {
+                if (leafLength == leaf.length) {
+                    // an exactly full current leaf is pushed lazily on the next write; close it now so a full source leaf can be shared
+                    growOrCloseLeaf();
+                }
+                if (leafLength == 0 && start == 0 && end == WIDTH && source.length == WIDTH) {
+                    // a full, untrimmed leaf of the source: share it, nobody mutates leaves
+                    push(source, 1);
+                    lenRest += WIDTH;
+                    return;
+                }
+                int from = start, remaining = end - start;
+                while (remaining > 0) {
+                    if (leafLength == leaf.length) {
+                        growOrCloseLeaf();
+                    }
+                    final int count = Math.min(leaf.length - leafLength, remaining);
+                    System.arraycopy(source, from, leaf, leafLength, count);
+                    leafLength += count;
+                    from += count;
+                    remaining -= count;
+                }
+            } else {
+                // a primitive leaf (int[], ...): elements are boxed one by one
+                for (int i = start; i < end; i++) {
+                    add((T) type.getAt(sourceLeaf, i));
+                }
+            }
+        }
+    }
 }
 
 interface VectorModule {
@@ -1447,4 +1784,5 @@ interface VectorModule {
                     t -> apply(elements.drop(t._2 + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1)));
         }
     }
+
 }

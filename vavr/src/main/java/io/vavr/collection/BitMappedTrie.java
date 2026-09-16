@@ -74,6 +74,15 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
         return new BitMappedTrie<>(type, array, 0, size, shift);
     }
 
+    /**
+     * Wraps node arrays produced by {@link Vector.Builder}: {@code root} is a leaf ({@code depthShift == 0}) or a tree of
+     * {@code Object[]} nodes whose children are left-aligned and truncated to their content, exactly the shape
+     * {@link #ofAll(Object)} produces. The arrays are owned by the returned trie and must not be mutated afterwards.
+     */
+    static <T extends @Nullable Object> BitMappedTrie<T> ofBuilt(Object root, int length, int depthShift) {
+        return new BitMappedTrie<>(obj(), root, 0, length, depthShift);
+    }
+
     private BitMappedTrie<T> boxed() { return map(identity()); }
 
     BitMappedTrie<T> prependAll(Iterable<? extends T> iterable) {
@@ -317,6 +326,20 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
     }
     private int getMin(int start, int index, Object leaf) { return Math.min(type.lengthOf(leaf), start + length - index); }
 
+    <U extends @Nullable Object> BitMappedTrie<U> map(Function<? super T, ? extends U> mapper) {
+        final Object results = obj().newInstance(length);
+        this.<T> visit((index, leaf, start, end) -> map(mapper, results, index, leaf, start, end));
+        return BitMappedTrie.ofAll(results);
+    }
+    private <U extends @Nullable Object> int map(Function<? super T, ? extends U> mapper, Object results, int index, T leaf, int start, int end) {
+        for (int i = start; i < end; i++) {
+            obj().setAt(results, index++, mapper.apply(type.getAt(leaf, i)));
+        }
+        return index;
+    }
+
+    /* keeps the receiver's leaf type: a primitive-backed trie is filtered into primitive leaves, without boxing.
+     * Vector.filter deliberately uses this rather than the builder: see the comment there. */
     BitMappedTrie<T> filter(Predicate<? super T> predicate) {
         final Object results = type.newInstance(length());
         final int length = this.<T> visit((index, leaf, start, end) -> filter(predicate, results, index, leaf, start, end));
@@ -334,19 +357,13 @@ final class BitMappedTrie<T extends @Nullable Object> implements Serializable {
         return index;
     }
 
-    <U extends @Nullable Object> BitMappedTrie<U> map(Function<? super T, ? extends U> mapper) {
-        final Object results = obj().newInstance(length);
-        this.<T> visit((index, leaf, start, end) -> map(mapper, results, index, leaf, start, end));
-        return BitMappedTrie.ofAll(results);
-    }
-    private <U extends @Nullable Object> int map(Function<? super T, ? extends U> mapper, Object results, int index, T leaf, int start, int end) {
-        for (int i = start; i < end; i++) {
-            obj().setAt(results, index++, mapper.apply(type.getAt(leaf, i)));
-        }
-        return index;
-    }
-
     int length() { return length; }
+
+    @SuppressWarnings("ObjectEquality")
+    boolean hasObjectLeaves() { return type == obj(); }
+
+    /* for tests: the shift of the root level, 0 for a single leaf */
+    int depthShift() { return depthShift; }
 }
 
 @FunctionalInterface

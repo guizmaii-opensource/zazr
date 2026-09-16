@@ -46,7 +46,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         return empty().isOrdered();
     }
 
-    protected abstract <T> Collector<T, ArrayList<T>, ? extends Traversable<T>> collector();
+    protected abstract <T> Collector<T, ?, ? extends Traversable<T>> collector();
 
     @Override
     protected abstract <T> Traversable<T> empty();

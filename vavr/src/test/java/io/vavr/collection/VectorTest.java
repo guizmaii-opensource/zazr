@@ -8,7 +8,6 @@ import io.vavr.collection.JavaConverters.ListView;
 import io.vavr.control.Option;
 import java.io.InvalidObjectException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -21,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class VectorTest extends AbstractIndexedSeqTest {
 
     @Override
-    protected <T> Collector<T, ArrayList<T>, Vector<T>> collector() {
+    protected <T> Collector<T, Vector.Builder<T>, Vector<T>> collector() {
         return Vector.collector();
     }
 
