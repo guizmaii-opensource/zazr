@@ -1,7 +1,5 @@
 package io.vavr.collection;
 
-import io.vavr.Function1;
-import io.vavr.PartialFunction;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Option;
@@ -21,7 +19,6 @@ import org.assertj.core.api.IterableAssert;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.Some;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -440,27 +437,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         ))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
-    }
-
-    @Nested
-    class AspartialfunctionTests {
-        @Test
-        public void shouldImplementPartialFunction() {
-            PartialFunction<Integer, String> f = mapOf(1, "1").asPartialFunction();
-            assertThat(f.isDefinedAt(1)).isTrue();
-            assertThat(f.apply(1)).isEqualTo("1");
-            assertThat(f.isDefinedAt(2)).isFalse();
-        }
-
-        @Test
-        public void shouldApplyExistingKey() {
-            assertThat(emptyInt().put(1, 2).asPartialFunction().apply(1)).isEqualTo(2);
-        }
-
-        @Test
-        public void shouldApplyNonExistingKey() {
-            assertThrows(NoSuchElementException.class, () -> emptyInt().put(1, 2).asPartialFunction().apply(3));
-        }
     }
 
     @Nested
@@ -1222,13 +1198,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         assertThat(mapOfEntries()).isSameAs(emptyMap());
     }
 
-    @Test
-    public void lift() {
-        final Function1<String, Option<Integer>> lifted = mapOf("A", 1).lift();
-        assertThat(lifted.apply("A").get()).isEqualTo(1);
-        assertThat(lifted.apply("a").isEmpty()).isTrue();
-    }
-
     @Nested
     class FilterTests {
         @Test
@@ -1411,25 +1380,25 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         @Test
         public void shouldGetValueOfNullKeyWhenPutFirstHavingTwoEntries() {
             final Map<Integer, String> map = mapOfNullKey(null, "a", 2, "b");
-            assertThat(map.get(null)).isEqualTo(Some("a"));
+            assertThat(map.get(null)).isEqualTo(Option.some("a"));
         }
 
         @Test
         public void shouldGetValueOfNullKeyWhenPutLastHavingTwoEntries() {
             final Map<Integer, String> map = mapOfNullKey(1, "a", null, "b");
-            assertThat(map.get(null)).isEqualTo(Some("b"));
+            assertThat(map.get(null)).isEqualTo(Option.some("b"));
         }
 
         @Test
         public void shouldGetAPresentNullValueWhenPutFirstHavingTwoEntries() {
             final Map<Integer, String> map = mapOf(1, null, 2, "b");
-            assertThat(map.get(1)).isEqualTo(Some(null));
+            assertThat(map.get(1)).isEqualTo(Option.some(null));
         }
 
         @Test
         public void shouldGetAPresentNullValueWhenPutLastHavingTwoEntries() {
             final Map<Integer, String> map = mapOf(1, "a", 2, null);
-            assertThat(map.get(2)).isEqualTo(Some(null));
+            assertThat(map.get(2)).isEqualTo(Option.some(null));
         }
     }
 

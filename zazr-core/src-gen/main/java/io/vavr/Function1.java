@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -201,30 +200,6 @@ public interface Function1<T1 extends @Nullable Object, R extends @Nullable Obje
      */
     default boolean isMemoized() {
         return this instanceof Memoized;
-    }
-
-    /**
-     * Converts this {@code Function1} to a {@link PartialFunction} by adding an {@code isDefinedAt} condition.
-     *
-     * @param isDefinedAt a predicate that states if an element is in the domain of the returned {@code PartialFunction}.
-     * @return a new {@code PartialFunction} that has the same behavior like this function but is defined only for those elements that make it through the given {@code Predicate}
-     * @throws NullPointerException if {@code isDefinedAt} is null
-     */
-    default PartialFunction<T1, R> partial(Predicate<? super T1> isDefinedAt) {
-        Objects.requireNonNull(isDefinedAt, "isDefinedAt is null");
-        final Function1<T1, R> self = this;
-        return new PartialFunction<T1, R>() {
-
-            @Override
-            public boolean isDefinedAt(T1 t1) {
-                return isDefinedAt.test(t1);
-            }
-
-            @Override
-            public R apply(T1 t1) {
-              return self.apply(t1);
-            }
-        };
     }
 
     /**

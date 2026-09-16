@@ -435,14 +435,12 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * If this {@code Either} is a {@link Either.Left}, no operation is performed and it is returned unchanged.
      *
      * <pre>{@code
-     * import static io.vavr.API.*;
-     *
      * // = Right("A")
-     * Either<Integer, String> right = Right("a");
+     * Either<Integer, String> right = Either.right("a");
      * right.map(String::toUpperCase);
      *
      * // = Left(1)
-     * Either<Integer, String> left = Left(1);
+     * Either<Integer, String> left = Either.left(1);
      * left.map(String::toUpperCase);
      * }</pre>
      *
@@ -468,14 +466,12 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * If this {@code Either} is a {@link Either.Right}, no operation is performed and it is returned unchanged.
      *
      * <pre>{@code
-     * import static io.vavr.API.*;
-     *
      * // = Left(2)
-     * Either<Integer, String> left = Left(1);
+     * Either<Integer, String> left = Either.left(1);
      * left.mapLeft(i -> i + 1);
      *
      * // = Right("a")
-     * Either<Integer, String> right = Right("a");
+     * Either<Integer, String> right = Either.right("a");
      * right.mapLeft(i -> i + 1);
      * }</pre>
      *
@@ -498,13 +494,11 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * Transforms this {@code Either} into a value of type {@code U} using the given function.
      *
      * <pre>{@code
-     * import static io.vavr.API.*;
-     *
      * // = "R:1"
-     * Right(1).transform(e -> e.fold(l -> "L:" + l, r -> "R:" + r));
+     * Either.right(1).transform(e -> e.fold(l -> "L:" + l, r -> "R:" + r));
      *
      * // = "L:error"
-     * Left("error").transform(e -> e.fold(l -> "L:" + l, r -> "R:" + r));
+     * Either.left("error").transform(e -> e.fold(l -> "L:" + l, r -> "R:" + r));
      * }</pre>
      *
      * @param f   a function to transform this {@code Either}
@@ -533,16 +527,14 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * indistinguishable from an already-present {@code Left}.
      *
      * <pre>{@code
-     * import static io.vavr.API.*;
-     *
      * // = Some(Right(42))
-     * Right(42).filter(i -> i > 0);
+     * Either.right(42).filter(i -> i > 0);
      *
      * // = None
-     * Right(42).filter(i -> i < 0);
+     * Either.right(42).filter(i -> i < 0);
      *
      * // = Some(Left("error")), predicate is not evaluated
-     * Left("error").filter(i -> false);
+     * Either.left("error").filter(i -> false);
      * }</pre>
      *
      * To fall back to a {@code Left} instead of {@code None} when the predicate rejects the right value,
@@ -568,16 +560,14 @@ public interface Either<L extends @Nullable Object, R extends @Nullable Object> 
      * A {@link Either.Left} is returned unchanged and the predicate is not evaluated.
      *
      * <pre>{@code
-     * import static io.vavr.API.*;
-     *
      * // = Left("bad: a")
-     * Right("a").filterOrElse(i -> false, val -> "bad: " + val);
+     * Either.right("a").filterOrElse(i -> false, val -> "bad: " + val);
      *
      * // = Right("a")
-     * Right("a").filterOrElse(i -> true, val -> "bad: " + val);
+     * Either.right("a").filterOrElse(i -> true, val -> "bad: " + val);
      *
      * // = Left("error"), predicate is not evaluated
-     * Left("error").filterOrElse(i -> false, val -> "bad: " + val);
+     * Either.left("error").filterOrElse(i -> false, val -> "bad: " + val);
      * }</pre>
      *
      * @param predicate a predicate to test the right value

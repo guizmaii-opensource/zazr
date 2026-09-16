@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import io.vavr.PartialFunction;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Option;
@@ -70,9 +69,6 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
 
     @Override
     SortedSet<T> addAll(Iterable<? extends T> elements);
-
-    @Override
-    <R extends @Nullable Object> SortedSet<R> collect(PartialFunction<? super T, ? extends R> partialFunction);
 
     @Override
     SortedSet<T> diff(Set<? extends T> elements);

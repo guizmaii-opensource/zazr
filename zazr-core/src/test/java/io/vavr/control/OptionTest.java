@@ -2,8 +2,6 @@ package io.vavr.control;
 
 import io.vavr.*;
 import io.vavr.AbstractValueTest;
-import io.vavr.Function1;
-import io.vavr.PartialFunction;
 import io.vavr.collection.Seq;
 import java.util.*;
 import java.util.List;
@@ -464,17 +462,17 @@ public class OptionTest extends AbstractValueTest {
     class ToeitherTests {
         @Test
         public void shouldMakeRightOnSomeToEither() {
-            assertThat(API.Some(5).toEither("bad")).isEqualTo(API.Right(5));
+            assertThat(Option.some(5).toEither("bad")).isEqualTo(Either.right(5));
         }
 
         @Test
         public void shouldMakeLeftOnNoneToEither() {
-            assertThat(API.None().toEither("bad")).isEqualTo(API.Left("bad"));
+            assertThat(Option.none().toEither("bad")).isEqualTo(Either.left("bad"));
         }
 
         @Test
         public void shouldMakeLeftOnNoneToEitherSupplier() {
-            assertThat(API.None().toEither(() -> "bad")).isEqualTo(API.Left("bad"));
+            assertThat(Option.none().toEither(() -> "bad")).isEqualTo(Either.left("bad"));
         }
     }
 
@@ -482,17 +480,17 @@ public class OptionTest extends AbstractValueTest {
     class TovalidationTests {
         @Test
         public void shouldMakeValidOnSomeToValidation() {
-            assertThat(API.Some(5).toValidation("bad")).isEqualTo(API.Valid(5));
+            assertThat(Option.some(5).toValidation("bad")).isEqualTo(Validation.valid(5));
         }
 
         @Test
         public void shouldMakeLeftOnNoneToValidation() {
-            assertThat(API.None().toValidation("bad")).isEqualTo(API.Invalid("bad"));
+            assertThat(Option.none().toValidation("bad")).isEqualTo(Validation.invalid("bad"));
         }
 
         @Test
         public void shouldMakeLeftOnNoneToValidationSupplier() {
-            assertThat(API.None().toValidation(() -> "bad")).isEqualTo(API.Invalid("bad"));
+            assertThat(Option.none().toValidation(() -> "bad")).isEqualTo(Validation.invalid("bad"));
         }
     }
 
@@ -532,41 +530,6 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldHandleTransformOnNone() {
             assertThat(Option.none().<String> transform(self -> self.isEmpty() ? "ok" : "failed")).isEqualTo("ok");
-        }
-    }
-
-    @Nested
-    class CollectTests {
-        @Test
-        public void shouldCollectDefinedValueUsingPartialFunction() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String> of(String::valueOf).partial(i -> i % 2 == 1);
-            assertThat(Option.of(3).collect(pf)).isEqualTo(Option.of("3"));
-        }
-
-        @Test
-        public void shouldFilterNotDefinedValueUsingPartialFunction() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String> of(String::valueOf).partial(i -> i % 2 == 1);
-            assertThat(Option.of(2).collect(pf)).isEqualTo(Option.none());
-        }
-
-        @Test
-        public void shouldCollectEmptyOptionalUsingPartialFunction() {
-            final PartialFunction<Integer, String> pf = Function1.<Integer, String> of(String::valueOf).partial(i -> i % 2 == 1);
-            assertThat(Option.<Integer>none().collect(pf)).isEqualTo(Option.none());
-        }
-
-        @Test
-        public void shouldThrowExceptionOnNullCollectPartialFunction() {
-            assertThrows(NullPointerException.class, () -> {
-                final PartialFunction<Integer, String> pf = null;
-                Option.some(1).collect(pf);
-            });
-        }
-
-        @Test
-        public void shouldNotCallPartialFunctionOnUndefinedArg() {
-            final PartialFunction<Integer, Integer> pf = Function1.<Integer, Integer> of(x -> 1/x).partial(i -> i != 0);
-            assertThat(Option.of(0).collect(pf)).isEqualTo(Option.none());
         }
     }
 

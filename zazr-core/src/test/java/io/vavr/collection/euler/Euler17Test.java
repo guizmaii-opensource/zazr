@@ -8,7 +8,6 @@ import io.vavr.collection.Seq;
 import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.*;
 import static io.vavr.collection.Stream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -100,20 +99,27 @@ public class Euler17Test {
     ).grouped(2).toSortedMap(pair -> Tuple.of((Integer) pair.get(0), (String) pair.get(1)));
 
     /**
-     * Solution using Vavr Pattern Matching.
+     * Solution using plain conditionals.
      */
     private static final class SolutionA implements SolutionProblem17 {
         @Override
         public int letterCount(int num) {
-            return Match(num).of( /*@formatter:off*/
-                    Case($(n -> n >= 1000),           n -> length(n / 1000) + length(1000) + letterCount(n % 1000)),
-                    Case($(n -> n >= 100),            n -> Match(n).of(
-                        Case($(n1 -> (n1 % 100) > 0), n1 -> length(n1 / 100) + length(100) + CONJUNCTION.length() + letterCount(n1 % 100)),
-                        Case($(),                  length(n / 100) + length(100)))),
-                    Case($(n -> n >= 20),             n -> length(n - (n % 10)) + letterCount(n % 10)),
-                    Case($(0),                        0),
-                    Case($(),                         n -> length(n))
-            ); /*@formatter:on*/
+            if (num >= 1000) {
+                return length(num / 1000) + length(1000) + letterCount(num % 1000);
+            }
+            if (num >= 100) {
+                if ((num % 100) > 0) {
+                    return length(num / 100) + length(100) + CONJUNCTION.length() + letterCount(num % 100);
+                }
+                return length(num / 100) + length(100);
+            }
+            if (num >= 20) {
+                return length(num - (num % 10)) + letterCount(num % 10);
+            }
+            if (num == 0) {
+                return 0;
+            }
+            return length(num);
         }
 
         private static int length(int number) {

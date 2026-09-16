@@ -10,8 +10,6 @@ import java.util.Spliterator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.Left;
-import static io.vavr.API.Right;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -55,18 +53,18 @@ public class EitherTest extends AbstractValueTest {
 
     @Test
     public void shouldReturnSameWhenCallingMapOnLeft() {
-        final Either<Integer, Object> actual = Left(1);
+        final Either<Integer, Object> actual = Either.left(1);
         assertThat(actual.map(v -> {throw new IllegalStateException();})).isSameAs(actual);
     }
 
     @Test
     public void shouldThrowIfRightGetLeft() {
-        assertThrows(NoSuchElementException.class, () -> Right(1).getLeft());
+        assertThrows(NoSuchElementException.class, () -> Either.right(1).getLeft());
     }
 
     @Test
     public void shouldThrowIfLeftGet() {
-        assertThrows(NoSuchElementException.class, () -> Left(1).get());
+        assertThrows(NoSuchElementException.class, () -> Either.left(1).get());
     }
 
     @Test

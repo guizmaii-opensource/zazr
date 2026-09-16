@@ -18,9 +18,8 @@ import org.jspecify.annotations.Nullable;
  * permutations, combinations, and cross-products. Most operations return a new
  * sequence while retaining the original ordering semantics.</p>
  *
- * <p>The interface also provides mechanisms for traversal, conversion to Java
- * collection views (both read-only and mutable), and treating the sequence as an
- * index-based partial function.</p>
+ * <p>The interface also provides mechanisms for traversal and conversion to Java
+ * collection views (both read-only and mutable).</p>
  *
  * Views:
  *
@@ -34,7 +33,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> the element type
  * @author Daniel Dietrich, Grzegorz Piwowarek
  */
-public interface Seq<T extends @Nullable Object> extends Traversable<T>, PartialFunction<Integer, T> {
+public interface Seq<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Narrows a {@code Seq<? extends T>} to {@code Seq<T>} via a safe unchecked cast.
@@ -68,21 +67,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * @throws NullPointerException if {@code elements} is {@code null}
      */
     Seq<T> appendAll(Iterable<? extends T> elements);
-
-    /**
-     * A {@code Seq} is a partial function which returns the element at the specified index by calling
-     * {@linkplain #get(int)}.
-     *
-     * @param index an index
-     * @return the element at the given index
-     * @throws IndexOutOfBoundsException if this is empty, index &lt; 0 or index &gt;= length()
-     * @deprecated Will be removed
-     */
-    @Deprecated
-    @Override
-    default T apply(Integer index) {
-        return get(index);
-    }
 
     /**
      * Returns an <strong>immutable</strong> {@link java.util.List} view of this {@code Seq}.
@@ -145,22 +129,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
      * @see Seq#asJavaMutable()
      */
     Seq<T> asJavaMutable(Consumer<? super java.util.List<T>> action);
-
-    /**
-     * Returns a {@link PartialFunction} view of this {@code Seq}, where the function
-     * is defined at an index if this sequence contains at least {@code index + 1} elements.
-     * Applying the partial function to a defined index returns the element at that index.
-     *
-     * <p>This method itself never throws. Applying the returned function to an index for which
-     * {@code isDefinedAt(index)} is {@code false} (i.e. {@code index < 0} or {@code index >= length()})
-     * throws an {@code IndexOutOfBoundsException}.</p>
-     *
-     * @return a {@link PartialFunction} mapping indices to elements
-     */
-    PartialFunction<Integer, T> asPartialFunction() throws IndexOutOfBoundsException;
-
-    @Override
-    <R extends @Nullable Object> Seq<R> collect(PartialFunction<? super T, ? extends R> partialFunction);
 
     /**
      * Returns a sequence containing all combinations of elements from this sequence,
@@ -548,17 +516,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
         return Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
-    /**
-     * Turns this sequence into a plain function returning an Option result.
-     *
-     * @return a function that takes an index i and returns the value of
-     * this sequence in a Some if the index is within bounds, otherwise a None.
-     * @deprecated Will be removed
-     */
-    @Deprecated
-    default Function1<Integer, Option<T>> lift() {
-        return i -> (i >= 0 && i < length()) ? Option.some(apply(i)) : Option.none();
-    }
 
     /**
      * Returns the index of the last occurrence of the given element at or before
@@ -1272,32 +1229,6 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T>, Partial
 
     @Override
     <U extends @Nullable Object> Seq<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper);
-
-    /**
-     * Turns this sequence from a partial function into a total function that
-     * returns defaultValue for all indexes that are out of bounds.
-     *
-     * @param defaultValue default value to return for out of bound indexes
-     * @return a total function from index to T
-     * @deprecated Will be removed
-     */
-    @Deprecated
-    default Function1<Integer, T> withDefaultValue(T defaultValue) {
-        return i -> (i >= 0 && i < length()) ? apply(i) : defaultValue;
-    }
-
-    /**
-     * Turns this sequence from a partial function into a total function that
-     * returns a value computed by defaultFunction for all indexes that are out of bounds.
-     *
-     * @param defaultFunction function to evaluate for all out-of-bounds indexes.
-     * @return a total function from index to T
-     * @deprecated Will be removed
-     */
-    @Deprecated
-    default Function1<Integer, T> withDefault(Function<? super Integer, ? extends T> defaultFunction) {
-        return i -> (i >= 0 && i < length()) ? apply(i) : defaultFunction.apply(i);
-    }
 
     @Override
     default boolean isSequential() {

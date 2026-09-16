@@ -29,10 +29,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
-import static io.vavr.API.Invalid;
-import static io.vavr.API.Left;
-import static io.vavr.API.Right;
-import static io.vavr.API.Valid;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation")
@@ -401,16 +397,16 @@ public abstract class AbstractValueTest {
 
     @TestTemplate
     public void shouldConvertToEither() {
-        assertThat(empty().toEither("test")).isEqualTo(Left("test"));
-        assertThat(empty().toEither(() -> "test")).isEqualTo(Left("test"));
-        assertThat(of(1).toEither("test")).isEqualTo(Right(1));
+        assertThat(empty().toEither("test")).isEqualTo(Either.left("test"));
+        assertThat(empty().toEither(() -> "test")).isEqualTo(Either.left("test"));
+        assertThat(of(1).toEither("test")).isEqualTo(Either.right(1));
     }
 
     @TestTemplate
     public void shouldConvertToValidation() {
-        assertThat(empty().toValidation("test")).isEqualTo(Invalid("test"));
-        assertThat(empty().toValidation(() -> "test")).isEqualTo(Invalid("test"));
-        assertThat(of(1).toValidation("test")).isEqualTo(Valid(1));
+        assertThat(empty().toValidation("test")).isEqualTo(Validation.invalid("test"));
+        assertThat(empty().toValidation(() -> "test")).isEqualTo(Validation.invalid("test"));
+        assertThat(of(1).toValidation("test")).isEqualTo(Validation.valid(1));
     }
 
     @TestTemplate

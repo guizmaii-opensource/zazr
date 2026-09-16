@@ -793,11 +793,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public <R extends @Nullable Object> Vector<R> collect(PartialFunction<? super T, ? extends R> partialFunction) {
-        return ofAll(iterator().<R> collect(partialFunction));
-    }
-
-    @Override
     public Vector<Vector<T>> combinations() { return rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity()); }
 
     @Override

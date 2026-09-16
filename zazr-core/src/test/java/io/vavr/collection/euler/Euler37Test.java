@@ -4,7 +4,6 @@ import io.vavr.collection.List;
 import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler37Test {
@@ -41,16 +40,14 @@ public class Euler37Test {
     }
 
     private static boolean isTruncatablePrime(int prime) {
-        return Match(prime).of(
-                Case($(p -> p > 7), p -> {
-                    final Vector<Character> primeSeq = Vector.ofAll(Integer.toString(p).toCharArray());
-                    return List.rangeClosed(1, primeSeq.length() - 1)
-                            .flatMap(i -> List.of(primeSeq.drop(i), primeSeq.dropRight(i)))
-                            .map(Vector::mkString)
-                            .map(Long::valueOf)
-                            .forAll(Utils.MEMOIZED_IS_PRIME::apply);
-                }),
-                Case($(), false)
-        );
+        if (prime <= 7) {
+            return false;
+        }
+        final Vector<Character> primeSeq = Vector.ofAll(Integer.toString(prime).toCharArray());
+        return List.rangeClosed(1, primeSeq.length() - 1)
+                .flatMap(i -> List.of(primeSeq.drop(i), primeSeq.dropRight(i)))
+                .map(Vector::mkString)
+                .map(Long::valueOf)
+                .forAll(Utils.MEMOIZED_IS_PRIME::apply);
     }
 }

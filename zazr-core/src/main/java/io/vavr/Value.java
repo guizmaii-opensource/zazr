@@ -41,11 +41,6 @@ import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.API.Invalid;
-import static io.vavr.API.Left;
-import static io.vavr.API.Right;
-import static io.vavr.API.Valid;
-
 /**
  * Represents a value in a functional programming context.
  *
@@ -1028,7 +1023,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
         if (this instanceof Either) {
             return ((Either<?, T>) this).mapLeft(ignored -> left);
         } else {
-            return isEmpty() ? Left(left) : Right(get());
+            return isEmpty() ? Either.left(left) : Either.right(get());
         }
     }
 
@@ -1046,7 +1041,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
         if (this instanceof Either) {
             return ((Either<?, T>) this).mapLeft(ignored -> leftSupplier.get());
         } else {
-            return isEmpty() ? Left(leftSupplier.get()) : Right(get());
+            return isEmpty() ? Either.left(leftSupplier.get()) : Either.right(get());
         }
     }
 
@@ -1063,7 +1058,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
         if (this instanceof Validation) {
             return ((Validation<?, T>) this).mapError(ignored -> invalid);
         } else {
-            return isEmpty() ? Invalid(invalid) : Valid(get());
+            return isEmpty() ? Validation.invalid(invalid) : Validation.valid(get());
         }
     }
 
@@ -1081,7 +1076,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
         if (this instanceof Validation) {
             return ((Validation<?, T>) this).mapError(ignored -> invalidSupplier.get());
         } else {
-            return isEmpty() ? Invalid(invalidSupplier.get()) : Valid(get());
+            return isEmpty() ? Validation.invalid(invalidSupplier.get()) : Validation.valid(get());
         }
     }
 

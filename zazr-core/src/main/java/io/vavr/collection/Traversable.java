@@ -1,6 +1,5 @@
 package io.vavr.collection;
 
-import io.vavr.PartialFunction;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.Value;
@@ -99,31 +98,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, Va
             throw new UnsupportedOperationException("Elements are not numeric", x);
         }
     }
-
-    /**
-     * Applies a {@link PartialFunction} to all elements that are defined for it and collects the results.
-     * <p>
-     * For each element in iteration order, the function is first tested:
-     *
-     * <pre>{@code
-     * partialFunction.isDefinedAt(element)
-     * }</pre>
-     *
-     * If {@code true}, the element is mapped to type {@code R}:
-     *
-     * <pre>{@code
-     * R newElement = partialFunction.apply(element)
-     * }</pre>
-     *
-     * <p><strong>Note:</strong> If this {@code Traversable} is ordered (i.e., extends {@link Ordered}),
-     * the caller must ensure that the resulting elements are comparable (i.e., implement {@link Comparable}).
-     *
-     * @param partialFunction a function that may not be defined for all elements of this traversable
-     * @param <R> the type of elements in the resulting {@code Traversable}
-     * @return a new {@code Traversable} containing the results of applying the partial function
-     * @throws NullPointerException if {@code partialFunction} is null
-     */
-    <R extends @Nullable Object> Traversable<R> collect(PartialFunction<? super T, ? extends R> partialFunction);
 
     /**
      * Checks whether this {@code Traversable} contains all elements from the given iterable.

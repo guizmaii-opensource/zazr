@@ -4,7 +4,6 @@ import io.vavr.collection.List;
 import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler38Test {
@@ -60,13 +59,13 @@ public class Euler38Test {
     }
 
     private static boolean isPandigitalMultipleRest(Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
-        return Match(pandigitalRest.length()).of(
-                Case($(0), true),
-                Case($(), length -> List.rangeClosed(1, length)
-                        .find(i -> Integer.valueOf(pandigitalRest.take(i).mkString()) == multiplicand * multiplicator)
-                        .map(i -> isPandigitalMultipleRest(pandigitalRest.drop(i), multiplicand, multiplicator + 1))
-                        .getOrElse(false)
-                )
-        );
+        final int length = pandigitalRest.length();
+        if (length == 0) {
+            return true;
+        }
+        return List.rangeClosed(1, length)
+                .find(i -> Integer.valueOf(pandigitalRest.take(i).mkString()) == multiplicand * multiplicator)
+                .map(i -> isPandigitalMultipleRest(pandigitalRest.drop(i), multiplicand, multiplicator + 1))
+                .getOrElse(false);
     }
 }

@@ -10,16 +10,16 @@ import org.jspecify.annotations.Nullable;
  * An immutable {@code Map} interface.
  *
  * <p>
- * Represents a collection of key-value pairs with immutable operations. 
+ * Represents a collection of key-value pairs with immutable operations.
  * Supports typical map operations such as querying, updating, filtering,
- * transforming, and iterating over entries. Provides convenient methods 
- * for converting to standard Java maps and for working with default values.
+ * transforming, and iterating over entries. Provides convenient methods
+ * for converting to standard Java maps.
  *
  * @param <K> Key type
  * @param <V> Value type
  * @author Daniel Dietrich, Ruslan Sennov, Grzegorz Piwowarek
  */
-public interface Map<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>>, PartialFunction<K, V> {
+public interface Map<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>> {
 
     /**
      * Narrows a widened {@code Map<? extends K, ? extends V>} to {@code Map<K, V>}
@@ -58,38 +58,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     static <K extends @Nullable Object, V extends @Nullable Object> Tuple2<K, V> entry(K key, V value) {
         return Tuple.of(key, value);
-    }
-
-    @Deprecated
-    @Override
-    default V apply(K key) {
-        return get(key).getOrElseThrow(() -> new NoSuchElementException(String.valueOf(key)));
-    }
-
-    /**
-     * Turns this {@code Map} into a {@link PartialFunction} which is defined at a given key, if this {@code Map}
-     * contains that key. When applied to a defined key, the partial function will return
-     * the value of this {@code Map} that is associated with the key.
-     *
-     * @return a new {@link PartialFunction}
-     * @throws NoSuchElementException when a non-existing key is applied to the partial function
-     */
-    default PartialFunction<K, V> asPartialFunction() throws IndexOutOfBoundsException {
-        return new PartialFunction<K, V>() {
-            @Override
-            public V apply(K key) {
-                return get(key).getOrElseThrow(() -> new NoSuchElementException(String.valueOf(key)));
-            }
-            @Override
-            public boolean isDefinedAt(K key) {
-                return containsKey(key);
-            }
-        };
-    }
-
-    @Override
-    default <R extends @Nullable Object> Seq<R> collect(PartialFunction<? super Tuple2<K, V>, ? extends R> partialFunction) {
-        return io.vavr.collection.Vector.ofAll(iterator().<R> collect(partialFunction));
     }
 
     /**
@@ -316,15 +284,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     @Override
     default int length() {
         return size();
-    }
-
-    /**
-     * Turns this map into a plain function returning an Option result.
-     *
-     * @return a function that takes a key k and returns its value in a Some if found, otherwise a None.
-     */
-    default Function1<K, Option<V>> lift() {
-        return this::get;
     }
 
     /**
@@ -640,33 +599,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
         return iterator().map(Tuple2::_2);
     }
 
-    /**
-     * Turns this map from a partial function into a total function that
-     * returns a value computed by defaultFunction for all keys
-     * absent from the map.
-     *
-     * @param defaultFunction function to evaluate for all keys not present in the map
-     * @return a total function from K to V
-     * @deprecated Will be removed
-     */
-    @Deprecated
-    default Function1<K, V> withDefault(Function<? super K, ? extends V> defaultFunction) {
-        return k -> get(k).getOrElse(() -> defaultFunction.apply(k));
-    }
-
-    /**
-     * Turns this map from a partial function into a total function that
-     * returns defaultValue for all keys absent from the map.
-     *
-     * @param defaultValue default value to return for all keys not present in the map
-     * @return a total function from K to V
-     * @deprecated Will be removed
-     */
-    @Deprecated
-    default Function1<K, V> withDefaultValue(V defaultValue) {
-        return k -> get(k).getOrElse(defaultValue);
-    }
-
     @Override
     default <U extends @Nullable Object> Seq<Tuple2<Tuple2<K, V>, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
@@ -730,12 +662,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     @Override
     io.vavr.collection.Iterator<? extends Map<K, V>> grouped(int size);
-
-    @Deprecated
-    @Override
-    default boolean isDefinedAt(K key) {
-        return containsKey(key);
-    }
 
     @Override
     default boolean isDistinct() {

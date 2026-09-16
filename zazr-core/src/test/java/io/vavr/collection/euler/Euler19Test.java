@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import org.junit.jupiter.api.Test;
 
-import static io.vavr.API.For;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -40,8 +39,8 @@ public class Euler19Test {
     }
 
     private static int findNumberOfFirstMonthDaysOnSunday(int startYear, int endYear) {
-        return For(List.rangeClosed(startYear, endYear), List.of(Month.values()))
-                .yield(Tuple::of)
+        return List.rangeClosed(startYear, endYear)
+                .flatMap(year -> List.of(Month.values()).map(month -> Tuple.of(year, month)))
                 .filter(t -> isFirstDayOfMonthSunday(t._1, t._2))
                 .length();
     }

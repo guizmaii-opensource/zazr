@@ -17,7 +17,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-import static io.vavr.API.Match;
 import static io.vavr.control.TryModule.isFatal;
 import static io.vavr.control.TryModule.sneakyThrow;
 
@@ -364,31 +363,6 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
     }
 
     /**
-     * Transforms the value of this {@code Try} using the given {@link PartialFunction} if it is defined at the value.
-     * <p>
-     * The {@code partialFunction} is first tested with {@link PartialFunction#isDefinedAt(Object)}. If it returns
-     * {@code true}, the value is mapped using {@link PartialFunction#apply(Object)} and wrapped in a new {@code Try}.
-     * If the function is not defined at the value or this {@code Try} is a {@link Failure}, the result is a {@link Failure}.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * PartialFunction<Integer, String> pf = ...;
-     * Try.of(() -> 42)
-     *    .collect(pf); // maps the value if pf.isDefinedAt(42) is true
-     * }</pre>
-     *
-     * @param partialFunction a function that may not be defined for all input values
-     * @param <R>             the type of the mapped result
-     * @return a new {@code Try} containing the mapped value if defined, or a {@link Failure}
-     * @throws NullPointerException if {@code partialFunction} is {@code null}
-     */
-    @SuppressWarnings("unchecked")
-    default <R extends @Nullable Object> Try<R> collect(PartialFunction<? super T, ? extends R> partialFunction){
-        Objects.requireNonNull(partialFunction, "partialFunction is null");
-        return filter(partialFunction::isDefinedAt).map(partialFunction::apply);
-    }
-
-    /**
      * Returns a {@code Success} containing the throwable if this {@code Try} is a {@link Failure}.
      * <p>
      * If this {@code Try} is a {@link Success}, a {@code Failure} containing a {@link NoSuchElementException} is returned.
@@ -663,26 +637,6 @@ public interface Try<T extends @Nullable Object> extends Value<T> {
     @Override
     default Try<@Nullable Void> mapToVoid() {
         return this.<@Nullable Void>map(ignored -> null);
-    }
-
-    /**
-     * Transforms the cause of this {@link Failure} using the given sequence of match cases.
-     * <p>
-     * If this {@code Try} is a {@link Success}, it is returned unchanged. If this is a {@link Failure}, the
-     * cause is matched against the provided {@code cases}. If a match is found, a new {@link Failure} containing
-     * the mapped exception is returned. If none of the cases match, the original {@link Failure} is returned.
-     *
-     * @param cases a possibly non-exhaustive sequence of match cases to handle the cause
-     * @return a new {@code Try} with a mapped cause if a match is found, otherwise this {@code Try}
-     */
-    @SuppressWarnings({ "unchecked", "varargs" })
-    default Try<T> mapFailure(Match.Case<? extends Throwable, ? extends Throwable> ... cases) {
-        if (isSuccess()) {
-            return this;
-        } else {
-            final Option<Throwable> x = Match(getCause()).option(cases);
-            return x.isEmpty() ? this : failure(x.get());
-        }
     }
 
     /**
