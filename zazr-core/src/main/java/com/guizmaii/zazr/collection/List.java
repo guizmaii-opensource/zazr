@@ -971,7 +971,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         if (n >= length()) {
             return empty();
         }
-        return ofAll(iterator().dropRight(n));
+        return take(length - n);
     }
 
     @Override

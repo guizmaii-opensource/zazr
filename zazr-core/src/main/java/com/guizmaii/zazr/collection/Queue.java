@@ -896,9 +896,20 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
-        final int length = front.length();
-        if (index < length) {
-            return front.get(index);
+        // walk the front instead of measuring it: List.length() is O(n)
+        int remaining = index;
+        List<T> list = front;
+        while (remaining > 0 && !list.isEmpty()) {
+            list = list.tail();
+            remaining--;
+        }
+        if (!list.isEmpty()) {
+            return list.head();
+        }
+        final int rearIndex = remaining;
+        final int rearLength = rear.length();
+        if (rearIndex < rearLength) {
+            return rear.get(rearLength - rearIndex - 1);
         } else {
             final int rearIndex = index - length;
             final int rearLength = rear.length();
@@ -942,8 +953,9 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
             return frontIndex;
         } else {
             // we need to reverse because we search the first occurrence
-            final int rearIndex = rear.reverse().indexOf(element, from - front.length());
-            return (rearIndex == -1) ? -1 : rearIndex + front.length();
+            final int frontLength = front.length();
+            final int rearIndex = rear.reverse().indexOf(element, from - frontLength);
+            return (rearIndex == -1) ? -1 : rearIndex + frontLength;
         }
     }
 
