@@ -2,8 +2,8 @@ package io.vavr.collection.euler;
 
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static io.vavr.collection.euler.Utils.factors;
@@ -47,16 +47,16 @@ public class Euler33Test {
     }
 
     private static boolean isNonTrivialDigitCancellingFraction(Tuple2<Integer, Integer> fraction) {
-        return CharSeq.of(fraction._1.toString())
+        return Vector.ofAll(fraction._1.toString().toCharArray())
                 .filter(d -> d != '0')
-                .find(d -> CharSeq.of(fraction._2.toString()).contains(d))
+                .find(d -> Vector.ofAll(fraction._2.toString().toCharArray()).contains(d))
                 .map(d -> fractionCanBeSimplifiedByCancellingDigit(fraction, d))
                 .getOrElse(false);
     }
 
     private static boolean fractionCanBeSimplifiedByCancellingDigit(Tuple2<Integer, Integer> fraction, char d) {
-        return Tuple.of(CharSeq.of(fraction._1.toString()).remove(d), CharSeq.of(fraction._2.toString()).remove(d))
-                .map(CharSeq::mkString, CharSeq::mkString)
+        return Tuple.of(Vector.ofAll(fraction._1.toString().toCharArray()).remove(d), Vector.ofAll(fraction._2.toString().toCharArray()).remove(d))
+                .map(Vector::mkString, Vector::mkString)
                 .map(Double::valueOf, Double::valueOf)
                 .apply((d1, d2) -> fraction._1 / d1 == fraction._2 / d2);
     }

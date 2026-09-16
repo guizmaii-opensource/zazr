@@ -117,7 +117,9 @@ interface ArrayType<T extends @Nullable Object> {
 
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> T asPrimitives(Class<?> primitiveClass, Iterable<?> values) {
-        final Object[] array = Array.ofAll(values).toJavaArray();
+        final java.util.List<Object> list = new java.util.ArrayList<>();
+        values.forEach(list::add);
+        final Object[] array = list.toArray();
         final ArrayType<T> type = of((Class<T>) primitiveClass);
         final Object results = type.newInstance(array.length);
         for (int i = 0; i < array.length; i++) {

@@ -11,8 +11,7 @@ public class CollectionsTest {
     public void shouldBeEqualSets() throws Exception {
         forAll(List.of(TreeSet.ofAll(1, 2, 3),
                 HashSet.ofAll(1, 2, 3),
-                LinkedHashSet.ofAll(1, 2, 3),
-                BitSet.ofAll(1, 2, 3)), true);
+                LinkedHashSet.ofAll(1, 2, 3)), true);
     }
 
     @Test
@@ -23,17 +22,16 @@ public class CollectionsTest {
 
     @Test
     public void shouldBeEqualSeqs() throws Exception {
-        forAll(List.of(Array.ofAll(1, 2, 3),
+        forAll(List.of(Vector.ofAll(1, 2, 3),
                 Stream.ofAll(1, 2, 3),
-                Vector.ofAll(1, 2, 3),
                 List.ofAll(1, 2, 3),
                 Queue.ofAll(1, 2, 3)), true);
     }
 
     @Test
     public void shouldNotBeEqualSeqs() throws Exception {
-        forAll(List.of(Array.ofAll(1, 2, 3),
-                Array.ofAll('a', 'b', 'c')), false);
+        forAll(List.of(Vector.ofAll(1, 2, 3),
+                Vector.ofAll('a', 'b', 'c')), false);
     }
 
     @Test
@@ -50,22 +48,8 @@ public class CollectionsTest {
     }
 
     @Test
-    public void shouldBeEqualMultimaps() throws Exception {
-        forAll(List.of(TreeMultimap.withSeq().<Integer, Integer>empty().put(1, 1).put(1, 1).put(2, 2),
-                HashMultimap.withSeq().<Integer, Integer>empty().put(1, 1).put(1, 1).put(2, 2),
-                LinkedHashMultimap.withSeq().<Integer, Integer>empty().put(1, 1).put(1, 1).put(2, 2)), true);
-    }
-
-    @Test
-    public void shouldNotBeEqualMultimaps() throws Exception {
-        forAll(List.of(TreeMultimap.withSeq().<Integer, Integer>empty().put(1, 1).put(1, 1).put(2, 2),
-                HashMultimap.withSeq().<Character, Character>empty().put('a', 'b').put('c', 'd').put('e', 'f')),
-                false);
-    }
-
-    @Test
     public void shouldNotBeEqualSeqAndSet() throws Exception {
-        forAll(List.of(Array.ofAll(1, 2, 3),
+        forAll(List.of(Vector.ofAll(1, 2, 3),
                 TreeSet.ofAll(1, 2, 3)), false);
     }
 

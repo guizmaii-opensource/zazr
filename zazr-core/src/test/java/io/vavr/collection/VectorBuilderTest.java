@@ -273,7 +273,7 @@ public class VectorBuilderTest {
             assertSameShape(Vector.fill(n, 7), Vector.ofAll(java.util.Collections.nCopies(Math.max(n, 0), 7)), Math.max(n, 0));
         }
         // ofAll of a sized Traversable that is not a Vector
-        assertSameShape(Vector.ofAll(Array.ofAll(big)), Vector.range(0, 100_000), 100_000);
+        assertSameShape(Vector.ofAll(Queue.ofAll(big)), Vector.range(0, 100_000), 100_000);
         assertSameShape(Vector.ofAll(List.ofAll(list32)), full32, 32);
         assertSameShape(Vector.ofAll(HashSet.of(1)), Vector.of(1), 1);
     }

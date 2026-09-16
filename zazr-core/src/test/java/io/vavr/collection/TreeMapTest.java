@@ -303,7 +303,7 @@ public class TreeMapTest extends AbstractSortedMapTest {
         @Test
         public void shouldScanRight() {
             final TreeMap<String, Integer> tm = TreeMap.ofEntries(Tuple.of("one", 1), Tuple.of("two", 2));
-            final Seq<String> result = tm.scanRight("z", (t1, acc) -> acc + CharSeq.of(t1._1).reverse());
+            final Seq<String> result = tm.scanRight("z", (t1, acc) -> acc + new StringBuilder(t1._1).reverse());
             assertThat(result).isEqualTo(List.of("zowteno", "zowt", "z"));
         }
 

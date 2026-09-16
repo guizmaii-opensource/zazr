@@ -3,9 +3,9 @@ package io.vavr.collection.euler;
 import io.vavr.Function1;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import io.vavr.control.Option;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -64,7 +64,7 @@ public class Euler26Test {
         return Tuple.of(
                 divisor,
                 recurringCycleLengthInDecimalFractionPart(
-                        CharSeq.of(BigDecimal.ONE.divide(BigDecimal.valueOf(divisor), 2000, RoundingMode.UP).toString())
+                        Vector.ofAll(BigDecimal.ONE.divide(BigDecimal.valueOf(divisor), 2000, RoundingMode.UP).toString().toCharArray())
                                 .transform(removeLeadingZeroAndDecimalPoint())
                                 .transform(removeRoundingDigit())
                                 .transform(removeTrailingZeroes())
@@ -73,7 +73,7 @@ public class Euler26Test {
     }
 
     private static int recurringCycleLengthInDecimalFractionPart(String decimalFractionPart) {
-        return CharSeq.of(decimalFractionPart)
+        return Vector.ofAll(decimalFractionPart.toCharArray())
                 .reverse()
                 .toStream() // Stream is lazy evaluated which ensures the rest is only evaluated until the recurring cycle is found.
                 .transform(createCandidateCycles())
@@ -83,15 +83,15 @@ public class Euler26Test {
                 .getOrElse(0);
     }
 
-    private static Function1<CharSeq, CharSeq> removeLeadingZeroAndDecimalPoint() {
+    private static Function1<Vector<Character>, Vector<Character>> removeLeadingZeroAndDecimalPoint() {
         return seq -> seq.drop(2);
     }
 
-    private static Function1<CharSeq, CharSeq> removeRoundingDigit() {
+    private static Function1<Vector<Character>, Vector<Character>> removeRoundingDigit() {
         return seq -> seq.dropRight(1);
     }
 
-    private static Function1<CharSeq, CharSeq> removeTrailingZeroes() {
+    private static Function1<Vector<Character>, Vector<Character>> removeTrailingZeroes() {
         return seq -> seq
                 .reverse()
                 .dropWhile(c -> c == '0') //Remove any trailing zeroes
@@ -111,7 +111,7 @@ public class Euler26Test {
 
     private static Function1<Stream<String>, Option<String>> findFirstRecurringCycle(String decimalFractionPart) {
         return reversedCandidateCycles -> reversedCandidateCycles
-                .map(s -> CharSeq.of(s).reverse().mkString())
+                .map(s -> Vector.ofAll(s.toCharArray()).reverse().mkString())
                 .find(candidate -> candidate.equals(decimalFractionPart.substring(decimalFractionPart.length() - (candidate.length() * 2), decimalFractionPart.length() - candidate.length())));
     }
 }

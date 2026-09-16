@@ -16,12 +16,9 @@
  * </tr>
  * </thead>
  * <tbody>
- * <tr><td>{@linkplain io.vavr.collection.Array}</td><td><small>const</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.CharSeq}</td><td><small>const</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
  * <tr><td><em>{@linkplain io.vavr.collection.Iterator}</em></td><td><small>const</small></td><td><small>const</small></td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
  * <tr><td>{@linkplain io.vavr.collection.List}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>linear</small></td></tr>
  * <tr><td>{@linkplain io.vavr.collection.Queue}</td><td><small>const</small></td><td><small>const<sup>a</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>const</small></td></tr>
- * <tr><td>{@linkplain io.vavr.collection.PriorityQueue}</td><td><small>log</small></td><td><small>log</small></td><td><small>&mdash;</small></td><td><small>&mdash;</small></td><td><small>&mdash;</small></td><td><small>&mdash;</small></td></tr>
  * <tr><td>{@linkplain io.vavr.collection.Stream}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const<sup>lazy</sup></small></td><td><small>const<sup>lazy</sup></small></td></tr>
  * <tr><td>{@linkplain io.vavr.collection.Vector}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td></tr>
  * </tbody>

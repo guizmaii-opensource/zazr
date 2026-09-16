@@ -2530,7 +2530,9 @@ interface IteratorModule {
             } else {
                 buffer = new Object[0];
             }
-            return Array.wrap(result);
+            @SuppressWarnings("unchecked")
+            final T[] typed = (T[]) result;
+            return Vector.of(typed);
         }
 
         private static void drop(Iterator<?> source, int count) {

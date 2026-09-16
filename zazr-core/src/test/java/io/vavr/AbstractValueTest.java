@@ -1,8 +1,5 @@
 package io.vavr;
 
-import io.vavr.collection.AbstractMultimapTest;
-import io.vavr.collection.Array;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
 import io.vavr.collection.Traversable;
 import io.vavr.control.Either;
@@ -28,6 +25,9 @@ import org.assertj.core.api.ObjectAssert;
 import org.assertj.core.api.StringAssert;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
+import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
 import static io.vavr.API.Invalid;
 import static io.vavr.API.Left;
@@ -36,8 +36,24 @@ import static io.vavr.API.Valid;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation")
-@ExtendWith(AbstractMultimapTest.TestTemplateProvider.class)
+@ExtendWith(AbstractValueTest.TestTemplateProvider.class)
 public abstract class AbstractValueTest {
+
+    // A pass-through provider for @TestTemplate methods: one invocation, no parameterization.
+    // (Used to also multiply invocations per Multimap.ContainerType before that family was deleted.)
+    public static class TestTemplateProvider implements TestTemplateInvocationContextProvider {
+
+        @Override
+        public boolean supportsTestTemplate(ExtensionContext context) {
+            return true;
+        }
+
+        @Override
+        public java.util.stream.Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext extensionContext) {
+            return java.util.stream.Stream.of(new TestTemplateInvocationContext() {
+            });
+        }
+    }
 
     protected Random getRandom(int seed) {
         if (seed >= 0) {
@@ -277,25 +293,6 @@ public abstract class AbstractValueTest {
     // -- Conversions toXxx()
 
     @TestTemplate
-    public void shouldConvertToArray() {
-        final Value<Integer> value = of(1, 2, 3);
-        final Array<Integer> array = value.toArray();
-        if (value.isSingleValued()) {
-            assertThat(array).isEqualTo(Array.of(1));
-        } else {
-            assertThat(array).isEqualTo(Array.of(1, 2, 3));
-        }
-    }
-
-    @TestTemplate
-    public void shouldConvertToCharSeq() {
-        final Value<Integer> value = of(1, 2, 3);
-        final CharSeq charSeq = value.toCharSeq();
-        final CharSeq expected = CharSeq.of(of(1, 2, 3).iterator().mkString());
-        assertThat(charSeq).isEqualTo(expected);
-    }
-
-    @TestTemplate
     public void shouldConvertToList() {
         final Value<Integer> value = of(1, 2, 3);
         final io.vavr.collection.List<Integer> list = value.toList();
@@ -424,29 +421,6 @@ public abstract class AbstractValueTest {
             assertThat(queue).isEqualTo(io.vavr.collection.Queue.of(1));
         } else {
             assertThat(queue).isEqualTo(io.vavr.collection.Queue.of(1, 2, 3));
-        }
-    }
-
-    @TestTemplate
-    public void shouldConvertToPriorityQueueUsingImplicitComparator() {
-        final Value<Integer> value = of(1, 3, 2);
-        final io.vavr.collection.PriorityQueue<Integer> queue = value.toPriorityQueue();
-        if (value.isSingleValued()) {
-            assertThat(queue).isEqualTo(io.vavr.collection.PriorityQueue.of(1));
-        } else {
-            assertThat(queue).isEqualTo(io.vavr.collection.PriorityQueue.of(1, 2, 3));
-        }
-    }
-
-    @TestTemplate
-    public void shouldConvertToPriorityQueueUsingExplicitComparator() {
-        final Comparator<Integer> comparator = Comparator.naturalOrder();
-        final Value<Integer> value = of(1, 3, 2);
-        final io.vavr.collection.PriorityQueue<Integer> queue = value.toPriorityQueue(comparator);
-        if (value.isSingleValued()) {
-            assertThat(queue).isEqualTo(io.vavr.collection.PriorityQueue.of(comparator, 1));
-        } else {
-            assertThat(queue).isEqualTo(io.vavr.collection.PriorityQueue.of(comparator, 1, 2, 3));
         }
     }
 

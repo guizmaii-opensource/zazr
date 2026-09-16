@@ -1,7 +1,7 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,13 +26,13 @@ public class Euler36Test {
                 .sum().intValue();
     }
 
-    private static boolean isPalindrome(CharSeq seq) {
+    private static boolean isPalindrome(Vector<Character> seq) {
         return seq.dropWhile(c -> c == '0').equals(seq.reverse().dropWhile(c -> c == '0'));
     }
 
     private static boolean isDoubleBasePalindrome(int x) {
-        final CharSeq seq = CharSeq.of(Integer.toString(x));
-        final CharSeq rev = CharSeq.of(Integer.toBinaryString(x));
+        final Vector<Character> seq = Vector.ofAll(Integer.toString(x).toCharArray());
+        final Vector<Character> rev = Vector.ofAll(Integer.toBinaryString(x).toCharArray());
         return isPalindrome(seq) && isPalindrome(rev);
     }
 

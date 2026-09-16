@@ -95,26 +95,6 @@ final class Collections {
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object> boolean equals(Multimap<K, V> source, @Nullable Object object) {
-        if (source == object) {
-            return true;
-        } else if (source != null && object instanceof Multimap) {
-            final Multimap<K, V> multimap = (Multimap<K, V>) object;
-            if (source.size() != multimap.size()) {
-                return false;
-            } else {
-                try {
-                    return source.forAll(multimap::contains);
-                } catch (ClassCastException e) {
-                    return false;
-                }
-            }
-        } else {
-            return false;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
     static <V extends @Nullable Object> boolean equals(Seq<V> source, @Nullable Object object) {
         if (object == source) {
             return true;

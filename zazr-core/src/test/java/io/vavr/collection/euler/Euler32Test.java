@@ -2,8 +2,8 @@ package io.vavr.collection.euler;
 
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +42,7 @@ public class Euler32Test {
         return num.length() == to - from + 1 && List.rangeClosed(from, to).forAll(i -> num.contains(Integer.toString(i)));
     }
 
-    private static final CharSeq DIGITS_1_9 = CharSeq.of("123456789");
+    private static final Vector<Character> DIGITS_1_9 = Vector.ofAll("123456789".toCharArray());
 
     private static long sumOfAllProductsPandigital1Through9() {
         return List.of(1, 2)

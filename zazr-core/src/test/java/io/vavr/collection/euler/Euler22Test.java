@@ -1,7 +1,7 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.Stream;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static io.vavr.collection.euler.Utils.file;
@@ -35,7 +35,7 @@ public class Euler22Test {
     }
 
     private static long nameScore(String name, long position) {
-        return CharSeq.of(name)
+        return Vector.ofAll(name.toCharArray())
                 .map(c -> c - 'A' + 1)
                 .sum().longValue() * position;
     }

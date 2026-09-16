@@ -1,6 +1,6 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.Array;
+import io.vavr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +27,7 @@ public class Euler07Test {
         assertThat(prime(10_001)).isEqualTo(104_743);
     }
 
-    private static final Array<Integer> PRIMES = Array.ofAll(PrimeNumbers.primes().take(10_001));
+    private static final Vector<Integer> PRIMES = Vector.ofAll(PrimeNumbers.primes().take(10_001));
 
     private static long prime(int index) {
         return PRIMES.get(index - 1);

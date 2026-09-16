@@ -37,7 +37,7 @@ import static io.vavr.collection.JavaConverters.ListView;
  * @param <T> Component type of the Queue
  * @author Daniel Dietrich
  */
-public final class Queue<T extends @Nullable Object> extends AbstractQueue<T, Queue<T>> implements LinearSeq<T> {
+public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     private static final Queue<?> EMPTY = new Queue<>(io.vavr.collection.List.empty(), io.vavr.collection.List.empty());
 
@@ -723,7 +723,6 @@ public final class Queue<T extends @Nullable Object> extends AbstractQueue<T, Qu
      * @param element The new element
      * @return a new {@code Queue} instance, containing the new element
      */
-    @Override
     public Queue<T> enqueue(T element) {
         return new Queue<>(front, rear.prepend(element));
     }
@@ -1476,5 +1475,141 @@ public final class Queue<T extends @Nullable Object> extends AbstractQueue<T, Qu
     @Override
     public int hashCode() {
         return io.vavr.collection.Collections.hashOrdered(this);
+    }
+
+    /**
+     * Removes an element from this Queue.
+     *
+     * @return a tuple containing the first element and the remaining elements of this Queue
+     * @throws NoSuchElementException if this Queue is empty
+     */
+    public Tuple2<T, Queue<T>> dequeue() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("dequeue of empty " + getClass().getSimpleName());
+        } else {
+            return Tuple.of(head(), tail());
+        }
+    }
+
+    /**
+     * Removes an element from this Queue.
+     *
+     * @return {@code None} if this Queue is empty, otherwise {@code Some} {@code Tuple} containing the first element and the remaining elements of this Queue
+     */
+    public Option<Tuple2<T, Queue<T>>> dequeueOption() {
+        return isEmpty() ? Option.none() : Option.some(dequeue());
+    }
+
+    /**
+     * Enqueues the given elements. A queue has FIFO order, i.e. the first of the given elements is
+     * the first which will be retrieved.
+     *
+     * @param elements Elements, may be empty
+     * @return a new {@code Queue} instance, containing the new elements
+     * @throws NullPointerException if elements is null
+     */
+    @SuppressWarnings("unchecked")
+    public Queue<T> enqueue(T ... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return enqueueAll(io.vavr.collection.List.of(elements));
+    }
+
+    /**
+     * Returns the first element without modifying it.
+     *
+     * @return the first element
+     * @throws NoSuchElementException if this Queue is empty
+     */
+    public T peek() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("peek of empty " + getClass().getSimpleName());
+        } else {
+            return head();
+        }
+    }
+
+    /**
+     * Returns the first element without modifying the Queue.
+     *
+     * @return {@code None} if this Queue is empty, otherwise a {@code Some} containing the first element
+     */
+    public Option<T> peekOption() {
+        return isEmpty() ? Option.none() : Option.some(peek());
+    }
+
+    @Override
+    public Queue<T> dropUntil(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return dropWhile(predicate.negate());
+    }
+
+    /**
+     * Dual of {@linkplain #tailOption()}, returning all elements except the last as {@code Option}.
+     *
+     * @return {@code Some(Queue)} or {@code None} if this is empty.
+     */
+    public Option<Queue<T>> initOption() {
+        return isEmpty() ? Option.none() : Option.some(init());
+    }
+
+    @Override
+    public Option<Queue<T>> tailOption() {
+        return isEmpty() ? Option.none() : Option.some(tail());
+    }
+
+    @Override
+    public Queue<T> retainAll(Iterable<? extends T> elements) {
+        return Collections.retainAll(this, elements);
+    }
+
+    /**
+     * Removes all occurrences of the specified elements from this Queue.
+     *
+     * @param elements the elements to be removed
+     * @return a new Queue with all occurrences of the specified elements removed
+     * @throws NullPointerException if {@code elements} is null
+     */
+    @Override
+    public Queue<T> removeAll(Iterable<? extends T> elements) {
+        return Collections.removeAll(this, elements);
+    }
+
+    /**
+     * Removes all elements from this Queue that satisfy the given predicate.
+     *
+     * @param predicate the predicate used to test elements
+     * @return a new Queue with all elements that satisfy the predicate removed
+     * @throws NullPointerException if {@code predicate} is null
+     * @deprecated Use {@link #reject(Predicate)} instead
+     */
+    @Deprecated
+    public Queue<T> removeAll(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return reject(predicate);
+    }
+
+    @Override
+    public Queue<T> reject(Predicate<? super T> predicate) {
+        return Collections.reject(this, predicate);
+    }
+
+    @Override
+    public Queue<T> takeWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return takeUntil(predicate.negate());
+    }
+
+    @Override
+    public Queue<T> peek(Consumer<? super T> action) {
+        Objects.requireNonNull(action, "action is null");
+        if (!isEmpty()) {
+            action.accept(head());
+        }
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return mkString(stringPrefix() + "(", ", ", ")");
     }
 }

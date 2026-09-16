@@ -1,8 +1,8 @@
 package io.vavr.collection.euler;
 
-import io.vavr.collection.CharSeq;
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
+import io.vavr.collection.Vector;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -46,19 +46,19 @@ public class Euler43Test {
     }
 
     private static Seq<Long> tenDigitPandigitalsWithProperty() {
-        final CharSeq ALL_DIGITS = CharSeq.of("0123456789");
+        final Vector<Character> ALL_DIGITS = Vector.ofAll("0123456789".toCharArray());
         final List<Integer> DIVISORS = List.of(2, 3, 5, 7, 11, 13, 17);
 
         return ALL_DIGITS
                 .combinations(2)
-                .flatMap(CharSeq::permutations)
+                .flatMap(Vector::permutations)
                 .flatMap(firstTwoDigits -> DIVISORS
                         .foldLeft(List.of(firstTwoDigits), (accumulator, divisor) -> accumulator
                                 .flatMap(digitsSoFar -> ALL_DIGITS
                                         .removeAll(digitsSoFar)
                                         .map(nextDigit -> digitsSoFar.append(nextDigit))
                                 )
-                                .filter(digitsToTest -> digitsToTest.takeRight(3).parseInt() % divisor == 0)
+                                .filter(digitsToTest -> Integer.parseInt(digitsToTest.takeRight(3).mkString()) % divisor == 0)
                         )
                 )
                 .map(tailDigitsWithProperty -> tailDigitsWithProperty
@@ -67,6 +67,6 @@ public class Euler43Test {
                                 .head()
                         )
                 )
-                .map(CharSeq::parseLong);
+                .map(v -> Long.parseLong(v.mkString()));
     }
 }

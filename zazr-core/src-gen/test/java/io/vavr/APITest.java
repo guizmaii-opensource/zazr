@@ -306,36 +306,6 @@ public class APITest {
         }
 
         @Test
-        public void shouldCharReturnNotNull() {
-            assertThat((Iterable<Character>) CharSeq('1')).isNotNull();
-        }
-
-        @Test
-        public void shouldCharArrayReturnNotNull() {
-            assertThat((Iterable<Character>) CharSeq('1', '2', '3')).isNotNull();
-        }
-
-        @Test
-        public void shouldCharSeqReturnNotNull() {
-            assertThat((Iterable<Character>) CharSeq("123")).isNotNull();
-        }
-
-        @Test
-        public void shouldEmptyArrayReturnNotNull() {
-            assertThat(Array()).isNotNull();
-        }
-
-        @Test
-        public void shouldArrayWithSingleReturnNotNull() {
-            assertThat(Array('1')).isNotNull();
-        }
-
-        @Test
-        public void shouldArrayWithVarArgReturnNotNull() {
-            assertThat(Array('1', '2', '3')).isNotNull();
-        }
-
-        @Test
         public void shouldEmptyVectorReturnNotNull() {
             assertThat(Vector()).isNotNull();
         }
@@ -483,36 +453,6 @@ public class APITest {
         @Test
         public void shouldSortedSetWithVarArgAndComparatorReturnNotNull() {
             assertThat(SortedSet((Comparator<Character>) Character::compareTo, '1', '2', '3')).isNotNull();
-        }
-
-        @Test
-        public void shouldEmptyPriorityQueueReturnNotNull() {
-            assertThat(PriorityQueue()).isNotNull();
-        }
-
-        @Test
-        public void shouldEmptyPriorityQueueWithComparatorReturnNotNull() {
-            assertThat(PriorityQueue((Comparator<Character>) Character::compareTo)).isNotNull();
-        }
-
-        @Test
-        public void shouldPriorityQueueWithSingleReturnNotNull() {
-            assertThat(PriorityQueue('1')).isNotNull();
-        }
-
-        @Test
-        public void shouldPriorityQueueWithSingleAndComparatorReturnNotNull() {
-            assertThat(PriorityQueue(Character::compareTo, '1')).isNotNull();
-        }
-
-        @Test
-        public void shouldPriorityQueueWithVarArgReturnNotNull() {
-            assertThat(PriorityQueue('1', '2', '3')).isNotNull();
-        }
-
-        @Test
-        public void shouldPriorityQueueWithVarArgAndComparatorReturnNotNull() {
-            assertThat(PriorityQueue((Comparator<Character>) Character::compareTo, '1', '2', '3')).isNotNull();
         }
 
         @Test

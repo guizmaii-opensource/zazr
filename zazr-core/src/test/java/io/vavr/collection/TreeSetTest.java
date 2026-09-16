@@ -222,8 +222,8 @@ public class TreeSetTest extends AbstractSortedSetTest {
         public void shouldConstructEmptySetWithExplicitComparator() {
             final TreeSet<Integer> ts = TreeSet.<Integer> of(Comparators.naturalComparator()
                 .reversed())
-                .addAll(Array.ofAll(1, 2, 3));
-            assertThat(ts.toArray()).isEqualTo(Array.of(3, 2, 1));
+                .addAll(Vector.of(1, 2, 3));
+            assertThat(ts.toVector()).isEqualTo(Vector.of(3, 2, 1));
         }
 
         @Test
@@ -283,9 +283,9 @@ public class TreeSetTest extends AbstractSortedSetTest {
         public void shouldKeepComparatorOnRemoveAll() {
             final TreeSet<Integer> ts = TreeSet.of(Comparators.naturalComparator()
                 .reversed(), 1, 2, 3)
-                .removeAll(Array.ofAll(1, 2, 3))
-                .addAll(Array.ofAll(4, 5, 6));
-            assertThat(ts.toArray()).isEqualTo(Array.of(6, 5, 4));
+                .removeAll(Vector.of(1, 2, 3))
+                .addAll(Vector.of(4, 5, 6));
+            assertThat(ts.toVector()).isEqualTo(Vector.of(6, 5, 4));
         }
     }
 
