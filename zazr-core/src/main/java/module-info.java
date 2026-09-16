@@ -1,6 +1,6 @@
-module io.vavr {
-    exports io.vavr;
-    exports io.vavr.collection;
-    exports io.vavr.control;
+module com.guizmaii.zazr {
+    exports com.guizmaii.zazr;
+    exports com.guizmaii.zazr.collection;
+    exports com.guizmaii.zazr.control;
     requires static org.jspecify;
 }

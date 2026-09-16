@@ -94,7 +94,7 @@
     </build>
 
     <profiles>
-        <!-- `make bench`: runs io.vavr.JmhRunner against the test classpath's JMH-generated benchmarks. -->
+        <!-- `make bench`: runs com.guizmaii.zazr.JmhRunner against the test classpath's JMH-generated benchmarks. -->
         <profile>
             <id>benchmark</id>
             <build>
@@ -115,7 +115,7 @@
                                     <arguments>
                                         <argument>-classpath</argument>
                                         <classpath/>
-                                        <argument>io.vavr.JmhRunner</argument>
+                                        <argument>com.guizmaii.zazr.JmhRunner</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
