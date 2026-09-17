@@ -148,7 +148,9 @@ public final class Lazy<T extends @Nullable Object> {
 
     /**
      * Returns a {@code Lazy} that, when first evaluated, applies {@code mapper} to this value and evaluates
-     * the {@code Lazy} it returns.
+     * the {@code Lazy} it returns. The mapper must return a {@code Lazy}, never {@code null}: a {@code null}
+     * result is rejected at evaluation time, i.e. by {@link #get()} on the returned {@code Lazy}, which then
+     * stays unevaluated. (The value a {@code Lazy} holds may be {@code null}; see {@link #map(Function)}.)
      *
      * @param mapper a function from the value to another {@code Lazy}
      * @param <U>    the type of the resulting value
@@ -157,7 +159,7 @@ public final class Lazy<T extends @Nullable Object> {
      */
     public <U extends @Nullable Object> Lazy<U> flatMap(Function<? super T, ? extends Lazy<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return Lazy.of(() -> mapper.apply(get()).get());
+        return Lazy.of(() -> Objects.requireNonNull(mapper.apply(get()), "Lazy.flatMap: mapper returned null").get());
     }
 
     /**

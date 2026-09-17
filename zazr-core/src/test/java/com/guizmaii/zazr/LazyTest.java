@@ -204,6 +204,13 @@ public class LazyTest {
         public void shouldThrowOnNullMapper() {
             assertThrows(NullPointerException.class, () -> Lazy.of(() -> 1).flatMap(null));
         }
+
+        @Test
+        public void shouldRejectANullLazyReturnedByTheMapperOnEvaluation() {
+            final Lazy<Integer> result = Lazy.of(() -> 1).flatMap(i -> null);
+            assertThatThrownBy(result::get).isInstanceOf(NullPointerException.class).hasMessage("Lazy.flatMap: mapper returned null");
+            assertThat(result.isEvaluated()).isFalse();
+        }
     }
 
     @Nested
