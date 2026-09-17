@@ -1,5 +1,6 @@
 package com.guizmaii.zazr.control;
 
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
@@ -8,6 +9,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -848,6 +851,77 @@ public class OptionTest {
         @Test
         public void shouldThrowOnNullMapper() {
             assertThrows(NullPointerException.class, () -> Option.some(1).collect(null));
+        }
+    }
+
+    @Nested
+    class ZipTests {
+
+        @Test
+        public void shouldPairTwoSomes() {
+            assertThat(Option.some(1).zip(Option.some("a"))).isEqualTo(Option.some(Tuple.of(1, "a")));
+        }
+
+        @Test
+        public void shouldBeNoneWhenEitherSideIsNone() {
+            assertThat(Option.some(1).zip(Option.none())).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zip(Option.some("a"))).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zip(Option.none())).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldCombineWithZipWith() {
+            final AtomicInteger calls = new AtomicInteger();
+            assertThat(Option.some(1).zipWith(Option.some(2), (a, b) -> {
+                calls.incrementAndGet();
+                return a + b;
+            })).isEqualTo(Option.some(3));
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotCallTheCombinerUnlessBothAreSome() {
+            final BiFunction<Integer, Integer, Integer> notCalled = (_, _) -> {
+                throw new AssertionError("must not be called");
+            };
+            assertThat(Option.some(1).zipWith(Option.none(), notCalled)).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zipWith(Option.some(2), notCalled)).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zipWith(Option.none(), notCalled)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldRejectANullCombinerResult() {
+            assertThatThrownBy(() -> Option.some(1).zipWith(Option.some(2), (_, _) -> null))
+              .isInstanceOf(NullPointerException.class)
+              .hasMessage("Option.zipWith: f returned null");
+        }
+
+        @Test
+        public void shouldKeepTheLeftValueWithZipLeft() {
+            final Option<Integer> some = Option.some(1);
+            assertThat(some.zipLeft(Option.some("a"))).isSameAs(some);
+            assertThat(some.zipLeft(Option.none())).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zipLeft(Option.some("a"))).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zipLeft(Option.none())).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldKeepTheRightValueWithZipRight() {
+            final Option<String> some = Option.some("a");
+            assertThat(Option.some(1).zipRight(some)).isSameAs(some);
+            assertThat(Option.some(1).zipRight(Option.none())).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zipRight(some)).isEqualTo(Option.none());
+            assertThat(Option.<Integer>none().zipRight(Option.none())).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            final Option<Integer> some = Option.some(1);
+            assertThatThrownBy(() -> some.zip(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> some.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> some.zipWith(Option.some(2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> some.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> some.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.guizmaii.zazr.control;
 
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Nested;
@@ -779,6 +782,85 @@ public class EitherTest {
         @Test
         public void shouldThrowOnNullAction() {
             assertThrows(NullPointerException.class, () -> Either.left(1).tapLeft(null));
+        }
+    }
+
+    @Nested
+    public class ZipTests {
+
+        @Test
+        public void shouldPairTwoRights() {
+            assertThat(Either.<String, Integer>right(1).zip(Either.right("a"))).isEqualTo(Either.right(Tuple.of(1, "a")));
+        }
+
+        @Test
+        public void shouldReturnTheFirstLeftAsIs() {
+            final Either<String, Integer> left = Either.left("a");
+            final Either<String, String> otherLeft = Either.left("b");
+            assertThat(left.zip(Either.right("x"))).isSameAs(left);
+            assertThat(Either.<String, Integer>right(1).zip(otherLeft)).isSameAs(otherLeft);
+            assertThat(left.zip(otherLeft)).isSameAs(left);
+        }
+
+        @Test
+        public void shouldCombineWithZipWith() {
+            final AtomicInteger calls = new AtomicInteger();
+            assertThat(Either.<String, Integer>right(1).zipWith(Either.right(2), (a, b) -> {
+                calls.incrementAndGet();
+                return a + b;
+            })).isEqualTo(Either.right(3));
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotCallTheCombinerUnlessBothAreRight() {
+            final BiFunction<Integer, Integer, Integer> notCalled = (_, _) -> {
+                throw new AssertionError("must not be called");
+            };
+            final Either<String, Integer> left = Either.left("a");
+            final Either<String, Integer> otherLeft = Either.left("b");
+            assertThat(left.zipWith(Either.right(2), notCalled)).isSameAs(left);
+            assertThat(Either.<String, Integer>right(1).zipWith(left, notCalled)).isSameAs(left);
+            assertThat(left.zipWith(otherLeft, notCalled)).isSameAs(left);
+        }
+
+        @Test
+        public void shouldRejectANullCombinerResult() {
+            assertThatThrownBy(() -> Either.<String, Integer>right(1).zipWith(Either.right(2), (_, _) -> null))
+              .isInstanceOf(NullPointerException.class)
+              .hasMessage("Either.zipWith: f returned null");
+        }
+
+        @Test
+        public void shouldKeepTheLeftValueWithZipLeft() {
+            final Either<String, Integer> right = Either.right(1);
+            final Either<String, Integer> left = Either.left("a");
+            final Either<String, String> otherLeft = Either.left("b");
+            assertThat(right.zipLeft(Either.right("x"))).isSameAs(right);
+            assertThat(right.zipLeft(otherLeft)).isSameAs(otherLeft);
+            assertThat(left.zipLeft(Either.right("x"))).isSameAs(left);
+            assertThat(left.zipLeft(otherLeft)).isSameAs(left);
+        }
+
+        @Test
+        public void shouldKeepTheRightValueWithZipRight() {
+            final Either<String, String> right = Either.right("x");
+            final Either<String, Integer> left = Either.left("a");
+            final Either<String, String> otherLeft = Either.left("b");
+            assertThat(Either.<String, Integer>right(1).zipRight(right)).isSameAs(right);
+            assertThat(Either.<String, Integer>right(1).zipRight(otherLeft)).isSameAs(otherLeft);
+            assertThat(left.zipRight(right)).isSameAs(left);
+            assertThat(left.zipRight(otherLeft)).isSameAs(left);
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            final Either<String, Integer> right = Either.right(1);
+            assertThatThrownBy(() -> right.zip(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> right.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> right.zipWith(Either.right(2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> right.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> right.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
 }

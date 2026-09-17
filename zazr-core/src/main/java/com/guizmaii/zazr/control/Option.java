@@ -1,6 +1,20 @@
 package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.CheckedFunction1;
+import com.guizmaii.zazr.Function3;
+import com.guizmaii.zazr.Function4;
+import com.guizmaii.zazr.Function5;
+import com.guizmaii.zazr.Function6;
+import com.guizmaii.zazr.Function7;
+import com.guizmaii.zazr.Function8;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.Tuple4;
+import com.guizmaii.zazr.Tuple5;
+import com.guizmaii.zazr.Tuple6;
+import com.guizmaii.zazr.Tuple7;
+import com.guizmaii.zazr.Tuple8;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
@@ -8,6 +22,7 @@ import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -459,6 +474,466 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
             action.accept(get());
         }
         return this;
+    }
+
+    // -- zip (design 3.4)
+
+    /**
+     * Pairs this value with {@code that}'s, failing fast: {@code Some} of the pair when both are {@code Some},
+     * otherwise {@code None}. The same as {@link #zipWith(Option, BiFunction)} with {@code Tuple::of}.
+     * <pre>{@code
+     * Option.some(1).zip(Option.some("a")); // = Some((1, a))
+     * Option.some(1).zip(Option.none());    // = None
+     * }</pre>
+     *
+     * @param that the other option
+     * @param <U>  the value type of {@code that}
+     * @return {@code Some} of the pair of values, or {@code None} if either side is {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <U extends @Nullable Object> Option<Tuple2<T, U>> zip(Option<? extends U> that) {
+        return zipWith(that, Tuple::of);
+    }
+
+    /**
+     * Combines this value with {@code that}'s through {@code f}, failing fast: {@code Some} of the result when both
+     * are {@code Some}, otherwise {@code None}. {@code f} is called only when both are {@code Some}; it must not
+     * return {@code null}, since {@code Some} cannot hold {@code null} (design 3.9).
+     *
+     * @param that the other option
+     * @param f    combines the two values; it must not return {@code null}
+     * @param <U>  the value type of {@code that}
+     * @param <V>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if either side is {@code None}
+     * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
+     */
+    default <U extends @Nullable Object, V extends @Nullable Object> Option<V> zipWith(Option<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(f, "f is null");
+        if (isEmpty() || that.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(get(), that.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * {@link #zip(Option)} keeping this value: this {@code Some} when both are {@code Some}, otherwise {@code None}.
+     * Both sides are inspected, so this is not {@link #orElse(Option)}: {@code Some(1).zipLeft(None)} is {@code None}.
+     *
+     * @param that the other option
+     * @param <U>  the value type of {@code that}
+     * @return this {@code Some}, or {@code None} if either side is {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <U extends @Nullable Object> Option<T> zipLeft(Option<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isEmpty() || that.isEmpty() ? none() : this;
+    }
+
+    /**
+     * {@link #zip(Option)} keeping {@code that}'s value: {@code that} when both are {@code Some}, otherwise
+     * {@code None}. Both sides are inspected: {@code None.zipRight(Some(1))} is {@code None}.
+     *
+     * @param that the other option
+     * @param <U>  the value type of {@code that}
+     * @return {@code that}, or {@code None} if either side is {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <U extends @Nullable Object> Option<U> zipRight(Option<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isEmpty() || that.isEmpty() ? none() : narrow(that);
+    }
+
+    /**
+     * Pairs the values of two {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Option<Tuple2<T1, T2>> zip(Option<? extends T1> o1, Option<? extends T2> o2) {
+        return zipWith(o1, o2, Tuple::of);
+    }
+
+    /**
+     * Combines the values of two {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the values of three {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Function3)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Option<Tuple3<T1, T2, T3>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3) {
+        return zipWith(o1, o2, o3, Tuple::of);
+    }
+
+    /**
+     * Combines the values of three {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(o3, "o3 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the values of four {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Function4)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Option<Tuple4<T1, T2, T3, T4>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4) {
+        return zipWith(o1, o2, o3, o4, Tuple::of);
+    }
+
+    /**
+     * Combines the values of four {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(o3, "o3 is null");
+        Objects.requireNonNull(o4, "o4 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the values of five {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Function5)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Option<Tuple5<T1, T2, T3, T4, T5>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5) {
+        return zipWith(o1, o2, o3, o4, o5, Tuple::of);
+    }
+
+    /**
+     * Combines the values of five {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(o3, "o3 is null");
+        Objects.requireNonNull(o4, "o4 is null");
+        Objects.requireNonNull(o5, "o5 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the values of six {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Option, Function6)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param o6  the sixth {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <T6> the value type of {@code o6}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Option<Tuple6<T1, T2, T3, T4, T5, T6>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6) {
+        return zipWith(o1, o2, o3, o4, o5, o6, Tuple::of);
+    }
+
+    /**
+     * Combines the values of six {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param o6  the sixth {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <T6> the value type of {@code o6}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(o3, "o3 is null");
+        Objects.requireNonNull(o4, "o4 is null");
+        Objects.requireNonNull(o5, "o5 is null");
+        Objects.requireNonNull(o6, "o6 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty() || o6.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the values of seven {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Option, Option, Function7)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param o6  the sixth {@code Option}
+     * @param o7  the seventh {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <T6> the value type of {@code o6}
+     * @param <T7> the value type of {@code o7}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Option<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7) {
+        return zipWith(o1, o2, o3, o4, o5, o6, o7, Tuple::of);
+    }
+
+    /**
+     * Combines the values of seven {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param o6  the sixth {@code Option}
+     * @param o7  the seventh {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <T6> the value type of {@code o6}
+     * @param <T7> the value type of {@code o7}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(o3, "o3 is null");
+        Objects.requireNonNull(o4, "o4 is null");
+        Objects.requireNonNull(o5, "o5 is null");
+        Objects.requireNonNull(o6, "o6 is null");
+        Objects.requireNonNull(o7, "o7 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty() || o6.isEmpty() || o7.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get()), "Option.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the values of eight {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Option, Option, Option, Function8)}
+     * with {@code Tuple::of}.
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param o6  the sixth {@code Option}
+     * @param o7  the seventh {@code Option}
+     * @param o8  the eighth {@code Option}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <T6> the value type of {@code o6}
+     * @param <T7> the value type of {@code o7}
+     * @param <T8> the value type of {@code o8}
+     * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Option<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7, Option<? extends T8> o8) {
+        return zipWith(o1, o2, o3, o4, o5, o6, o7, o8, Tuple::of);
+    }
+
+    /**
+     * Combines the values of eight {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
+     * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
+     * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param o1  the first {@code Option}
+     * @param o2  the second {@code Option}
+     * @param o3  the third {@code Option}
+     * @param o4  the fourth {@code Option}
+     * @param o5  the fifth {@code Option}
+     * @param o6  the sixth {@code Option}
+     * @param o7  the seventh {@code Option}
+     * @param o8  the eighth {@code Option}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <T1> the value type of {@code o1}
+     * @param <T2> the value type of {@code o2}
+     * @param <T3> the value type of {@code o3}
+     * @param <T4> the value type of {@code o4}
+     * @param <T5> the value type of {@code o5}
+     * @param <T6> the value type of {@code o6}
+     * @param <T7> the value type of {@code o7}
+     * @param <T8> the value type of {@code o8}
+     * @param <R>  the result type
+     * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7, Option<? extends T8> o8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+        Objects.requireNonNull(o1, "o1 is null");
+        Objects.requireNonNull(o2, "o2 is null");
+        Objects.requireNonNull(o3, "o3 is null");
+        Objects.requireNonNull(o4, "o4 is null");
+        Objects.requireNonNull(o5, "o5 is null");
+        Objects.requireNonNull(o6, "o6 is null");
+        Objects.requireNonNull(o7, "o7 is null");
+        Objects.requireNonNull(o8, "o8 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty() || o6.isEmpty() || o7.isEmpty() || o8.isEmpty()) {
+            return none();
+        }
+        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get(), o8.get()), "Option.zipWith: f returned null"));
     }
 
     // -- conversions (design 3.2)

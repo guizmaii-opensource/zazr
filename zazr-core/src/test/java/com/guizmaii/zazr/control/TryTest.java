@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.assertj.core.api.Assertions;
@@ -1807,6 +1808,101 @@ public class TryTest {
         public void shouldThrowOnNullArguments() {
             assertThrows(NullPointerException.class, () -> Try.withResources(null, r -> "x"));
             assertThrows(NullPointerException.class, () -> Try.withResources(() -> Closeable.of(1), null));
+        }
+    }
+
+    @Nested
+    class ZipTests {
+
+        @Test
+        public void shouldPairTwoSuccesses() {
+            assertThat(Try.success(1).zip(Try.success("a"))).isEqualTo(Try.success(Tuple.of(1, "a")));
+        }
+
+        @Test
+        public void shouldReturnTheFirstFailureAsIs() {
+            final Try<Integer> failure = Try.failure(new IllegalStateException("a"));
+            final Try<String> otherFailure = Try.failure(new IllegalStateException("b"));
+            assertThat(failure.zip(Try.success("x"))).isSameAs(failure);
+            assertThat(Try.success(1).zip(otherFailure)).isSameAs(otherFailure);
+            assertThat(failure.zip(otherFailure)).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldCombineWithZipWith() {
+            final AtomicInteger calls = new AtomicInteger();
+            assertThat(Try.success(1).zipWith(Try.success(2), (a, b) -> {
+                calls.incrementAndGet();
+                return a + b;
+            })).isEqualTo(Try.success(3));
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotCallTheCombinerUnlessBothAreSuccess() {
+            final BiFunction<Integer, Integer, Integer> notCalled = (_, _) -> {
+                throw new AssertionError("must not be called");
+            };
+            final Try<Integer> failure = Try.failure(new IllegalStateException("a"));
+            final Try<Integer> otherFailure = Try.failure(new IllegalStateException("b"));
+            assertThat(failure.zipWith(Try.success(2), notCalled)).isSameAs(failure);
+            assertThat(Try.success(1).zipWith(failure, notCalled)).isSameAs(failure);
+            assertThat(failure.zipWith(otherFailure, notCalled)).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldCaptureWhatTheCombinerThrows() {
+            final RuntimeException boom = new IllegalStateException("boom");
+            assertThat(Try.success(1).zipWith(Try.success(2), (_, _) -> {
+                throw boom;
+            })).isEqualTo(Try.failure(boom));
+        }
+
+        @Test
+        public void shouldRethrowAFatalCombinerError() {
+            final UnknownError fatal = new UnknownError("fatal");
+            assertThatThrownBy(() -> Try.success(1).zipWith(Try.success(2), (_, _) -> {
+                throw fatal;
+            })).isSameAs(fatal);
+        }
+
+        @Test
+        public void shouldCaptureANullCombinerResultAsAFailure() {
+            final Try<Object> actual = Try.success(1).zipWith(Try.success(2), (_, _) -> null);
+            assertThat(actual.isFailure()).isTrue();
+            assertThat(actual.getCause()).isInstanceOf(NullPointerException.class).hasMessage("Try.zipWith: f returned null");
+        }
+
+        @Test
+        public void shouldKeepTheLeftValueWithZipLeft() {
+            final Try<Integer> success = Try.success(1);
+            final Try<Integer> failure = Try.failure(new IllegalStateException("a"));
+            final Try<String> otherFailure = Try.failure(new IllegalStateException("b"));
+            assertThat(success.zipLeft(Try.success("x"))).isSameAs(success);
+            assertThat(success.zipLeft(otherFailure)).isSameAs(otherFailure);
+            assertThat(failure.zipLeft(Try.success("x"))).isSameAs(failure);
+            assertThat(failure.zipLeft(otherFailure)).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldKeepTheRightValueWithZipRight() {
+            final Try<String> success = Try.success("x");
+            final Try<Integer> failure = Try.failure(new IllegalStateException("a"));
+            final Try<String> otherFailure = Try.failure(new IllegalStateException("b"));
+            assertThat(Try.success(1).zipRight(success)).isSameAs(success);
+            assertThat(Try.success(1).zipRight(otherFailure)).isSameAs(otherFailure);
+            assertThat(failure.zipRight(success)).isSameAs(failure);
+            assertThat(failure.zipRight(otherFailure)).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            final Try<Integer> success = Try.success(1);
+            assertThatThrownBy(() -> success.zip(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> success.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> success.zipWith(Try.success(2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> success.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> success.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
 }
