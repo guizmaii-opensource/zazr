@@ -1281,6 +1281,23 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
+    default <U extends @Nullable Object> Stream<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // walk to the first kept element now, the rest lazily; the Option found on the way is the head, so the
+        // mapper never runs twice for an element
+        Stream<T> stream = this;
+        while (!stream.isEmpty()) {
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(stream.head()), "Stream.collect: mapper returned null");
+            if (collected.isDefined()) {
+                final Stream<T> tail = stream.tail();
+                return cons(collected.get(), () -> tail.collect(mapper));
+            }
+            stream = stream.tail();
+        }
+        return Empty.instance();
+    }
+
+    @Override
     default <U extends @Nullable Object> Stream<U> as(U value) {
         return map(ignored -> value);
     }

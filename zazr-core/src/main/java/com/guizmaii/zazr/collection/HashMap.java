@@ -675,6 +675,15 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return foldLeft(HashMap.empty(), (acc, entry) -> {
+            final Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "HashMap.collect: mapper returned null");
+            return collected.isDefined() ? acc.put(collected.get()) : acc;
+        });
+    }
+
+    @Override
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return foldLeft(HashMap.empty(), (acc, entry) -> acc.put(entry.map(mapper)));

@@ -369,6 +369,31 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
+     * Matches and transforms the value in one step: {@code mapper} returns {@code Some} of the new value for a
+     * value it accepts and {@code None} for one it rejects. The {@code case} ergonomics come from a {@code switch}
+     * inside the lambda:
+     * <pre>{@code
+     * Option<Double> radius = shape.collect(s -> switch (s) {
+     *     case Circle c -> Option.some(c.radius());
+     *     default -> Option.none();
+     * });
+     * }</pre>
+     * On an {@code Option} this is the same operation as {@link #flatMap(Function)}, spelled the way it is spelled on
+     * the collections.
+     *
+     * @param mapper a function from the value to {@code Some} of its replacement or {@code None}; it must not
+     *               return {@code null}
+     * @param <U>    the type of the collected value
+     * @return the {@code Option} the mapper returned for a {@code Some}, {@code None} for a {@code None}
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Option<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return isEmpty() ? none() : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.collect: mapper returned null");
+    }
+
+    /**
      * Transforms the value of this {@code Some} using the given mapper and wraps it in a new {@code Some}.
      * Returns {@code None} if this is {@code None}.
      * <p>

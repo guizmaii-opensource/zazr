@@ -1135,6 +1135,17 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+        return collect(this, EntryComparator.natural(), mapper);
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+        Objects.requireNonNull(keyComparator, "keyComparator is null");
+        return collect(this, EntryComparator.of(keyComparator), mapper);
+    }
+
+    @Override
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         return map(this, EntryComparator.natural(), mapper);
     }
@@ -1426,6 +1437,13 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(mapper, "mapper is null");
         return createTreeMap(entryComparator, map.entries.iterator().flatMap(entry -> mapper.apply(entry._1(), entry._2())));
     }
+    private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
+            BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // Iterator.collect rejects a null Option and drops the None entries in one pass
+        return createTreeMap(entryComparator, map.entries.iterator().collect(entry -> mapper.apply(entry._1(), entry._2())));
+    }
+
 
     private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> map(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
             BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {

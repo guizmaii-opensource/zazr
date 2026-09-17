@@ -1131,6 +1131,19 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     }
 
     @Override
+    default <U extends @Nullable Object> List<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        List<U> list = empty();
+        for (T t : this) {
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "List.collect: mapper returned null");
+            if (collected.isDefined()) {
+                list = list.prepend(collected.get());
+            }
+        }
+        return list.reverse();
+    }
+
+    @Override
     default <U extends @Nullable Object> List<U> as(U value) {
         return map(ignored -> value);
     }

@@ -811,6 +811,23 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
+    public <U extends @Nullable Object> LinkedHashSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isEmpty()) {
+            return empty();
+        }
+        LinkedHashMap<U, Object> that = LinkedHashMap.empty();
+        for (T t : this) {
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.collect: mapper returned null");
+            if (collected.isDefined()) {
+                final U u = collected.get();
+                that = that.put(u, u);
+            }
+        }
+        return new LinkedHashSet<>(that);
+    }
+
+    @Override
     public <U extends @Nullable Object> LinkedHashSet<U> as(U value) {
         return map(ignored -> value);
     }

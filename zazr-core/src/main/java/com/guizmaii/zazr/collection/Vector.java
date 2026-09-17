@@ -996,6 +996,23 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
+    public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // one pass over the leaves straight into the builder, like flatMap: no intermediate collection
+        final Builder<U> builder = newBuilder();
+        trie.<Object> visit((index, leaf, start, end) -> {
+            for (int i = start; i < end; i++) {
+                final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(trie.type.getAt(leaf, i)), "Vector.collect: mapper returned null");
+                if (collected.isDefined()) {
+                    builder.add(collected.get());
+                }
+            }
+            return index + end - start;
+        });
+        return builder.result();
+    }
+
+    @Override
     public <U extends @Nullable Object> Vector<U> as(U value) {
         return map(ignored -> value);
     }

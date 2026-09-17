@@ -587,6 +587,28 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     <U extends @Nullable Object> Traversable<U> map(Function<? super T, ? extends U> mapper);
 
     /**
+     * Matches and transforms the elements in one pass: {@code mapper} returns {@code Some} of the new element for
+     * an element it accepts and {@code None} for one it drops. The result has the same collection kind and keeps
+     * the order of this collection. The {@code case} ergonomics come from a {@code switch} inside the lambda:
+     * <pre>{@code
+     * Vector<Double> radii = shapes.collect(s -> switch (s) {
+     *     case Circle c -> Option.some(c.radius());
+     *     default -> Option.none();
+     * });
+     * }</pre>
+     * This is {@code filter} and {@code map} in one step, without evaluating anything twice: each element is
+     * passed to the mapper exactly once. {@link Stream} and {@link Iterator} call the mapper lazily, as they do
+     * for {@code map}.
+     *
+     * @param mapper a function from an element to {@code Some} of its replacement or {@code None}; it must not
+     *               return {@code null}
+     * @param <U>    the type of the collected elements
+     * @return the collected elements, in order
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an element
+     */
+    <U extends @Nullable Object> Traversable<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    /**
      * Replaces every element with {@code value}: the same shape, every element the same. The same as
      * {@code map(ignored -> value)}.
      *

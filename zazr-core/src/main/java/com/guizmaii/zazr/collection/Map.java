@@ -296,10 +296,44 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
         return (Seq<U>) iterator().map(mapper).toStream();
     }
 
+    /**
+     * Matches and transforms the entries in one pass into a {@link Seq}; see {@link #collect(BiFunction)} for a
+     * result that is a {@code Map}.
+     *
+     * @param mapper a function from an entry to {@code Some} of the collected value or {@code None}; it must not
+     *               return {@code null}
+     * @param <U>    the type of the collected values
+     * @return the collected values, in the iteration order of this {@code Map}
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an entry
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    default <U extends @Nullable Object> Seq<U> collect(Function<? super Tuple2<K, V>, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return (Seq<U>) iterator().collect(mapper).toStream();
+    }
+
     @Override
     default <U extends @Nullable Object> Seq<U> as(U value) {
         return map(ignored -> value);
     }
+
+    /**
+     * Matches and transforms the entries in one pass into a {@code Map} of the same kind: {@code mapper} returns
+     * {@code Some} of the new entry for an entry it keeps and {@code None} for one it drops. Two kept entries with
+     * the same new key keep the later one in iteration order, as {@link #map(BiFunction)} does.
+     * <pre>{@code
+     * Map<String, Integer> adults = ages.collect((name, age) -> age >= 18 ? Option.some(Tuple.of(name, age)) : Option.none());
+     * }</pre>
+     *
+     * @param mapper a function from a key and a value to {@code Some} of the new entry or {@code None}; it must not
+     *               return {@code null}
+     * @param <K2>   the new key type
+     * @param <V2>   the new value type
+     * @return a {@code Map} of the collected entries
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an entry
+     */
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper);
 
     /**
      * Maps the entries of this {@code Map} to form a new {@code Map}.

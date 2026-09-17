@@ -1049,6 +1049,12 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
+    public <U extends @Nullable Object> Queue<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return isEmpty() ? empty() : new Queue<>(toList().collect(mapper), com.guizmaii.zazr.collection.List.empty());
+    }
+
+    @Override
     public <U extends @Nullable Object> Queue<U> as(U value) {
         return map(ignored -> value);
     }

@@ -174,6 +174,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Predica
     <U extends @Nullable Object> Set<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
+    <U extends @Nullable Object> Set<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    @Override
     default <U extends @Nullable Object> Set<U> as(U value) {
         return map(ignored -> value);
     }

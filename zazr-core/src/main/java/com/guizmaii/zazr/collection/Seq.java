@@ -1116,6 +1116,9 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     <U extends @Nullable Object> Seq<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
+    <U extends @Nullable Object> Seq<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    @Override
     default <U extends @Nullable Object> Seq<U> as(U value) {
         return map(ignored -> value);
     }

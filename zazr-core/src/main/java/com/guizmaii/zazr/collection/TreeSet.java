@@ -877,6 +877,36 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     /**
+     * Matches and transforms the elements in one pass into a {@code TreeSet} ordered by {@code comparator}; see
+     * {@link #collect(Function)}.
+     *
+     * @param comparator the order of the collected elements
+     * @param mapper     a function from an element to {@code Some} of its replacement or {@code None}; it must
+     *                   not return {@code null}
+     * @param <U>        the type of the collected elements
+     * @return a {@code TreeSet} of the collected elements
+     * @throws NullPointerException if an argument is null, or if {@code mapper} returns {@code null} for an element
+     */
+    public <U extends @Nullable Object> TreeSet<U> collect(Comparator<? super U> comparator, Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        return TreeSet.ofAll(comparator, iterator().collect(mapper));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The result is ordered by the natural order of {@code U}; use {@link #collect(Comparator, Function)} to
+     * choose the order.
+     *
+     * @throws ClassCastException if the collected elements are not mutually {@link Comparable}
+     */
+    @Override
+    public <U extends @Nullable Object> TreeSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        return collect(Comparators.naturalComparator(), mapper);
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * The resulting TreeSet is ordered by the natural comparator of {@code U}.

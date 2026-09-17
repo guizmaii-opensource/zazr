@@ -1835,6 +1835,44 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
+    default <U extends @Nullable Object> Iterator<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<U>() {
+
+                // a flag and a field, not an Option, as in filter(): the mapper's Option is unwrapped as soon as it is seen
+                private boolean nextDefined = false;
+                private @Nullable U next;
+
+                @Override
+                public boolean hasNext() {
+                    while (!nextDefined && that.hasNext()) {
+                        final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(that.next()), "Iterator.collect: mapper returned null");
+                        if (collected.isDefined()) {
+                            next = collected.get();
+                            nextDefined = true;
+                        }
+                    }
+                    return nextDefined;
+                }
+
+                @Override
+                // hasNext() sets `next` whenever it sets `nextDefined`
+                @SuppressWarnings("NullAway")
+                public U getNext() {
+                    final U result = next;
+                    nextDefined = false;
+                    next = null;
+                    return result;
+                }
+            };
+        }
+    }
+
+    @Override
     default <U extends @Nullable Object> Iterator<U> as(U value) {
         return map(ignored -> value);
     }

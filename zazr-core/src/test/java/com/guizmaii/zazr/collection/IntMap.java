@@ -162,6 +162,11 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
+    public <U> Seq<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        return original.collect(e -> mapper.apply(e._2()));
+    }
+
+    @Override
     public IntMap<T> orElse(Iterable<? extends T> other) {
         return unit(original.orElse(List.ofAll(other).zipWithIndex().map(t -> Tuple.of(t._2(), t._1()))));
     }

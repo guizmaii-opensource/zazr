@@ -808,6 +808,23 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
+    public <U extends @Nullable Object> HashSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isEmpty()) {
+            return empty();
+        }
+        HashArrayMappedTrie<U, U> that = HashArrayMappedTrie.empty();
+        for (T t : this) {
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "HashSet.collect: mapper returned null");
+            if (collected.isDefined()) {
+                final U u = collected.get();
+                that = that.put(u, u);
+            }
+        }
+        return new HashSet<>(that);
+    }
+
+    @Override
     public <U extends @Nullable Object> HashSet<U> as(U value) {
         return map(ignored -> value);
     }

@@ -419,6 +419,43 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
+     * Matches and transforms the value in one step: {@code mapper} returns {@code Some} of the new value for a
+     * value it accepts and {@code None} for one it rejects, which fails this {@code Try} with a
+     * {@link NoSuchElementException}. The {@code case} ergonomics come from a {@code switch} inside the lambda:
+     * <pre>{@code
+     * Try<Double> radius = shape.collect(s -> switch (s) {
+     *     case Circle c -> Option.some(c.radius());
+     *     default -> Option.none();
+     * });
+     * }</pre>
+     * The mapper runs under {@code Try}, as {@link #map(Function)} does: a non-fatal exception it throws, or a
+     * {@code null} it returns instead of an {@code Option}, becomes the {@code Failure}. A {@code Failure} is
+     * returned unchanged and the mapper is not called.
+     *
+     * @param mapper a function from the value to {@code Some} of its replacement or {@code None}
+     * @param <U>    the type of the collected value
+     * @return {@code Success} of the collected value, a {@code Failure} of a {@code NoSuchElementException} if the
+     *         mapper returned {@code None}, or this {@code Failure}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Try<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isFailure()) {
+            return (Failure<U>) this;
+        }
+        try {
+            final T value = get();
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(value), "Try.collect: mapper returned null");
+            return collected.isDefined()
+              ? new Success<>(collected.get())
+              : new Failure<>(new NoSuchElementException("Predicate does not hold for " + value));
+        } catch (Throwable t) {
+            return new Failure<>(t);
+        }
+    }
+
+    /**
      * Returns the value of this {@code Try} if it is a {@link Success}, or throws the underlying exception if it is a {@link Failure}.
      * <p>
      * <strong>Important:</strong> If this {@code Try} is a {@link Failure}, the exception thrown is exactly the

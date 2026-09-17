@@ -189,6 +189,9 @@ public interface IndexedSeq<T extends @Nullable Object> extends Seq<T> {
     <U extends @Nullable Object> IndexedSeq<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
+    <U extends @Nullable Object> IndexedSeq<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    @Override
     default <U extends @Nullable Object> IndexedSeq<U> as(U value) {
         return map(ignored -> value);
     }

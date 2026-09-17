@@ -122,6 +122,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
     <U extends @Nullable Object> SortedSet<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
+    <U extends @Nullable Object> SortedSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    @Override
     default <U extends @Nullable Object> SortedSet<U> as(U value) {
         return map((o1, o2) -> 0, ignored -> value);
     }
