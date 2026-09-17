@@ -1,8 +1,10 @@
 package com.guizmaii.zazr.collection;
 
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.JavaConverters.ChangePolicy;
 import com.guizmaii.zazr.collection.JavaConverters.ListView;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,6 +14,7 @@ import java.util.stream.Collector;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -420,6 +423,131 @@ public class VectorTest extends AbstractIndexedSeqTest {
                 final NullPointerException e = assertThrows(NullPointerException.class,
                   () -> Vector.range(0, n).collect(i -> i == last ? null : Option.some(i)));
                 assertThat(e.getMessage()).isEqualTo("Vector.collect: mapper returned null");
+            }
+        }
+    }
+
+    // partitionMap, duplicates, duplicatesBy, flatten and nonEmpty, at the empty/1/32/33 boundaries and on both leaf representations
+
+    static java.util.List<Vector<Integer>> bothRepresentations(int n) {
+        final Vector<Integer> primitive = Vector.range(0, n);
+        return java.util.List.of(primitive, Vector.ofAll(primitive.toJavaList()));
+    }
+
+    @Nested
+    class PartitionMapTests {
+
+        @Test
+        public void shouldPartitionMapLikePartitionAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                for (Vector<Integer> vector : bothRepresentations(n)) {
+                    final Tuple2<Vector<String>, Vector<Integer>> actual = vector.partitionMap(i -> i % 2 == 0 ? Either.left("e" + i) : Either.right(i));
+                    final Tuple2<Vector<Integer>, Vector<Integer>> expected = vector.partition(i -> i % 2 == 0);
+                    assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
+                    assertThat(actual._2()).isEqualTo(expected._2());
+                    assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
+                }
+            }
+        }
+
+        @Test
+        public void shouldLeaveOneSideEmpty() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                for (Vector<Integer> vector : bothRepresentations(n)) {
+                    assertThat(vector.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(vector, Vector.empty()));
+                    assertThat(vector.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(Vector.empty(), vector));
+                }
+            }
+            assertThat(Vector.<Integer> empty().partitionMap(i -> Either.<Integer, Integer> left(i))._1()).isSameAs(Vector.empty());
+        }
+
+        @Test
+        public void shouldRejectNullFunctionAndNullEither() {
+            assertThatNullPointerException().isThrownBy(() -> Vector.of(1).partitionMap(null)).withMessage("f is null");
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                final NullPointerException e = assertThrows(NullPointerException.class,
+                  () -> Vector.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)));
+                assertThat(e.getMessage()).isEqualTo("Vector.partitionMap: f returned null");
+            }
+        }
+    }
+
+    @Nested
+    class DuplicatesTests {
+
+        @Test
+        public void shouldReturnDuplicatesInOrderOfFirstOccurrence() {
+            assertThat(Vector.of(3, 1, 3, 2, 1, 3).duplicates()).isEqualTo(Vector.of(3, 1));
+            assertThat(Vector.of(1, 2, 2, 1).duplicates()).isEqualTo(Vector.of(1, 2));
+            assertThat(Vector.of("a", "b", "c").duplicates()).isEqualTo(Vector.empty());
+            assertThat(Vector.of("a", "b", "c").duplicates()).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer> empty().duplicates()).isSameAs(Vector.empty());
+        }
+
+        @Test
+        public void shouldReturnTheFirstElementOfEachDuplicatedKey() {
+            assertThat(Vector.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length)).isEqualTo(Vector.of("aa", "b"));
+            assertThat(Vector.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length)).isEqualTo(Vector.of("aa"));
+            assertThat(Vector.of("b", "aa", "e", "cc").duplicatesBy(String::length)).isEqualTo(Vector.of("b", "aa"));
+            assertThat(Vector.of("a", "bb").duplicatesBy(String::length)).isEqualTo(Vector.empty());
+            assertThatNullPointerException().isThrownBy(() -> Vector.of(1).duplicatesBy(null)).withMessage("keyExtractor is null");
+        }
+
+        @Test
+        public void shouldFindDuplicatesAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                for (Vector<Integer> vector : bothRepresentations(n)) {
+                    assertThat(vector.duplicates()).isEqualTo(Vector.empty());
+                    assertThat(vector.appendAll(vector).duplicates()).isEqualTo(vector);
+                    assertThat(vector.appendAll(vector.reverse()).duplicates()).isEqualTo(vector);
+                    assertThat(vector.duplicatesBy(i -> i % 5)).isEqualTo(vector.take(Math.max(n - 5, 0)).take(5));
+                    assertThat(vector.duplicatesBy(i -> i % 5).isEmpty()).isEqualTo(n <= 5);
+                }
+            }
+        }
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenNestedIterablesAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                for (Vector<Integer> inner : bothRepresentations(n)) {
+                    assertThat(Vector.flatten(Vector.of(inner, inner))).isEqualTo(inner.appendAll(inner));
+                    assertThat(Vector.flatten(java.util.List.of(inner.toJavaList(), inner))).isEqualTo(inner.appendAll(inner));
+                    assertThat(Vector.flatten(Vector.of(Vector.<Integer> empty(), inner, Vector.<Integer> empty()))).isEqualTo(inner);
+                    assertThat(Vector.flatten(Vector.of(inner))).isEqualTo(inner);
+                }
+            }
+            assertThat(Vector.flatten(Vector.<Vector<Integer>> empty())).isSameAs(Vector.empty());
+            assertThat(Vector.flatten(Vector.of(Vector.<Integer> empty()))).isSameAs(Vector.empty());
+            final Vector<Number> numbers = Vector.flatten(Vector.of(Vector.of(1), Vector.of(2.0)));
+            assertThat(numbers).isEqualTo(Vector.<Number> of(1, 2.0));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> Vector.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> Vector.flatten(java.util.Arrays.asList(Vector.of(1), null)));
+            assertThatNullPointerException().isThrownBy(() -> Vector.flatten(Vector.of(java.util.Arrays.asList(1, null))));
+        }
+    }
+
+    @Nested
+    class NonEmptyTests {
+
+        @Test
+        public void shouldNarrowToNonEmptyVector() {
+            assertThat(Vector.<Integer> empty().nonEmpty()).isEqualTo(Option.none());
+            for (int n : new int[] { 1, 32, 33 }) {
+                for (Vector<Integer> vector : bothRepresentations(n)) {
+                    final Option<NonEmptyVector<Integer>> actual = vector.nonEmpty();
+                    assertThat(actual.isDefined()).isTrue();
+                    assertThat(actual.get().toVector()).isSameAs(vector);
+                    assertThat(actual.get().size()).isEqualTo(n);
+                }
             }
         }
     }
