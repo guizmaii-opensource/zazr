@@ -330,6 +330,18 @@ public class VectorBuilderTest {
     }
 
     @Test
+    public void shouldKeepElementsAddedBeforeANullOnRejectedAddAll() {
+        final java.util.List<Integer> withNullElement = new java.util.ArrayList<>();
+        withNullElement.add(1);
+        withNullElement.add(2);
+        withNullElement.add(null);
+        withNullElement.add(3);
+        final Vector.Builder<Integer> builder = Vector.newBuilder();
+        assertThatThrownBy(() -> builder.addAll(withNullElement)).isInstanceOf(NullPointerException.class);
+        assertThat(builder.result()).isEqualTo(Vector.of(1, 2));
+    }
+
+    @Test
     public void shouldThrowOnAnyUseAfterResult() {
         final Vector.Builder<Integer> builder = Vector.newBuilder();
         builder.add(1);

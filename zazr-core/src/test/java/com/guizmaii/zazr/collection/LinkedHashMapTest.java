@@ -134,6 +134,25 @@ public class LinkedHashMapTest extends AbstractMapTest {
     }
 
     @Nested
+    class StaticOfentriesTests {
+        @Test
+        public void shouldRejectNullEntryInOfEntries() {
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashMap.ofEntries((Tuple2<Integer, String>) null))
+                    .withMessage("LinkedHashMap.ofEntries: entry is null");
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashMap.ofEntries((java.util.Map.Entry<Integer, String>) null))
+                    .withMessage("LinkedHashMap.ofEntries: entry is null");
+            final java.util.List<Tuple2<Integer, String>> withNullEntry = new java.util.ArrayList<>();
+            withNullEntry.add(Tuple.of(1, "a"));
+            withNullEntry.add(null);
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashMap.ofEntries(withNullEntry))
+                    .withMessage("LinkedHashMap.ofEntries: entry is null");
+        }
+    }
+
+    @Nested
     class LinkedHashMapKeysetTests {
         @Test
         public void shouldKeepKeySetOrder() {

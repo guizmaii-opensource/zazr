@@ -1548,10 +1548,16 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
          * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} with {@code Object[]}
          * leaves copies whole leaf arrays and shares aligned full ones instead of iterating; a primitive-backed Vector
          * ({@code Vector.range}, {@code ofAll(int[])}) is boxed one element at a time.
+         * <p>
+         * If {@code elements} is not itself a {@code Vector} (which cannot contain a null element), it is consumed
+         * one element at a time, and a null element part-way through is rejected only when reached: the builder keeps
+         * whatever elements were added before it, and a later {@link #result()} returns that partial content, not an
+         * empty or discarded builder.
          *
          * @param elements the elements to append
          * @return this builder
          * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code elements} is null, or if it yields a null element
          */
         @SuppressWarnings("unchecked")
         public Builder<T> addAll(Iterable<? extends T> elements) {

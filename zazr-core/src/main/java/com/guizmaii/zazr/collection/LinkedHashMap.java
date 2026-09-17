@@ -486,6 +486,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         HashMap<K, V> map = HashMap.empty();
         Vector<K> list = Vector.empty();
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
             map = map.put(entry.getKey(), entry.getValue());
             list = list.append(entry.getKey());
         }
@@ -502,6 +503,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofEntries(Tuple2<? extends K, ? extends V> ... entries) {
+        Objects.requireNonNull(entries, "entries is null");
+        for (Tuple2<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
+        }
         final HashMap<K, V> map = HashMap.ofEntries(entries);
         Vector<K> list = Vector.empty();
         for (Tuple2<? extends K, ? extends V> entry : entries) {
@@ -527,6 +532,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             HashMap<K, V> map = HashMap.empty();
             Vector<K> list = Vector.empty();
             for (Tuple2<? extends K, ? extends V> entry : entries) {
+                Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
                 map = map.put(entry);
                 list = list.append(entry._1());
             }

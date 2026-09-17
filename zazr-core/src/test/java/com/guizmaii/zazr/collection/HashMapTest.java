@@ -1,5 +1,6 @@
 package com.guizmaii.zazr.collection;
 
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -128,6 +129,22 @@ public class HashMapTest extends AbstractMapTest {
         @Test
         public void shouldRejectNullValueOnPut() {
             Assertions.assertThatNullPointerException().isThrownBy(() -> HashMap.<Integer, Integer>empty().put(1, null));
+        }
+
+        @Test
+        public void shouldRejectNullEntryInOfEntries() {
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> HashMap.ofEntries((Tuple2<Integer, String>) null))
+                    .withMessage("HashMap.ofEntries: entry is null");
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> HashMap.ofEntries((java.util.Map.Entry<Integer, String>) null))
+                    .withMessage("HashMap.ofEntries: entry is null");
+            final java.util.List<Tuple2<Integer, String>> withNullEntry = new java.util.ArrayList<>();
+            withNullEntry.add(Tuple.of(1, "a"));
+            withNullEntry.add(null);
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> HashMap.ofEntries(withNullEntry))
+                    .withMessage("HashMap.ofEntries: entry is null");
         }
 
         @Test
