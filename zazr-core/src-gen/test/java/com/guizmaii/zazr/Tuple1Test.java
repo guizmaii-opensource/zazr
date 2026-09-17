@@ -85,10 +85,10 @@ public class Tuple1Test {
     }
 
     @Test
-    public void shouldReturnTuple1OfSequence1() {
+    public void shouldReturnTuple1OfUnzip1() {
       final Seq<Tuple1<Integer>> iterable = List.of(Tuple.of(2));
       final Tuple1<Seq<Integer>> expected = Tuple.of(Stream.of(2));
-      assertThat(Tuple.sequence1(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip1(iterable)).isEqualTo(expected);
     }
 
     @Test
