@@ -152,28 +152,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return Nil.instance();
     }
 
-    /**
-     * A {@code List} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    default boolean isAsync() {
-        return false;
-    }
-
     @Override
     boolean isEmpty();
-
-    /**
-     * A {@code List} is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    default boolean isLazy() {
-        return false;
-    }
 
     /**
      * Narrows a widened {@code List<? extends T>} to {@code List<T>}
@@ -1642,11 +1622,6 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     }
 
     @Override
-    default String stringPrefix() {
-        return "List";
-    }
-
-    @Override
     default List<T> subSequence(int beginIndex) {
         if (beginIndex < 0 || beginIndex > length()) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
@@ -1898,7 +1873,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
         @Override
         public String toString() {
-            return stringPrefix() + "()";
+            return "List()";
         }
     }
 
@@ -1954,7 +1929,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
         @Override
         public String toString() {
-            return mkString(stringPrefix() + "(", ", ", ")");
+            return mkString("List(", ", ", ")");
         }
     }
 }

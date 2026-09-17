@@ -49,7 +49,7 @@ public interface Arbitrary<T> {
      * final Gen&lt;BinaryTree&lt;Integer&gt;&gt; treeGen = new ArbitraryTree().apply(10);
      *
      * // stream sum of tree node values to console for 100 arbitrary trees
-     * Stream.of(() -&gt; treeGen.apply(RNG.get())).map(Tree::sum).take(100).stdout();
+     * Stream.of(() -&gt; treeGen.apply(RNG.get())).map(Tree::sum).take(100).forEach(System.out::println);
      * </code>
      * </pre>
      *

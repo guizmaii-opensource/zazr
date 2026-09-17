@@ -125,6 +125,12 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     protected abstract <T1 extends Comparable<? super T1>, T2> Map<T1, T2> emptyMap();
 
+    // the type name a map built by mapOf(...) prints; empty() is an IntMap wrapper, whose name differs
+    private String mapPrefix() {
+        final String empty = emptyMap().toString();
+        return empty.substring(0, empty.length() - "()".length());
+    }
+
     protected abstract <K extends Comparable<? super K>, V, T extends V> Collector<T, ArrayList<T>, ? extends Map<K, V>> collectorWithMapper(
             Function<? super T,? extends K> keyMapper);
 
@@ -781,7 +787,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
             // we need to compare Strings because equals (intentionally) does not work for IntMod2
             final String actual = map.put(new IntMod2(3), "b").toString();
-            final String expected = map.stringPrefix() + "((3, b))";
+            final String expected = mapPrefix() + "((3, b))";
 
             assertThat(actual).isEqualTo(expected);
         }
@@ -792,7 +798,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
             // we need to compare Strings because equals (intentionally) does not work for IntMod2
             final String actual = map.put(new IntMod2(3), "a").toString();
-            final String expected = map.stringPrefix() + "((3, a))";
+            final String expected = mapPrefix() + "((3, a))";
 
             assertThat(actual).isEqualTo(expected);
         }

@@ -1761,11 +1761,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
-    default T get() {
-        return head();
-    }
-
-    @Override
     default <C extends @Nullable Object> Map<C, Iterator<T>> groupBy(Function<? super T, ? extends C> classifier) {
         return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Iterator::ofAll);
     }
@@ -1802,29 +1797,9 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         return hasNext() ? Option.some(init()) : Option.none();
     }
 
-    /**
-     * An {@code Iterator} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    default boolean isAsync() {
-        return false;
-    }
-
     @Override
     default boolean isEmpty() {
         return !hasNext();
-    }
-
-    /**
-     * An {@code Iterator} is computed lazily.
-     *
-     * @return true
-     */
-    @Override
-    default boolean isLazy() {
-        return true;
     }
 
     @Override
@@ -1923,7 +1898,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     /**
      * Returns a new Iterator that lazily performs the given {@code action} on each
-     * element as it is pulled via {@link #next()}; unlike other lazy {@code Value}
+     * element as it is pulled via {@link #next()}; unlike a lazy {@code Stream}
      * implementations, not even the first element's action runs until the first
      * element is actually requested.
      *
@@ -2154,11 +2129,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-
-    @Override
-    default String stringPrefix() {
-        return "Iterator";
-    }
 
     /**
      * Consumes and discards the first element from this Iterator and returns this
@@ -2481,16 +2451,11 @@ interface IteratorModule {
         public boolean hasNext() { return false; }
 
         @Override
-        public Object next() { throw new NoSuchElementException(stringPrefix() + ".next()"); }
-
-        @Override
-        public String stringPrefix() {
-            return "EmptyIterator";
-        }
+        public Object next() { throw new NoSuchElementException("EmptyIterator.next()"); }
 
         @Override
         public String toString() {
-            return stringPrefix() + "()";
+            return "EmptyIterator()";
         }
     }
 

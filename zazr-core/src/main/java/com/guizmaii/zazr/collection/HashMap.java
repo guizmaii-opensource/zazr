@@ -649,29 +649,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.initOption(this);
     }
 
-    /**
-     * A {@code HashMap} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() {
         return trie.isEmpty();
-    }
-
-    /**
-     * A {@code HashMap} is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
     }
 
     @Override
@@ -942,13 +922,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public String stringPrefix() {
-        return "HashMap";
-    }
-
-    @Override
     public String toString() {
-        return mkString(stringPrefix() + "(", ", ", ")");
+        return mkString("HashMap(", ", ", ")");
     }
 
     private static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> wrap(HashArrayMappedTrie<K, V> trie) {

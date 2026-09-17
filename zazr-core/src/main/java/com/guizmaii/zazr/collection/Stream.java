@@ -1254,26 +1254,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
         }
     }
 
-    /**
-     * A {@code Stream} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    default boolean isAsync() {
-        return false;
-    }
-
-    /**
-     * A {@code Stream} is computed lazily.
-     *
-     * @return true
-     */
-    @Override
-    default boolean isLazy() {
-        return true;
-    }
-
     @Override
     default boolean isTraversableAgain() {
         return true;
@@ -1636,11 +1616,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default String stringPrefix() {
-        return "Stream";
-    }
-
-    @Override
     default Stream<T> subSequence(int beginIndex) {
         if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
@@ -1955,7 +1930,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
         @Override
         public String toString() {
-            return stringPrefix() + "()";
+            return "Stream()";
         }
 
     }
@@ -2007,7 +1982,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
 
         @Override
         public String toString() {
-            final StringBuilder builder = new StringBuilder(stringPrefix()).append("(");
+            final StringBuilder builder = new StringBuilder("Stream(");
             Stream<T> stream = this;
             while (stream != null && !stream.isEmpty()) {
                 final Cons<T> cons = (Cons<T>) stream;

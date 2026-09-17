@@ -219,7 +219,7 @@ final class Collections {
 
     static <T extends @Nullable Object> T last(Traversable<T> source){
         if (source.isEmpty()) {
-            throw new NoSuchElementException("last of empty " + source.stringPrefix());
+            throw new NoSuchElementException("last of empty " + source);
         } else {
             final Iterator<T> it = source.iterator();
             T result = it.next();

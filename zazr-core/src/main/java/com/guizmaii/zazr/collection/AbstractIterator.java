@@ -17,7 +17,7 @@ abstract class AbstractIterator<T extends @Nullable Object> implements Iterator<
 
     @Override
     public String toString() {
-        return stringPrefix() + "(" + (isEmpty() ? "" : "?") + ")";
+        return "Iterator(" + (isEmpty() ? "" : "?") + ")";
     }
 
     protected abstract T getNext();

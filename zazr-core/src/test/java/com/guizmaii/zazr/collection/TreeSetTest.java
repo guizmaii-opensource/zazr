@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection;
 
-import com.guizmaii.zazr.Value;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -369,7 +368,7 @@ public class TreeSetTest extends AbstractSortedSetTest {
     class TosortedsetTests {
         @Test
         public void shouldReturnSelfOnConvertToSortedSet() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toSortedSet()).isSameAs(value);
         }
 
@@ -381,13 +380,13 @@ public class TreeSetTest extends AbstractSortedSetTest {
 
         @Test
         public void shouldNotReturnSelfOnConvertToSortedSetWithDifferentComparator() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toSortedSet(Integer::compareTo)).isNotSameAs(value);
         }
 
         @Test
         public void shouldPreserveComparatorOnConvertToSortedSetWithoutDistinctComparator() {
-            final Value<Integer> value = TreeSet.of(Comparators.naturalComparator().reversed(), 1, 2, 3);
+            final Traversable<Integer> value = TreeSet.of(Comparators.naturalComparator().reversed(), 1, 2, 3);
             assertThat(value.toSortedSet().mkString(",")).isEqualTo("3,2,1");
         }
     }
@@ -397,7 +396,7 @@ public class TreeSetTest extends AbstractSortedSetTest {
         
         @Test
         void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.get()));
+            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
             assertThat(transformed).isEqualTo("42");
         }
     }

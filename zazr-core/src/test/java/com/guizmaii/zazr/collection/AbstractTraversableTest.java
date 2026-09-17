@@ -2,10 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.control.Option;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
@@ -19,11 +15,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import org.assertj.core.api.BooleanAssert;
+import org.assertj.core.api.DoubleAssert;
+import org.assertj.core.api.IntegerAssert;
+import org.assertj.core.api.IterableAssert;
+import org.assertj.core.api.LongAssert;
+import org.assertj.core.api.ObjectArrayAssert;
+import org.assertj.core.api.ObjectAssert;
+import org.assertj.core.api.StringAssert;
 import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
+import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
-import static com.guizmaii.zazr.OutputTester.failingPrintStream;
-import static com.guizmaii.zazr.OutputTester.failingPrintWriter;
-import static java.lang.System.lineSeparator;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,12 +37,80 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 
-public abstract class AbstractTraversableTest extends AbstractValueTest {
+@SuppressWarnings("deprecation")
+@ExtendWith(AbstractTraversableTest.TestTemplateProvider.class)
+public abstract class AbstractTraversableTest {
 
-    // collections reject null elements, keys and values (design 3.9)
-    @Override
-    protected boolean allowsNull() {
-        return false;
+    // A pass-through provider for @TestTemplate methods: one invocation, no parameterization.
+    // (Used to also multiply invocations per Multimap.ContainerType before that family was deleted.)
+    public static class TestTemplateProvider implements TestTemplateInvocationContextProvider {
+
+        @Override
+        public boolean supportsTestTemplate(ExtensionContext context) {
+            return true;
+        }
+
+        @Override
+        public java.util.stream.Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext extensionContext) {
+            return java.util.stream.Stream.of(new TestTemplateInvocationContext() {
+            });
+        }
+    }
+
+    protected <T> IterableAssert<T> assertThat(Iterable<T> actual) {
+        return new IterableAssert<T>(actual) {
+        };
+    }
+
+    protected <T> ObjectAssert<T> assertThat(T actual) {
+        return new ObjectAssert<T>(actual) {
+        };
+    }
+
+    protected <T> ObjectArrayAssert<T> assertThat(T[] actual) {
+        return new ObjectArrayAssert<T>(actual) {
+        };
+    }
+
+    protected BooleanAssert assertThat(Boolean actual) {
+        return new BooleanAssert(actual) {
+        };
+    }
+
+    protected DoubleAssert assertThat(Double actual) {
+        return new DoubleAssert(actual) {
+        };
+    }
+
+    protected IntegerAssert assertThat(Integer actual) {
+        return new IntegerAssert(actual) {
+        };
+    }
+
+    protected LongAssert assertThat(Long actual) {
+        return new LongAssert(actual) {
+        };
+    }
+
+    protected StringAssert assertThat(String actual) {
+        return new StringAssert(actual) {
+        };
+    }
+
+    // TODO: Eliminate this method. Switching the behavior of unit tests is evil. Tests should not contain additional logic. Also it seems currently to be used in different semantic contexts.
+    abstract protected boolean useIsEqualToInsteadOfIsSameAs();
+
+    // returns the peek result of the specific Traversable implementation
+    abstract protected int getPeekNonNilPerformingAnAction();
+
+    /**
+     * The type name {@code toString()} prints before the parenthesised elements, e.g. {@code List} for
+     * {@code List(1, 2)}, taken from the empty instance; a test class whose empty and non-empty instances print
+     * different names overrides it.
+     */
+    protected String stringPrefix() {
+        final String empty = empty().toString();
+        return empty.substring(0, empty.length() - "()".length());
     }
 
     protected final boolean isTraversableAgain() {
@@ -50,18 +123,15 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     protected abstract <T> Collector<T, ?, ? extends Traversable<T>> collector();
 
-    @Override
     protected abstract <T> Traversable<T> empty();
 
     protected boolean emptyShouldBeSingleton() {
         return true;
     }
 
-    @Override
     protected abstract <T> Traversable<T> of(T element);
 
     @SuppressWarnings("unchecked")
-    @Override
     protected abstract <T> Traversable<T> of(T... elements);
 
     protected abstract <T> Traversable<T> ofAll(Iterable<? extends T> elements);
@@ -2004,51 +2074,6 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.IMMUTABLE)).isTrue();
     }
 
-    // -- out
-
-    @TestTemplate
-    public void shouldHandleStdoutIOException() {
-        assertThrows(IllegalStateException.class, () -> of(0).out(OutputTester.failingPrintStream()));
-    }
-
-    // -- PrintStream
-
-    @TestTemplate
-    public void shouldWriteToPrintStream() {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-        final PrintStream out = new PrintStream(baos);
-        of(1, 2, 3).out(out);
-        assertThat(baos.toString()).isEqualTo(of(1, 2, 3).mkString("", lineSeparator(), lineSeparator()));
-    }
-
-    @TestTemplate
-    public void shouldHandlePrintStreamIOException() {
-        assertThrows(IllegalStateException.class, () -> {
-            try (PrintStream failingPrintStream = failingPrintStream()) {
-                of(0).out(failingPrintStream);
-            }
-        });
-    }
-
-    // -- PrintWriter
-
-    @TestTemplate
-    public void shouldWriteToPrintWriter() {
-        final StringWriter sw = new StringWriter();
-        final PrintWriter out = new PrintWriter(sw);
-        of(1, 2, 3).out(out);
-        assertThat(sw.toString()).isEqualTo(of(1, 2, 3).mkString("", lineSeparator(), lineSeparator()));
-    }
-
-    @TestTemplate
-    public void shouldHandlePrintWriterIOException() {
-        assertThrows(IllegalStateException.class, () -> {
-            try (PrintWriter failingPrintWriter = failingPrintWriter()) {
-                of(0).out(failingPrintWriter);
-            }
-        });
-    }
-
     // -- sum
 
     @TestTemplate
@@ -2592,7 +2617,7 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
     public void shouldConformEmptyStringRepresentation() {
         final Traversable<Object> testee = empty();
         if (!testee.hasDefiniteSize()) {
-            assertThat(testee.toString()).isEqualTo(testee.stringPrefix() + "()");
+            assertThat(testee.toString()).isEqualTo(stringPrefix() + "()");
             testee.size(); // evaluates all elements of lazy collections
         }
         assertThat(testee.toString()).isEqualTo(toString(testee));
@@ -2603,17 +2628,17 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         final Traversable<Object> testee = of("a", "b", "c");
         if (isTraversableAgain()) {
             if (!testee.hasDefiniteSize()) {
-                assertThat(testee.toString()).isEqualTo(testee.stringPrefix() + "(a, ?)");
+                assertThat(testee.toString()).isEqualTo(stringPrefix() + "(a, ?)");
                 testee.size(); // evaluates all elements of lazy collections
             }
             assertThat(testee.toString()).isEqualTo(toString(testee));
         } else {
-            assertThat(testee.toString()).isEqualTo(testee.stringPrefix() + "(?)");
+            assertThat(testee.toString()).isEqualTo(stringPrefix() + "(?)");
         }
     }
 
-    private static String toString(Traversable<?> traversable) {
-        return traversable.mkString(traversable.stringPrefix() + "(", ", ", ")");
+    private String toString(Traversable<?> traversable) {
+        return traversable.mkString(stringPrefix() + "(", ", ", ")");
     }
 
     // -- static collector()
@@ -2794,6 +2819,383 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         public String toString() {
             return value;
         }
+    }
+
+    // -- isEmpty
+
+    @TestTemplate
+    public void shouldCalculateIsEmpty() {
+        assertThat(empty().isEmpty()).isTrue();
+        assertThat(of(1).isEmpty()).isFalse();
+    }
+
+    // -- mapTo
+
+    @TestTemplate
+    public void shouldExecuteMapToCorrectly() {
+        assertThat(empty().mapTo(1)).isEqualTo(empty().mapTo(2));
+        assertThat(of(2).mapTo(1)).isEqualTo(of(3).mapTo(1));
+        assertThat(of(2).mapTo(1)).isEqualTo(of(3).map(ignored -> 1));
+        assertThat(of(3).mapTo(2)).isEqualTo(of(1).map(ignored -> 2));
+    }
+
+    // -- forEach
+
+    @TestTemplate
+    public void shouldPerformsActionOnEachElement() {
+        final int[] consumer = new int[1];
+        final Traversable<Integer> value = of(1, 2, 3);
+        value.forEach(i -> consumer[0] += i);
+        assertThat(consumer[0]).isEqualTo(6);
+    }
+
+    @TestTemplate
+    public void shouldThrowOnForEachWithNullAction() {
+        assertThrows(NullPointerException.class, () -> of(1).forEach(null));
+    }
+
+    // -- peek
+
+    @TestTemplate
+    public void shouldPeekNil() {
+        assertThat(empty().peek(t -> {})).isEqualTo(empty());
+    }
+
+    @TestTemplate
+    public void shouldPeekNonNilPerformingNoAction() {
+        assertThat(of(1).peek(t -> {})).isEqualTo(of(1));
+    }
+
+    @TestTemplate
+    public void shouldPeekSingleValuePerformingAnAction() {
+        final int[] effect = {0};
+        final Traversable<Integer> actual = of(1).peek(i -> effect[0] = i);
+        assertThat(actual).isEqualTo(of(1));
+        assertThat(effect[0]).isEqualTo(1);
+    }
+
+    @TestTemplate
+    public void shouldPeekNonNilPerformingAnAction() {
+        final int[] effect = {0};
+        final Traversable<Integer> actual = of(1, 2, 3).peek(i -> effect[0] = i);
+        assertThat(actual).isEqualTo(of(1, 2, 3)); // traverses all elements in the lazy case
+        assertThat(effect[0]).isEqualTo(getPeekNonNilPerformingAnAction());
+    }
+
+    // -- exists
+
+    @TestTemplate
+    public void shouldBeAwareOfExistingElement() {
+        assertThat(of(1, 2).exists(i -> i == 2)).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldBeAwareOfNonExistingElement() {
+        assertThat(this.<Integer>empty().exists(i -> i == 1)).isFalse();
+    }
+
+    @TestTemplate
+    public void shouldThrowOnExistsWithNullPredicate() {
+        assertThrows(NullPointerException.class, () -> of(1).exists(null));
+    }
+
+    // -- forAll
+
+    @TestTemplate
+    public void shouldBeAwareOfPropertyThatHoldsForAll() {
+        assertThat(of(2, 4).forAll(i -> i % 2 == 0)).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldBeAwareOfPropertyThatNotHoldsForAll() {
+        assertThat(of(1, 2).forAll(i -> i % 2 == 0)).isFalse();
+    }
+
+    @TestTemplate
+    public void shouldHoldPropertyForAllOfNil() {
+        assertThat(this.<Integer>empty().forAll(i -> false)).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldThrowOnForAllWithNullPredicate() {
+        assertThrows(NullPointerException.class, () -> of(1).forAll(null));
+    }
+
+    // -- collect(Collector)
+
+    @TestTemplate
+    public void shouldCollectWithACollector() {
+        final java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
+    }
+
+    @TestTemplate
+    public void shouldCollectWithSupplierAccumulatorAndCombiner() {
+        final ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
+    }
+
+    // -- Conversions toXxx()
+
+    @TestTemplate
+    public void shouldConvertToList() {
+        assertThat(of(1, 2, 3).toList()).isEqualTo(List.of(1, 2, 3));
+        assertThat(empty().toList()).isSameAs(List.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToHashMap() {
+        assertThat(of(9, 5, 1).toMap(i -> Tuple.of(i, i))).isEqualTo(HashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(empty().toMap(i -> Tuple.of(i, i))).isSameAs(HashMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToHashMapTwoFunctions() {
+        assertThat(of(9, 5, 1).toMap(Function.identity(), Function.identity())).isEqualTo(HashMap.of(1, 1, 5, 5, 9, 9));
+    }
+
+    @TestTemplate
+    public void shouldConvertToLinkedMap() {
+        assertThat(of(1, 5, 9).toLinkedMap(i -> Tuple.of(i, i))).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(empty().toLinkedMap(i -> Tuple.of(i, i))).isSameAs(LinkedHashMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToLinkedMapTwoFunctions() {
+        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity())).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMap() {
+        assertThat(of(9, 5, 1).toSortedMap(i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(this.<Integer>empty().toSortedMap(i -> Tuple.of(i, i))).isEqualTo(TreeMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMapTwoFunctions() {
+        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity())).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMapWithComparator() {
+        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
+        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity())).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+    }
+
+    @TestTemplate
+    public void shouldConvertToQueue() {
+        assertThat(of(1, 2, 3).toQueue()).isEqualTo(Queue.of(1, 2, 3));
+        assertThat(empty().toQueue()).isSameAs(Queue.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSet() {
+        assertThat(of(1, 2, 3).toSet()).isEqualTo(HashSet.of(1, 2, 3));
+        assertThat(empty().toSet()).isSameAs(HashSet.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToLinkedSet() {
+        final Traversable<Integer> value = of(3, 7, 1, 15, 0);
+        final Set<Integer> set = value.toLinkedSet();
+        final List<Integer> itemsInOrder = isTraversableAgain() ? value.toList() : List.of(3, 7, 1, 15, 0);
+        assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
+        assertThat(empty().toLinkedSet()).isSameAs(LinkedHashSet.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedSetWithoutComparatorOnComparable() {
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet()).isEqualTo(TreeSet.of(0, 1, 3, 7, 15));
+    }
+
+    @TestTemplate
+    public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
+        assertThrows(ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedSet() {
+        final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed())).isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+    }
+
+    @TestTemplate
+    public void shouldConvertToStream() {
+        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
+        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToVector() {
+        assertThat(of(1, 2, 3).toVector()).isEqualTo(Vector.of(1, 2, 3));
+        assertThat(empty().toVector()).isSameAs(Vector.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArray() {
+        assertThat(of(1, 2, 3).toJavaArray()).isEqualTo(new Object[]{1, 2, 3});
+        assertThat(empty().toJavaArray()).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithFactory() {
+        final Integer[] ints = of(1, 2, 3).toJavaArray(Integer[]::new);
+        assertThat(ints).containsOnly(1, 2, 3);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHint() {
+        final Integer[] ints = of(1, 2, 3).toJavaArray(Integer.class);
+        assertThat(ints).containsOnly(1, 2, 3);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveBoolean() {
+        assertThat(of(true, false).toJavaArray(boolean.class)).containsOnly(true, false);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveByte() {
+        assertThat(of((byte) 1, (byte) 2).toJavaArray(byte.class)).containsOnly((byte) 1, (byte) 2);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveChar() {
+        assertThat(of('a', 'b').toJavaArray(char.class)).containsOnly('a', 'b');
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveDouble() {
+        assertThat(of(.1, .2).toJavaArray(double.class)).containsOnly(.1, .2);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveFloat() {
+        assertThat(of(.1f, .2f).toJavaArray(float.class)).containsOnly(.1f, .2f);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveInt() {
+        assertThat(of(1, 2).toJavaArray(int.class)).containsOnly(1, 2);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveLong() {
+        assertThat(of(1L, 2L).toJavaArray(long.class)).containsOnly(1L, 2L);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveShort() {
+        assertThat(of((short) 1, (short) 2).toJavaArray(short.class)).containsOnly((short) 1, (short) 2);
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaArrayWithTypeHintPrimitiveVoid() {
+        // a Void element can only be null, which no collection accepts (design 3.9)
+        assertThrows(NullPointerException.class, () -> of((Void) null).toJavaArray(void.class));
+        assertThat(this.<Void>empty().toJavaArray(void.class)).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaCollectionUsingSupplier() {
+        final java.util.List<Integer> ints = of(1, 2, 3).toJavaCollection(ArrayList::new);
+        assertThat(ints).isEqualTo(asList(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaList() {
+        final java.util.List<Integer> list = of(1, 2, 3).toJavaList();
+        assertThat(list).isEqualTo(asList(1, 2, 3));
+        assertThat(empty().toJavaList()).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaListUsingSupplier() {
+        final java.util.List<Integer> ints = of(1, 2, 3).toJavaList(ArrayList::new);
+        assertThat(ints).isEqualTo(asList(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaMapUsingFunction() {
+        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(v -> Tuple.of(v, v));
+        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
+        assertThat(empty().toJavaMap(v -> Tuple.of(v, v))).isEqualTo(java.util.Map.of());
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaMapUsingSupplierAndFunction() {
+        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, i -> Tuple.of(i, i));
+        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaMapUsingSupplierAndTwoFunction() {
+        final java.util.Map<Integer, String> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, Function.identity(), String::valueOf);
+        assertThat(map).isEqualTo(java.util.Map.of(1, "1", 2, "2", 3, "3"));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaSet() {
+        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet();
+        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
+        assertThat(empty().toJavaSet()).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaSetUsingSupplier() {
+        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet(java.util.HashSet::new);
+        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaStream() {
+        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).toJavaStream();
+        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
+        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaParallelStream() {
+        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).toJavaParallelStream();
+        assertThat(s1.isParallel()).isTrue();
+        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
+        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
+    }
+
+    @TestTemplate
+    public void shouldHaveAReasonableToString() {
+        final Traversable<Integer> value = of(1, 2);
+        value.toList(); // evaluate all elements (e.g. for Stream)
+        assertThat(value.toString()).contains("1", "2");
+    }
+
+    // -- equals
+
+    @TestTemplate
+    public void shouldRecognizeSameObject() {
+        final Traversable<Integer> v = of(1);
+        //noinspection EqualsWithItself
+        assertThat(v.equals(v)).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldRecognizeEqualObjects() {
+        final Traversable<Integer> v1 = of(1);
+        final Traversable<Integer> v2 = of(1);
+        assertThat(v1.equals(v2)).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldRecognizeUnequalObjects() {
+        final Traversable<Integer> v1 = of(1);
+        final Traversable<Integer> v2 = of(2);
+        assertThat(v1.equals(v2)).isFalse();
     }
 
     // -- null elements are rejected at construction, everywhere (design 3.9)

@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection;
 
-import com.guizmaii.zazr.Value;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Spliterator;
@@ -231,7 +230,7 @@ public class LinkedHashSetTest extends AbstractSetTest {
     class TransformTests {
         @Test
         public void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.get()));
+            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
             assertThat(transformed).isEqualTo("42");
         }
     }
@@ -240,7 +239,7 @@ public class LinkedHashSetTest extends AbstractSetTest {
     class TolinkedsetTests {
         @Test
         public void shouldReturnSelfOnConvertToLinkedSet() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toLinkedSet()).isSameAs(value);
         }
     }

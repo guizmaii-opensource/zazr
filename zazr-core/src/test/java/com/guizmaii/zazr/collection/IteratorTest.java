@@ -875,14 +875,6 @@ public class IteratorTest extends AbstractTraversableTest {
         // a hashCode impl would enforce evaluation which is not wanted
     }
 
-    // -- isLazy
-
-    @Override
-    @Test
-    public void shouldVerifyLazyProperty() {
-        assertThat(empty().isLazy()).isTrue();
-        assertThat(of(1).isLazy()).isTrue();
-    }
 
     // -- take
 
@@ -909,6 +901,19 @@ public class IteratorTest extends AbstractTraversableTest {
     @Test
     public void shouldHaveAReasonableToString() {
         // iterators are intermediate objects and should not have an equals, hashCode or toString
+    }
+
+    @Override
+    @Test
+    public void shouldConformEmptyStringRepresentation() {
+        assertThat(empty().toString()).isEqualTo("EmptyIterator()");
+    }
+
+    @Override
+    @Test
+    public void shouldConformNonEmptyStringRepresentation() {
+        // an Iterator is single-pass: toString never consumes it
+        assertThat(of("a", "b", "c").toString()).isEqualTo("Iterator(?)");
     }
 
     @Nested

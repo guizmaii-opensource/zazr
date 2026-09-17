@@ -19,8 +19,8 @@ public interface CheckedConsumer<T extends @Nullable Object> {
      *
      * <p>Example usage:</p>
      * <pre>{@code
-     * final CheckedConsumer<Value> checkedConsumer = CheckedConsumer.of(Value::stdout);
-     * final Consumer<Value> consumer = checkedConsumer.unchecked();
+     * final CheckedConsumer<Object> checkedConsumer = CheckedConsumer.of(System.out::println);
+     * final Consumer<Object> consumer = checkedConsumer.unchecked();
      *
      * // prints "H", "i" and "!", each on its own line
      * consumer.accept(Vector.of('H', 'i', '!'));

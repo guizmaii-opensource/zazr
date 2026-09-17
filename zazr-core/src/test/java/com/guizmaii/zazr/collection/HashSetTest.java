@@ -2,7 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.Value;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Spliterator;
@@ -303,7 +302,7 @@ public class HashSetTest extends AbstractSetTest {
         
         @Test
         void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.get()));
+            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
             assertThat(transformed).isEqualTo("42");
         }
     }
@@ -470,7 +469,7 @@ public class HashSetTest extends AbstractSetTest {
     class TosetTests {
         @Test
         public void shouldReturnSelfOnConvertToSet() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toSet()).isSameAs(value);
         }
     }

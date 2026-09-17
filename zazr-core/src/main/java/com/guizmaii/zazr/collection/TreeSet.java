@@ -838,29 +838,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
     }
 
-    /**
-     * A {@code TreeSet} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() {
         return tree.isEmpty();
-    }
-
-    /**
-     * A {@code TreeSet} is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
     }
 
     @Override
@@ -1221,12 +1201,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     @Override
-    public String stringPrefix() {
-        return "TreeSet";
-    }
-
-    @Override
     public String toString() {
-        return mkString(stringPrefix() + "(", ", ", ")");
+        return mkString("TreeSet(", ", ", ")");
     }
 }
