@@ -1019,11 +1019,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * empty, or a new {@link Option} wrapping the value.
      */
     default Option<T> toOption() {
-        if (this instanceof Option) {
-            return (Option<T>) this;
-        } else {
-            return isEmpty() ? Option.none() : Option.some(get());
-        }
+        return isEmpty() ? Option.none() : Option.some(get());
     }
 
     /**

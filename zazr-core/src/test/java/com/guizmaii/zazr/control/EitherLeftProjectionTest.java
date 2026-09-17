@@ -183,7 +183,7 @@ public class EitherLeftProjectionTest extends AbstractValueTest {
 
         @Test
         public void shouldFilterSomeOnLeftProjectionOfLeftIfPredicateMatches() {
-            final boolean actual = Either.left(1).left().filter(i -> true).toOption().isDefined();
+            final boolean actual = Either.left(1).left().filter(i -> true).isDefined();
             assertThat(actual).isTrue();
         }
 

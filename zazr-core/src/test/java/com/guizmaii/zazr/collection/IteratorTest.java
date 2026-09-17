@@ -43,20 +43,9 @@ public class IteratorTest extends AbstractTraversableTest {
             @SuppressWarnings("unchecked")
             @Override
             public IterableAssert<T> isEqualTo(Object expected) {
-                if (actual instanceof Option) {
-                    final Option<?> opt1 = ((Option<?>) actual);
-                    final Option<?> opt2 = (Option<?>) expected;
-                    Assertions.assertThat(wrapIterator(opt1)).isEqualTo(wrapIterator(opt2));
-                    return this;
-                } else {
-                    final Iterable<T> iterable = (Iterable<T>) expected;
-                    Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(iterable));
-                    return this;
-                }
-            }
-
-            private Option<?> wrapIterator(Option<?> option) {
-                return option.map(o -> (o instanceof Iterator) ? List.ofAll((Iterator<?>) o) : o);
+                final Iterable<T> iterable = (Iterable<T>) expected;
+                Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(iterable));
+                return this;
             }
         };
     }
@@ -66,7 +55,13 @@ public class IteratorTest extends AbstractTraversableTest {
         return new ObjectAssert<T>(actual) {
             @Override
             public ObjectAssert<T> isEqualTo(Object expected) {
-                if (actual instanceof Tuple2) {
+                if (actual instanceof Option) {
+                    // an Option is not Iterable: an Option of an Iterator is compared by the Iterator's elements
+                    final Option<?> opt1 = ((Option<?>) actual).map(this::wrapIterator);
+                    final Option<?> opt2 = ((Option<?>) expected).map(this::wrapIterator);
+                    Assertions.assertThat((Object) opt1).isEqualTo(opt2);
+                    return this;
+                } else if (actual instanceof Tuple2) {
                     final Tuple2<?, ?> t1 = ((Tuple2<?, ?>) actual).map(this::toList);
                     final Tuple2<?, ?> t2 = ((Tuple2<?, ?>) expected).map(this::toList);
                     Assertions.assertThat((Object) t1).isEqualTo(t2);

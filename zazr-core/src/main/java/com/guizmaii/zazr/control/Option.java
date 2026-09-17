@@ -1,8 +1,8 @@
 package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.CheckedFunction1;
-import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.collection.Iterator;
+import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
@@ -29,12 +29,15 @@ import org.jspecify.annotations.Nullable;
  * {@code Some} never holds {@code null}: {@link #some(Object)} throws and {@link #ofNullable(Object)} is the escape
  * hatch, as {@link java.util.Optional#of(Object)} and {@link java.util.Optional#ofNullable(Object)} are.
  * <p>
+ * An {@code Option} is not a collection and not {@link Iterable} (design 3.2): to iterate or collect its value, convert
+ * it explicitly with {@link #toVector()}, {@link #toList()} or {@link #stream()}.
+ * <p>
  * The design is similar to {@link java.util.Optional} and to
  * <a href="http://www.scala-lang.org/api/current/#scala.Option">Scala's {@code Option}</a>.
  *
  * @param <T> the type of the optional value
  */
-public sealed interface Option<T extends @Nullable Object> extends Value<T> permits Option.Some, Option.None {
+public sealed interface Option<T extends @Nullable Object> permits Option.Some, Option.None {
 
     /**
      * Creates an {@code Option} from a nullable value: {@code None} for {@code null}, {@code Some(value)} otherwise.
@@ -186,8 +189,16 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
      *
      * @return {@code true} if this is {@code None}, {@code false} if this is {@code Some}
      */
-    @Override
     boolean isEmpty();
+
+    /**
+     * Checks whether this {@code Option} contains a value.
+     *
+     * @return {@code true} if this is {@code Some}, {@code false} if this is {@code None}
+     */
+    default boolean isDefined() {
+        return !isEmpty();
+    }
 
     /**
      * Executes the given {@link Runnable} if this {@code Option} is empty ({@code None}).
@@ -204,51 +215,11 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
     }
 
     /**
-     * Indicates that an {@code Option}'s value is computed synchronously.
-     *
-     * @return {@code false}
-     */
-    @Override
-    default boolean isAsync() {
-        return false;
-    }
-
-    /**
-     * Checks whether this {@code Option} contains a value.
-     *
-     * @return {@code true} if this is {@code Some}, {@code false} if this is {@code None}
-     */
-    default boolean isDefined() {
-        return !isEmpty();
-    }
-
-    /**
-     * Indicates that an {@code Option}'s value is computed eagerly.
-     *
-     * @return {@code false}
-     */
-    @Override
-    default boolean isLazy() {
-        return false;
-    }
-
-    /**
-     * Indicates that an {@code Option} contains exactly one value.
-     *
-     * @return {@code true}
-     */
-    @Override
-    default boolean isSingleValued() {
-        return true;
-    }
-
-    /**
      * Returns the value contained in this {@code Some}, or throws if this is {@code None}.
      *
      * @return the contained value
      * @throws NoSuchElementException if this is {@code None}
      */
-    @Override
     T get();
 
     /**
@@ -259,9 +230,49 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
      * @param other an alternative value to return if this is {@code None}
      * @return the contained value if defined, otherwise {@code other}
      */
-    @Override
     default T getOrElse(T other) {
         return isEmpty() ? other : get();
+    }
+
+    /**
+     * Returns the value contained in this {@code Some}, or the value supplied by {@code supplier} if this is {@code None}.
+     * <p>
+     * The alternative value is evaluated lazily.
+     *
+     * @param supplier a supplier of an alternative value if this is {@code None}
+     * @return the contained value if defined, otherwise the value returned by {@code supplier}
+     * @throws NullPointerException if {@code supplier} is null
+     */
+    default T getOrElse(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? supplier.get() : get();
+    }
+
+    /**
+     * Returns the value contained in this {@code Some}, or throws an exception provided by {@code exceptionSupplier} if this is {@code None}.
+     *
+     * @param exceptionSupplier a supplier of the exception to throw if this is {@code None}
+     * @param <X>               the type of the exception
+     * @return the contained value if defined
+     * @throws X if this {@code Option} is {@code None}
+     * @throws NullPointerException if {@code exceptionSupplier} is null
+     */
+    default <X extends Throwable> T getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
+        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
+        if (isEmpty()) {
+            throw exceptionSupplier.get();
+        } else {
+            return get();
+        }
+    }
+
+    /**
+     * Returns the value contained in this {@code Some}, or {@code null} if this is {@code None}.
+     *
+     * @return the contained value if defined, otherwise {@code null}
+     */
+    default @Nullable T getOrNull() {
+        return isEmpty() ? null : get();
     }
 
     /**
@@ -290,36 +301,49 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
     }
 
     /**
-     * Returns the value contained in this {@code Some}, or the value supplied by {@code supplier} if this is {@code None}.
-     * <p>
-     * The alternative value is evaluated lazily.
+     * Checks whether this {@code Option} holds a value equal to {@code element}, as tested by {@link Objects#equals(Object, Object)}.
      *
-     * @param supplier a supplier of an alternative value if this is {@code None}
-     * @return the contained value if defined, otherwise the value returned by {@code supplier}
-     * @throws NullPointerException if {@code supplier} is null
+     * @param element the element to look for, may be {@code null}
+     * @return {@code true} if this is {@code Some(element)}, {@code false} otherwise (always for {@code None})
      */
-    @Override
-    default T getOrElse(Supplier<? extends T> supplier) {
-        Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? supplier.get() : get();
+    default boolean contains(@Nullable T element) {
+        return isDefined() && Objects.equals(get(), element);
     }
 
     /**
-     * Returns the value contained in this {@code Some}, or throws an exception provided by {@code exceptionSupplier} if this is {@code None}.
+     * Checks whether this {@code Option} holds a value satisfying the given predicate.
      *
-     * @param exceptionSupplier a supplier of the exception to throw if this is {@code None}
-     * @param <X>               the type of the exception
-     * @return the contained value if defined
-     * @throws X if this {@code Option} is {@code None}
-     * @throws NullPointerException if {@code exceptionSupplier} is null
+     * @param predicate a predicate to test the contained value
+     * @return {@code true} if this is {@code Some} and the predicate holds for its value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
-    default <X extends Throwable> T getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
-        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
-        if (isEmpty()) {
-            throw exceptionSupplier.get();
-        } else {
-            return get();
+    default boolean exists(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isDefined() && predicate.test(get());
+    }
+
+    /**
+     * Checks whether the given predicate holds for the value of this {@code Option}; it holds vacuously for {@code None}.
+     *
+     * @param predicate a predicate to test the contained value
+     * @return {@code true} if this is {@code None} or the predicate holds for the value of this {@code Some}, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean forAll(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isEmpty() || predicate.test(get());
+    }
+
+    /**
+     * Performs the given action on the value of this {@code Some}; does nothing for {@code None}.
+     *
+     * @param action a consumer of the contained value
+     * @throws NullPointerException if {@code action} is null
+     */
+    default void forEach(Consumer<? super T> action) {
+        Objects.requireNonNull(action, "action is null");
+        if (isDefined()) {
+            action.accept(get());
         }
     }
 
@@ -364,20 +388,15 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
      * @return a new {@code Some} with the mapped value if this is defined, otherwise {@code None}
      * @throws NullPointerException if {@code mapper} is null
      */
-    @Override
     default <U extends @Nullable Object> Option<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return isEmpty() ? none() : some(mapper.apply(get()));
     }
 
-    @Override
-    default <U extends @Nullable Object> Option<U> mapTo(U value) {
-        return map(ignored -> value);
-    }
-
     /**
-     * Converts this {@code Option} to a {@link Try}, then applies the given checked function if this is a {@link Try.Success},
-     * passing the contained value to it.
+     * Applies the given checked function to the value of this {@code Some} under {@link Try}: a {@code Success} of
+     * the result, a {@code Failure} of whatever the function throws, or a {@code Failure} of a
+     * {@link NoSuchElementException} if this is {@code None}.
      *
      * @param <U>    the type of the resulting {@code Try}'s value
      * @param mapper a checked function to transform the contained value
@@ -387,7 +406,8 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
      * @throws NullPointerException if {@code mapper} is null
      */
     default <U extends @Nullable Object> Try<U> mapTry(CheckedFunction1<? super T, ? extends U> mapper) {
-        return toTry().mapTry(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return isEmpty() ? Try.failure(new NoSuchElementException("No value present")) : Try.success(get()).mapTry(mapper);
     }
 
     /**
@@ -404,7 +424,9 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
      * @throws NullPointerException if {@code ifNone} or {@code f} is null
      */
     default <U extends @Nullable Object> U fold(Supplier<? extends U> ifNone, Function<? super T, ? extends U> f) {
-        return this.<U>map(f).getOrElse(ifNone);
+        Objects.requireNonNull(ifNone, "ifNone is null");
+        Objects.requireNonNull(f, "f is null");
+        return isEmpty() ? ifNone.get() : f.apply(get());
     }
 
     /**
@@ -415,7 +437,6 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
      * @return this {@code Option}
      * @throws NullPointerException if {@code action} is null
      */
-    @Override
     default Option<T> peek(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isDefined()) {
@@ -437,9 +458,86 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
         return f.apply(this);
     }
 
-    @Override
-    default Iterator<T> iterator() {
-        return isEmpty() ? Iterator.empty() : Iterator.of(get());
+    // -- conversions (design 3.2)
+
+    /**
+     * Converts this {@code Option} to an {@link Either}: {@code Right(value)} for {@code Some}, {@code Left(leftSupplier.get())} for {@code None}.
+     * <p>
+     * The supplier is invoked only for {@code None}; it must not supply {@code null}, since {@code Left} cannot hold {@code null} (design 3.9).
+     *
+     * @param leftSupplier a supplier of the left value, invoked if this is {@code None}
+     * @param <L>          the left type of the {@link Either}
+     * @return a {@code Right} of the contained value, or a {@code Left} of the supplied value
+     * @throws NullPointerException if {@code leftSupplier} is null, or if it supplies {@code null}
+     */
+    default <L extends @Nullable Object> Either<L, T> toEither(Supplier<? extends L> leftSupplier) {
+        Objects.requireNonNull(leftSupplier, "leftSupplier is null");
+        return isEmpty() ? Either.left(leftSupplier.get()) : Either.right(get());
+    }
+
+    /**
+     * Converts this {@code Option} to a {@link Try}: {@code Success(value)} for {@code Some}, {@code Failure(ifEmpty.get())} for {@code None}.
+     * <p>
+     * The supplier is invoked only for {@code None}; it must not supply {@code null} nor a fatal throwable (see {@link Try}).
+     *
+     * @param ifEmpty a supplier of the failure cause, invoked if this is {@code None}
+     * @return a {@code Success} of the contained value, or a {@code Failure} of the supplied throwable
+     * @throws NullPointerException if {@code ifEmpty} is null, or if it supplies {@code null}
+     */
+    default Try<T> toTry(Supplier<? extends Throwable> ifEmpty) {
+        Objects.requireNonNull(ifEmpty, "ifEmpty is null");
+        return isEmpty() ? Try.failure(ifEmpty.get()) : Try.success(get());
+    }
+
+    /**
+     * Converts this {@code Option} to a {@link Validation}: {@code Valid(value)} for {@code Some}, {@code Invalid(invalidSupplier.get())} for {@code None}.
+     * <p>
+     * The supplier is invoked only for {@code None}; it must not supply {@code null}, since {@code Invalid} cannot hold {@code null} (design 3.9).
+     *
+     * @param invalidSupplier a supplier of the error, invoked if this is {@code None}
+     * @param <E>             the error type of the {@link Validation}
+     * @return a {@code Valid} of the contained value, or an {@code Invalid} of the supplied error
+     * @throws NullPointerException if {@code invalidSupplier} is null, or if it supplies {@code null}
+     */
+    default <E extends @Nullable Object> Validation<E, T> toValidation(Supplier<? extends E> invalidSupplier) {
+        Objects.requireNonNull(invalidSupplier, "invalidSupplier is null");
+        return isEmpty() ? Validation.invalid(invalidSupplier.get()) : Validation.valid(get());
+    }
+
+    /**
+     * Converts this {@code Option} to a {@link Vector} of zero or one element.
+     *
+     * @return {@code Vector.of(value)} for {@code Some}, the empty {@code Vector} for {@code None}
+     */
+    default Vector<T> toVector() {
+        return isEmpty() ? Vector.empty() : Vector.of(get());
+    }
+
+    /**
+     * Converts this {@code Option} to a {@link List} of zero or one element.
+     *
+     * @return {@code List.of(value)} for {@code Some}, the empty {@code List} for {@code None}
+     */
+    default List<T> toList() {
+        return isEmpty() ? List.empty() : List.of(get());
+    }
+
+    /**
+     * Converts this {@code Option} to a {@link java.util.Optional}.
+     *
+     * @return {@code Optional.of(value)} for {@code Some}, {@code Optional.empty()} for {@code None}
+     */
+    default Optional<T> toOptional() {
+        return isEmpty() ? Optional.empty() : Optional.of(get());
+    }
+
+    /**
+     * Converts this {@code Option} to a sequential {@link java.util.stream.Stream} of zero or one element.
+     *
+     * @return {@code Stream.of(value)} for {@code Some}, an empty {@code Stream} for {@code None}
+     */
+    default java.util.stream.Stream<T> stream() {
+        return isEmpty() ? java.util.stream.Stream.empty() : java.util.stream.Stream.of(get());
     }
 
     @Override
@@ -480,13 +578,8 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
         }
 
         @Override
-        public String stringPrefix() {
-            return "Some";
-        }
-
-        @Override
         public String toString() {
-            return stringPrefix() + "(" + value + ")";
+            return "Some(" + value + ")";
         }
     }
 
@@ -511,13 +604,8 @@ public sealed interface Option<T extends @Nullable Object> extends Value<T> perm
         }
 
         @Override
-        public String stringPrefix() {
-            return "None";
-        }
-
-        @Override
         public String toString() {
-            return stringPrefix();
+            return "None";
         }
     }
 }

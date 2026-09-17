@@ -1,54 +1,25 @@
 package com.guizmaii.zazr.control;
 
-import com.guizmaii.zazr.*;
-import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
-import java.util.*;
-import java.util.List;
+import com.guizmaii.zazr.collection.Vector;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class OptionTest extends AbstractValueTest {
-
-    // -- AbstractValueTest
-
-    @Override
-    protected <T> Option<T> empty() {
-        return Option.none();
-    }
-
-    @Override
-    protected <T> Option<T> of(T element) {
-        return Option.some(element);
-    }
-
-    @SafeVarargs
-    @Override
-    protected final <T> Option<T> of(T... elements) {
-        return of(elements[0]);
-    }
-
-    @Override
-    protected boolean allowsNull() {
-        return false;
-    }
-
-    @Override
-    protected boolean useIsEqualToInsteadOfIsSameAs() {
-        return true;
-    }
-
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
+public class OptionTest {
 
     @Nested
     class NarrowTests {
@@ -123,13 +94,19 @@ public class OptionTest extends AbstractValueTest {
         public void shouldThrowExceptionOnNullOptional() {
             assertThrows(NullPointerException.class, () -> assertThat(Option.ofOptional(null)).isEqualTo(Option.none()));
         }
+
+        @Test
+        public void shouldNotBeIterable() {
+            // design 3.2: for (x : option) and list.addAll(option) must not compile
+            assertThat(Iterable.class.isAssignableFrom(Option.class)).isFalse();
+        }
     }
 
     @Nested
     class SequenceTests {
         @Test
         public void shouldConvertListOfNonEmptyOptionsToOptionOfList() {
-            final List<Option<String>> options = Arrays.asList(Option.some("a"), Option.some("b"), Option.some("c"));
+            final java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.some("b"), Option.some("c"));
             final Option<Seq<String>> reducedOption = Option.sequence(options);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
@@ -138,14 +115,14 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldConvertListOfEmptyOptionsToOptionOfList() {
-            final List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
+            final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
             final Option<Seq<String>> option = Option.sequence(options);
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldConvertListOfMixedOptionsToOptionOfList() {
-            final List<Option<String>> options = Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
+            final java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
             final Option<Seq<String>> option = Option.sequence(options);
             assertThat(option instanceof Option.None).isTrue();
         }
@@ -155,7 +132,7 @@ public class OptionTest extends AbstractValueTest {
     class TraverseTests {
         @Test
         public void shouldTraverseListOfNonEmptyOptionsToOptionOfList() {
-            final List<String> options = Arrays.asList("a", "b", "c");
+            final java.util.List<String> options = Arrays.asList("a", "b", "c");
             final Option<Seq<String>> reducedOption = Option.traverse(options, Option::some);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
@@ -164,14 +141,14 @@ public class OptionTest extends AbstractValueTest {
 
         @Test
         public void shouldTraverseListOfEmptyOptionsToOptionOfList() {
-            final List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
+            final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
             final Option<Seq<String>> option = Option.traverse(options, Function.identity());
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldTraverseListOfMixedOptionsToOptionOfList() {
-            final List<String> options = Arrays.asList("a", "b", "c");
+            final java.util.List<String> options = Arrays.asList("a", "b", "c");
             final Option<Seq<String>> option =
                 Option.traverse(options, x -> x.equals("b") ? Option.none() : Option.some(x));
             assertThat(option instanceof Option.None).isTrue();
@@ -229,10 +206,16 @@ public class OptionTest extends AbstractValueTest {
         public void shouldGetAlternativeOnGetOrElseWhenValueIsNotDefined() {
             assertThat(Option.none().getOrElse(2)).isEqualTo(2);
         }
+
+        @Test
+        public void shouldAcceptNullAsAlternative() {
+            assertThat(Option.<Integer>none().getOrElse((Integer) null)).isNull();
+            assertThat(Option.some(1).getOrElse((Integer) null)).isEqualTo(1);
+        }
     }
 
     @Nested
-    class Getorelse2Tests {
+    class GetorelseSupplierTests {
         @Test
         public void shouldGetValueOnGetOrElseGetWhenValueIsPresent() {
             assertThat(Option.some(1).getOrElse(() -> 2)).isEqualTo(1);
@@ -241,6 +224,19 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldGetAlternativeOnGetOrElseGetWhenValueIsNotDefined() {
             assertThat(Option.none().getOrElse(() -> 2)).isEqualTo(2);
+        }
+
+        @Test
+        public void shouldNotInvokeSupplierWhenValueIsPresent() {
+            assertThat(Option.some(1).getOrElse(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            final Supplier<Integer> supplier = null;
+            assertThrows(NullPointerException.class, () -> Option.<Integer>none().getOrElse(supplier));
         }
     }
 
@@ -255,20 +251,23 @@ public class OptionTest extends AbstractValueTest {
         public void shouldThrowOnGetOrElseThrowWhenValueIsNotDefined() {
             assertThrows(RuntimeException.class, () -> Option.none().getOrElseThrow(() -> new RuntimeException("none")));
         }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            assertThrows(NullPointerException.class, () -> Option.none().getOrElseThrow(null));
+        }
     }
 
     @Nested
-    class TojavaoptionalTests {
+    class GetornullTests {
         @Test
-        public void shouldConvertNoneToJavaOptional() {
-            final Option<Object> none = Option.none();
-            assertThat(none.toJavaOptional()).isEqualTo(Optional.empty());
+        public void shouldGetValueOnGetOrNullWhenValueIsPresent() {
+            assertThat(Option.some(1).getOrNull()).isEqualTo(1);
         }
 
         @Test
-        public void shouldConvertSomeToJavaOptional() {
-            final Option<Integer> some = Option.some(1);
-            assertThat(some.toJavaOptional()).isEqualTo(Optional.of(1));
+        public void shouldGetNullOnGetOrNullWhenValueIsNotDefined() {
+            assertThat(Option.none().getOrNull()).isNull();
         }
     }
 
@@ -387,6 +386,16 @@ public class OptionTest extends AbstractValueTest {
             assertThat(result.getCause().getMessage()).isEqualTo("message");
         }
 
+        @Test
+        public void shouldCaptureNullResultOfMapTryAsFailure() {
+            assertThat(Option.some(1).mapTry(i -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Option.some(1).mapTry(null));
+        }
+
         private Integer checkedFunction(String string) throws Exception {
             throw new Exception("message");
         }
@@ -405,15 +414,39 @@ public class OptionTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldFlatMapNonEmptyIterable() {
+        public void shouldFlatMapToSome() {
             final Option<Integer> option = Option.some(2);
             assertThat(Option.some(1).flatMap(i -> option)).isEqualTo(Option.some(2));
         }
 
         @Test
-        public void shouldFlatMapEmptyIterable() {
+        public void shouldFlatMapToNone() {
             final Option<Integer> option = Option.none();
             assertThat(Option.some(1).flatMap(i -> option)).isEqualTo(Option.none());
+        }
+    }
+
+    @Nested
+    class ContainsTests {
+        @Test
+        public void shouldContainTheValueOfSome() {
+            assertThat(Option.some(1).contains(1)).isTrue();
+        }
+
+        @Test
+        public void shouldNotContainAnotherValue() {
+            assertThat(Option.some(1).contains(2)).isFalse();
+        }
+
+        @Test
+        public void shouldNotContainNull() {
+            assertThat(Option.some(1).contains(null)).isFalse();
+        }
+
+        @Test
+        public void shouldNotContainAnythingInNone() {
+            assertThat(Option.<Integer>none().contains(1)).isFalse();
+            assertThat(Option.<Integer>none().contains(null)).isFalse();
         }
     }
 
@@ -433,6 +466,11 @@ public class OptionTest extends AbstractValueTest {
         public void shouldNotHoldPropertyExistsOfNone() {
             assertThat(Option.none().exists(e -> true)).isFalse();
         }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> Option.none().exists(null));
+        }
     }
 
     @Nested
@@ -448,8 +486,13 @@ public class OptionTest extends AbstractValueTest {
         }
 
         @Test // a property holds for all elements of no elements
-        public void shouldNotHoldPropertyForAllOfNone() {
-            assertThat(Option.none().forAll(e -> true)).isTrue();
+        public void shouldHoldPropertyForAllOfNone() {
+            assertThat(Option.none().forAll(e -> false)).isTrue();
+        }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> Option.none().forAll(null));
         }
     }
 
@@ -468,23 +511,78 @@ public class OptionTest extends AbstractValueTest {
             Option.<Integer> none().forEach(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(-1);
         }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> Option.none().forEach(null));
+        }
     }
 
     @Nested
     class ToeitherTests {
         @Test
         public void shouldMakeRightOnSomeToEither() {
-            assertThat(Option.some(5).toEither("bad")).isEqualTo(Either.right(5));
+            assertThat(Option.some(5).toEither(() -> "bad")).isEqualTo(Either.right(5));
         }
 
         @Test
         public void shouldMakeLeftOnNoneToEither() {
-            assertThat(Option.none().toEither("bad")).isEqualTo(Either.left("bad"));
+            assertThat(Option.none().toEither(() -> "bad")).isEqualTo(Either.left("bad"));
         }
 
         @Test
-        public void shouldMakeLeftOnNoneToEitherSupplier() {
-            assertThat(Option.none().toEither(() -> "bad")).isEqualTo(Either.left("bad"));
+        public void shouldNotInvokeSupplierOnSome() {
+            assertThat(Option.some(5).toEither(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(Either.right(5));
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            assertThrows(NullPointerException.class, () -> Option.some(5).toEither(null));
+        }
+
+        @Test
+        public void shouldRejectNullLeftSuppliedForNone() {
+            // Left cannot hold null (design 3.9)
+            assertThrows(NullPointerException.class, () -> Option.none().toEither(() -> null));
+        }
+    }
+
+    @Nested
+    class TotryTests {
+        @Test
+        public void shouldMakeSuccessOnSomeToTry() {
+            assertThat(Option.some(5).toTry(IllegalStateException::new)).isEqualTo(Try.success(5));
+        }
+
+        @Test
+        public void shouldMakeFailureOnNoneToTry() {
+            final Exception x = new Exception("test");
+            assertThat(Option.none().toTry(() -> x)).isEqualTo(Try.failure(x));
+        }
+
+        @Test
+        public void shouldNotInvokeSupplierOnSome() {
+            assertThat(Option.some(5).toTry(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(Try.success(5));
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            assertThrows(NullPointerException.class, () -> Option.some(5).toTry(null));
+        }
+
+        @Test
+        public void shouldRejectNullCauseSuppliedForNone() {
+            assertThrows(NullPointerException.class, () -> Option.none().toTry(() -> null));
+        }
+
+        @Test
+        public void shouldRethrowFatalCauseSuppliedForNone() {
+            // a Failure never holds a fatal throwable
+            assertThrows(InterruptedException.class, () -> Option.none().toTry(InterruptedException::new));
         }
     }
 
@@ -492,17 +590,89 @@ public class OptionTest extends AbstractValueTest {
     class TovalidationTests {
         @Test
         public void shouldMakeValidOnSomeToValidation() {
-            assertThat(Option.some(5).toValidation("bad")).isEqualTo(Validation.valid(5));
+            assertThat(Option.some(5).toValidation(() -> "bad")).isEqualTo(Validation.valid(5));
         }
 
         @Test
-        public void shouldMakeLeftOnNoneToValidation() {
-            assertThat(Option.none().toValidation("bad")).isEqualTo(Validation.invalid("bad"));
-        }
-
-        @Test
-        public void shouldMakeLeftOnNoneToValidationSupplier() {
+        public void shouldMakeInvalidOnNoneToValidation() {
             assertThat(Option.none().toValidation(() -> "bad")).isEqualTo(Validation.invalid("bad"));
+        }
+
+        @Test
+        public void shouldNotInvokeSupplierOnSome() {
+            assertThat(Option.some(5).toValidation(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(Validation.valid(5));
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            assertThrows(NullPointerException.class, () -> Option.some(5).toValidation(null));
+        }
+
+        @Test
+        public void shouldRejectNullErrorSuppliedForNone() {
+            // Invalid cannot hold null (design 3.9)
+            assertThrows(NullPointerException.class, () -> Option.none().toValidation(() -> null));
+        }
+    }
+
+    @Nested
+    class TovectorTests {
+        @Test
+        public void shouldConvertSomeToVector() {
+            assertThat(Option.some(1).toVector()).isEqualTo(Vector.of(1));
+        }
+
+        @Test
+        public void shouldConvertNoneToEmptyVector() {
+            assertThat(Option.none().toVector()).isSameAs(Vector.empty());
+        }
+    }
+
+    @Nested
+    class TolistTests {
+        @Test
+        public void shouldConvertSomeToList() {
+            assertThat(Option.some(1).toList()).isEqualTo(List.of(1));
+        }
+
+        @Test
+        public void shouldConvertNoneToEmptyList() {
+            assertThat(Option.none().toList()).isSameAs(List.empty());
+        }
+    }
+
+    @Nested
+    class TooptionalTests {
+        @Test
+        public void shouldConvertNoneToOptional() {
+            final Option<Object> none = Option.none();
+            assertThat(none.toOptional()).isEqualTo(Optional.empty());
+        }
+
+        @Test
+        public void shouldConvertSomeToOptional() {
+            final Option<Integer> some = Option.some(1);
+            assertThat(some.toOptional()).isEqualTo(Optional.of(1));
+        }
+    }
+
+    @Nested
+    class StreamTests {
+        @Test
+        public void shouldStreamTheValueOfSome() {
+            assertThat(Option.some(1).stream().collect(Collectors.toList())).containsExactly(1);
+        }
+
+        @Test
+        public void shouldStreamNothingForNone() {
+            assertThat(Option.none().stream().count()).isEqualTo(0L);
+        }
+
+        @Test
+        public void shouldStreamSequentially() {
+            assertThat(Option.some(1).stream().isParallel()).isFalse();
         }
     }
 
@@ -523,6 +693,18 @@ public class OptionTest extends AbstractValueTest {
             assertThat(actual[0]).isEqualTo(-1);
             assertThat(testee).isEqualTo(Option.none());
         }
+
+        @Test
+        public void shouldReturnTheSameInstance() {
+            final Option<Integer> some = Option.some(1);
+            assertThat(some.peek(i -> {})).isSameAs(some);
+            assertThat(Option.none().peek(i -> {})).isSameAs(Option.none());
+        }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> Option.some(1).peek(null));
+        }
     }
 
     @Nested
@@ -542,19 +724,6 @@ public class OptionTest extends AbstractValueTest {
         @Test
         public void shouldHandleTransformOnNone() {
             assertThat(Option.none().<String> transform(self -> self.isEmpty() ? "ok" : "failed")).isEqualTo("ok");
-        }
-    }
-
-    @Nested
-    class IteratorTests {
-        @Test
-        public void shouldReturnIteratorOfSome() {
-            assertThat((Iterator<Integer>) Option.some(1).iterator()).isNotNull();
-        }
-
-        @Test
-        public void shouldReturnIteratorOfNone() {
-            assertThat((Iterator<Object>) Option.none().iterator()).isNotNull();
         }
     }
 
@@ -632,22 +801,7 @@ public class OptionTest extends AbstractValueTest {
     }
 
     @Nested
-    class SpliteratorTests {
-        @Test
-        public void shouldHaveSizedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
-        }
-
-        @Test
-        public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-        }
-
-        @Test
-        public void shouldReturnSizeWhenSpliterator() {
-            assertThat(of(1).spliterator().getExactSizeIfKnown()).isEqualTo(1);
-        }
-
+    class FoldTests {
         @Test
         public void foldStringToInt() {
             assertThat(Option.some("1").fold(() -> -1, Integer::valueOf)).isEqualTo(1);
@@ -664,6 +818,17 @@ public class OptionTest extends AbstractValueTest {
             });
             assertThat(right.get()).isEqualTo(1);
             assertThat(left.getLeft()).isEqualTo("Empty");
+        }
+
+        @Test
+        public void shouldFoldToNull() {
+            assertThat(Option.some(1).<Object>fold(() -> "none", i -> null)).isNull();
+        }
+
+        @Test
+        public void shouldThrowOnNullArguments() {
+            assertThrows(NullPointerException.class, () -> Option.some(1).fold(null, i -> i));
+            assertThrows(NullPointerException.class, () -> Option.some(1).fold(() -> 1, null));
         }
     }
 }

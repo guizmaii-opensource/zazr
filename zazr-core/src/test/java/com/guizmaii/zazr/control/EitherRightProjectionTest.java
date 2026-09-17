@@ -189,7 +189,7 @@ public class EitherRightProjectionTest extends AbstractValueTest {
 
     @Test
     public void shouldFilterSomeOnRightProjectionOfRightIfPredicateMatches() {
-        final boolean actual = Either.<String, Integer> right(1).right().filter(i -> true).toOption().isDefined();
+        final boolean actual = Either.<String, Integer> right(1).right().filter(i -> true).isDefined();
         assertThat(actual).isTrue();
     }
 
