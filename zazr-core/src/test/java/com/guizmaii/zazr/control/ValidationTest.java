@@ -136,17 +136,17 @@ public class ValidationTest {
             assertThatThrownBy(() -> Validation.fromEither(null)).isInstanceOf(NullPointerException.class).hasMessage("either is null");
             assertThatThrownBy(() -> Validation.fromOption(null, () -> "e")).isInstanceOf(NullPointerException.class).hasMessage("option is null");
             assertThatThrownBy(() -> Validation.fromOption(Option.some(1), null)).isInstanceOf(NullPointerException.class).hasMessage("ifNone is null");
-            assertThatThrownBy(() -> Validation.fromOption(Option.none(), () -> null)).isInstanceOf(NullPointerException.class).hasMessage("error is null");
+            assertThatThrownBy(() -> Validation.fromOption(Option.none(), () -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.fromOption: ifNone returned null");
             assertThatThrownBy(() -> Validation.fromPredicate(null, _ -> true, _ -> "e")).isInstanceOf(NullPointerException.class).hasMessage("value is null");
             assertThatThrownBy(() -> Validation.fromPredicate(1, null, _ -> "e")).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
             assertThatThrownBy(() -> Validation.fromPredicate(1, _ -> true, null)).isInstanceOf(NullPointerException.class).hasMessage("ifFalse is null");
-            assertThatThrownBy(() -> Validation.fromPredicate(1, _ -> false, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("error is null");
+            assertThatThrownBy(() -> Validation.fromPredicate(1, _ -> false, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.fromPredicate: ifFalse returned null");
             assertThatThrownBy(() -> Validation.fromTry(null)).isInstanceOf(NullPointerException.class).hasMessage("t is null");
             assertThatThrownBy(() -> Validation.of(null, t -> t)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
             assertThatThrownBy(() -> Validation.of(() -> 1, null)).isInstanceOf(NullPointerException.class).hasMessage("onError is null");
             assertThatThrownBy(() -> Validation.of(() -> {
                 throw new RuntimeException();
-            }, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("error is null");
+            }, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.of: onError returned null");
         }
     }
 
@@ -199,7 +199,7 @@ public class ValidationTest {
 
         @Test
         public void shouldRejectANullCombinerResult() {
-            assertThatThrownBy(() -> Validation.valid(1).zipWith(Validation.valid(2), (_, _) -> null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
+            assertThatThrownBy(() -> Validation.valid(1).zipWith(Validation.valid(2), (_, _) -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.zipWith: f returned null");
         }
 
         @Test
@@ -214,6 +214,29 @@ public class ValidationTest {
             assertThat(Validation.<String, Integer>valid(1).zipRight(Validation.valid("a"))).isEqualTo(Validation.valid("a"));
             assertThat(ValidationTest.<Integer>invalid("a").zipRight(invalid("b"))).isEqualTo(invalid("a", "b"));
             assertThat(ValidationTest.<Integer>invalid("a").zipRight(Validation.valid("x"))).isEqualTo(invalid("a"));
+        }
+
+        @Test
+        public void shouldKeepTheErrorOrderAcrossThreeOperandsHoweverNested() {
+            final Validation<String, Integer> a = invalid("a");
+            final Validation<String, Integer> b = invalid("b");
+            final Validation<String, Integer> c = invalid("c");
+            assertThat(a.zip(b).zip(c)).isEqualTo(invalid("a", "b", "c"));
+            assertThat(a.zip(b.zip(c))).isEqualTo(invalid("a", "b", "c"));
+            assertThat(a.zip(Validation.<String, Integer>valid(1)).zip(c)).isEqualTo(invalid("a", "c"));
+            assertThat(Validation.<String, Integer>valid(1).zip(b).zip(c)).isEqualTo(invalid("b", "c"));
+            assertThat(a.zip(b).zip(Validation.<String, Integer>valid(1))).isEqualTo(invalid("a", "b"));
+            assertThat(Validation.<String, Integer>valid(1).zip(Validation.<String, Integer>valid(2)).zip(Validation.<String, Integer>valid(3)))
+                    .isEqualTo(Validation.valid(Tuple.of(Tuple.of(1, 2), 3)));
+        }
+
+        @Test
+        public void shouldPlaceAnEitherOperandWhereItStandsInAChain() {
+            final Validation<String, Integer> a = invalid("a");
+            final Validation<String, Integer> c = invalid("c");
+            assertThat(a.zip(Either.<String, Integer>left("b")).zip(c)).isEqualTo(invalid("a", "b", "c"));
+            assertThat(a.zip(c).zip(Either.<String, Integer>left("b"))).isEqualTo(invalid("a", "c", "b"));
+            assertThat(Validation.<String, Integer>valid(1).zip(Either.<String, Integer>left("b")).zip(c)).isEqualTo(invalid("b", "c"));
         }
 
         @Test
@@ -260,6 +283,17 @@ public class ValidationTest {
         }
 
         @Test
+        public void shouldCollectAcrossALeafBoundary() {
+            // 33 validations: the results builder crosses the 32-wide leaf of the Vector trie
+            final Vector<Validation<String, Integer>> valids = Vector.range(0, 33).map(Validation::valid);
+            assertThat(Validation.collectAll(valids)).isEqualTo(Validation.valid(Vector.range(0, 33)));
+            final Vector<Validation<String, Integer>> invalids = Vector.range(0, 33).map(i -> ValidationTest.<Integer>invalid("e" + i));
+            assertThat(Validation.collectAll(invalids)).isEqualTo(Validation.invalidAll(NonEmptyVector.unsafeFromVector(Vector.range(0, 33).map(i -> "e" + i))));
+            final Vector<Validation<String, Integer>> lastInvalid = valids.update(32, invalid("last"));
+            assertThat(Validation.collectAll(lastInvalid)).isEqualTo(invalid("last"));
+        }
+
+        @Test
         public void shouldAcceptAJavaCollection() {
             assertThat(Validation.collectAll(java.util.List.of(Validation.valid(1), Validation.valid(2)))).isEqualTo(Validation.valid(Vector.of(1, 2)));
         }
@@ -267,7 +301,7 @@ public class ValidationTest {
         @Test
         public void shouldRejectNulls() {
             assertThatThrownBy(() -> Validation.collectAll(null)).isInstanceOf(NullPointerException.class).hasMessage("validations is null");
-            assertThatThrownBy(() -> Validation.collectAll(java.util.Arrays.asList(Validation.valid(1), null))).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Validation.collectAll(java.util.Arrays.asList(Validation.valid(1), null))).isInstanceOf(NullPointerException.class).hasMessage("Validation.collectAll: element is null");
         }
     }
 
@@ -305,6 +339,17 @@ public class ValidationTest {
         }
 
         @Test
+        public void shouldCallTheFunctionForEveryElementOfANonEmptyVectorEvenAfterAnInvalid() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Validation<String, NonEmptyVector<Integer>> result = Validation.forEach(NonEmptyVector.of("x", "2", "y"), s -> {
+                calls.incrementAndGet();
+                return parse(s);
+            });
+            assertThat(calls.get()).isEqualTo(3);
+            assertThat(result).isEqualTo(invalid("not a number: x", "not a number: y"));
+        }
+
+        @Test
         public void shouldReturnANonEmptyVectorForANonEmptyVector() {
             final Validation<String, NonEmptyVector<Integer>> valid = Validation.forEach(NonEmptyVector.of("1", "2"), ValidationTest::parse);
             assertThat(valid).isEqualTo(Validation.valid(NonEmptyVector.of(1, 2)));
@@ -317,7 +362,8 @@ public class ValidationTest {
             assertThatThrownBy(() -> Validation.forEach((NonEmptyVector<String>) null, ValidationTest::parse)).isInstanceOf(NullPointerException.class).hasMessage("values is null");
             assertThatThrownBy(() -> Validation.forEach(List.of("1"), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
             assertThatThrownBy(() -> Validation.forEach(NonEmptyVector.of("1"), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> Validation.forEach(List.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+            assertThatThrownBy(() -> Validation.forEach(List.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.forEach: f returned null");
+            assertThatThrownBy(() -> Validation.forEach(NonEmptyVector.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.forEach: f returned null");
         }
     }
 
@@ -354,7 +400,7 @@ public class ValidationTest {
         public void shouldRejectNulls() {
             assertThatThrownBy(() -> Validation.partition(null, ValidationTest::parse)).isInstanceOf(NullPointerException.class).hasMessage("values is null");
             assertThatThrownBy(() -> Validation.partition(List.of("1"), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> Validation.partition(List.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+            assertThatThrownBy(() -> Validation.partition(List.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.partition: f returned null");
         }
     }
 
@@ -382,7 +428,7 @@ public class ValidationTest {
         @Test
         public void shouldRejectNulls() {
             assertThatThrownBy(() -> Validation.valid(1).orElse(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> invalid("a").orElse(() -> null)).isInstanceOf(NullPointerException.class).hasMessage("that supplied null");
+            assertThatThrownBy(() -> invalid("a").orElse(() -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.orElse: that returned null");
         }
     }
 
@@ -437,9 +483,9 @@ public class ValidationTest {
         @Test
         public void shouldRejectNulls() {
             assertThatThrownBy(() -> Validation.valid(1).flatMap(null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> Validation.valid(1).flatMap(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+            assertThatThrownBy(() -> Validation.valid(1).flatMap(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.flatMap: f returned null");
             assertThatThrownBy(() -> Validation.valid(1).flatMapEither(null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> Validation.valid(1).flatMapEither(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+            assertThatThrownBy(() -> Validation.valid(1).flatMapEither(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.flatMapEither: f returned null");
         }
     }
 
@@ -476,11 +522,12 @@ public class ValidationTest {
 
         @Test
         public void shouldRejectNullMapperResults() {
-            assertThatThrownBy(() -> Validation.valid(1).map(_ -> null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> invalid("a").mapError(_ -> null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> invalid("a").mapErrorAll(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("errors is null");
-            assertThatThrownBy(() -> Validation.valid(1).mapBoth(_ -> null, _ -> null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> invalid("a").mapBoth(_ -> null, _ -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Validation.valid(1).map(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.map: f returned null");
+            assertThatThrownBy(() -> invalid("a").mapError(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.mapError: f returned null");
+            assertThatThrownBy(() -> invalid("a", "b").mapError(e -> e.equals("b") ? null : e)).isInstanceOf(NullPointerException.class).hasMessage("Validation.mapError: f returned null");
+            assertThatThrownBy(() -> invalid("a").mapErrorAll(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.mapErrorAll: f returned null");
+            assertThatThrownBy(() -> Validation.valid(1).mapBoth(_ -> null, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.mapBoth: valueMapper returned null");
+            assertThatThrownBy(() -> invalid("a").mapBoth(_ -> null, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.mapBoth: errorMapper returned null");
         }
 
         @Test
@@ -543,6 +590,12 @@ public class ValidationTest {
         public void shouldGetOrElseThrowASuppliedThrowable() {
             assertThat(Validation.<String, Integer>valid(1).getOrElseThrow(() -> new IllegalStateException("no"))).isEqualTo(1);
             assertThatThrownBy(() -> invalid("a").getOrElseThrow(() -> new IllegalStateException("no"))).isInstanceOf(IllegalStateException.class).hasMessage("no");
+        }
+
+        @Test
+        public void shouldRejectANullThrowableInsteadOfThrowingNull() {
+            assertThatThrownBy(() -> invalid("a").getOrElseThrow(() -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.getOrElseThrow: exceptionSupplier returned null");
+            assertThatThrownBy(() -> invalid("a").getOrElseThrow(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.getOrElseThrow: exceptionFunction returned null");
         }
 
         @Test
@@ -661,9 +714,9 @@ public class ValidationTest {
         @Test
         public void shouldRejectNulls() {
             assertThatThrownBy(() -> Validation.valid(1).toEitherWith(null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> invalid("a").toEitherWith(_ -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> invalid("a").toEitherWith(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.toEitherWith: f returned null");
             assertThatThrownBy(() -> Validation.valid(1).toTry(null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> invalid("a").toTry(_ -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> invalid("a").toTry(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.toTry: f returned null");
         }
     }
 
@@ -676,6 +729,19 @@ public class ValidationTest {
             assertThat(Validation.valid(1)).isNotEqualTo(Validation.valid(2));
             assertThat(invalid("a")).isEqualTo(invalid("a")).hasSameHashCodeAs(invalid("a"));
             assertThat(Validation.valid(1)).isNotEqualTo(invalid("1"));
+        }
+
+        @Test
+        public void shouldBeEqualAcrossConstructionPaths() {
+            final Validation<String, Object> zipped = ValidationTest.<Integer>invalid("a").zip(invalid("b")).map(_ -> 0);
+            final Validation<String, Object> all = Validation.invalidAll(NonEmptyVector.of("a", "b"));
+            final Validation<String, Object> collected = Validation.collectAll(List.of(invalid("a"), invalid("b"))).map(_ -> 0);
+            final Validation<String, Object> mapped = ValidationTest.<Object>invalid("A", "B").mapError(String::toLowerCase);
+            assertThat(zipped).isEqualTo(all).hasSameHashCodeAs(all);
+            assertThat(collected).isEqualTo(all).hasSameHashCodeAs(all);
+            assertThat(mapped).isEqualTo(all).hasSameHashCodeAs(all);
+            assertThat(Validation.fromEither(Either.right(1))).isEqualTo(Validation.valid(1)).hasSameHashCodeAs(Validation.valid(1));
+            assertThat(Validation.fromOption(Option.none(), () -> "a")).isEqualTo(Validation.invalid("a")).hasSameHashCodeAs(Validation.invalid("a"));
         }
 
         @Test

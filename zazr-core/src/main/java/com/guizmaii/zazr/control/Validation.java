@@ -133,7 +133,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromOption(Option<? extends A> option, Supplier<? extends E> ifNone) {
         Objects.requireNonNull(option, "option is null");
         Objects.requireNonNull(ifNone, "ifNone is null");
-        return option.isDefined() ? valid(option.get()) : invalid(ifNone.get());
+        return option.isDefined() ? valid(option.get()) : invalid(Objects.requireNonNull(ifNone.get(), "Validation.fromOption: ifNone returned null"));
     }
 
     /**
@@ -156,7 +156,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(value, "value is null");
         Objects.requireNonNull(predicate, "predicate is null");
         Objects.requireNonNull(ifFalse, "ifFalse is null");
-        return predicate.test(value) ? valid(value) : invalid(ifFalse.apply(value));
+        return predicate.test(value) ? valid(value) : invalid(Objects.requireNonNull(ifFalse.apply(value), "Validation.fromPredicate: ifFalse returned null"));
     }
 
     /**
@@ -193,7 +193,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(onError, "onError is null");
         return switch (Try.of(f)) {
             case Success(var value) -> valid(value);
-            case Failure(var cause) -> invalid(onError.apply(cause));
+            case Failure(var cause) -> invalid(Objects.requireNonNull(onError.apply(cause), "Validation.of: onError returned null"));
         };
     }
 
@@ -215,7 +215,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      */
     static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, Vector<A>> collectAll(Iterable<? extends Validation<? extends E, ? extends A>> validations) {
         Objects.requireNonNull(validations, "validations is null");
-        return forEach(validations, v -> v);
+        return forEach(validations, v -> Objects.requireNonNull(v, "Validation.collectAll: element is null"));
     }
 
     /**
@@ -241,7 +241,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         final Vector.Builder<B> results = Vector.newBuilder();
         Vector.Builder<E> errors = null;
         for (A value : values) {
-            final Validation<? extends E, ? extends B> validation = Objects.requireNonNull(f.apply(value), "f returned null");
+            final Validation<? extends E, ? extends B> validation = Objects.requireNonNull(f.apply(value), "Validation.forEach: f returned null");
             if (validation instanceof Invalid(var es)) {
                 if (errors == null) {
                     errors = Vector.newBuilder();
@@ -293,7 +293,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         final Vector.Builder<E> errors = Vector.newBuilder();
         final Vector.Builder<B> results = Vector.newBuilder();
         for (A value : values) {
-            switch (Objects.requireNonNull(f.apply(value), "f returned null")) {
+            switch (Objects.requireNonNull(f.apply(value), "Validation.partition: f returned null")) {
                 case Valid(var v) -> results.add(v);
                 case Invalid(var es) -> errors.addAll(es.toVector());
             }
@@ -335,7 +335,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid(var a) -> switch (that) {
-                case Valid(var b) -> valid(f.apply(a, b));
+                case Valid(var b) -> valid(Objects.requireNonNull(f.apply(a, b), "Validation.zipWith: f returned null"));
                 case Invalid<? extends E, ? extends B> invalid -> (Validation<E, C>) invalid;
             };
             case Invalid(var errors) -> switch (that) {
@@ -397,7 +397,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     @SuppressWarnings("unchecked")
     default Validation<E, A> orElse(Supplier<? extends Validation<? extends E, ? extends A>> that) {
         Objects.requireNonNull(that, "that is null");
-        return isValid() ? this : (Validation<E, A>) Objects.requireNonNull(that.get(), "that supplied null");
+        return isValid() ? this : (Validation<E, A>) Objects.requireNonNull(that.get(), "Validation.orElse: that returned null");
     }
 
     // -- short-circuit
@@ -424,7 +424,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     default <B extends @Nullable Object> Validation<E, B> flatMap(Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
-            case Valid(var value) -> (Validation<E, B>) Objects.requireNonNull(f.apply(value), "f returned null");
+            case Valid(var value) -> (Validation<E, B>) Objects.requireNonNull(f.apply(value), "Validation.flatMap: f returned null");
             case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
         };
     }
@@ -442,7 +442,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     default <B extends @Nullable Object> Validation<E, B> flatMapEither(Function<? super A, ? extends Either<? extends E, ? extends B>> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
-            case Valid(var value) -> fromEither(Objects.requireNonNull(f.apply(value), "f returned null"));
+            case Valid(var value) -> fromEither(Objects.requireNonNull(f.apply(value), "Validation.flatMapEither: f returned null"));
             case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
         };
     }
@@ -461,7 +461,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     default <B extends @Nullable Object> Validation<E, B> map(Function<? super A, ? extends B> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
-            case Valid(var value) -> valid(f.apply(value));
+            case Valid(var value) -> valid(Objects.requireNonNull(f.apply(value), "Validation.map: f returned null"));
             case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
         };
     }
@@ -479,7 +479,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid<E, A> valid -> (Validation<E2, A>) valid;
-            case Invalid(var errors) -> new Invalid<>(errors.map(f));
+            case Invalid(var errors) -> new Invalid<>(errors.map(e -> Objects.requireNonNull(f.apply(e), "Validation.mapError: f returned null")));
         };
     }
 
@@ -498,7 +498,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid<E, A> valid -> (Validation<E2, A>) valid;
-            case Invalid(var errors) -> new Invalid<>(f.apply(errors));
+            case Invalid(var errors) -> new Invalid<>(Objects.requireNonNull(f.apply(errors), "Validation.mapErrorAll: f returned null"));
         };
     }
 
@@ -516,8 +516,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(errorMapper, "errorMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         return switch (this) {
-            case Valid(var value) -> valid(valueMapper.apply(value));
-            case Invalid(var errors) -> new Invalid<>(errors.map(errorMapper));
+            case Valid(var value) -> valid(Objects.requireNonNull(valueMapper.apply(value), "Validation.mapBoth: valueMapper returned null"));
+            case Invalid(var errors) -> new Invalid<>(errors.map(e -> Objects.requireNonNull(errorMapper.apply(e), "Validation.mapBoth: errorMapper returned null")));
         };
     }
 
@@ -600,13 +600,14 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @param <X>               the type of the throwable
      * @return the value
      * @throws X                    if this is {@code Invalid}
-     * @throws NullPointerException if {@code exceptionSupplier} is null
+     * @throws NullPointerException if {@code exceptionSupplier} is null, or if it returns null (a {@code null} is
+     *                              never thrown)
      */
     default <X extends Throwable> A getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
         Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
         return switch (this) {
             case Valid(var value) -> value;
-            case Invalid<E, A> _ -> throw exceptionSupplier.get();
+            case Invalid<E, A> _ -> throw Objects.requireNonNull(exceptionSupplier.get(), "Validation.getOrElseThrow: exceptionSupplier returned null");
         };
     }
 
@@ -617,13 +618,14 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @param <X>               the type of the throwable
      * @return the value
      * @throws X                    if this is {@code Invalid}
-     * @throws NullPointerException if {@code exceptionFunction} is null
+     * @throws NullPointerException if {@code exceptionFunction} is null, or if it returns null (a {@code null} is
+     *                              never thrown)
      */
     default <X extends Throwable> A getOrElseThrow(Function<? super NonEmptyVector<E>, X> exceptionFunction) throws X {
         Objects.requireNonNull(exceptionFunction, "exceptionFunction is null");
         return switch (this) {
             case Valid(var value) -> value;
-            case Invalid(var errors) -> throw exceptionFunction.apply(errors);
+            case Invalid(var errors) -> throw Objects.requireNonNull(exceptionFunction.apply(errors), "Validation.getOrElseThrow: exceptionFunction returned null");
         };
     }
 
@@ -759,7 +761,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid(var value) -> Either.right(value);
-            case Invalid(var errors) -> Either.left(f.apply(errors));
+            case Invalid(var errors) -> Either.left(Objects.requireNonNull(f.apply(errors), "Validation.toEitherWith: f returned null"));
         };
     }
 
@@ -789,7 +791,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid(var value) -> Try.success(value);
-            case Invalid(var errors) -> Try.failure(f.apply(errors));
+            case Invalid(var errors) -> Try.failure(Objects.requireNonNull(f.apply(errors), "Validation.toTry: f returned null"));
         };
     }
 

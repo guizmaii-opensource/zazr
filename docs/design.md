@@ -386,8 +386,12 @@ Notes:
   There is no `orElseLog` without the log channel.
 - **`toString` is `Invalid(a, b)`**, the errors spread like a collection's, next to `Valid(1)`; the `NonEmptyVector`
   wrapper is not printed.
-- Null messages are `value is null`, `error is null`, `errors is null`, and the parameter name for the rest
-  (`that is null`, `f is null`, `f returned null`, `that supplied null`).
+- Null messages: a null argument is `<parameter> is null` (`value is null`, `errors is null`, `f is null`); a
+  function or supplier handed to a method that returns null where a value is required is rejected at the call
+  site, before any constructor sees it, with `Validation.<method>: <parameter> returned null`
+  (`Validation.mapErrorAll: f returned null`, `Validation.getOrElseThrow: exceptionFunction returned null`, so
+  `getOrElseThrow` never executes `throw null`); a null element of `collectAll` is
+  `Validation.collectAll: element is null`.
 
 ### 3.6 `NonEmptyVector<A>`
 
