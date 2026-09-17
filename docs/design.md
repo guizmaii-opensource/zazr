@@ -224,7 +224,7 @@ duplication is cheaper than a god interface).
 | `traverse(Iterable<A>, A->F<B>)` | `forEach(Iterable<A>, A->F<B>)` | ZIO/prelude name. Static on the companion, so no clash with `Iterable.forEach`. |
 | `Either.sequence` (accumulates *both* sides) vs `sequenceRight` (short-circuits) | delete the accumulating one; `Either.collectAll` short-circuits. Accumulation is `Validation`'s job. | one semantics per name |
 | `bimap` | `mapBoth` | ZIO 2 rename |
-| `peek` | `tap` | ZIO name; `peek` collides with `java.util.stream.Stream.peek` semantics only by accident |
+| `peek` | `tap` | ZIO name; `peek` collides with `java.util.stream.Stream.peek` semantics only by accident. On a collection `tap` runs the action on **every** element (Vavr's `peek` ran it on the head only, a `Value` artifact); `Stream` runs it on the head now and on the rest lazily, `Iterator` lazily (decided, #20) |
 | `peekLeft` / `onFailure` / `onSuccess` / `onEmpty` / `andThen(Consumer)` | `tapLeft`, `tapError`, `tap`, `tapNone`; drop `andThen(Consumer)` | `tap*` family |
 | `mapTo(U)` | `as(U)` | ZIO name |
 | `mapToVoid()` | `unit()` or delete | rarely useful without an effect type; delete |
@@ -241,7 +241,7 @@ duplication is cheaper than a god interface).
 | `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. | |
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
-| `Try.andFinally`, `andFinallyTry` | `ensuring(Runnable)`, `ensuring(CheckedRunnable)` | ZIO name |
+| `Try.andFinally`, `andFinallyTry` | `ensuring(CheckedRunnable)` only | ZIO name. One overload, not two: `ensuring(Runnable)` next to `ensuring(CheckedRunnable)` is ambiguous for every lambda (javac: both `void` functional interfaces match), and a `Runnable` lambda already is a `CheckedRunnable` lambda; a `Runnable` variable is passed as `r::run` (decided, #20) |
 | `Try.withResources(...)` ×8 + `WithResources1..8` | keep one `Try.withResources(Callable<R>, CheckedFunction1<R,A>)`; N resources nest | arity ladder not worth it |
 | `Try.filter` ×3, `filterTry` ×3 | one `filter(Predicate, Function<A,Throwable>)` and `filter(Predicate)` | |
 | `Either.left()/right()` projections + `LeftProjection`/`RightProjection` (24 members each) | delete; `Either` is right-biased and has `mapLeft`, `flip`, `fold` | ZIO 2 deleted all arrow combinators for the same reason |
