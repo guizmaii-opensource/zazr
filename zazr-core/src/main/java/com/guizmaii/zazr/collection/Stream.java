@@ -1165,11 +1165,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default boolean hasDefiniteSize() {
-        return false;
-    }
-
-    @Override
     default int indexOf(T element, int from) {
         int index = 0;
         for (Stream<T> stream = this; !stream.isEmpty(); stream = stream.tail(), index++) {
@@ -1255,11 +1250,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     default T last() {
         return Collections.last(this);
     }
@@ -1291,7 +1281,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     }
 
     @Override
-    default <U extends @Nullable Object> Stream<U> mapTo(U value) {
+    default <U extends @Nullable Object> Stream<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -1349,14 +1339,14 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      *         are handed to {@code action} lazily as they are traversed
      */
     @Override
-    default Stream<T> peek(Consumer<? super T> action) {
+    default Stream<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isEmpty()) {
             return this;
         } else {
             final T head = head();
             action.accept(head);
-            return cons(head, () -> tail().peek(action));
+            return cons(head, () -> tail().tap(action));
         }
     }
 
@@ -1716,19 +1706,6 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     default Stream<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeRightUntil(predicate.negate());
-    }
-
-    /**
-     * Transforms this {@code Stream}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U extends @Nullable Object> U transform(Function<? super Stream<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

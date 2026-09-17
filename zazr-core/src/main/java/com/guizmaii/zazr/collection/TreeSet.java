@@ -792,11 +792,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     @Override
-    public boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
     public T head() {
         if (isEmpty()) {
             throw new NoSuchElementException("head of empty TreeSet");
@@ -841,11 +836,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public boolean isEmpty() {
         return tree.isEmpty();
-    }
-
-    @Override
-    public boolean isTraversableAgain() {
-        return true;
     }
 
     @Override
@@ -894,7 +884,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * @throws ClassCastException if this set has more than one element and {@code value} is not {@link Comparable}
      */
     @Override
-    public <U extends @Nullable Object> TreeSet<U> mapTo(U value) {
+    public <U extends @Nullable Object> TreeSet<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -930,11 +920,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     @Override
-    public TreeSet<T> peek(Consumer<? super T> action) {
+    public TreeSet<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(head());
-        }
+        forEach(action);
         return this;
     }
 
@@ -1063,19 +1051,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Objects.requireNonNull(predicate, "predicate is null");
         final TreeSet<T> treeSet = TreeSet.ofAll(tree.comparator(), iterator().takeWhile(predicate));
         return (treeSet.length() == length()) ? this : treeSet;
-    }
-
-    /**
-     * Transforms this {@code TreeSet}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    public <U extends @Nullable Object> U transform(Function<? super TreeSet<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

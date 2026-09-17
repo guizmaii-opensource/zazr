@@ -142,21 +142,16 @@ public interface Arbitrary<T> {
         };
     }
 
-    default Arbitrary<T> peek(Consumer<? super T> action) {
-        return size -> apply(size).peek(action);
-    }
-
     /**
-     * Transforms this {@code Arbitrary}.
+     * Runs {@code action} on every generated value and returns an arbitrary of the same values.
      *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
+     * @param action what to do with each generated value
+     * @return a new arbitrary
+     * @throws NullPointerException if {@code action} is null
      */
-    default <U> U transform(Function<? super Arbitrary<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
+    default Arbitrary<T> tap(Consumer<? super T> action) {
+        Objects.requireNonNull(action, "action is null");
+        return size -> apply(size).tap(action);
     }
 
     /**

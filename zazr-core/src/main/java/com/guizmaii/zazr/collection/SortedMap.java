@@ -34,7 +34,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     /**
-     * Same as {@link #bimap(Function, Function)}, using a specific comparator for keys of the codomain of the given
+     * Same as {@link #mapBoth(Function, Function)}, using a specific comparator for keys of the codomain of the given
      * {@code keyMapper}.
      *
      * @param <K2>          key's component type of the map result
@@ -45,7 +45,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return a new {@code SortedMap}
      * @throws NullPointerException if {@code keyMapper} or {@code valueMapper} is null
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> bimap(Comparator<? super K2> keyComparator,
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> mapBoth(Comparator<? super K2> keyComparator,
                                      Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
     /**
@@ -76,7 +76,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     // -- Adjusted return types of Map methods
 
     @Override
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> bimap(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
     @Override
     Tuple2<V, ? extends SortedMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
@@ -157,11 +157,6 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     Option<? extends SortedMap<K, V>> initOption();
 
     @Override
-    default boolean isOrdered() {
-        return true;
-    }
-
-    @Override
     SortedSet<K> keySet();
 
     @Override
@@ -197,7 +192,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
 
     @Override
-    SortedMap<K, V> peek(Consumer<? super Tuple2<K, V>> action);
+    SortedMap<K, V> tap(Consumer<? super Tuple2<K, V>> action);
 
     @Override
     SortedMap<K, V> put(K key, V value);

@@ -494,7 +494,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> bimap(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         final Iterator<Tuple2<K2, V2>> entries = iterator().map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
@@ -724,8 +724,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public HashMap<K, V> peek(Consumer<? super Tuple2<K, V>> action) {
-        return Maps.peek(this, action);
+    public HashMap<K, V> tap(Consumer<? super Tuple2<K, V>> action) {
+        return Maps.tap(this, action);
     }
 
     @Override

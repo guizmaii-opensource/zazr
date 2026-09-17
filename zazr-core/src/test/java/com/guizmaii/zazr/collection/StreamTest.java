@@ -504,13 +504,6 @@ public class StreamTest extends AbstractLinearSeqTest {
         }
     }
 
-    // -- peek
-
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 3;
-    }
-
     @Nested
     class StreamPermutationsTests {
         @Test
@@ -795,16 +788,6 @@ public class StreamTest extends AbstractLinearSeqTest {
         final Stream<Integer> stream = this.of(1);
         stream.tail(); // evaluates empty tail
         assertThat(stream.toString()).isEqualTo("Stream(1)");
-    }
-
-    @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
-        }
     }
 
     @Nested

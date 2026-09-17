@@ -1116,7 +1116,7 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     <U extends @Nullable Object> Seq<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
-    default <U extends @Nullable Object> Seq<U> mapTo(U value) {
+    default <U extends @Nullable Object> Seq<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -1130,7 +1130,7 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     Tuple2<? extends Seq<T>, ? extends Seq<T>> partition(Predicate<? super T> predicate);
 
     @Override
-    Seq<T> peek(Consumer<? super T> action);
+    Seq<T> tap(Consumer<? super T> action);
 
     @Override
     Seq<T> replace(T currentElement, T newElement);
@@ -1225,8 +1225,4 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     @Override
     <U extends @Nullable Object> Seq<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper);
 
-    @Override
-    default boolean isSequential() {
-        return true;
-    }
 }

@@ -910,14 +910,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     // -- TreeMap API
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> bimap(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
-        return bimap(this, EntryComparator.natural(), keyMapper, valueMapper);
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
+        return mapBoth(this, EntryComparator.natural(), keyMapper, valueMapper);
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> bimap(Comparator<? super K2> keyComparator,
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> mapBoth(Comparator<? super K2> keyComparator,
                                           Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
-        return bimap(this, EntryComparator.of(keyComparator), keyMapper, valueMapper);
+        return mapBoth(this, EntryComparator.of(keyComparator), keyMapper, valueMapper);
     }
 
     @Override
@@ -1207,8 +1207,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public TreeMap<K, V> peek(Consumer<? super Tuple2<K, V>> action) {
-        return Maps.peek(this, action);
+    public TreeMap<K, V> tap(Consumer<? super Tuple2<K, V>> action) {
+        return Maps.tap(this, action);
     }
 
     @Override
@@ -1414,7 +1414,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // -- private helpers
 
-    private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> bimap(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
+    private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> mapBoth(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
             Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");

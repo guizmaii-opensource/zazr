@@ -119,11 +119,6 @@ public class VectorTest extends AbstractIndexedSeqTest {
         return Vector.rangeBy(from, toExclusive, step);
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
     //fixme: delete, when useIsEqualToInsteadOfIsSameAs() will be eliminated from AbstractValueTest class
     @Override
     protected boolean useIsEqualToInsteadOfIsSameAs() {
@@ -260,16 +255,6 @@ public class VectorTest extends AbstractIndexedSeqTest {
         @Test
         public void shouldThrowForVoidType() {
             assertThrows(IllegalArgumentException.class, () -> ArrayType.of(void.class));
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
         }
     }
 

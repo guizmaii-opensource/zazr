@@ -70,7 +70,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a new {@code Map}
      * @throws NullPointerException if {@code keyMapper} or {@code valueMapper} is null
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> bimap(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
     @Override
     default boolean contains(Tuple2<K, V> element) {
@@ -244,16 +244,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     V getOrElse(K key, V defaultValue);
 
     @Override
-    default boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
-    default boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     
     Iterator<Tuple2<K, V>> iterator();
 
@@ -307,7 +297,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     }
 
     @Override
-    default <U extends @Nullable Object> Seq<U> mapTo(U value) {
+    default <U extends @Nullable Object> Seq<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -502,19 +492,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     java.util.Map<K, V> toJavaMap();
 
     /**
-     * Transforms this {@code Map}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U extends @Nullable Object> U transform(Function<? super Map<K, V>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
-    /**
      * Unzips the entries of this {@code Map} by treating each key-value pair as an element,
      * and splitting them into two separate {@code Seq} collections - one for keys and one for values.
      *
@@ -663,11 +640,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> grouped(int size);
 
     @Override
-    default boolean isDistinct() {
-        return true;
-    }
-
-    @Override
     Map<K, V> init();
 
     @Override
@@ -683,7 +655,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Tuple2<? extends Map<K, V>, ? extends Map<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
 
     @Override
-    Map<K, V> peek(Consumer<? super Tuple2<K, V>> action);
+    Map<K, V> tap(Consumer<? super Tuple2<K, V>> action);
 
     @Override
     Map<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);

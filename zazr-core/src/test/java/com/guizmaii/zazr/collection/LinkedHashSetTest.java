@@ -40,11 +40,6 @@ public class LinkedHashSetTest extends AbstractSetTest {
     }
 
     @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
-    @Override
     protected <T> LinkedHashSet<T> ofAll(Iterable<? extends T> elements) {
         return LinkedHashSet.ofAll(elements);
     }
@@ -227,15 +222,6 @@ public class LinkedHashSetTest extends AbstractSetTest {
     }
 
     @Nested
-    class TransformTests {
-        @Test
-        public void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
-        }
-    }
-
-    @Nested
     class TolinkedsetTests {
         @Test
         public void shouldReturnSelfOnConvertToLinkedSet() {
@@ -254,14 +240,6 @@ public class LinkedHashSetTest extends AbstractSetTest {
         @Test
         public void shouldHaveOrderedSpliterator() {
             assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-        }
-    }
-
-    @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnTrueWhenIsSequentialCalled() {
-            assertThat(of(1, 2, 3).isSequential()).isTrue();
         }
     }
 

@@ -112,16 +112,16 @@ public class TreeMapTest extends AbstractSortedMapTest {
         return TreeMap.fill(n, s);
     }
 
-    // -- bimap
+    // -- mapBoth
 
     @Test
-    public void shouldBiMapEmpty() {
-        assertThat(TreeMap.empty().bimap(Function.identity(), Function.identity())).isEmpty();
+    public void shouldMapBothEmpty() {
+        assertThat(TreeMap.empty().mapBoth(Function.identity(), Function.identity())).isEmpty();
     }
 
     @Test
-    public void shouldBiMapNonEmpty() {
-        final TreeMap<String, Integer> actual = TreeMap.of(1, "1", 2, "2").bimap(Comparators.naturalComparator(), String::valueOf, Integer::parseInt);
+    public void shouldMapBothNonEmpty() {
+        final TreeMap<String, Integer> actual = TreeMap.of(1, "1", 2, "2").mapBoth(Comparators.naturalComparator(), String::valueOf, Integer::parseInt);
         final TreeMap<String, Integer> expected = TreeMap.of("1", 1, "2", 2);
         assertThat(actual).isEqualTo(expected);
     }

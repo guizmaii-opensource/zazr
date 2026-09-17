@@ -174,11 +174,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
-    @Override
     protected <T> IntMap<T> of(T element) {
         Map<Integer, T> map = emptyMap();
         map = map.put(0, element);
@@ -584,17 +579,17 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         }
     }
 
-    // -- biMap
+    // -- mapBoth
 
     @Test
-    public void shouldBiMapEmpty() {
-        assertThat(emptyInt().bimap(i -> i + 1, o -> o)).isEqualTo(com.guizmaii.zazr.collection.Vector.empty());
+    public void shouldMapBothEmpty() {
+        assertThat(emptyInt().mapBoth(i -> i + 1, o -> o)).isEqualTo(com.guizmaii.zazr.collection.Vector.empty());
     }
 
     @Test
-    public void shouldBiMapNonEmpty() {
+    public void shouldMapBothNonEmpty() {
         final Seq<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        final Seq<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").bimap(i -> i + 1, s -> s + "!").toStream();
+        final Seq<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").mapBoth(i -> i + 1, s -> s + "!").toStream();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -728,7 +723,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Test
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmpty() {
         final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-        if (map.isOrdered()) {
+        if (map instanceof Ordered) {
             assertThat(this.<Integer, String> emptyMap().merge(map)).isEqualTo(map);
         } else {
             assertThat(this.<Integer, String> emptyMap().merge(map)).isSameAs(map);
@@ -757,7 +752,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Test
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmptyUsingCollisionResolution() {
         final Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
-        if (map.isOrdered()) {
+        if (map instanceof Ordered) {
             assertThat(this.<Integer, Integer> emptyMap().merge(map, Math::max)).isEqualTo(map);
         } else {
             assertThat(this.<Integer, Integer> emptyMap().merge(map, Math::max)).isSameAs(map);
@@ -834,15 +829,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         public void shouldReturnSameMapWhenEmptyRemoveAllNonEmpty() {
             final Map<Integer, String> empty = emptyMap();
             assertThat(empty.removeAll(com.guizmaii.zazr.collection.List.of(1, 2, 3))).isSameAs(empty);
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        @Test
-        public void shouldTransform() {
-            final Map<?, ?> actual = emptyIntInt().put(1, 11).transform(map -> map.put(2, 22));
-            assertThat(actual).isEqualTo(emptyIntInt().put(1, 11).put(2, 22));
         }
     }
 

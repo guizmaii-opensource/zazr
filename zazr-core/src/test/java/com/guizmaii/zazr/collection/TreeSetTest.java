@@ -121,11 +121,6 @@ public class TreeSetTest extends AbstractSortedSetTest {
     }
 
     @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
-    @Override
     protected TreeSet<Character> range(char from, char toExclusive) {
         return TreeSet.range(from, toExclusive);
     }
@@ -388,16 +383,6 @@ public class TreeSetTest extends AbstractSortedSetTest {
         public void shouldPreserveComparatorOnConvertToSortedSetWithoutDistinctComparator() {
             final Traversable<Integer> value = TreeSet.of(Comparators.naturalComparator().reversed(), 1, 2, 3);
             assertThat(value.toSortedSet().mkString(",")).isEqualTo("3,2,1");
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
         }
     }
 

@@ -1031,11 +1031,6 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     }
 
     @Override
-    default boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
     default int indexOf(T element, int from) {
         int index = 0;
         for (List<T> list = this; !list.isEmpty(); list = list.tail(), index++) {
@@ -1110,11 +1105,6 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     }
 
     @Override
-    default boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     default T last() {
         return Collections.last(this);
     }
@@ -1141,7 +1131,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     }
 
     @Override
-    default <U extends @Nullable Object> List<U> mapTo(U value) {
+    default <U extends @Nullable Object> List<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -1230,11 +1220,9 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * @return this {@code List}
      */
     @Override
-    default List<T> peek(Consumer<? super T> action) {
+    default List<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(head());
-        }
+        forEach(action);
         return this;
     }
 
@@ -1710,19 +1698,6 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     default List<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reverse().takeWhile(predicate).reverse();
-    }
-
-    /**
-     * Transforms this {@code List}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U extends @Nullable Object> U transform(Function<? super List<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

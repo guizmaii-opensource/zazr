@@ -541,21 +541,13 @@ public class GenTest {
     });
     }
 
-    // -- peek
+    // -- tap
 
     @Test
-    public void shouldPeekArbitrary() {
+    public void shouldTapGen() {
         final int[] actual = new int[] { -1 };
-        final int expected = Gen.of(1).peek(i -> actual[0] = i).apply(new Random());
+        final int expected = Gen.of(1).tap(i -> actual[0] = i).apply(new Random());
         assertThat(actual[0]).isEqualTo(expected);
-    }
-
-    // -- transform
-
-    @Test
-    public void shouldTransformGen() {
-        final String s = Gen.of(1).transform(gen -> gen.apply(RANDOM).toString());
-        assertThat(s).isEqualTo("1");
     }
 
     // helpers

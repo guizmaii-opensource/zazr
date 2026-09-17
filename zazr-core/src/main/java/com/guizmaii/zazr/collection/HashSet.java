@@ -724,11 +724,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
     public T head() {
         if (tree.isEmpty()) {
             throw new NoSuchElementException("head of empty set");
@@ -784,11 +779,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     public Iterator<T> iterator() {
         return tree.keysIterator();
     }
@@ -818,7 +808,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> HashSet<U> mapTo(U value) {
+    public <U extends @Nullable Object> HashSet<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -843,11 +833,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public HashSet<T> peek(Consumer<? super T> action) {
+    public HashSet<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(iterator().head());
-        }
+        forEach(action);
         return this;
     }
 
@@ -968,19 +956,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(predicate, "predicate is null");
         final HashSet<T> taken = HashSet.ofAll(iterator().takeWhile(predicate));
         return taken.length() == length() ? this : taken;
-    }
-
-    /**
-     * Transforms this {@code HashSet}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    public <U extends @Nullable Object> U transform(Function<? super HashSet<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

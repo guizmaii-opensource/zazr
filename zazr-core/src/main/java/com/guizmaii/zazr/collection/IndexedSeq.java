@@ -189,7 +189,7 @@ public interface IndexedSeq<T extends @Nullable Object> extends Seq<T> {
     <U extends @Nullable Object> IndexedSeq<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
-    default <U extends @Nullable Object> IndexedSeq<U> mapTo(U value) {
+    default <U extends @Nullable Object> IndexedSeq<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -209,7 +209,7 @@ public interface IndexedSeq<T extends @Nullable Object> extends Seq<T> {
     Tuple2<? extends IndexedSeq<T>, ? extends IndexedSeq<T>> partition(Predicate<? super T> predicate);
 
     @Override
-    IndexedSeq<T> peek(Consumer<? super T> action);
+    IndexedSeq<T> tap(Consumer<? super T> action);
 
     @Override
     IndexedSeq<? extends IndexedSeq<T>> permutations();

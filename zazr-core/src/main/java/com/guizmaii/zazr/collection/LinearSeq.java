@@ -167,7 +167,7 @@ public interface LinearSeq<T extends @Nullable Object> extends Seq<T> {
     <U extends @Nullable Object> LinearSeq<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
-    default <U extends @Nullable Object> LinearSeq<U> mapTo(U value) {
+    default <U extends @Nullable Object> LinearSeq<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -187,7 +187,7 @@ public interface LinearSeq<T extends @Nullable Object> extends Seq<T> {
     Tuple2<? extends LinearSeq<T>, ? extends LinearSeq<T>> partition(Predicate<? super T> predicate);
 
     @Override
-    LinearSeq<T> peek(Consumer<? super T> action);
+    LinearSeq<T> tap(Consumer<? super T> action);
 
     @Override
     LinearSeq<? extends LinearSeq<T>> permutations();
@@ -436,7 +436,7 @@ interface LinearSeqModule {
             int index = 0;
             final int sliceLength = slice.length();
             // DEV-NOTE: we can't compute the length of an infinite Stream but it may contain a slice
-            final boolean lazy = !source.hasDefiniteSize();
+            final boolean lazy = !Collections.hasDefiniteSize(source);
             // length once, then counted down: List.length() walks the list
             int remaining = lazy ? 0 : source.length();
             while (lazy ? source.nonEmpty() : remaining >= sliceLength) {

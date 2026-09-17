@@ -138,12 +138,4 @@ public abstract class AbstractSortedSetTest extends AbstractSetTest {
         }
     }
 
-    @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnFalseWhenIsSequentialCalled() {
-            assertThat(of(1, 2, 3).isSequential()).isFalse();
-        }
-    }
-
 }

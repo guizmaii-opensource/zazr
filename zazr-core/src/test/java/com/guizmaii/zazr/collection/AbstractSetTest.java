@@ -97,7 +97,7 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
         @Test
         public void shouldReturnSameSetWhenAddAllNonEmptyToEmpty() {
             final Set<Integer> set = of(1, 2, 3);
-            if (set.isOrdered()) {
+            if (set instanceof Ordered) {
                 assertThat(empty().addAll(set)).isEqualTo(set);
             } else {
                 assertThat(empty().addAll(set)).isSameAs(set);
@@ -173,7 +173,7 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
         public void shouldReturnSameSetWhenNonEmptyIntersectEmpty() {
             final Set<Integer> set = of(1, 2);
             final Set<Integer> empty = empty();
-            if (set.isOrdered()) {
+            if (set instanceof Ordered) {
                 assertThat(set.intersect(empty)).isEqualTo(empty);
             } else {
                 assertThat(set.intersect(empty)).isSameAs(empty);
@@ -247,7 +247,7 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
     @Test
     public void shouldReturnSameSetWhenEmptyUnionNonEmpty() {
         final Set<Integer> set = of(1, 2);
-        if (set.isOrdered()) {
+        if (set instanceof Ordered) {
             assertThat(empty().union(set)).isEqualTo(set);
         } else {
             assertThat(empty().union(set)).isSameAs(set);

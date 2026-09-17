@@ -926,11 +926,6 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
-    public boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
     public T head() {
         if (isEmpty()) {
             throw new NoSuchElementException("head of empty Queue");
@@ -1028,11 +1023,6 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
-    public boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     public Iterator<T> iterator() {
         return front.iterator().concat(rear.reverseIterator());
     }
@@ -1059,7 +1049,7 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> Queue<U> mapTo(U value) {
+    public <U extends @Nullable Object> Queue<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -1370,19 +1360,6 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return takeRightUntil(predicate.negate());
     }
 
-    /**
-     * Transforms this {@code Queue}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    public <U extends @Nullable Object> U transform(Function<? super Queue<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
     @Override
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Queue<T1>, Queue<T2>> unzip(
       Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
@@ -1572,11 +1549,9 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     }
 
     @Override
-    public Queue<T> peek(Consumer<? super T> action) {
+    public Queue<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(head());
-        }
+        forEach(action);
         return this;
     }
 

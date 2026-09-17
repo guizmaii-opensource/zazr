@@ -181,11 +181,6 @@ public class IteratorTest extends AbstractTraversableTest {
         return true;
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 3;
-    }
-
     @Test
     public void shouldFailOfEmptyArgList() {
         assertThrows(NoSuchElementException.class, () -> of().next());
@@ -331,15 +326,6 @@ public class IteratorTest extends AbstractTraversableTest {
         @Test
         public void shouldConcatThisNonEmptyWithNonEmpty() {
             assertThat(Iterator.of(1).concat(Iterator.of(2))).isEqualTo(Iterator.of(1, 2));
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        @Test
-        public void shouldTransform() {
-            final Iterator<?> it = Iterator.of(1, 2).transform(ii -> ii.drop(1));
-            assertThat(it).isEqualTo(Iterator.of(2));
         }
     }
 
@@ -945,14 +931,6 @@ public class IteratorTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnTrueWhenIsSequentialCalled() {
-            assertThat(of(1, 2, 3).isSequential()).isTrue();
-        }
-    }
-
-    @Nested
     class FindlastTests {
         @Test
         public void shouldRejectFindLastOfNullElement() {
@@ -1023,8 +1001,8 @@ public class IteratorTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldRejectNullResultOnMapTo() {
-        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).mapTo(null).toList());
+    public void shouldRejectNullResultOnAs() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).as(null).toList());
     }
 
     @Test

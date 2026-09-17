@@ -183,11 +183,6 @@ public class ListTest extends AbstractLinearSeqTest {
         return List.transpose((List<List<T>>) rows);
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
     @Nested
     class ListStaticNarrowTests {
         @Test
@@ -322,16 +317,6 @@ public class ListTest extends AbstractLinearSeqTest {
             assertThat(of(0).push(1)).isEqualTo(of(1, 0));
             assertThat(of(0).push(1, 2, 3)).isEqualTo(of(3, 2, 1, 0));
             assertThat(of(0).pushAll(of(1, 2, 3))).isEqualTo(of(3, 2, 1, 0));
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
         }
     }
 
