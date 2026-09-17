@@ -310,7 +310,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     @Override
     default <U extends @Nullable Object> Seq<U> collect(Function<? super Tuple2<K, V>, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return (Seq<U>) iterator().collect(mapper).toStream();
+        // one String per call, only so that a null Option is reported under the concrete map type, as the other kinds do
+        final String nullMessage = getClass().getSimpleName() + ".collect: mapper returned null";
+        return (Seq<U>) iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), nullMessage)).toStream();
     }
 
     @Override

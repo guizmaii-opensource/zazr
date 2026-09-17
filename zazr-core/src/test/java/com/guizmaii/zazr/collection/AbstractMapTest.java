@@ -1583,7 +1583,16 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRejectNullOptionFromCollectBiFunction() {
-        assertThrows(NullPointerException.class, () -> mapOf(1, "a").collect((k, v) -> null));
+        final Map<Integer, String> map = mapOf(1, "a");
+        final NullPointerException e = assertThrows(NullPointerException.class, () -> map.collect((k, v) -> null));
+        assertThat(e.getMessage()).isEqualTo(map.getClass().getSimpleName() + ".collect: mapper returned null");
+    }
+
+    @Test
+    public void shouldRejectNullOptionFromCollectFunctionUnderTheMapType() {
+        final Map<Integer, String> map = mapOf(1, "a");
+        final NullPointerException e = assertThrows(NullPointerException.class, () -> map.collect(t -> null).toList());
+        assertThat(e.getMessage()).isEqualTo(map.getClass().getSimpleName() + ".collect: mapper returned null");
     }
 
     @Test

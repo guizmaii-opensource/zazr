@@ -1440,8 +1440,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
             BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        // Iterator.collect rejects a null Option and drops the None entries in one pass
-        return createTreeMap(entryComparator, map.entries.iterator().collect(entry -> mapper.apply(entry._1(), entry._2())));
+        // Iterator.collect drops the None entries in one pass; the null check runs here so that the message names this type
+        return createTreeMap(entryComparator, map.entries.iterator().collect(entry -> Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "TreeMap.collect: mapper returned null")));
     }
 
 

@@ -890,7 +890,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     public <U extends @Nullable Object> TreeSet<U> collect(Comparator<? super U> comparator, Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return TreeSet.ofAll(comparator, iterator().collect(mapper));
+        // the null check runs here so that the message names this type, not the Iterator that does the walking
+        return TreeSet.ofAll(comparator, iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), "TreeSet.collect: mapper returned null")));
     }
 
     /**

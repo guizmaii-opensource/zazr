@@ -1051,7 +1051,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     @Override
     public <U extends @Nullable Object> Queue<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? empty() : new Queue<>(toList().collect(mapper), com.guizmaii.zazr.collection.List.empty());
+        // the null check runs here so that the message names this type, not the List that does the walking
+        return isEmpty() ? empty() : new Queue<>(toList().collect(t -> Objects.requireNonNull(mapper.apply(t), "Queue.collect: mapper returned null")), com.guizmaii.zazr.collection.List.empty());
     }
 
     @Override

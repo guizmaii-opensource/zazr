@@ -860,9 +860,11 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRejectNullOptionFromCollectMapper() {
+        // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, Iterator...)
+        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
           .isInstanceOf(NullPointerException.class)
-          .hasMessageContaining("collect: mapper returned null");
+          .hasMessage(type + ".collect: mapper returned null");
     }
 
     @TestTemplate

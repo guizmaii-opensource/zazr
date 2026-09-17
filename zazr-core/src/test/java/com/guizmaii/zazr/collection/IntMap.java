@@ -163,7 +163,7 @@ public final class IntMap<T> implements Traversable<T> {
 
     @Override
     public <U> Seq<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
-        return original.collect(e -> mapper.apply(e._2()));
+        return original.collect(e -> Objects.requireNonNull(mapper.apply(e._2()), "IntMap.collect: mapper returned null"));
     }
 
     @Override
