@@ -13,6 +13,7 @@ import com.guizmaii.zazr.collection.Stream;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 public class Tuple2Test {
@@ -111,8 +112,8 @@ public class Tuple2Test {
     @Test
     public void shouldMapComponents() {
       final Tuple2<Object, Object> tuple = createTuple();
-      final Function1<Object, Object> f1 = Function1.identity();
-      final Function1<Object, Object> f2 = Function1.identity();
+      final Function<Object, Object> f1 = Function.identity();
+      final Function<Object, Object> f2 = Function.identity();
       final Tuple2<Object, Object> actual = tuple.map(f1, f2);
       assertThat(actual).isEqualTo(tuple);
     }

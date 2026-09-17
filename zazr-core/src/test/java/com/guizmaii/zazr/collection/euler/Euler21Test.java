@@ -1,9 +1,9 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.collection.Stream;
 import java.util.Objects;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +36,7 @@ public class Euler21Test {
     }
 
     private static int sumOfAmicablePairs(int n) {
-        final Function1<Integer, Integer> mSumOfDivisors = Function1.of(Euler21Test::sumOfDivisors).memoized();
+        final Function<Integer, Integer> mSumOfDivisors = Memoize.of(Euler21Test::sumOfDivisors);
         return Stream.range(1, n)
                 .filter(x -> mSumOfDivisors.apply(mSumOfDivisors.apply(x)).intValue() == x && mSumOfDivisors.apply(x) > x)
                 .foldLeft(0, (sum, x) -> sum + x + mSumOfDivisors.apply(x));

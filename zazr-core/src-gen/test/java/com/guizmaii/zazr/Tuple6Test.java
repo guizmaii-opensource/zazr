@@ -11,6 +11,7 @@ import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Stream;
 import java.util.Comparator;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 public class Tuple6Test {
@@ -193,12 +194,12 @@ public class Tuple6Test {
     @Test
     public void shouldMapComponents() {
       final Tuple6<Object, Object, Object, Object, Object, Object> tuple = createTuple();
-      final Function1<Object, Object> f1 = Function1.identity();
-      final Function1<Object, Object> f2 = Function1.identity();
-      final Function1<Object, Object> f3 = Function1.identity();
-      final Function1<Object, Object> f4 = Function1.identity();
-      final Function1<Object, Object> f5 = Function1.identity();
-      final Function1<Object, Object> f6 = Function1.identity();
+      final Function<Object, Object> f1 = Function.identity();
+      final Function<Object, Object> f2 = Function.identity();
+      final Function<Object, Object> f3 = Function.identity();
+      final Function<Object, Object> f4 = Function.identity();
+      final Function<Object, Object> f5 = Function.identity();
+      final Function<Object, Object> f6 = Function.identity();
       final Tuple6<Object, Object, Object, Object, Object, Object> actual = tuple.map(f1, f2, f3, f4, f5, f6);
       assertThat(actual).isEqualTo(tuple);
     }

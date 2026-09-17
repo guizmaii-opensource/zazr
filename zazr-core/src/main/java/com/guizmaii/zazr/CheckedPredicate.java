@@ -3,7 +3,7 @@ package com.guizmaii.zazr;
 import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.CheckedPredicateModule.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * A {@linkplain java.util.function.Predicate} that is allowed to throw checked exceptions.
@@ -42,9 +42,9 @@ public interface CheckedPredicate<T extends @Nullable Object> {
      *
      * @param t the input argument
      * @return {@code true} if the argument satisfies the predicate, {@code false} otherwise
-     * @throws Throwable if an error occurs during evaluation
+     * @throws Exception if an error occurs during evaluation
      */
-    boolean test(T t) throws Throwable;
+    boolean test(T t) throws Exception;
 
     /**
      * Returns a predicate that represents the logical negation of this predicate.
@@ -70,14 +70,4 @@ public interface CheckedPredicate<T extends @Nullable Object> {
             }
         };
     }
-}
-
-interface CheckedPredicateModule {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
-    }
-
 }

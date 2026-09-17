@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Stream;
 import java.io.File;
@@ -8,15 +7,16 @@ import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.util.Scanner;
+import java.util.function.Function;
 
 final class Utils {
 
     private Utils() {
     }
 
-    static final Function1<Integer, BigInteger> MEMOIZED_FACTORIAL = Function1.of(Utils::factorial).memoized();
+    static final Function<Integer, BigInteger> MEMOIZED_FACTORIAL = Memoize.of(Utils::factorial);
 
-    static final Function1<Long, Boolean> MEMOIZED_IS_PRIME = Function1.of(Utils::isPrime).memoized();
+    static final Function<Long, Boolean> MEMOIZED_IS_PRIME = Memoize.of(Utils::isPrime);
 
     static Stream<BigInteger> fibonacci() {
         return Stream.of(BigInteger.ZERO, BigInteger.ONE).appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));

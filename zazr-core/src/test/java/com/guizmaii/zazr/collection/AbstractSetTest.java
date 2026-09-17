@@ -33,6 +33,36 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
     }
 
     @Nested
+    class TestTests {
+        @Test
+        public void shouldDelegateTestToContainsForAPresentElement() {
+            final Set<Integer> set = of(1, 2, 3);
+            assertThat(set.test(2)).isTrue();
+            assertThat(set.test(2)).isEqualTo(set.contains(2));
+        }
+
+        @Test
+        public void shouldDelegateTestToContainsForAnAbsentElement() {
+            final Set<Integer> set = of(1, 2, 3);
+            assertThat(set.test(4)).isFalse();
+            assertThat(set.test(4)).isEqualTo(set.contains(4));
+        }
+
+        @Test
+        public void shouldComposeAsAPredicateWithNegateAndAnd() {
+            final Set<Integer> set = of(1, 2, 3);
+            final java.util.function.Predicate<Integer> notInSet = set.negate();
+            assertThat(notInSet.test(2)).isFalse();
+            assertThat(notInSet.test(4)).isTrue();
+
+            final java.util.function.Predicate<Integer> inSetAndEven = set.and(i -> i % 2 == 0);
+            assertThat(inSetAndEven.test(2)).isTrue();
+            assertThat(inSetAndEven.test(1)).isFalse();
+            assertThat(inSetAndEven.test(4)).isFalse();
+        }
+    }
+
+    @Nested
     class FillIntSupplierTests {
         @Test
         public void shouldReturnSingleAfterFillWithConstant() {

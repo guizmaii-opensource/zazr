@@ -16,8 +16,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.control.TryModule.isFatal;
-import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.isFatal;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * A control structure that allows writing safe code without explicitly managing try-catch blocks for exceptions.
@@ -31,7 +31,7 @@ import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
  * };
  * }</pre>
  * A {@code Success} never holds {@code null}: {@link #success(Object)} throws, and a computation that returns
- * {@code null} under {@link #of(CheckedFunction0)}, {@link #mapTry(CheckedFunction1)} or
+ * {@code null} under {@link #of(Callable)}, {@link #mapTry(CheckedFunction1)} or
  * {@link #fromCompletableFuture(CompletableFuture)} is captured, like any other non-fatal outcome, as a
  * {@code Failure} of a {@link NullPointerException}. A computation that returns nothing is run with
  * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
@@ -60,62 +60,28 @@ import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
 public sealed interface Try<T extends @Nullable Object> extends Value<T> permits Try.Success, Try.Failure {
 
     /**
-     * Creates a {@link Try} instance from a {@link CheckedFunction0}.
+     * Creates a {@link Try} instance from a {@link Callable}.
      * <p>
-     * If the supplier executes without throwing an exception, a {@link Success} containing the result is returned.
+     * If the callable executes without throwing an exception, a {@link Success} containing the result is returned.
      * If a non-fatal exception occurs during execution, a {@link Failure} wrapping the thrown exception is returned;
      * fatal throwables (see the class-level documentation) are rethrown instead. A {@code Success} cannot hold
      * {@code null}, so a {@code null} result is captured as a {@link Failure} of a {@link NullPointerException}:
      * every non-fatal outcome of the computation ends up in the returned {@code Try}.
      *
-     * @param supplier the checked supplier to execute
-     * @param <T>      the type of the value returned by the supplier
-     * @return a {@link Success} with the supplier's result, or a {@link Failure} if an exception is thrown or the
+     * @param supplier the callable to execute
+     * @param <T>      the type of the value returned by the callable
+     * @return a {@link Success} with the callable's result, or a {@link Failure} if an exception is thrown or the
      *         result is {@code null}
      * @throws NullPointerException if {@code supplier} is {@code null}
      */
-    static <T extends @Nullable Object> Try<T> of(CheckedFunction0<? extends T> supplier) {
+    static <T extends @Nullable Object> Try<T> of(Callable<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
         try {
-            final T value = supplier.apply();
+            final T value = supplier.call();
             return value == null ? TryModule.nullResult("Try.of") : new Success<>(value);
         } catch (Throwable t) {
             return new Failure<>(t);
         }
-    }
-
-    /**
-     * Creates a {@link Try} instance from a {@link Supplier}.
-     * <p>
-     * If the supplier executes without throwing an exception, a {@link Success} containing the result is returned.
-     * If a non-fatal exception occurs during execution, a {@link Failure} wrapping the thrown exception is returned;
-     * fatal throwables (see the class-level documentation) are rethrown instead.
-     *
-     * @param supplier the supplier to execute
-     * @param <T>      the type of the value returned by the supplier
-     * @return a {@link Success} with the supplier's result, or a {@link Failure} if an exception is thrown
-     * @throws NullPointerException if {@code supplier} is {@code null}
-     */
-    static <T extends @Nullable Object> Try<T> ofSupplier(Supplier<? extends T> supplier) {
-        Objects.requireNonNull(supplier, "supplier is null");
-        return of(supplier::get);
-    }
-
-    /**
-     * Creates a {@link Try} instance from a {@link Callable}.
-     * <p>
-     * If the callable executes without throwing an exception, a {@link Success} containing the result is returned.
-     * If a non-fatal exception occurs during execution, a {@link Failure} wrapping the thrown exception is returned;
-     * fatal throwables (see the class-level documentation) are rethrown instead.
-     *
-     * @param callable the callable to execute
-     * @param <T>      the type of the value returned by the callable
-     * @return a {@link Success} with the callable's result, or a {@link Failure} if an exception is thrown
-     * @throws NullPointerException if {@code callable} is {@code null}
-     */
-    static <T extends @Nullable Object> Try<T> ofCallable(Callable<? extends T> callable) {
-        Objects.requireNonNull(callable, "callable is null");
-        return of(callable::call);
     }
 
     /**
@@ -531,7 +497,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * <p>
      * This is a shortcut for {@link #flatMapTry(CheckedFunction1)}.
      * <p>
-     * The mapper must return a {@code Try}, never {@code null}. A {@code Try} built inside the mapper captures a {@code null} computation result as a {@code Failure}, see {@link #of(CheckedFunction0)}.
+     * The mapper must return a {@code Try}, never {@code null}. A {@code Try} built inside the mapper captures a {@code null} computation result as a {@code Failure}, see {@link #of(Callable)}.
      *
      * @param mapper a function mapping the value to another {@code Try}
      * @param <U>    the type of the resulting {@code Try}
@@ -919,7 +885,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * Try.of(() -> 1/0).recover(Error.class, x -> Integer.MAX_VALUE);
      * }</pre>
      * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
      *
      * @param <X>           the type of exception to handle
      * @param exceptionType the specific exception type that should be recovered
@@ -1073,7 +1039,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * Try.of(() -> 1/0).recover(x -> Integer.MAX_VALUE);
      * }</pre>
      * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
      *
      * @param f A recovery function that takes the underlying exception and returns a value
      * @return a {@code Try} containing either the original success value or the recovered value
@@ -1127,7 +1093,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * Recovers from any failure by evaluating the given {@code recoveryAttempt} if this {@code Try} is a {@link Try.Failure}.
      * <p>
      * If this {@code Try} is already a {@link Success}, it is returned unchanged. The {@code recoveryAttempt} is
-     * evaluated using {@link Try#of(CheckedFunction0)}, and its result is wrapped in a new {@code Try}.
+     * evaluated using {@link Try#of(Callable)}, and its result is wrapped in a new {@code Try}.
      * <p>
      * Example:
      * <pre>{@code
@@ -1140,13 +1106,13 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      *    .recoverAllAndTry(() -> 10);
      * }</pre>
      * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
      *
      * @param recoveryAttempt A checked supplier providing a fallback value in case of failure
      * @return a {@code Try} containing either the original success value or the result of {@code recoveryAttempt}
      * @throws NullPointerException if {@code recoveryAttempt} is null
      */
-    default Try<T> recoverAllAndTry(CheckedFunction0<? extends T> recoveryAttempt) {
+    default Try<T> recoverAllAndTry(Callable<? extends T> recoveryAttempt) {
         Objects.requireNonNull(recoveryAttempt, "recoveryAttempt is null");
         return isFailure() ? of(recoveryAttempt) : this;
     }
@@ -1154,7 +1120,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
     /**
      * Returns {@code this} if it is a {@link Try.Success}, or attempts to recover from a failure when the
      * underlying cause is assignable to the specified {@code exceptionType} by evaluating the given
-     * {@code recoveryAttempt} (via {@link Try#of(CheckedFunction0)}).
+     * {@code recoveryAttempt} (via {@link Try#of(Callable)}).
      * <p>
      * Example usage:
      * <pre>{@code
@@ -1171,7 +1137,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      *    .recoverAndTry(NullPointerException.class, () -> 10);
      * }</pre>
      * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(CheckedFunction0)}.
+     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
      *
      * @param <X>             The type of the exception that may be recovered
      * @param exceptionType   The specific exception type that triggers the recovery
@@ -1179,7 +1145,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @return a {@code Try} containing either the original success value or the result of {@code recoveryAttempt}
      * @throws NullPointerException if {@code exceptionType} or {@code recoveryAttempt} is null
      */
-    default <X extends Throwable> Try<T> recoverAndTry(Class<X> exceptionType, CheckedFunction0<? extends T> recoveryAttempt) {
+    default <X extends Throwable> Try<T> recoverAndTry(Class<X> exceptionType, Callable<? extends T> recoveryAttempt) {
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(recoveryAttempt, "recoveryAttempt is null");
         return isFailure() && exceptionType.isAssignableFrom(getCause().getClass())
@@ -1482,7 +1448,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T1> Type of the 1st resource.
      * @return a new {@link WithResources1} instance.
      */
-    static <T1 extends AutoCloseable> WithResources1<T1> withResources(CheckedFunction0<? extends T1> t1Supplier) {
+    static <T1 extends AutoCloseable> WithResources1<T1> withResources(Callable<? extends T1> t1Supplier) {
         return new WithResources1<>(t1Supplier);
     }
 
@@ -1495,7 +1461,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T2> Type of the 2nd resource.
      * @return a new {@link WithResources2} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable> WithResources2<T1, T2> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable> WithResources2<T1, T2> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier) {
         return new WithResources2<>(t1Supplier, t2Supplier);
     }
 
@@ -1510,7 +1476,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T3> Type of the 3rd resource.
      * @return a new {@link WithResources3} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable> WithResources3<T1, T2, T3> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable> WithResources3<T1, T2, T3> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier) {
         return new WithResources3<>(t1Supplier, t2Supplier, t3Supplier);
     }
 
@@ -1527,7 +1493,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T4> Type of the 4th resource.
      * @return a new {@link WithResources4} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable> WithResources4<T1, T2, T3, T4> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable> WithResources4<T1, T2, T3, T4> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier) {
         return new WithResources4<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier);
     }
 
@@ -1546,7 +1512,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T5> Type of the 5th resource.
      * @return a new {@link WithResources5} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable> WithResources5<T1, T2, T3, T4, T5> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable> WithResources5<T1, T2, T3, T4, T5> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier) {
         return new WithResources5<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier);
     }
 
@@ -1567,7 +1533,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T6> Type of the 6th resource.
      * @return a new {@link WithResources6} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable> WithResources6<T1, T2, T3, T4, T5, T6> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier, CheckedFunction0<? extends T6> t6Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable> WithResources6<T1, T2, T3, T4, T5, T6> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier) {
         return new WithResources6<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier, t6Supplier);
     }
 
@@ -1590,7 +1556,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T7> Type of the 7th resource.
      * @return a new {@link WithResources7} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable> WithResources7<T1, T2, T3, T4, T5, T6, T7> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier, CheckedFunction0<? extends T6> t6Supplier, CheckedFunction0<? extends T7> t7Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable> WithResources7<T1, T2, T3, T4, T5, T6, T7> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier) {
         return new WithResources7<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier, t6Supplier, t7Supplier);
     }
 
@@ -1615,7 +1581,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @param <T8> Type of the 8th resource.
      * @return a new {@link WithResources8} instance.
      */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable, T8 extends AutoCloseable> WithResources8<T1, T2, T3, T4, T5, T6, T7, T8> withResources(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier, CheckedFunction0<? extends T6> t6Supplier, CheckedFunction0<? extends T7> t7Supplier, CheckedFunction0<? extends T8> t8Supplier) {
+    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable, T8 extends AutoCloseable> WithResources8<T1, T2, T3, T4, T5, T6, T7, T8> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier, Callable<? extends T8> t8Supplier) {
         return new WithResources8<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier, t6Supplier, t7Supplier, t8Supplier);
     }
 
@@ -1626,9 +1592,9 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources1<T1 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
+        private final Callable<? extends T1> t1Supplier;
 
-        private WithResources1(CheckedFunction0<? extends T1> t1Supplier) {
+        private WithResources1(Callable<? extends T1> t1Supplier) {
             this.t1Supplier = t1Supplier;
         }
 
@@ -1642,7 +1608,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction1<? super T1, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call()) {
                     return f.apply(t1);
                 }
             });
@@ -1657,10 +1623,10 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources2<T1 extends AutoCloseable, T2 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
 
-        private WithResources2(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier) {
+        private WithResources2(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
         }
@@ -1675,7 +1641,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction2<? super T1, ? super T2, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call()) {
                     return f.apply(t1, t2);
                 }
             });
@@ -1691,11 +1657,11 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources3<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
-        private final CheckedFunction0<? extends T3> t3Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
+        private final Callable<? extends T3> t3Supplier;
 
-        private WithResources3(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier) {
+        private WithResources3(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
             this.t3Supplier = t3Supplier;
@@ -1711,7 +1677,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction3<? super T1, ? super T2, ? super T3, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply(); T3 t3 = t3Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call()) {
                     return f.apply(t1, t2, t3);
                 }
             });
@@ -1728,12 +1694,12 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources4<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
-        private final CheckedFunction0<? extends T3> t3Supplier;
-        private final CheckedFunction0<? extends T4> t4Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
+        private final Callable<? extends T3> t3Supplier;
+        private final Callable<? extends T4> t4Supplier;
 
-        private WithResources4(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier) {
+        private WithResources4(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
             this.t3Supplier = t3Supplier;
@@ -1750,7 +1716,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply(); T3 t3 = t3Supplier.apply(); T4 t4 = t4Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call()) {
                     return f.apply(t1, t2, t3, t4);
                 }
             });
@@ -1768,13 +1734,13 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources5<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
-        private final CheckedFunction0<? extends T3> t3Supplier;
-        private final CheckedFunction0<? extends T4> t4Supplier;
-        private final CheckedFunction0<? extends T5> t5Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
+        private final Callable<? extends T3> t3Supplier;
+        private final Callable<? extends T4> t4Supplier;
+        private final Callable<? extends T5> t5Supplier;
 
-        private WithResources5(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier) {
+        private WithResources5(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
             this.t3Supplier = t3Supplier;
@@ -1792,7 +1758,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply(); T3 t3 = t3Supplier.apply(); T4 t4 = t4Supplier.apply(); T5 t5 = t5Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call()) {
                     return f.apply(t1, t2, t3, t4, t5);
                 }
             });
@@ -1811,14 +1777,14 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources6<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
-        private final CheckedFunction0<? extends T3> t3Supplier;
-        private final CheckedFunction0<? extends T4> t4Supplier;
-        private final CheckedFunction0<? extends T5> t5Supplier;
-        private final CheckedFunction0<? extends T6> t6Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
+        private final Callable<? extends T3> t3Supplier;
+        private final Callable<? extends T4> t4Supplier;
+        private final Callable<? extends T5> t5Supplier;
+        private final Callable<? extends T6> t6Supplier;
 
-        private WithResources6(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier, CheckedFunction0<? extends T6> t6Supplier) {
+        private WithResources6(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
             this.t3Supplier = t3Supplier;
@@ -1837,7 +1803,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply(); T3 t3 = t3Supplier.apply(); T4 t4 = t4Supplier.apply(); T5 t5 = t5Supplier.apply(); T6 t6 = t6Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call()) {
                     return f.apply(t1, t2, t3, t4, t5, t6);
                 }
             });
@@ -1857,15 +1823,15 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources7<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
-        private final CheckedFunction0<? extends T3> t3Supplier;
-        private final CheckedFunction0<? extends T4> t4Supplier;
-        private final CheckedFunction0<? extends T5> t5Supplier;
-        private final CheckedFunction0<? extends T6> t6Supplier;
-        private final CheckedFunction0<? extends T7> t7Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
+        private final Callable<? extends T3> t3Supplier;
+        private final Callable<? extends T4> t4Supplier;
+        private final Callable<? extends T5> t5Supplier;
+        private final Callable<? extends T6> t6Supplier;
+        private final Callable<? extends T7> t7Supplier;
 
-        private WithResources7(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier, CheckedFunction0<? extends T6> t6Supplier, CheckedFunction0<? extends T7> t7Supplier) {
+        private WithResources7(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
             this.t3Supplier = t3Supplier;
@@ -1885,7 +1851,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
         public <R extends @Nullable Object> Try<R> of(CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply(); T3 t3 = t3Supplier.apply(); T4 t4 = t4Supplier.apply(); T5 t5 = t5Supplier.apply(); T6 t6 = t6Supplier.apply(); T7 t7 = t7Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call(); T7 t7 = t7Supplier.call()) {
                     return f.apply(t1, t2, t3, t4, t5, t6, t7);
                 }
             });
@@ -1906,16 +1872,16 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      */
     final class WithResources8<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable, T8 extends AutoCloseable> {
 
-        private final CheckedFunction0<? extends T1> t1Supplier;
-        private final CheckedFunction0<? extends T2> t2Supplier;
-        private final CheckedFunction0<? extends T3> t3Supplier;
-        private final CheckedFunction0<? extends T4> t4Supplier;
-        private final CheckedFunction0<? extends T5> t5Supplier;
-        private final CheckedFunction0<? extends T6> t6Supplier;
-        private final CheckedFunction0<? extends T7> t7Supplier;
-        private final CheckedFunction0<? extends T8> t8Supplier;
+        private final Callable<? extends T1> t1Supplier;
+        private final Callable<? extends T2> t2Supplier;
+        private final Callable<? extends T3> t3Supplier;
+        private final Callable<? extends T4> t4Supplier;
+        private final Callable<? extends T5> t5Supplier;
+        private final Callable<? extends T6> t6Supplier;
+        private final Callable<? extends T7> t7Supplier;
+        private final Callable<? extends T8> t8Supplier;
 
-        private WithResources8(CheckedFunction0<? extends T1> t1Supplier, CheckedFunction0<? extends T2> t2Supplier, CheckedFunction0<? extends T3> t3Supplier, CheckedFunction0<? extends T4> t4Supplier, CheckedFunction0<? extends T5> t5Supplier, CheckedFunction0<? extends T6> t6Supplier, CheckedFunction0<? extends T7> t7Supplier, CheckedFunction0<? extends T8> t8Supplier) {
+        private WithResources8(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier, Callable<? extends T8> t8Supplier) {
             this.t1Supplier = t1Supplier;
             this.t2Supplier = t2Supplier;
             this.t3Supplier = t3Supplier;
@@ -1936,7 +1902,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         @SuppressWarnings("try"/* https://bugs.openjdk.java.net/browse/JDK-8155591 */)
         public <R extends @Nullable Object> Try<R> of(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
             return Try.of(() -> {
-                try (T1 t1 = t1Supplier.apply(); T2 t2 = t2Supplier.apply(); T3 t3 = t3Supplier.apply(); T4 t4 = t4Supplier.apply(); T5 t5 = t5Supplier.apply(); T6 t6 = t6Supplier.apply(); T7 t7 = t7Supplier.apply(); T8 t8 = t8Supplier.apply()) {
+                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call(); T7 t7 = t7Supplier.call(); T8 t8 = t8Supplier.call()) {
                     return f.apply(t1, t2, t3, t4, t5, t6, t7, t8);
                 }
             });
@@ -1949,34 +1915,5 @@ interface TryModule {
     /** The Failure a capturing constructor returns when the computation yields null, which Success cannot hold. */
     static <T extends @Nullable Object> Try<T> nullResult(String constructor) {
         return new Try.Failure<>(new NullPointerException(constructor + ": the computation returned null"));
-    }
-
-    static boolean isFatal(Throwable throwable) {
-        return throwable instanceof InterruptedException
-                || throwable instanceof LinkageError
-                || ThreadDeathResolver.isThreadDeath(throwable)
-                || throwable instanceof VirtualMachineError;
-    }
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
-    }
-
-    class ThreadDeathResolver {
-        static final @Nullable Class<?> THREAD_DEATH_CLASS = resolve();
-
-        static boolean isThreadDeath(Throwable throwable) {
-            return THREAD_DEATH_CLASS != null && THREAD_DEATH_CLASS.isInstance(throwable);
-        }
-
-        private static @Nullable Class<?> resolve() {
-            try {
-                return Class.forName("java.lang.ThreadDeath");
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
     }
 }

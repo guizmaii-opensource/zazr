@@ -53,6 +53,8 @@ public class ValueTest {
     public void shouldConvertSortedMapWithKeyComparatorToSortedSetUsingNaturalOrderOfEntries() {
         final Comparator<Integer> keyComparator = Comparator.comparingInt(Integer::intValue); // not applicable to Tuple2
         final Value<Tuple2<Integer, String>> map = TreeMap.of(keyComparator.reversed(), 1, "a", 2, "b");
-        assertThat(map.toSortedSet()).isEqualTo(TreeSet.of(Tuple.of(1, "a"), Tuple.of(2, "b")));
+        // Set now implements Predicate<T> (docs/design.md 3.1), so assertThat(Iterable) vs assertThat(Predicate)
+        // is ambiguous without a type witness.
+        assertThat((Iterable<Tuple2<Integer, String>>) map.toSortedSet()).isEqualTo(TreeSet.of(Tuple.of(1, "a"), Tuple.of(2, "b")));
     }
 }

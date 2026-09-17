@@ -1,7 +1,11 @@
 package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.CheckedConsumer;
+import com.guizmaii.zazr.CheckedFunction1;
+import com.guizmaii.zazr.CheckedFunction3;
 import com.guizmaii.zazr.CheckedPredicate;
+import com.guizmaii.zazr.CheckedRunnable;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.Value;
@@ -276,48 +280,6 @@ public class TryTest extends AbstractValueTest {
     }
 
     @Nested
-    class TryOfsupplierTests {
-        @Test
-        public void shouldCreateSuccessWhenCallingTryOfSupplier() {
-            assertThat(Try.ofSupplier(() -> 1) instanceof Try.Success).isTrue();
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenCallingTryOfSupplier() {
-            assertThatThrownBy(() -> Try.ofSupplier(null)).isInstanceOf(NullPointerException.class)
-              .hasMessage("supplier is null");
-        }
-
-        @Test
-        public void shouldCreateFailureWhenCallingTryOfSupplier() {
-            assertThat(Try.ofSupplier(() -> {
-                throw new Error("error");
-            }) instanceof Try.Failure).isTrue();
-        }
-    }
-
-    @Nested
-    class TryOfcallableTests {
-        @Test
-        public void shouldCreateSuccessWhenCallingTryOfCallable() {
-            assertThat(Try.ofCallable(() -> 1) instanceof Try.Success).isTrue();
-        }
-
-        @Test
-        public void shouldCreateFailureWhenCallingTryOfCallable() {
-            assertThat(Try.ofCallable(() -> {
-                throw new Error("error");
-            }) instanceof Try.Failure).isTrue();
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenCallingTryOfCallable() {
-            assertThatThrownBy(() -> Try.ofCallable(null)).isInstanceOf(NullPointerException.class)
-              .hasMessage("callable is null");
-        }
-    }
-
-    @Nested
     class TryRunTests {
         @Test
         public void shouldCreateSuccessWhenCallingTryRunCheckedRunnable() {
@@ -357,6 +319,197 @@ public class TryTest extends AbstractValueTest {
         public void shouldThrowNullPointerExceptionWhenCallingTryRunRunnable() {
             assertThatThrownBy(() -> Try.runRunnable(null)).isInstanceOf(NullPointerException.class)
               .hasMessage("runnable is null");
+        }
+    }
+
+    // -- checked exceptions (docs/design.md 3.1 follow-up, #53): CheckedFunctionN/CheckedRunnable now declare
+    // a checked Exception instead of the broader Throwable; a checked IOException reaches the caller (or the
+    // Failure) unwrapped and un-rewrapped through every adapter that used to sneaky-throw to fit a Callable.
+
+    @Nested
+    class CheckedExceptionPropagationTests {
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromTryOf() {
+            final IOException cause = new IOException("boom");
+            final Try<?> result = Try.of(() -> {
+                throw cause;
+            });
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromTryRun() {
+            final IOException cause = new IOException("boom");
+            final Try<?> result = Try.run(() -> {
+                throw cause;
+            });
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromWithResourcesBody() {
+            final IOException cause = new IOException("boom");
+            final Closeable<Integer> closeable1 = Closeable.of(1);
+            final Try<?> result = Try.withResources(() -> closeable1).of(i -> {
+                throw cause;
+            });
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+            assertThat(closeable1.isClosed).isTrue();
+        }
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromLiftTry() {
+            final IOException cause = new IOException("boom");
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw cause;
+            };
+            final Try<String> result = CheckedFunction1.liftTry(throwing).apply(1);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromGetOrElseTry() {
+            final IOException cause = new IOException("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCurriedLastStep() throws Exception {
+            final IOException cause = new IOException("boom");
+            final CheckedFunction3<Integer, Integer, Integer, String> f = (a, b, c) -> {
+                throw cause;
+            };
+            final CheckedFunction1<Integer, String> lastStep = f.curried().apply(1).apply(2);
+            assertThatThrownBy(() -> lastStep.apply(3)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedFunctionUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedFunction1<Integer, String> checked = i -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().apply(1)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedRunnableUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedRunnable checked = () -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().run()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedConsumerUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedConsumer<Integer> checked = i -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().accept(1)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedPredicateUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedPredicate<Integer> checked = i -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().test(1)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldStillRethrowFatalErrorsFromTryOfInsteadOfCapturingThem() {
+            final VirtualMachineError fatal = new OutOfMemoryError("fatal");
+            assertThatThrownBy(() -> Try.of(() -> {
+                throw fatal;
+            })).isSameAs(fatal);
+        }
+    }
+
+    // -- allocation-aware rewrites (#54): CheckedFunctionN.lift builds the Option directly (no throwaway Try)
+    // and Value.getOrElseTry calls the supplier directly (no throwaway Try either); both preserve the exact
+    // exception-propagation semantics the Try-based implementation had.
+
+    @Nested
+    class AllocationAwareRewriteTests {
+
+        @Test
+        public void shouldLiftCaptureACheckedExceptionAsNone() {
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw new IOException("boom");
+            };
+            assertThat(CheckedFunction1.lift(throwing).apply(1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldLiftCaptureARuntimeExceptionAsNone() {
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw new IllegalStateException("boom");
+            };
+            assertThat(CheckedFunction1.lift(throwing).apply(1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldLiftCaptureANonFatalAssertionErrorAsNone() {
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw new AssertionError("boom");
+            };
+            assertThat(CheckedFunction1.lift(throwing).apply(1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldLiftPropagateAFatalOutOfMemoryError() {
+            final OutOfMemoryError fatal = new OutOfMemoryError("fatal");
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw fatal;
+            };
+            assertThatThrownBy(() -> CheckedFunction1.lift(throwing).apply(1)).isSameAs(fatal);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateACheckedException() {
+            final IOException cause = new IOException("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateARuntimeException() {
+            final IllegalStateException cause = new IllegalStateException("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateANonFatalAssertionError() {
+            final AssertionError cause = new AssertionError("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateAFatalOutOfMemoryError() {
+            final OutOfMemoryError fatal = new OutOfMemoryError("fatal");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw fatal;
+            })).isSameAs(fatal);
         }
     }
 
@@ -942,7 +1095,7 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldNotRecoverFailureWhenExceptionTypeIsntAssignable() {
-            final Throwable error = new IllegalStateException(FAILURE);
+            final RuntimeException error = new IllegalStateException(FAILURE);
             assertThat(Try.of(() -> {throw error;}).recoverWith(Error.class, success()).getCause()).isSameAs(error);
         }
     }
@@ -1772,7 +1925,7 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldEnsureThatIdentityCheckedFunctionReturnsIdentity() throws Throwable {
+        public void shouldEnsureThatIdentityCheckedFunctionReturnsIdentity() {
             assertThat(Function.identity().apply(1)).isEqualTo(1);
         }
 
@@ -1806,16 +1959,6 @@ public class TryTest extends AbstractValueTest {
             assertThat(result.isFailure()).isTrue();
             assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
             assertThat(result.getCause().getMessage()).isEqualTo("Try.of: the computation returned null");
-        }
-
-        @Test
-        public void shouldCaptureNullResultOfOfSupplierAsFailure() {
-            assertThat(Try.ofSupplier(() -> null).getCause()).isInstanceOf(NullPointerException.class);
-        }
-
-        @Test
-        public void shouldCaptureNullResultOfOfCallableAsFailure() {
-            assertThat(Try.ofCallable(() -> null).getCause()).isInstanceOf(NullPointerException.class);
         }
 
         @Test

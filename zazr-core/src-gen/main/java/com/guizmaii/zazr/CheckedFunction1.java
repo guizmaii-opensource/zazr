@@ -4,14 +4,12 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static com.guizmaii.zazr.CheckedFunction1Module.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.isFatal;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
@@ -45,15 +43,15 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      * <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html#syntax">lambda expression</a></li>
      * </ul>
      *
-     * Examples (w.l.o.g. referring to Function1):
+     * Examples (w.l.o.g. referring to CheckedFunction1):
      * <pre>{@code // using a lambda expression
-     * Function1<Integer, Integer> add1 = Function1.of(i -> i + 1);
+     * CheckedFunction1<T1, R> add1 = CheckedFunction1.of((t1) -> t1);
      *
-     * // using a method reference (, e.g. Integer method(Integer i) { return i + 1; })
-     * Function1<Integer, Integer> add2 = Function1.of(this::method);
+     * // using a method reference
+     * CheckedFunction1<T1, R> add2 = CheckedFunction1.of(this::method);
      *
      * // using a lambda reference
-     * Function1<Integer, Integer> add3 = Function1.of(add1::apply);
+     * CheckedFunction1<T1, R> add3 = CheckedFunction1.of(add1::apply);
      * }</pre>
      *
      * @param methodReference (typically) a method reference, e.g. {@code Type::method}
@@ -76,8 +74,18 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *         throwable. Fatal throwables (see {@link Try}) are rethrown
      *         instead of being turned into {@code None}.
      */
-    static <T1 extends @Nullable Object, R extends @Nullable Object> Function1<T1, Option<R>> lift(CheckedFunction1<? super T1, ? extends R> partialFunction) {
-        return t1 -> Try.<R>of(() -> partialFunction.apply(t1)).toOption();
+    static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Option<R>> lift(CheckedFunction1<? super T1, ? extends R> partialFunction) {
+        return t1 -> {
+            try {
+                final R result = partialFunction.apply(t1);
+                return result == null ? Option.<R>none() : Option.some(result);
+            } catch (Throwable t) {
+                if (isFatal(t)) {
+                    return sneakyThrow(t);
+                }
+                return Option.<R>none();
+            }
+        };
     }
 
     /**
@@ -91,7 +99,7 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *         non-fatal throwable. Fatal throwables (see {@link Try}) are rethrown
      *         instead of being wrapped.
      */
-    static <T1 extends @Nullable Object, R extends @Nullable Object> Function1<T1, Try<R>> liftTry(CheckedFunction1<? super T1, ? extends R> partialFunction) {
+    static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Try<R>> liftTry(CheckedFunction1<? super T1, ? extends R> partialFunction) {
         return t1 -> Try.of(() -> partialFunction.apply(t1));
     }
 
@@ -123,18 +131,9 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *
      * @param t1 argument 1
      * @return the result of function application
-     * @throws Throwable if something goes wrong applying this function to the given arguments
+     * @throws Exception if something goes wrong applying this function to the given arguments
      */
-    R apply(T1 t1) throws Throwable;
-
-    /**
-     * Returns the number of function arguments.
-     * @return an int value &gt;= 0
-     * @see <a href="http://en.wikipedia.org/wiki/Arity">Arity</a>
-     */
-    default int arity() {
-        return 1;
-    }
+    R apply(T1 t1) throws Exception;
 
     /**
      * Returns a curried version of this function.
@@ -155,69 +154,24 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
     }
 
     /**
-     * Returns a reversed version of this function. This may be useful in a recursive context.
+     * Return a composed function that first applies this CheckedFunction1 to the given arguments and in case of a
+     * non-fatal throwable tries to get a value from the {@code recover} function with the throwable information.
+     * A fatal throwable (see {@link Try}) is never handed to
+     * {@code recover}: it propagates unchanged instead.
      *
-     * @return a reversed function equivalent to this.
-     */
-    default CheckedFunction1<T1, R> reversed() {
-        return this;
-    }
-
-    /**
-     * Returns a memoizing version of this function, which computes the return value for given arguments only one time.
-     * On subsequent calls given the same arguments the memoized value is returned.
-     * <p>
-     * Note that {@code null} arguments and {@code null} return values are permitted; a {@code null} result
-     * is cached like any other value.
-     *
-     * @return a memoizing function equivalent to this.
-     */
-    default CheckedFunction1<T1, R> memoized() {
-        if (isMemoized()) {
-            return this;
-        } else {
-            final Map<T1, R> cache = new HashMap<>();
-            final ReentrantLock lock = new ReentrantLock();
-            return (CheckedFunction1<T1, R> & Memoized) (t1) -> {
-                lock.lock();
-                try {
-                    if (cache.containsKey(t1)) {
-                        return cache.get(t1);
-                    } else {
-                        final R value = apply(t1);
-                        cache.put(t1, value);
-                        return value;
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            };
-        }
-    }
-
-    /**
-     * Checks if this function is memoizing (= caching) computed values.
-     *
-     * @return true, if this function is memoizing, false otherwise
-     */
-    default boolean isMemoized() {
-        return this instanceof Memoized;
-    }
-
-    /**
-     * Return a composed function that first applies this CheckedFunction1 to the given arguments and in case of throwable
-     * try to get value from {@code recover} function with same arguments and throwable information.
-     *
-     * @param recover the function applied in case of throwable
+     * @param recover the function applied in case of a non-fatal throwable
      * @return a function composed of this and recover
      * @throws NullPointerException if recover is null
      */
-    default Function1<T1, R> recover(Function<? super Throwable, ? extends Function<? super T1, ? extends R>> recover) {
+    default Function<T1, R> recover(Function<? super Throwable, ? extends Function<? super T1, ? extends R>> recover) {
         Objects.requireNonNull(recover, "recover is null");
         return (t1) -> {
             try {
                 return this.apply(t1);
             } catch (Throwable throwable) {
+                if (isFatal(throwable)) {
+                    return sneakyThrow(throwable);
+                }
                 final Function<? super T1, ? extends R> func = recover.apply(throwable);
                 Objects.requireNonNull(func, () -> "recover return null for " + throwable.getClass() + ": " + throwable.getMessage());
                 return func.apply(t1);
@@ -228,9 +182,9 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
     /**
      * Returns an unchecked function that will <em>sneaky throw</em> if an exceptions occurs when applying the function.
      *
-     * @return a new Function1 that throws a {@code Throwable}.
+     * @return a new unchecked function that throws a {@code Throwable}.
      */
-    default Function1<T1, R> unchecked() {
+    default Function<T1, R> unchecked() {
         return (t1) -> {
             try {
                 return apply(t1);
@@ -277,17 +231,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction1<S, R> compose1(Function1<? super S, ? extends T1> before) {
+    default <S extends @Nullable Object> CheckedFunction1<S, R> compose1(Function<? super S, ? extends T1> before) {
         Objects.requireNonNull(before, "before is null");
         return (S s) -> apply(before.apply(s));
-    }
-}
-
-interface CheckedFunction1Module {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
     }
 }

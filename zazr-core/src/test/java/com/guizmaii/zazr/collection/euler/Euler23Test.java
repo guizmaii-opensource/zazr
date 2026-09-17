@@ -1,8 +1,8 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Stream;
+import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -65,5 +65,5 @@ public class Euler23Test {
         return Stream.rangeClosed(SMALLEST_ABUNDANT_NUMBER, l / 2).exists(a -> isAbundant.apply(a) && isAbundant.apply(l - a));
     }
 
-    private static final Function1<Long, Boolean> isAbundant = Function1.of((Long l) -> Utils.divisors(l).sum().longValue() > l).memoized();
+    private static final Function<Long, Boolean> isAbundant = Memoize.of((Long l) -> Utils.divisors(l).sum().longValue() > l);
 }

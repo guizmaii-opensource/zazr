@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.CheckedConsumerModule.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * A {@linkplain java.util.function.Consumer} that is allowed to throw checked exceptions.
@@ -42,9 +42,9 @@ public interface CheckedConsumer<T extends @Nullable Object> {
      * Performs an action on the given value, potentially causing side-effects.
      *
      * @param t the input value of type {@code T}
-     * @throws Throwable if an error occurs during execution
+     * @throws Exception if an error occurs during execution
      */
-    void accept(T t) throws Throwable;
+    void accept(T t) throws Exception;
 
     /**
      * Returns a composed {@code CheckedConsumer} that performs, in sequence, 
@@ -74,14 +74,4 @@ public interface CheckedConsumer<T extends @Nullable Object> {
             }
         };
     }
-}
-
-interface CheckedConsumerModule {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
-    }
-
 }
