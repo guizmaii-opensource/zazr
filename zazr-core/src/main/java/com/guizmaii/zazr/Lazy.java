@@ -77,17 +77,15 @@ public final class Lazy<T extends @Nullable Object> {
     }
 
     /**
-     * Combines multiple {@code Lazy} instances into a single {@code Lazy} containing a sequence of their evaluated values.
+     * Turns many {@code Lazy} values into one {@code Lazy} of a {@link Seq} of their values, in iteration order.
+     * Nothing is evaluated until the returned {@code Lazy} is, which then evaluates every element.
      *
-     * <p>Transforms an {@code Iterable<Lazy<? extends T>>} into a {@code Lazy<Seq<T>>}, evaluating each value lazily
-     * when the resulting {@code Lazy} is accessed.</p>
-     *
-     * @param <T>    the type of the lazy values
-     * @param values an {@code Iterable} of lazy values
-     * @return a {@code Lazy} containing a sequence of the evaluated values
+     * @param <T>    the value type
+     * @param values the {@code Lazy} values to collect
+     * @return an unevaluated {@code Lazy} of all the values
      * @throws NullPointerException if {@code values} is null
      */
-    public static <T extends @Nullable Object> Lazy<Seq<T>> sequence(Iterable<? extends Lazy<? extends T>> values) {
+    public static <T extends @Nullable Object> Lazy<Seq<T>> collectAll(Iterable<? extends Lazy<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
         return Lazy.of(() -> Vector.ofAll(values).map(Lazy::get));
     }
@@ -163,13 +161,14 @@ public final class Lazy<T extends @Nullable Object> {
     }
 
     /**
-     * Evaluates this {@code Lazy} and performs the given {@code action} on its value.
+     * Evaluates this {@code Lazy}, runs {@code action} on its value and returns this instance. Whatever the action
+     * throws propagates to the caller.
      *
-     * @param action the action performed on the value
+     * @param action what to do with the value
      * @return this instance
      * @throws NullPointerException if {@code action} is null
      */
-    public Lazy<T> peek(Consumer<? super T> action) {
+    public Lazy<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         action.accept(get());
         return this;

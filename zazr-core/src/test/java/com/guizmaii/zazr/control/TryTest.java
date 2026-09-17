@@ -49,67 +49,72 @@ public class TryTest {
     }
 
     @Nested
-    class AndfinallyTests {
+    class EnsuringTests {
         @Test
-        public void shouldExecuteAndFinallyOnSuccess() {
+        public void shouldRunTheFinalizerOnSuccess() {
             final AtomicInteger count = new AtomicInteger();
-            Try.run(() -> count.set(0)).andFinally(() -> count.set(1));
+            Try.run(() -> count.set(0)).ensuring(() -> count.set(1));
             assertThat(count.get()).isEqualTo(1);
         }
 
         @Test
-        public void shouldExecuteAndFinallyTryOnSuccess() {
-            final AtomicInteger count = new AtomicInteger();
-            Try.run(() -> count.set(0)).andFinallyTry(() -> count.set(1));
-            assertThat(count.get()).isEqualTo(1);
-        }
-
-        @Test
-        public void shouldExecuteAndFinallyOnFailure() {
+        public void shouldRunTheFinalizerOnFailure() {
             final AtomicInteger count = new AtomicInteger();
             Try.run(() -> {throw new IllegalStateException(FAILURE);})
-              .andFinallyTry(() -> count.set(1));
+              .ensuring(() -> count.set(1));
             assertThat(count.get()).isEqualTo(1);
         }
 
         @Test
-        public void shouldExecuteAndFinallyTryOnFailure() {
-            final AtomicInteger count = new AtomicInteger();
-            Try.run(() -> {throw new IllegalStateException(FAILURE);})
-              .andFinallyTry(() -> count.set(1));
-            assertThat(count.get()).isEqualTo(1);
+        public void shouldReturnThisWhenTheFinalizerCompletes() {
+            final Try<String> success = success();
+            assertThat(success.ensuring(() -> {})).isSameAs(success);
+            final Try<String> failure = failure();
+            assertThat(failure.ensuring(() -> {})).isSameAs(failure);
         }
 
         @Test
-        public void shouldExecuteAndFinallyTryOnFailureWithFailure() {
-            final Try<Object> result = Try.of(() -> {throw new IllegalStateException(FAILURE);})
-              .andFinallyTry(() -> {throw new IllegalStateException(FAILURE);});
-            assertThat(result.isFailure());
+        public void shouldFailWithWhatTheFinalizerThrowsOnSuccess() {
+            final IllegalStateException thrown = new IllegalStateException(FAILURE);
+            final Try<String> result = success().ensuring(() -> {throw thrown;});
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(thrown);
         }
 
         @Test
-        public void shouldPreserveOriginalFailureWhenRunnableAlsoThrows() {
+        public void shouldAcceptACheckedFinalizer() {
+            final Try<String> result = success().ensuring(() -> {throw new IOException("io");});
+            assertThat(result.getCause()).isInstanceOf(IOException.class);
+        }
+
+        @Test
+        public void shouldPreserveOriginalFailureWhenTheFinalizerAlsoThrows() {
             final IllegalStateException original = new IllegalStateException("original");
             final IllegalArgumentException finallyEx = new IllegalArgumentException("finally");
             final Try<Object> result = Try.<Object>failure(original)
-              .andFinallyTry(() -> { throw finallyEx; });
+              .ensuring(() -> { throw finallyEx; });
             assertThat(result.isFailure()).isTrue();
             assertThat(result.getCause()).isSameAs(original);
             assertThat(result.getCause().getSuppressed()).containsExactly(finallyEx);
         }
 
         @Test
-        public void shouldRethrowFatalThrowableFromRunnableOnSuccess() {
+        public void shouldRethrowFatalThrowableFromTheFinalizerOnSuccess() {
             assertThrows(InterruptedException.class, () ->
-              Try.success(1).andFinallyTry(() -> { throw new InterruptedException(); }));
+              Try.success(1).ensuring(() -> { throw new InterruptedException(); }));
         }
 
         @Test
-        public void shouldRethrowFatalThrowableFromRunnableWhenAlreadyFailure() {
+        public void shouldRethrowFatalThrowableFromTheFinalizerWhenAlreadyFailure() {
             final IllegalStateException original = new IllegalStateException("original");
             assertThrows(InterruptedException.class, () ->
-              Try.<Object>failure(original).andFinallyTry(() -> { throw new InterruptedException(); }));
+              Try.<Object>failure(original).ensuring(() -> { throw new InterruptedException(); }));
             assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldThrowOnNullFinalizer() {
+            assertThrows(NullPointerException.class, () -> success().ensuring(null));
         }
     }
 
@@ -279,28 +284,6 @@ public class TryTest {
         }
     }
 
-    @Nested
-    class TryRunrunnableTests {
-        @Test
-        public void shouldCreateSuccessWhenCallingTryRunRunnable() {
-            assertThat(Try.runRunnable(() -> {
-            }) instanceof Try.Success).isTrue();
-        }
-
-        @Test
-        public void shouldCreateFailureWhenCallingTryRunRunnable() {
-            assertThat(Try.runRunnable(() -> {
-                throw new Error("error");
-            }) instanceof Try.Failure).isTrue();
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenCallingTryRunRunnable() {
-            assertThatThrownBy(() -> Try.runRunnable(null)).isInstanceOf(NullPointerException.class)
-              .hasMessage("runnable is null");
-        }
-    }
-
     // -- checked exceptions (docs/design.md 3.1 follow-up, #53): CheckedFunctionN/CheckedRunnable now declare
     // a checked Exception instead of the broader Throwable; a checked IOException reaches the caller (or the
     // Failure) unwrapped and un-rewrapped through every adapter that used to sneaky-throw to fit a Callable.
@@ -332,7 +315,7 @@ public class TryTest {
         public void shouldCaptureTheOriginalIOExceptionInstanceFromWithResourcesBody() {
             final IOException cause = new IOException("boom");
             final Closeable<Integer> closeable1 = Closeable.of(1);
-            final Try<?> result = Try.withResources(() -> closeable1).of(i -> {
+            final Try<?> result = Try.withResources(() -> closeable1, i -> {
                 throw cause;
             });
             assertThat(result.isFailure()).isTrue();
@@ -470,257 +453,19 @@ public class TryTest {
     }
 
     @Test
-    public void shouldCreateSuccessTryWithResources1() {
+    public void shouldCreateSuccessTryWithResources() {
         final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Try<String> actual = Try.withResources(() -> closeable1).of(i1 -> "" + i1.value);
+        final Try<String> actual = Try.withResources(() -> closeable1, i1 -> "" + i1.value);
         assertThat(actual).isEqualTo(Try.success("1"));
         assertThat(closeable1.isClosed).isTrue();
     }
 
     @Test
-    public void shouldCreateFailureTryWithResources1() {
+    public void shouldCreateFailureTryWithResources() {
         final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Try<?> actual = Try.withResources(() -> closeable1).of(i -> {throw new Error();});
+        final Try<?> actual = Try.withResources(() -> closeable1, i -> {throw new Error();});
         assertThat(actual.isFailure()).isTrue();
         assertThat(closeable1.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources2() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2)
-          .of((i1, i2) -> "" + i1.value + i2.value);
-        assertThat(actual).isEqualTo(Try.success("12"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources2() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2)
-          .of((i1, i2) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources3() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3)
-          .of((i1, i2, i3) -> "" + i1.value + i2.value + i3.value);
-        assertThat(actual).isEqualTo(Try.success("123"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources3() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3)
-          .of((i1, i2, i3) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources4() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4)
-          .of((i1, i2, i3, i4) -> "" + i1.value + i2.value + i3.value + i4.value);
-        assertThat(actual).isEqualTo(Try.success("1234"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources4() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4)
-          .of((i1, i2, i3, i4) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources5() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5)
-          .of((i1, i2, i3, i4, i5) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value);
-        assertThat(actual).isEqualTo(Try.success("12345"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources5() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5)
-          .of((i1, i2, i3, i4, i5) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources6() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Closeable<Integer> closeable6 = Closeable.of(6);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6)
-          .of((i1, i2, i3, i4, i5, i6) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value + i6.value);
-        assertThat(actual).isEqualTo(Try.success("123456"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-        assertThat(closeable6.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources6() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Closeable<Integer> closeable6 = Closeable.of(6);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6)
-          .of((i1, i2, i3, i4, i5, i6) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-        assertThat(closeable6.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources7() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Closeable<Integer> closeable6 = Closeable.of(6);
-        final Closeable<Integer> closeable7 = Closeable.of(7);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6, () -> closeable7)
-          .of((i1, i2, i3, i4, i5, i6, i7) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value + i6.value + i7.value);
-        assertThat(actual).isEqualTo(Try.success("1234567"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-        assertThat(closeable6.isClosed).isTrue();
-        assertThat(closeable7.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources7() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Closeable<Integer> closeable6 = Closeable.of(6);
-        final Closeable<Integer> closeable7 = Closeable.of(7);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6, () -> closeable7)
-          .of((i1, i2, i3, i4, i5, i6, i7) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-        assertThat(closeable6.isClosed).isTrue();
-        assertThat(closeable7.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources8() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Closeable<Integer> closeable6 = Closeable.of(6);
-        final Closeable<Integer> closeable7 = Closeable.of(7);
-        final Closeable<Integer> closeable8 = Closeable.of(8);
-        final Try<String> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6, () -> closeable7, () -> closeable8)
-          .of((i1, i2, i3, i4, i5, i6, i7, i8) -> "" + i1.value + i2.value + i3.value + i4.value + i5.value + i6.value + i7.value + i8.value);
-        assertThat(actual).isEqualTo(Try.success("12345678"));
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-        assertThat(closeable6.isClosed).isTrue();
-        assertThat(closeable7.isClosed).isTrue();
-        assertThat(closeable8.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources8() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Closeable<Integer> closeable2 = Closeable.of(2);
-        final Closeable<Integer> closeable3 = Closeable.of(3);
-        final Closeable<Integer> closeable4 = Closeable.of(4);
-        final Closeable<Integer> closeable5 = Closeable.of(5);
-        final Closeable<Integer> closeable6 = Closeable.of(6);
-        final Closeable<Integer> closeable7 = Closeable.of(7);
-        final Closeable<Integer> closeable8 = Closeable.of(8);
-        final Try<?> actual = Try.withResources(() -> closeable1, () -> closeable2, () -> closeable3, () -> closeable4, () -> closeable5, () -> closeable6, () -> closeable7, () -> closeable8)
-          .of((i1, i2, i3, i4, i5, i6, i7, i8) -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
-        assertThat(closeable2.isClosed).isTrue();
-        assertThat(closeable3.isClosed).isTrue();
-        assertThat(closeable4.isClosed).isTrue();
-        assertThat(closeable5.isClosed).isTrue();
-        assertThat(closeable6.isClosed).isTrue();
-        assertThat(closeable7.isClosed).isTrue();
-        assertThat(closeable8.isClosed).isTrue();
     }
 
     @Nested
@@ -759,7 +504,7 @@ public class TryTest {
 
         @Test
         public void shouldCreateFailureOnNonFatalException() {
-            assertThat(failure().failed().get().getClass().getName()).isEqualTo(RuntimeException.class.getName());
+            assertThat(failure().getCause()).isExactlyInstanceOf(RuntimeException.class);
         }
     }
 
@@ -901,10 +646,10 @@ public class TryTest {
     }
 
     @Nested
-    class GetorelsegetTests {
+    class GetorelseFunctionTests {
         @Test
-        public void shouldReturnElseWhenOrElseGetOnFailure() {
-            assertThat(failure().getOrElseGet(x -> OK)).isEqualTo(OK);
+        public void shouldReturnValueComputedFromCauseOnFailure() {
+            assertThat(failure().getOrElse(x -> OK)).isEqualTo(OK);
         }
     }
 
@@ -933,257 +678,118 @@ public class TryTest {
     }
 
     @Nested
-    class OrelserunTests {
-        @Test
-        public void shouldRunElseWhenOrElseRunOnFailure() {
-            final String[] result = new String[1];
-            failure().orElseRun(x -> result[0] = OK);
-            assertThat(result[0]).isEqualTo(OK);
-        }
-    }
-
-    @Nested
-    class RecoverClassFunctionTests {
+    class CatchSomeTests {
         @Test
         public void shouldRecoverWhenFailureMatchesExactly() {
             final Try<String> testee = failure(RuntimeException.class);
-            assertThat(testee.recover(RuntimeException.class, x -> OK).isSuccess()).isTrue();
+            assertThat(testee.catchSome(RuntimeException.class, x -> OK).isSuccess()).isTrue();
         }
 
         @Test
         public void shouldRecoverWhenFailureIsAssignableFrom() {
             final Try<String> testee = failure(UnsupportedOperationException.class);
-            assertThat(testee.recover(RuntimeException.class, x -> OK).isSuccess()).isTrue();
+            assertThat(testee.catchSome(RuntimeException.class, x -> OK).isSuccess()).isTrue();
         }
 
         @Test
         public void shouldReturnThisWhenRecoverDifferentTypeOfFailure() {
             final Try<String> testee = failure(RuntimeException.class);
-            assertThat(testee.recover(NullPointerException.class, x -> OK)).isSameAs(testee);
+            assertThat(testee.catchSome(NullPointerException.class, x -> OK)).isSameAs(testee);
         }
 
         @Test
         public void shouldReturnThisWhenRecoverSpecificFailureOnSuccess() {
             final Try<String> testee = success();
-            assertThat(testee.recover(RuntimeException.class, x -> OK)).isSameAs(testee);
+            assertThat(testee.catchSome(RuntimeException.class, x -> OK)).isSameAs(testee);
         }
     }
 
     @Nested
-    class RecoverClassObjectTests {
-        @Test
-        public void shouldRecoverWithSuccessWhenFailureMatchesExactly() {
-            final Try<String> testee = failure(RuntimeException.class);
-            assertThat(testee.recover(RuntimeException.class, OK).isSuccess()).isTrue();
-        }
-
-        @Test
-        public void shouldRecoverWithSuccessWhenFailureIsAssignableFrom() {
-            final Try<String> testee = failure(UnsupportedOperationException.class);
-            assertThat(testee.recover(RuntimeException.class, OK).isSuccess()).isTrue();
-        }
-
-        @Test
-        public void shouldReturnThisWhenRecoverWithSuccessDifferentTypeOfFailure() {
-            final Try<String> testee = failure(RuntimeException.class);
-            assertThat(testee.recover(NullPointerException.class, OK)).isSameAs(testee);
-        }
-
-        @Test
-        public void shouldReturnThisWhenRecoverWithSuccessSpecificFailureOnSuccess() {
-            final Try<String> testee = success();
-            assertThat(testee.recover(RuntimeException.class, OK)).isSameAs(testee);
-        }
-    }
-
-    @Nested
-    class RecoverFunctionTests {
+    class CatchAllTests {
         @Test
         public void shouldRecoverOnFailure() {
-            assertThat(failure().recover(x -> OK).get()).isEqualTo(OK);
+            assertThat(failure().catchAll(x -> OK).get()).isEqualTo(OK);
         }
 
         @Test
         public void shouldReturnThisWhenRecoverOnSuccess() {
             final Try<String> testee = success();
-            assertThat(testee.recover(x -> OK)).isSameAs(testee);
+            assertThat(testee.catchAll(x -> OK)).isSameAs(testee);
         }
     }
 
     @Nested
-    class RecoverwithFunctionTests {
+    class CatchAllWithTests {
         @Test
         public void shouldRecoverWithOnFailure() {
-            assertThat(TryTest.<String>failure().recoverWith(x -> success()).get()).isEqualTo(OK);
+            assertThat(TryTest.<String>failure().catchAllWith(x -> success()).get()).isEqualTo(OK);
         }
 
         @Test
         public void shouldRecoverWithThrowingOnFailure() {
             final RuntimeException error = error();
-            assertThat(failure().recoverWith(x -> {
+            assertThat(failure().catchAllWith(x -> {
                 throw error;
             })).isEqualTo(Try.failure(error));
         }
     }
 
     @Nested
-    class RecoverwithClassFunctionTests {
+    class CatchSomeWithTests {
         @Test
         public void shouldNotTryToRecoverWhenItIsNotNeeded() {
-            assertThat(Try.of(() -> OK).recoverWith(RuntimeException.class, x -> failure()).get()).isEqualTo(OK);
+            assertThat(Try.of(() -> OK).catchSomeWith(RuntimeException.class, x -> failure()).get()).isEqualTo(OK);
         }
 
         @Test
         public void shouldReturnExceptionWhenRecoveryWasNotSuccess() {
-            final Try<?> testee = Try.of(() -> {throw error();}).recoverWith(IOException.class, x -> failure());
+            final Try<?> testee = Try.of(() -> {throw error();}).catchSomeWith(IOException.class, x -> failure());
             assertThatThrownBy(testee::get).isInstanceOf(RuntimeException.class).hasMessage("error");
         }
 
         @Test
         public void shouldReturnErrorOfRecoveryWhenRecoveryFails() {
             final Error error = new Error();
-            final Throwable actual = Try.failure(new IOException()).recoverWith(IOException.class, x -> {throw error;})
+            final Throwable actual = Try.failure(new IOException()).catchSomeWith(IOException.class, x -> {throw error;})
               .getCause();
             assertThat(actual).isSameAs(error);
         }
 
         @Test
         public void shouldReturnRecoveredValue() {
-            assertThat(Try.of(() -> {throw error();}).recoverWith(RuntimeException.class, x -> success())
+            assertThat(Try.of(() -> {throw error();}).catchSomeWith(RuntimeException.class, x -> success())
               .get()).isEqualTo(OK);
         }
 
         @Test
         public void shouldHandleErrorDuringRecovering() {
             final Try<?> t = Try.of(() -> {throw new IllegalArgumentException(OK);})
-              .recoverWith(IOException.class, x -> {throw new IllegalStateException(FAILURE);});
+              .catchSomeWith(IOException.class, x -> {throw new IllegalStateException(FAILURE);});
             assertThatThrownBy(t::get).isInstanceOf(IllegalArgumentException.class);
         }
     }
 
     @Nested
-    class RecoverwithClassTryTests {
+    class TapErrorTests {
         @Test
-        public void shouldNotReturnRecoveredValueOnSuccess() {
-            assertThat(Try.of(() -> OK).recoverWith(IOException.class, failure()).get()).isEqualTo(OK);
-        }
-
-        @Test
-        public void shouldReturnRecoveredValueOnFailure() {
-            assertThat(Try.of(() -> {throw new IllegalStateException(FAILURE);})
-              .recoverWith(IllegalStateException.class, success()).get()).isEqualTo(OK);
-        }
-
-        @Test
-        public void shouldNotRecoverFailureWhenExceptionTypeIsntAssignable() {
-            final RuntimeException error = new IllegalStateException(FAILURE);
-            assertThat(Try.of(() -> {throw error;}).recoverWith(Error.class, success()).getCause()).isSameAs(error);
-        }
-    }
-
-    @Nested
-    class RecoverallandtryTests {
-        @Test
-        public void shouldRecoverFailure() {
-            assertThat(failure()
-                    .recoverAllAndTry(() -> OK))
-                    .isEqualTo(Try.success(OK));
-        }
-
-        @Test
-        public void shouldNotRecoverSuccess() {
-            final String initialValue = "INITIAL";
-            final String attemptValue = "RECOVERY";
-            assertThat(Try.success(initialValue)
-                    .recoverAllAndTry(() -> attemptValue))
-                    .isEqualTo(Try.success(initialValue));
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenRecoveryAttemptIsNull() {
-            assertThrows(NullPointerException.class, () -> failure().recoverAllAndTry(null));
-        }
-    }
-
-    @Nested
-    class RecoverandtryTests {
-        @Test
-        public void shouldRecoverCorrectTypeOfFailure() {
-            assertThat(Try.failure(new RuntimeException())
-                    .recoverAndTry(RuntimeException.class, () -> OK))
-                    .isEqualTo(Try.success(OK));
-        }
-
-        @Test
-        public void shouldNotRecoverIncorrectTypeOfFailure() {
-            Try<Object> initialFailure = Try.failure(new RuntimeException());
-            assertThat(initialFailure
-                    .recoverAndTry(IllegalStateException.class, () -> OK))
-                    .isEqualTo(initialFailure);
-        }
-
-        @Test
-        public void shouldNotRecoverSuccessForRecoverAndTry() {
-            final String initialValue = "INITIAL";
-            final String attemptValue = "RECOVERY";
-            assertThat(Try.success(initialValue)
-                    .recoverAndTry(Throwable.class, () -> attemptValue))
-                    .isEqualTo(Try.success(initialValue));
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenExceptionTypeIsNull() {
-            assertThrows(NullPointerException.class, () -> failure().recoverAndTry(null, () -> OK));
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenRecoveryAttemptIsNullForRecoverAndTry() {
-            assertThrows(NullPointerException.class, () -> failure().recoverAndTry(Throwable.class, null));
-        }
-    }
-
-    @Nested
-    class OnfailureTests {
-        @Test
-        public void shouldConsumeThrowableWhenCallingOnFailureGivenFailure() {
+        public void shouldConsumeThrowableWhenCallingTapErrorGivenFailure() {
             final String[] result = new String[]{FAILURE};
-            failure().onFailure(x -> result[0] = OK);
+            failure().tapError(x -> result[0] = OK);
             assertThat(result[0]).isEqualTo(OK);
         }
 
         @Test
-        public void shouldConsumeThrowableWhenCallingOnFailureWithMatchingExceptionTypeGivenFailure() {
+        public void shouldConsumeThrowableWhenCallingTapErrorWithMatchingExceptionTypeGivenFailure() {
             final String[] result = new String[]{FAILURE};
-            failure().onFailure(RuntimeException.class, x -> result[0] = OK);
+            failure().tapError(RuntimeException.class, x -> result[0] = OK);
             assertThat(result[0]).isEqualTo(OK);
         }
 
         @Test
-        public void shouldNotConsumeThrowableWhenCallingOnFailureWithNonMatchingExceptionTypeGivenFailure() {
+        public void shouldNotConsumeThrowableWhenCallingTapErrorWithNonMatchingExceptionTypeGivenFailure() {
             final String[] result = new String[]{OK};
-            failure().onFailure(Error.class, x -> result[0] = FAILURE);
+            failure().tapError(Error.class, x -> result[0] = FAILURE);
             assertThat(result[0]).isEqualTo(OK);
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        @Test
-        public void shouldThrowWhenTransformationIsNull() {
-            assertThrows(NullPointerException.class, () -> Try.success(1).transform(null));
-        }
-
-        @Test
-        public void shouldTransformSuccess() {
-            final int actual = Try.success(1).transform(self -> self.get() - 1);
-            assertThat(actual).isEqualTo(0);
-        }
-
-        @Test
-        public void shouldTransformFailure() {
-            final Error error = new Error();
-            final Throwable actual = Try.failure(error).transform(Try::getCause);
-            assertThat(actual).isSameAs(error);
         }
     }
 
@@ -1494,9 +1100,9 @@ public class TryTest {
         @Test
         public void shouldChainConsumableSuccessWithAndThen() {
             final Try<Integer> actual = Try.of(() -> new ArrayList<Integer>())
-              .andThen(arr -> arr.add(10))
-              .andThen(arr -> arr.add(30))
-              .andThen(arr -> arr.add(20))
+              .andThenTry(arr -> arr.add(10))
+              .andThenTry(arr -> arr.add(30))
+              .andThenTry(arr -> arr.add(20))
               .map(arr -> arr.get(1));
 
             final Try<Integer> expected = Try.success(30);
@@ -1506,9 +1112,9 @@ public class TryTest {
         @Test
         public void shouldChainConsumableFailureWithAndThen() {
             final Try<Integer> actual = Try.of(() -> new ArrayList<Integer>())
-              .andThen(arr -> arr.add(10))
-              .andThen(arr -> arr.add(Integer.parseInt("aaa"))) //Throws exception.
-              .andThen(arr -> arr.add(20))
+              .andThenTry(arr -> arr.add(10))
+              .andThenTry(arr -> arr.add(Integer.parseInt("aaa"))) //Throws exception.
+              .andThenTry(arr -> arr.add(20))
               .map(arr -> arr.get(1));
             assertThat(actual.toString()).isEqualTo("Failure(java.lang.NumberFormatException: For input string: \"aaa\")");
         }
@@ -1516,10 +1122,10 @@ public class TryTest {
         // peek
 
         @Test
-        public void shouldPeekFailure() {
+        public void shouldTapFailure() {
             final List<Object> list = new ArrayList<>();
             final Try<Object> failure = failure();
-            assertThat(failure.peek(list::add)).isSameAs(failure);
+            assertThat(failure.tap(list::add)).isSameAs(failure);
             assertThat(list.isEmpty()).isTrue();
         }
 
@@ -1583,11 +1189,11 @@ public class TryTest {
     }
 
     @Nested
-    class SequenceTests {
+    class CollectAllTests {
         @Test
         public void shouldConvertListOfSuccessToTryOfList() {
             final List<Try<String>> tries = Arrays.asList(Try.success("a"), Try.success("b"), Try.success("c"));
-            final Try<Seq<String>> reducedTry = Try.sequence(tries);
+            final Try<Seq<String>> reducedTry = Try.collectAll(tries);
             assertThat(reducedTry instanceof Try.Success).isTrue();
             assertThat(reducedTry.get().size()).isEqualTo(3);
             assertThat(reducedTry.get().mkString()).isEqualTo("abc");
@@ -1597,7 +1203,7 @@ public class TryTest {
         public void shouldConvertListOfFailureToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<Try<String>> tries = Arrays.asList(Try.failure(t), Try.failure(t), Try.failure(t));
-            final Try<Seq<String>> reducedTry = Try.sequence(tries);
+            final Try<Seq<String>> reducedTry = Try.collectAll(tries);
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
 
@@ -1605,35 +1211,35 @@ public class TryTest {
         public void shouldConvertListOfMixedTryToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<Try<String>> tries = Arrays.asList(Try.success("a"), Try.failure(t), Try.success("c"));
-            final Try<Seq<String>> reducedTry = Try.sequence(tries);
+            final Try<Seq<String>> reducedTry = Try.collectAll(tries);
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
     }
 
     @Nested
-    class TraverseTests {
+    class ForEachTests {
         @Test
-        public void shouldTraverseListOfSuccessToTryOfList() {
+        public void shouldForEachListOfSuccessToTryOfList() {
             final List<String> tries = Arrays.asList("a", "b", "c");
-            final Try<Seq<String>> reducedTry = Try.traverse(tries, Try::success);
+            final Try<Seq<String>> reducedTry = Try.forEach(tries, Try::success);
             assertThat(reducedTry instanceof Try.Success).isTrue();
             assertThat(reducedTry.get().size()).isEqualTo(3);
             assertThat(reducedTry.get().mkString()).isEqualTo("abc");
         }
 
         @Test
-        public void shouldTraverseListOfFailureToTryOfList() {
+        public void shouldForEachListOfFailureToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<Throwable> tries = Arrays.asList(t, t, t);
-            final Try<Seq<String>> reducedTry = Try.traverse(tries, Try::failure);
+            final Try<Seq<String>> reducedTry = Try.forEach(tries, Try::failure);
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
 
         @Test
-        public void shouldTraverseListOfMixedTryToTryOfList() {
+        public void shouldForEachListOfMixedTryToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<String> tries = Arrays.asList("a", "b", "c");
-            final Try<Seq<String>> reducedTry = Try.traverse(tries, x -> x.equals("b") ? Try.failure(t) : Try.success(x));
+            final Try<Seq<String>> reducedTry = Try.forEach(tries, x -> x.equals("b") ? Try.failure(t) : Try.success(x));
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
     }
@@ -1667,15 +1273,8 @@ public class TryTest {
         }
 
         @Test
-        public void shouldOrElseGetOnSuccess() {
-            assertThat(success().getOrElseGet(x -> null)).isEqualTo(OK);
-        }
-
-        @Test
-        public void shouldOrElseRunOnSuccess() {
-            final String[] result = new String[]{OK};
-            success().orElseRun(x -> result[0] = FAILURE);
-            assertThat(result[0]).isEqualTo(OK);
+        public void shouldGetOrElseFunctionOnSuccess() {
+            assertThat(success().getOrElse(x -> null)).isEqualTo(OK);
         }
 
         @Test
@@ -1684,19 +1283,19 @@ public class TryTest {
         }
 
         @Test
-        public void shouldRecoverOnSuccess() {
-            assertThat(success().recover(x -> null).get()).isEqualTo(OK);
+        public void shouldCatchAllOnSuccess() {
+            assertThat(success().catchAll(x -> null).get()).isEqualTo(OK);
         }
 
         @Test
-        public void shouldRecoverWithOnSuccess() {
-            assertThat(success().recoverWith(x -> null).get()).isEqualTo(OK);
+        public void shouldCatchAllWithOnSuccess() {
+            assertThat(success().catchAllWith(x -> null).get()).isEqualTo(OK);
         }
 
         @Test
-        public void shouldNotConsumeThrowableWhenCallingOnFailureGivenSuccess() {
+        public void shouldNotConsumeThrowableWhenCallingTapErrorGivenSuccess() {
             final String[] result = new String[]{OK};
-            success().onFailure(x -> result[0] = FAILURE);
+            success().tapError(x -> result[0] = FAILURE);
             assertThat(result[0]).isEqualTo(OK);
         }
 
@@ -1735,12 +1334,6 @@ public class TryTest {
         public void shouldFilterNonMatchingPredicateAndDefaultThrowableSupplierOnSuccess() {
             assertThat(success().filter(s -> false).getCause())
               .isInstanceOf(NoSuchElementException.class);
-        }
-
-        @Test
-        public void shouldFilterNonMatchingPredicateAndCustomThrowableSupplierOnSuccess() {
-            assertThat(success().filter(s -> false, () -> new IllegalArgumentException()).getCause())
-              .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
@@ -1805,12 +1398,6 @@ public class TryTest {
         }
 
         @Test
-        public void shouldThrowWhenCallingFailedOnSuccess() {
-            final Try<?> testee = success().failed();
-            assertThatThrownBy(testee::get).isInstanceOf(NoSuchElementException.class);
-        }
-
-        @Test
         public void shouldThrowWhenCallingGetCauseOnSuccess() {
             assertThrows(UnsupportedOperationException.class, () -> success().getCause());
         }
@@ -1836,20 +1423,20 @@ public class TryTest {
         // peek
 
         @Test
-        public void shouldPeekSuccess() {
+        public void shouldTapSuccess() {
             final List<Object> list = new ArrayList<>();
-            assertThat(success().peek(list::add)).isEqualTo(success());
+            assertThat(success().tap(list::add)).isEqualTo(success());
             assertThat(list.isEmpty()).isFalse();
         }
 
         @Test
-        public void shouldPeekSuccessAndThrow() {
-            assertThrows(RuntimeException.class, () -> success().peek(t -> failure().get()));
+        public void shouldTapSuccessAndThrow() {
+            assertThrows(RuntimeException.class, () -> success().tap(t -> failure().get()));
         }
 
         @Test
-        public void shouldThrowOnNullPeekAction() {
-            assertThrows(NullPointerException.class, () -> success().peek(null));
+        public void shouldThrowOnNullTapAction() {
+            assertThrows(NullPointerException.class, () -> success().tap(null));
         }
 
         // equals
@@ -1948,9 +1535,9 @@ public class TryTest {
         }
 
         @Test
-        public void shouldCaptureNullResultOfRecoverAsFailure() {
-            assertThat(TryTest.<String>failure().recover(x -> null).getCause()).isInstanceOf(NullPointerException.class);
-            assertThat(TryTest.<String>failure().recoverAllAndTry(() -> null).getCause()).isInstanceOf(NullPointerException.class);
+        public void shouldCaptureNullResultOfCatchAllAsFailure() {
+            assertThat(TryTest.<String>failure().catchAll(x -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(TryTest.<String>failure().catchSome(RuntimeException.class, x -> null).getCause()).isInstanceOf(NullPointerException.class);
         }
 
         @Test

@@ -202,7 +202,7 @@ final class Collections {
     }
 
     static Option<Integer> indexOption(int index) {
-        return Option.when(index >= 0, index);
+        return index >= 0 ? Option.some(index) : Option.none();
     }
 
     // @param iterable may not be null

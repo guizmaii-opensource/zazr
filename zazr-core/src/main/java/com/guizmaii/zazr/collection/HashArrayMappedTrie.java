@@ -371,7 +371,7 @@ interface HashArrayMappedTrieModule {
 
         @Override
         Option<V> lookup(int shift, int keyHash, K key) {
-            return Option.when(equals(keyHash, key), value);
+            return equals(keyHash, key) ? Option.some(value) : Option.none();
         }
 
         @Override
