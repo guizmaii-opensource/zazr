@@ -16,8 +16,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.Throwables.isFatal;
-import static com.guizmaii.zazr.Throwables.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.isFatal;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * A control structure that allows writing safe code without explicitly managing try-catch blocks for exceptions.

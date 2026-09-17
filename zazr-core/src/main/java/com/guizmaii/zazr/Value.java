@@ -21,6 +21,7 @@ import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import com.guizmaii.zazr.control.Validation;
+import com.guizmaii.zazr.internal.Throwables;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;

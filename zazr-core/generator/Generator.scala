@@ -146,8 +146,8 @@ def generateMainClasses(): Unit = {
 
         // lift() needs both regardless of checked-ness (a fatal throwable from an unchecked partialFunction
         // must propagate too); unchecked()/recover() (checked only) reuse the same imports.
-        im.getStatic("com.guizmaii.zazr.Throwables.sneakyThrow")
-        im.getStatic("com.guizmaii.zazr.Throwables.isFatal")
+        im.getStatic("com.guizmaii.zazr.internal.Throwables.sneakyThrow")
+        im.getStatic("com.guizmaii.zazr.internal.Throwables.isFatal")
 
         xs"""
           /**

@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.Throwables.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * A {@linkplain java.util.function.Consumer} that is allowed to throw checked exceptions.

@@ -1,6 +1,6 @@
 package com.guizmaii.zazr;
 
-import static com.guizmaii.zazr.Throwables.sneakyThrow;
+import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * A {@linkplain Runnable} that is allowed to throw checked exceptions.

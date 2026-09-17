@@ -1,21 +1,26 @@
-package com.guizmaii.zazr;
+package com.guizmaii.zazr.internal;
 
 import org.jspecify.annotations.Nullable;
 
 /**
- * Two internal cross-cutting helpers for checked-exception handling, used across both {@code com.guizmaii.zazr}
- * and {@code com.guizmaii.zazr.control} (hence {@code public}, even though neither is meant to be public API;
- * see the DEV-NOTEs).
+ * Two internal cross-cutting helpers for checked-exception handling, used across
+ * {@code com.guizmaii.zazr}, {@code com.guizmaii.zazr.control} and {@code com.guizmaii.zazr.collection}.
+ * <p>
+ * This class and its methods are {@code public} only because {@code module-info.java} does <strong>not</strong>
+ * export {@code com.guizmaii.zazr.internal}, so nothing outside this module can see it under the module path;
+ * on the classpath (an unnamed module, or an automatic module) it stays reachable regardless of the
+ * {@code exports} declaration, which is an accepted, documented gap. Either way: <strong>this is not public
+ * API</strong> and may change or disappear without notice. {@code zazr-test} and {@code zazr-benchmark} are
+ * separate modules and must not depend on it.
  * <p>
  * {@link #sneakyThrow} implements the "sneaky throw" erasure trick: rethrows any {@link Throwable}, checked or
  * not, without the compiler requiring it to be declared or caught. Used wherever a checked computation has to
  * be exposed through a JDK functional interface, whose methods declare no checked exceptions.
  * <p>
  * {@link #isFatal} is {@link com.guizmaii.zazr.control.Try}'s policy for which throwables are never captured
- * as a {@code Failure} and
- * instead always propagate: {@link InterruptedException}, {@link LinkageError}, {@link ThreadDeath} and
- * {@link VirtualMachineError}. Anything a checked function's {@code recover} or a lift-style adapter catches
- * follows the same policy, so a fatal error is never handed to user recovery code.
+ * as a {@code Failure} and instead always propagate: {@link InterruptedException}, {@link LinkageError},
+ * {@link ThreadDeath} and {@link VirtualMachineError}. Anything a checked function's {@code recover} or a
+ * lift-style adapter catches follows the same policy, so a fatal error is never handed to user recovery code.
  */
 public interface Throwables {
 
