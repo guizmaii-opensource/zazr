@@ -849,7 +849,7 @@ public class TryTest {
         public void shouldConvertFailureToValidation() {
             final Try<Object> failure = failure();
             final Validation<Throwable, Object> invalid = failure.toValidation();
-            assertThat(invalid.getError()).isSameAs(failure.getCause());
+            assertThat(invalid).isEqualTo(Validation.invalid(failure.getCause()));
             assertThat(invalid.isInvalid()).isTrue();
         }
 

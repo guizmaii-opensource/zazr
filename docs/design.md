@@ -229,7 +229,7 @@ duplication is cheaper than a god interface).
 | `peekLeft` / `onFailure` / `onSuccess` / `onEmpty` / `andThen(Consumer)` | `tapLeft`, `tapError`, `tap`, `tapNone`; drop `andThen(Consumer)` | `tap*` family |
 | `mapTo(U)` | `as(U)` | ZIO name |
 | `mapToVoid()` | `unit()` or delete | rarely useful without an effect type; delete |
-| `swap` | `flip` on `Either`/`Validation` | ZIO name. (`Tuple2.swap` stays; it's not an error/success swap.) |
+| `swap` | `flip` on `Either`; deleted on `Validation` | ZIO name. (`Tuple2.swap` stays; it's not an error/success swap.) `Validation` has no `flip` since #22: its sides are not symmetric, one is a `NonEmptyVector` (3.5) |
 | `getOrElseGet(Function<L,R>)` | `getOrElse(Function<L,R>)` overload | keep one name |
 | `orElseRun`, `orElseTry` | `orElse` + `tapError`/`getOrElseThrow` | fewer near-duplicates |
 | `transform(Function<Option<T>,U>)` | delete | it is just function application |
@@ -238,7 +238,7 @@ duplication is cheaper than a god interface).
 | javadoc: "monadic container type", "behave like a monad", "applicative functor, not a Monad", "more like a Functor than a Monad", `// Monad implementation`, "For-comprehension" | rewritten in plain English: "a value that may be absent", "a computation that either fails with `L` or succeeds with `R`", "`Validation` keeps *all* errors: combining two invalid values with `zip` concatenates their errors, whereas `Either` stops at the first". No mention of Monad/Functor/Applicative anywhere in the repo, generator included (`monadicTypesFor` etc.). | Principle 1 applies to prose too; a grep for `monad\|functor\|applicative` in CI keeps it that way |
 | `Option.of(nullable)` / `Option.some` / `Option.when` | `Option.ofNullable`, `Option.some` (**rejects null**), `Option.when(boolean, Supplier)` | see 3.9 |
 | `Validation.valid/invalid`, `Either.right/left`, `Try.success/failure` | keep | already purpose-named |
-| `Validation.cond`, `Either.cond` | `fromPredicate(A, Predicate<A>, Supplier<E>)` | prelude name; reads as what it does |
+| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Supplier<L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. `Validation`'s takes the rejected value (3.5, #22) so the error can name it, the everyday case for a field check; `Either`'s keeps the supplier |
 | `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. | |
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
@@ -285,7 +285,8 @@ machinery, and it is exactly what the migration guide says higher-arity zips wer
 Semantics per type: `Option`/`Either`/`Try`/`Lazy` fail-fast (first `None`/`Left`/`Failure` wins).
 `Validation` accumulates: `Invalid(e1) zip Invalid(e2) == Invalid(e1 ++ e2)`.
 
-`Validation.Builder..Builder8` and instance `combine` are deleted.
+`Validation.Builder..Builder8` and instance `combine` are deleted (done in #22, with the instance `zip` family; the
+static arities come here).
 
 ### 3.5 `Validation<E, A>` with a `NonEmptyVector<E>` error side
 
@@ -354,6 +355,43 @@ Notes:
   in Java it would be a third type parameter on every signature. zio-prelude's `orElseLog` idea (demote the
   discarded alternative's errors to warnings) can come back later as a separate type if anyone asks.
 - `These<A,B>` is not ported either: every combinator needs a user-supplied merge for the left side.
+
+**Decided while implementing (#22):**
+- **The surface is the sketch above plus the common member set of 3.2 and `get()`, `mapBoth`, `toVector()`.**
+  The sketch lists only what is specific to `Validation`; the members every control type has (`getOrElse(A)`,
+  `getOrElse(Supplier)`, `getOrElseThrow(Supplier)`, `getOrNull()`, `contains`, `exists`, `forAll`, the instance
+  `forEach(Consumer)`) stay, with `Either`'s right-side semantics (`forAll` holds vacuously on `Invalid`), next to
+  the `Function<NonEmptyVector<E>, ...>` forms of `getOrElse` and `getOrElseThrow`. `get()` throws
+  `NoSuchElementException` on `Invalid`, like `Either.get()` and `Try.get()`; `mapBoth` and `toVector()` follow the
+  naming table and the conversion sets of 3.2. Not kept: `isEmpty` (a `Validation` has no empty case; `Invalid` is
+  a failure, not an absence, and `isInvalid()` is the question) and `orElse(Validation)` (`orElse(Supplier)` only).
+  Everything else the Vavr type had is gone: `Builder..Builder8`, `combine`, `ap`, `getError`, `flip`, `filter`,
+  `narrow` and the `Seq<E>`-accumulating `collectAll`/`forEach`. The `Invalid` errors are reached by the record
+  accessor `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or
+  `toEither()`.
+- **`fromPredicate(A, Predicate<A>, Function<A, E>)`**, as sketched, not the `Supplier<E>` of the 3.3 row: the
+  function receives the rejected value so the error can name it. `Either.fromPredicate` keeps its supplier.
+- **`of(Callable, Function<Throwable, E>)` is `Try.of` followed by a conversion**, so it has exactly `Try.of`'s
+  policy: a fatal throwable is rethrown, a `null` result is a `NullPointerException` handed to `onError`.
+- **`forEach(NonEmptyVector, f)` and `forEach(Iterable, f)` are overloads.** Unlike 3.6's `flatMap`/`flatMapAll`,
+  the lambda is the second argument and the first argument's type is a plain value: javac picks the
+  `NonEmptyVector` overload as the more specific one, with an implicitly typed lambda too. It delegates to the
+  `Iterable` one and re-wraps the result (`unsafeFromVector`: as many results as inputs).
+- **Accumulation is builder-based.** `forEach`/`collectAll`/`partition` are one loop over a `Vector.Builder` per
+  side (results and errors); the errors builder is created on the first `Invalid` and the result builder is left
+  alone from then on. `collectAll` is `forEach` with the identity. `zip` on two `Invalid`s is one
+  `NonEmptyVector.appendAll`; an `Invalid` operand is returned as is when the other side is `Valid`.
+- **`zip(Either)`** treats a `Left` as a validation with one error, so `Invalid(a) zip Left(b)` is `Invalid(a, b)`.
+- **`orElse` drops the errors of the discarded side** (as sketched): `Invalid(a) orElse Invalid(b)` is `Invalid(b)`.
+  There is no `orElseLog` without the log channel.
+- **`toString` is `Invalid(a, b)`**, the errors spread like a collection's, next to `Valid(1)`; the `NonEmptyVector`
+  wrapper is not printed.
+- Null messages: a null argument is `<parameter> is null` (`value is null`, `errors is null`, `f is null`); a
+  function or supplier handed to a method that returns null where a value is required is rejected at the call
+  site, before any constructor sees it, with `Validation.<method>: <parameter> returned null`
+  (`Validation.mapErrorAll: f returned null`, `Validation.getOrElseThrow: exceptionFunction returned null`, so
+  `getOrElseThrow` never executes `throw null`); a null element of `collectAll` is
+  `Validation.collectAll: element is null`.
 
 ### 3.6 `NonEmptyVector<A>`
 

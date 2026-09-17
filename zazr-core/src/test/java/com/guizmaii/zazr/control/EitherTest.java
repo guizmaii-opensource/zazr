@@ -662,7 +662,7 @@ public class EitherTest {
         public void shouldConvertToInvalidValidation() {
             final Validation<String, ?> validation = Either.left("vavr").toValidation();
             assertThat(validation.isInvalid()).isTrue();
-            assertThat(validation.getError()).isEqualTo("vavr");
+            assertThat(validation).isEqualTo(Validation.invalid("vavr"));
         }
     }
 

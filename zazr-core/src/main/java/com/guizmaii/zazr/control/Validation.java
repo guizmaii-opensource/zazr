@@ -1,621 +1,644 @@
 package com.guizmaii.zazr.control;
 
-import com.guizmaii.zazr.*;
-import com.guizmaii.zazr.collection.Iterator;
-import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.control.Try.Failure;
+import com.guizmaii.zazr.control.Try.Success;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An implementation similar to Scalaz's 
- * <a href="http://eed3si9n.com/learning-scalaz/Validation.html">Validation</a> control.
- *
+ * A validation that either succeeds with a value of type {@code A} or fails with <em>one or more</em> errors of type
+ * {@code E}. Modelled on zio-prelude's {@code Validation}, minus its log channel (design 3.5).
  * <p>
- * Unlike {@code Either}, which short-circuits on the first error, {@code Validation} accumulates all errors when
- * validations are combined, which is what a form or a configuration wants: every problem reported at once.
- * </p>
+ * Unlike {@link Either}, which stops at the first error, {@code Validation} keeps <em>all</em> errors: combining two
+ * invalid values with {@link #zip(Validation)} concatenates their errors, which is what a form or a configuration
+ * wants: every problem reported at once. The errors live in a {@link NonEmptyVector}, so an {@code Invalid} carries
+ * at least one and their order is the order in which they were accumulated (the field order, usually).
  * <p>
  * {@code Validation} is a sealed interface with two record cases, {@link Valid} and {@link Invalid}, so it is
  * eliminated with an exhaustive {@code switch}:
- * </p>
  * <pre>{@code
  * String s = switch (validation) {
  *     case Valid(var value) -> "ok: " + value;
- *     case Invalid(var error) -> "rejected: " + error;
+ *     case Invalid(var errors) -> "rejected: " + errors.mkString(", ");
  * };
  * }</pre>
+ * Neither case holds {@code null}: {@link #valid(Object)}, {@link #invalid(Object)} and
+ * {@link #invalidAll(NonEmptyVector)} throw.
  * <p>
- * Neither case holds {@code null}: {@link #valid(Object)} and {@link #invalid(Object)} throw.
- * </p>
+ * Two ways to combine validations, with different semantics:
+ * <ul>
+ * <li>{@link #zip(Validation)}, {@link #zipWith(Validation, BiFunction)}, {@link #collectAll(Iterable)},
+ * {@link #forEach(Iterable, Function)} <strong>accumulate</strong>: every operand is evaluated and every error is
+ * kept.</li>
+ * <li>{@link #flatMap(Function)} and {@link #flatMapEither(Function)} <strong>short-circuit</strong>: the function is
+ * not called when this is {@code Invalid}, and its errors are never joined with this one's. Use them for a step that
+ * needs the previous value (a cross-field rule after the fields have been validated), never to accumulate.</li>
+ * </ul>
+ * <pre>{@code
+ * Validation<String, Integer> age = Validation.fromPredicate(a, x -> x >= 0, x -> "age " + x + " is negative");
+ * Validation<String, String> name = Validation.fromPredicate(n, s -> !s.isBlank(), s -> "name is blank");
+ * Validation<String, Person> person = age.zipWith(name, Person::new);   // Invalid("age -1 is negative", "name is blank")
+ * }</pre>
+ * <p>
+ * The sides are not symmetric (one is non-empty), so there is no {@code flip}. Equality is the record equality, order
+ * sensitive on the errors: {@code Invalid(a, b)} is not {@code Invalid(b, a)}.
  * <p>
  * A {@code Validation} is not a collection and not {@link Iterable} (design 3.2): to iterate its value, convert it
  * explicitly with {@link #toVector()} or {@link #toOption()}.
- * </p>
  *
- * <pre>
- * {@code
- * // Validation construction:
- *
- * // Valid
- * Validation<String, Integer> valid = Validation.valid(5);
- *
- * // Invalid
- * Validation<List<String>, Integer>invalid = Validation.invalid(List.of("error1", "error2"));
- *
- * // Validation combination:
- *
- * Validation<String, String> valid1 = Validation.valid("John");
- * Validation<String, Integer> valid2 = Validation.valid(5);
- * Validation<String, Option<String>> valid3 = Validation.valid(Option.some("123 Fake St."));
- * Function3<String, Integer, Option<String>, Person> f = ...;
- *
- * Validation<Seq<String>, String> result =
- *     valid1.combine(valid2).ap((name, age) -> "Name: " + name + " Age: " + age);
- *
- * Validation<Seq<String>, Person> result2 =
- *     valid1.combine(valid2).combine(valid3).ap(f);
- *
- * // Another way to combine validations:
- * Validation<Seq<String>, Person> result3 =
- *     Validation.combine(valid1, valid2, valid3).ap(f);
- * }
- * </pre>
- *
- * @param <E> the type of values in the case of invalid
- * @param <T> the type of values in the case of valid
- * @author Eric Nelson
- * @see <a href="https://github.com/scalaz/scalaz/blob/series/7.3.x/core/src/main/scala/scalaz/Validation.scala">
- *     Scalaz Validation source</a>
+ * @param <E> the error type
+ * @param <A> the value type
  */
-public sealed interface Validation<E extends @Nullable Object, T extends @Nullable Object> permits Validation.Valid, Validation.Invalid {
+public sealed interface Validation<E extends @Nullable Object, A extends @Nullable Object> permits Validation.Valid, Validation.Invalid {
+
+    // -- constructors
 
     /**
-     * Creates a {@link Valid} that contains the given {@code value}.
+     * Creates a {@link Valid} holding {@code value}.
      *
-     * @param <E>   type of the error
-     * @param <T>   type of the given {@code value}
-     * @param value A value, must not be null
+     * @param value the value, must not be {@code null}
+     * @param <E>   the error type
+     * @param <A>   the value type
      * @return {@code Valid(value)}
-     * @throws NullPointerException if value is null
+     * @throws NullPointerException if {@code value} is null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> valid(T value) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> valid(A value) {
         return new Valid<>(value);
     }
 
     /**
-     * Creates an {@link Invalid} that contains the given {@code error}.
+     * Creates an {@link Invalid} holding the single error {@code error}.
      *
-     * @param <E>   type of the given {@code error}
-     * @param <T>   type of the value
-     * @param error An error, must not be null
+     * @param error the error, must not be {@code null}
+     * @param <E>   the error type
+     * @param <A>   the value type
      * @return {@code Invalid(error)}
-     * @throws NullPointerException if error is null
+     * @throws NullPointerException if {@code error} is null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> invalid(@NonNull E error) {
-        return new Invalid<>(error);
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> invalid(E error) {
+        Objects.requireNonNull(error, "error is null");
+        return new Invalid<>(NonEmptyVector.single(error));
     }
 
     /**
-     * Creates a {@code Validation} of an {@code Either}.
+     * Creates an {@link Invalid} holding {@code errors}, in their order.
      *
-     * @param either An {@code Either}
-     * @param <E>    error type
-     * @param <T>    value type
-     * @return A {@code Valid(either.get())} if either is a Right, otherwise {@code Invalid(either.getLeft())}.
-     * @throws NullPointerException if either is null
+     * @param errors the errors, must not be {@code null}
+     * @param <E>    the error type
+     * @param <A>    the value type
+     * @return {@code Invalid(errors)}
+     * @throws NullPointerException if {@code errors} is null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> fromEither(Either<E, T> either) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> invalidAll(NonEmptyVector<E> errors) {
+        return new Invalid<>(errors);
+    }
+
+    /**
+     * Converts an {@link Either}: {@code Valid(value)} for a {@code Right}, {@code Invalid} of the single left value
+     * for a {@code Left}.
+     *
+     * @param either the {@code Either} to convert
+     * @param <E>    the error type
+     * @param <A>    the value type
+     * @return the {@code Validation} equivalent of {@code either}
+     * @throws NullPointerException if {@code either} is null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromEither(Either<? extends E, ? extends A> either) {
         Objects.requireNonNull(either, "either is null");
         return either.isRight() ? valid(either.get()) : invalid(either.getLeft());
     }
 
     /**
-     * Creates a {@code Validation} of an {@code Try}.
+     * Converts an {@link Option}: {@code Valid(value)} for a {@code Some}, {@code Invalid} of the supplied error for
+     * {@code None}. The supplier is called only for {@code None}.
      *
-     * @param t      A {@code Try}
-     * @param <T>    type of the valid value
-     * @return A {@code Valid(t.get())} if t is a Success, otherwise {@code Invalid(t.getCause())}.
+     * @param option the {@code Option} to convert
+     * @param ifNone supplies the error for {@code None}; it must not return {@code null}
+     * @param <E>    the error type
+     * @param <A>    the value type
+     * @return the {@code Validation} equivalent of {@code option}
+     * @throws NullPointerException if {@code option} or {@code ifNone} is null, or if {@code ifNone} supplies null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromOption(Option<? extends A> option, Supplier<? extends E> ifNone) {
+        Objects.requireNonNull(option, "option is null");
+        Objects.requireNonNull(ifNone, "ifNone is null");
+        return option.isDefined() ? valid(option.get()) : invalid(Objects.requireNonNull(ifNone.get(), "Validation.fromOption: ifNone returned null"));
+    }
+
+    /**
+     * Tests {@code value} with {@code predicate}: {@code Valid(value)} if it holds, {@code Invalid(ifFalse.apply(value))}
+     * if it does not. The function is called only when the predicate fails and receives the rejected value, so the
+     * error can name it.
+     * <pre>{@code
+     * Validation.fromPredicate(age, a -> a >= 18, a -> a + " is under 18"); // = Valid(age) or Invalid("17 is under 18")
+     * }</pre>
+     *
+     * @param value     the value to test, must not be {@code null}
+     * @param predicate the condition the value has to satisfy
+     * @param ifFalse   builds the error from the rejected value; it must not return {@code null}
+     * @param <E>       the error type
+     * @param <A>       the value type
+     * @return {@code Valid(value)} if the predicate holds, otherwise {@code Invalid} of the built error
+     * @throws NullPointerException if any argument is null, or if {@code ifFalse} returns null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromPredicate(A value, Predicate<? super A> predicate, Function<? super A, ? extends E> ifFalse) {
+        Objects.requireNonNull(value, "value is null");
+        Objects.requireNonNull(predicate, "predicate is null");
+        Objects.requireNonNull(ifFalse, "ifFalse is null");
+        return predicate.test(value) ? valid(value) : invalid(Objects.requireNonNull(ifFalse.apply(value), "Validation.fromPredicate: ifFalse returned null"));
+    }
+
+    /**
+     * Converts a {@link Try}: {@code Valid(value)} for a {@code Success}, {@code Invalid} of the single cause for a
+     * {@code Failure}.
+     *
+     * @param t   the {@code Try} to convert
+     * @param <A> the value type
+     * @return the {@code Validation} equivalent of {@code t}
      * @throws NullPointerException if {@code t} is null
      */
-    static <T extends @Nullable Object> Validation<Throwable, T> fromTry(Try<? extends T> t) {
+    static <A extends @Nullable Object> Validation<Throwable, A> fromTry(Try<? extends A> t) {
         Objects.requireNonNull(t, "t is null");
         return t.isSuccess() ? valid(t.get()) : invalid(t.getCause());
     }
 
     /**
-     * Turns many {@code Validation}s into one {@code Validation} of all their values, keeping every error:
-     * {@code Valid} of a {@link Seq} of the values in iteration order when every element is a {@code Valid},
-     * otherwise {@code Invalid} of the errors of all the {@code Invalid} elements, concatenated in iteration order.
-     * Unlike {@link Either#collectAll(Iterable)}, it does not stop at the first error. The empty iterable gives
-     * {@code Valid} of the empty {@code Seq}.
+     * Runs {@code f}: {@code Valid} of its result, or {@code Invalid} of the single error built by {@code onError}
+     * from what it threw. Exactly the outcomes of {@link Try#of(Callable)}: a fatal throwable is rethrown, a
+     * {@code null} result is a {@link NullPointerException} handed to {@code onError}.
      * <pre>{@code
-     * Validation.collectAll(List.of(Validation.valid(1), Validation.valid(2)));                          // = Valid(Seq(1, 2))
-     * Validation.collectAll(List.of(Validation.invalid(List.of("a")), Validation.invalid(List.of("b")))); // = Invalid(Seq("a", "b"))
+     * Validation.of(() -> Integer.parseInt(s), t -> "not a number: " + s);
      * }</pre>
      *
-     * @param values the {@code Validation}s to collect; each error is a {@code Seq} of errors
-     * @param <E>    the error type
-     * @param <T>    the value type
-     * @return {@code Valid} of all the values, or {@code Invalid} of all the errors
-     * @throws NullPointerException if {@code values} is null
+     * @param f       the computation to run
+     * @param onError builds the error from the throwable; it must not return {@code null}
+     * @param <E>     the error type
+     * @param <A>     the value type
+     * @return {@code Valid} of the result or {@code Invalid} of the built error
+     * @throws NullPointerException if {@code f} or {@code onError} is null, or if {@code onError} returns null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<Seq<E>, Seq<T>> collectAll(Iterable<? extends Validation<? extends Seq<? extends E>, ? extends T>> values) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> of(Callable<? extends A> f, Function<? super Throwable, ? extends E> onError) {
+        Objects.requireNonNull(f, "f is null");
+        Objects.requireNonNull(onError, "onError is null");
+        return switch (Try.of(f)) {
+            case Success(var value) -> valid(value);
+            case Failure(var cause) -> invalid(Objects.requireNonNull(onError.apply(cause), "Validation.of: onError returned null"));
+        };
+    }
+
+    // -- accumulate
+
+    /**
+     * Accumulates {@code validations}: {@code Valid} of a {@link Vector} of all the values, in order, when every one is
+     * {@code Valid}; otherwise {@code Invalid} of the errors of <em>every</em> {@code Invalid}, in order. The empty
+     * iterable gives {@code Valid} of the empty {@code Vector}.
+     * <pre>{@code
+     * Validation.collectAll(List.of(valid(1), invalid("a"), invalid("b"))); // = Invalid("a", "b")
+     * }</pre>
+     *
+     * @param validations the validations to accumulate
+     * @param <E>         the error type
+     * @param <A>         the value type
+     * @return {@code Valid} of all the values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code validations} or one of its elements is null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, Vector<A>> collectAll(Iterable<? extends Validation<? extends E, ? extends A>> validations) {
+        Objects.requireNonNull(validations, "validations is null");
+        return forEach(validations, v -> Objects.requireNonNull(v, "Validation.collectAll: element is null"));
+    }
+
+    /**
+     * Applies {@code f} to every element and accumulates the results as {@link #collectAll(Iterable)} does: {@code Valid}
+     * of a {@link Vector} of the mapped values when every call returns a {@code Valid}, otherwise {@code Invalid} of
+     * the errors of every {@code Invalid}, in order. {@code f} is called for every element, whatever the earlier
+     * results were.
+     * <pre>{@code
+     * Validation.forEach(List.of("1", "x", "y"), s -> parse(s)); // = Invalid("x is not a number", "y is not a number")
+     * }</pre>
+     *
+     * @param values the elements to validate
+     * @param f      a function from an element to a {@code Validation}; it must not return {@code null}
+     * @param <E>    the error type
+     * @param <A>    the element type
+     * @param <B>    the value type of the results
+     * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Validation<E, Vector<B>> forEach(Iterable<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
-        List<E> errors = List.empty();
-        List<T> list = List.empty();
-        for (Validation<? extends Seq<? extends E>, ? extends T> value : values) {
-            if (value.isInvalid()) {
-                errors = errors.prependAll(value.getError().reverse());
-            } else if (errors.isEmpty()) {
-                list = list.prepend(value.get());
+        Objects.requireNonNull(f, "f is null");
+        final Vector.Builder<B> results = Vector.newBuilder();
+        Vector.Builder<E> errors = null;
+        for (A value : values) {
+            final Validation<? extends E, ? extends B> validation = Objects.requireNonNull(f.apply(value), "Validation.forEach: f returned null");
+            if (validation instanceof Invalid(var es)) {
+                if (errors == null) {
+                    errors = Vector.newBuilder();
+                }
+                errors.addAll(es.toVector());
+            } else if (errors == null) {
+                results.add(validation.get());
             }
         }
-        return errors.isEmpty() ? valid(list.reverse()) : invalid(errors.reverse());
+        return errors == null ? valid(results.result()) : new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
 
     /**
-     * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
-     * {@code Valid} of a {@link Seq} of the mapped values when every call returns a {@code Valid}, otherwise
-     * {@code Invalid} of all the errors. The mapper is called for every element.
-     * <pre>{@code
-     * Validation.forEach(List.of("1", "x"), s -> parse(s)); // = Invalid(Seq("x is not a number"))
-     * }</pre>
+     * {@link #forEach(Iterable, Function)} on a {@link NonEmptyVector}: as many results as inputs, so the {@code Valid}
+     * side is a {@code NonEmptyVector} too.
      *
-     * @param values the elements to map
-     * @param mapper a function from an element to a {@code Validation} whose error is a {@code Seq} of errors; it
-     *               must not return {@code null}
+     * @param values the elements to validate
+     * @param f      a function from an element to a {@code Validation}; it must not return {@code null}
      * @param <E>    the error type
-     * @param <T>    the element type
-     * @param <U>    the mapped value type
+     * @param <A>    the element type
+     * @param <B>    the value type of the results
      * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
-     * @throws NullPointerException if {@code values} or {@code mapper} is null
+     * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object, U extends @Nullable Object> Validation<Seq<E>, Seq<U>> forEach(
-      Iterable<? extends T> values,
-      Function<? super T, ? extends Validation<? extends Seq<? extends E>, ? extends U>> mapper) {
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Validation<E, NonEmptyVector<B>> forEach(NonEmptyVector<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
-        Objects.requireNonNull(mapper, "mapper is null");
-        return collectAll(Iterator.ofAll(values).map(mapper));
+        return forEach(values.toVector(), f).map(NonEmptyVector::unsafeFromVector);
     }
 
     /**
-     * Narrows a widened {@code Validation<? extends E, ? extends T>} to {@code Validation<E, T>}
-     * by performing a type-safe cast. This is eligible because immutable/read-only
-     * collections are covariant.
-     *
-     * @param validation A {@code Validation}.
-     * @param <E>        type of error
-     * @param <T>        type of valid value
-     * @return the given {@code validation} instance as narrowed type {@code Validation<E, T>}.
-     */
-    @SuppressWarnings("unchecked")
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> narrow(Validation<? extends E, ? extends T> validation) {
-        return (Validation<E, T>) validation;
-    }
-
-    /**
-     * Tests {@code value} with {@code predicate}: {@code Valid(value)} if it holds, {@code Invalid(ifFalse.get())}
-     * if it does not. The supplier is called only when the predicate fails.
+     * Applies {@code f} to every element and splits the results: the errors of every {@code Invalid} on the left, in
+     * order, the values of every {@code Valid} on the right, in order. Cannot fail: an all-valid input has an empty
+     * left side, an all-invalid input an empty right side.
      * <pre>{@code
-     * Validation.fromPredicate(age, a -> a >= 18, () -> "minor"); // = Valid(age) or Invalid("minor")
+     * Validation.partition(List.of("1", "x", "2"), s -> parse(s)); // = (Vector("x is not a number"), Vector(1, 2))
      * }</pre>
      *
-     * @param value     the value to test, must not be {@code null}
-     * @param predicate the condition the value has to satisfy
-     * @param ifFalse   supplies the error when the predicate fails; it must not return {@code null}
-     * @param <E>       the error type
-     * @param <T>       the value type
-     * @return {@code Valid(value)} if the predicate holds, otherwise {@code Invalid} of the supplied error
-     * @throws NullPointerException if any argument is null, or if {@code ifFalse} supplies null
+     * @param values the elements to validate
+     * @param f      a function from an element to a {@code Validation}; it must not return {@code null}
+     * @param <E>    the error type
+     * @param <A>    the element type
+     * @param <B>    the value type of the results
+     * @return the errors and the values
+     * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> fromPredicate(T value, Predicate<? super T> predicate, Supplier<? extends E> ifFalse) {
-        Objects.requireNonNull(value, "value is null");
-        Objects.requireNonNull(predicate, "predicate is null");
-        Objects.requireNonNull(ifFalse, "ifFalse is null");
-        return predicate.test(value) ? valid(value) : invalid(ifFalse.get());
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Tuple2<Vector<E>, Vector<B>> partition(Iterable<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(values, "values is null");
+        Objects.requireNonNull(f, "f is null");
+        final Vector.Builder<E> errors = Vector.newBuilder();
+        final Vector.Builder<B> results = Vector.newBuilder();
+        for (A value : values) {
+            switch (Objects.requireNonNull(f.apply(value), "Validation.partition: f returned null")) {
+                case Valid(var v) -> results.add(v);
+                case Invalid(var es) -> errors.addAll(es.toVector());
+            }
+        }
+        return Tuple.of(errors.result(), results.result());
     }
 
     /**
-     * Combines two {@code Validation}s into a {@link Builder}.
+     * Pairs this value with {@code that}'s, keeping <em>all</em> errors: {@code Valid((a, b))} when both are
+     * {@code Valid}, otherwise {@code Invalid} of this one's errors followed by {@code that}'s.
+     * <pre>{@code
+     * Validation.invalid("a").zip(Validation.invalid("b")); // = Invalid("a", "b")
+     * }</pre>
      *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @return an instance of Builder&lt;E,T1,T2&gt;
-     * @throws NullPointerException if validation1 or validation2 is null
+     * @param that the other validation
+     * @param <B>  the value type of {@code that}
+     * @return the pair of values, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> Builder<E, T1, T2> combine(Validation<E, T1> validation1, Validation<E, T2> validation2) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        return new Builder<>(validation1, validation2);
+    default <B extends @Nullable Object> Validation<E, Tuple2<A, B>> zip(Validation<? extends E, ? extends B> that) {
+        return zipWith(that, Tuple::of);
     }
 
     /**
-     * Combines three {@code Validation}s into a {@link Builder3}.
+     * Combines this value with {@code that}'s through {@code f}, keeping <em>all</em> errors: {@code Valid(f(a, b))}
+     * when both are {@code Valid}, otherwise {@code Invalid} of this one's errors followed by {@code that}'s. {@code f}
+     * is called only when both are {@code Valid}.
      *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param <T3>        type of third valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @param validation3 third validation
-     * @return an instance of Builder3&lt;E,T1,T2,T3&gt;
-     * @throws NullPointerException if validation1, validation2 or validation3 is null
-     */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Builder3<E, T1, T2, T3> combine(Validation<E, T1> validation1, Validation<E, T2> validation2, Validation<E, T3> validation3) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        Objects.requireNonNull(validation3, "validation3 is null");
-        return new Builder3<>(validation1, validation2, validation3);
-    }
-
-    /**
-     * Combines four {@code Validation}s into a {@link Builder4}.
-     *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param <T3>        type of third valid value
-     * @param <T4>        type of fourth valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @param validation3 third validation
-     * @param validation4 fourth validation
-     * @return an instance of Builder4&lt;E,T1,T2,T3,T4&gt;
-     * @throws NullPointerException if validation1, validation2, validation3 or validation4 is null
-     */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Builder4<E, T1, T2, T3, T4> combine(Validation<E, T1> validation1, Validation<E, T2> validation2, Validation<E, T3> validation3, Validation<E, T4> validation4) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        Objects.requireNonNull(validation3, "validation3 is null");
-        Objects.requireNonNull(validation4, "validation4 is null");
-        return new Builder4<>(validation1, validation2, validation3, validation4);
-    }
-
-    /**
-     * Combines five {@code Validation}s into a {@link Builder5}.
-     *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param <T3>        type of third valid value
-     * @param <T4>        type of fourth valid value
-     * @param <T5>        type of fifth valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @param validation3 third validation
-     * @param validation4 fourth validation
-     * @param validation5 fifth validation
-     * @return an instance of Builder5&lt;E,T1,T2,T3,T4,T5&gt;
-     * @throws NullPointerException if validation1, validation2, validation3, validation4 or validation5 is null
-     */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Builder5<E, T1, T2, T3, T4, T5> combine(Validation<E, T1> validation1, Validation<E, T2> validation2, Validation<E, T3> validation3, Validation<E, T4> validation4, Validation<E, T5> validation5) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        Objects.requireNonNull(validation3, "validation3 is null");
-        Objects.requireNonNull(validation4, "validation4 is null");
-        Objects.requireNonNull(validation5, "validation5 is null");
-        return new Builder5<>(validation1, validation2, validation3, validation4, validation5);
-    }
-
-    /**
-     * Combines six {@code Validation}s into a {@link Builder6}.
-     *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param <T3>        type of third valid value
-     * @param <T4>        type of fourth valid value
-     * @param <T5>        type of fifth valid value
-     * @param <T6>        type of sixth valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @param validation3 third validation
-     * @param validation4 fourth validation
-     * @param validation5 fifth validation
-     * @param validation6 sixth validation
-     * @return an instance of Builder6&lt;E,T1,T2,T3,T4,T5,T6&gt;
-     * @throws NullPointerException if validation1, validation2, validation3, validation4, validation5 or validation6 is null
-     */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Builder6<E, T1, T2, T3, T4, T5, T6> combine(Validation<E, T1> validation1, Validation<E, T2> validation2, Validation<E, T3> validation3, Validation<E, T4> validation4, Validation<E, T5> validation5, Validation<E, T6> validation6) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        Objects.requireNonNull(validation3, "validation3 is null");
-        Objects.requireNonNull(validation4, "validation4 is null");
-        Objects.requireNonNull(validation5, "validation5 is null");
-        Objects.requireNonNull(validation6, "validation6 is null");
-        return new Builder6<>(validation1, validation2, validation3, validation4, validation5, validation6);
-    }
-
-    /**
-     * Combines seven {@code Validation}s into a {@link Builder7}.
-     *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param <T3>        type of third valid value
-     * @param <T4>        type of fourth valid value
-     * @param <T5>        type of fifth valid value
-     * @param <T6>        type of sixth valid value
-     * @param <T7>        type of seventh valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @param validation3 third validation
-     * @param validation4 fourth validation
-     * @param validation5 fifth validation
-     * @param validation6 sixth validation
-     * @param validation7 seventh validation
-     * @return an instance of Builder7&lt;E,T1,T2,T3,T4,T5,T6,T7&gt;
-     * @throws NullPointerException if validation1, validation2, validation3, validation4, validation5, validation6 or validation7 is null
-     */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Builder7<E, T1, T2, T3, T4, T5, T6, T7> combine(Validation<E, T1> validation1, Validation<E, T2> validation2, Validation<E, T3> validation3, Validation<E, T4> validation4, Validation<E, T5> validation5, Validation<E, T6> validation6, Validation<E, T7> validation7) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        Objects.requireNonNull(validation3, "validation3 is null");
-        Objects.requireNonNull(validation4, "validation4 is null");
-        Objects.requireNonNull(validation5, "validation5 is null");
-        Objects.requireNonNull(validation6, "validation6 is null");
-        Objects.requireNonNull(validation7, "validation7 is null");
-        return new Builder7<>(validation1, validation2, validation3, validation4, validation5, validation6, validation7);
-    }
-
-    /**
-     * Combines eight {@code Validation}s into a {@link Builder8}.
-     *
-     * @param <E>         type of error
-     * @param <T1>        type of first valid value
-     * @param <T2>        type of second valid value
-     * @param <T3>        type of third valid value
-     * @param <T4>        type of fourth valid value
-     * @param <T5>        type of fifth valid value
-     * @param <T6>        type of sixth valid value
-     * @param <T7>        type of seventh valid value
-     * @param <T8>        type of eighth valid value
-     * @param validation1 first validation
-     * @param validation2 second validation
-     * @param validation3 third validation
-     * @param validation4 fourth validation
-     * @param validation5 fifth validation
-     * @param validation6 sixth validation
-     * @param validation7 seventh validation
-     * @param validation8 eighth validation
-     * @return an instance of Builder8&lt;E,T1,T2,T3,T4,T5,T6,T7,T8&gt;
-     * @throws NullPointerException if validation1, validation2, validation3, validation4, validation5, validation6, validation7 or validation8 is null
-     */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Builder8<E, T1, T2, T3, T4, T5, T6, T7, T8> combine(Validation<E, T1> validation1, Validation<E, T2> validation2, Validation<E, T3> validation3, Validation<E, T4> validation4, Validation<E, T5> validation5, Validation<E, T6> validation6, Validation<E, T7> validation7, Validation<E, T8> validation8) {
-        Objects.requireNonNull(validation1, "validation1 is null");
-        Objects.requireNonNull(validation2, "validation2 is null");
-        Objects.requireNonNull(validation3, "validation3 is null");
-        Objects.requireNonNull(validation4, "validation4 is null");
-        Objects.requireNonNull(validation5, "validation5 is null");
-        Objects.requireNonNull(validation6, "validation6 is null");
-        Objects.requireNonNull(validation7, "validation7 is null");
-        Objects.requireNonNull(validation8, "validation8 is null");
-        return new Builder8<>(validation1, validation2, validation3, validation4, validation5, validation6, validation7, validation8);
-    }
-
-    /**
-     * Check whether this is of type {@code Valid}
-     *
-     * @return true if is a Valid, false if is an Invalid
-     */
-    boolean isValid();
-
-    /**
-     * Check whether this is of type {@code Invalid}
-     *
-     * @return true if is an Invalid, false if is a Valid
-     */
-    boolean isInvalid();
-
-    /**
-     * Returns this {@code Validation} if it is valid, otherwise return the alternative.
-     *
-     * @param other An alternative {@code Validation}
-     * @return this {@code Validation} if it is valid, otherwise return the alternative.
+     * @param that the other validation
+     * @param f    combines the two values; it must not return {@code null}
+     * @param <B>  the value type of {@code that}
+     * @param <C>  the result type
+     * @return the combined value, or the accumulated errors
+     * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    default Validation<E, T> orElse(Validation<? extends E, ? extends T> other) {
-        Objects.requireNonNull(other, "other is null");
-        return isValid() ? this : (Validation<E, T>) other;
+    default <B extends @Nullable Object, C extends @Nullable Object> Validation<E, C> zipWith(Validation<? extends E, ? extends B> that, BiFunction<? super A, ? super B, ? extends C> f) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var a) -> switch (that) {
+                case Valid(var b) -> valid(Objects.requireNonNull(f.apply(a, b), "Validation.zipWith: f returned null"));
+                case Invalid<? extends E, ? extends B> invalid -> (Validation<E, C>) invalid;
+            };
+            case Invalid(var errors) -> switch (that) {
+                case Valid<?, ?> _ -> (Validation<E, C>) this;
+                case Invalid(var more) -> new Invalid<>(errors.appendAll(more));
+            };
+        };
     }
 
     /**
-     * Returns this {@code Validation} if it is valid, otherwise return the result of evaluating supplier.
+     * {@link #zip(Validation)} keeping this value: {@code Valid(a)} when both are {@code Valid}, otherwise the
+     * accumulated errors.
      *
-     * @param supplier An alternative {@code Validation} supplier
-     * @return this {@code Validation} if it is valid, otherwise return the result of evaluating supplier.
+     * @param that the other validation
+     * @param <B>  the value type of {@code that}
+     * @return this value, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, A> zipLeft(Validation<? extends E, ? extends B> that) {
+        return zipWith(that, (a, _) -> a);
+    }
+
+    /**
+     * {@link #zip(Validation)} keeping {@code that}'s value: {@code Valid(b)} when both are {@code Valid}, otherwise
+     * the accumulated errors.
+     *
+     * @param that the other validation
+     * @param <B>  the value type of {@code that}
+     * @return {@code that}'s value, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, B> zipRight(Validation<? extends E, ? extends B> that) {
+        return zipWith(that, (_, b) -> b);
+    }
+
+    /**
+     * {@link #zip(Validation)} with an {@link Either} operand, seen as a validation with one error: {@code Left(e)}
+     * contributes {@code e} to the accumulated errors.
+     *
+     * @param that the other side
+     * @param <B>  the right type of {@code that}
+     * @return the pair of values, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, Tuple2<A, B>> zip(Either<? extends E, ? extends B> that) {
+        Objects.requireNonNull(that, "that is null");
+        return zip(fromEither(that));
+    }
+
+    /**
+     * Returns this if it is {@code Valid}, otherwise the supplied alternative. The errors of the discarded side are
+     * dropped: when both are {@code Invalid}, the result is the alternative's errors only. The supplier is called
+     * only when this is {@code Invalid}.
+     *
+     * @param that supplies the alternative; it must not return {@code null}
+     * @return this if {@code Valid}, otherwise {@code that.get()}
+     * @throws NullPointerException if {@code that} is null, or if it supplies null
      */
     @SuppressWarnings("unchecked")
-    default Validation<E, T> orElse(Supplier<Validation<? extends E, ? extends T>> supplier) {
-        Objects.requireNonNull(supplier, "supplier is null");
-        return isValid() ? this : (Validation<E, T>) supplier.get();
+    default Validation<E, A> orElse(Supplier<? extends Validation<? extends E, ? extends A>> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isValid() ? this : (Validation<E, A>) Objects.requireNonNull(that.get(), "Validation.orElse: that returned null");
     }
 
-    /**
-     * Checks whether this {@code Validation} holds no value, i.e. is an {@code Invalid}.
-     *
-     * @return {@code true} if this is an {@code Invalid}, {@code false} if this is a {@code Valid}
-     */
-    default boolean isEmpty() {
-        return isInvalid();
-    }
+    // -- short-circuit
 
     /**
-     * Gets the value of this {@code Validation} if is a {@code Valid} or throws if this is an {@code Invalid}.
-     *
-     * @return The value of this {@code Validation}
-     * @throws NoSuchElementException if this is an {@code Invalid}
-     */
-    T get();
-
-    /**
-     * Gets the value if this is a {@code Valid}, or {@code other} if this is an {@code Invalid}.
+     * Runs {@code f} on this value and returns its result. <strong>Short-circuits</strong>: {@code f} is not called
+     * when this is {@code Invalid}, and the errors of the validation it returns are never accumulated with this one's.
      * <p>
-     * Note that {@code other} is evaluated eagerly.
+     * When we chain validations like this we only do the second validation if the first one is successful. If all we
+     * are doing is chaining then we don't actually need {@code Validation} and could just use {@link Either}. Use
+     * {@link #zip(Validation)}, {@link #zipWith(Validation, BiFunction)} or {@link #collectAll(Iterable)} to
+     * accumulate; use {@code flatMap} for a step that needs the previous value, e.g. a cross-field rule once the
+     * fields have been validated:
+     * <pre>{@code
+     * start.zip(end).flatMap(range -> range._1().isBefore(range._2()) ? valid(range) : invalid("start after end"));
+     * }</pre>
      *
-     * @param other an alternative value
-     * @return the value of this {@code Valid}, otherwise {@code other}
+     * @param f   the next validation; it must not return {@code null}
+     * @param <B> the value type of the result
+     * @return {@code f.apply(value)} if this is {@code Valid}, otherwise this
+     * @throws NullPointerException if {@code f} is null, or if it returns null
      */
-    default T getOrElse(T other) {
-        return isValid() ? get() : other;
+    @SuppressWarnings("unchecked")
+    default <B extends @Nullable Object> Validation<E, B> flatMap(Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> (Validation<E, B>) Objects.requireNonNull(f.apply(value), "Validation.flatMap: f returned null");
+            case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
+        };
     }
 
     /**
-     * Gets the value if this is a {@code Valid}, or the value supplied by {@code supplier} if this is an {@code Invalid}.
+     * {@link #flatMap(Function)} for a step that returns an {@link Either}: {@code Left(e)} becomes {@code Invalid(e)}.
+     * Short-circuits like {@code flatMap}; the {@code Either} is a single rule, so there is nothing to accumulate.
      *
-     * @param supplier a supplier of an alternative value, invoked only for an {@code Invalid}
-     * @return the value of this {@code Valid}, otherwise the supplied value
+     * @param f   the next step; it must not return {@code null}
+     * @param <B> the value type of the result
+     * @return {@code fromEither(f.apply(value))} if this is {@code Valid}, otherwise this
+     * @throws NullPointerException if {@code f} is null, or if it returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <B extends @Nullable Object> Validation<E, B> flatMapEither(Function<? super A, ? extends Either<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> fromEither(Objects.requireNonNull(f.apply(value), "Validation.flatMapEither: f returned null"));
+            case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
+        };
+    }
+
+    // -- transform / eliminate
+
+    /**
+     * Applies {@code f} to the value of a {@code Valid}; an {@code Invalid} is returned unchanged.
+     *
+     * @param f   the mapper; it must not return {@code null}
+     * @param <B> the value type of the result
+     * @return {@code Valid(f.apply(value))}, or this {@code Invalid}
+     * @throws NullPointerException if {@code f} is null, or if it returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <B extends @Nullable Object> Validation<E, B> map(Function<? super A, ? extends B> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> valid(Objects.requireNonNull(f.apply(value), "Validation.map: f returned null"));
+            case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
+        };
+    }
+
+    /**
+     * Applies {@code f} to <em>each</em> error of an {@code Invalid}; a {@code Valid} is returned unchanged.
+     *
+     * @param f    the mapper; it must not return {@code null}
+     * @param <E2> the error type of the result
+     * @return {@code Invalid} of the mapped errors, or this {@code Valid}
+     * @throws NullPointerException if {@code f} is null, or if it returns null for an error
+     */
+    @SuppressWarnings("unchecked")
+    default <E2 extends @Nullable Object> Validation<E2, A> mapError(Function<? super E, ? extends E2> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid<E, A> valid -> (Validation<E2, A>) valid;
+            case Invalid(var errors) -> new Invalid<>(errors.map(e -> Objects.requireNonNull(f.apply(e), "Validation.mapError: f returned null")));
+        };
+    }
+
+    /**
+     * Applies {@code f} to the errors of an {@code Invalid} as a whole; a {@code Valid} is returned unchanged. The
+     * result stays non-empty by construction: {@code f} may merge, reorder or add errors, but cannot make the
+     * validation valid.
+     *
+     * @param f    the mapper; it must not return {@code null}
+     * @param <E2> the error type of the result
+     * @return {@code Invalid(f.apply(errors))}, or this {@code Valid}
+     * @throws NullPointerException if {@code f} is null, or if it returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <E2 extends @Nullable Object> Validation<E2, A> mapErrorAll(Function<? super NonEmptyVector<E>, ? extends NonEmptyVector<E2>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid<E, A> valid -> (Validation<E2, A>) valid;
+            case Invalid(var errors) -> new Invalid<>(Objects.requireNonNull(f.apply(errors), "Validation.mapErrorAll: f returned null"));
+        };
+    }
+
+    /**
+     * {@link #mapError(Function)} and {@link #map(Function)} at once; only the side that applies is called.
+     *
+     * @param errorMapper applied to each error of an {@code Invalid}; it must not return {@code null}
+     * @param valueMapper applied to the value of a {@code Valid}; it must not return {@code null}
+     * @param <E2>        the error type of the result
+     * @param <B>         the value type of the result
+     * @return the mapped {@code Validation}
+     * @throws NullPointerException if a mapper is null, or if the applied one returns null
+     */
+    default <E2 extends @Nullable Object, B extends @Nullable Object> Validation<E2, B> mapBoth(Function<? super E, ? extends E2> errorMapper, Function<? super A, ? extends B> valueMapper) {
+        Objects.requireNonNull(errorMapper, "errorMapper is null");
+        Objects.requireNonNull(valueMapper, "valueMapper is null");
+        return switch (this) {
+            case Valid(var value) -> valid(Objects.requireNonNull(valueMapper.apply(value), "Validation.mapBoth: valueMapper returned null"));
+            case Invalid(var errors) -> new Invalid<>(errors.map(e -> Objects.requireNonNull(errorMapper.apply(e), "Validation.mapBoth: errorMapper returned null")));
+        };
+    }
+
+    /**
+     * Eliminates this {@code Validation}: {@code ifInvalid} on the errors, or {@code ifValid} on the value. The
+     * argument order is the ZIO one, failure first.
+     *
+     * @param ifInvalid applied to the errors of an {@code Invalid}
+     * @param ifValid   applied to the value of a {@code Valid}
+     * @param <B>       the result type
+     * @return the result of the function that applies
+     * @throws NullPointerException if a function is null
+     */
+    default <B extends @Nullable Object> B fold(Function<? super NonEmptyVector<E>, ? extends B> ifInvalid, Function<? super A, ? extends B> ifValid) {
+        Objects.requireNonNull(ifInvalid, "ifInvalid is null");
+        Objects.requireNonNull(ifValid, "ifValid is null");
+        return switch (this) {
+            case Valid(var value) -> ifValid.apply(value);
+            case Invalid(var errors) -> ifInvalid.apply(errors);
+        };
+    }
+
+    /**
+     * Returns the value if this is {@code Valid}; otherwise throws.
+     *
+     * @return the value
+     * @throws NoSuchElementException if this is {@code Invalid}
+     */
+    A get();
+
+    /**
+     * Returns the value if this is {@code Valid}, otherwise {@code other}.
+     *
+     * @param other the alternative, may be {@code null}
+     * @return the value or {@code other}
+     */
+    default A getOrElse(A other) {
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> other;
+        };
+    }
+
+    /**
+     * Returns the value if this is {@code Valid}, otherwise the value supplied by {@code supplier}. The supplier is
+     * called only for an {@code Invalid}.
+     *
+     * @param supplier supplies the alternative
+     * @return the value or {@code supplier.get()}
      * @throws NullPointerException if {@code supplier} is null
      */
-    default T getOrElse(Supplier<? extends T> supplier) {
+    default A getOrElse(Supplier<? extends A> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isValid() ? get() : supplier.get();
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> supplier.get();
+        };
     }
 
     /**
-     * Gets the value if this is a {@code Valid}, or throws the exception supplied by {@code exceptionSupplier} if this
-     * is an {@code Invalid}.
+     * Returns the value if this is {@code Valid}, otherwise {@code other} applied to the errors.
      *
-     * @param <X>               the type of the exception to throw
-     * @param exceptionSupplier a supplier of the exception, invoked only for an {@code Invalid}
-     * @return the value of this {@code Valid}
-     * @throws X                    if this is an {@code Invalid}
-     * @throws NullPointerException if {@code exceptionSupplier} is null
-     */
-    default <X extends Throwable> T getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
-        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
-        if (isValid()) {
-            return get();
-        } else {
-            throw exceptionSupplier.get();
-        }
-    }
-
-    /**
-     * Gets the value if this is a {@code Valid}, or {@code null} if this is an {@code Invalid}.
-     *
-     * @return the value of this {@code Valid}, otherwise {@code null}
-     */
-    default @Nullable T getOrNull() {
-        return isValid() ? get() : null;
-    }
-
-    /**
-     * Returns the value, or the value {@code other} computes from the error if this is an {@code Invalid}.
-     *
-     * @param other a function from the error to a replacement value, called only for an {@code Invalid}
-     * @return the value of this {@code Valid}, otherwise {@code other.apply(getError())}
+     * @param other builds the alternative from the errors; called only for an {@code Invalid}
+     * @return the value or {@code other.apply(errors)}
      * @throws NullPointerException if {@code other} is null
      */
-    default T getOrElse(Function<? super E, ? extends T> other) {
+    default A getOrElse(Function<? super NonEmptyVector<E>, ? extends A> other) {
         Objects.requireNonNull(other, "other is null");
-        return isValid() ? get() : other.apply(getError());
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid(var errors) -> other.apply(errors);
+        };
     }
 
     /**
-     * Gets the error of this Validation if it is an {@code Invalid} or throws if this is a {@code Valid}.
+     * Returns the value if this is {@code Valid}, otherwise throws the supplied throwable. The supplier is called only
+     * for an {@code Invalid}.
      *
-     * @return The error, if present
-     * @throws RuntimeException if this is a {@code Valid}
+     * @param exceptionSupplier supplies the throwable
+     * @param <X>               the type of the throwable
+     * @return the value
+     * @throws X                    if this is {@code Invalid}
+     * @throws NullPointerException if {@code exceptionSupplier} is null, or if it returns null (a {@code null} is
+     *                              never thrown)
      */
-    E getError();
-
-    // -- conversions (design 3.2)
-
-    /**
-     * Converts this Validation to an {@link Either}.
-     *
-     * @return {@code Either.right(get())} if this is valid, otherwise {@code Either.left(getError())}.
-     */
-    default Either<E, T> toEither() {
-        return isValid() ? Either.right(get()) : Either.left(getError());
+    default <X extends Throwable> A getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
+        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> throw Objects.requireNonNull(exceptionSupplier.get(), "Validation.getOrElseThrow: exceptionSupplier returned null");
+        };
     }
 
     /**
-     * Converts this Validation to an {@link Either}, mapping the error of an {@code Invalid} with {@code f}.
-     * <p>
-     * The function is applied only to an {@code Invalid}; it must not return {@code null}, since {@code Left}
-     * cannot hold {@code null} (design 3.9).
+     * Returns the value if this is {@code Valid}, otherwise throws the throwable built from the errors.
      *
-     * @param f    a function from the error to the left value
-     * @param <E2> the left type of the resulting {@code Either}
-     * @return {@code Either.right(get())} if this is valid, otherwise {@code Either.left(f.apply(getError()))}
-     * @throws NullPointerException if {@code f} is null, or if it returns {@code null} for an {@code Invalid}
+     * @param exceptionFunction builds the throwable from the errors; called only for an {@code Invalid}
+     * @param <X>               the type of the throwable
+     * @return the value
+     * @throws X                    if this is {@code Invalid}
+     * @throws NullPointerException if {@code exceptionFunction} is null, or if it returns null (a {@code null} is
+     *                              never thrown)
      */
-    default <E2 extends @Nullable Object> Either<E2, T> toEitherWith(Function<? super E, ? extends E2> f) {
-        Objects.requireNonNull(f, "f is null");
-        return isValid() ? Either.right(get()) : Either.left(f.apply(getError()));
+    default <X extends Throwable> A getOrElseThrow(Function<? super NonEmptyVector<E>, X> exceptionFunction) throws X {
+        Objects.requireNonNull(exceptionFunction, "exceptionFunction is null");
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid(var errors) -> throw Objects.requireNonNull(exceptionFunction.apply(errors), "Validation.getOrElseThrow: exceptionFunction returned null");
+        };
     }
 
     /**
-     * Converts this Validation to an {@link Option} of its value: {@code Some(value)} for a {@code Valid},
-     * {@code None} for an {@code Invalid}, whose error is dropped.
+     * Returns the value if this is {@code Valid}, otherwise {@code null}.
      *
-     * @return {@code Option.some(get())} if this is valid, otherwise {@code Option.none()}
+     * @return the value or {@code null}
      */
-    default Option<T> toOption() {
-        return isValid() ? Option.some(get()) : Option.none();
-    }
-
-    /**
-     * Converts this Validation to a {@link Try}: {@code Success(value)} for a {@code Valid}, a {@code Failure} of the
-     * throwable {@code f} builds from the error for an {@code Invalid}.
-     * <p>
-     * The function is applied only to an {@code Invalid}; it must not return {@code null} nor a fatal throwable
-     * (see {@link Try}).
-     *
-     * @param f a function from the error to the failure cause
-     * @return {@code Try.success(get())} if this is valid, otherwise {@code Try.failure(f.apply(getError()))}
-     * @throws NullPointerException if {@code f} is null, or if it returns {@code null} for an {@code Invalid}
-     */
-    default Try<T> toTry(Function<? super E, ? extends Throwable> f) {
-        Objects.requireNonNull(f, "f is null");
-        return isValid() ? Try.success(get()) : Try.failure(f.apply(getError()));
-    }
-
-    /**
-     * Converts this Validation to a {@link Vector} of zero or one element: its value, if any.
-     *
-     * @return {@code Vector.of(get())} if this is valid, otherwise the empty {@code Vector}
-     */
-    default Vector<T> toVector() {
-        return isValid() ? Vector.of(get()) : Vector.empty();
-    }
-
-    @Override
-    boolean equals(@Nullable Object o);
-
-    @Override
-    int hashCode();
-
-    @Override
-    String toString();
-
-    /**
-     * Performs the given action for the value contained in {@code Valid}, or does nothing
-     * if this is an {@code Invalid}.
-     *
-     * @param action the action to be performed on the contained value
-     * @throws NullPointerException if action is null
-     */
-    default void forEach(Consumer<? super T> action) {
-        Objects.requireNonNull(action, "action is null");
-        if (isValid()) {
-            action.accept(get());
-        }
+    default @Nullable A getOrNull() {
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> null;
+        };
     }
 
     /**
@@ -625,231 +648,175 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      * @param element the element to look for, may be {@code null}
      * @return {@code true} if this is {@code Valid(element)}, {@code false} otherwise (always for an {@code Invalid})
      */
-    default boolean contains(@Nullable T element) {
-        return isValid() && Objects.equals(get(), element);
+    default boolean contains(@Nullable A element) {
+        return this instanceof Valid(var value) && Objects.equals(value, element);
     }
 
     /**
-     * Checks whether this {@code Validation} holds a value satisfying the given predicate.
+     * Checks whether this {@code Validation} holds a value satisfying {@code predicate}.
      *
-     * @param predicate a predicate to test the value
-     * @return {@code true} if this is a {@code Valid} and the predicate holds for its value, {@code false} otherwise
+     * @param predicate the condition to test the value with
+     * @return {@code true} if this is {@code Valid} and the predicate holds for its value, {@code false} otherwise
      * @throws NullPointerException if {@code predicate} is null
      */
-    default boolean exists(Predicate<? super T> predicate) {
+    default boolean exists(Predicate<? super A> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return isValid() && predicate.test(get());
+        return this instanceof Valid(var value) && predicate.test(value);
     }
 
     /**
-     * Checks whether the given predicate holds for the value of this {@code Validation}; it holds vacuously for an
+     * Checks whether {@code predicate} holds for the value of this {@code Validation}; it holds vacuously for an
      * {@code Invalid}.
      *
-     * @param predicate a predicate to test the value
-     * @return {@code true} if this is an {@code Invalid} or the predicate holds for the value, {@code false} otherwise
+     * @param predicate the condition to test the value with
+     * @return {@code true} if this is {@code Invalid} or the predicate holds for the value, {@code false} otherwise
      * @throws NullPointerException if {@code predicate} is null
      */
-    default boolean forAll(Predicate<? super T> predicate) {
+    default boolean forAll(Predicate<? super A> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return isInvalid() || predicate.test(get());
+        return !(this instanceof Valid(var value)) || predicate.test(value);
     }
 
     /**
-     * Transforms this {@code Validation} to a value of type {@code U}.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * Validation<List<String>, String> valid = ...;<br>
-     * int i = valid.fold(List::length, String::length);
-     * }</pre>
+     * Runs {@code action} on the value of a {@code Valid}; does nothing for an {@code Invalid}. The same as
+     * {@link #tap(Consumer)} without the return value.
      *
-     * @param <U>       the fold result type
-     * @param ifInvalid an error mapper
-     * @param ifValid   an mapper for a valid value
-     * @return {@code ifValid.apply(get())} if this is valid, otherwise {@code ifInvalid.apply(getError())}.
-     * @throws NullPointerException if one of the given mappers {@code ifInvalid} or {@code ifValid} is null
+     * @param action what to do with the value
+     * @throws NullPointerException if {@code action} is null
      */
-    default <U extends @Nullable Object> U fold(Function<? super E, ? extends U> ifInvalid, Function<? super T, ? extends U> ifValid) {
-        Objects.requireNonNull(ifInvalid, "ifInvalid is null");
-        Objects.requireNonNull(ifValid, "ifValid is null");
-        return isValid() ? ifValid.apply(get()) : ifInvalid.apply(getError());
-    }
-
-    /**
-     * Exchanges the sides: a {@code Valid(v)} becomes {@code Invalid(v)}, an {@code Invalid(e)} becomes
-     * {@code Valid(e)}. Useful to run the value-side operations on the error, then {@code flip()} back.
-     *
-     * @return this {@code Validation} with its sides exchanged
-     */
-    default Validation<T, E> flip() {
-        if (isInvalid()) {
-            final E error = this.getError();
-            return Validation.valid(error);
-        } else {
-            final T value = this.get();
-            return Validation.invalid(value);
+    default void forEach(Consumer<? super A> action) {
+        Objects.requireNonNull(action, "action is null");
+        if (this instanceof Valid(var value)) {
+            action.accept(value);
         }
     }
 
     /**
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
-     */
-    @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object> Validation<E, U> map(Function<? super T, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        if (isInvalid()) {
-            return (Validation<E, U>) this;
-        } else {
-            return Validation.valid(f.apply(this.get()));
-        }
-    }
-
-    /**
-     * Maps both sides at once: {@code errorMapper} is applied to an {@code Invalid}, {@code valueMapper} to a
-     * {@code Valid}; only one of them runs. The same as {@code mapError(errorMapper).map(valueMapper)}.
-     * <p>
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
-     *
-     * @param <E2>        the new error type
-     * @param <T2>        the new value type
-     * @param errorMapper the function for an error
-     * @param valueMapper the function for a value
-     * @return a {@code Valid} or {@code Invalid} of the mapped value
-     * @throws NullPointerException if a mapper is null
-     */
-    default <E2 extends @Nullable Object, T2 extends @Nullable Object> Validation<E2, T2> mapBoth(Function<? super E, ? extends E2> errorMapper, Function<? super T, ? extends T2> valueMapper) {
-        Objects.requireNonNull(errorMapper, "errorMapper is null");
-        Objects.requireNonNull(valueMapper, "valueMapper is null");
-        if (isInvalid()) {
-            final E error = this.getError();
-            return Validation.invalid(errorMapper.apply(error));
-        } else {
-            final T value = this.get();
-            return Validation.valid(valueMapper.apply(value));
-        }
-    }
-
-    /**
-     * Applies a function f to the error of this Validation if this is an Invalid. Otherwise does nothing
-     * if this is a Valid.
-     * <p>
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
-     *
-     * @param <U> type of the error resulting from the mapping
-     * @param f   a function that maps the error in this Invalid
-     * @return an instance of Validation&lt;U,T&gt;
-     * @throws NullPointerException if mapping operation f is null, or if this is an Invalid and f returns null
-     */
-    @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object> Validation<U, T> mapError(Function<? super E, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        if (isInvalid()) {
-            return Validation.invalid(f.apply(this.getError()));
-        } else {
-            return (Validation<U, T>) this;
-        }
-    }
-
-    /**
-     * Applies a validation containing a function to this validation's value. The result is a {@link Validation.Valid}
-     * only if both this and the given validation are valid; otherwise it is a {@link Validation.Invalid} accumulating
-     * the errors of whichever side(s) are invalid.
-     *
-     * @param <U>        type of the result of applying the function
-     * @param validation the validation containing the function to apply
-     * @return a valid Validation with the result if both are valid, otherwise an invalid Validation with accumulated errors
-     * @throws NullPointerException if validation is null
-     */
-    default <U extends @Nullable Object> Validation<Seq<E>, U> ap(Validation<Seq<E>, ? extends Function<? super T, ? extends U>> validation) {
-        Objects.requireNonNull(validation, "validation is null");
-        if (isValid()) {
-            if (validation.isValid()) {
-                final Function<? super T, ? extends U> f = validation.get();
-                final U u = f.apply(this.get());
-                return valid(u);
-            } else {
-                final Seq<E> errors = validation.getError();
-                return invalid(errors);
-            }
-        } else {
-            if (validation.isValid()) {
-                final E error = this.getError();
-                return invalid(List.of(error));
-            } else {
-                final Seq<E> errors = validation.getError();
-                final E error = this.getError();
-                return invalid(errors.append(error));
-            }
-        }
-    }
-
-    /**
-     * Combines two {@code Validation}s to form a {@link Builder}, which can then be used to perform further
-     * combines, or apply a function to it in order to transform the {@link Builder} into a {@code Validation}.
-     *
-     * @param <U>        type of the value contained in validation
-     * @param validation the validation object to combine this with
-     * @return an instance of Builder
-     */
-    default <U extends @Nullable Object> Builder<E, T, U> combine(Validation<E, U> validation) {
-        return new Builder<>(this, validation);
-    }
-
-
-    /**
-     * Filters this {@code Validation} by testing a predicate on the value.
-     * If this is an Invalid or if the predicate matches, returns Some of this Validation,
-     * otherwise returns None.
-     *
-     * @param predicate A predicate to test the value
-     * @return {@code Some(this)} if this is an Invalid or the predicate matches, otherwise {@code None}
-     * @throws NullPointerException if predicate is null
-     */
-    default Option<Validation<E, T>> filter(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return isInvalid() || predicate.test(get()) ? Option.some(this) : Option.none();
-    }
-
-    /**
-     * FlatMaps the value of this Validation if it is valid, otherwise returns this Invalid.
-     * <p>
-     * The mapper must return a {@code Validation}, never {@code null}; the {@code Validation} it builds rejects {@code null} on both sides (design 3.9).
-     *
-     * @param <U>    type of the returned Validation value
-     * @param mapper the mapper function to apply to the value
-     * @return the result of {@code mapper.apply(get())} if this is a Valid, otherwise this same Invalid
-     * @throws NullPointerException if mapper is null
-     */
-    @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object> Validation<E, U> flatMap(Function<? super T, ? extends Validation<E, ? extends U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return isInvalid() ? (Validation<E, U>) this : (Validation<E, U>) mapper.apply(get());
-    }
-
-    /**
-     * Runs {@code action} on the value if this is a {@code Valid} and returns this {@code Validation} unchanged;
-     * does nothing for an {@code Invalid}. Whatever the action throws propagates to the caller.
+     * Runs {@code action} on the value of a {@code Valid} and returns this {@code Validation} unchanged; does nothing
+     * for an {@code Invalid}.
      *
      * @param action what to do with the value
      * @return this {@code Validation}
      * @throws NullPointerException if {@code action} is null
      */
-    default Validation<E, T> tap(Consumer<? super T> action) {
+    default Validation<E, A> tap(Consumer<? super A> action) {
         Objects.requireNonNull(action, "action is null");
-        if (isValid()) {
-            action.accept(get());
+        if (this instanceof Valid(var value)) {
+            action.accept(value);
         }
         return this;
     }
 
     /**
-     * A valid Validation. The value is never {@code null}.
+     * Runs {@code action} on the errors of an {@code Invalid} and returns this {@code Validation} unchanged; does
+     * nothing for a {@code Valid}. The counterpart of {@link #tap(Consumer)}.
+     *
+     * @param action what to do with the errors
+     * @return this {@code Validation}
+     * @throws NullPointerException if {@code action} is null
+     */
+    default Validation<E, A> tapError(Consumer<? super NonEmptyVector<E>> action) {
+        Objects.requireNonNull(action, "action is null");
+        if (this instanceof Invalid(var errors)) {
+            action.accept(errors);
+        }
+        return this;
+    }
+
+    /**
+     * @return {@code true} if this is a {@link Valid}, {@code false} otherwise
+     */
+    boolean isValid();
+
+    /**
+     * @return {@code true} if this is an {@link Invalid}, {@code false} otherwise
+     */
+    boolean isInvalid();
+
+    // -- conversions
+
+    /**
+     * Converts this {@code Validation} to an {@link Either}: {@code Right(value)} for a {@code Valid}, {@code Left} of
+     * all the errors for an {@code Invalid}.
+     *
+     * @return the {@code Either} equivalent of this {@code Validation}
+     */
+    default Either<NonEmptyVector<E>, A> toEither() {
+        return switch (this) {
+            case Valid(var value) -> Either.right(value);
+            case Invalid(var errors) -> Either.left(errors);
+        };
+    }
+
+    /**
+     * Converts this {@code Validation} to an {@link Either} with the errors merged by {@code f}: {@code Right(value)}
+     * for a {@code Valid}, {@code Left(f.apply(errors))} for an {@code Invalid}.
+     *
+     * @param f    merges the errors into one left value; it must not return {@code null}
+     * @param <E2> the left type
+     * @return the {@code Either} equivalent of this {@code Validation}
+     * @throws NullPointerException if {@code f} is null, or if it returns null for an {@code Invalid}
+     */
+    default <E2 extends @Nullable Object> Either<E2, A> toEitherWith(Function<? super NonEmptyVector<E>, ? extends E2> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> Either.right(value);
+            case Invalid(var errors) -> Either.left(Objects.requireNonNull(f.apply(errors), "Validation.toEitherWith: f returned null"));
+        };
+    }
+
+    /**
+     * Converts this {@code Validation} to an {@link Option}: {@code Some(value)} for a {@code Valid}, {@code None} for
+     * an {@code Invalid}; the errors are dropped.
+     *
+     * @return the {@code Option} of the value
+     */
+    default Option<A> toOption() {
+        return switch (this) {
+            case Valid(var value) -> Option.some(value);
+            case Invalid<E, A> _ -> Option.none();
+        };
+    }
+
+    /**
+     * Converts this {@code Validation} to a {@link Try}: {@code Success(value)} for a {@code Valid}, {@code Failure}
+     * of the throwable built from the errors for an {@code Invalid}.
+     *
+     * @param f builds the failure cause from the errors; it must not return {@code null} nor a fatal throwable (see
+     *          {@link Try})
+     * @return the {@code Try} equivalent of this {@code Validation}
+     * @throws NullPointerException if {@code f} is null, or if it returns null for an {@code Invalid}
+     */
+    default Try<A> toTry(Function<? super NonEmptyVector<E>, ? extends Throwable> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> Try.success(value);
+            case Invalid(var errors) -> Try.failure(Objects.requireNonNull(f.apply(errors), "Validation.toTry: f returned null"));
+        };
+    }
+
+    /**
+     * Converts this {@code Validation} to a {@link Vector} of zero or one element: its value, if any.
+     *
+     * @return {@code Vector.of(value)} for a {@code Valid}, otherwise the empty {@code Vector}
+     */
+    default Vector<A> toVector() {
+        return switch (this) {
+            case Valid(var value) -> Vector.of(value);
+            case Invalid<E, A> _ -> Vector.empty();
+        };
+    }
+
+    // -- cases
+
+    /**
+     * The {@code Valid} case of a {@code Validation}. The value is never {@code null}.
      *
      * @param value the value, never {@code null}
-     * @param <E>   type of the error of this Validation
-     * @param <T>   type of the value of this Validation
+     * @param <E>   the error type
+     * @param <A>   the value type
      */
-    record Valid<E extends @Nullable Object, T extends @Nullable Object>(T value) implements Validation<E, T> {
+    record Valid<E extends @Nullable Object, A extends @Nullable Object>(A value) implements Validation<E, A> {
 
         /**
          * Rejects {@code null}.
@@ -861,6 +828,11 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         }
 
         @Override
+        public A get() {
+            return value;
+        }
+
+        @Override
         public boolean isValid() {
             return true;
         }
@@ -868,16 +840,6 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         @Override
         public boolean isInvalid() {
             return false;
-        }
-
-        @Override
-        public T get() {
-            return value;
-        }
-
-        @Override
-        public E getError() throws RuntimeException {
-            throw new NoSuchElementException("error of 'valid' Validation");
         }
 
         @Override
@@ -887,21 +849,27 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * An invalid Validation. The error is never {@code null}.
+     * The {@code Invalid} case of a {@code Validation}: at least one error, in accumulation order. Equality is the
+     * record equality, so it is order sensitive.
      *
-     * @param error the error, never {@code null}
-     * @param <E>   type of the error of this Validation
-     * @param <T>   type of the value of this Validation
+     * @param errors the errors, never {@code null}
+     * @param <E>    the error type
+     * @param <A>    the value type
      */
-    record Invalid<E extends @Nullable Object, T extends @Nullable Object>(E error) implements Validation<E, T> {
+    record Invalid<E extends @Nullable Object, A extends @Nullable Object>(NonEmptyVector<E> errors) implements Validation<E, A> {
 
         /**
          * Rejects {@code null}.
          *
-         * @throws NullPointerException if {@code error} is null
+         * @throws NullPointerException if {@code errors} is null
          */
         public Invalid {
-            Objects.requireNonNull(error, "error is null");
+            Objects.requireNonNull(errors, "errors is null");
+        }
+
+        @Override
+        public A get() {
+            throw new NoSuchElementException("get() on Invalid");
         }
 
         @Override
@@ -915,371 +883,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         }
 
         @Override
-        public T get() throws RuntimeException {
-            throw new NoSuchElementException("get of 'invalid' Validation");
-        }
-
-        @Override
-        public E getError() {
-            return error;
-        }
-
-        @Override
         public String toString() {
-            return "Invalid(" + error + ")";
-        }
-    }
-
-    /**
-     * A builder that holds two Validation instances, used for combining validations
-     * and applying functions that take two arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     */
-    final class Builder<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-
-        private Builder(Validation<E, T1> v1, Validation<E, T2> v2) {
-            this.v1 = v1;
-            this.v2 = v2;
-        }
-
-        /**
-         * Applies a binary function to the values of the two validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(BiFunction<T1, T2, R> f) {
-            Objects.requireNonNull(f, "f is null");
-            return v2.ap(v1.ap(Validation.valid(t1 -> t2 -> f.apply(t1, t2))));
-        }
-
-        /**
-         * Combines this builder with another validation, creating a Builder3.
-         *
-         * @param <T3> type of third valid value
-         * @param v3   the third validation
-         * @return a new Builder3 instance
-         */
-        public <T3 extends @Nullable Object> Builder3<E, T1, T2, T3> combine(Validation<E, T3> v3) {
-            return new Builder3<>(v1, v2, v3);
-        }
-
-    }
-
-    /**
-     * A builder that holds three Validation instances, used for combining validations
-     * and applying functions that take three arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     * @param <T3> type of third valid value
-     */
-    final class Builder3<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-        private Validation<E, T3> v3;
-
-        private Builder3(Validation<E, T1> v1, Validation<E, T2> v2, Validation<E, T3> v3) {
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-        }
-
-        /**
-         * Applies a ternary function to the values of the three validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function3<T1, T2, T3, R> f) {
-            return v3.ap(v2.ap(v1.ap(Validation.valid(f.curried()))));
-        }
-
-        /**
-         * Combines this builder with another validation, creating a Builder4.
-         *
-         * @param <T4> type of fourth valid value
-         * @param v4   the fourth validation
-         * @return a new Builder4 instance
-         */
-        public <T4 extends @Nullable Object> Builder4<E, T1, T2, T3, T4> combine(Validation<E, T4> v4) {
-            return new Builder4<>(v1, v2, v3, v4);
-        }
-
-    }
-
-    /**
-     * A builder that holds four Validation instances, used for combining validations
-     * and applying functions that take four arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     * @param <T3> type of third valid value
-     * @param <T4> type of fourth valid value
-     */
-    final class Builder4<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-        private Validation<E, T3> v3;
-        private Validation<E, T4> v4;
-
-        private Builder4(Validation<E, T1> v1, Validation<E, T2> v2, Validation<E, T3> v3, Validation<E, T4> v4) {
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-            this.v4 = v4;
-        }
-
-        /**
-         * Applies a quaternary function to the values of the four validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function4<T1, T2, T3, T4, R> f) {
-            return v4.ap(v3.ap(v2.ap(v1.ap(Validation.valid(f.curried())))));
-        }
-
-        /**
-         * Combines this builder with another validation, creating a Builder5.
-         *
-         * @param <T5> type of fifth valid value
-         * @param v5   the fifth validation
-         * @return a new Builder5 instance
-         */
-        public <T5 extends @Nullable Object> Builder5<E, T1, T2, T3, T4, T5> combine(Validation<E, T5> v5) {
-            return new Builder5<>(v1, v2, v3, v4, v5);
-        }
-
-    }
-
-    /**
-     * A builder that holds five Validation instances, used for combining validations
-     * and applying functions that take five arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     * @param <T3> type of third valid value
-     * @param <T4> type of fourth valid value
-     * @param <T5> type of fifth valid value
-     */
-    final class Builder5<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-        private Validation<E, T3> v3;
-        private Validation<E, T4> v4;
-        private Validation<E, T5> v5;
-
-        private Builder5(Validation<E, T1> v1, Validation<E, T2> v2, Validation<E, T3> v3, Validation<E, T4> v4, Validation<E, T5> v5) {
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-            this.v4 = v4;
-            this.v5 = v5;
-        }
-
-        /**
-         * Applies a quinary function to the values of the five validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function5<T1, T2, T3, T4, T5, R> f) {
-            return v5.ap(v4.ap(v3.ap(v2.ap(v1.ap(Validation.valid(f.curried()))))));
-        }
-
-        /**
-         * Combines this builder with another validation, creating a Builder6.
-         *
-         * @param <T6> type of sixth valid value
-         * @param v6   the sixth validation
-         * @return a new Builder6 instance
-         */
-        public <T6 extends @Nullable Object> Builder6<E, T1, T2, T3, T4, T5, T6> combine(Validation<E, T6> v6) {
-            return new Builder6<>(v1, v2, v3, v4, v5, v6);
-        }
-
-    }
-
-    /**
-     * A builder that holds six Validation instances, used for combining validations
-     * and applying functions that take six arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     * @param <T3> type of third valid value
-     * @param <T4> type of fourth valid value
-     * @param <T5> type of fifth valid value
-     * @param <T6> type of sixth valid value
-     */
-    final class Builder6<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-        private Validation<E, T3> v3;
-        private Validation<E, T4> v4;
-        private Validation<E, T5> v5;
-        private Validation<E, T6> v6;
-
-        private Builder6(Validation<E, T1> v1, Validation<E, T2> v2, Validation<E, T3> v3, Validation<E, T4> v4, Validation<E, T5> v5, Validation<E, T6> v6) {
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-            this.v4 = v4;
-            this.v5 = v5;
-            this.v6 = v6;
-        }
-
-        /**
-         * Applies a senary function to the values of the six validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function6<T1, T2, T3, T4, T5, T6, R> f) {
-            return v6.ap(v5.ap(v4.ap(v3.ap(v2.ap(v1.ap(Validation.valid(f.curried())))))));
-        }
-
-        /**
-         * Combines this builder with another validation, creating a Builder7.
-         *
-         * @param <T7> type of seventh valid value
-         * @param v7   the seventh validation
-         * @return a new Builder7 instance
-         */
-        public <T7 extends @Nullable Object> Builder7<E, T1, T2, T3, T4, T5, T6, T7> combine(Validation<E, T7> v7) {
-            return new Builder7<>(v1, v2, v3, v4, v5, v6, v7);
-        }
-
-    }
-
-    /**
-     * A builder that holds seven Validation instances, used for combining validations
-     * and applying functions that take seven arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     * @param <T3> type of third valid value
-     * @param <T4> type of fourth valid value
-     * @param <T5> type of fifth valid value
-     * @param <T6> type of sixth valid value
-     * @param <T7> type of seventh valid value
-     */
-    final class Builder7<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-        private Validation<E, T3> v3;
-        private Validation<E, T4> v4;
-        private Validation<E, T5> v5;
-        private Validation<E, T6> v6;
-        private Validation<E, T7> v7;
-
-        private Builder7(Validation<E, T1> v1, Validation<E, T2> v2, Validation<E, T3> v3, Validation<E, T4> v4, Validation<E, T5> v5, Validation<E, T6> v6, Validation<E, T7> v7) {
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-            this.v4 = v4;
-            this.v5 = v5;
-            this.v6 = v6;
-            this.v7 = v7;
-        }
-
-        /**
-         * Applies a septenary function to the values of the seven validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function7<T1, T2, T3, T4, T5, T6, T7, R> f) {
-            return v7.ap(v6.ap(v5.ap(v4.ap(v3.ap(v2.ap(v1.ap(Validation.valid(f.curried()))))))));
-        }
-
-        /**
-         * Combines this builder with another validation, creating a Builder8.
-         *
-         * @param <T8> type of eighth valid value
-         * @param v8   the eighth validation
-         * @return a new Builder8 instance
-         */
-        public <T8 extends @Nullable Object> Builder8<E, T1, T2, T3, T4, T5, T6, T7, T8> combine(Validation<E, T8> v8) {
-            return new Builder8<>(v1, v2, v3, v4, v5, v6, v7, v8);
-        }
-
-    }
-
-    /**
-     * A builder that holds eight Validation instances, used for combining validations
-     * and applying functions that take eight arguments.
-     *
-     * @param <E>  type of error
-     * @param <T1> type of first valid value
-     * @param <T2> type of second valid value
-     * @param <T3> type of third valid value
-     * @param <T4> type of fourth valid value
-     * @param <T5> type of fifth valid value
-     * @param <T6> type of sixth valid value
-     * @param <T7> type of seventh valid value
-     * @param <T8> type of eighth valid value
-     */
-    final class Builder8<E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> {
-
-        private Validation<E, T1> v1;
-        private Validation<E, T2> v2;
-        private Validation<E, T3> v3;
-        private Validation<E, T4> v4;
-        private Validation<E, T5> v5;
-        private Validation<E, T6> v6;
-        private Validation<E, T7> v7;
-        private Validation<E, T8> v8;
-
-        private Builder8(Validation<E, T1> v1, Validation<E, T2> v2, Validation<E, T3> v3, Validation<E, T4> v4, Validation<E, T5> v5, Validation<E, T6> v6, Validation<E, T7> v7, Validation<E, T8> v8) {
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-            this.v4 = v4;
-            this.v5 = v5;
-            this.v6 = v6;
-            this.v7 = v7;
-            this.v8 = v8;
-        }
-
-        /**
-         * Applies an octonary function to the values of the eight validations held by this builder.
-         * If all validations are valid, the function is applied. Otherwise, errors are accumulated.
-         *
-         * @param <R> type of the result
-         * @param f   the function to apply
-         * @return a Validation with the result or accumulated errors
-         */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> f) {
-            return v8.ap(v7.ap(v6.ap(v5.ap(v4.ap(v3.ap(v2.ap(v1.ap(Validation.valid(f.curried())))))))));
+            return errors.mkString("Invalid(", ", ", ")");
         }
     }
 }
