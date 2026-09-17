@@ -35,14 +35,14 @@ public class CheckedFunction1Test {
     }
 
     @Test
-    public void shouldCreateIdentityFunction() throws Throwable {
+    public void shouldCreateIdentityFunction() throws Exception {
         final CheckedFunction1<String, String> identity = CheckedFunction1.identity();
         final String s = "test";
         assertThat(identity.apply(s)).isEqualTo(s);
     }
 
     @Test
-    public void shouldConstant() throws Throwable {
+    public void shouldConstant() throws Exception {
         final CheckedFunction1<Object, Object> f = CheckedFunction1.constant(6);
         assertThat(f.apply(1)).isEqualTo(6);
     }
@@ -121,7 +121,7 @@ public class CheckedFunction1Test {
     private static final CheckedFunction1<Integer, Integer> recurrent1 = (i1) -> i1 <= 0 ? i1 : CheckedFunction1Test.recurrent1.apply(i1 - 1) + 1;
 
     @Test
-    public void shouldCalculatedRecursively() throws Throwable {
+    public void shouldCalculatedRecursively() throws Exception {
         assertThat(recurrent1.apply(11)).isEqualTo(11);
         assertThat(recurrent1.apply(22)).isEqualTo(22);
     }
@@ -138,7 +138,7 @@ public class CheckedFunction1Test {
     class ComposeTests {
 
       @Test
-      public void shouldCompose1()  throws Throwable {
+      public void shouldCompose1()  throws Exception {
           final CheckedFunction1<String, String> concat = (String s1) -> s1;
           final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose1(toUpperCase).apply("xx")).isEqualTo("XX");
@@ -147,7 +147,7 @@ public class CheckedFunction1Test {
     }
 
     @Test
-    public void shouldNarrow() throws Throwable{
+    public void shouldNarrow() throws Exception{
         final CheckedFunction1<Number, String> wideFunction = (o1) -> String.format("Numbers are: %s", o1);
         final CheckedFunction1<Integer, CharSequence> narrowFunction = CheckedFunction1.narrow(wideFunction);
 

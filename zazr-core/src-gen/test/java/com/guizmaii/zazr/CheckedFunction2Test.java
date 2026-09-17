@@ -36,13 +36,13 @@ public class CheckedFunction2Test {
     }
 
     @Test
-    public void shouldPartiallyApply() throws Throwable {
+    public void shouldPartiallyApply() throws Exception {
         final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> null;
         assertThat(f.apply(null)).isNotNull();
     }
 
     @Test
-    public void shouldConstant() throws Throwable {
+    public void shouldConstant() throws Exception {
         final CheckedFunction2<Object, Object, Object> f = CheckedFunction2.constant(6);
         assertThat(f.apply(1, 2)).isEqualTo(6);
     }
@@ -121,7 +121,7 @@ public class CheckedFunction2Test {
     private static final CheckedFunction2<Integer, Integer, Integer> recurrent1 = (i1, i2) -> i1 <= 0 ? i1 : CheckedFunction2Test.recurrent1.apply(i1 - 1, i2) + 1;
 
     @Test
-    public void shouldCalculatedRecursively() throws Throwable {
+    public void shouldCalculatedRecursively() throws Exception {
         assertThat(recurrent1.apply(11, 11)).isEqualTo(11);
         assertThat(recurrent1.apply(22, 22)).isEqualTo(22);
     }
@@ -138,14 +138,14 @@ public class CheckedFunction2Test {
     class ComposeTests {
 
       @Test
-      public void shouldCompose1()  throws Throwable {
+      public void shouldCompose1()  throws Exception {
           final CheckedFunction2<String, String, String> concat = (String s1, String s2) -> s1 + s2;
           final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose1(toUpperCase).apply("xx", "s2")).isEqualTo("XXs2");
       }
 
       @Test
-      public void shouldCompose2()  throws Throwable {
+      public void shouldCompose2()  throws Exception {
           final CheckedFunction2<String, String, String> concat = (String s1, String s2) -> s1 + s2;
           final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose2(toUpperCase).apply("s1", "xx")).isEqualTo("s1XX");
@@ -154,7 +154,7 @@ public class CheckedFunction2Test {
     }
 
     @Test
-    public void shouldNarrow() throws Throwable{
+    public void shouldNarrow() throws Exception{
         final CheckedFunction2<Number, Number, String> wideFunction = (o1, o2) -> String.format("Numbers are: %s, %s", o1, o2);
         final CheckedFunction2<Integer, Integer, CharSequence> narrowFunction = CheckedFunction2.narrow(wideFunction);
 

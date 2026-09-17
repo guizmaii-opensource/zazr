@@ -1609,11 +1609,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction1<? super T1, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call()) {
-                    try {
-                        return f.apply(t1);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1);
                 }
             });
         }
@@ -1646,11 +1642,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction2<? super T1, ? super T2, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2);
                 }
             });
         }
@@ -1686,11 +1678,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction3<? super T1, ? super T2, ? super T3, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2, t3);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2, t3);
                 }
             });
         }
@@ -1729,11 +1717,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2, t3, t4);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2, t3, t4);
                 }
             });
         }
@@ -1775,11 +1759,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2, t3, t4, t5);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2, t3, t4, t5);
                 }
             });
         }
@@ -1824,11 +1804,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2, t3, t4, t5, t6);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2, t3, t4, t5, t6);
                 }
             });
         }
@@ -1876,11 +1852,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call(); T7 t7 = t7Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2, t3, t4, t5, t6, t7);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2, t3, t4, t5, t6, t7);
                 }
             });
         }
@@ -1931,11 +1903,7 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         public <R extends @Nullable Object> Try<R> of(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
             return Try.of(() -> {
                 try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call(); T7 t7 = t7Supplier.call(); T8 t8 = t8Supplier.call()) {
-                    try {
-                        return f.apply(t1, t2, t3, t4, t5, t6, t7, t8);
-                    } catch (Throwable t) {
-                        return sneakyThrow(t);
-                    }
+                    return f.apply(t1, t2, t3, t4, t5, t6, t7, t8);
                 }
             });
         }

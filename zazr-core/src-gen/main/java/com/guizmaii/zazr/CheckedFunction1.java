@@ -4,7 +4,7 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static com.guizmaii.zazr.CheckedFunction1Module.sneakyThrow;
+import static com.guizmaii.zazr.Throwables.sneakyThrow;
 
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
@@ -74,7 +74,7 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *         instead of being turned into {@code None}.
      */
     static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Option<R>> lift(CheckedFunction1<? super T1, ? extends R> partialFunction) {
-        return t1 -> Try.<R>of(() -> { try { return partialFunction.apply(t1); } catch (Throwable t) { return sneakyThrow(t); } }).toOption();
+        return t1 -> Try.<R>of(() -> partialFunction.apply(t1)).toOption();
     }
 
     /**
@@ -89,7 +89,7 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *         instead of being wrapped.
      */
     static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Try<R>> liftTry(CheckedFunction1<? super T1, ? extends R> partialFunction) {
-        return t1 -> Try.of(() -> { try { return partialFunction.apply(t1); } catch (Throwable t) { return sneakyThrow(t); } });
+        return t1 -> Try.of(() -> partialFunction.apply(t1));
     }
 
     /**
@@ -120,9 +120,9 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *
      * @param t1 argument 1
      * @return the result of function application
-     * @throws Throwable if something goes wrong applying this function to the given arguments
+     * @throws Exception if something goes wrong applying this function to the given arguments
      */
-    R apply(T1 t1) throws Throwable;
+    R apply(T1 t1) throws Exception;
 
     /**
      * Returns a curried version of this function.
@@ -218,14 +218,5 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
     default <S extends @Nullable Object> CheckedFunction1<S, R> compose1(Function<? super S, ? extends T1> before) {
         Objects.requireNonNull(before, "before is null");
         return (S s) -> apply(before.apply(s));
-    }
-}
-
-interface CheckedFunction1Module {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
     }
 }

@@ -1,8 +1,6 @@
 package com.guizmaii.zazr;
 
-import org.jspecify.annotations.Nullable;
-
-import static com.guizmaii.zazr.CheckedRunnableModule.sneakyThrow;
+import static com.guizmaii.zazr.Throwables.sneakyThrow;
 
 /**
  * A {@linkplain Runnable} that is allowed to throw checked exceptions.
@@ -37,10 +35,10 @@ public interface CheckedRunnable {
     /**
      * Executes the action, potentially performing side-effects.
      *
-     * @throws Throwable if an error occurs during execution
+     * @throws Exception if an error occurs during execution
      */
 
-    void run() throws Throwable;
+    void run() throws Exception;
 
     /**
      * Returns an unchecked {@link Runnable} that <em>sneakily throws</em> any exception 
@@ -57,14 +55,4 @@ public interface CheckedRunnable {
             }
         };
     }
-}
-
-interface CheckedRunnableModule {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
-    }
-
 }

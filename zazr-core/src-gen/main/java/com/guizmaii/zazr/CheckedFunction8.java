@@ -4,7 +4,7 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static com.guizmaii.zazr.CheckedFunction8Module.sneakyThrow;
+import static com.guizmaii.zazr.Throwables.sneakyThrow;
 
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
@@ -102,7 +102,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being turned into {@code None}.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Function8<T1, T2, T3, T4, T5, T6, T7, T8, Option<R>> lift(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.<R>of(() -> { try { return partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8); } catch (Throwable t) { return sneakyThrow(t); } }).toOption();
+        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.<R>of(() -> partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8)).toOption();
     }
 
     /**
@@ -124,7 +124,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being wrapped.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Function8<T1, T2, T3, T4, T5, T6, T7, T8, Try<R>> liftTry(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.of(() -> { try { return partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8); } catch (Throwable t) { return sneakyThrow(t); } });
+        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.of(() -> partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8));
     }
 
     /**
@@ -159,9 +159,9 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @param t7 argument 7
      * @param t8 argument 8
      * @return the result of function application
-     * @throws Throwable if something goes wrong applying this function to the given arguments
+     * @throws Exception if something goes wrong applying this function to the given arguments
      */
-    R apply(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) throws Throwable;
+    R apply(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) throws Exception;
 
     /**
      * Applies this function partially to one argument.
@@ -432,14 +432,5 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
     default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, S, R> compose8(Function<? super S, ? extends T8> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, S s) -> apply(t1, t2, t3, t4, t5, t6, t7, before.apply(s));
-    }
-}
-
-interface CheckedFunction8Module {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
     }
 }

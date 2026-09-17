@@ -4,7 +4,7 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static com.guizmaii.zazr.CheckedFunction4Module.sneakyThrow;
+import static com.guizmaii.zazr.Throwables.sneakyThrow;
 
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
@@ -86,7 +86,7 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being turned into {@code None}.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Function4<T1, T2, T3, T4, Option<R>> lift(CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4) -> Try.<R>of(() -> { try { return partialFunction.apply(t1, t2, t3, t4); } catch (Throwable t) { return sneakyThrow(t); } }).toOption();
+        return (t1, t2, t3, t4) -> Try.<R>of(() -> partialFunction.apply(t1, t2, t3, t4)).toOption();
     }
 
     /**
@@ -104,7 +104,7 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being wrapped.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Function4<T1, T2, T3, T4, Try<R>> liftTry(CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4) -> Try.of(() -> { try { return partialFunction.apply(t1, t2, t3, t4); } catch (Throwable t) { return sneakyThrow(t); } });
+        return (t1, t2, t3, t4) -> Try.of(() -> partialFunction.apply(t1, t2, t3, t4));
     }
 
     /**
@@ -131,9 +131,9 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
      * @param t3 argument 3
      * @param t4 argument 4
      * @return the result of function application
-     * @throws Throwable if something goes wrong applying this function to the given arguments
+     * @throws Exception if something goes wrong applying this function to the given arguments
      */
-    R apply(T1 t1, T2 t2, T3 t3, T4 t4) throws Throwable;
+    R apply(T1 t1, T2 t2, T3 t3, T4 t4) throws Exception;
 
     /**
      * Applies this function partially to one argument.
@@ -290,14 +290,5 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
     default <S extends @Nullable Object> CheckedFunction4<T1, T2, T3, S, R> compose4(Function<? super S, ? extends T4> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, S s) -> apply(t1, t2, t3, before.apply(s));
-    }
-}
-
-interface CheckedFunction4Module {
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
     }
 }

@@ -35,14 +35,14 @@ public class CheckedFunction3Test {
     }
 
     @Test
-    public void shouldPartiallyApply() throws Throwable {
+    public void shouldPartiallyApply() throws Exception {
         final CheckedFunction3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
         assertThat(f.apply(null)).isNotNull();
         assertThat(f.apply(null, null)).isNotNull();
     }
 
     @Test
-    public void shouldConstant() throws Throwable {
+    public void shouldConstant() throws Exception {
         final CheckedFunction3<Object, Object, Object, Object> f = CheckedFunction3.constant(6);
         assertThat(f.apply(1, 2, 3)).isEqualTo(6);
     }
@@ -121,7 +121,7 @@ public class CheckedFunction3Test {
     private static final CheckedFunction3<Integer, Integer, Integer, Integer> recurrent1 = (i1, i2, i3) -> i1 <= 0 ? i1 : CheckedFunction3Test.recurrent1.apply(i1 - 1, i2, i3) + 1;
 
     @Test
-    public void shouldCalculatedRecursively() throws Throwable {
+    public void shouldCalculatedRecursively() throws Exception {
         assertThat(recurrent1.apply(11, 11, 11)).isEqualTo(11);
         assertThat(recurrent1.apply(22, 22, 22)).isEqualTo(22);
     }
@@ -138,21 +138,21 @@ public class CheckedFunction3Test {
     class ComposeTests {
 
       @Test
-      public void shouldCompose1()  throws Throwable {
+      public void shouldCompose1()  throws Exception {
           final CheckedFunction3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
           final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3")).isEqualTo("XXs2s3");
       }
 
       @Test
-      public void shouldCompose2()  throws Throwable {
+      public void shouldCompose2()  throws Exception {
           final CheckedFunction3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
           final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3")).isEqualTo("s1XXs3");
       }
 
       @Test
-      public void shouldCompose3()  throws Throwable {
+      public void shouldCompose3()  throws Exception {
           final CheckedFunction3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
           final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx")).isEqualTo("s1s2XX");
@@ -161,7 +161,7 @@ public class CheckedFunction3Test {
     }
 
     @Test
-    public void shouldNarrow() throws Throwable{
+    public void shouldNarrow() throws Exception{
         final CheckedFunction3<Number, Number, Number, String> wideFunction = (o1, o2, o3) -> String.format("Numbers are: %s, %s, %s", o1, o2, o3);
         final CheckedFunction3<Integer, Integer, Integer, CharSequence> narrowFunction = CheckedFunction3.narrow(wideFunction);
 

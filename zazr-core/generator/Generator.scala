@@ -145,7 +145,7 @@ def generateMainClasses(): Unit = {
         }
 
         if (checked) {
-          im.getStatic(s"com.guizmaii.zazr.${className}Module.sneakyThrow")
+          im.getStatic("com.guizmaii.zazr.Throwables.sneakyThrow")
         }
 
         xs"""
@@ -210,12 +210,9 @@ def generateMainClasses(): Unit = {
               static $fullGenericsDecl ${javaFunctionType(i, im)}$genericsOptionReturnType lift($fullGenericsType partialFunction) {
                   ${
                     val func = "partialFunction"
-                    // Try.of takes a Callable (throws Exception only), but a checked partialFunction.apply()
-                    // declares `throws Throwable`; catch it here and sneaky-throw so the lambda declares
-                    // nothing checked, the same way unchecked() already does.
-                    val supplier =
-                      if (checked) s"() -> { try { return $func.apply($params); } catch (Throwable t) { return sneakyThrow(t); } }"
-                      else s"() -> $func.apply($params)"
+                    // Try.of takes a Callable (throws Exception only); a checked partialFunction.apply() now
+                    // declares `throws Exception` too, so this satisfies Callable directly, no wrapping needed.
+                    val supplier = s"() -> $func.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
                       return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.<R>of($supplier).toOption();
@@ -235,9 +232,7 @@ def generateMainClasses(): Unit = {
                */
               static $fullGenericsDecl ${javaFunctionType(i, im)}$genericsTryReturnType liftTry($fullGenericsType partialFunction) {
                   ${
-                    val supplier =
-                      if (checked) s"() -> { try { return partialFunction.apply($params); } catch (Throwable t) { return sneakyThrow(t); } }"
-                      else s"() -> partialFunction.apply($params)"
+                    val supplier = s"() -> partialFunction.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
                       return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.of($supplier);
@@ -273,9 +268,9 @@ def generateMainClasses(): Unit = {
                * Applies this function to ${arguments(i)} and returns the result.
                ${(0 to i).gen(j => if (j == 0) "*" else s"* @param t$j argument $j")(using "\n")}
                * @return the result of function application
-               * ${checked.gen("@throws Throwable if something goes wrong applying this function to the given arguments")}
+               * ${checked.gen("@throws Exception if something goes wrong applying this function to the given arguments")}
                */
-              R apply($paramsDecl)${checked.gen(" throws Throwable")};
+              R apply($paramsDecl)${checked.gen(" throws Exception")};
 
               ${(1 until i).gen(j => {
                 val remaining = i - j
@@ -431,17 +426,6 @@ def generateMainClasses(): Unit = {
                 """
               })(using "\n\n")}
           }
-
-          ${checked.gen(xs"""
-            interface ${className}Module {
-
-                // DEV-NOTE: we do not plan to expose this as public API
-                @SuppressWarnings("unchecked")
-                static <T extends Throwable, R $nullableBound> R sneakyThrow(Throwable t) throws T {
-                    throw (T) t;
-                }
-            }
-          """)}
         """
       }
     })
@@ -1150,7 +1134,7 @@ def generateTestClasses(): Unit = {
 
               ${(i == 1).gen(xs"""
                 @$test
-                public void shouldCreateIdentityFunction()${checked.gen(" throws Throwable")} {
+                public void shouldCreateIdentityFunction()${checked.gen(" throws Exception")} {
                     final $name$i<String, String> identity = $name$i.identity();
                     final String s = "test";
                     assertThat(identity.apply(s)).isEqualTo(s);
@@ -1159,7 +1143,7 @@ def generateTestClasses(): Unit = {
 
               ${(i > 1).gen(xs"""
                 @$test
-                public void shouldPartiallyApply()${checked.gen(" throws Throwable")} {
+                public void shouldPartiallyApply()${checked.gen(" throws Exception")} {
                     final $name$i<$generics> f = ($functionArgs) -> null;
                     ${(1 until i).gen(j => {
                       val partialArgs = (1 to j).gen(k => "null")(using ", ")
@@ -1169,7 +1153,7 @@ def generateTestClasses(): Unit = {
               """)}
 
               @$test
-              public void shouldConstant()${checked.gen(" throws Throwable")} {
+              public void shouldConstant()${checked.gen(" throws Exception")} {
                   final $name$i<$generics> f = $name$i.constant(6);
                   $assertThat(f.apply(${(1 to i).gen(j => s"$j")(using ", ")})).isEqualTo(6);
               }
@@ -1276,7 +1260,7 @@ def generateTestClasses(): Unit = {
               private static final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> recurrent1 = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> $recFuncF1
 
               @$test
-              public void shouldCalculatedRecursively()${checked.gen(" throws Throwable")} {
+              public void shouldCalculatedRecursively()${checked.gen(" throws Exception")} {
                   assertThat(recurrent1.apply(${(1 to i).gen(j => "11")(using ", ")})).isEqualTo(11);
                   ${(i > 0).gen(s"assertThat(recurrent1.apply(${(1 to i).gen(j => "22")(using ", ")})).isEqualTo(22);")}
               }
@@ -1300,7 +1284,7 @@ def generateTestClasses(): Unit = {
                   xs"""
 
                   @$test
-                  public void shouldCompose$j() ${checked.gen(" throws Throwable ")}{
+                  public void shouldCompose$j() ${checked.gen(" throws Exception ")}{
                       final $name$i<$genArgs, String> concat = ($params) -> $concat;
                       final $jdkFunction1<String, String> toUpperCase = String::toUpperCase;
                       assertThat(concat.compose$j(toUpperCase).apply($values)).isEqualTo(\"$expected\");
@@ -1313,7 +1297,7 @@ def generateTestClasses(): Unit = {
 
               ${(i > 0).gen(xs"""
               @$test
-              public void shouldNarrow()${checked.gen(" throws Throwable")}{
+              public void shouldNarrow()${checked.gen(" throws Exception")}{
                   final $name$i<$wideGenericArgs, $wideGenericResult> wideFunction = ($functionArgs) -> String.format("Numbers are: $wideFunctionPattern", $functionArgs);
                   final $name$i<$narrowGenericArgs, $narrowGenericResult> narrowFunction = $name$i.narrow(wideFunction);
 
