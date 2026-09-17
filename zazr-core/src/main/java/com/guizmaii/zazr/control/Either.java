@@ -1,10 +1,25 @@
 package com.guizmaii.zazr.control;
 
+import com.guizmaii.zazr.Function3;
+import com.guizmaii.zazr.Function4;
+import com.guizmaii.zazr.Function5;
+import com.guizmaii.zazr.Function6;
+import com.guizmaii.zazr.Function7;
+import com.guizmaii.zazr.Function8;
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.Tuple4;
+import com.guizmaii.zazr.Tuple5;
+import com.guizmaii.zazr.Tuple6;
+import com.guizmaii.zazr.Tuple7;
+import com.guizmaii.zazr.Tuple8;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -573,6 +588,582 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
             action.accept(getLeft());
         }
         return this;
+    }
+
+    // -- zip (design 3.4)
+
+    /**
+     * Pairs this right value with {@code that}'s, failing fast: {@code Right} of the pair when both are
+     * {@code Right}, otherwise the first {@code Left} of the two (this one, then {@code that}), as is. The same as
+     * {@link #zipWith(Either, BiFunction)} with {@code Tuple::of}.
+     * <pre>{@code
+     * Either.right(1).zip(Either.right("a")); // = Right((1, a))
+     * Either.right(1).zip(Either.left("b"));  // = Left(b)
+     * Either.left("a").zip(Either.left("b")); // = Left(a)
+     * }</pre>
+     *
+     * @param that the other side
+     * @param <U>  the right type of {@code that}
+     * @return {@code Right} of the pair of values, or the first {@code Left}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <U extends @Nullable Object> Either<L, Tuple2<R, U>> zip(Either<? extends L, ? extends U> that) {
+        return zipWith(that, Tuple::of);
+    }
+
+    /**
+     * Combines this right value with {@code that}'s through {@code f}, failing fast: {@code Right} of the result when
+     * both are {@code Right}, otherwise the first {@code Left} of the two (this one, then {@code that}), as is.
+     * {@code f} is called only when both are {@code Right}; it must not return {@code null}, since {@code Right}
+     * cannot hold {@code null} (design 3.9).
+     *
+     * @param that the other side
+     * @param f    combines the two right values; it must not return {@code null}
+     * @param <U>  the right type of {@code that}
+     * @param <V>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object, V extends @Nullable Object> Either<L, V> zipWith(Either<? extends L, ? extends U> that, BiFunction<? super R, ? super U, ? extends V> f) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(f, "f is null");
+        if (isLeft()) {
+            return (Either<L, V>) this;
+        }
+        if (that.isLeft()) {
+            return (Either<L, V>) that;
+        }
+        return right(Objects.requireNonNull(f.apply(get(), that.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * {@link #zip(Either)} keeping this right value: this {@code Right} when both are {@code Right}, otherwise the
+     * first {@code Left} of the two, as is. Both sides are inspected, so this is not {@link #orElse(Either)}:
+     * {@code Right(1).zipLeft(Left("b"))} is {@code Left("b")}.
+     *
+     * @param that the other side
+     * @param <U>  the right type of {@code that}
+     * @return this {@code Right}, or the first {@code Left}
+     * @throws NullPointerException if {@code that} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Either<L, R> zipLeft(Either<? extends L, ? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isLeft() || that.isRight() ? this : (Either<L, R>) that;
+    }
+
+    /**
+     * {@link #zip(Either)} keeping {@code that}'s right value: {@code that} when both are {@code Right}, otherwise
+     * the first {@code Left} of the two, as is. Both sides are inspected: {@code Left("a").zipRight(Right(1))} is
+     * {@code Left("a")}.
+     *
+     * @param that the other side
+     * @param <U>  the right type of {@code that}
+     * @return {@code that}, or the first {@code Left}
+     * @throws NullPointerException if {@code that} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Either<L, U> zipRight(Either<? extends L, ? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isLeft() ? (Either<L, U>) this : narrow(that);
+    }
+
+    /**
+     * Pairs the right values of two {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> Either<L, Tuple2<T1, T2>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2) {
+        return zipWith(e1, e2, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of two {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, BiFunction<? super T1, ? super T2, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the right values of three {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Either<L, Tuple3<T1, T2, T3>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3) {
+        return zipWith(e1, e2, e3, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of three {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Function3<? super T1, ? super T2, ? super T3, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(e3, "e3 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        if (e3.isLeft()) {
+            return (Either<L, U>) e3;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the right values of four {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Either<L, Tuple4<T1, T2, T3, T4>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4) {
+        return zipWith(e1, e2, e3, e4, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of four {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(e3, "e3 is null");
+        Objects.requireNonNull(e4, "e4 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        if (e3.isLeft()) {
+            return (Either<L, U>) e3;
+        }
+        if (e4.isLeft()) {
+            return (Either<L, U>) e4;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the right values of five {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Either<L, Tuple5<T1, T2, T3, T4, T5>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5) {
+        return zipWith(e1, e2, e3, e4, e5, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of five {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(e3, "e3 is null");
+        Objects.requireNonNull(e4, "e4 is null");
+        Objects.requireNonNull(e5, "e5 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        if (e3.isLeft()) {
+            return (Either<L, U>) e3;
+        }
+        if (e4.isLeft()) {
+            return (Either<L, U>) e4;
+        }
+        if (e5.isLeft()) {
+            return (Either<L, U>) e5;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the right values of six {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param e6  the sixth {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <T6> the value type of {@code e6}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Either<L, Tuple6<T1, T2, T3, T4, T5, T6>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6) {
+        return zipWith(e1, e2, e3, e4, e5, e6, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of six {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param e6  the sixth {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <T6> the value type of {@code e6}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(e3, "e3 is null");
+        Objects.requireNonNull(e4, "e4 is null");
+        Objects.requireNonNull(e5, "e5 is null");
+        Objects.requireNonNull(e6, "e6 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        if (e3.isLeft()) {
+            return (Either<L, U>) e3;
+        }
+        if (e4.isLeft()) {
+            return (Either<L, U>) e4;
+        }
+        if (e5.isLeft()) {
+            return (Either<L, U>) e5;
+        }
+        if (e6.isLeft()) {
+            return (Either<L, U>) e6;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the right values of seven {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param e6  the sixth {@code Either}
+     * @param e7  the seventh {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <T6> the value type of {@code e6}
+     * @param <T7> the value type of {@code e7}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Either<L, Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7) {
+        return zipWith(e1, e2, e3, e4, e5, e6, e7, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of seven {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param e6  the sixth {@code Either}
+     * @param e7  the seventh {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <T6> the value type of {@code e6}
+     * @param <T7> the value type of {@code e7}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(e3, "e3 is null");
+        Objects.requireNonNull(e4, "e4 is null");
+        Objects.requireNonNull(e5, "e5 is null");
+        Objects.requireNonNull(e6, "e6 is null");
+        Objects.requireNonNull(e7, "e7 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        if (e3.isLeft()) {
+            return (Either<L, U>) e3;
+        }
+        if (e4.isLeft()) {
+            return (Either<L, U>) e4;
+        }
+        if (e5.isLeft()) {
+            return (Either<L, U>) e5;
+        }
+        if (e6.isLeft()) {
+            return (Either<L, U>) e6;
+        }
+        if (e7.isLeft()) {
+            return (Either<L, U>) e7;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get()), "Either.zipWith: f returned null"));
+    }
+
+    /**
+     * Pairs the right values of eight {@code Either}s, failing fast: {@code Right} of the tuple of the values when
+     * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
+     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param e6  the sixth {@code Either}
+     * @param e7  the seventh {@code Either}
+     * @param e8  the eighth {@code Either}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <T6> the value type of {@code e6}
+     * @param <T7> the value type of {@code e7}
+     * @param <T8> the value type of {@code e8}
+     * @return {@code Right} of the tuple of the values, or the first {@code Left}
+     * @throws NullPointerException if any argument is null
+     */
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Either<L, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7, Either<? extends L, ? extends T8> e8) {
+        return zipWith(e1, e2, e3, e4, e5, e6, e7, e8, Tuple::of);
+    }
+
+    /**
+     * Combines the right values of eight {@code Either}s through {@code f}, failing fast: {@code Right} of the result
+     * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Right}, with the values in argument order; it must not return
+     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     *
+     * @param e1  the first {@code Either}
+     * @param e2  the second {@code Either}
+     * @param e3  the third {@code Either}
+     * @param e4  the fourth {@code Either}
+     * @param e5  the fifth {@code Either}
+     * @param e6  the sixth {@code Either}
+     * @param e7  the seventh {@code Either}
+     * @param e8  the eighth {@code Either}
+     * @param f  combines the values; it must not return {@code null}
+     * @param <L>  the left type, shared by every argument
+     * @param <T1> the value type of {@code e1}
+     * @param <T2> the value type of {@code e2}
+     * @param <T3> the value type of {@code e3}
+     * @param <T4> the value type of {@code e4}
+     * @param <T5> the value type of {@code e5}
+     * @param <T6> the value type of {@code e6}
+     * @param <T7> the value type of {@code e7}
+     * @param <T8> the value type of {@code e8}
+     * @param <U>  the result type
+     * @return {@code Right} of the combined value, or the first {@code Left}
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7, Either<? extends L, ? extends T8> e8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends U> f) {
+        Objects.requireNonNull(e1, "e1 is null");
+        Objects.requireNonNull(e2, "e2 is null");
+        Objects.requireNonNull(e3, "e3 is null");
+        Objects.requireNonNull(e4, "e4 is null");
+        Objects.requireNonNull(e5, "e5 is null");
+        Objects.requireNonNull(e6, "e6 is null");
+        Objects.requireNonNull(e7, "e7 is null");
+        Objects.requireNonNull(e8, "e8 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (e1.isLeft()) {
+            return (Either<L, U>) e1;
+        }
+        if (e2.isLeft()) {
+            return (Either<L, U>) e2;
+        }
+        if (e3.isLeft()) {
+            return (Either<L, U>) e3;
+        }
+        if (e4.isLeft()) {
+            return (Either<L, U>) e4;
+        }
+        if (e5.isLeft()) {
+            return (Either<L, U>) e5;
+        }
+        if (e6.isLeft()) {
+            return (Either<L, U>) e6;
+        }
+        if (e7.isLeft()) {
+            return (Either<L, U>) e7;
+        }
+        if (e8.isLeft()) {
+            return (Either<L, U>) e8;
+        }
+        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get(), e8.get()), "Either.zipWith: f returned null"));
     }
 
     // -- conversions (design 3.2)

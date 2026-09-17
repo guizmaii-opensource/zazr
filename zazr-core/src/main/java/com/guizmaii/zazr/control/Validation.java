@@ -1,7 +1,19 @@
 package com.guizmaii.zazr.control;
 
+import com.guizmaii.zazr.Function3;
+import com.guizmaii.zazr.Function4;
+import com.guizmaii.zazr.Function5;
+import com.guizmaii.zazr.Function6;
+import com.guizmaii.zazr.Function7;
+import com.guizmaii.zazr.Function8;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.Tuple4;
+import com.guizmaii.zazr.Tuple5;
+import com.guizmaii.zazr.Tuple6;
+import com.guizmaii.zazr.Tuple7;
+import com.guizmaii.zazr.Tuple8;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Try.Failure;
@@ -383,6 +395,476 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     default <B extends @Nullable Object> Validation<E, Tuple2<A, B>> zip(Either<? extends E, ? extends B> that) {
         Objects.requireNonNull(that, "that is null");
         return zip(fromEither(that));
+    }
+
+    /**
+     * Pairs the values of two validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> Validation<E, Tuple2<T1, T2>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2) {
+        return zipWith(v1, v2, Tuple::of);
+    }
+
+    /**
+     * Combines the values of two validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * Pairs the values of three validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Validation<E, Tuple3<T1, T2, T3>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3) {
+        return zipWith(v1, v2, v3, Tuple::of);
+    }
+
+    /**
+     * Combines the values of three validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(v3, "v3 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        errors = accumulate(errors, v3);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * Pairs the values of four validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Validation<E, Tuple4<T1, T2, T3, T4>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4) {
+        return zipWith(v1, v2, v3, v4, Tuple::of);
+    }
+
+    /**
+     * Combines the values of four validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(v3, "v3 is null");
+        Objects.requireNonNull(v4, "v4 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        errors = accumulate(errors, v3);
+        errors = accumulate(errors, v4);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * Pairs the values of five validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Validation<E, Tuple5<T1, T2, T3, T4, T5>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5) {
+        return zipWith(v1, v2, v3, v4, v5, Tuple::of);
+    }
+
+    /**
+     * Combines the values of five validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(v3, "v3 is null");
+        Objects.requireNonNull(v4, "v4 is null");
+        Objects.requireNonNull(v5, "v5 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        errors = accumulate(errors, v3);
+        errors = accumulate(errors, v4);
+        errors = accumulate(errors, v5);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * Pairs the values of six validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param v6  the sixth validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <T6> the value type of {@code v6}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Validation<E, Tuple6<T1, T2, T3, T4, T5, T6>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6) {
+        return zipWith(v1, v2, v3, v4, v5, v6, Tuple::of);
+    }
+
+    /**
+     * Combines the values of six validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param v6  the sixth validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <T6> the value type of {@code v6}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(v3, "v3 is null");
+        Objects.requireNonNull(v4, "v4 is null");
+        Objects.requireNonNull(v5, "v5 is null");
+        Objects.requireNonNull(v6, "v6 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        errors = accumulate(errors, v3);
+        errors = accumulate(errors, v4);
+        errors = accumulate(errors, v5);
+        errors = accumulate(errors, v6);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * Pairs the values of seven validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param v6  the sixth validation
+     * @param v7  the seventh validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <T6> the value type of {@code v6}
+     * @param <T7> the value type of {@code v7}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Validation<E, Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7) {
+        return zipWith(v1, v2, v3, v4, v5, v6, v7, Tuple::of);
+    }
+
+    /**
+     * Combines the values of seven validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param v6  the sixth validation
+     * @param v7  the seventh validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <T6> the value type of {@code v6}
+     * @param <T7> the value type of {@code v7}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(v3, "v3 is null");
+        Objects.requireNonNull(v4, "v4 is null");
+        Objects.requireNonNull(v5, "v5 is null");
+        Objects.requireNonNull(v6, "v6 is null");
+        Objects.requireNonNull(v7, "v7 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        errors = accumulate(errors, v3);
+        errors = accumulate(errors, v4);
+        errors = accumulate(errors, v5);
+        errors = accumulate(errors, v6);
+        errors = accumulate(errors, v7);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * Pairs the values of eight validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
+     * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * {@code Tuple::of}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param v6  the sixth validation
+     * @param v7  the seventh validation
+     * @param v8  the eighth validation
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <T6> the value type of {@code v6}
+     * @param <T7> the value type of {@code v7}
+     * @param <T8> the value type of {@code v8}
+     * @return {@code Valid} of the tuple of the values, or the accumulated errors
+     * @throws NullPointerException if any argument is null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Validation<E, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7, Validation<? extends E, ? extends T8> v8) {
+        return zipWith(v1, v2, v3, v4, v5, v6, v7, v8, Tuple::of);
+    }
+
+    /**
+     * Combines the values of eight validations through {@code f}, keeping <em>all</em> errors: {@code Valid} of the
+     * result when every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid}
+     * argument, concatenated in argument order. {@code f} is called only when every argument is {@code Valid}, with
+     * the values in argument order; it must not return {@code null}.
+     *
+     * @param v1  the first validation
+     * @param v2  the second validation
+     * @param v3  the third validation
+     * @param v4  the fourth validation
+     * @param v5  the fifth validation
+     * @param v6  the sixth validation
+     * @param v7  the seventh validation
+     * @param v8  the eighth validation
+     * @param f  combines the values; it must not return {@code null}
+     * @param <E>  the error type, shared by every argument
+     * @param <T1> the value type of {@code v1}
+     * @param <T2> the value type of {@code v2}
+     * @param <T3> the value type of {@code v3}
+     * @param <T4> the value type of {@code v4}
+     * @param <T5> the value type of {@code v5}
+     * @param <T6> the value type of {@code v6}
+     * @param <T7> the value type of {@code v7}
+     * @param <T8> the value type of {@code v8}
+     * @param <R>  the result type
+     * @return {@code Valid} of the combined value, or the accumulated errors
+     * @throws NullPointerException if any argument is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7, Validation<? extends E, ? extends T8> v8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+        Objects.requireNonNull(v1, "v1 is null");
+        Objects.requireNonNull(v2, "v2 is null");
+        Objects.requireNonNull(v3, "v3 is null");
+        Objects.requireNonNull(v4, "v4 is null");
+        Objects.requireNonNull(v5, "v5 is null");
+        Objects.requireNonNull(v6, "v6 is null");
+        Objects.requireNonNull(v7, "v7 is null");
+        Objects.requireNonNull(v8, "v8 is null");
+        Objects.requireNonNull(f, "f is null");
+        Vector.Builder<E> errors = null;
+        errors = accumulate(errors, v1);
+        errors = accumulate(errors, v2);
+        errors = accumulate(errors, v3);
+        errors = accumulate(errors, v4);
+        errors = accumulate(errors, v5);
+        errors = accumulate(errors, v6);
+        errors = accumulate(errors, v7);
+        errors = accumulate(errors, v8);
+        if (errors == null) {
+            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get(), v8.get()), "Validation.zipWith: f returned null"));
+        }
+        return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * One step of the error accumulation of the static {@code zip}/{@code zipWith} family: adds the errors of
+     * {@code validation}, if it is {@code Invalid}, to {@code errors}, which is {@code null} until the first
+     * {@code Invalid} operand creates it (the {@link #forEach(Iterable, Function)} pattern).
+     */
+    private static <E extends @Nullable Object> Vector.@Nullable Builder<E> accumulate(Vector.@Nullable Builder<E> errors, Validation<? extends E, ?> validation) {
+        if (validation instanceof Invalid(var es)) {
+            if (errors == null) {
+                errors = Vector.newBuilder();
+            }
+            errors.addAll(es.toVector());
+        }
+        return errors;
     }
 
     /**

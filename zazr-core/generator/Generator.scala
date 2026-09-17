@@ -1114,6 +1114,7 @@ def generateTestClasses(): Unit = {
   genFunctionTests()
   genMapOfEntriesTests()
   genTupleTests()
+  genControlZipTests()
 
   /**
    * Generator of Function tests
@@ -1668,6 +1669,301 @@ def generateTestClasses(): Unit = {
           }
         """
       })
+    })
+  }
+
+  /**
+   * Generator of the tests of the static zip/zipWith family (arities 2..N) of the control types (design 3.4).
+   * The main-code methods are hand-written in Option, Either, Try, Validation and Lazy; only their test matrix is
+   * generated: one class per type, for every arity the all-success case, every single failing position, the null
+   * checks, and what is specific to the type (Validation accumulates, Lazy defers).
+   */
+  def genControlZipTests(): Unit = {
+
+    val arities = 2 to N
+
+    def lambdaParams(n: Int): String = (1 to n).gen(j => s"a$j")(using ", ")
+    def ignoredParams(n: Int): String = (1 to n).gen(_ => "_")(using ", ")
+    def concatenation(n: Int): String = "\"\" + " + (1 to n).gen(j => s"a$j")(using " + ")
+    def digits(n: Int): String = (1 to n).gen(j => s"$j")
+    def ints(n: Int): String = (1 to n).gen(j => s"$j")(using ", ")
+    def notCalled(n: Int): String = s"(${ignoredParams(n)}) -> { throw new AssertionError(\"must not be called\"); }"
+    def operands(n: Int, ok: Int => String, failing: Int => String, fails: Int => Boolean): String =
+      (1 to n).gen(j => if (fails(j)) failing(j) else ok(j))(using ", ")
+
+    /**
+     * Option, Either and Try: fail-fast, the first failure in argument order is the result.
+     */
+    def genFailFastZipTest(typeName: String, paramPrefix: String, valueType: String,
+                           success: Int => String, wrapSuccess: String => String, failure: Int => String,
+                           exactFailureInstance: Boolean): Unit = {
+
+      genVavrFile("com.guizmaii.zazr.control", s"${typeName}ZipTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+
+        val test = im.getType("org.junit.jupiter.api.Test")
+        val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
+        val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
+        val AtomicInteger = im.getType("java.util.concurrent.atomic.AtomicInteger")
+        val Tuple = im.getType("com.guizmaii.zazr.Tuple")
+
+        def failureAssertion(actual: String, failing: String): String =
+          if (exactFailureInstance) s"$assertThat($actual).isSameAs($failing);" else s"$assertThat($actual).isEqualTo(${failure(0)});"
+
+        def nullResultAssertion(n: Int): String = {
+          val call = s"$typeName.zipWith(${operands(n, success, failure, _ => false)}, (${lambdaParams(n)}) -> null)"
+          if (typeName == "Try") xs"""
+            final Try<Object> actual = $call;
+            $assertThat(actual.isFailure()).isTrue();
+            $assertThat(actual.getCause()).isInstanceOf(NullPointerException.class).hasMessage("Try.zipWith: f returned null");
+          """ else xs"""
+            $assertThatThrownBy(() -> $call).isInstanceOf(NullPointerException.class).hasMessage("$typeName.zipWith: f returned null");
+          """
+        }
+
+        xs"""
+          public class $className {
+
+              ${arities.gen(n => xs"""
+                @$test
+                public void shouldZip${n}Successes() {
+                    $assertThat($typeName.zip(${operands(n, success, failure, _ => false)})).isEqualTo(${wrapSuccess(s"$Tuple.of(${ints(n)})")});
+                }
+
+                @$test
+                public void shouldZipWith${n}Successes() {
+                    final $AtomicInteger calls = new $AtomicInteger();
+                    final ${valueType.replace("Integer", "String")} actual = $typeName.zipWith(${operands(n, success, failure, _ => false)}, (${lambdaParams(n)}) -> {
+                        calls.incrementAndGet();
+                        return ${concatenation(n)};
+                    });
+                    $assertThat(actual).isEqualTo(${wrapSuccess(s""""${digits(n)}"""")});
+                    $assertThat(calls.get()).isEqualTo(1);
+                }
+
+                @$test
+                public void shouldFailWhenOneOf${n}Fails() {
+                    ${(1 to n).gen(k => xs"""
+                      final $valueType failing$k = ${failure(k)};
+                      ${failureAssertion(s"$typeName.zip(${operands(n, success, j => s"failing$j", _ == k)})", s"failing$k")}
+                      ${failureAssertion(s"$typeName.zipWith(${operands(n, success, j => s"failing$j", _ == k)}, ${notCalled(n)})", s"failing$k")}
+                    """)(using "\n")}
+                }
+
+                ${(exactFailureInstance).gen(xs"""
+                  @$test
+                  public void shouldReturnTheFirstFailureOf${n}InArgumentOrder() {
+                      ${(1 to n).gen(k => s"final $valueType failing$k = ${failure(k)};")(using "\n")}
+                      ${(1 to n).gen(k => xs"""
+                        ${failureAssertion(s"$typeName.zip(${operands(n, success, j => s"failing$j", _ >= k)})", s"failing$k")}
+                        ${failureAssertion(s"$typeName.zipWith(${operands(n, success, j => s"failing$j", _ >= k)}, ${notCalled(n)})", s"failing$k")}
+                      """)(using "\n")}
+                  }
+                """)}
+
+                ${(typeName == "Try").gen(xs"""
+                  @$test
+                  public void shouldCaptureWhatTheCombinerOf${n}Throws() {
+                      final RuntimeException boom = new IllegalStateException("boom");
+                      $assertThat(Try.zipWith(${operands(n, success, failure, _ => false)}, (${ignoredParams(n)}) -> {
+                          throw boom;
+                      })).isEqualTo(Try.failure(boom));
+                  }
+                """)}
+
+                @$test
+                public void shouldRejectANullResultOfZipWith$n() {
+                    ${nullResultAssertion(n)}
+                }
+
+                @$test
+                public void shouldRejectANullArgumentOf$n() {
+                    ${(1 to n).gen(k => xs"""
+                      $assertThatThrownBy(() -> $typeName.zip(${operands(n, success, _ => "null", _ == k)})).isInstanceOf(NullPointerException.class).hasMessage("$paramPrefix$k is null");
+                      $assertThatThrownBy(() -> $typeName.zipWith(${operands(n, success, _ => "null", _ == k)}, ${notCalled(n)})).isInstanceOf(NullPointerException.class).hasMessage("$paramPrefix$k is null");
+                    """)(using "\n")}
+                    $assertThatThrownBy(() -> $typeName.zipWith(${operands(n, success, failure, _ => false)}, null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+                }
+              """)(using "\n\n")}
+          }
+        """
+      })
+    }
+
+    genFailFastZipTest("Option", "o", "Option<Integer>",
+      j => s"Option.some($j)", v => s"Option.some($v)", _ => "Option.<Integer>none()", exactFailureInstance = false)
+    genFailFastZipTest("Either", "e", "Either<String, Integer>",
+      j => s"Either.<String, Integer>right($j)", v => s"Either.right($v)", j => s"""Either.<String, Integer>left("e$j")""", exactFailureInstance = true)
+    genFailFastZipTest("Try", "t", "Try<Integer>",
+      j => s"Try.success($j)", v => s"Try.success($v)", j => s"""Try.<Integer>failure(new IllegalStateException("e$j"))""", exactFailureInstance = true)
+
+    /**
+     * Validation: accumulating, the errors of every Invalid operand in argument order.
+     */
+    genVavrFile("com.guizmaii.zazr.control", "ValidationZipTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+
+      val test = im.getType("org.junit.jupiter.api.Test")
+      val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
+      val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
+      val AtomicInteger = im.getType("java.util.concurrent.atomic.AtomicInteger")
+      val Tuple = im.getType("com.guizmaii.zazr.Tuple")
+      val NonEmptyVector = im.getType("com.guizmaii.zazr.collection.NonEmptyVector")
+
+      def valid(j: Int): String = s"Validation.<String, Integer>valid($j)"
+      def invalid(j: Int): String = s"""Validation.<String, Integer>invalid("e$j")"""
+      def errors(ks: Seq[Int]): String = s"""Validation.invalidAll($NonEmptyVector.of(${ks.gen(k => s""""e$k"""")(using ", ")}))"""
+      def all(n: Int): String = operands(n, valid, invalid, _ => false)
+
+      xs"""
+        public class $className {
+
+            ${arities.gen(n => xs"""
+              @$test
+              public void shouldZip${n}Valids() {
+                  $assertThat(Validation.zip(${all(n)})).isEqualTo(Validation.valid($Tuple.of(${ints(n)})));
+              }
+
+              @$test
+              public void shouldZipWith${n}Valids() {
+                  final $AtomicInteger calls = new $AtomicInteger();
+                  final Validation<String, String> actual = Validation.zipWith(${all(n)}, (${lambdaParams(n)}) -> {
+                      calls.incrementAndGet();
+                      return ${concatenation(n)};
+                  });
+                  $assertThat(actual).isEqualTo(Validation.valid("${digits(n)}"));
+                  $assertThat(calls.get()).isEqualTo(1);
+              }
+
+              @$test
+              public void shouldKeepTheErrorsOfTheOneInvalidOf$n() {
+                  ${(1 to n).gen(k => xs"""
+                    $assertThat(Validation.zip(${operands(n, valid, invalid, _ == k)})).isEqualTo(${errors(Seq(k))});
+                    $assertThat(Validation.zipWith(${operands(n, valid, invalid, _ == k)}, ${notCalled(n)})).isEqualTo(${errors(Seq(k))});
+                  """)(using "\n")}
+              }
+
+              @$test
+              public void shouldConcatenateTheErrorsOfTwoInvalidsOf${n}InArgumentOrder() {
+                  ${(for (k <- 1 to n; m <- (k + 1) to n) yield xs"""
+                    $assertThat(Validation.zip(${operands(n, valid, invalid, j => j == k || j == m)})).isEqualTo(${errors(Seq(k, m))});
+                    $assertThat(Validation.zipWith(${operands(n, valid, invalid, j => j == k || j == m)}, ${notCalled(n)})).isEqualTo(${errors(Seq(k, m))});
+                  """).mkString("\n")}
+              }
+
+              @$test
+              public void shouldConcatenateTheErrorsOf${n}InvalidsInArgumentOrder() {
+                  $assertThat(Validation.zip(${operands(n, valid, invalid, _ => true)})).isEqualTo(${errors(1 to n)});
+                  $assertThat(Validation.zipWith(${operands(n, valid, invalid, _ => true)}, ${notCalled(n)})).isEqualTo(${errors(1 to n)});
+              }
+
+              @$test
+              public void shouldRejectANullResultOfZipWith$n() {
+                  $assertThatThrownBy(() -> Validation.zipWith(${all(n)}, (${lambdaParams(n)}) -> null)).isInstanceOf(NullPointerException.class).hasMessage("Validation.zipWith: f returned null");
+              }
+
+              @$test
+              public void shouldRejectANullArgumentOf$n() {
+                  ${(1 to n).gen(k => xs"""
+                    $assertThatThrownBy(() -> Validation.zip(${operands(n, valid, _ => "null", _ == k)})).isInstanceOf(NullPointerException.class).hasMessage("v$k is null");
+                    $assertThatThrownBy(() -> Validation.zipWith(${operands(n, valid, _ => "null", _ == k)}, ${notCalled(n)})).isInstanceOf(NullPointerException.class).hasMessage("v$k is null");
+                  """)(using "\n")}
+                  $assertThatThrownBy(() -> Validation.zipWith(${all(n)}, null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+              }
+            """)(using "\n\n")}
+        }
+      """
+    })
+
+    /**
+     * Lazy: nothing is evaluated before the result is, the operands are evaluated in argument order, once.
+     */
+    genVavrFile("com.guizmaii.zazr", "LazyZipTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+
+      val test = im.getType("org.junit.jupiter.api.Test")
+      val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
+      val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
+      val AtomicInteger = im.getType("java.util.concurrent.atomic.AtomicInteger")
+      val ArrayList = im.getType("java.util.ArrayList")
+      val List = im.getType("java.util.List")
+
+      def lazies(n: Int): String = (1 to n).gen(j => s"l$j")(using ", ")
+      def tracked(n: Int): String = (1 to n).gen(j => xs"""
+        final Lazy<Integer> l$j = Lazy.of(() -> {
+            order.add($j);
+            return $j;
+        });
+      """)(using "\n")
+      def tupleType(n: Int): String = s"Tuple$n<${(1 to n).gen(_ => "Integer")(using ", ")}>"
+
+      xs"""
+        public class $className {
+
+            ${arities.gen(n => xs"""
+              @$test
+              public void shouldNotEvaluateBeforeTheZipOf${n}Is() {
+                  final $List<Integer> order = new $ArrayList<>();
+                  ${tracked(n)}
+                  final Lazy<${tupleType(n)}> zipped = Lazy.zip(${lazies(n)});
+                  final Lazy<String> combined = Lazy.zipWith(${lazies(n)}, (${lambdaParams(n)}) -> ${concatenation(n)});
+                  $assertThat(zipped.isEvaluated()).isFalse();
+                  $assertThat(combined.isEvaluated()).isFalse();
+                  ${(1 to n).gen(j => s"$assertThat(l$j.isEvaluated()).isFalse();")(using "\n")}
+                  $assertThat(order).isEmpty();
+              }
+
+              @$test
+              public void shouldEvaluateTheZipOf${n}InArgumentOrderAndCacheIt() {
+                  final $List<Integer> order = new $ArrayList<>();
+                  ${tracked(n)}
+                  final Lazy<${tupleType(n)}> zipped = Lazy.zip(${lazies(n)});
+                  $assertThat(zipped.get()).isEqualTo(Tuple.of(${ints(n)}));
+                  $assertThat(order).containsExactly(${ints(n)});
+                  $assertThat(zipped.isEvaluated()).isTrue();
+                  ${(1 to n).gen(j => s"$assertThat(l$j.isEvaluated()).isTrue();")(using "\n")}
+                  $assertThat(zipped.get()).isSameAs(zipped.get());
+                  $assertThat(order).containsExactly(${ints(n)});
+              }
+
+              @$test
+              public void shouldEvaluateTheZipWithOf${n}InArgumentOrderAndCacheIt() {
+                  final $List<Integer> order = new $ArrayList<>();
+                  final $AtomicInteger calls = new $AtomicInteger();
+                  ${tracked(n)}
+                  final Lazy<String> combined = Lazy.zipWith(${lazies(n)}, (${lambdaParams(n)}) -> {
+                      calls.incrementAndGet();
+                      return ${concatenation(n)};
+                  });
+                  $assertThat(calls.get()).isEqualTo(0);
+                  $assertThat(combined.get()).isEqualTo("${digits(n)}");
+                  $assertThat(order).containsExactly(${ints(n)});
+                  $assertThat(combined.get()).isEqualTo("${digits(n)}");
+                  $assertThat(calls.get()).isEqualTo(1);
+                  $assertThat(order).containsExactly(${ints(n)});
+              }
+
+              @$test
+              public void shouldHoldNullFromTheZipWithOf$n() {
+                  final Lazy<Object> combined = Lazy.zipWith(${(1 to n).gen(j => s"Lazy.of(() -> $j)")(using ", ")}, (${ignoredParams(n)}) -> null);
+                  $assertThat(combined.get()).isNull();
+                  $assertThat(combined.isEvaluated()).isTrue();
+              }
+
+              @$test
+              public void shouldZip${n}WithANullValue() {
+                  final Lazy<${tupleType(n)}> zipped = Lazy.zip(${(1 to n).gen(j => if (j == 1) "Lazy.<Integer>of(() -> null)" else s"Lazy.of(() -> $j)")(using ", ")});
+                  $assertThat(zipped.get()).isEqualTo(Tuple.of(${(1 to n).gen(j => if (j == 1) "null" else s"$j")(using ", ")}));
+              }
+
+              @$test
+              public void shouldRejectANullArgumentOf$n() {
+                  ${(1 to n).gen(k => xs"""
+                    $assertThatThrownBy(() -> Lazy.zip(${(1 to n).gen(j => if (j == k) "null" else s"Lazy.of(() -> $j)")(using ", ")})).isInstanceOf(NullPointerException.class).hasMessage("l$k is null");
+                    $assertThatThrownBy(() -> Lazy.zipWith(${(1 to n).gen(j => if (j == k) "null" else s"Lazy.of(() -> $j)")(using ", ")}, ${notCalled(n)})).isInstanceOf(NullPointerException.class).hasMessage("l$k is null");
+                  """)(using "\n")}
+                  $assertThatThrownBy(() -> Lazy.zipWith(${(1 to n).gen(j => s"Lazy.of(() -> $j)")(using ", ")}, null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+              }
+            """)(using "\n\n")}
+        }
+      """
     })
   }
 }

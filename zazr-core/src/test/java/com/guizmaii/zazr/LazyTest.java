@@ -4,6 +4,7 @@ import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Try;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -354,6 +355,109 @@ public class LazyTest {
             final Lazy<Integer> lazy = Lazy.of(() -> 1);
             lazy.get();
             assertThat(lazy.toString()).isEqualTo("Lazy(1)");
+        }
+    }
+
+    @Nested
+    class ZipTests {
+
+        private final ArrayList<Integer> order = new ArrayList<>();
+
+        private Lazy<Integer> tracked(int value) {
+            return Lazy.of(() -> {
+                order.add(value);
+                return value;
+            });
+        }
+
+        @Test
+        public void shouldNotEvaluateBeforeTheZipIs() {
+            final Lazy<Integer> a = tracked(1);
+            final Lazy<Integer> b = tracked(2);
+            final Lazy<Tuple2<Integer, Integer>> zipped = a.zip(b);
+            final Lazy<Integer> combined = a.zipWith(b, Integer::sum);
+            final Lazy<Integer> left = a.zipLeft(b);
+            final Lazy<Integer> right = a.zipRight(b);
+            assertThat(zipped.isEvaluated()).isFalse();
+            assertThat(combined.isEvaluated()).isFalse();
+            assertThat(left.isEvaluated()).isFalse();
+            assertThat(right.isEvaluated()).isFalse();
+            assertThat(a.isEvaluated()).isFalse();
+            assertThat(b.isEvaluated()).isFalse();
+            assertThat(order).isEmpty();
+        }
+
+        @Test
+        public void shouldEvaluateTheZipInOrderAndCacheIt() {
+            final Lazy<Integer> a = tracked(1);
+            final Lazy<Integer> b = tracked(2);
+            final Lazy<Tuple2<Integer, Integer>> zipped = a.zip(b);
+            assertThat(zipped.get()).isEqualTo(Tuple.of(1, 2));
+            assertThat(order).containsExactly(1, 2);
+            assertThat(zipped.isEvaluated()).isTrue();
+            assertThat(a.isEvaluated()).isTrue();
+            assertThat(b.isEvaluated()).isTrue();
+            assertThat(zipped.get()).isSameAs(zipped.get());
+            assertThat(order).containsExactly(1, 2);
+        }
+
+        @Test
+        public void shouldCombineWithZipWithOnceInOrder() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Lazy<String> combined = tracked(1).zipWith(tracked(2), (x, y) -> {
+                calls.incrementAndGet();
+                return "" + x + y;
+            });
+            assertThat(calls.get()).isEqualTo(0);
+            assertThat(combined.get()).isEqualTo("12");
+            assertThat(combined.get()).isEqualTo("12");
+            assertThat(calls.get()).isEqualTo(1);
+            assertThat(order).containsExactly(1, 2);
+        }
+
+        @Test
+        public void shouldHoldNullFromZipWith() {
+            final Lazy<Object> combined = Lazy.of(() -> 1).zipWith(Lazy.of(() -> 2), (_, _) -> null);
+            assertThat(combined.get()).isNull();
+            assertThat(combined.isEvaluated()).isTrue();
+        }
+
+        @Test
+        public void shouldZipANullValue() {
+            assertThat(Lazy.<Integer>of(() -> null).zip(Lazy.of(() -> 2)).get()).isEqualTo(Tuple.of(null, 2));
+            assertThat(Lazy.of(() -> 1).zip(Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, null));
+        }
+
+        @Test
+        public void shouldKeepTheLeftValueWithZipLeft() {
+            final Lazy<Integer> b = tracked(2);
+            final Lazy<Integer> left = tracked(1).zipLeft(b);
+            assertThat(left.get()).isEqualTo(1);
+            assertThat(order).containsExactly(1, 2);
+            assertThat(b.isEvaluated()).isTrue();
+            assertThat(left.get()).isEqualTo(1);
+            assertThat(order).containsExactly(1, 2);
+        }
+
+        @Test
+        public void shouldKeepTheRightValueWithZipRight() {
+            final Lazy<Integer> a = tracked(1);
+            final Lazy<Integer> right = a.zipRight(tracked(2));
+            assertThat(right.get()).isEqualTo(2);
+            assertThat(order).containsExactly(1, 2);
+            assertThat(a.isEvaluated()).isTrue();
+            assertThat(right.get()).isEqualTo(2);
+            assertThat(order).containsExactly(1, 2);
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            final Lazy<Integer> lazy = Lazy.of(() -> 1);
+            assertThatThrownBy(() -> lazy.zip(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zipWith(Lazy.of(() -> 2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> lazy.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
 }

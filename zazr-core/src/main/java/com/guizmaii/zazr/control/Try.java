@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1141,6 +1142,631 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         }
     }
 
+    // -- zip (design 3.4)
+
+    /**
+     * Pairs this value with {@code that}'s, failing fast: {@code Success} of the pair when both are {@code Success},
+     * otherwise the first {@code Failure} of the two (this one, then {@code that}), as is. The same as
+     * {@link #zipWith(Try, BiFunction)} with {@code Tuple::of}.
+     * <pre>{@code
+     * Try.success(1).zip(Try.success("a"));   // = Success((1, a))
+     * Try.success(1).zip(Try.failure(error)); // = Failure(error)
+     * }</pre>
+     *
+     * @param that the other {@code Try}
+     * @param <U>  the value type of {@code that}
+     * @return {@code Success} of the pair of values, or the first {@code Failure}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <U extends @Nullable Object> Try<Tuple2<T, U>> zip(Try<? extends U> that) {
+        return zipWith(that, Tuple::of);
+    }
+
+    /**
+     * Combines this value with {@code that}'s through {@code f}, failing fast: {@code Success} of the result when
+     * both are {@code Success}, otherwise the first {@code Failure} of the two (this one, then {@code that}), as is.
+     * {@code f} is called only when both are {@code Success} and runs under {@code Try} like a {@link #map(Function)}
+     * mapper: a non-fatal exception it throws is captured as a {@code Failure}, a fatal one is rethrown, and a
+     * {@code null} result is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold
+     * {@code null} (design 3.9).
+     *
+     * @param that the other {@code Try}
+     * @param f    combines the two values
+     * @param <U>  the value type of {@code that}
+     * @param <V>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if {@code that} or {@code f} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object, V extends @Nullable Object> Try<V> zipWith(Try<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(f, "f is null");
+        if (isFailure()) {
+            return (Try<V>) this;
+        }
+        if (that.isFailure()) {
+            return (Try<V>) that;
+        }
+        try {
+            final V value = f.apply(get(), that.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * {@link #zip(Try)} keeping this value: this {@code Success} when both are {@code Success}, otherwise the first
+     * {@code Failure} of the two, as is. Both sides are inspected, so this is not {@link #orElse(Try)}:
+     * {@code Success(1).zipLeft(Failure(e))} is {@code Failure(e)}.
+     *
+     * @param that the other {@code Try}
+     * @param <U>  the value type of {@code that}
+     * @return this {@code Success}, or the first {@code Failure}
+     * @throws NullPointerException if {@code that} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Try<T> zipLeft(Try<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isFailure() || that.isSuccess() ? this : (Try<T>) that;
+    }
+
+    /**
+     * {@link #zip(Try)} keeping {@code that}'s value: {@code that} when both are {@code Success}, otherwise the
+     * first {@code Failure} of the two, as is. Both sides are inspected: {@code Failure(e).zipRight(Success(1))} is
+     * {@code Failure(e)}.
+     *
+     * @param that the other {@code Try}
+     * @param <U>  the value type of {@code that}
+     * @return {@code that}, or the first {@code Failure}
+     * @throws NullPointerException if {@code that} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Try<U> zipRight(Try<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isFailure() ? (Try<U>) this : narrow(that);
+    }
+
+    /**
+     * Pairs the values of two {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Try<Tuple2<T1, T2>> zip(Try<? extends T1> t1, Try<? extends T2> t2) {
+        return zipWith(t1, t2, Tuple::of);
+    }
+
+    /**
+     * Combines the values of two {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * Pairs the values of three {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Try<Tuple3<T1, T2, T3>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3) {
+        return zipWith(t1, t2, t3, Tuple::of);
+    }
+
+    /**
+     * Combines the values of three {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(t3, "t3 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        if (t3.isFailure()) {
+            return (Try<R>) t3;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get(), t3.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * Pairs the values of four {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Try<Tuple4<T1, T2, T3, T4>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4) {
+        return zipWith(t1, t2, t3, t4, Tuple::of);
+    }
+
+    /**
+     * Combines the values of four {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(t3, "t3 is null");
+        Objects.requireNonNull(t4, "t4 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        if (t3.isFailure()) {
+            return (Try<R>) t3;
+        }
+        if (t4.isFailure()) {
+            return (Try<R>) t4;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * Pairs the values of five {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Try<Tuple5<T1, T2, T3, T4, T5>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5) {
+        return zipWith(t1, t2, t3, t4, t5, Tuple::of);
+    }
+
+    /**
+     * Combines the values of five {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(t3, "t3 is null");
+        Objects.requireNonNull(t4, "t4 is null");
+        Objects.requireNonNull(t5, "t5 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        if (t3.isFailure()) {
+            return (Try<R>) t3;
+        }
+        if (t4.isFailure()) {
+            return (Try<R>) t4;
+        }
+        if (t5.isFailure()) {
+            return (Try<R>) t5;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * Pairs the values of six {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param t6  the sixth {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <T6> the value type of {@code t6}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Try<Tuple6<T1, T2, T3, T4, T5, T6>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6) {
+        return zipWith(t1, t2, t3, t4, t5, t6, Tuple::of);
+    }
+
+    /**
+     * Combines the values of six {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param t6  the sixth {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <T6> the value type of {@code t6}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(t3, "t3 is null");
+        Objects.requireNonNull(t4, "t4 is null");
+        Objects.requireNonNull(t5, "t5 is null");
+        Objects.requireNonNull(t6, "t6 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        if (t3.isFailure()) {
+            return (Try<R>) t3;
+        }
+        if (t4.isFailure()) {
+            return (Try<R>) t4;
+        }
+        if (t5.isFailure()) {
+            return (Try<R>) t5;
+        }
+        if (t6.isFailure()) {
+            return (Try<R>) t6;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * Pairs the values of seven {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param t6  the sixth {@code Try}
+     * @param t7  the seventh {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <T6> the value type of {@code t6}
+     * @param <T7> the value type of {@code t7}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Try<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7) {
+        return zipWith(t1, t2, t3, t4, t5, t6, t7, Tuple::of);
+    }
+
+    /**
+     * Combines the values of seven {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param t6  the sixth {@code Try}
+     * @param t7  the seventh {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <T6> the value type of {@code t6}
+     * @param <T7> the value type of {@code t7}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(t3, "t3 is null");
+        Objects.requireNonNull(t4, "t4 is null");
+        Objects.requireNonNull(t5, "t5 is null");
+        Objects.requireNonNull(t6, "t6 is null");
+        Objects.requireNonNull(t7, "t7 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        if (t3.isFailure()) {
+            return (Try<R>) t3;
+        }
+        if (t4.isFailure()) {
+            return (Try<R>) t4;
+        }
+        if (t5.isFailure()) {
+            return (Try<R>) t5;
+        }
+        if (t6.isFailure()) {
+            return (Try<R>) t6;
+        }
+        if (t7.isFailure()) {
+            return (Try<R>) t7;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
+    /**
+     * Pairs the values of eight {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
+     * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
+     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param t6  the sixth {@code Try}
+     * @param t7  the seventh {@code Try}
+     * @param t8  the eighth {@code Try}
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <T6> the value type of {@code t6}
+     * @param <T7> the value type of {@code t7}
+     * @param <T8> the value type of {@code t8}
+     * @return {@code Success} of the tuple of the values, or the first {@code Failure}
+     * @throws NullPointerException if any argument is null
+     */
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Try<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7, Try<? extends T8> t8) {
+        return zipWith(t1, t2, t3, t4, t5, t6, t7, t8, Tuple::of);
+    }
+
+    /**
+     * Combines the values of eight {@code Try}s through {@code f}, failing fast: {@code Success} of the result when
+     * every argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. {@code f} is
+     * called only when every argument is a {@code Success}, with the values in argument order, and runs under
+     * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
+     * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     *
+     * @param t1  the first {@code Try}
+     * @param t2  the second {@code Try}
+     * @param t3  the third {@code Try}
+     * @param t4  the fourth {@code Try}
+     * @param t5  the fifth {@code Try}
+     * @param t6  the sixth {@code Try}
+     * @param t7  the seventh {@code Try}
+     * @param t8  the eighth {@code Try}
+     * @param f  combines the values
+     * @param <T1> the value type of {@code t1}
+     * @param <T2> the value type of {@code t2}
+     * @param <T3> the value type of {@code t3}
+     * @param <T4> the value type of {@code t4}
+     * @param <T5> the value type of {@code t5}
+     * @param <T6> the value type of {@code t6}
+     * @param <T7> the value type of {@code t7}
+     * @param <T8> the value type of {@code t8}
+     * @param <R>  the result type
+     * @return {@code Success} of the combined value, or the first {@code Failure}, or a {@code Failure} of what
+     *         {@code f} threw or of a {@code NullPointerException} if it returned {@code null}
+     * @throws NullPointerException if any argument is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7, Try<? extends T8> t8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+        Objects.requireNonNull(t1, "t1 is null");
+        Objects.requireNonNull(t2, "t2 is null");
+        Objects.requireNonNull(t3, "t3 is null");
+        Objects.requireNonNull(t4, "t4 is null");
+        Objects.requireNonNull(t5, "t5 is null");
+        Objects.requireNonNull(t6, "t6 is null");
+        Objects.requireNonNull(t7, "t7 is null");
+        Objects.requireNonNull(t8, "t8 is null");
+        Objects.requireNonNull(f, "f is null");
+        if (t1.isFailure()) {
+            return (Try<R>) t1;
+        }
+        if (t2.isFailure()) {
+            return (Try<R>) t2;
+        }
+        if (t3.isFailure()) {
+            return (Try<R>) t3;
+        }
+        if (t4.isFailure()) {
+            return (Try<R>) t4;
+        }
+        if (t5.isFailure()) {
+            return (Try<R>) t5;
+        }
+        if (t6.isFailure()) {
+            return (Try<R>) t6;
+        }
+        if (t7.isFailure()) {
+            return (Try<R>) t7;
+        }
+        if (t8.isFailure()) {
+            return (Try<R>) t8;
+        }
+        try {
+            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get(), t8.get());
+            return value == null ? TryModule.nullZipResult() : new Success<>(value);
+        } catch (Throwable x) {
+            return new Failure<>(x);
+        }
+    }
+
     // -- try with resources
 
     /**
@@ -1180,5 +1806,10 @@ interface TryModule {
     /** The Failure a capturing constructor returns when the computation yields null, which Success cannot hold. */
     static <T extends @Nullable Object> Try<T> nullResult(String constructor) {
         return new Try.Failure<>(new NullPointerException(constructor + ": the computation returned null"));
+    }
+
+    /** The Failure {@code zipWith} returns when {@code f} yields null, which Success cannot hold. */
+    static <T extends @Nullable Object> Try<T> nullZipResult() {
+        return new Try.Failure<>(new NullPointerException("Try.zipWith: f returned null"));
     }
 }

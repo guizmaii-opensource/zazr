@@ -264,7 +264,7 @@ Things ZIO does that **do not** port and should not be imitated:
 
 ### 3.4 `zip` at arity N (the replacement for `ap` and `Builder`)
 
-**Decision.** Every control type gets the same generated family, arities 2..8 (matching `Tuple8`):
+**Decision.** Every control type gets the same family, arities 2..8 (matching `Tuple8`):
 
 ```java
 // instance
@@ -272,21 +272,56 @@ Things ZIO does that **do not** port and should not be imitated:
 <B, C> Option<C> zipWith(Option<B> that, BiFunction<A,B,C> f);
 <B> Option<A> zipLeft(Option<B> that);
 <B> Option<B> zipRight(Option<B> that);
-// static, generated for N = 2..8
+// static, for N = 2..8
 static <A,B,C> Option<Tuple3<A,B,C>> zip(Option<A> a, Option<B> b, Option<C> c);
 static <A,B,C,D> Option<D> zipWith(Option<A> a, Option<B> b, Option<C> c, Function3<A,B,C,D> f);
 ```
 
-Same for `Either<L,·>`, `Try`, `Validation<E,·>`, `Lazy`, `Future` (if kept), and `Tuple` itself.
+Same for `Either<L,·>`, `Try`, `Validation<E,·>` and `Lazy`. `Tuple` gets no new methods: `TupleN.concat(TupleM)` is
+already the flattening operation for tuples.
 The rule that makes chaining unnecessary: **arity is fixed at the call site by the static overload**, so
 users never see `Tuple2<Tuple2<A,B>,C>`. This is ZIO's `Zippable` result without the type-level
 machinery, and it is exactly what the migration guide says higher-arity zips were for.
 
-Semantics per type: `Option`/`Either`/`Try`/`Lazy` fail-fast (first `None`/`Left`/`Failure` wins).
+Semantics per type: `Option`/`Either`/`Try` fail-fast (first `None`/`Left`/`Failure` wins), `Lazy` defers.
 `Validation` accumulates: `Invalid(e1) zip Invalid(e2) == Invalid(e1 ++ e2)`.
 
 `Validation.Builder..Builder8` and instance `combine` are deleted (done in #22, with the instance `zip` family; the
-static arities come here).
+static arities came in #23).
+
+**Decided while implementing (#23):**
+- **Instance family** on `Option`, `Either`, `Try` and `Lazy` (`Validation` has had it since #22, with the same
+  signatures, wildcards and messages): `zip(that)` returning a `Tuple2`, `zipWith(that, BiFunction)`, `zipLeft(that)`,
+  `zipRight(that)`. Fail-fast in receiver-then-argument order: `Option` yields `None` when either side is `None`;
+  `Either` returns the first `Left` and `Try` the first `Failure`, unchanged (narrowed, no reallocation).
+  `zipLeft`/`zipRight` inspect both sides and keep one, like ZIO's `<*` and `*>`; they are not `orElse`:
+  `Some(1).zipLeft(None)` is `None`. When both sides succeed, `zipLeft` returns the receiver and `zipRight` the
+  argument, as is.
+- **Static family**, N = 2..8: `zip(a1..aN)` returning the type wrapping `TupleN`, and `zipWith(a1..aN, f)` where `f`
+  is a `BiFunction` for N = 2 and `Function3..Function8` for N = 3..8. Fail-fast in argument order for
+  `Option`/`Either`/`Try`: the first failure is returned as is, `f` is not called, and no argument after the failing
+  one is inspected (every argument is null-checked first). `Validation` accumulates: `Invalid` of the errors of every
+  `Invalid` argument, concatenated in argument order (one `Vector.Builder`, created by the first `Invalid`, as
+  `forEach` does), `Valid` only when every argument is. Type parameters follow the wildcard style of the rest of the
+  API (`Option<? extends B>`, `BiFunction<? super A, ? super B, ? extends C>`), and the error side of
+  `Either`/`Validation` is shared across arguments (`Either<? extends L, ? extends A1>` ... yielding
+  `Either<L, TupleN<...>>`).
+- **`Lazy`** has no failure: the result, instance or static, is an unevaluated `Lazy` that, when first forced, forces
+  the receiver then the argument (the arguments in argument order), applies `f` and caches the result; `f` runs at
+  most once. A `Lazy` may hold `null` (3.11), so `f` may return `null` and a `null` operand value is passed through.
+- **Null policy.** A null argument, container or `f`, is a `NullPointerException` with `<parameter> is null`
+  (`that is null`, `o1 is null`, `f is null`). `f` returning null where the wrapper cannot hold it is rejected at the
+  call site with `<Type>.zipWith: f returned null`, as 3.5 states for `Validation`, on `Option`, `Either` and
+  `Validation`. `Try` is different because `f` runs under `Try` like a `map` mapper: what it throws is captured as a
+  `Failure` (fatal throwables propagate) and a null result is a `Failure` of a `NullPointerException` carrying the
+  same message, not a thrown one; every non-fatal outcome of the computation ends up in the returned `Try`, as
+  `Try.of` and `Try.map` already promise.
+- **Where the code lives.** The main-code methods are hand-written in `Option.java`, `Either.java`, `Try.java`,
+  `Validation.java` and `Lazy.java`: the generator cannot own part of a hand-written file. `zipWith` at every arity
+  applies `f` to the unwrapped values directly, never through an intermediate `TupleN` or a chain of arity-2 zips
+  producing nested tuples; `zip` is `zipWith(..., Tuple::of)`, one tuple allocation. The static family's test matrix
+  is generated (`genControlZipTests` in `Generator.scala`, one `<Type>ZipTest` class per type under `src-gen/test`);
+  the instance methods are tested by hand in `OptionTest`, `EitherTest`, `TryTest` and `LazyTest`.
 
 ### 3.5 `Validation<E, A>` with a `NonEmptyVector<E>` error side
 
