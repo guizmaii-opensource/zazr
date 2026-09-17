@@ -1768,6 +1768,14 @@ def generateTestClasses(): Unit = {
                           throw boom;
                       })).isEqualTo(Try.failure(boom));
                   }
+
+                  @$test
+                  public void shouldRethrowAFatalCombinerErrorOf$n() {
+                      final UnknownError fatal = new UnknownError("fatal");
+                      $assertThatThrownBy(() -> Try.zipWith(${operands(n, success, failure, _ => false)}, (${ignoredParams(n)}) -> {
+                          throw fatal;
+                      })).isSameAs(fatal);
+                  }
                 """)}
 
                 @$test

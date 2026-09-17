@@ -307,8 +307,9 @@ static arities came in #23).
   `Either`/`Validation` is shared across arguments (`Either<? extends L, ? extends A1>` ... yielding
   `Either<L, TupleN<...>>`).
 - **`Lazy`** has no failure: the result, instance or static, is an unevaluated `Lazy` that, when first forced, forces
-  the receiver then the argument (the arguments in argument order), applies `f` and caches the result; `f` runs at
-  most once. A `Lazy` may hold `null` (3.11), so `f` may return `null` and a `null` operand value is passed through.
+  the receiver then the argument (the arguments in argument order), applies `f` and caches the result. `f` runs
+  once on a successful evaluation; if it throws, nothing is cached and it runs again on the next `get()`, as for
+  `Lazy.of`. A `Lazy` may hold `null` (3.11), so `f` may return `null` and a `null` operand value is passed through.
 - **Null policy.** A null argument, container or `f`, is a `NullPointerException` with `<parameter> is null`
   (`that is null`, `o1 is null`, `f is null`). `f` returning null where the wrapper cannot hold it is rejected at the
   call site with `<Type>.zipWith: f returned null`, as 3.5 states for `Validation`, on `Option`, `Either` and

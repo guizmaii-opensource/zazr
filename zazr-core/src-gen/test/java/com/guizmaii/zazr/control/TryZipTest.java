@@ -58,6 +58,14 @@ public class TryZipTest {
     }
 
     @Test
+    public void shouldRethrowAFatalCombinerErrorOf2() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), (_, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
+    }
+
+    @Test
     public void shouldRejectANullResultOfZipWith2() {
         final Try<Object> actual = Try.zipWith(Try.success(1), Try.success(2), (a1, a2) -> null);
         assertThat(actual.isFailure()).isTrue();
@@ -121,6 +129,14 @@ public class TryZipTest {
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (_, _, _) -> {
             throw boom;
         })).isEqualTo(Try.failure(boom));
+    }
+
+    @Test
+    public void shouldRethrowAFatalCombinerErrorOf3() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (_, _, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
     }
 
     @Test
@@ -195,6 +211,14 @@ public class TryZipTest {
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), (_, _, _, _) -> {
             throw boom;
         })).isEqualTo(Try.failure(boom));
+    }
+
+    @Test
+    public void shouldRethrowAFatalCombinerErrorOf4() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), (_, _, _, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
     }
 
     @Test
@@ -277,6 +301,14 @@ public class TryZipTest {
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), (_, _, _, _, _) -> {
             throw boom;
         })).isEqualTo(Try.failure(boom));
+    }
+
+    @Test
+    public void shouldRethrowAFatalCombinerErrorOf5() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), (_, _, _, _, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
     }
 
     @Test
@@ -367,6 +399,14 @@ public class TryZipTest {
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6), (_, _, _, _, _, _) -> {
             throw boom;
         })).isEqualTo(Try.failure(boom));
+    }
+
+    @Test
+    public void shouldRethrowAFatalCombinerErrorOf6() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6), (_, _, _, _, _, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
     }
 
     @Test
@@ -465,6 +505,14 @@ public class TryZipTest {
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6), Try.success(7), (_, _, _, _, _, _, _) -> {
             throw boom;
         })).isEqualTo(Try.failure(boom));
+    }
+
+    @Test
+    public void shouldRethrowAFatalCombinerErrorOf7() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6), Try.success(7), (_, _, _, _, _, _, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
     }
 
     @Test
@@ -571,6 +619,14 @@ public class TryZipTest {
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6), Try.success(7), Try.success(8), (_, _, _, _, _, _, _, _) -> {
             throw boom;
         })).isEqualTo(Try.failure(boom));
+    }
+
+    @Test
+    public void shouldRethrowAFatalCombinerErrorOf8() {
+        final UnknownError fatal = new UnknownError("fatal");
+        assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6), Try.success(7), Try.success(8), (_, _, _, _, _, _, _, _) -> {
+            throw fatal;
+        })).isSameAs(fatal);
     }
 
     @Test

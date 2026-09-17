@@ -180,8 +180,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines this value with {@code that}'s through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates this value then {@code that}, applies {@code f} to the two values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param that the other {@code Lazy}
      * @param f    combines the two values
@@ -251,8 +252,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of two {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -291,8 +293,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of three {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -336,8 +339,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of four {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -386,8 +390,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of five {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -441,8 +446,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of six {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -501,8 +507,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of seven {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -566,8 +573,9 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Combines the values of eight {@code Lazy} values through {@code f}: an unevaluated {@code Lazy} that, when first
      * evaluated, evaluates every argument in argument order, applies {@code f} to their values and caches the result.
-     * Nothing is evaluated before that, and {@code f} runs at most once. A {@code Lazy} may hold {@code null}, so
-     * {@code f} may return it.
+     * Nothing is evaluated before that; {@code f} runs once on a successful evaluation, and if it throws nothing is
+     * cached and it runs again on the next {@link #get()}, as for {@link #of(Supplier)}. A {@code Lazy} may hold
+     * {@code null}, so {@code f} may return it.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
