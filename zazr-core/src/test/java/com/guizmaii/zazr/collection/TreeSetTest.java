@@ -1,5 +1,6 @@
 package com.guizmaii.zazr.collection;
 
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -423,5 +424,27 @@ public class TreeSetTest extends AbstractSortedSetTest {
     @Test
     public void shouldRejectNullElementOnAdd() {
         assertThatNullPointerException().isThrownBy(() -> TreeSet.<Integer>empty(nullsFirst(Comparators.naturalComparator())).add(null));
+    }
+
+    @Nested
+    class CollectTests {
+
+        @Test
+        public void shouldCollectWithAComparator() {
+            final TreeSet<String> actual = TreeSet.of(1, 2, 3)
+              .collect(java.util.Comparator.reverseOrder(), i -> i == 2 ? Option.<String>none() : Option.some("v" + i));
+            assertThat(actual.mkString()).isEqualTo("v3v1");
+            assertThat(actual.comparator().compare("a", "b")).isGreaterThan(0);
+        }
+
+        @Test
+        public void shouldCollectWithTheNaturalOrder() {
+            assertThat(TreeSet.of(3, 1, 2).collect(i -> i == 2 ? Option.<String>none() : Option.some("v" + i)).mkString()).isEqualTo("v1v3");
+        }
+
+        @Test
+        public void shouldThrowOnCollectWithNullComparator() {
+            org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> TreeSet.of(1).collect(null, i -> Option.some(i)));
+        }
     }
 }

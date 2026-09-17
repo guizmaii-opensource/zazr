@@ -1000,4 +1000,18 @@ public class ValidationTest {
             assertThrows(NullPointerException.class, () -> Validation.invalid("error").tap(null));
         }
     }
+
+    @Nested
+    class ForEachAccumulationTests {
+        @Test
+        public void shouldCallTheMapperForEveryElement() {
+            final java.util.List<Integer> seen = new ArrayList<>();
+            final Validation<Seq<String>, Seq<Integer>> actual = Validation.forEach(List.of(1, 2, 3), i -> {
+                seen.add(i);
+                return i == 2 ? Validation.invalid(List.of("e")) : Validation.valid(i);
+            });
+            assertThat(actual).isEqualTo(Validation.invalid(List.of("e")));
+            assertThat(seen).containsExactly(1, 2, 3);
+        }
+    }
 }

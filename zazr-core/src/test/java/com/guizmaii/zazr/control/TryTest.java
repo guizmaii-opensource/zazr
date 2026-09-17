@@ -1581,4 +1581,232 @@ public class TryTest {
         return Try.of(() -> "ok");
     }
 
+    @Nested
+    class CollectTests {
+        @Test
+        public void shouldCollectSuccessToSuccess() {
+            assertThat(Try.success(2).collect(i -> Option.some(i * 10))).isEqualTo(Try.success(20));
+        }
+
+        @Test
+        public void shouldFailWithNoSuchElementWhenTheMapperReturnsNone() {
+            final Try<Integer> actual = Try.success(2).collect(i -> Option.none());
+            assertThat(actual.isFailure()).isTrue();
+            assertThat(actual.getCause()).isInstanceOf(NoSuchElementException.class).hasMessage("Predicate does not hold for 2");
+        }
+
+        @Test
+        public void shouldReturnThisFailureWithoutCallingTheMapper() {
+            final Try<Integer> failure = failure();
+            assertThat(failure.collect(i -> {
+                throw new AssertionError("must not be called");
+            })).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldCaptureWhatTheMapperThrows() {
+            final RuntimeException thrown = error();
+            assertThat(Try.success(1).collect(i -> {
+                throw thrown;
+            }).getCause()).isSameAs(thrown);
+        }
+
+        @Test
+        public void shouldCaptureANullOptionFromTheMapperAsFailure() {
+            final Try<Object> actual = Try.success(1).collect(i -> null);
+            assertThat(actual.getCause()).isInstanceOf(NullPointerException.class).hasMessage("Try.collect: mapper returned null");
+        }
+
+        @Test
+        public void shouldCollectWithASwitchInsideTheLambda() {
+            final Try<Object> shape = Try.success("circle");
+            final Try<Integer> actual = shape.collect(s -> switch (s) {
+                case String str -> Option.some(str.length());
+                default -> Option.none();
+            });
+            assertThat(actual).isEqualTo(Try.success(6));
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> success().collect(null));
+        }
+    }
+
+    @Nested
+    class MapErrorTests {
+        @Test
+        public void shouldReturnThisOnSuccess() {
+            final Try<String> success = success();
+            assertThat(success.mapError(e -> {
+                throw new AssertionError("must not be called");
+            })).isSameAs(success);
+        }
+
+        @Test
+        public void shouldReplaceTheCauseOnFailure() {
+            final IOException cause = new IOException("io");
+            final Try<Object> actual = Try.failure(cause).mapError(e -> new IllegalStateException("wrapped", e));
+            assertThat(actual.isFailure()).isTrue();
+            assertThat(actual.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("wrapped");
+            assertThat(actual.getCause().getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldCaptureWhatTheMapperThrows() {
+            final RuntimeException thrown = error();
+            assertThat(failure().mapError(e -> {
+                throw thrown;
+            }).getCause()).isSameAs(thrown);
+        }
+
+        @Test
+        public void shouldFailWithNullPointerExceptionWhenTheMapperReturnsNull() {
+            assertThat(failure().mapError(e -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldRethrowAFatalMappedCause() {
+            assertThrows(InterruptedException.class, () -> failure().mapError(e -> new InterruptedException()));
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> failure().mapError(null));
+        }
+    }
+
+    @Nested
+    class CatchFamilyEdgeTests {
+        @Test
+        public void shouldCaptureWhatCatchSomeThrows() {
+            final RuntimeException thrown = error();
+            assertThat(failure().catchSome(RuntimeException.class, x -> {
+                throw thrown;
+            }).getCause()).isSameAs(thrown);
+        }
+
+        @Test
+        public void shouldFailWithNullPointerExceptionWhenCatchAllWithReturnsNull() {
+            assertThat(failure().catchAllWith(x -> null).getCause())
+              .isInstanceOf(NullPointerException.class).hasMessage("Try.catchAllWith: f returned null");
+        }
+
+        @Test
+        public void shouldFailWithNullPointerExceptionWhenCatchSomeWithReturnsNull() {
+            assertThat(failure().catchSomeWith(RuntimeException.class, x -> null).getCause())
+              .isInstanceOf(NullPointerException.class).hasMessage("Try.catchSomeWith: f returned null");
+        }
+
+        @Test
+        public void shouldReturnThisWhenCatchSomeWithDoesNotMatch() {
+            final Try<String> failure = failure();
+            assertThat(failure.catchSomeWith(IOException.class, x -> success())).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldReturnThisWhenCatchSomeWithOnSuccess() {
+            final Try<String> success = success();
+            assertThat(success.catchSomeWith(RuntimeException.class, x -> failure())).isSameAs(success);
+        }
+
+        @Test
+        public void shouldReturnTheTryTheRecoveryReturns() {
+            final Try<String> other = failure();
+            assertThat(TryTest.<String>failure().catchAllWith(x -> other)).isSameAs(other);
+            assertThat(TryTest.<String>failure().catchSomeWith(RuntimeException.class, x -> other)).isSameAs(other);
+        }
+
+        @Test
+        public void shouldThrowOnNullArguments() {
+            assertThrows(NullPointerException.class, () -> failure().catchAll(null));
+            assertThrows(NullPointerException.class, () -> failure().catchSome(null, x -> OK));
+            assertThrows(NullPointerException.class, () -> failure().catchSome(RuntimeException.class, null));
+            assertThrows(NullPointerException.class, () -> failure().catchAllWith(null));
+            assertThrows(NullPointerException.class, () -> failure().catchSomeWith(null, x -> success()));
+            assertThrows(NullPointerException.class, () -> failure().catchSomeWith(RuntimeException.class, null));
+        }
+    }
+
+    @Nested
+    class TapErrorOnSuccessTests {
+        @Test
+        public void shouldNotConsumeAnythingWhenCallingTapErrorWithExceptionTypeGivenSuccess() {
+            final String[] result = new String[]{OK};
+            final Try<String> success = success();
+            assertThat(success.tapError(RuntimeException.class, x -> result[0] = FAILURE)).isSameAs(success);
+            assertThat(result[0]).isEqualTo(OK);
+        }
+
+        @Test
+        public void shouldReturnThisOnTapErrorOfFailure() {
+            final Try<String> failure = failure();
+            assertThat(failure.tapError(x -> {})).isSameAs(failure);
+            assertThat(failure.tapError(RuntimeException.class, x -> {})).isSameAs(failure);
+        }
+
+        @Test
+        public void shouldThrowOnNullArguments() {
+            assertThrows(NullPointerException.class, () -> failure().tapError(null));
+            assertThrows(NullPointerException.class, () -> failure().tapError(null, x -> {}));
+            assertThrows(NullPointerException.class, () -> failure().tapError(RuntimeException.class, null));
+        }
+    }
+
+    @Nested
+    class WithResourcesTests {
+        @Test
+        public void shouldNestResources() {
+            final Closeable<Integer> outer = Closeable.of(1);
+            final Closeable<Integer> inner = Closeable.of(2);
+            final Try<String> actual = Try.withResources(() -> outer, o ->
+              Try.withResources(() -> inner, i -> "" + o.value + i.value).get());
+            assertThat(actual).isEqualTo(Try.success("12"));
+            assertThat(outer.isClosed).isTrue();
+            assertThat(inner.isClosed).isTrue();
+        }
+
+        @Test
+        public void shouldFailWhenTheResourceCannotBeAcquired() {
+            final IOException cause = new IOException("no resource");
+            final Try<String> actual = Try.withResources(() -> {
+                throw cause;
+            }, r -> "unreachable");
+            assertThat(actual.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldSuppressTheCloseFailureWhenTheBodyThrows() {
+            final IOException bodyFailure = new IOException("body");
+            final IllegalStateException closeFailure = new IllegalStateException("close");
+            final AutoCloseable resource = () -> {
+                throw closeFailure;
+            };
+            final Try<String> actual = Try.withResources(() -> resource, r -> {
+                throw bodyFailure;
+            });
+            assertThat(actual.getCause()).isSameAs(bodyFailure);
+            assertThat(bodyFailure.getSuppressed()).containsExactly(closeFailure);
+        }
+
+        @Test
+        public void shouldFailWithTheCloseFailureWhenOnlyCloseThrows() {
+            final IllegalStateException closeFailure = new IllegalStateException("close");
+            final AutoCloseable resource = () -> {
+                throw closeFailure;
+            };
+            assertThat(Try.withResources(() -> resource, r -> "ok").getCause()).isSameAs(closeFailure);
+        }
+
+        @Test
+        public void shouldCaptureANullResultAsFailure() {
+            assertThat(Try.withResources(() -> Closeable.of(1), r -> null).getCause()).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldThrowOnNullArguments() {
+            assertThrows(NullPointerException.class, () -> Try.withResources(null, r -> "x"));
+            assertThrows(NullPointerException.class, () -> Try.withResources(() -> Closeable.of(1), null));
+        }
+    }
 }

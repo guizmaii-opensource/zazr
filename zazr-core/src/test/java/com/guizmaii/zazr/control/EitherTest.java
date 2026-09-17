@@ -759,4 +759,26 @@ public class EitherTest {
             assertThrows(InterruptedException.class, () -> Either.left("error").toTry(InterruptedException::new));
         }
     }
+
+    @Nested
+    public class ForEachShortCircuitTests {
+        @Test
+        public void shouldStopCallingTheMapperAfterTheFirstLeft() {
+            final java.util.List<Integer> seen = new java.util.ArrayList<>();
+            final Either<String, Seq<Integer>> actual = Either.forEach(List.of(1, 2, 3), i -> {
+                seen.add(i);
+                return i == 2 ? Either.left("stop") : Either.right(i);
+            });
+            assertThat(actual).isEqualTo(Either.left("stop"));
+            assertThat(seen).containsExactly(1, 2);
+        }
+    }
+
+    @Nested
+    public class TapLeftNullTests {
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> Either.left(1).tapLeft(null));
+        }
+    }
 }

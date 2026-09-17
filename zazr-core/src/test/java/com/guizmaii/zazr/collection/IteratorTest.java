@@ -1104,4 +1104,41 @@ public class IteratorTest extends AbstractTraversableTest {
         assertThatNullPointerException().isThrownBy(() -> Iterator.unfold(1, i -> Option.some(Tuple.of(i, (Integer) null))).next())
                 .withMessage("Iterator: element is null");
     }
+
+    @Nested
+    class CollectTests {
+
+        @Test
+        public void shouldNotCallTheCollectMapperBeforeTheFirstElementIsRequested() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Iterator<Integer> actual = Iterator.of(1, 2, 3).collect(i -> {
+                calls.incrementAndGet();
+                return Option.some(i);
+            });
+            assertThat(calls.get()).isEqualTo(0);
+            assertThat(actual.hasNext()).isTrue();
+            assertThat(calls.get()).isEqualTo(1);
+            assertThat(actual.next()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldCallTheCollectMapperOncePerElementAcrossHasNextCalls() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Iterator<Integer> actual = Iterator.of(1, 2, 3, 4).collect(i -> {
+                calls.incrementAndGet();
+                return i % 2 == 0 ? Option.some(i) : Option.none();
+            });
+            assertThat(actual.hasNext()).isTrue();
+            assertThat(actual.hasNext()).isTrue();
+            assertThat(actual.next()).isEqualTo(2);
+            assertThat(actual.next()).isEqualTo(4);
+            assertThat(actual.hasNext()).isFalse();
+            assertThat(calls.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void shouldReturnTheEmptyIteratorForAnEmptySource() {
+            assertThat(Iterator.<Integer>empty().collect(i -> Option.some(i))).isSameAs(Iterator.empty());
+        }
+    }
 }

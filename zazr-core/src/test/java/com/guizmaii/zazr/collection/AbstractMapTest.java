@@ -1541,4 +1541,54 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
             assertThat(map.mapKeys(k -> "x", (v1, v2) -> "merged")).isEqualTo(mapOf("x", "1"));
         }
     }
+
+    // -- collect(BiFunction)
+
+    @Test
+    public void shouldCollectEntriesIntoAMapOfTheSameKind() {
+        final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+        final Map<String, Integer> actual = map.collect((k, v) -> k % 2 == 1 ? Option.some(Tuple.of(v, k * 10)) : Option.none());
+        assertThat(actual).isEqualTo(this.<String, Integer>emptyMap().put("a", 10).put("c", 30));
+        assertThat(actual.getClass()).isSameAs(map.getClass());
+    }
+
+    @Test
+    public void shouldCollectNothingWhenEveryEntryIsDropped() {
+        assertThat(mapOf(1, "a", 2, "b").collect((k, v) -> Option.none())).isEqualTo(emptyMap());
+    }
+
+    @Test
+    public void shouldCollectNothingFromAnEmptyMap() {
+        final AtomicInteger calls = new AtomicInteger();
+        assertThat(this.<Integer, String>emptyMap().collect((k, v) -> {
+            calls.incrementAndGet();
+            return Option.some(Tuple.of(k, v));
+        })).isEqualTo(emptyMap());
+        assertThat(calls.get()).isEqualTo(0);
+    }
+
+    @Test
+    public void shouldKeepTheLastEntryOnKeyCollisionWhenCollecting() {
+        final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+        final Map<Integer, String> actual = map.collect((k, v) -> Option.some(Tuple.of(0, v)));
+        assertThat(actual.size()).isEqualTo(1);
+        assertThat(actual.get(0)).isEqualTo(Option.some(map.last()._2()));
+    }
+
+    @Test
+    public void shouldCollectEntriesIntoASeq() {
+        final Seq<String> actual = mapOf(1, "a", 2, "b").collect(t -> t._1() == 2 ? Option.some(t._2()) : Option.none());
+        assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.Vector.of("b"));
+    }
+
+    @Test
+    public void shouldRejectNullOptionFromCollectBiFunction() {
+        assertThrows(NullPointerException.class, () -> mapOf(1, "a").collect((k, v) -> null));
+    }
+
+    @Test
+    public void shouldThrowOnCollectWithNullBiFunction() {
+        final java.util.function.BiFunction<Integer, String, Option<Tuple2<Integer, String>>> mapper = null;
+        assertThrows(NullPointerException.class, () -> mapOf(1, "a").collect(mapper));
+    }
 }

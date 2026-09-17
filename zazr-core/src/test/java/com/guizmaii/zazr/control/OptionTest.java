@@ -808,4 +808,46 @@ public class OptionTest {
             assertThrows(NullPointerException.class, () -> Option.some(1).fold(() -> 1, null));
         }
     }
+
+    @Nested
+    class CollectTests {
+        @Test
+        public void shouldCollectSomeToSome() {
+            assertThat(Option.some(2).collect(i -> Option.some(i * 10))).isEqualTo(Option.some(20));
+        }
+
+        @Test
+        public void shouldCollectSomeToNone() {
+            assertThat(Option.some(2).collect(i -> Option.none())).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldNotCallTheMapperOnNone() {
+            assertThat(Option.<Integer>none().collect(i -> {
+                throw new AssertionError("must not be called");
+            })).isSameAs(Option.none());
+        }
+
+        @Test
+        public void shouldCollectWithASwitchInsideTheLambda() {
+            final Option<Object> shape = Option.some("circle");
+            final Option<Integer> actual = shape.collect(s -> switch (s) {
+                case String str -> Option.some(str.length());
+                default -> Option.none();
+            });
+            assertThat(actual).isEqualTo(Option.some(6));
+        }
+
+        @Test
+        public void shouldRejectANullOptionFromTheMapper() {
+            assertThatThrownBy(() -> Option.some(1).collect(i -> null))
+              .isInstanceOf(NullPointerException.class)
+              .hasMessage("Option.collect: mapper returned null");
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Option.some(1).collect(null));
+        }
+    }
 }

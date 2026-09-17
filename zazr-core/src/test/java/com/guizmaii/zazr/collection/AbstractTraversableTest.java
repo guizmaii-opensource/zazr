@@ -811,6 +811,66 @@ public abstract class AbstractTraversableTest {
         assertThat(of(1, 2, 3).flatMap(v -> of(v, 0))).isEqualTo(of(1, 0, 2, 0, 3, 0));
     }
 
+    // -- collect
+
+    @TestTemplate
+    public void shouldCollectNothingFromEmpty() {
+        final AtomicInteger calls = new AtomicInteger();
+        final Traversable<Integer> actual = this.<Integer>empty().collect(i -> {
+            calls.incrementAndGet();
+            return Option.some(i);
+        });
+        assertThat(actual).isEqualTo(empty());
+        assertThat(calls.get()).isEqualTo(0);
+    }
+
+    @TestTemplate
+    public void shouldCollectNothingWhenEveryElementIsDropped() {
+        assertThat(of(1, 2, 3).collect(i -> Option.none())).isEqualTo(empty());
+    }
+
+    @TestTemplate
+    public void shouldCollectEveryElementWhenEveryElementIsKept() {
+        assertThat(of(1, 2, 3).collect(i -> Option.some(i * 10))).isEqualTo(of(10, 20, 30));
+    }
+
+    @TestTemplate
+    public void shouldCollectTheKeptElementsInOrder() {
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+    }
+
+    @TestTemplate
+    public void shouldCollectWithASwitchInsideTheLambda() {
+        final Traversable<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+            case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
+            default -> Option.none();
+        });
+        assertThat(actual).isEqualTo(of(10, 30));
+    }
+
+    @TestTemplate
+    public void shouldCallTheCollectMapperOncePerElement() {
+        final AtomicInteger calls = new AtomicInteger();
+        of(1, 2, 3).collect(i -> {
+            calls.incrementAndGet();
+            return i == 2 ? Option.none() : Option.some(i);
+        }).size();
+        assertThat(calls.get()).isEqualTo(3);
+    }
+
+    @TestTemplate
+    public void shouldRejectNullOptionFromCollectMapper() {
+        assertThatThrownBy(() -> of(1).collect(i -> null).size())
+          .isInstanceOf(NullPointerException.class)
+          .hasMessageContaining("collect: mapper returned null");
+    }
+
+    @TestTemplate
+    public void shouldThrowOnCollectWithNullMapper() {
+        final Function<Integer, Option<Integer>> mapper = null;
+        assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
+    }
+
     // -- fold
 
     @TestTemplate
