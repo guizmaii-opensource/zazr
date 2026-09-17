@@ -1284,7 +1284,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Pairs the values of three {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
      * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
-     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Try, Try, Try, Function3)} with {@code Tuple::of}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1345,7 +1345,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Pairs the values of four {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
      * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
-     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Try, Try, Try, Try, Function4)} with {@code Tuple::of}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1414,7 +1414,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Pairs the values of five {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
      * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
-     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Try, Try, Try, Try, Try, Function5)} with {@code Tuple::of}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1491,7 +1491,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Pairs the values of six {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
      * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
-     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Try, Try, Try, Try, Try, Try, Function6)} with {@code Tuple::of}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1576,7 +1576,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Pairs the values of seven {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
      * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
-     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Try, Try, Try, Try, Try, Try, Try, Function7)} with {@code Tuple::of}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1669,7 +1669,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Pairs the values of eight {@code Try}s, failing fast: {@code Success} of the tuple of the values when every
      * argument is a {@code Success}, otherwise the first {@code Failure} in argument order, as is. The same as
-     * {@link #zipWith(Try, Try, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Try, Try, Try, Try, Try, Try, Try, Try, Function8)} with {@code Tuple::of}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}

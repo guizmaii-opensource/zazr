@@ -587,7 +587,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Pairs the values of three {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
-     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Function3)}
      * with {@code Tuple::of}.
      *
      * @param o1  the first {@code Option}
@@ -633,7 +633,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Pairs the values of four {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
-     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Function4)}
      * with {@code Tuple::of}.
      *
      * @param o1  the first {@code Option}
@@ -684,7 +684,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Pairs the values of five {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
-     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Function5)}
      * with {@code Tuple::of}.
      *
      * @param o1  the first {@code Option}
@@ -740,7 +740,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Pairs the values of six {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
-     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Option, Function6)}
      * with {@code Tuple::of}.
      *
      * @param o1  the first {@code Option}
@@ -801,7 +801,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Pairs the values of seven {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
-     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Option, Option, Function7)}
      * with {@code Tuple::of}.
      *
      * @param o1  the first {@code Option}
@@ -867,7 +867,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Pairs the values of eight {@code Option}s, failing fast: {@code Some} of the tuple of the values when every
-     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, BiFunction)}
+     * argument is a {@code Some}, otherwise {@code None}. The same as {@link #zipWith(Option, Option, Option, Option, Option, Option, Option, Option, Function8)}
      * with {@code Tuple::of}.
      *
      * @param o1  the first {@code Option}

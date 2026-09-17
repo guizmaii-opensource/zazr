@@ -273,7 +273,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Pairs the values of three {@code Lazy} values: an unevaluated {@code Lazy} that, when first evaluated, evaluates
      * every argument in argument order and caches the tuple of their values. The same as
-     * {@link #zipWith(Lazy, Lazy, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Lazy, Lazy, Lazy, Function3)} with {@code Tuple::of}.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -316,7 +316,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Pairs the values of four {@code Lazy} values: an unevaluated {@code Lazy} that, when first evaluated, evaluates
      * every argument in argument order and caches the tuple of their values. The same as
-     * {@link #zipWith(Lazy, Lazy, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Lazy, Lazy, Lazy, Lazy, Function4)} with {@code Tuple::of}.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -364,7 +364,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Pairs the values of five {@code Lazy} values: an unevaluated {@code Lazy} that, when first evaluated, evaluates
      * every argument in argument order and caches the tuple of their values. The same as
-     * {@link #zipWith(Lazy, Lazy, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Lazy, Lazy, Lazy, Lazy, Lazy, Function5)} with {@code Tuple::of}.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -417,7 +417,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Pairs the values of six {@code Lazy} values: an unevaluated {@code Lazy} that, when first evaluated, evaluates
      * every argument in argument order and caches the tuple of their values. The same as
-     * {@link #zipWith(Lazy, Lazy, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Lazy, Lazy, Lazy, Lazy, Lazy, Lazy, Function6)} with {@code Tuple::of}.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -475,7 +475,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Pairs the values of seven {@code Lazy} values: an unevaluated {@code Lazy} that, when first evaluated, evaluates
      * every argument in argument order and caches the tuple of their values. The same as
-     * {@link #zipWith(Lazy, Lazy, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Lazy, Lazy, Lazy, Lazy, Lazy, Lazy, Lazy, Function7)} with {@code Tuple::of}.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}
@@ -538,7 +538,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Pairs the values of eight {@code Lazy} values: an unevaluated {@code Lazy} that, when first evaluated, evaluates
      * every argument in argument order and caches the tuple of their values. The same as
-     * {@link #zipWith(Lazy, Lazy, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Lazy, Lazy, Lazy, Lazy, Lazy, Lazy, Lazy, Lazy, Function8)} with {@code Tuple::of}.
      *
      * @param l1  the first {@code Lazy}
      * @param l2  the second {@code Lazy}

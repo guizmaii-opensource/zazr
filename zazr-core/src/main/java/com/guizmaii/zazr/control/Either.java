@@ -719,7 +719,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     /**
      * Pairs the right values of three {@code Either}s, failing fast: {@code Right} of the tuple of the values when
      * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
-     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Either, Either, Either, Function3)} with {@code Tuple::of}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -774,7 +774,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     /**
      * Pairs the right values of four {@code Either}s, failing fast: {@code Right} of the tuple of the values when
      * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
-     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Either, Either, Either, Either, Function4)} with {@code Tuple::of}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -837,7 +837,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     /**
      * Pairs the right values of five {@code Either}s, failing fast: {@code Right} of the tuple of the values when
      * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
-     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Either, Either, Either, Either, Either, Function5)} with {@code Tuple::of}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -908,7 +908,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     /**
      * Pairs the right values of six {@code Either}s, failing fast: {@code Right} of the tuple of the values when
      * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
-     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Either, Either, Either, Either, Either, Either, Function6)} with {@code Tuple::of}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -987,7 +987,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     /**
      * Pairs the right values of seven {@code Either}s, failing fast: {@code Right} of the tuple of the values when
      * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
-     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Either, Either, Either, Either, Either, Either, Either, Function7)} with {@code Tuple::of}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -1074,7 +1074,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     /**
      * Pairs the right values of eight {@code Either}s, failing fast: {@code Right} of the tuple of the values when
      * every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. The same as
-     * {@link #zipWith(Either, Either, BiFunction)} with {@code Tuple::of}.
+     * {@link #zipWith(Either, Either, Either, Either, Either, Either, Either, Either, Function8)} with {@code Tuple::of}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}

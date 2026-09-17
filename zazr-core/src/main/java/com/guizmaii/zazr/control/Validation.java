@@ -447,7 +447,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     /**
      * Pairs the values of three validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
      * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
-     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, Validation, Function3)} with
      * {@code Tuple::of}.
      *
      * @param v1  the first validation
@@ -500,7 +500,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     /**
      * Pairs the values of four validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
      * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
-     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, Validation, Validation, Function4)} with
      * {@code Tuple::of}.
      *
      * @param v1  the first validation
@@ -559,7 +559,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     /**
      * Pairs the values of five validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
      * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
-     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, Validation, Validation, Validation, Function5)} with
      * {@code Tuple::of}.
      *
      * @param v1  the first validation
@@ -624,7 +624,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     /**
      * Pairs the values of six validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
      * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
-     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, Validation, Validation, Validation, Validation, Function6)} with
      * {@code Tuple::of}.
      *
      * @param v1  the first validation
@@ -695,7 +695,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     /**
      * Pairs the values of seven validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
      * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
-     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, Validation, Validation, Validation, Validation, Validation, Function7)} with
      * {@code Tuple::of}.
      *
      * @param v1  the first validation
@@ -772,7 +772,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     /**
      * Pairs the values of eight validations, keeping <em>all</em> errors: {@code Valid} of the tuple of the values when
      * every argument is {@code Valid}, otherwise {@code Invalid} of the errors of every {@code Invalid} argument,
-     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, BiFunction)} with
+     * concatenated in argument order. The same as {@link #zipWith(Validation, Validation, Validation, Validation, Validation, Validation, Validation, Validation, Function8)} with
      * {@code Tuple::of}.
      *
      * @param v1  the first validation
