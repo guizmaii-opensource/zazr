@@ -5,6 +5,8 @@ import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -893,6 +895,11 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     @Override
     public java.util.Iterator<A> iterator() { return vector.iterator(); }
+
+    @Override
+    public Spliterator<A> spliterator() {
+        return Spliterators.spliterator(iterator(), vector.length(), Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL);
+    }
 
     /**
      * @return a sequential {@link java.util.stream.Stream} over the elements

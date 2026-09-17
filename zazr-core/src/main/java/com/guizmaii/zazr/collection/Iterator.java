@@ -2487,8 +2487,13 @@ interface IteratorModule {
             this.step = step;
             this.gap = Math.max(step - size, 0);
             this.preserve = Math.max(size - step, 0);
-            this.buffer = take(that, new Object[size], 0, size);
+            // the first group starts small and grows with the source: a size beyond the source (grouped(Integer.MAX_VALUE)
+            // is one group) must not allocate an array of that size. Later groups allocate `size` directly: they are only
+            // reached when the previous group was full, so the source is known to hold that many.
+            this.buffer = take(that, new Object[Math.min(size, INITIAL_CAPACITY)], 0, size);
         }
+
+        private static final int INITIAL_CAPACITY = 32;
 
         @Override
         public boolean hasNext() {
@@ -2526,19 +2531,18 @@ interface IteratorModule {
             }
         }
 
+        /* fills target[offset, offset + count) from the source, doubling the array when it is full, and trims it to what was read */
         private static Object[] take(Iterator<?> source, Object[] target, int offset, int count) {
+            final int wanted = offset + count;
+            Object[] buffer = target;
             int i = offset;
-            while (i < count + offset && source.hasNext()) {
-                target[i] = source.next();
-                i++;
+            while (i < wanted && source.hasNext()) {
+                if (i == buffer.length) {
+                    buffer = Arrays.copyOf(buffer, (int) Math.min(wanted, 2L * buffer.length));
+                }
+                buffer[i++] = source.next();
             }
-            if (i < target.length) {
-                final Object[] result = new Object[i];
-                System.arraycopy(target, 0, result, 0, i);
-                return result;
-            } else {
-                return target;
-            }
+            return (i < buffer.length) ? Arrays.copyOf(buffer, i) : buffer;
         }
     }
 

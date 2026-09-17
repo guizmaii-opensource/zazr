@@ -427,7 +427,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
         }
     }
 
-    // partitionMap, duplicates, duplicatesBy, flatten and nonEmpty, at the empty/1/32/33 boundaries and on both leaf representations
+    // partitionMap, duplicates, duplicatesBy, flatten and toNonEmptyVector, at the empty/1/32/33/1023/1024/1025 boundaries and on both leaf representations
 
     static java.util.List<Vector<Integer>> bothRepresentations(int n) {
         final Vector<Integer> primitive = Vector.range(0, n);
@@ -439,7 +439,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
 
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
                     final Tuple2<Vector<String>, Vector<Integer>> actual = vector.partitionMap(i -> i % 2 == 0 ? Either.left("e" + i) : Either.right(i));
                     final Tuple2<Vector<Integer>, Vector<Integer>> expected = vector.partition(i -> i % 2 == 0);
@@ -452,7 +452,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
 
         @Test
         public void shouldLeaveOneSideEmpty() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
                     assertThat(vector.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(vector, Vector.empty()));
                     assertThat(vector.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(Vector.empty(), vector));
@@ -496,7 +496,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
 
         @Test
         public void shouldFindDuplicatesAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
                     assertThat(vector.duplicates()).isEqualTo(Vector.empty());
                     assertThat(vector.appendAll(vector).duplicates()).isEqualTo(vector);
@@ -513,7 +513,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
 
         @Test
         public void shouldFlattenNestedIterablesAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> inner : bothRepresentations(n)) {
                     assertThat(Vector.flatten(Vector.of(inner, inner))).isEqualTo(inner.appendAll(inner));
                     assertThat(Vector.flatten(java.util.List.of(inner.toJavaList(), inner))).isEqualTo(inner.appendAll(inner));
@@ -536,12 +536,34 @@ public class VectorTest extends AbstractIndexedSeqTest {
     }
 
     @Nested
+    class GroupedHugeSizeTests {
+        @Test
+        public void shouldGroupIntoOneGroupWhenSizeExceedsTheVector() {
+            for (int n : new int[] { 1, 32, 33, 1025 }) {
+                for (Vector<Integer> vector : bothRepresentations(n)) {
+                    assertThat(vector.grouped(Integer.MAX_VALUE).toList()).isEqualTo(List.of(vector));
+                    assertThat(vector.sliding(Integer.MAX_VALUE).toList()).isEqualTo(List.of(vector));
+                    assertThat(vector.sliding(2, Integer.MAX_VALUE).toList()).isEqualTo(List.of(vector.take(2)));
+                    assertThat(vector.sliding(Integer.MAX_VALUE, 1).toList()).isEqualTo(List.of(vector));
+                    assertThat(vector.grouped(n + 1).toList()).isEqualTo(List.of(vector));
+                }
+            }
+            assertThat(Vector.empty().grouped(Integer.MAX_VALUE).isEmpty()).isTrue();
+            // the first group grows past the initial capacity in every step configuration
+            assertThat(Vector.range(0, 100).grouped(40).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(40, 80), Vector.range(80, 100)));
+            assertThat(Vector.range(0, 100).sliding(40, 30).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(30, 70), Vector.range(60, 100)));
+            assertThat(Vector.range(0, 101).sliding(40, 30).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(30, 70), Vector.range(60, 100), Vector.range(90, 101)));
+            assertThat(Vector.range(0, 100).sliding(40, 50).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(50, 90)));
+        }
+    }
+
+    @Nested
     class ToNonEmptyVectorTests {
 
         @Test
         public void shouldNarrowToNonEmptyVector() {
             assertThat(Vector.<Integer> empty().toNonEmptyVector()).isEqualTo(Option.none());
-            for (int n : new int[] { 1, 32, 33 }) {
+            for (int n : new int[] { 1, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
                     final Option<NonEmptyVector<Integer>> actual = vector.toNonEmptyVector();
                     assertThat(actual.isDefined()).isTrue();

@@ -22,13 +22,13 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Every method is checked at sizes 1, 2, 32 and 33 (the leaf boundary) against the equivalent {@link Vector} call, on both
+ * Every method is checked at sizes 1, 2, 32, 33, 1023, 1024 and 1025 (the leaf and second-level boundaries) against the equivalent {@link Vector} call, on both
  * representations a Vector can have (primitive {@code int[]} leaves from {@code Vector.range}, {@code Object[]} leaves from
  * {@code Vector.ofAll}).
  */
 public class NonEmptyVectorTest {
 
-    static final int[] SIZES = { 1, 2, 32, 33 };
+    static final int[] SIZES = { 1, 2, 32, 33, 1023, 1024, 1025 };
 
     /* (size, vector) for both leaf representations */
     static Stream<Arguments> vectors() {
@@ -317,6 +317,10 @@ public class NonEmptyVectorTest {
                 assertThat(NonEmptyVector.flatten(nev(groups)).toVector()).isEqualTo(vector);
             }
             assertThatThrownBy(() -> nev.grouped(0)).isInstanceOf(IllegalArgumentException.class);
+            // a size beyond the source is one group, and allocates only what the source holds
+            final Vector<NonEmptyVector<Integer>> one = nev.grouped(Integer.MAX_VALUE);
+            assertThat(one.size()).isEqualTo(1);
+            assertThat(one.get(0).toVector()).isEqualTo(vector);
         }
 
         @ParameterizedTest
@@ -544,6 +548,10 @@ public class NonEmptyVectorTest {
             final NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev).containsExactlyElementsOf(vector);
             assertThat(nev.iterator().hasNext()).isTrue();
+            final java.util.Spliterator<Integer> spliterator = nev.spliterator();
+            assertThat(spliterator.hasCharacteristics(java.util.Spliterator.SIZED | java.util.Spliterator.SUBSIZED | java.util.Spliterator.ORDERED | java.util.Spliterator.IMMUTABLE | java.util.Spliterator.NONNULL)).isTrue();
+            assertThat(spliterator.getExactSizeIfKnown()).isEqualTo(n);
+            assertThat(java.util.stream.StreamSupport.stream(nev.spliterator(), false).toList()).isEqualTo(vector.toJavaList());
             assertThat(nev.stream().toList()).isEqualTo(vector.toJavaList());
             assertThat(nev.asJava()).isEqualTo(vector.asJava());
             assertThat(nev.asJava().size()).isEqualTo(n);
@@ -589,7 +597,7 @@ public class NonEmptyVectorTest {
     class Flatten {
 
         @ParameterizedTest
-        @ValueSource(ints = { 1, 2, 32, 33 })
+        @ValueSource(ints = { 1, 2, 32, 33, 1023, 1024, 1025 })
         public void shouldFlattenNestedNonEmptyVectors(int n) {
             final NonEmptyVector<NonEmptyVector<Integer>> nested = nev(Vector.range(0, n)).map(i -> nev(Vector.range(i, i + n)));
             final NonEmptyVector<Integer> flat = NonEmptyVector.flatten(nested);
