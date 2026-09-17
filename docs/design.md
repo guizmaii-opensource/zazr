@@ -363,17 +363,51 @@ type would guarantee nothing at the use site. Return-type contract, copied from 
 
 | returns `NonEmptyVector` | returns `Vector` | total (no `Option`) | returns `Option` |
 |---|---|---|---|
-| `map`, `flatMap(A->NonEmptyVector<B>)`, `append`, `appendAll(Vector)`, `prepend`, `prependAll(Vector)`, `concat(NonEmptyVector)`, `reverse`, `distinct`, `sorted`, `sortBy`, `zip`, `zipWith`, `zipWithIndex`, `scanLeft`? (yes, n+1), `update(i,·)`, `grouped(n)` as `Vector<NonEmptyVector<A>>`, `groupBy` as `HashMap<K,NonEmptyVector<A>>` | `filter`, `reject`, `flatMap(A->Iterable<B>)`, `tail`, `init`, `drop*`, `take*`, `slice`, `removeAt`, `toVector()` | `head`, `last`, `max(Comparator)`, `min(Comparator)`, `maxBy`, `minBy`, `reduce`, `reduceLeft`, `reduceRight`, `reduceMap(A->B, BinaryOperator<B>)`, `size` (≥1), `mkString` | `find`, `indexOf`, `tailNonEmpty()`, `initNonEmpty()` |
+| `map`, `flatMap(A->NonEmptyVector<B>)`, `append`, `appendAll(Vector)`, `appendAll(NonEmptyVector)`, `prepend`, `prependAll(Vector)`, `prependAll(NonEmptyVector)`, `concat(NonEmptyVector)`, `reverse`, `distinct`, `distinctBy` ×2, `sorted` ×2, `sortBy` ×2, `zip(NonEmptyVector)`, `zipWith(NonEmptyVector, ·)`, `zipWithIndex` ×2, `scanLeft` (n+1), `update(i,·)` ×2, `tap`; `grouped(n)` as `Vector<NonEmptyVector<A>>`, `groupBy` as `HashMap<K,NonEmptyVector<A>>` | `filter`, `reject`, `collect(A->Option<B>)`, `flatMapAll(A->Iterable<B>)`, `partitionMap`, `duplicates`, `duplicatesBy`, `tail`, `init`, `drop*`, `take*`, `slice`, `removeAt`, `remove`, `removeAll` ×3, `toVector()` | `head`, `last`, `max(Comparator)`, `min(Comparator)`, `maxBy(A->U)`, `minBy(A->U)`, `reduce`, `reduceLeft`, `reduceRight`, `reduceMap(A->B, (B,B)->B)`, `size` (≥1), `get`, `mkString` ×3, `foldLeft`, `foldRight`, `contains`, `exists`, `forAll`, `count`, `indexOf`, `iterator`, `stream`, `asJava`, `toList`, `toSet` | `find`, `findLast`, `indexOfOption`, `tailNonEmpty()`, `initNonEmpty()` |
 
-Constructors: `of(A head, A... tail)`, `of(A head, Iterable<A> tail)`, `single(A)`,
-`fromVector(Vector<A>) : Option<NonEmptyVector<A>>`, `fromIterable(Iterable<A>) : Option<...>`,
-`unsafeFromVector(Vector<A>)` (throws). On `Vector`: `Option<NonEmptyVector<A>> nonEmpty()`.
+Constructors: `of(A head, A... tail)`, `fromIterable(A head, Iterable<? extends A> tail)`, `single(A)`,
+`fromVector(Vector<A>) : Option<NonEmptyVector<A>>`, `fromIterable(Iterable<? extends A>) : Option<...>`,
+`unsafeFromVector(Vector<A>)` (throws `IllegalArgumentException`), static
+`flatten(NonEmptyVector<? extends NonEmptyVector<? extends A>>)`. On `Vector`:
+`Option<NonEmptyVector<A>> nonEmpty()`.
 
 Accept the weak type, return the strong one: `appendAll(Vector<A>) : NonEmptyVector<A>` (ZIO's
 `NonEmptyChunk.append(Chunk)` does exactly this).
 
 Implementation cost is low: every method is a one-line delegation to the wrapped `Vector` plus an
 `unsafe` re-wrap. `NonEmptyVector` implements `Iterable<A>` (it *is* a collection).
+
+**Decided while implementing (#21), where Java forced a choice:**
+- **`flatMap` / `flatMapAll`.** The two `flatMap`s of the table cannot be overloads: a lambda argument
+  (`x -> ...`) is compatible with both `Function<A, NonEmptyVector<B>>` and `Function<A, Iterable<B>>`, and
+  javac reports an ambiguity on every call. `flatMap` keeps the name for the function returning a
+  `NonEmptyVector` (the result stays non-empty); the function returning any `Iterable` is `flatMapAll`,
+  returning `Vector` (`All` from the suffix vocabulary of section 2: the total, possibly empty, variant).
+- **`fromIterable(head, tail)`, not `of(head, Iterable)`.** Next to `of(A head, A... tail)`, the overload
+  `of(A head, Iterable<? extends A> tail)` is selected by javac's first (non-varargs) phase whenever the
+  *elements* are themselves iterables: `NonEmptyVector.of(nev1, nev2)` or `of(List.of(1), List.of(2))`
+  silently becomes "head `nev1`, then the elements of `nev2`", typed `NonEmptyVector<Object>`, or fails
+  to compile under a target type. A `Vector<Vector<A>>` from `grouped`/`combinations` is a common input,
+  so the head-plus-iterable constructor is `fromIterable(A head, Iterable<? extends A> tail)`, ZIO's own
+  name (`NonEmptyChunk.fromIterable(a, as)`), distinguished from `fromIterable(Iterable) : Option` by arity.
+- **`Vector.nonEmpty()` replaces the boolean `Traversable.nonEmpty()`.** Java cannot override a
+  `boolean nonEmpty()` with `Option<NonEmptyVector<T>> nonEmpty()`, and `Vector` implements `Traversable`.
+  The boolean had five call sites, all `!isEmpty()`; it is deleted from `Traversable` (and from the 3.7
+  list of shared operations). One spelling per operation (section 2, rule 2): `isEmpty()` is the test,
+  `nonEmpty()` is the narrowing.
+- **Null messages name the type.** The wrapped `Vector` already rejects nulls; the paths where a
+  `NonEmptyVector` receives an element itself (`of`, `fromIterable`, `single`, `append`, `prepend`,
+  `update(i, a)`) check first, with messages `NonEmptyVector: head is null`, `NonEmptyVector: element is null`,
+  `NonEmptyVector.append: element is null`, and so on. Mapper results are checked by `Vector`'s own paths.
+- **No `Option` on the way to a total result.** `max`, `min`, `maxBy`, `minBy` and `reduceMap` are loops over
+  the iterator (the key function applied once per element, ties resolved to the first element as on
+  `Vector`), not `vector.maxBy(f).get()`, so nothing is wrapped to be unwrapped on the next line.
+- `reduce`, `reduceLeft`, `reduceRight`, `reduceMap` take `BiFunction<? super A, ? super A, ? extends A>`
+  like `Vector` does; a `BinaryOperator<A>` lambda or method reference fits. `iterator()` returns
+  `java.util.Iterator<A>`: the zazr `Iterator` is deleted in 3.7, and the type declares only what survives.
+- Equality is structural over the elements and only against another `NonEmptyVector`: a `Vector` and a
+  `NonEmptyVector` with the same elements are not equal (compare through `toVector()`).
+  `toString` is `NonEmptyVector(a, b)`.
 
 **Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
 motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
@@ -390,10 +424,13 @@ What stays shared is one small read-only interface, kept under the name `Travers
 operations that are **order-agnostic and O(n) on every implementation**:
 
 ```
-iterator, size, isEmpty, nonEmpty, contains, containsAll, exists, forAll, count, find,
+iterator, size, isEmpty, contains, containsAll, exists, forAll, count, find,
 foldLeft, reduceLeft? (no: order) -> reduce(BinaryOperator) only on ordered types,
 mkString ×3, forEach, toVector, toList, toSet, stream(), toArray, asJava()   (3.1: O(1) view)
 ```
+
+(`nonEmpty` is not in the list: on `Vector` that name returns `Option<NonEmptyVector<T>>`, 3.6; the boolean
+is spelled `!isEmpty()`.)
 
 Everything positional or complexity-sensitive moves to the concrete types: `get`, `update`, `insert`,
 `removeAt`, `last`, `init`, `slice`, `take*`, `drop*`, `reverse`, `sorted`, `zip*`, `sliding`,
@@ -415,17 +452,20 @@ Not on `TreeSet` (the two result sides need comparators for `L` and `R`) nor on 
 tuples; use `entries().partitionMap(...)`). Implemented with two builders (3.8.1), one pass, no
 intermediate `Either` list. `Validation.partition` (3.5) is the same idea for validations.
 
-Also new on `Vector` (and `List`, `NonEmptyVector`, since it costs one line each) (decided): `duplicates`,
-the complement of `distinct`:
+Also new on `Vector` (and `List`, `NonEmptyVector`, since it costs one line each) (decided; on `Vector` and
+`NonEmptyVector` since #21, `List` with #24/#25): `duplicates`, the complement of `distinct`:
 
 ```java
 Vector<A> duplicates();                                        // elements occurring more than once, each once, in order of first occurrence
 <K> Vector<A> duplicatesBy(Function<? super A, ? extends K> key); // same, keyed; the first occurrence of each duplicated key is returned
 ```
 
-`Vector.of(3, 1, 3, 2, 1, 3).duplicates()` is `Vector.of(3, 1)`. One pass with a `HashMap<K, Integer>`
-count (or a seen/reported pair of hash sets), O(n) time, result built with the builder; `isEmpty()` on
-the result is the "all distinct" test, so no separate `isDistinct` is needed (it is deleted with `Value`).
+`Vector.of(3, 1, 3, 2, 1, 3).duplicates()` is `Vector.of(3, 1)`; `Vector.of(1, 2, 2, 1).duplicates()` is
+`Vector.of(1, 2)` (first-occurrence order, not the order in which the repeats are met). One pass over the
+elements with a `java.util.LinkedHashMap<K, A>` of first occurrences plus a `HashSet<K>` of the keys seen
+again, the key computed once per element, then one pass over the distinct keys into the builder (sized to
+the result); O(n) time; `isEmpty()` on the result is the "all distinct" test, so no separate `isDistinct`
+is needed (it is deleted with `Value`).
 
 `flatten` (decided), as a **static** method on every collection and control type, because Java cannot
 type an instance `flatten()`: Scala's needs evidence that the element type is itself a collection
@@ -569,7 +609,7 @@ What each one replaces, and how (Scala 2.13 is the reference for all of them):
 | `TreeMap`, `TreeSet` | `createTreeMap` does one persistent `insert` per entry (`TreeMap.java:1512-1515`), each allocating O(log n) nodes plus rebalancing. | **Sort-then-build**: buffer entries into an array, on `result()` stable-sort with the comparator, drop adjacent duplicate keys keeping the last, then build the balanced tree bottom-up in O(n) (port of `RedBlackTree.fromOrderedEntries`, `RedBlackTree.scala:956`, ~20 lines: recursive split, black nodes, red leaves only at the deepest level). Total O(n log n) compares, one array plus exactly n nodes. Scala's alternative, in-place `mutableUpd` on builder-owned nodes, is more code for the same result; not needed. Also gives the `ofEntries(alreadySorted)` O(n) fast path. |
 | `LinkedHashMap`, `LinkedHashSet` | HashMap plus a `Vector` of insertion order with tombstone slots (recent commits `37e4fc110`, `dc152270a`). | Composite: `HashMap.Builder` + `Vector.Builder`. |
 | `List` | `ofAll` prepends back-to-front over a `java.util.List` (`List.java:259-264`), optimal; other iterables reverse first (2n cells). | Array buffer, then build back-to-front: n cells + one array. Scala's `ListBuffer` trick (mutating the last cell's `tail`, `ListBuffer.scala:118`) is unavailable because `Cons` is a record. |
-| `NonEmptyVector` | new | none; `NonEmptyVector.fromVector(builder.result())` returns `Option`, or `NonEmptyVector.of(head, vector)`. |
+| `NonEmptyVector` | new | none; `NonEmptyVector.fromVector(builder.result())` returns `Option`, or `NonEmptyVector.fromIterable(head, vector)`. |
 | `LazyList` | lazy | none (a builder would force it). |
 
 Order of implementation: `Vector.Builder` (3.8), then `TreeMap`/`TreeSet` (cheap, self-contained), then
