@@ -19,13 +19,13 @@ public interface CheckedConsumer<T extends @Nullable Object> {
      *
      * <p>Example usage:</p>
      * <pre>{@code
-     * final CheckedConsumer<Object> checkedConsumer = CheckedConsumer.of(System.out::println);
-     * final Consumer<Object> consumer = checkedConsumer.unchecked();
+     * final CheckedConsumer<Vector<Character>> checkedConsumer = CheckedConsumer.of(v -> v.forEach(System.out::println));
+     * final Consumer<Vector<Character>> consumer = checkedConsumer.unchecked();
      *
      * // prints "H", "i" and "!", each on its own line
      * consumer.accept(Vector.of('H', 'i', '!'));
      *
-     * // may throw an exception
+     * // throws a NullPointerException
      * consumer.accept(null);
      * }</pre>
      *
