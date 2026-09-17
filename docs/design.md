@@ -369,7 +369,7 @@ Constructors: `of(A head, A... tail)`, `fromIterable(A head, Iterable<? extends 
 `fromVector(Vector<A>) : Option<NonEmptyVector<A>>`, `fromIterable(Iterable<? extends A>) : Option<...>`,
 `unsafeFromVector(Vector<A>)` (throws `IllegalArgumentException`), static
 `flatten(NonEmptyVector<? extends NonEmptyVector<? extends A>>)`. On `Vector`:
-`Option<NonEmptyVector<A>> nonEmpty()`.
+`Option<NonEmptyVector<A>> toNonEmptyVector()`.
 
 Accept the weak type, return the strong one: `appendAll(Vector<A>) : NonEmptyVector<A>` (ZIO's
 `NonEmptyChunk.append(Chunk)` does exactly this).
@@ -390,11 +390,10 @@ Implementation cost is low: every method is a one-line delegation to the wrapped
   to compile under a target type. A `Vector<Vector<A>>` from `grouped`/`combinations` is a common input,
   so the head-plus-iterable constructor is `fromIterable(A head, Iterable<? extends A> tail)`, ZIO's own
   name (`NonEmptyChunk.fromIterable(a, as)`), distinguished from `fromIterable(Iterable) : Option` by arity.
-- **`Vector.nonEmpty()` replaces the boolean `Traversable.nonEmpty()`.** Java cannot override a
-  `boolean nonEmpty()` with `Option<NonEmptyVector<T>> nonEmpty()`, and `Vector` implements `Traversable`.
-  The boolean had five call sites, all `!isEmpty()`; it is deleted from `Traversable` (and from the 3.7
-  list of shared operations). One spelling per operation (section 2, rule 2): `isEmpty()` is the test,
-  `nonEmpty()` is the narrowing.
+- **`Vector.toNonEmptyVector()`, not `nonEmpty()`.** Java cannot override the boolean
+  `Traversable.nonEmpty()` (kept, 3.7) with `Option<NonEmptyVector<T>> nonEmpty()`, and `Vector` implements
+  `Traversable`. The narrowing takes the `to*` conversion name of the suffix vocabulary (section 2, rule 3),
+  next to `toVector()`, `toList()`, `toSet()`.
 - **Null messages name the type.** The wrapped `Vector` already rejects nulls; the paths where a
   `NonEmptyVector` receives an element itself (`of`, `fromIterable`, `single`, `append`, `prepend`,
   `update(i, a)`) check first, with messages `NonEmptyVector: head is null`, `NonEmptyVector: element is null`,
@@ -424,13 +423,12 @@ What stays shared is one small read-only interface, kept under the name `Travers
 operations that are **order-agnostic and O(n) on every implementation**:
 
 ```
-iterator, size, isEmpty, contains, containsAll, exists, forAll, count, find,
+iterator, size, isEmpty, nonEmpty, contains, containsAll, exists, forAll, count, find,
 foldLeft, reduceLeft? (no: order) -> reduce(BinaryOperator) only on ordered types,
 mkString ×3, forEach, toVector, toList, toSet, stream(), toArray, asJava()   (3.1: O(1) view)
 ```
 
-(`nonEmpty` is not in the list: on `Vector` that name returns `Option<NonEmptyVector<T>>`, 3.6; the boolean
-is spelled `!isEmpty()`.)
+(`nonEmpty` stays boolean; the narrowing to `NonEmptyVector` is `Vector.toNonEmptyVector()`, 3.6.)
 
 Everything positional or complexity-sensitive moves to the concrete types: `get`, `update`, `insert`,
 `removeAt`, `last`, `init`, `slice`, `take*`, `drop*`, `reverse`, `sorted`, `zip*`, `sliding`,

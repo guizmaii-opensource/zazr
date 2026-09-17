@@ -829,6 +829,17 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     }
 
     /**
+     * Checks if this {@code Traversable} contains at least one element.
+     * <p>
+     * Equivalent to {@code !isEmpty()}.
+     *
+     * @return {@code true} if this Traversable is not empty, {@code false} otherwise
+     */
+    default boolean nonEmpty() {
+        return !isEmpty();
+    }
+
+    /**
      * Returns this {@code Traversable} if it is non-empty; otherwise, returns the given alternative.
      *
      * @param other an alternative {@code Traversable} to return if this is empty

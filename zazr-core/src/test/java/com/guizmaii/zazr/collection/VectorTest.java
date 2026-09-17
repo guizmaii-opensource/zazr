@@ -536,14 +536,14 @@ public class VectorTest extends AbstractIndexedSeqTest {
     }
 
     @Nested
-    class NonEmptyTests {
+    class ToNonEmptyVectorTests {
 
         @Test
         public void shouldNarrowToNonEmptyVector() {
-            assertThat(Vector.<Integer> empty().nonEmpty()).isEqualTo(Option.none());
+            assertThat(Vector.<Integer> empty().toNonEmptyVector()).isEqualTo(Option.none());
             for (int n : new int[] { 1, 32, 33 }) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
-                    final Option<NonEmptyVector<Integer>> actual = vector.nonEmpty();
+                    final Option<NonEmptyVector<Integer>> actual = vector.toNonEmptyVector();
                     assertThat(actual.isDefined()).isTrue();
                     assertThat(actual.get().toVector()).isSameAs(vector);
                     assertThat(actual.get().size()).isEqualTo(n);

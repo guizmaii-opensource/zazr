@@ -92,7 +92,7 @@ public class NonEmptyVectorTest {
                 final Vector<Integer> vector = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromVector(vector).get().toVector()).isSameAs(vector);
                 assertThat(NonEmptyVector.unsafeFromVector(vector).toVector()).isSameAs(vector);
-                assertThat(vector.nonEmpty().get().toVector()).isSameAs(vector);
+                assertThat(vector.toNonEmptyVector().get().toVector()).isSameAs(vector);
                 assertThat(NonEmptyVector.fromIterable(vector).get().toVector()).isSameAs(vector);
             }
         }
@@ -100,7 +100,7 @@ public class NonEmptyVectorTest {
         @Test
         public void shouldReturnNoneFromEmptyVector() {
             assertThat(NonEmptyVector.fromVector(Vector.<Integer> empty())).isEqualTo(Option.none());
-            assertThat(Vector.<Integer> empty().nonEmpty()).isEqualTo(Option.none());
+            assertThat(Vector.<Integer> empty().toNonEmptyVector()).isEqualTo(Option.none());
             assertThat(NonEmptyVector.fromIterable(Vector.<Integer> empty())).isEqualTo(Option.none());
             assertThat(NonEmptyVector.fromIterable(java.util.List.<Integer> of())).isEqualTo(Option.none());
             assertThat(NonEmptyVector.fromIterable(List.<Integer> empty())).isEqualTo(Option.none());
