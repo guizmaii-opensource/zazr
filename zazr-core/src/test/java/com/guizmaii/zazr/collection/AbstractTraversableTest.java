@@ -2,7 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.control.Try;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -34,6 +33,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 public abstract class AbstractTraversableTest extends AbstractValueTest {
+
+    // collections reject null elements, keys and values (design 3.9)
+    @Override
+    protected boolean allowsNull() {
+        return false;
+    }
 
     protected final boolean isTraversableAgain() {
         return empty().isTraversableAgain();
@@ -2785,34 +2790,10 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
         }
     }
 
-    // -- null elements: methods returning T return the stored null; methods returning Option throw (Some(null) does not exist)
+    // -- null elements are rejected at construction, everywhere (design 3.9)
 
     @TestTemplate
-    public void shouldReturnStoredNullFromMethodsReturningT() {
-        assertThat(of((Integer) null).head()).isNull();
-        assertThat(of((Integer) null).last()).isNull();
-        assertThat(of((Integer) null).single()).isNull();
-        assertThat(of((Integer) null).get()).isNull();
-    }
-
-    @TestTemplate
-    public void shouldThrowWhenWrappingNullElementInOption() {
-        assertThrows(NullPointerException.class, () -> of((Integer) null).headOption());
-        assertThrows(NullPointerException.class, () -> of((Integer) null).lastOption());
-        assertThrows(NullPointerException.class, () -> of((Integer) null).singleOption());
-        assertThrows(NullPointerException.class, () -> of((Integer) null).reduceLeftOption((a, b) -> a));
-        assertThrows(NullPointerException.class, () -> of((Integer) null).reduceRightOption((a, b) -> a));
-        assertThrows(NullPointerException.class, () -> of((Integer) null).find(x -> true));
-        assertThrows(NullPointerException.class, () -> of((Integer) null).maxBy(Comparator.nullsFirst(Comparator.<Integer>naturalOrder())));
-        assertThrows(NullPointerException.class, () -> of((Integer) null).toOption());
-        assertThrows(NullPointerException.class, () -> of((Integer) null).toEither("left"));
-        assertThrows(NullPointerException.class, () -> of((Integer) null).toValidation("invalid"));
-    }
-
-    @TestTemplate
-    public void shouldCaptureNullElementInToTry() {
-        final Try<Integer> result = of((Integer) null).toTry();
-        assertThat(result.isFailure()).isTrue();
-        assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
+    public void shouldRejectNullElementOnConstruction() {
+        assertThrows(NullPointerException.class, () -> of((Integer) null));
     }
 }

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.guizmaii.zazr.TestComparators.toStringComparator;
 import static java.util.Comparator.nullsFirst;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 public class TreeSetTest extends AbstractSortedSetTest {
 
@@ -24,11 +25,6 @@ public class TreeSetTest extends AbstractSortedSetTest {
     @Override
     protected <T> TreeSet<T> empty() {
         return TreeSet.empty(Comparators.naturalComparator());
-    }
-
-    @Override
-    protected <T> TreeSet<T> emptyWithNull() {
-        return TreeSet.empty(nullsFirst(Comparators.naturalComparator()));
     }
 
     @Override
@@ -433,20 +429,15 @@ public class TreeSetTest extends AbstractSortedSetTest {
     public void shouldZipAllNonEmptyAndNil() {
     }
 
-    // -- a stored null is returned by the methods that return T, not Option
+    // -- null elements are rejected at construction (design 3.9)
 
     @Test
-    public void shouldReturnStoredNullFromHeadLastAndGet() {
-        final TreeSet<Integer> single = of(nullsFirst(Comparators.naturalComparator()), (Integer) null);
-        assertThat(single.head()).isNull();
-        assertThat(single.last()).isNull();
-        assertThat(single.get()).isNull();
-        assertThat(single.init()).isEmpty();
-        assertThat(single.tail()).isEmpty();
-        final TreeSet<Integer> two = this.<Integer>of(nullsFirst(Comparators.naturalComparator()), null, 1);
-        assertThat(two.head()).isNull();
-        assertThat(two.last()).isEqualTo(1);
-        assertThat(two.tail()).isEqualTo(of(nullsFirst(Comparators.naturalComparator()), 1));
-        assertThat(two.init()).isEqualTo(of(nullsFirst(Comparators.naturalComparator()), (Integer) null));
+    public void shouldRejectNullElementOnOf() {
+        assertThatNullPointerException().isThrownBy(() -> of(nullsFirst(Comparators.naturalComparator()), (Integer) null));
+    }
+
+    @Test
+    public void shouldRejectNullElementOnAdd() {
+        assertThatNullPointerException().isThrownBy(() -> TreeSet.<Integer>empty(nullsFirst(Comparators.naturalComparator())).add(null));
     }
 }

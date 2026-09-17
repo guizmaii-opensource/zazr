@@ -8,13 +8,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
 
     @Override
     abstract protected <T> Set<T> empty();
-
-    abstract protected <T> Set<T> emptyWithNull();
 
     @Override
     abstract protected <T> Set<T> of(T element);
@@ -45,16 +44,6 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
 
     @Nested
     class AddTests {
-        @Test
-        public void shouldAddNullAndNonNull() {
-            assertThat(emptyWithNull().add(null).add(1)).contains(null, 1);
-        }
-
-        @Test
-        public void shouldAddNonNullAndNull() {
-            assertThat(emptyWithNull().add(1).add(null)).contains(null, 1);
-        }
-
         @Test
         public void shouldNotAddAnExistingElementTwice() {
             final Set<IntMod2> set = of(new IntMod2(2));
@@ -273,49 +262,29 @@ public abstract class AbstractSetTest extends AbstractTraversableRangeTest {
         }
     }
 
-    // -- null elements: presence checks must not go through Option, since Some(null) does not exist
+    // -- null elements: every construction and insertion path rejects null (design 3.9)
 
     @Nested
     class NullElementTests {
 
         @Test
-        public void shouldContainNullElement() {
-            final Set<Integer> set = AbstractSetTest.this.<Integer>emptyWithNull().add(null);
-            assertThat(set.contains(null)).isTrue();
-            assertThat(set.contains(1)).isFalse();
-            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().contains(null)).isFalse();
+        public void shouldRejectNullOnOf() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractSetTest.this.<Integer>of((Integer) null));
         }
 
         @Test
-        public void shouldAddNullOnce() {
-            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(null)).hasSize(1);
+        public void shouldRejectNullOnOfVarargs() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractSetTest.this.<Integer>of(1, null));
         }
 
         @Test
-        public void shouldEqualWithNullElementsInBothDirections() {
-            final Set<Integer> a = AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(1);
-            final Set<Integer> b = AbstractSetTest.this.<Integer>emptyWithNull().add(1).add(null);
-            assertThat(a).isEqualTo(b);
-            assertThat(b).isEqualTo(a);
-            assertThat(a.hashCode()).isEqualTo(b.hashCode());
-            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().add(null)).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
-            assertThat(a).isNotEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(1));
-            assertThat(AbstractSetTest.this.<Integer>emptyWithNull().add(1)).isNotEqualTo(a);
+        public void shouldRejectNullOnAdd() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractSetTest.this.<Integer>empty().add(null));
         }
 
         @Test
-        public void shouldFilterDiffAndIntersectWithNullElement() {
-            final Set<Integer> set = AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(1);
-            assertThat(set.filter(x -> true)).isEqualTo(set);
-            assertThat(set.diff(AbstractSetTest.this.<Integer>emptyWithNull().add(1))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
-            assertThat(set.intersect(AbstractSetTest.this.<Integer>emptyWithNull().add(null))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
-        }
-
-        @Test
-        public void shouldRemoveAllAndRetainAllWithNullElement() {
-            final Set<Integer> set = AbstractSetTest.this.<Integer>emptyWithNull().add(null).add(1);
-            assertThat(set.removeAll(List.of((Integer) null))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(1));
-            assertThat(set.retainAll(List.of((Integer) null))).isEqualTo(AbstractSetTest.this.<Integer>emptyWithNull().add(null));
+        public void shouldRejectNullOnAddAll() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractSetTest.this.<Integer>empty().addAll(java.util.Arrays.asList(1, null)));
         }
     }
 }

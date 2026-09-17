@@ -30,6 +30,7 @@ import static com.guizmaii.zazr.collection.Iterator.iterate;
 import static com.guizmaii.zazr.collection.Iterator.narrow;
 import static com.guizmaii.zazr.collection.Iterator.rangeBy;
 import static com.guizmaii.zazr.collection.Iterator.rangeClosedBy;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -479,9 +480,9 @@ public class IteratorTest extends AbstractTraversableTest {
             assertThat(empty().distinct().toList()).isSameAs(List.empty());
         }
 
-        @Test(/* #2425 */)
-        public void shouldNotEatNullOnDistinct() {
-            assertThat(of((String) null).distinct().toList()).isEqualTo(List.of((String) null));
+        @Test
+        public void shouldRejectNullElementOnOf() {
+            assertThatNullPointerException().isThrownBy(() -> of((String) null));
         }
 
         @Test
@@ -989,11 +990,15 @@ public class IteratorTest extends AbstractTraversableTest {
         assertThat(result).isEqualTo(Option.none());
     }
 
-    // -- distinct with null elements goes through a HashSet, whose contains must not use Option
+    // -- null elements are rejected (design 3.9)
 
     @Test
-    public void shouldDistinctNullElements() {
-        assertThat(Iterator.<Integer>of(null, null).distinct().toList()).isEqualTo(List.of((Integer) null));
-        assertThat(Iterator.<Integer>of(null, 1, null, 1).distinct().toList()).isEqualTo(List.of(null, 1));
+    public void shouldRejectNullElementOnOf() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of((Integer) null));
+    }
+
+    @Test
+    public void shouldRejectNullElementOnOfVarargs() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1, null));
     }
 }

@@ -308,12 +308,9 @@ public class SealedTypesTest {
         }
 
         @Test
-        public void shouldRejectNullTailAndAllowNullHead() {
+        public void shouldRejectNullTailAndNullHead() {
             assertThatThrownBy(() -> new Cons<>(1, null)).isInstanceOf(NullPointerException.class).hasMessage("tail is null");
-            final Cons<String> cons = new Cons<>(null, List.empty());
-            assertThat(cons.head()).isNull();
-            assertThat(cons.length()).isEqualTo(1);
-            assertThat(cons).isEqualTo(List.of((String) null));
+            assertThatThrownBy(() -> new Cons<>(null, List.empty())).isInstanceOf(NullPointerException.class).hasMessage("List: element is null");
         }
 
         @Test

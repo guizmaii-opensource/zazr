@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Spliterator;
@@ -90,15 +89,6 @@ public class HashMapTest extends AbstractMapTest {
         return HashMap.ofAll(stream, f);
     }
 
-    protected <K extends Comparable<? super K>, V> HashMap<K, V> mapOfNullKey(K k1, V v1, K k2, V v2) {
-        return mapOf(k1, v1, k2, v2);
-    }
-
-    @Override
-    protected <K extends Comparable<? super K>, V> HashMap<K, V> mapOfNullKey(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return mapOf(k1, v1, k2, v2, k3, v3);
-    }
-
     @Override
     protected <K extends Comparable<? super K>, V> HashMap<K, V> mapTabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         return HashMap.tabulate(n, f);
@@ -131,19 +121,13 @@ public class HashMapTest extends AbstractMapTest {
     @Nested
     class SpecificTests {
         @Test
-        public void shouldCalculateHashCodeOfCollision() {
-            Assertions.assertThat(HashMap.empty().put(null, 1).put(0, 2).hashCode())
-                    .isEqualTo(HashMap.empty().put(0, 2).put(null, 1).hashCode());
-            Assertions.assertThat(HashMap.empty().put(null, 1).put(0, 2).hashCode())
-                    .isEqualTo(HashMap.empty().put(null, 1).put(0, 2).hashCode());
+        public void shouldRejectNullKeyOnPut() {
+            Assertions.assertThatNullPointerException().isThrownBy(() -> HashMap.empty().put(null, 1));
         }
 
         @Test
-        public void shouldCheckHashCodeInLeafList() {
-            HashMap<Integer, Integer> trie = HashMap.empty();
-            trie = trie.put(0, 1).put(null, 2);       // LeafList.hash == 0
-            final Option<Integer> none = trie.get(1 << 6);  // (key.hash & BUCKET_BITS) == 0
-            Assertions.assertThat(none).isEqualTo(Option.none());
+        public void shouldRejectNullValueOnPut() {
+            Assertions.assertThatNullPointerException().isThrownBy(() -> HashMap.<Integer, Integer>empty().put(1, null));
         }
 
         @Test

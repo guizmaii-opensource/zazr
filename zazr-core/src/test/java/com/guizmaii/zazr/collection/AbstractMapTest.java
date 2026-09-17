@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -156,10 +157,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     protected abstract <T, K extends Comparable<? super K>, V> Map<K, V> mapOf(java.util.stream.Stream<? extends T> stream,
             Function<? super T, Tuple2<? extends K, ? extends V>> f);
-
-    protected abstract <K extends Comparable<? super K>, V> Map<K, V> mapOfNullKey(K k1, V v1, K k2, V v2);
-
-    protected abstract <K extends Comparable<? super K>, V> Map<K, V> mapOfNullKey(K k1, V v1, K k2, V v2, K k3, V v3);
 
     protected abstract <K extends Comparable<? super K>, V> Map<K, V> mapTabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f);
 
@@ -779,12 +776,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldPutNullKeyIntoMapThatContainsNullKey() {
-            final Map<Integer, String> map = mapOfNullKey(1, "a", null, "b", 2, "c");
-            assertThat(map.put(null, "!")).isEqualTo(mapOfNullKey(1, "a", null, "!", 2, "c"));
-        }
-
-        @Test
         public void shouldPutExistingKeyAndNonEqualValue() {
             final Map<IntMod2, String> map = mapOf(new IntMod2(1), "a");
 
@@ -814,12 +805,6 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
             final Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
             assertThat(src.remove(2)).isEqualTo(emptyInt().put(1, 'a').put(3, 'c'));
             assertThat(src.remove(33)).isSameAs(src);
-        }
-
-        @Test
-        public void shouldRemoveFromMapThatContainsFirstEntryHavingNullKey() {
-            final Map<Integer, String> map = mapOfNullKey(null, "a", 1, "b", 2, "c");
-            assertThat(map.remove(1)).isEqualTo(mapOfNullKey(null, "a", 2, "c"));
         }
     }
 
@@ -1311,23 +1296,13 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Nested
     class GetWithNullsTests {
         @Test
-        public void shouldRejectGetOfKeySetToNull() {
-            // a map may hold null values, but get(k) cannot return Some(null) (design 3.9)
-            final Map<String, String> map = mapOf("1", null);
-            assertThat(map.containsKey("1")).isTrue();
-            assertThatThrownBy(() -> map.get("1")).isInstanceOf(NullPointerException.class);
+        public void shouldRejectPutOfNullValue() {
+            assertThatNullPointerException().isThrownBy(() -> mapOf("1", "a").put("2", null));
         }
 
         @Test
-        public void shouldReturnOptionOfKeyWhenAccessingPresentKeysInAMapWithNulls() {
-            final Map<String, String> map = mapOf("1", "a").put("2", null);
-            assertThat(map.get("1")).isEqualTo(Option.some("a"));
-        }
-
-        @Test
-        public void shouldReturnNoneWhenAccessingAbsentKeysInAMapWithNulls() {
-            final Map<String, String> map = mapOf("1", "a").put("2", null);
-            assertThat(map.get("3")).isEqualTo(Option.none());
+        public void shouldRejectOfWithNullValue() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractMapTest.this.<String, String>mapOf("1", null));
         }
 
         @Test
@@ -1383,29 +1358,8 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldGetValueOfNullKeyWhenPutFirstHavingTwoEntries() {
-            final Map<Integer, String> map = mapOfNullKey(null, "a", 2, "b");
-            assertThat(map.get(null)).isEqualTo(Option.some("a"));
-        }
-
-        @Test
-        public void shouldGetValueOfNullKeyWhenPutLastHavingTwoEntries() {
-            final Map<Integer, String> map = mapOfNullKey(1, "a", null, "b");
-            assertThat(map.get(null)).isEqualTo(Option.some("b"));
-        }
-
-        @Test
-        public void shouldRejectGetOfPresentNullValueWhenPutFirstHavingTwoEntries() {
-            final Map<Integer, String> map = mapOf(1, null, 2, "b");
-            assertThatThrownBy(() -> map.get(1)).isInstanceOf(NullPointerException.class);
-            assertThat(map.get(2)).isEqualTo(Option.some("b"));
-        }
-
-        @Test
-        public void shouldRejectGetOfPresentNullValueWhenPutLastHavingTwoEntries() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, null);
-            assertThat(map.get(1)).isEqualTo(Option.some("a"));
-            assertThatThrownBy(() -> map.get(2)).isInstanceOf(NullPointerException.class);
+        public void shouldRejectPutOfNullKey() {
+            assertThatNullPointerException().isThrownBy(() -> mapOf(1, "a").put(null, "b"));
         }
     }
 
@@ -1497,77 +1451,42 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Nested
     class NullValueTests {
 
-        private Map<String, String> withNull() {
-            return mapOf("k", null);
+        @Test
+        public void shouldRejectOfWithNullValue() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractMapTest.this.<String, String>mapOf("k", null));
         }
 
         @Test
-        public void shouldContainEntryWithNullValue() {
-            assertThat(withNull().contains(Tuple.<String, String>of("k", null))).isTrue();
-            assertThat(withNull().contains(Tuple.<String, String>of("k", "v"))).isFalse();
-            assertThat(withNull().contains(Tuple.<String, String>of("x", null))).isFalse();
+        public void shouldRejectPutOfNullValue() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractMapTest.this.<String, String>mapOf("k", "v").put("k", null));
         }
 
         @Test
-        public void shouldEqualWithNullValueInBothDirections() {
-            final Map<String, String> a = withNull();
-            final Map<String, String> b = withNull();
-            assertThat(a).isEqualTo(b);
-            assertThat(b).isEqualTo(a);
-            assertThat(a.hashCode()).isEqualTo(b.hashCode());
-            assertThat(mapOf("k", "v")).isNotEqualTo(a);
-            assertThat(a).isNotEqualTo(mapOf("k", "v"));
+        public void shouldRejectPutWithMergeResultingInNull() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractMapTest.this.<String, String>mapOf("k", "v").put("k", "w", (a, b) -> null));
         }
 
         @Test
-        public void shouldGetOrElseTheStoredNull() {
-            assertThat(withNull().getOrElse("k", "default")).isNull();
-            assertThat(withNull().getOrElse("x", "default")).isEqualTo("default");
+        public void shouldRejectComputeIfPresentWithNullResult() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractMapTest.this.<String, String>mapOf("k", "v").computeIfPresent("k", (k, v) -> null));
         }
 
         @Test
-        public void shouldRetainAllEntriesWithNullValue() {
-            assertThat(withNull().retainAll(List.of(Tuple.<String, String>of("k", null)))).isEqualTo(withNull());
-            assertThat(withNull().retainAll(List.of(Tuple.<String, String>of("k", "v")))).isEmpty();
+        public void shouldRejectComputeIfAbsentWithNullResult() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> null));
         }
 
         @Test
-        public void shouldMergeOverAndWithNullValue() {
-            assertThat(withNull().merge(mapOf("k", "v"), (a, b) -> b)).isEqualTo(mapOf("k", "v"));
-            assertThat(mapOf("k", "v").merge(withNull(), (a, b) -> b)).isEqualTo(withNull());
+        public void shouldRejectReplaceWithNullValue() {
+            final Map<String, String> map = mapOf("k", "v");
+            assertThatNullPointerException().isThrownBy(() -> map.replace(Tuple.of("k", "v"), Tuple.<String, String>of("k", null)));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll((k, v) -> null));
         }
 
         @Test
-        public void shouldPutWithMergeOverNullValue() {
-            assertThat(withNull().put("k", "v", (a, b) -> b)).isEqualTo(mapOf("k", "v"));
-            assertThat(withNull().put(Tuple.of("k", "v"), (a, b) -> b)).isEqualTo(mapOf("k", "v"));
-        }
-
-        @Test
-        public void shouldComputeIfPresentOverNullValue() {
-            final Tuple2<Option<String>, ? extends Map<String, String>> result = withNull().computeIfPresent("k", (k, v) -> "v");
-            assertThat(result._1()).isEqualTo(Option.some("v"));
-            assertThat(result._2()).isEqualTo(mapOf("k", "v"));
-        }
-
-        @Test
-        public void shouldComputeIfAbsentOverNullValue() {
-            final Tuple2<String, ? extends Map<String, String>> result = withNull().computeIfAbsent("k", k -> "v");
-            assertThat(result._1()).isNull();
-            assertThat(result._2()).isEqualTo(withNull());
-        }
-
-        @Test
-        public void shouldReplaceEntryWithNullValue() {
-            assertThat(withNull().replace(Tuple.<String, String>of("k", null), Tuple.of("k", "v"))).isEqualTo(mapOf("k", "v"));
-            assertThat(withNull().replaceAll(Tuple.<String, String>of("k", null), Tuple.of("k", "v"))).isEqualTo(mapOf("k", "v"));
-            assertThat(withNull().replaceAll((k, v) -> "v")).isEqualTo(mapOf("k", "v"));
-        }
-
-        @Test
-        public void shouldMapKeysWithMergeOverNullValue() {
-            final Map<String, String> map = mapOf("a", null, "b", "v");
-            assertThat(map.mapKeys(k -> "x", (v1, v2) -> "merged")).isEqualTo(mapOf("x", "merged"));
+        public void shouldRejectMapKeysWithMergeResultingInNull() {
+            final Map<String, String> map = mapOf("a", "1", "b", "2");
+            assertThatNullPointerException().isThrownBy(() -> map.mapKeys(k -> "x", (v1, v2) -> null));
         }
     }
 }

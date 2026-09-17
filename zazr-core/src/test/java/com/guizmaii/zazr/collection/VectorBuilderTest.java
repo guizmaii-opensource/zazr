@@ -325,9 +325,8 @@ public class VectorBuilderTest {
     }
 
     @Test
-    public void shouldAcceptNullElements() {
-        final Vector<Integer> actual = Vector.<Integer> newBuilder().add(null).add(1).add(null).result();
-        assertThat(actual).containsExactly(null, 1, null);
+    public void shouldRejectNullElements() {
+        assertThatThrownBy(() -> Vector.<Integer> newBuilder().add(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test

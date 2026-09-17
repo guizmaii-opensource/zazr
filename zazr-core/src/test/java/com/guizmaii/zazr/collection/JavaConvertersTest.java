@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
 import static com.guizmaii.zazr.collection.JavaConvertersTest.ChangePolicy.IMMUTABLE;
 import static com.guizmaii.zazr.collection.JavaConvertersTest.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementNullability.NON_NULLABLE;
 import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementNullability.NULLABLE;
 import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementType.GENERIC;
 import static java.util.Arrays.asList;
@@ -31,10 +32,10 @@ public class JavaConvertersTest {
           // -- immutable classes
 
           new Data("java.util.Arrays$ArrayList", new ListFactory(java.util.Arrays::asList), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(Vector.class.getName(), new ListFactory(ts -> Vector.of(ts).asJava()), IMMUTABLE, GENERIC, NULLABLE),
+          new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
+          new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
+          new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
+          new Data(Vector.class.getName(), new ListFactory(ts -> Vector.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
 
           // -- mutable classes
 
@@ -43,10 +44,10 @@ public class JavaConvertersTest {
               java.util.Collections.addAll(list, ts);
               return list;
           }), MUTABLE, GENERIC, NULLABLE),
-          new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),
-          new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),
-          new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE),
-          new Data(Vector.class.getName(), new ListFactory(ts -> Vector.of(ts).asJavaMutable()), MUTABLE, GENERIC, NULLABLE)
+          new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJavaMutable()), MUTABLE, GENERIC, NON_NULLABLE),
+          new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJavaMutable()), MUTABLE, GENERIC, NON_NULLABLE),
+          new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJavaMutable()), MUTABLE, GENERIC, NON_NULLABLE),
+          new Data(Vector.class.getName(), new ListFactory(ts -> Vector.of(ts).asJavaMutable()), MUTABLE, GENERIC, NON_NULLABLE)
         );
     }
 
@@ -196,17 +197,17 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenAddingElementAtNegativeIndexToEmpty() {
-        ifSupported(() -> empty().add(-1, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> empty().add(-1, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenAddingElementAtNonExistingIndexToEmpty() {
-        ifSupported(() -> empty().add(1, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> empty().add(1, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenAddingElementAtNegativeIndexToNonEmpty() {
-        ifSupported(() -> of('1').add(-1, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> of('1').add(-1, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
@@ -214,7 +215,7 @@ public class JavaConvertersTest {
         ifSupported(() -> {
             final java.util.List<Character> list = of('1');
             // should throw for eagerly evaluated collections
-            list.add(2, null);
+            list.add(2, '9');
             // afterburner for lazy persistent collections
             list.size();
         }, IndexOutOfBoundsException.class);
@@ -858,7 +859,7 @@ public class JavaConvertersTest {
     @TestTemplate
     public void shouldReturnLastIndexOfWrongTypedElementWhenNonEmpty() {
         if (elementType == GENERIC) {
-            assertThat(of('1', null, '2').lastIndexOf("a")).isEqualTo(-1);
+            assertThat(of('1', '3', '2').lastIndexOf("a")).isEqualTo(-1);
         }
     }
 
@@ -2040,22 +2041,22 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenSettingElementAtNegativeIndexWhenEmpty() {
-        ifSupported(() -> empty().set(-1, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> empty().set(-1, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenSettingElementAtNegativeIndexWhenNotEmpty() {
-        ifSupported(() -> of('1').set(-1, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> of('1').set(-1, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenSettingElementAtSizeIndexWhenEmpty() {
-        ifSupported(() -> empty().set(0, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> empty().set(0, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenSettingElementAtSizeIndexWhenNotEmpty() {
-        ifSupported(() -> of('1').set(1, null), IndexOutOfBoundsException.class);
+        ifSupported(() -> of('1').set(1, '9'), IndexOutOfBoundsException.class);
     }
 
     @TestTemplate

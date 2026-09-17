@@ -16,6 +16,7 @@ import org.junit.jupiter.api.TestTemplate;
 
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -163,10 +164,8 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     }
 
     @Test
-    public void shouldAppendNullElementToNil() {
-        final Seq<Integer> actual = this.<Integer> empty().append(null);
-        final Seq<Integer> expected = this.of((Integer) null);
-        assertThat(actual).isEqualTo(expected);
+    public void shouldRejectAppendOfNullElement() {
+        assertThatNullPointerException().isThrownBy(() -> this.<Integer> empty().append(null));
     }
 
     @Test
@@ -829,17 +828,17 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
 
     @Test
     public void shouldThrowWhenInsertOnNonNilWithNegativeIndex() {
-        assertThrows(IndexOutOfBoundsException.class, () -> of(1).insert(-1, null));
+        assertThrows(IndexOutOfBoundsException.class, () -> of(1).insert(-1, 9));
     }
 
     @Test
     public void shouldThrowWhenInsertOnNilWithNegativeIndex() {
-        assertThrows(IndexOutOfBoundsException.class, () -> empty().insert(-1, null));
+        assertThrows(IndexOutOfBoundsException.class, () -> this.<Integer> empty().insert(-1, 9));
     }
 
     @Test
     public void shouldThrowOnInsertWhenExceedingUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> empty().insert(1, null));
+        assertThrows(IndexOutOfBoundsException.class, () -> this.<Integer> empty().insert(1, 9));
     }
 
     // -- insertAll
@@ -1428,9 +1427,9 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     }
 
     @Test
-    public void shouldRemoveAllNullsFromNonEmpty() {
-        final Seq<Integer> seq = of(1, null, 2, null, 3);
-        assertThat(seq.removeAll((Integer) null)).isEqualTo(of(1, 2, 3));
+    public void shouldNotRemoveAbsentNullFromNonEmpty() {
+        final Seq<Integer> seq = of(1, 2, 3);
+        assertThat(seq.removeAll((Integer) null)).isEqualTo(seq);
     }
 
     @Nested
@@ -2378,13 +2377,13 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     class NullElementRemoveAllTests {
 
         @Test
-        public void shouldRemoveAllNullElements() {
-            assertThat(AbstractSeqTest.this.<Integer>of(null, 1).removeAll(List.of((Integer) null))).isEqualTo(of(1));
+        public void shouldRejectNullOnOf() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractSeqTest.this.<Integer>of((Integer) null));
         }
 
         @Test
-        public void shouldRetainAllNullElements() {
-            assertThat(AbstractSeqTest.this.<Integer>of(null, 1).retainAll(List.of((Integer) null))).isEqualTo(of((Integer) null));
+        public void shouldRejectNullOnOfVarargs() {
+            assertThatNullPointerException().isThrownBy(() -> AbstractSeqTest.this.<Integer>of(1, null));
         }
     }
 }

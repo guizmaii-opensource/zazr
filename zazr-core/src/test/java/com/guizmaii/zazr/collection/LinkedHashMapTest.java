@@ -89,15 +89,6 @@ public class LinkedHashMapTest extends AbstractMapTest {
         return LinkedHashMap.ofAll(stream, f);
     }
 
-    protected <K extends Comparable<? super K>, V> Map<K, V> mapOfNullKey(K k1, V v1, K k2, V v2) {
-        return mapOf(k1, v1, k2, v2);
-    }
-
-    @Override
-    protected <K extends Comparable<? super K>, V> Map<K, V> mapOfNullKey(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return mapOf(k1, v1, k2, v2, k3, v3);
-    }
-
     @Override
     protected <K extends Comparable<? super K>, V> LinkedHashMap<K, V> mapTabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         return LinkedHashMap.tabulate(n, f);

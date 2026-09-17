@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static java.util.Comparator.nullsFirst;
 
 public class TreeMapTest extends AbstractSortedMapTest {
 
@@ -90,16 +89,6 @@ public class TreeMapTest extends AbstractSortedMapTest {
     @Override
     protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapOf(K k1, V v1, K k2, V v2, K k3, V v3) {
         return TreeMap.of(k1, v1, k2, v2, k3, v3);
-    }
-
-    @Override
-    protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapOfNullKey(K k1, V v1, K k2, V v2) {
-        return TreeMap.of(nullsFirst(Comparators.naturalComparator()), k1, v1, k2, v2);
-    }
-
-    @Override
-    protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapOfNullKey(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return TreeMap.of(nullsFirst(Comparators.naturalComparator()), k1, v1, k2, v2, k3, v3);
     }
 
     @Override

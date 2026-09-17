@@ -30,55 +30,47 @@ public class VectorPropertyTest {
             final Vector<Boolean> actualBoolean = Vector.ofAll(ArrayType.<boolean[]> asPrimitives(boolean.class, expectedBoolean));
             assert (i == 0) || (actualBoolean.trie.type.type() == boolean.class);
             assertAreEqual(expectedBoolean, actualBoolean);
-            assertAreEqual(expectedBoolean.append(null), actualBoolean.append(null));
 
             /* byte */
             final Seq<Byte> expectedByte = expected.map(Integer::byteValue);
             final Vector<Byte> actualByte = Vector.ofAll(ArrayType.<byte[]> asPrimitives(byte.class, expectedByte));
             assert (i == 0) || (actualByte.trie.type.type() == byte.class);
             assertAreEqual(expectedByte, actualByte);
-            assertAreEqual(expectedByte.append(null), actualByte.append(null));
 
             /* char */
             final Seq<Character> expectedChar = expected.map(v -> (char) v.intValue());
             final Vector<Character> actualChar = Vector.ofAll(ArrayType.<char[]> asPrimitives(char.class, expectedChar));
             assert (i == 0) || (actualChar.trie.type.type() == char.class);
             assertAreEqual(expectedChar, actualChar);
-            assertAreEqual(expectedChar.append(null), actualChar.append(null));
 
             /* double */
             final Seq<Double> expectedDouble = expected.map(Integer::doubleValue);
             final Vector<Double> actualDouble = Vector.ofAll(ArrayType.<double[]> asPrimitives(double.class, expectedDouble));
             assert (i == 0) || (actualDouble.trie.type.type() == double.class);
             assertAreEqual(expectedDouble, actualDouble);
-            assertAreEqual(expectedDouble.append(null), actualDouble.append(null));
 
             /* float */
             final Seq<Float> expectedFloat = expected.map(Integer::floatValue);
             final Vector<Float> actualFloat = Vector.ofAll(ArrayType.<float[]> asPrimitives(float.class, expectedFloat));
             assert (i == 0) || (actualFloat.trie.type.type() == float.class);
             assertAreEqual(expectedFloat, actualFloat);
-            assertAreEqual(expectedFloat.append(null), actualFloat.append(null));
 
             /* int */
             final Vector<Integer> actualInt = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
             assert (i == 0) || (actualInt.trie.type.type() == int.class);
             assertAreEqual(expected, actualInt);
-            assertAreEqual(expected.append(null), actual.append(null));
 
             /* long */
             final Seq<Long> expectedLong = expected.map(Integer::longValue);
             final Vector<Long> actualLong = Vector.ofAll(ArrayType.<long[]> asPrimitives(long.class, expectedLong));
             assert (i == 0) || (actualLong.trie.type.type() == long.class);
             assertAreEqual(expectedLong, actualLong);
-            assertAreEqual(expectedLong.append(null), actualLong.append(null));
 
             /* short */
             final Seq<Short> expectedShort = expected.map(Integer::shortValue);
             final Vector<Short> actualShort = Vector.ofAll(ArrayType.<short[]> asPrimitives(short.class, expectedShort));
             assert (i == 0) || (actualShort.trie.type.type() == short.class);
             assertAreEqual(expectedShort, actualShort);
-            assertAreEqual(expectedShort.append(null), actualShort.append(null));
         }
     }
 
@@ -345,9 +337,7 @@ public class VectorPropertyTest {
     }
     private Object randomValue(Random random) {
         final int percent = percent(random);
-        if (percent < 5) {
-            return null;
-        } else if (percent < 10) {
+        if (percent < 10) {
             return "String";
         } else {
             return random.nextInt();
