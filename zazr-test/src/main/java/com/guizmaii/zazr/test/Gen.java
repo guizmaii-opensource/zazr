@@ -295,7 +295,7 @@ public interface Gen<T> {
      */
     default Gen<T> intersperse(Gen<T> other) {
         final Iterator<Gen<T>> iter = Iterator.continually(this).intersperse(other);
-        return random -> iter.get().apply(random);
+        return random -> iter.next().apply(random);
     }
 
     /**

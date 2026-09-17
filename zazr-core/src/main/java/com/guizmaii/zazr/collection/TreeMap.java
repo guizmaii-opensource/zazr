@@ -1085,29 +1085,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.initOption(this);
     }
 
-    /**
-     * An {@code TreeMap}'s value is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() {
         return entries.isEmpty();
-    }
-
-    /**
-     * An {@code TreeMap}'s value is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
     }
 
     @Override
@@ -1428,13 +1408,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public String stringPrefix() {
-        return "TreeMap";
-    }
-
-    @Override
     public String toString() {
-        return mkString(stringPrefix() + "(", ", ", ")");
+        return mkString("TreeMap(", ", ", ")");
     }
 
     // -- private helpers

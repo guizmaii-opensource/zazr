@@ -699,29 +699,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return Maps.initOption(this);
     }
 
-    /**
-     * An {@code LinkedHashMap}'s value is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() {
         return map.isEmpty();
-    }
-
-    /**
-     * An {@code LinkedHashMap}'s value is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
     }
 
     @Override
@@ -1070,13 +1050,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public String stringPrefix() {
-        return "LinkedHashMap";
-    }
-
-    @Override
     public String toString() {
-        return mkString(stringPrefix() + "(", ", ", ")");
+        return mkString("LinkedHashMap(", ", ", ")");
     }
 
     /**

@@ -37,6 +37,9 @@ import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
  * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
  * {@code Throwable} instance, see {@link Failure}.
  * <p>
+ * A {@code Try} is not a collection and not {@link Iterable} (design 3.2): to iterate its value, convert it
+ * explicitly with {@link #toVector()} or {@link #toOption()}.
+ * <p>
  * The following exceptions are considered fatal or non-recoverable:
  * <ul>
  *     <li>{@linkplain InterruptedException}</li>
@@ -57,7 +60,7 @@ import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
  * @param <T> the type of the value in case of success
  * @author Daniel
  */
-public sealed interface Try<T extends @Nullable Object> extends Value<T> permits Try.Success, Try.Failure {
+public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try.Failure {
 
     /**
      * Creates a {@link Try} instance from a {@link Callable}.
@@ -544,7 +547,6 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @return the value contained in this {@code Success}
      * throws Throwable the underlying cause sneakily if this is a {@link Failure}
      */
-    @Override
     T get();
 
     /**
@@ -556,21 +558,10 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
     Throwable getCause();
 
     /**
-     * Indicates whether this {@code Try} is computed asynchronously.
-     *
-     * @return {@code false} for a regular {@code Try}, since the value is computed synchronously
-     */
-    @Override
-    default boolean isAsync() {
-        return false;
-    }
-
-    /**
      * Checks whether this {@code Try} contains no value, i.e., it is a {@link Failure}.
      *
      * @return {@code true} if this is a {@link Failure}, {@code false} if this is a {@link Success}
      */
-    @Override
     boolean isEmpty();
 
     /**
@@ -581,36 +572,11 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
     boolean isFailure();
 
     /**
-     * Indicates whether this {@code Try} is evaluated lazily.
-     *
-     * @return {@code false} for a standard {@code Try}, as its value is computed eagerly
-     */
-    @Override
-    default boolean isLazy() {
-        return false;
-    }
-
-    /**
-     * Indicates whether this {@code Try} represents a single value.
-     *
-     * @return {@code true}, since a {@code Try} always contains at most one value
-     */
-    @Override
-    default boolean isSingleValued() {
-        return true;
-    }
-
-    /**
      * Checks whether this {@code Try} is a {@link Success}.
      *
      * @return {@code true} if this is a {@link Success}, {@code false} if this is a {@link Failure}
      */
     boolean isSuccess();
-
-    @Override
-    default Iterator<T> iterator() {
-        return isSuccess() ? Iterator.of(get()) : Iterator.empty();
-    }
 
     /**
      * Shortcut for {@code mapTry(mapper::apply)}, see {@link #mapTry(CheckedFunction1)}.
@@ -622,15 +588,9 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @return a {@code Try}
      * @throws NullPointerException if {@code mapper} is null
      */
-    @Override
     default <U extends @Nullable Object> Try<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return mapTry(mapper::apply);
-    }
-
-    @Override
-    default <U extends @Nullable Object> Try<U> mapTo(U value) {
-        return map(ignored -> value);
     }
 
     /**
@@ -776,6 +736,39 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
     }
 
     /**
+     * Returns the value of this {@code Success}, or {@code other} if this is a {@link Failure}.
+     * <p>
+     * Note that {@code other} is evaluated eagerly.
+     *
+     * @param other an alternative value
+     * @return the value of this {@link Success}, otherwise {@code other}
+     */
+    default T getOrElse(T other) {
+        return isSuccess() ? get() : other;
+    }
+
+    /**
+     * Returns the value of this {@code Success}, or the value supplied by {@code supplier} if this is a {@link Failure}.
+     *
+     * @param supplier a supplier of an alternative value, invoked only for a {@code Failure}
+     * @return the value of this {@link Success}, otherwise the supplied value
+     * @throws NullPointerException if {@code supplier} is null
+     */
+    default T getOrElse(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isSuccess() ? get() : supplier.get();
+    }
+
+    /**
+     * Returns the value of this {@code Success}, or {@code null} if this is a {@link Failure}.
+     *
+     * @return the value of this {@link Success}, otherwise {@code null}
+     */
+    default @Nullable T getOrNull() {
+        return isSuccess() ? get() : null;
+    }
+
+    /**
      * Returns the value of this {@code Success}, or applies the given function to the cause if this is a {@link Failure}.
      *
      * @param other a function mapping the throwable cause to a replacement value
@@ -807,6 +800,25 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
     }
 
     /**
+     * Returns the value of this {@link Success}, or throws the exception supplied by {@code exceptionSupplier} if this
+     * is a {@link Failure}. To throw the cause itself, use {@link #get()}.
+     *
+     * @param <X>               the type of the exception to throw
+     * @param exceptionSupplier a supplier of the exception, invoked only for a {@code Failure}
+     * @return the value of this {@link Success}
+     * @throws X                    if this is a {@link Failure}
+     * @throws NullPointerException if {@code exceptionSupplier} is null
+     */
+    default <X extends Throwable> T getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
+        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
+        if (isFailure()) {
+            throw exceptionSupplier.get();
+        } else {
+            return get();
+        }
+    }
+
+    /**
      * Returns the value of this {@link Success}, or throws a provided exception if this is a {@link Failure}.
      * <p>
      * The exception to throw is created by applying the given {@code exceptionProvider} function to the cause of the failure.
@@ -823,6 +835,56 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
             throw exceptionProvider.apply(getCause());
         } else {
             return get();
+        }
+    }
+
+    /**
+     * Checks whether this {@code Try} holds a value equal to {@code element}, as tested by {@link Objects#equals(Object, Object)}.
+     *
+     * @param element the element to look for, may be {@code null}
+     * @return {@code true} if this is {@code Success(element)}, {@code false} otherwise (always for a {@code Failure})
+     */
+    default boolean contains(@Nullable T element) {
+        return isSuccess() && Objects.equals(get(), element);
+    }
+
+    /**
+     * Checks whether this {@code Try} holds a value satisfying the given predicate. The predicate is not run under
+     * {@code Try}: whatever it throws propagates to the caller.
+     *
+     * @param predicate a predicate to test the value
+     * @return {@code true} if this is a {@code Success} and the predicate holds for its value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean exists(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isSuccess() && predicate.test(get());
+    }
+
+    /**
+     * Checks whether the given predicate holds for the value of this {@code Try}; it holds vacuously for a
+     * {@code Failure}. The predicate is not run under {@code Try}: whatever it throws propagates to the caller.
+     *
+     * @param predicate a predicate to test the value
+     * @return {@code true} if this is a {@code Failure} or the predicate holds for the value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean forAll(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isFailure() || predicate.test(get());
+    }
+
+    /**
+     * Performs the given action on the value if this is a {@link Success}; does nothing for a {@code Failure}. Unlike
+     * {@link #andThen(Consumer)}, an exception thrown by the action propagates to the caller.
+     *
+     * @param action a consumer of the value
+     * @throws NullPointerException if {@code action} is null
+     */
+    default void forEach(Consumer<? super T> action) {
+        Objects.requireNonNull(action, "action is null");
+        if (isSuccess()) {
+            action.accept(get());
         }
     }
 
@@ -855,7 +917,6 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
      * @return this {@code Try} instance
      * @throws NullPointerException if {@code action} is null
      */
-    @Override
     default Try<T> peek(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isSuccess()) {
@@ -1170,56 +1231,36 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
     }
 
     /**
-     * Converts this {@code Try} to an {@link Either}, mapping the failure cause to a left value using
-     * the provided {@link Function}.
-     *
-     * @param <L>             the left type of the resulting {@code Either}
-     * @param throwableMapper a function to convert the failure {@link Throwable} to type {@code L}
-     * @return a new {@code Either} representing this {@code Try}
-     * @throws NullPointerException if {@code throwableMapper} is null
-     */
-    default <L extends @Nullable Object> Either<L, T> toEither(Function<? super Throwable, ? extends L> throwableMapper) {
-        Objects.requireNonNull(throwableMapper, "throwableMapper is null");
-        if (isFailure()) {
-            return Either.left(throwableMapper.apply(getCause()));
-        } else {
-            return Either.right(get());
-        }
-    }
-
-    /**
-     * Converts this {@code Try} to a {@link Validation}.
-     * <p>
-     * A {@link Try.Success} is converted to a {@link Validation#valid(Object)}, while
-     * a {@link Try.Failure} is converted to a {@link Validation#invalid(Object)} containing
-     * the cause.
+     * Converts this {@code Try} to a {@link Validation}: {@code Valid(value)} for a {@link Success}, {@code Invalid(cause)}
+     * for a {@link Failure}.
      *
      * @return a new {@code Validation} representing this {@code Try}
      */
     default Validation<Throwable, T> toValidation() {
-        return toValidation(Function.identity());
-    }
-
-    /**
-     * Converts this {@code Try} to a {@link Validation}, mapping the failure cause to an invalid value
-     * using the provided {@link Function}.
-     *
-     * <pre>{@code
-     * Validation<String, Integer> validation = Try.of(() -> 1/0).toValidation(Throwable::getMessage);
-     * }</pre>
-     *
-     * @param <U>             the type of the invalid value
-     * @param throwableMapper a function to convert the failure {@link Throwable} to type {@code U}
-     * @return a {@code Validation} representing this {@code Try}
-     * @throws NullPointerException if {@code throwableMapper} is null, or if it returns {@code null} for the failure cause
-     */
-    default <U extends @Nullable Object> Validation<U, T> toValidation(Function<? super Throwable, ? extends U> throwableMapper) {
-        Objects.requireNonNull(throwableMapper, "throwableMapper is null");
         if (isFailure()) {
-            return Validation.invalid(throwableMapper.apply(getCause()));
+            return Validation.invalid(getCause());
         } else {
             return Validation.valid(get());
         }
+    }
+
+    /**
+     * Converts this {@code Try} to an {@link Option}: {@code Some(value)} for a {@link Success}, {@code None} for a
+     * {@link Failure}, whose cause is dropped.
+     *
+     * @return {@code Option.some(get())} if this is a {@code Success}, otherwise {@code Option.none()}
+     */
+    default Option<T> toOption() {
+        return isSuccess() ? Option.some(get()) : Option.none();
+    }
+
+    /**
+     * Converts this {@code Try} to a {@link Vector} of zero or one element: its value, if any.
+     *
+     * @return {@code Vector.of(get())} if this is a {@code Success}, otherwise the empty {@code Vector}
+     */
+    default Vector<T> toVector() {
+        return isSuccess() ? Vector.of(get()) : Vector.empty();
     }
 
     /**
@@ -1362,13 +1403,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         }
 
         @Override
-        public String stringPrefix() {
-            return "Success";
-        }
-
-        @Override
         public String toString() {
-            return stringPrefix() + "(" + value + ")";
+            return "Success(" + value + ")";
         }
     }
 
@@ -1429,13 +1465,8 @@ public sealed interface Try<T extends @Nullable Object> extends Value<T> permits
         }
 
         @Override
-        public String stringPrefix() {
-            return "Failure";
-        }
-
-        @Override
         public String toString() {
-            return stringPrefix() + "(" + cause + ")";
+            return "Failure(" + cause + ")";
         }
     }
 

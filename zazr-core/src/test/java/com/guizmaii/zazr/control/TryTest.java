@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.control;
 
-import com.guizmaii.zazr.AbstractValueTest;
 import com.guizmaii.zazr.CheckedConsumer;
 import com.guizmaii.zazr.CheckedFunction1;
 import com.guizmaii.zazr.CheckedFunction3;
@@ -8,7 +7,6 @@ import com.guizmaii.zazr.CheckedPredicate;
 import com.guizmaii.zazr.CheckedRunnable;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
-import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.collection.Seq;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
@@ -16,11 +14,9 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,55 +26,26 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class TryTest extends AbstractValueTest {
+public class TryTest {
 
     private static final String OK = "ok";
     private static final String FAILURE = "failure";
 
-    // -- AbstractValueTest
-
-    @Override
-    protected <T> Try<T> empty() {
-        // one shared cause: two Failures are equal only when they hold the same Throwable (design 3.9)
-        return Try.failure(EMPTY_CAUSE);
-    }
-
-    private static final NoSuchElementException EMPTY_CAUSE = new NoSuchElementException();
-
-    @Override
-    protected <T> Try<T> of(T element) {
-        return Try.success(element);
-    }
-
-    @SafeVarargs
-    @Override
-    protected final <T> Try<T> of(T... elements) {
-        return of(elements[0]);
-    }
-
-    @Override
-    protected boolean allowsNull() {
-        return false;
-    }
-
-    @Override
-    protected boolean useIsEqualToInsteadOfIsSameAs() {
-        return true;
-    }
-
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
-    @Override
     @Test
-    public void shouldGetEmpty() {
-        assertThrows(NoSuchElementException.class, () -> empty().get());
+    public void shouldNotBeIterable() {
+        // design 3.2: list.addAll(someTry) must not compile
+        assertThat(Iterable.class.isAssignableFrom(Try.class)).isFalse();
+    }
+
+    @Test
+    public void shouldThrowTheCauseOnGetOfFailure() {
+        final NoSuchElementException cause = new NoSuchElementException();
+        assertThatThrownBy(() -> Try.failure(cause).get()).isSameAs(cause);
     }
 
     @Nested
@@ -171,6 +138,26 @@ public class TryTest extends AbstractValueTest {
                 });
             });
         }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> failure().exists(null));
+        }
+    }
+
+    @Nested
+    class ContainsTests {
+        @Test
+        public void shouldContainTheSuccessValue() {
+            assertThat(Try.success(1).contains(1)).isTrue();
+            assertThat(Try.success(1).contains(2)).isFalse();
+            assertThat(Try.success(1).contains(null)).isFalse();
+        }
+
+        @Test
+        public void shouldNotContainAnythingOnFailure() {
+            assertThat(TryTest.<Integer>failure().contains(1)).isFalse();
+        }
     }
 
     @Nested
@@ -198,6 +185,11 @@ public class TryTest extends AbstractValueTest {
                 });
             });
         }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> failure().forAll(null));
+        }
     }
 
     @Nested
@@ -224,19 +216,6 @@ public class TryTest extends AbstractValueTest {
         public void shouldReturnAlternativeOnOrElseSupplierIfFailure() {
             final Try<Integer> success = Try.success(42);
             assertThat(Try.failure(new RuntimeException()).orElse(() -> success)).isSameAs(success);
-        }
-    }
-
-    @Nested
-    class IteratorTests {
-        @Test
-        public void shouldReturnIteratorOfSuccess() {
-            assertThat((Iterator<Integer>) Try.success(1).iterator()).isNotNull();
-        }
-
-        @Test
-        public void shouldReturnIteratorOfFailure() {
-            assertThat((Iterator<Object>) failure().iterator()).isNotNull();
         }
     }
 
@@ -373,15 +352,6 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldRethrowTheOriginalIOExceptionInstanceFromGetOrElseTry() {
-            final IOException cause = new IOException("boom");
-            final Value<String> empty = Try.failure(new RuntimeException("empty"));
-            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
-                throw cause;
-            })).isSameAs(cause);
-        }
-
-        @Test
         public void shouldRethrowTheOriginalIOExceptionInstanceFromCurriedLastStep() throws Exception {
             final IOException cause = new IOException("boom");
             final CheckedFunction3<Integer, Integer, Integer, String> f = (a, b, c) -> {
@@ -437,8 +407,7 @@ public class TryTest extends AbstractValueTest {
     }
 
     // -- allocation-aware rewrites (#54): CheckedFunctionN.lift builds the Option directly (no throwaway Try)
-    // and Value.getOrElseTry calls the supplier directly (no throwaway Try either); both preserve the exact
-    // exception-propagation semantics the Try-based implementation had.
+    // and preserves the exact exception-propagation semantics the Try-based implementation had.
 
     @Nested
     class AllocationAwareRewriteTests {
@@ -476,41 +445,6 @@ public class TryTest extends AbstractValueTest {
             assertThatThrownBy(() -> CheckedFunction1.lift(throwing).apply(1)).isSameAs(fatal);
         }
 
-        @Test
-        public void shouldGetOrElseTryPropagateACheckedException() {
-            final IOException cause = new IOException("boom");
-            final Value<String> empty = Try.failure(new RuntimeException("empty"));
-            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
-                throw cause;
-            })).isSameAs(cause);
-        }
-
-        @Test
-        public void shouldGetOrElseTryPropagateARuntimeException() {
-            final IllegalStateException cause = new IllegalStateException("boom");
-            final Value<String> empty = Try.failure(new RuntimeException("empty"));
-            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
-                throw cause;
-            })).isSameAs(cause);
-        }
-
-        @Test
-        public void shouldGetOrElseTryPropagateANonFatalAssertionError() {
-            final AssertionError cause = new AssertionError("boom");
-            final Value<String> empty = Try.failure(new RuntimeException("empty"));
-            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
-                throw cause;
-            })).isSameAs(cause);
-        }
-
-        @Test
-        public void shouldGetOrElseTryPropagateAFatalOutOfMemoryError() {
-            final OutOfMemoryError fatal = new OutOfMemoryError("fatal");
-            final Value<String> empty = Try.failure(new RuntimeException("empty"));
-            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
-                throw fatal;
-            })).isSameAs(fatal);
-        }
     }
 
     // -- Try.withResources
@@ -917,9 +851,9 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldThrowUndeclaredThrowableExceptionWhenUsingDynamicProxiesAndGetThrows() {
-            final Value<?> testee = (Value<?>) Proxy.newProxyInstance(
-              Value.class.getClassLoader(),
-              new Class<?>[]{Value.class},
+            final Supplier<?> testee = (Supplier<?>) Proxy.newProxyInstance(
+              Supplier.class.getClassLoader(),
+              new Class<?>[]{Supplier.class},
               (proxy, method, args) -> Try.failure(new Exception()).get());
             assertThatThrownBy(testee::get)
               .isInstanceOf(UndeclaredThrowableException.class)
@@ -932,6 +866,37 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldReturnElseWhenOrElseOnFailure() {
             assertThat(failure().getOrElse(OK)).isEqualTo(OK);
+        }
+
+        @Test
+        public void shouldReturnSuppliedElseWhenOrElseOnFailure() {
+            assertThat(failure().getOrElse(() -> OK)).isEqualTo(OK);
+        }
+
+        @Test
+        public void shouldNotInvokeSupplierOnSuccess() {
+            assertThat(success().getOrElse(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(OK);
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            final Supplier<String> supplier = null;
+            assertThrows(NullPointerException.class, () -> TryTest.<String>failure().getOrElse(supplier));
+        }
+    }
+
+    @Nested
+    class GetornullTests {
+        @Test
+        public void shouldReturnNullWhenGetOrNullOnFailure() {
+            assertThat(failure().getOrNull()).isNull();
+        }
+
+        @Test
+        public void shouldReturnValueWhenGetOrNullOnSuccess() {
+            assertThat(success().getOrNull()).isEqualTo(OK);
         }
     }
 
@@ -948,6 +913,22 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldThrowOtherWhenGetOrElseThrowOnFailure() {
             assertThrows(IllegalStateException.class, () -> failure().getOrElseThrow(x -> new IllegalStateException(OK)));
+        }
+
+        @Test
+        public void shouldThrowSuppliedWhenGetOrElseThrowOnFailure() {
+            assertThrows(IllegalStateException.class, () -> failure().getOrElseThrow(() -> new IllegalStateException(OK)));
+        }
+
+        @Test
+        public void shouldReturnValueWhenGetOrElseThrowOnSuccess() {
+            assertThat(success().getOrElseThrow(() -> new IllegalStateException(OK))).isEqualTo(OK);
+        }
+
+        @Test
+        public void shouldThrowOnNullArguments() {
+            assertThrows(NullPointerException.class, () -> failure().getOrElseThrow((Supplier<RuntimeException>) null));
+            assertThrows(NullPointerException.class, () -> failure().getOrElseThrow((Function<Throwable, RuntimeException>) null));
         }
     }
 
@@ -1210,60 +1191,49 @@ public class TryTest extends AbstractValueTest {
     class TooptionTests {
         @Test
         public void shouldConvertFailureToOption() {
-            assertThat(failure().toOption().isDefined()).isFalse();
+            // the cause is dropped
+            assertThat(failure().toOption()).isSameAs(Option.none());
+        }
+
+        @Test
+        public void shouldConvertSuccessToOption() {
+            assertThat(success().toOption()).isEqualTo(Option.some(OK));
+        }
+    }
+
+    @Nested
+    class TovectorTests {
+        @Test
+        public void shouldConvertFailureToEmptyVector() {
+            assertThat(failure().toVector()).isSameAs(com.guizmaii.zazr.collection.Vector.empty());
+        }
+
+        @Test
+        public void shouldConvertSuccessToVectorOfOne() {
+            assertThat(success().toVector()).isEqualTo(com.guizmaii.zazr.collection.Vector.of(OK));
         }
     }
 
     @Nested
     class ToeitherTests {
         @Test
-        public void shouldConvertFailureToEither() {
-            assertThat(failure().toEither().isLeft()).isTrue();
+        public void shouldConvertFailureToEitherLeftOfTheCause() {
+            final RuntimeException cause = error();
+            final Either<Throwable, Object> either = Try.failure(cause).toEither();
+            assertThat(either.isLeft()).isTrue();
+            assertThat(either.getLeft()).isSameAs(cause);
         }
 
         @Test
-        public void shouldConvertFailureToEitherUsingMapper() {
-            Either<String, Object> converted = failure().toEither(
-                exception -> "error string"
-            );
-            assertThat(converted.isLeft()).isTrue();
-            assertThat(converted.getLeft()).isEqualTo("error string");
+        public void shouldConvertSuccessToEitherRight() {
+            assertThat(success().toEither()).isEqualTo(Either.right(OK));
         }
 
         @Test
-        public void shouldConvertSuccessToEitherUsingMapper() {
-            Either<String, String> converted = success().toEither(
-                exception -> "another error"
-            );
-            assertThat(converted.isRight()).isTrue();
-            assertThat(converted.get()).isEqualTo(success().get());
-        }
-
-        @Test
-        public void shouldExecuteToEitherMapperLazilyOnlyWhenFailure() {
-            Either<String, String> converted = success().toEither(
-                exception -> {
-                    throw new RuntimeException();
-                }
-            );
-            assertThat(converted.isRight()).isTrue();
-            assertThat(converted.get()).isEqualTo(success().get());
-        }
-
-        @Test
-        public void shouldNotAcceptNullAsThrowableMapperForToEither() {
-            Function<Throwable, String> mapper = null;
-            assertThrows(NullPointerException.class, () -> failure().toEither(mapper));
-        }
-
-        @Test
-        public void shouldConvertFailureToEitherLeft() {
-            assertThat(failure().toEither("test").isLeft()).isTrue();
-        }
-
-        @Test
-        public void shouldConvertFailureToEitherLeftSupplier() {
-            assertThat(failure().toEither(() -> "test").isLeft()).isTrue();
+        public void shouldMapTheCauseThroughMapLeft() {
+            // toEither(Function) is gone (design 3.2): the mapping composes on the Either
+            final Either<String, Object> converted = Try.failure(error()).toEither().mapLeft(Throwable::getMessage);
+            assertThat(converted).isEqualTo(Either.left("error"));
         }
     }
 
@@ -1273,16 +1243,20 @@ public class TryTest extends AbstractValueTest {
         public void shouldConvertFailureToValidation() {
             final Try<Object> failure = failure();
             final Validation<Throwable, Object> invalid = failure.toValidation();
-            assertThat(invalid.getError()).isEqualTo(failure.getCause());
+            assertThat(invalid.getError()).isSameAs(failure.getCause());
             assertThat(invalid.isInvalid()).isTrue();
         }
 
         @Test
-        public void shouldConvertFailureToInvalidValidation() {
-            final Try<Object> failure = failure();
-            final Validation<String, Object> validation = failure.toValidation(Throwable::toString);
-            assertThat(validation.getError()).isEqualTo(failure.getCause().toString());
-            assertThat(validation.isInvalid()).isTrue();
+        public void shouldConvertSuccessToValidation() {
+            assertThat(success().toValidation()).isEqualTo(Validation.valid(OK));
+        }
+
+        @Test
+        public void shouldMapTheCauseThroughMapError() {
+            // toValidation(Function) is gone (design 3.2): the mapping composes on the Validation
+            final Validation<String, Object> validation = Try.failure(error()).toValidation().mapError(Throwable::getMessage);
+            assertThat(validation).isEqualTo(Validation.invalid("error"));
         }
     }
 
@@ -1391,27 +1365,6 @@ public class TryTest extends AbstractValueTest {
         }
     }
 
-    @Nested
-    class Tovalidation2Tests {
-        @Test
-        public void shouldConvertFailureToValidationLeft() {
-            assertThat(failure().toValidation("test").isInvalid()).isTrue();
-        }
-
-        @Test
-        public void shouldConvertFailureToValidationLeftSupplier() {
-            assertThat(failure().toValidation(() -> "test").isInvalid()).isTrue();
-        }
-    }
-
-    @Nested
-    class TojavaoptionalTests {
-        @Test
-        public void shouldConvertFailureToJavaOptional() {
-            assertThat(failure().toJavaOptional().isPresent()).isFalse();
-        }
-    }
-
     // -- filter
 
     @Test
@@ -1461,10 +1414,35 @@ public class TryTest extends AbstractValueTest {
     @Nested
     class IsemptyTests {
         @Test
+        public void shouldBeEmptyOnFailure() {
+            assertThat(failure().isEmpty()).isTrue();
+        }
+
+        @Test
+        public void shouldNotBeEmptyOnSuccess() {
+            assertThat(success().isEmpty()).isFalse();
+        }
+    }
+
+    @Nested
+    class ForeachTests {
+        @Test
         public void shouldForEachOnFailure() {
             final List<String> actual = new ArrayList<>();
             TryTest.<String>failure().forEach(actual::add);
             assertThat(actual.isEmpty()).isTrue();
+        }
+
+        @Test
+        public void shouldPropagateWhatTheActionThrows() {
+            assertThrows(IllegalStateException.class, () -> success().forEach(s -> {
+                throw new IllegalStateException(s);
+            }));
+        }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> failure().forEach(null));
         }
     }
 
@@ -1738,16 +1716,6 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldConvertSuccessToValidValidationUsingConversionWithMapper() {
-            assertThat(success().toValidation(Throwable::getMessage).isValid()).isTrue();
-        }
-
-        @Test
-        public void shouldConvertSuccessToJavaOptional() {
-            assertThat(success().toJavaOptional().get()).isEqualTo(OK);
-        }
-
-        @Test
         public void shouldFilterMatchingPredicateOnSuccess() {
             assertThat(success().filter(s -> true).get()).isEqualTo(OK);
         }
@@ -1877,6 +1845,11 @@ public class TryTest extends AbstractValueTest {
         @Test
         public void shouldPeekSuccessAndThrow() {
             assertThrows(RuntimeException.class, () -> success().peek(t -> failure().get()));
+        }
+
+        @Test
+        public void shouldThrowOnNullPeekAction() {
+            assertThrows(NullPointerException.class, () -> success().peek(null));
         }
 
         // equals
@@ -2021,21 +1994,4 @@ public class TryTest extends AbstractValueTest {
         return Try.of(() -> "ok");
     }
 
-    @Nested
-    class SpliteratorTests {
-        @Test
-        public void shouldHaveSizedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
-        }
-
-        @Test
-        public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-        }
-
-        @Test
-        public void shouldReturnSizeWhenSpliterator() {
-            assertThat(of(1).spliterator().getExactSizeIfKnown()).isEqualTo(1);
-        }
-    }
 }

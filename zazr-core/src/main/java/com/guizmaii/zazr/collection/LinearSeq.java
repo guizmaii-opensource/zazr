@@ -436,7 +436,7 @@ interface LinearSeqModule {
             int index = 0;
             final int sliceLength = slice.length();
             // DEV-NOTE: we can't compute the length of an infinite Stream but it may contain a slice
-            final boolean lazy = source.isLazy();
+            final boolean lazy = !source.hasDefiniteSize();
             // length once, then counted down: List.length() walks the list
             int remaining = lazy ? 0 : source.length();
             while (lazy ? source.nonEmpty() : remaining >= sliceLength) {

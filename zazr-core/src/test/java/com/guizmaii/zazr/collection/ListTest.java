@@ -2,7 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -331,7 +330,7 @@ public class ListTest extends AbstractLinearSeqTest {
         
         @Test
         void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.get()));
+            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
             assertThat(transformed).isEqualTo("42");
         }
     }
@@ -404,7 +403,7 @@ public class ListTest extends AbstractLinearSeqTest {
     class TolistTests {
         @Test
         public void shouldReturnSelfOnConvertToList() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toList()).isSameAs(value);
         }
     }

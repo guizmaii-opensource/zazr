@@ -778,29 +778,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
-    /**
-     * A {@code HashSet} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() {
         return tree.isEmpty();
-    }
-
-    /**
-     * A {@code HashSet} is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
     }
 
     @Override
@@ -1100,13 +1080,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public String stringPrefix() {
-        return "HashSet";
-    }
-
-    @Override
     public String toString() {
-        return mkString(stringPrefix() + "(", ", ", ")");
+        return mkString("HashSet(", ", ", ")");
     }
 
     private static <T extends @Nullable Object> HashArrayMappedTrie<T, T> addAll(HashArrayMappedTrie<T, T> initial,

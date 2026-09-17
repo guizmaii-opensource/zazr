@@ -781,29 +781,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
-    /**
-     * An {@code LinkedHashSet}'s value is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() {
         return map.isEmpty();
-    }
-
-    /**
-     * An {@code LinkedHashSet}'s value is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
     }
 
     @Override
@@ -1115,13 +1095,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public String stringPrefix() {
-        return "LinkedHashSet";
-    }
-
-    @Override
     public String toString() {
-        return mkString(stringPrefix() + "(", ", ", ")");
+        return mkString("LinkedHashSet(", ", ", ")");
     }
 
     private static <T extends @Nullable Object> LinkedHashMap<T, Object> addAll(LinkedHashMap<T, Object> initial,

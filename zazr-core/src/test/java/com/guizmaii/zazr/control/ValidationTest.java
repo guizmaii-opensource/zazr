@@ -1,55 +1,171 @@
 package com.guizmaii.zazr.control;
 
-import com.guizmaii.zazr.AbstractValueTest;
-import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Spliterator;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ValidationTest extends AbstractValueTest {
+public class ValidationTest {
 
     private static final String OK = "ok";
     private static final List<String> ERRORS = List.of("error1", "error2", "error3");
 
-    // -- AbstractValueTest
-
-    @Override
-    protected <T> Validation<String, T> empty() {
-        return Validation.invalid("empty");
+    @Test
+    public void shouldNotBeIterable() {
+        // design 3.2
+        assertThat(Iterable.class.isAssignableFrom(Validation.class)).isFalse();
     }
 
-    @Override
-    protected <T> Validation<String, T> of(T element) {
-        return Validation.valid(element);
+    @Nested
+    class GetTests {
+        @Test
+        public void shouldGetValid() {
+            assertThat(Validation.valid(1).get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldThrowOnGetInvalid() {
+            assertThrows(NoSuchElementException.class, () -> Validation.invalid("e").get());
+        }
     }
 
-    @SafeVarargs
-    @Override
-    protected final <T> Value<T> of(T... elements) {
-        return Validation.valid(elements[0]);
+    @Nested
+    class IsEmptyTests {
+        @Test
+        public void shouldBeEmptyOnInvalid() {
+            assertThat(Validation.invalid("e").isEmpty()).isTrue();
+        }
+
+        @Test
+        public void shouldNotBeEmptyOnValid() {
+            assertThat(Validation.valid(1).isEmpty()).isFalse();
+        }
     }
 
-    @Override
-    protected boolean allowsNull() {
-        return false;
+    @Nested
+    class GetOrElseTests {
+        @Test
+        public void shouldGetValueOnValid() {
+            assertThat(Validation.valid(1).getOrElse(2)).isEqualTo(1);
+            assertThat(Validation.valid(1).getOrElse(() -> 2)).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldGetAlternativeOnInvalid() {
+            assertThat(Validation.<String, Integer>invalid("e").getOrElse(2)).isEqualTo(2);
+            assertThat(Validation.<String, Integer>invalid("e").getOrElse(() -> 2)).isEqualTo(2);
+        }
+
+        @Test
+        public void shouldAcceptNullAsAlternative() {
+            assertThat(Validation.<String, Integer>invalid("e").getOrElse((Integer) null)).isNull();
+        }
+
+        @Test
+        public void shouldNotInvokeSupplierOnValid() {
+            assertThat(Validation.valid(1).getOrElse(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            final Supplier<Integer> supplier = null;
+            assertThrows(NullPointerException.class, () -> Validation.<String, Integer>invalid("e").getOrElse(supplier));
+        }
     }
 
-    @Override
-    protected boolean useIsEqualToInsteadOfIsSameAs() {
-        return true;
+    @Nested
+    class GetOrElseThrowTests {
+        @Test
+        public void shouldGetValueOnValid() {
+            assertThat(Validation.valid(1).getOrElseThrow(() -> new IllegalStateException("x"))).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldThrowSuppliedExceptionOnInvalid() {
+            assertThrows(IllegalStateException.class, () -> Validation.invalid("e").getOrElseThrow(() -> new IllegalStateException("x")));
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            assertThrows(NullPointerException.class, () -> Validation.invalid("e").getOrElseThrow(null));
+        }
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
+    @Nested
+    class GetOrNullTests {
+        @Test
+        public void shouldGetValueOnValid() {
+            assertThat(Validation.valid(1).getOrNull()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldGetNullOnInvalid() {
+            assertThat(Validation.invalid("e").getOrNull()).isNull();
+        }
+    }
+
+    @Nested
+    class ContainsTests {
+        @Test
+        public void shouldContainTheValidValue() {
+            assertThat(Validation.valid(1).contains(1)).isTrue();
+            assertThat(Validation.valid(1).contains(2)).isFalse();
+            assertThat(Validation.valid(1).contains(null)).isFalse();
+        }
+
+        @Test
+        public void shouldNotContainTheError() {
+            assertThat(Validation.<Integer, Integer>invalid(1).contains(1)).isFalse();
+        }
+    }
+
+    @Nested
+    class ExistsTests {
+        @Test
+        public void shouldTestTheValidValue() {
+            assertThat(Validation.valid(1).exists(i -> i == 1)).isTrue();
+            assertThat(Validation.valid(1).exists(i -> i == 2)).isFalse();
+        }
+
+        @Test
+        public void shouldNotHoldOnInvalid() {
+            assertThat(Validation.invalid("e").exists(i -> true)).isFalse();
+        }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> Validation.invalid("e").exists(null));
+        }
+    }
+
+    @Nested
+    class ForAllTests {
+        @Test
+        public void shouldTestTheValidValue() {
+            assertThat(Validation.valid(1).forAll(i -> i == 1)).isTrue();
+            assertThat(Validation.valid(1).forAll(i -> i == 2)).isFalse();
+        }
+
+        @Test
+        public void shouldHoldVacuouslyOnInvalid() {
+            assertThat(Validation.invalid("e").forAll(i -> false)).isTrue();
+        }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> Validation.invalid("e").forAll(null));
+        }
     }
 
     @Nested
@@ -288,6 +404,97 @@ public class ValidationTest extends AbstractValueTest {
     }
 
     @Nested
+    class ToeitherwithTests {
+        @Test
+        public void shouldConvertValidToRightWithoutApplyingTheMapper() {
+            assertThat(Validation.<String, Integer>valid(42).toEitherWith(e -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(Either.right(42));
+        }
+
+        @Test
+        public void shouldConvertInvalidToLeftOfTheMappedError() {
+            assertThat(Validation.<String, Integer>invalid("vavr").toEitherWith(String::length)).isEqualTo(Either.left(4));
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Validation.valid(42).toEitherWith(null));
+        }
+
+        @Test
+        public void shouldRejectNullLeftBuiltForInvalid() {
+            // Left cannot hold null (design 3.9)
+            assertThrows(NullPointerException.class, () -> Validation.invalid("vavr").toEitherWith(e -> null));
+        }
+    }
+
+    @Nested
+    class TooptionTests {
+        @Test
+        public void shouldConvertValidToSome() {
+            assertThat(Validation.valid(42).toOption()).isEqualTo(Option.some(42));
+        }
+
+        @Test
+        public void shouldConvertInvalidToNone() {
+            // the error is dropped
+            assertThat(Validation.invalid("vavr").toOption()).isSameAs(Option.none());
+        }
+    }
+
+    @Nested
+    class TotryTests {
+        @Test
+        public void shouldConvertValidToSuccessWithoutApplyingTheMapper() {
+            assertThat(Validation.<String, Integer>valid(42).toTry(e -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(Try.success(42));
+        }
+
+        @Test
+        public void shouldConvertInvalidToFailureOfTheMappedError() {
+            final Try<Integer> result = Validation.<String, Integer>invalid("vavr").toTry(IllegalStateException::new);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("vavr");
+        }
+
+        @Test
+        public void shouldConvertInvalidOfThrowableWithTheIdentity() {
+            final RuntimeException cause = new RuntimeException("boom");
+            assertThat(Validation.<RuntimeException, Integer>invalid(cause).toTry(t -> t).getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Validation.valid(42).toTry(null));
+        }
+
+        @Test
+        public void shouldRejectNullCauseBuiltForInvalid() {
+            assertThrows(NullPointerException.class, () -> Validation.invalid("vavr").toTry(e -> null));
+        }
+
+        @Test
+        public void shouldRethrowFatalCauseBuiltForInvalid() {
+            assertThrows(InterruptedException.class, () -> Validation.invalid("vavr").toTry(InterruptedException::new));
+        }
+    }
+
+    @Nested
+    class TovectorTests {
+        @Test
+        public void shouldConvertValidToVectorOfOne() {
+            assertThat(Validation.valid(42).toVector()).isEqualTo(Vector.of(42));
+        }
+
+        @Test
+        public void shouldConvertInvalidToEmptyVector() {
+            assertThat(Validation.invalid("vavr").toVector()).isSameAs(Vector.empty());
+        }
+    }
+
+    @Nested
     class FilterTests {
         @Test
         public void shouldFilterValid() {
@@ -461,6 +668,11 @@ public class ValidationTest extends AbstractValueTest {
                 v2.forEach(accumulator::add);
                 assertThat(accumulator.size()).isEqualTo(0);
             }
+        }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> Validation.valid("x").forEach(null));
         }
     }
 
@@ -801,24 +1013,6 @@ public class ValidationTest extends AbstractValueTest {
         @Test
         public void shouldThrowOnNullActionWhenInvalid() {
             assertThrows(NullPointerException.class, () -> Validation.invalid("error").peek(null));
-        }
-    }
-
-    @Nested
-    class SpliteratorTests {
-        @Test
-        public void shouldHaveSizedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
-        }
-
-        @Test
-        public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-        }
-
-        @Test
-        public void shouldReturnSizeWhenSpliterator() {
-            assertThat(of(1).spliterator().getExactSizeIfKnown()).isEqualTo(1);
         }
     }
 }

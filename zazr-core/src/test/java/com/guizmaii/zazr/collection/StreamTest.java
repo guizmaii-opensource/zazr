@@ -664,14 +664,6 @@ public class StreamTest extends AbstractLinearSeqTest {
         }
     }
 
-    // -- isLazy
-
-    @Override
-    @Test
-    public void shouldVerifyLazyProperty() {
-        assertThat(empty().isLazy()).isTrue();
-        assertThat(of(1).isLazy()).isTrue();
-    }
 
     // -- subSequence(int, int)
 
@@ -774,7 +766,7 @@ public class StreamTest extends AbstractLinearSeqTest {
     class TostreamTests {
         @Test
         public void shouldReturnSelfOnConvertToStream() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toStream()).isSameAs(value);
         }
     }
@@ -810,7 +802,7 @@ public class StreamTest extends AbstractLinearSeqTest {
         
         @Test
         void shouldTransform() {
-            String transformed = of(42).transform(v -> String.valueOf(v.get()));
+            String transformed = of(42).transform(v -> String.valueOf(v.head()));
             assertThat(transformed).isEqualTo("42");
         }
     }

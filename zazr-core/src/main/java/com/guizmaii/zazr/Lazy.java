@@ -1,27 +1,24 @@
 package com.guizmaii.zazr;
 
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.control.Option;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Represents a lazily evaluated value. Unlike a standard {@link java.util.function.Supplier}, 
+ * Represents a lazily evaluated value. Unlike a standard {@link java.util.function.Supplier},
  * {@code Lazy} is memoizing: once the computation succeeds, its result is cached and the computation is not
  * performed again, ensuring referential transparency. If the computation throws, the exception propagates,
  * nothing is memoized, and the computation is retried on the next access.
  *
- * <p>This type behaves more like a <em>Functor</em> than a <em>Monad</em>: it represents a value rather than capturing
- * a specific state. Therefore, it does not provide operations like {@code flatMap} or {@code orElse}.</p>
+ * <p>A {@code Lazy} is a value, not a container: it is never empty, is not iterable, and {@link #get()} is its
+ * only conversion. It may hold {@code null}, unlike {@code Option}, {@code Either}, {@code Try} and
+ * {@code Validation} (design 3.9), so wrapping its value in one of those is done explicitly, e.g.
+ * {@code Option.ofNullable(lazy.get())}.</p>
  *
  * <p>Example usage:</p>
  * <pre>{@code
@@ -32,15 +29,10 @@ import org.jspecify.annotations.Nullable;
  * double memoizedValue = l.get(); // returns the same value as before, e.g., 0.123
  * }</pre>
  *
- * <p>Creating a <em>truly lazy</em> value for an interface type:</p>
- * <pre>{@code
- * final CharSequence chars = Lazy.val(() -> "Yay!", CharSequence.class);
- * }</pre>
- *
  * @param <T> the type of the lazily evaluated value
  * @author Daniel Dietrich
  */
-public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplier<T> {
+public final class Lazy<T extends @Nullable Object> {
 
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -77,15 +69,11 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
      * @param <T>      the type of the lazy value
      * @param supplier the supplier providing the value
      * @return a new {@code Lazy} instance
+     * @throws NullPointerException if {@code supplier} is null
      */
-    @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> Lazy<T> of(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        if (supplier instanceof Lazy) {
-            return (Lazy<T>) supplier;
-        } else {
-            return new Lazy<>(supplier);
-        }
+        return new Lazy<>(supplier);
     }
 
     /**
@@ -105,47 +93,16 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
     }
 
     /**
-     * Creates a true <em>lazy value</em> of type {@code T}, implemented using a {@linkplain java.lang.reflect.Proxy}
-     * that delegates to a {@code Lazy} instance.
-     *
-     * @param supplier the supplier providing the value when needed
-     * @param type     the interface class that the proxy should implement
-     * @param <T>      the type of the lazy value
-     * @return a new proxy instance of type {@code T} that evaluates lazily
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends @Nullable Object> T val(Supplier<? extends T> supplier, Class<T> type) {
-        Objects.requireNonNull(supplier, "supplier is null");
-        Objects.requireNonNull(type, "type is null");
-        if (!type.isInterface()) {
-            throw new IllegalArgumentException("type has to be an interface");
-        }
-        final Lazy<T> lazy = Lazy.of(supplier);
-        final InvocationHandler handler = (proxy, method, args) -> method.invoke(lazy.get(), args);
-        return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] { type }, handler);
-    }
-
-    /**
-     * Returns {@code Some} of the value if it satisfies the predicate, otherwise {@code None}. A {@code null} value that satisfies the predicate throws {@link NullPointerException}: {@code Some} cannot hold {@code null} (design 3.9).
-     */
-    public Option<T> filter(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final T v = get();
-        return predicate.test(v) ? Option.some(v) : Option.none();
-    }
-
-    /**
      * Evaluates this lazy value on the first call and caches the result.
      * Subsequent calls return the cached value without recomputation.
      *
      * @return the evaluated value
      */
-    @Override
     @SuppressWarnings("NullAway") // see computeValue(): a null supplier implies value is computed
     public T get() {
         return (supplier == null) ? value : computeValue();
     }
-    
+
     // `supplier` is nulled only *after* `value` is written, and both are volatile, so observing
     // a null supplier guarantees the computed value is visible. NullAway cannot express that.
     @SuppressWarnings("NullAway")
@@ -164,21 +121,6 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
     }
 
     /**
-     * Indicates that this {@code Lazy} value is computed synchronously.
-     *
-     * @return {@code false}
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    /**
      * Checks whether this lazy value has been evaluated.
      *
      * <p>Note: The value is evaluated internally (at most once) when {@link #get()} is called.</p>
@@ -190,59 +132,43 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
     }
 
     /**
-     * Indicates that this {@code Lazy} value is computed lazily.
+     * Returns a {@code Lazy} that applies {@code mapper} to this value when it is first evaluated.
+     * <p>
+     * A {@code Lazy} may hold {@code null}, so the mapper may return it.
      *
-     * @return {@code true}
+     * @param mapper a function applied to the value
+     * @param <U>    the type of the mapped value
+     * @return a new, unevaluated {@code Lazy}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    @Override
-    public boolean isLazy() {
-        return true;
-    }
-
-    @Override
-    public boolean isSingleValued() {
-        return true;
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        // not Iterator.of(get()): a Lazy may hold null (design 3.9), unlike the collections
-        final T value = get();
-        return new Iterator<T>() {
-
-            boolean hasNext = true;
-
-            @Override
-            public boolean hasNext() {
-                return hasNext;
-            }
-
-            @Override
-            public T next() {
-                if (!hasNext) {
-                    throw new java.util.NoSuchElementException();
-                }
-                hasNext = false;
-                return value;
-            }
-        };
-    }
-
-    /**
-     * A {@code Lazy} may hold {@code null}, so the mapper may return it; converting a {@code null} value with {@link #toOption()}, {@link #toEither(Object)}, {@link #toValidation(Object)} or {@link #filter(Predicate)} then throws {@link NullPointerException} and {@link #toTry()} yields a {@code Failure}, since none of those types holds {@code null} (design 3.9).
-     */
-    @Override
     public <U extends @Nullable Object> Lazy<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return Lazy.of(() -> mapper.apply(get()));
     }
 
-    @Override
-    public <U extends @Nullable Object> Lazy<U> mapTo(U value) {
-        return map(ignored -> value);
+    /**
+     * Returns a {@code Lazy} that, when first evaluated, applies {@code mapper} to this value and evaluates
+     * the {@code Lazy} it returns. The mapper must return a {@code Lazy}, never {@code null}: a {@code null}
+     * result is rejected at evaluation time, i.e. by {@link #get()} on the returned {@code Lazy}, which then
+     * stays unevaluated. (The value a {@code Lazy} holds may be {@code null}; see {@link #map(Function)}.)
+     *
+     * @param mapper a function from the value to another {@code Lazy}
+     * @param <U>    the type of the resulting value
+     * @return a new, unevaluated {@code Lazy}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public <U extends @Nullable Object> Lazy<U> flatMap(Function<? super T, ? extends Lazy<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return Lazy.of(() -> Objects.requireNonNull(mapper.apply(get()), "Lazy.flatMap: mapper returned null").get());
     }
 
-    @Override
+    /**
+     * Evaluates this {@code Lazy} and performs the given {@code action} on its value.
+     *
+     * @param action the action performed on the value
+     * @return this instance
+     * @throws NullPointerException if {@code action} is null
+     */
     public Lazy<T> peek(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         action.accept(get());
@@ -250,22 +176,13 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
     }
 
     /**
-     * Applies {@code f} to this {@code Lazy} instance itself (not to its contained value) and returns the
-     * result of {@code f} directly; the result is not wrapped in a {@code Lazy}.
+     * Views this {@code Lazy} as a {@link Supplier}. The supplier delegates to {@link #get()}, so it shares this
+     * instance's memoization: the computation still runs at most once.
      *
-     * @param f   a function that receives this {@code Lazy} and produces a result
-     * @param <U> the type of the result of {@code f}
-     * @return the result of {@code f.apply(this)}
-     * @throws NullPointerException if {@code f} is null
+     * @return a {@code Supplier} of this value
      */
-    public <U extends @Nullable Object> U transform(Function<? super Lazy<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
-    @Override
-    public String stringPrefix() {
-        return "Lazy";
+    public Supplier<T> toSupplier() {
+        return this::get;
     }
 
     @Override
@@ -280,7 +197,7 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
 
     @Override
     public String toString() {
-        return stringPrefix() + "(" + (!isEvaluated() ? "?" : value) + ")";
+        return "Lazy(" + (!isEvaluated() ? "?" : value) + ")";
     }
 
 }

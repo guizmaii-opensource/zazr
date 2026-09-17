@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.Value;
 import com.guizmaii.zazr.collection.JavaConverters.ChangePolicy;
 import com.guizmaii.zazr.collection.JavaConverters.ListView;
 import com.guizmaii.zazr.control.Option;
@@ -269,7 +268,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
         
         @Test
         void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.get()));
+            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
             assertThat(transformed).isEqualTo("42");
         }
     }
@@ -363,7 +362,7 @@ public class VectorTest extends AbstractIndexedSeqTest {
     class TovectorTests {
         @Test
         public void shouldReturnSelfOnConvertToVector() {
-            final Value<Integer> value = of(1, 2, 3);
+            final Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toVector()).isSameAs(value);
         }
     }

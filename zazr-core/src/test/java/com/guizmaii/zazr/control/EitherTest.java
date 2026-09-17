@@ -1,59 +1,31 @@
 package com.guizmaii.zazr.control;
 
-import com.guizmaii.zazr.AbstractValueTest;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
+import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Spliterator;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@SuppressWarnings("deprecation")
-public class EitherTest extends AbstractValueTest {
+public class EitherTest {
 
-    @Override
-    protected <T> Either<?, T> empty() {
-        return Either.<String, T>left("empty");
-    }
-
-    @Override
-    protected <T> Either<?, T> of(T element) {
-        return Either.<T, T>right(element);
-    }
-
-    @SafeVarargs
-    @Override
-    protected final <T> Either<?, T> of(T... elements) {
-        return of(elements[0]);
-    }
-
-    @Override
-    protected boolean allowsNull() {
-        return false;
-    }
-
-    @Override
-    protected boolean useIsEqualToInsteadOfIsSameAs() {
-        return true;
-    }
-
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
+    private static <T> Either<String, T> left() {
+        return Either.left("empty");
     }
 
     @Test
-    @Override
-    public void shouldConvertEmptyToTry() {
-        final Try<?> actual = empty().toTry();
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(actual.getCause()).isInstanceOf(Either.Failure.class);
+    public void shouldNotBeIterable() {
+        // design 3.2: Either.iterator() silently skipped a Left; the type is no longer Iterable
+        assertThat(Iterable.class.isAssignableFrom(Either.class)).isFalse();
     }
 
     @Test
@@ -70,6 +42,11 @@ public class EitherTest extends AbstractValueTest {
     @Test
     public void shouldThrowIfLeftGet() {
         assertThrows(NoSuchElementException.class, () -> Either.left(1).get());
+    }
+
+    @Test
+    public void shouldGetRight() {
+        assertThat(Either.right(1).get()).isEqualTo(1);
     }
 
     @Test
@@ -93,26 +70,10 @@ public class EitherTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldBimapLeftProjection() {
-            final Either.LeftProjection<Integer, String> actual = Either.<Integer, String>left(1).left()
-              .bimap(i -> i + 1, s -> s + "1");
-            final Either<Integer, String> expected = Either.left(2);
-            assertThat(actual.get()).isEqualTo(expected.getLeft());
-        }
-
-        @Test
         public void shouldBimapRight() {
             final Either<Integer, String> actual = Either.<Integer, String>right("1").bimap(i -> i + 1, s -> s + "1");
             final Either<Integer, String> expected = Either.right("11");
             assertThat(actual).isEqualTo(expected);
-        }
-
-        @Test
-        public void shouldBimapRightProjection() {
-            final Either.RightProjection<Integer, String> actual = Either.<Integer, String>right("1").right()
-              .bimap(i -> i + 1, s -> s + "1");
-            final Either<Integer, String> expected = Either.right("11");
-            assertThat(actual.get()).isEqualTo(expected.get());
         }
 
         @Test
@@ -415,6 +376,20 @@ public class EitherTest extends AbstractValueTest {
     }
 
     @Nested
+    public class IsEmptyTests {
+
+        @Test
+        public void shouldBeEmptyOnLeft() {
+            assertThat(Either.left(1).isEmpty()).isTrue();
+        }
+
+        @Test
+        public void shouldNotBeEmptyOnRight() {
+            assertThat(Either.right(1).isEmpty()).isFalse();
+        }
+    }
+
+    @Nested
     public class OrElseTests {
 
         @Test
@@ -431,6 +406,89 @@ public class EitherTest extends AbstractValueTest {
     }
 
     @Nested
+    public class GetOrElseTests {
+
+        @Test
+        public void shouldGetRightValue() {
+            assertThat(Either.right(1).getOrElse(2)).isEqualTo(1);
+            assertThat(Either.right(1).getOrElse(() -> 2)).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldGetAlternativeOnLeft() {
+            assertThat(EitherTest.<Integer>left().getOrElse(2)).isEqualTo(2);
+            assertThat(EitherTest.<Integer>left().getOrElse(() -> 2)).isEqualTo(2);
+        }
+
+        @Test
+        public void shouldAcceptNullAsAlternative() {
+            assertThat(EitherTest.<Integer>left().getOrElse((Integer) null)).isNull();
+            assertThat(Either.right(1).getOrElse((Integer) null)).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotInvokeSupplierOnRight() {
+            assertThat(Either.right(1).getOrElse(() -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldThrowOnNullSupplier() {
+            final Supplier<Integer> supplier = null;
+            assertThrows(NullPointerException.class, () -> EitherTest.<Integer>left().getOrElse(supplier));
+        }
+
+        @Test
+        public void shouldGetOrElseGetFromTheLeftValue() {
+            assertThat(Either.<String, Integer>right(1).getOrElseGet(String::length)).isEqualTo(1);
+            assertThat(Either.<String, Integer>left("abc").getOrElseGet(String::length)).isEqualTo(3);
+        }
+    }
+
+    @Nested
+    public class GetOrElseThrowTests {
+
+        @Test
+        public void shouldGetRightValue() {
+            assertThat(Either.right(1).getOrElseThrow(() -> new IllegalStateException("x"))).isEqualTo(1);
+            assertThat(Either.<String, Integer>right(1).getOrElseThrow(l -> new IllegalStateException(l))).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldThrowSuppliedExceptionOnLeft() {
+            assertThrows(IllegalStateException.class, () -> left().getOrElseThrow(() -> new IllegalStateException("x")));
+        }
+
+        @Test
+        public void shouldThrowExceptionBuiltFromTheLeftValue() {
+            assertThatThrownBy(() -> EitherTest.<Integer>left().getOrElseThrow(l -> new IllegalStateException(l)))
+              .isInstanceOf(IllegalStateException.class)
+              .hasMessage("empty");
+        }
+
+        @Test
+        public void shouldThrowOnNullArguments() {
+            assertThrows(NullPointerException.class, () -> left().getOrElseThrow((Supplier<RuntimeException>) null));
+            assertThrows(NullPointerException.class, () -> left().getOrElseThrow((Function<String, RuntimeException>) null));
+        }
+    }
+
+    @Nested
+    public class GetOrNullTests {
+
+        @Test
+        public void shouldGetRightValue() {
+            assertThat(Either.right(1).getOrNull()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldGetNullOnLeft() {
+            assertThat(left().getOrNull()).isNull();
+        }
+    }
+
+    @Nested
     public class LeftTests {
 
         @Test
@@ -441,6 +499,85 @@ public class EitherTest extends AbstractValueTest {
         @Test
         public void shouldReturnFalseWhenCallingIsRightOnLeft() {
             assertThat(Either.left(1).isRight()).isFalse();
+        }
+    }
+
+    @Nested
+    public class ContainsTests {
+
+        @Test
+        public void shouldContainTheRightValue() {
+            assertThat(Either.right(1).contains(1)).isTrue();
+            assertThat(Either.right(1).contains(2)).isFalse();
+            assertThat(Either.right(1).contains(null)).isFalse();
+        }
+
+        @Test
+        public void shouldNotContainTheLeftValue() {
+            assertThat(Either.<Integer, Integer>left(1).contains(1)).isFalse();
+        }
+    }
+
+    @Nested
+    public class ExistsTests {
+
+        @Test
+        public void shouldTestTheRightValue() {
+            assertThat(Either.right(1).exists(i -> i == 1)).isTrue();
+            assertThat(Either.right(1).exists(i -> i == 2)).isFalse();
+        }
+
+        @Test
+        public void shouldNotHoldOnLeft() {
+            assertThat(left().exists(i -> true)).isFalse();
+        }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> left().exists(null));
+        }
+    }
+
+    @Nested
+    public class ForAllTests {
+
+        @Test
+        public void shouldTestTheRightValue() {
+            assertThat(Either.right(1).forAll(i -> i == 1)).isTrue();
+            assertThat(Either.right(1).forAll(i -> i == 2)).isFalse();
+        }
+
+        @Test
+        public void shouldHoldVacuouslyOnLeft() {
+            assertThat(left().forAll(i -> false)).isTrue();
+        }
+
+        @Test
+        public void shouldThrowOnNullPredicate() {
+            assertThrows(NullPointerException.class, () -> left().forAll(null));
+        }
+    }
+
+    @Nested
+    public class ForEachTests {
+
+        @Test
+        public void shouldConsumeTheRightValue() {
+            final int[] actual = { -1 };
+            Either.right(1).forEach(i -> actual[0] = i);
+            assertThat(actual[0]).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotConsumeAnythingOnLeft() {
+            final int[] actual = { -1 };
+            EitherTest.<Integer>left().forEach(i -> actual[0] = i);
+            assertThat(actual[0]).isEqualTo(-1);
+        }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> left().forEach(null));
         }
     }
 
@@ -497,11 +634,34 @@ public class EitherTest extends AbstractValueTest {
     }
 
     @Nested
+    public class PeekTests {
+
+        @Test
+        public void shouldPeekRight() {
+            final int[] effect = {0};
+            final Either<String, Integer> right = Either.right(1);
+            assertThat(right.peek(i -> effect[0] = i)).isSameAs(right);
+            assertThat(effect[0]).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotPeekLeft() {
+            final Either<String, Integer> left = left();
+            assertThat(left.peek(i -> {throw new IllegalStateException();})).isSameAs(left);
+        }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> Either.right(1).peek(null));
+        }
+    }
+
+    @Nested
     public class PeekLeftTests {
 
         @Test
         public void shouldPeekLeftNil() {
-            assertThat(empty().peekLeft(t -> {})).isEqualTo(empty());
+            assertThat(left().peekLeft(t -> {})).isEqualTo(left());
         }
 
         @Test
@@ -557,6 +717,11 @@ public class EitherTest extends AbstractValueTest {
         }
 
         @Test
+        public void shouldNotEqualLeftOfDifferentValue() {
+            assertThat(Either.left(1)).isNotEqualTo(Either.left(2));
+        }
+
+        @Test
         public void shouldEqualRightIfObjectIsSame() {
             final Either<?, ?> right = Either.right(1);
             assertThat(right.equals(right)).isTrue();
@@ -576,6 +741,31 @@ public class EitherTest extends AbstractValueTest {
         public void shouldEqualRight() {
             assertThat(Either.right(1)).isEqualTo(Either.right(1));
         }
+
+        @Test
+        public void shouldNotEqualRightOfDifferentValue() {
+            assertThat(Either.right(1)).isNotEqualTo(Either.right(2));
+        }
+
+        @Test
+        public void shouldNotEqualLeftAndRightOfTheSameValue() {
+            assertThat(Either.left(1)).isNotEqualTo(Either.right(1));
+        }
+    }
+
+    @Nested
+    public class ToOptionTests {
+
+        @Test
+        public void shouldConvertRightToSome() {
+            assertThat(Either.right(42).toOption()).isEqualTo(Option.some(42));
+        }
+
+        @Test
+        public void shouldConvertLeftToNone() {
+            // the left value is dropped
+            assertThat(Either.left("x").toOption()).isSameAs(Option.none());
+        }
     }
 
     @Nested
@@ -593,6 +783,20 @@ public class EitherTest extends AbstractValueTest {
             final Validation<String, ?> validation = Either.left("vavr").toValidation();
             assertThat(validation.isInvalid()).isTrue();
             assertThat(validation.getError()).isEqualTo("vavr");
+        }
+    }
+
+    @Nested
+    public class ToVectorTests {
+
+        @Test
+        public void shouldConvertRightToVectorOfOne() {
+            assertThat(Either.right(42).toVector()).isEqualTo(Vector.of(42));
+        }
+
+        @Test
+        public void shouldConvertLeftToEmptyVector() {
+            assertThat(Either.left("x").toVector()).isSameAs(Vector.empty());
         }
     }
 
@@ -625,48 +829,54 @@ public class EitherTest extends AbstractValueTest {
     }
 
     @Nested
-    public class SpliteratorTests {
-
-        @Test
-        public void shouldHaveSizedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
-        }
-
-        @Test
-        public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-        }
-
-        @Test
-        public void shouldReturnSizeWhenSpliterator() {
-            assertThat(of(1).spliterator().getExactSizeIfKnown()).isEqualTo(1);
-        }
-    }
-
-    @Nested
     public class ToTryTests {
         @Test
         void shouldConvertRightToTrySuccess() {
             Either<String, String> either = Either.right("ok");
 
-            Try<String> result = either.toTry();
+            Try<String> result = either.toTry(IllegalStateException::new);
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.get()).isEqualTo("ok");
+            assertThat(result).isEqualTo(Try.success("ok"));
         }
 
         @Test
-        void shouldConvertLeftToTryFailureWrappingLeftValue() {
+        void shouldNotApplyTheMapperOnRight() {
+            assertThat(Either.<String, String>right("ok").toTry(l -> {
+                throw new AssertionError("must not be invoked");
+            })).isEqualTo(Try.success("ok"));
+        }
+
+        @Test
+        void shouldConvertLeftToTryFailureOfTheMappedLeftValue() {
             Either<String, String> either = Either.left("error");
 
-            Try<String> result = either.toTry();
+            Try<String> result = either.toTry(IllegalStateException::new);
 
             assertThat(result.isFailure()).isTrue();
-            assertThatThrownBy(result::get)
-              .isInstanceOfSatisfying(Either.Failure.class, failure -> {
-                  assertThat(failure.getValue()).isEqualTo("error");
-                  assertThat(failure.getMessage()).isEqualTo("wrapped value representing a failure");
-              });
+            assertThat(result.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("error");
+        }
+
+        @Test
+        void shouldConvertLeftOfThrowableWithTheIdentity() {
+            final IOException cause = new IOException("boom");
+            final Either<IOException, String> either = Either.left(cause);
+            assertThat(either.toTry(t -> t).getCause()).isSameAs(cause);
+        }
+
+        @Test
+        void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Either.right("ok").toTry(null));
+        }
+
+        @Test
+        void shouldRejectNullCauseBuiltForLeft() {
+            // a Failure cannot hold null
+            assertThrows(NullPointerException.class, () -> Either.left("error").toTry(l -> null));
+        }
+
+        @Test
+        void shouldRethrowFatalCauseBuiltForLeft() {
+            assertThrows(InterruptedException.class, () -> Either.left("error").toTry(InterruptedException::new));
         }
     }
 }

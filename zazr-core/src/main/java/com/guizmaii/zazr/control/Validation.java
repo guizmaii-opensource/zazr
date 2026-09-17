@@ -4,6 +4,7 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -34,6 +35,10 @@ import org.jspecify.annotations.Nullable;
  * }</pre>
  * <p>
  * Neither case holds {@code null}: {@link #valid(Object)} and {@link #invalid(Object)} throw.
+ * </p>
+ * <p>
+ * A {@code Validation} is not a collection and not {@link Iterable} (design 3.2): to iterate its value, convert it
+ * explicitly with {@link #toVector()} or {@link #toOption()}.
  * </p>
  *
  * <pre>
@@ -71,7 +76,7 @@ import org.jspecify.annotations.Nullable;
  * @see <a href="https://github.com/scalaz/scalaz/blob/series/7.3.x/core/src/main/scala/scalaz/Validation.scala">
  *     Scalaz Validation source</a>
  */
-public sealed interface Validation<E extends @Nullable Object, T extends @Nullable Object> extends Value<T> permits Validation.Valid, Validation.Invalid {
+public sealed interface Validation<E extends @Nullable Object, T extends @Nullable Object> permits Validation.Valid, Validation.Invalid {
 
     /**
      * Creates a {@link Valid} that contains the given {@code value}.
@@ -450,7 +455,11 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         return isValid() ? this : (Validation<E, T>) supplier.get();
     }
 
-    @Override
+    /**
+     * Checks whether this {@code Validation} holds no value, i.e. is an {@code Invalid}.
+     *
+     * @return {@code true} if this is an {@code Invalid}, {@code false} if this is a {@code Valid}
+     */
     default boolean isEmpty() {
         return isInvalid();
     }
@@ -461,8 +470,59 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      * @return The value of this {@code Validation}
      * @throws NoSuchElementException if this is an {@code Invalid}
      */
-    @Override
     T get();
+
+    /**
+     * Gets the value if this is a {@code Valid}, or {@code other} if this is an {@code Invalid}.
+     * <p>
+     * Note that {@code other} is evaluated eagerly.
+     *
+     * @param other an alternative value
+     * @return the value of this {@code Valid}, otherwise {@code other}
+     */
+    default T getOrElse(T other) {
+        return isValid() ? get() : other;
+    }
+
+    /**
+     * Gets the value if this is a {@code Valid}, or the value supplied by {@code supplier} if this is an {@code Invalid}.
+     *
+     * @param supplier a supplier of an alternative value, invoked only for an {@code Invalid}
+     * @return the value of this {@code Valid}, otherwise the supplied value
+     * @throws NullPointerException if {@code supplier} is null
+     */
+    default T getOrElse(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isValid() ? get() : supplier.get();
+    }
+
+    /**
+     * Gets the value if this is a {@code Valid}, or throws the exception supplied by {@code exceptionSupplier} if this
+     * is an {@code Invalid}.
+     *
+     * @param <X>               the type of the exception to throw
+     * @param exceptionSupplier a supplier of the exception, invoked only for an {@code Invalid}
+     * @return the value of this {@code Valid}
+     * @throws X                    if this is an {@code Invalid}
+     * @throws NullPointerException if {@code exceptionSupplier} is null
+     */
+    default <X extends Throwable> T getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
+        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
+        if (isValid()) {
+            return get();
+        } else {
+            throw exceptionSupplier.get();
+        }
+    }
+
+    /**
+     * Gets the value if this is a {@code Valid}, or {@code null} if this is an {@code Invalid}.
+     *
+     * @return the value of this {@code Valid}, otherwise {@code null}
+     */
+    default @Nullable T getOrNull() {
+        return isValid() ? get() : null;
+    }
 
     /**
      * Gets the value if it is a Valid or an value calculated from the error.
@@ -488,6 +548,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      */
     E getError();
 
+    // -- conversions (design 3.2)
+
     /**
      * Converts this Validation to an {@link Either}.
      *
@@ -495,6 +557,57 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      */
     default Either<E, T> toEither() {
         return isValid() ? Either.right(get()) : Either.left(getError());
+    }
+
+    /**
+     * Converts this Validation to an {@link Either}, mapping the error of an {@code Invalid} with {@code f}.
+     * <p>
+     * The function is applied only to an {@code Invalid}; it must not return {@code null}, since {@code Left}
+     * cannot hold {@code null} (design 3.9).
+     *
+     * @param f    a function from the error to the left value
+     * @param <E2> the left type of the resulting {@code Either}
+     * @return {@code Either.right(get())} if this is valid, otherwise {@code Either.left(f.apply(getError()))}
+     * @throws NullPointerException if {@code f} is null, or if it returns {@code null} for an {@code Invalid}
+     */
+    default <E2 extends @Nullable Object> Either<E2, T> toEitherWith(Function<? super E, ? extends E2> f) {
+        Objects.requireNonNull(f, "f is null");
+        return isValid() ? Either.right(get()) : Either.left(f.apply(getError()));
+    }
+
+    /**
+     * Converts this Validation to an {@link Option} of its value: {@code Some(value)} for a {@code Valid},
+     * {@code None} for an {@code Invalid}, whose error is dropped.
+     *
+     * @return {@code Option.some(get())} if this is valid, otherwise {@code Option.none()}
+     */
+    default Option<T> toOption() {
+        return isValid() ? Option.some(get()) : Option.none();
+    }
+
+    /**
+     * Converts this Validation to a {@link Try}: {@code Success(value)} for a {@code Valid}, a {@code Failure} of the
+     * throwable {@code f} builds from the error for an {@code Invalid}.
+     * <p>
+     * The function is applied only to an {@code Invalid}; it must not return {@code null} nor a fatal throwable
+     * (see {@link Try}).
+     *
+     * @param f a function from the error to the failure cause
+     * @return {@code Try.success(get())} if this is valid, otherwise {@code Try.failure(f.apply(getError()))}
+     * @throws NullPointerException if {@code f} is null, or if it returns {@code null} for an {@code Invalid}
+     */
+    default Try<T> toTry(Function<? super E, ? extends Throwable> f) {
+        Objects.requireNonNull(f, "f is null");
+        return isValid() ? Try.success(get()) : Try.failure(f.apply(getError()));
+    }
+
+    /**
+     * Converts this Validation to a {@link Vector} of zero or one element: its value, if any.
+     *
+     * @return {@code Vector.of(get())} if this is valid, otherwise the empty {@code Vector}
+     */
+    default Vector<T> toVector() {
+        return isValid() ? Vector.of(get()) : Vector.empty();
     }
 
     @Override
@@ -513,12 +626,47 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      * @param action the action to be performed on the contained value
      * @throws NullPointerException if action is null
      */
-    @Override
     default void forEach(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isValid()) {
             action.accept(get());
         }
+    }
+
+    /**
+     * Checks whether this {@code Validation} holds a value equal to {@code element}, as tested by
+     * {@link Objects#equals(Object, Object)}.
+     *
+     * @param element the element to look for, may be {@code null}
+     * @return {@code true} if this is {@code Valid(element)}, {@code false} otherwise (always for an {@code Invalid})
+     */
+    default boolean contains(@Nullable T element) {
+        return isValid() && Objects.equals(get(), element);
+    }
+
+    /**
+     * Checks whether this {@code Validation} holds a value satisfying the given predicate.
+     *
+     * @param predicate a predicate to test the value
+     * @return {@code true} if this is a {@code Valid} and the predicate holds for its value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean exists(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isValid() && predicate.test(get());
+    }
+
+    /**
+     * Checks whether the given predicate holds for the value of this {@code Validation}; it holds vacuously for an
+     * {@code Invalid}.
+     *
+     * @param predicate a predicate to test the value
+     * @return {@code true} if this is an {@code Invalid} or the predicate holds for the value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean forAll(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isInvalid() || predicate.test(get());
     }
 
     /**
@@ -562,7 +710,6 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
      * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
      */
     @SuppressWarnings("unchecked")
-    @Override
     default <U extends @Nullable Object> Validation<E, U> map(Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         if (isInvalid()) {
@@ -666,7 +813,6 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         return new Builder<>(this, validation);
     }
 
-    // -- Implementation of Value
 
     /**
      * Filters this {@code Validation} by testing a predicate on the value.
@@ -698,43 +844,19 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         return isInvalid() ? (Validation<E, U>) this : (Validation<E, U>) mapper.apply(get());
     }
 
-    @Override
+    /**
+     * Performs the given action on the value if this is a {@code Valid}; does nothing for an {@code Invalid}.
+     *
+     * @param action a consumer of the value
+     * @return this {@code Validation}
+     * @throws NullPointerException if action is null
+     */
     default Validation<E, T> peek(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isValid()) {
             action.accept(get());
         }
         return this;
-    }
-
-    /**
-     * A {@code Validation}'s value is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    default boolean isAsync() {
-        return false;
-    }
-
-    /**
-     * A {@code Validation}'s value is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    default boolean isLazy() {
-        return false;
-    }
-
-    @Override
-    default boolean isSingleValued() {
-        return true;
-    }
-
-    @Override
-    default Iterator<T> iterator() {
-        return isValid() ? Iterator.of(get()) : Iterator.empty();
     }
 
     /**
@@ -776,13 +898,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         }
 
         @Override
-        public String stringPrefix() {
-            return "Valid";
-        }
-
-        @Override
         public String toString() {
-            return stringPrefix() + "(" + value + ")";
+            return "Valid(" + value + ")";
         }
     }
 
@@ -825,13 +942,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
         }
 
         @Override
-        public String stringPrefix() {
-            return "Invalid";
-        }
-
-        @Override
         public String toString() {
-            return stringPrefix() + "(" + error + ")";
+            return "Invalid(" + error + ")";
         }
     }
 

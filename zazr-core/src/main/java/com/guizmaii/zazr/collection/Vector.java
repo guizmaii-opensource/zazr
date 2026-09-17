@@ -959,28 +959,8 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     @Override
     public Vector<T> intersperse(T element) { return ofAll(iterator().intersperse(element)); }
 
-    /**
-     * A {@code Vector} is computed synchronously.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isAsync() {
-        return false;
-    }
-
     @Override
     public boolean isEmpty() { return length() == 0; }
-
-    /**
-     * A {@code Vector} is computed eagerly.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isLazy() {
-        return false;
-    }
 
     @Override
     public boolean isTraversableAgain() { return true; }
@@ -1480,10 +1460,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public String stringPrefix() { return "Vector"; }
-
-    @Override
-    public String toString() { return mkString(stringPrefix() + "(", ", ", ")"); }
+    public String toString() { return mkString("Vector(", ", ", ")"); }
     /**
      * A mutable, single-use accumulator that builds a {@link Vector} element by element. Its invariant is that there is
      * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is handed
