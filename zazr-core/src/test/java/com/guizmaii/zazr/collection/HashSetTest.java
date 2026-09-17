@@ -93,11 +93,6 @@ public class HashSetTest extends AbstractSetTest {
     }
 
     @Override
-    protected <T> HashSet<T> emptyWithNull() {
-        return empty();
-    }
-
-    @Override
     protected <T> HashSet<T> of(T element) {
         return HashSet.of(element);
     }
@@ -256,8 +251,8 @@ public class HashSetTest extends AbstractSetTest {
 
     @Test
     public void shouldZipAllNonEmptyAndNil() {
-        final HashSet<?> actual = of(1).zipAll(empty(), null, null);
-        final HashSet<Tuple2<Integer, Object>> expected = of(Tuple.of(1, null));
+        final HashSet<?> actual = of(1).zipAll(empty(), 0, 0);
+        final HashSet<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
         assertThat(actual).isEqualTo(expected);
     }
 

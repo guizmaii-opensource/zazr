@@ -445,6 +445,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(entries, "entries is null");
         HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
             trie = trie.put(entry.getKey(), entry.getValue());
         }
         return wrap(trie);
@@ -463,6 +464,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(entries, "entries is null");
         HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
         for (Tuple2<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
             trie = trie.put(entry._1(), entry._2());
         }
         return wrap(trie);
@@ -484,6 +486,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         } else {
             HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
             for (Tuple2<? extends K, ? extends V> entry : entries) {
+                Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
                 trie = trie.put(entry._1(), entry._2());
             }
             return trie.isEmpty() ? empty() : wrap(trie);

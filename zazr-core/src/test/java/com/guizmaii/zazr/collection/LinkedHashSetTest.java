@@ -24,11 +24,6 @@ public class LinkedHashSetTest extends AbstractSetTest {
     }
 
     @Override
-    protected <T> LinkedHashSet<T> emptyWithNull() {
-        return empty();
-    }
-
-    @Override
     protected <T> LinkedHashSet<T> of(T element) {
         return LinkedHashSet.of(element);
     }

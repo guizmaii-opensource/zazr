@@ -440,7 +440,7 @@ public class QueueTest extends AbstractLinearSeqTest {
     class EqualsTests {
         @Test
         public void shouldCheckHashCodeWhenComparing() {
-            assertThat(Queue.of(0, null).equals(Queue.of(0, 0))).isFalse();
+            assertThat(Queue.of(0, 1).equals(Queue.of(0, 0))).isFalse();
         }
     }
 

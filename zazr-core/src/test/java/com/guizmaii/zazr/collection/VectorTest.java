@@ -13,6 +13,7 @@ import java.util.stream.Collector;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class VectorTest extends AbstractIndexedSeqTest {
@@ -239,12 +240,12 @@ public class VectorTest extends AbstractIndexedSeqTest {
     @Nested
     class PrimitivesTests {
         @Test
-        public void shouldAddNullToPrimitiveVector() {
+        public void shouldRejectNullOnPrimitiveVector() {
             final Vector<Integer> primitives = rangeClosed(0, 2);
 
-            assertThat(primitives.append(null)).isEqualTo(of(0, 1, 2, null));
-            assertThat(primitives.prepend(null)).isEqualTo(of(null, 0, 1, 2));
-            assertThat(primitives.update(1, (Integer) null)).isEqualTo(of(0, null, 2));
+            assertThatNullPointerException().isThrownBy(() -> primitives.append(null));
+            assertThatNullPointerException().isThrownBy(() -> primitives.prepend(null));
+            assertThatNullPointerException().isThrownBy(() -> primitives.update(1, (Integer) null));
         }
 
         @Test
@@ -349,7 +350,12 @@ public class VectorTest extends AbstractIndexedSeqTest {
 
         @Test
         public void shouldStringifyNonNil() {
-            assertThat(of(null, 1, 2, 3).toString()).isEqualTo("Vector(null, 1, 2, 3)");
+            assertThat(of(1, 2, 3).toString()).isEqualTo("Vector(1, 2, 3)");
+        }
+
+        @Test
+        public void shouldRejectNullElementOnOf() {
+            assertThatNullPointerException().isThrownBy(() -> of(null, 1, 2, 3));
         }
     }
 

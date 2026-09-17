@@ -121,15 +121,8 @@ public class RedBlackTreeTest {
     }
 
     @Test
-    public void shouldInsertNullIntoEmptyTreeBecauseComparatorNotCalled() {
-        final RedBlackTree<Integer> actual = RedBlackTreeTest.<Integer> empty().insert(null);
-        final RedBlackTree<Integer> expected = of((Integer) null);
-        assertThat(Collections.areEqual(actual, expected)).isTrue();
-    }
-
-    @Test
-    public void shouldNotInsertNullTwoTimesIntoEmptyTreeBecauseComparatorCalled() {
-        assertThrows(NullPointerException.class, () -> RedBlackTreeTest.<Integer> empty().insert(null).insert(null));
+    public void shouldRejectNullElementOnInsert() {
+        assertThrows(NullPointerException.class, () -> RedBlackTreeTest.<Integer> empty().insert(null));
     }
 
     @Test

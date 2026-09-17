@@ -96,6 +96,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(elements, "elements is null");
         HashArrayMappedTrie<T, T> tree = HashArrayMappedTrie.empty();
         for (T element : elements) {
+            Objects.requireNonNull(element, "HashSet.of: element is null");
             tree = tree.put(element, element);
         }
         return tree.isEmpty() ? empty() : new HashSet<>(tree);
@@ -589,6 +590,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public HashSet<T> add(T element) {
+        Objects.requireNonNull(element, "HashSet.add: element is null");
         return contains(element) ? this : new HashSet<>(tree.put(element, element));
     }
 
@@ -610,7 +612,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public boolean contains(T element) {
-        // containsKey, not get: a null element cannot be wrapped in Some
         return tree.containsKey(element);
     }
 
@@ -1112,6 +1113,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             Iterable<? extends T> additional) {
         HashArrayMappedTrie<T, T> that = initial;
         for (T t : additional) {
+            Objects.requireNonNull(t, "HashSet: element is null");
             that = that.put(t, t);
         }
         return that;

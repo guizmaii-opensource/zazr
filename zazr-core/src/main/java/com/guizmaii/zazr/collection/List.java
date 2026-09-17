@@ -1903,24 +1903,26 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     }
 
     /**
-     * A non-empty {@code List}: a {@code head} element and a {@code tail} {@code List}. The head may be {@code null},
-     * as any element of a collection may; the tail may not.
+     * A non-empty {@code List}: a {@code head} element and a {@code tail} {@code List}. Neither may be
+     * {@code null}: every construction and insertion path on {@code List} funnels through this
+     * constructor, so it is the single boundary that rejects a null element.
      * <p>
      * Equality is that of every {@code List}: a {@code Cons} equals any {@code Seq} with the same elements in the same
      * order, so {@code equals}, {@code hashCode} and {@code toString} are not the record defaults.
      *
-     * @param head the first element, may be {@code null}
+     * @param head the first element, never {@code null}
      * @param tail the remaining elements, never {@code null}
      * @param <T>  Component type of the List.
      */
     record Cons<T extends @Nullable Object>(T head, List<T> tail) implements List<T> {
 
         /**
-         * Rejects a {@code null} tail.
+         * Rejects a {@code null} head or tail.
          *
-         * @throws NullPointerException if {@code tail} is null
+         * @throws NullPointerException if {@code head} or {@code tail} is null
          */
         public Cons {
+            Objects.requireNonNull(head, "List: element is null");
             Objects.requireNonNull(tail, "tail is null");
         }
 

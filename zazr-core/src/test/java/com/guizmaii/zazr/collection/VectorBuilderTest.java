@@ -325,9 +325,20 @@ public class VectorBuilderTest {
     }
 
     @Test
-    public void shouldAcceptNullElements() {
-        final Vector<Integer> actual = Vector.<Integer> newBuilder().add(null).add(1).add(null).result();
-        assertThat(actual).containsExactly(null, 1, null);
+    public void shouldRejectNullElements() {
+        assertThatThrownBy(() -> Vector.<Integer> newBuilder().add(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void shouldKeepElementsAddedBeforeANullOnRejectedAddAll() {
+        final java.util.List<Integer> withNullElement = new java.util.ArrayList<>();
+        withNullElement.add(1);
+        withNullElement.add(2);
+        withNullElement.add(null);
+        withNullElement.add(3);
+        final Vector.Builder<Integer> builder = Vector.newBuilder();
+        assertThatThrownBy(() -> builder.addAll(withNullElement)).isInstanceOf(NullPointerException.class);
+        assertThat(builder.result()).isEqualTo(Vector.of(1, 2));
     }
 
     @Test
@@ -341,6 +352,7 @@ public class VectorBuilderTest {
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         // the state check comes before the argument check
         assertThatThrownBy(() -> builder.addAll(null)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.add(null)).isInstanceOf(IllegalStateException.class);
         // the bulk loops too, even for zero elements, where no leaf boundary would be crossed
         assertThatThrownBy(() -> builder.addTabulated(0, i -> i)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.addRepeated(0, 1)).isInstanceOf(IllegalStateException.class);

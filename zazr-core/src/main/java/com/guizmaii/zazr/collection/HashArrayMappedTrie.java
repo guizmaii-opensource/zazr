@@ -231,12 +231,13 @@ interface HashArrayMappedTrieModule {
 
         @Override
         public boolean containsKey(K key) {
-            // not get(key): a null value cannot be wrapped in Some, the entry can
-            return getEntry(key).isDefined();
+            return get(key).isDefined();
         }
 
         @Override
         public HashArrayMappedTrie<K, V> put(K key, V value) {
+            Objects.requireNonNull(key, "HashMap: key is null");
+            Objects.requireNonNull(value, "HashMap: value is null");
             return modify(0, Objects.hashCode(key), key, value, PUT);
         }
 

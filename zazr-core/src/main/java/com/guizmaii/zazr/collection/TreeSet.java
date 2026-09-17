@@ -801,7 +801,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new NoSuchElementException("head of empty TreeSet");
         } else {
-            return tree.minimum();
+            return tree.min().get();
         }
     }
 
@@ -815,7 +815,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty TreeSet");
         } else {
-            return new TreeSet<>(tree.delete(tree.maximum()));
+            return new TreeSet<>(tree.delete(tree.max().get()));
         }
     }
 
@@ -878,7 +878,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new NoSuchElementException("last of empty TreeSet");
         } else {
-            return tree.maximum();
+            return tree.max().get();
         }
     }
 
@@ -1040,7 +1040,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("tail of empty TreeSet");
         } else {
-            return new TreeSet<>(tree.delete(tree.minimum()));
+            return new TreeSet<>(tree.delete(tree.min().get()));
         }
     }
 

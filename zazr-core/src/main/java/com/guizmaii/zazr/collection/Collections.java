@@ -173,7 +173,7 @@ final class Collections {
     private static <T extends @Nullable Object, C extends @Nullable Object> java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier) {
         final java.util.Map<C, Collection<T>> results = new java.util.LinkedHashMap<>(source.isTraversableAgain() ? source.size() : 16);
         for (T value : source) {
-            final C key = classifier.apply(value);
+            final C key = Objects.requireNonNull(classifier.apply(value), "groupBy: key is null");
             results.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
         return results.entrySet();
@@ -236,7 +236,7 @@ final class Collections {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMerge, "valueMerge is null");
         return source.foldLeft(zero, (acc, entry) -> {
-            final K2 k2 = keyMapper.apply(entry._1());
+            final K2 k2 = Objects.requireNonNull(keyMapper.apply(entry._1()), "mapKeys: key is null");
             final V v2 = entry._2();
             final V v1 = Maps.getOrAbsent(acc, k2);
             final V v = v1 != Maps.ABSENT ? valueMerge.apply(v1, v2) : v2;

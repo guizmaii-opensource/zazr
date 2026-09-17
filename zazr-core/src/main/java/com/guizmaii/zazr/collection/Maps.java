@@ -16,8 +16,14 @@ import org.jspecify.annotations.Nullable;
 final class Maps {
 
     /**
-     * Marker for "no value stored under this key". Internal lookups use {@link #getOrAbsent(Map, Object)} instead of
-     * {@link Map#get(Object)} because a stored {@code null} value cannot be wrapped in {@code Some}.
+     * Marker for "no value stored under this key", compared by identity only. It exists purely to
+     * avoid allocating a {@link Option#some} on lookup hot paths: internal presence checks call
+     * {@link #getOrAbsent(Map, Object)} (which is {@link Map#getOrElse(Object, Object)} with this as
+     * the default) instead of {@link Map#get(Object)}, so no {@code Option} is boxed just to test
+     * {@code isDefined()}. It is never stored in a map and never returned to a caller: a value equal
+     * to it is impossible, because every value a caller can put is non-null and this instance is not
+     * reachable outside this package (design 3.9 forbids a stored {@code null}, which is the only
+     * thing this sentinel used to have to be told apart from).
      */
     static final Object ABSENT = new Object();
 

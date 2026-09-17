@@ -206,7 +206,26 @@ public final class Lazy<T extends @Nullable Object> implements Value<T>, Supplie
 
     @Override
     public Iterator<T> iterator() {
-        return Iterator.of(get());
+        // not Iterator.of(get()): a Lazy may hold null (design 3.9), unlike the collections
+        final T value = get();
+        return new Iterator<T>() {
+
+            boolean hasNext = true;
+
+            @Override
+            public boolean hasNext() {
+                return hasNext;
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext) {
+                    throw new java.util.NoSuchElementException();
+                }
+                hasNext = false;
+                return value;
+            }
+        };
     }
 
     /**

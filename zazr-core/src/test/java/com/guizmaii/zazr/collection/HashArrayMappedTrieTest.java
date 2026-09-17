@@ -8,6 +8,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 public class HashArrayMappedTrieTest {
 
@@ -40,14 +41,12 @@ public class HashArrayMappedTrieTest {
     @Test
     public void testGetExistingKey() {
         HashArrayMappedTrie<Integer, Integer> hamt = empty();
-        hamt = hamt.put(1, 2).put(4, 5).put(null, 7);
+        hamt = hamt.put(1, 2).put(4, 5);
         assertThat(hamt.containsKey(1)).isTrue();
         assertThat(hamt.get(1)).isEqualTo(Option.some(2));
         assertThat(hamt.getOrElse(1, 42)).isEqualTo(2);
         assertThat(hamt.containsKey(4)).isTrue();
         assertThat(hamt.get(4)).isEqualTo(Option.some(5));
-        assertThat(hamt.containsKey(null)).isTrue();
-        assertThat(hamt.get(null)).isEqualTo(Option.some(7));
     }
 
     @Test
@@ -59,8 +58,18 @@ public class HashArrayMappedTrieTest {
         assertThat(hamt.containsKey(2)).isFalse();
         assertThat(hamt.get(2)).isEqualTo(Option.none());
         assertThat(hamt.getOrElse(2, 42)).isEqualTo(42);
-        assertThat(hamt.containsKey(null)).isFalse();
-        assertThat(hamt.get(null)).isEqualTo(Option.none());
+    }
+
+    @Test
+    public void shouldRejectNullKey() {
+        final HashArrayMappedTrie<Integer, Integer> hamt = empty();
+        assertThatNullPointerException().isThrownBy(() -> hamt.put(null, 7));
+    }
+
+    @Test
+    public void shouldRejectNullValue() {
+        final HashArrayMappedTrie<Integer, Integer> hamt = empty();
+        assertThatNullPointerException().isThrownBy(() -> hamt.put(1, null));
     }
 
     @Test
@@ -112,15 +121,15 @@ public class HashArrayMappedTrieTest {
     }
 
     @Test
-    public void shouldLookupNullInZeroKey() {
+    public void shouldRejectNullKeyEvenAfterCollidingWithZeroHash() {
         HashArrayMappedTrie<Integer, Integer> trie = empty();
         // should contain all node types
         for (int i = 0; i < 5000; i++) {
             trie = trie.put(i, i);
         }
-        trie = trie.put(null, 2);
-        assertThat(trie.get(0).get()).isEqualTo(0);     // key.hashCode = 0
-        assertThat(trie.get(null).get()).isEqualTo(2);  // key.hashCode = 0
+        assertThat(trie.get(0).get()).isEqualTo(0); // key.hashCode = 0, same as null's
+        final HashArrayMappedTrie<Integer, Integer> finalTrie = trie;
+        assertThatNullPointerException().isThrownBy(() -> finalTrie.put(null, 2));
     }
 
     // - toString

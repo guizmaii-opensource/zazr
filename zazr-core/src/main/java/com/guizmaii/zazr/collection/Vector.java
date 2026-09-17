@@ -1527,16 +1527,19 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         /**
          * Appends one element.
          *
-         * @param element the element, may be null
+         * @param element the element, never null
          * @return this builder
          * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code element} is null
          */
         public Builder<T> add(T element) {
             // the hot path is one branch and one array store: the open check lives in growOrCloseLeaf(), reached
-            // through the zero-length DONE leaf, and the size is derived, not counted
+            // through the zero-length DONE leaf, and the size is derived, not counted. It runs before the null
+            // check so that add() on a closed builder always throws IllegalStateException, null argument or not.
             if (leafLength == leaf.length) {
                 growOrCloseLeaf();
             }
+            Objects.requireNonNull(element, "Vector.Builder.add: element is null");
             leaf[leafLength++] = element;
             return this;
         }
@@ -1545,10 +1548,16 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
          * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} with {@code Object[]}
          * leaves copies whole leaf arrays and shares aligned full ones instead of iterating; a primitive-backed Vector
          * ({@code Vector.range}, {@code ofAll(int[])}) is boxed one element at a time.
+         * <p>
+         * If {@code elements} is not itself a {@code Vector} (which cannot contain a null element), it is consumed
+         * one element at a time, and a null element part-way through is rejected only when reached: the builder keeps
+         * whatever elements were added before it, and a later {@link #result()} returns that partial content, not an
+         * empty or discarded builder.
          *
          * @param elements the elements to append
          * @return this builder
          * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code elements} is null, or if it yields a null element
          */
         @SuppressWarnings("unchecked")
         public Builder<T> addAll(Iterable<? extends T> elements) {
@@ -1682,7 +1691,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                     leaf = this.leaf;
                     leafLength = this.leafLength;
                 }
-                leaf[leafLength++] = mapper.apply(type.getAt(source, i));
+                leaf[leafLength++] = Objects.requireNonNull(mapper.apply(type.getAt(source, i)), "Vector.map: element is null");
             }
             this.leafLength = leafLength;
         }
@@ -1699,7 +1708,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                     leaf = this.leaf;
                     leafLength = this.leafLength;
                 }
-                leaf[leafLength++] = f.apply(i);
+                leaf[leafLength++] = Objects.requireNonNull(f.apply(i), "Vector: element is null");
             }
             this.leafLength = leafLength;
         }
@@ -1707,6 +1716,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         /* appends the same element n times, one Arrays.fill per leaf */
         void addRepeated(int n, T element) {
             checkOpen();
+            Objects.requireNonNull(element, "Vector.fill: element is null");
             int remaining = n;
             while (remaining > 0) {
                 if (leafLength == leaf.length) {
