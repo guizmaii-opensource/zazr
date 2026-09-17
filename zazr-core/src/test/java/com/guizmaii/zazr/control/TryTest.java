@@ -1,7 +1,11 @@
 package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.AbstractValueTest;
+import com.guizmaii.zazr.CheckedConsumer;
+import com.guizmaii.zazr.CheckedFunction1;
+import com.guizmaii.zazr.CheckedFunction3;
 import com.guizmaii.zazr.CheckedPredicate;
+import com.guizmaii.zazr.CheckedRunnable;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.Value;
@@ -315,6 +319,120 @@ public class TryTest extends AbstractValueTest {
         public void shouldThrowNullPointerExceptionWhenCallingTryRunRunnable() {
             assertThatThrownBy(() -> Try.runRunnable(null)).isInstanceOf(NullPointerException.class)
               .hasMessage("runnable is null");
+        }
+    }
+
+    // -- checked exceptions (docs/design.md 3.1 follow-up, #53): CheckedFunctionN/CheckedRunnable now declare
+    // a checked Exception instead of the broader Throwable; a checked IOException reaches the caller (or the
+    // Failure) unwrapped and un-rewrapped through every adapter that used to sneaky-throw to fit a Callable.
+
+    @Nested
+    class CheckedExceptionPropagationTests {
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromTryOf() {
+            final IOException cause = new IOException("boom");
+            final Try<?> result = Try.of(() -> {
+                throw cause;
+            });
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromTryRun() {
+            final IOException cause = new IOException("boom");
+            final Try<?> result = Try.run(() -> {
+                throw cause;
+            });
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromWithResourcesBody() {
+            final IOException cause = new IOException("boom");
+            final Closeable<Integer> closeable1 = Closeable.of(1);
+            final Try<?> result = Try.withResources(() -> closeable1).of(i -> {
+                throw cause;
+            });
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+            assertThat(closeable1.isClosed).isTrue();
+        }
+
+        @Test
+        public void shouldCaptureTheOriginalIOExceptionInstanceFromLiftTry() {
+            final IOException cause = new IOException("boom");
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw cause;
+            };
+            final Try<String> result = CheckedFunction1.liftTry(throwing).apply(1);
+            assertThat(result.isFailure()).isTrue();
+            assertThat(result.getCause()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromGetOrElseTry() {
+            final IOException cause = new IOException("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCurriedLastStep() throws Exception {
+            final IOException cause = new IOException("boom");
+            final CheckedFunction3<Integer, Integer, Integer, String> f = (a, b, c) -> {
+                throw cause;
+            };
+            final CheckedFunction1<Integer, String> lastStep = f.curried().apply(1).apply(2);
+            assertThatThrownBy(() -> lastStep.apply(3)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedFunctionUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedFunction1<Integer, String> checked = i -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().apply(1)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedRunnableUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedRunnable checked = () -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().run()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedConsumerUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedConsumer<Integer> checked = i -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().accept(1)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldRethrowTheOriginalIOExceptionInstanceFromCheckedPredicateUnchecked() {
+            final IOException cause = new IOException("boom");
+            final CheckedPredicate<Integer> checked = i -> {
+                throw cause;
+            };
+            assertThatThrownBy(() -> checked.unchecked().test(1)).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldStillRethrowFatalErrorsFromTryOfInsteadOfCapturingThem() {
+            final VirtualMachineError fatal = new OutOfMemoryError("fatal");
+            assertThatThrownBy(() -> Try.of(() -> {
+                throw fatal;
+            })).isSameAs(fatal);
         }
     }
 
@@ -1730,7 +1848,7 @@ public class TryTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldEnsureThatIdentityCheckedFunctionReturnsIdentity() throws Throwable {
+        public void shouldEnsureThatIdentityCheckedFunctionReturnsIdentity() {
             assertThat(Function.identity().apply(1)).isEqualTo(1);
         }
 
