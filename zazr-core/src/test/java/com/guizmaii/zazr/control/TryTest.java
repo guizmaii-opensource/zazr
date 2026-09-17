@@ -436,6 +436,83 @@ public class TryTest extends AbstractValueTest {
         }
     }
 
+    // -- allocation-aware rewrites (#54): CheckedFunctionN.lift builds the Option directly (no throwaway Try)
+    // and Value.getOrElseTry calls the supplier directly (no throwaway Try either); both preserve the exact
+    // exception-propagation semantics the Try-based implementation had.
+
+    @Nested
+    class AllocationAwareRewriteTests {
+
+        @Test
+        public void shouldLiftCaptureACheckedExceptionAsNone() {
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw new IOException("boom");
+            };
+            assertThat(CheckedFunction1.lift(throwing).apply(1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldLiftCaptureARuntimeExceptionAsNone() {
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw new IllegalStateException("boom");
+            };
+            assertThat(CheckedFunction1.lift(throwing).apply(1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldLiftCaptureANonFatalAssertionErrorAsNone() {
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw new AssertionError("boom");
+            };
+            assertThat(CheckedFunction1.lift(throwing).apply(1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldLiftPropagateAFatalOutOfMemoryError() {
+            final OutOfMemoryError fatal = new OutOfMemoryError("fatal");
+            final CheckedFunction1<Integer, String> throwing = i -> {
+                throw fatal;
+            };
+            assertThatThrownBy(() -> CheckedFunction1.lift(throwing).apply(1)).isSameAs(fatal);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateACheckedException() {
+            final IOException cause = new IOException("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateARuntimeException() {
+            final IllegalStateException cause = new IllegalStateException("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateANonFatalAssertionError() {
+            final AssertionError cause = new AssertionError("boom");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw cause;
+            })).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldGetOrElseTryPropagateAFatalOutOfMemoryError() {
+            final OutOfMemoryError fatal = new OutOfMemoryError("fatal");
+            final Value<String> empty = Try.failure(new RuntimeException("empty"));
+            assertThatThrownBy(() -> empty.getOrElseTry(() -> {
+                throw fatal;
+            })).isSameAs(fatal);
+        }
+    }
+
     // -- Try.withResources
 
     @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
