@@ -3,6 +3,7 @@ package com.guizmaii.zazr;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.List.Cons;
 import com.guizmaii.zazr.collection.List.Nil;
+import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Either.Left;
@@ -230,7 +231,7 @@ public class SealedTypesTest {
         private String describe(Validation<String, Integer> v) {
             return switch (v) {
                 case Valid(var value) -> "valid " + value;
-                case Invalid(var error) -> "invalid " + error;
+                case Invalid(var errors) -> "invalid " + errors.mkString(", ");
             };
         }
 
@@ -250,7 +251,7 @@ public class SealedTypesTest {
         @Test
         public void shouldRejectNullOnBothSides() {
             assertThatThrownBy(() -> new Valid<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
-            assertThatThrownBy(() -> new Invalid<>(null)).isInstanceOf(NullPointerException.class).hasMessage("error is null");
+            assertThatThrownBy(() -> new Invalid<>(null)).isInstanceOf(NullPointerException.class).hasMessage("errors is null");
             assertThatThrownBy(() -> Validation.valid(null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Validation.invalid(null)).isInstanceOf(NullPointerException.class);
         }
@@ -258,10 +259,10 @@ public class SealedTypesTest {
         @Test
         public void shouldHonourRecordEqualityContract() {
             assertThat(new Valid<>(1)).isEqualTo(Validation.valid(1)).hasSameHashCodeAs(Validation.valid(1));
-            assertThat(new Invalid<>("e")).isEqualTo(Validation.invalid("e")).hasSameHashCodeAs(Validation.invalid("e"));
-            assertThat(new Valid<>(1)).isNotEqualTo(new Invalid<>(1));
+            assertThat(new Invalid<>(NonEmptyVector.single("e"))).isEqualTo(Validation.invalid("e")).hasSameHashCodeAs(Validation.invalid("e"));
+            assertThat(new Valid<>(1)).isNotEqualTo(new Invalid<>(NonEmptyVector.single(1)));
             assertThat(new Valid<>(1).value()).isEqualTo(1);
-            assertThat(new Invalid<>("e").error()).isEqualTo("e");
+            assertThat(new Invalid<>(NonEmptyVector.single("e")).errors()).isEqualTo(NonEmptyVector.single("e"));
             assertThat(Validation.valid(1)).hasToString("Valid(1)");
             assertThat(Validation.invalid("e")).hasToString("Invalid(e)");
         }
