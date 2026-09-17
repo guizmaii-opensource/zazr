@@ -45,6 +45,14 @@ public class ValidationZipTest {
     }
 
     @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf2InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>invalid("e2"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e2")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>invalid("e2"), (_, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e2")));
+
+    }
+
+    @Test
     public void shouldConcatenateTheErrorsOf2InvalidsInArgumentOrder() {
         assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), Validation.<String, Integer>invalid("e2"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2")));
         assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), Validation.<String, Integer>invalid("e2"), (_, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2")));
@@ -98,6 +106,16 @@ public class ValidationZipTest {
         assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3"), (_, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e3")));
         assertThat(Validation.zip(Validation.<String, Integer>valid(1), Validation.<String, Integer>invalid("e2"), Validation.<String, Integer>invalid("e3"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e2", "e3")));
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>invalid("e2"), Validation.<String, Integer>invalid("e3"), (_, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e2", "e3")));
+    }
+
+    @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf3InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e3")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3"), (_, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e3")));
+        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>invalid("e3"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e3")));
+        assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>invalid("e3"), (_, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e3")));
     }
 
     @Test
@@ -164,6 +182,16 @@ public class ValidationZipTest {
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>invalid("e2"), Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e2", "e4")));
         assertThat(Validation.zip(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3"), Validation.<String, Integer>invalid("e4"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e3", "e4")));
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3"), Validation.<String, Integer>invalid("e4"), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e3", "e4")));
+    }
+
+    @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf4InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e4")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e4")));
+        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e4")));
+        assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e4")));
     }
 
     @Test
@@ -242,6 +270,16 @@ public class ValidationZipTest {
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3"), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e3", "e5")));
         assertThat(Validation.zip(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"), Validation.<String, Integer>invalid("e5"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e4", "e5")));
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"), Validation.<String, Integer>invalid("e5"), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e4", "e5")));
+    }
+
+    @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf5InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e5")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e5")));
+        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e5")));
+        assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e5")));
     }
 
     @Test
@@ -334,6 +372,16 @@ public class ValidationZipTest {
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>invalid("e4"), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e4", "e6")));
         assertThat(Validation.zip(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"), Validation.<String, Integer>invalid("e6"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e5", "e6")));
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"), Validation.<String, Integer>invalid("e6"), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e5", "e6")));
+    }
+
+    @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf6InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e6")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e6")));
+        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e6")));
+        assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e6")));
     }
 
     @Test
@@ -442,6 +490,16 @@ public class ValidationZipTest {
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>invalid("e5"), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e5", "e7")));
         assertThat(Validation.zip(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"), Validation.<String, Integer>invalid("e7"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e6", "e7")));
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"), Validation.<String, Integer>invalid("e7"), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e6", "e7")));
+    }
+
+    @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf7InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e7")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e7")));
+        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e7")));
+        assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e7")));
     }
 
     @Test
@@ -568,6 +626,16 @@ public class ValidationZipTest {
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>invalid("e6"), Validation.<String, Integer>valid(7), Validation.<String, Integer>invalid("e8"), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e6", "e8")));
         assertThat(Validation.zip(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"), Validation.<String, Integer>invalid("e8"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e7", "e8")));
         assertThat(Validation.zipWith(Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>invalid("e7"), Validation.<String, Integer>invalid("e8"), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e7", "e8")));
+    }
+
+    @Test
+    public void shouldConcatenateSeveralErrorsOfOneInvalidOf8InArgumentOrder() {
+        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        assertThat(Validation.zip(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>valid(7), Validation.<String, Integer>invalid("e8"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e8")));
+        assertThat(Validation.zipWith(first, Validation.<String, Integer>valid(2), Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>valid(7), Validation.<String, Integer>invalid("e8"), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e8")));
+        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        assertThat(Validation.zip(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>valid(7), Validation.<String, Integer>invalid("e8"))).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e8")));
+        assertThat(Validation.zipWith(Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>valid(3), Validation.<String, Integer>valid(4), Validation.<String, Integer>valid(5), Validation.<String, Integer>valid(6), Validation.<String, Integer>valid(7), Validation.<String, Integer>invalid("e8"), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e8")));
     }
 
     @Test

@@ -87,9 +87,9 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip2WithANullValue() {
-        final Lazy<Tuple2<Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2));
+    public void shouldZip2WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2)).get()).isEqualTo(Tuple.of(null, 2));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, null));
     }
 
     @Test
@@ -188,9 +188,10 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip3WithANullValue() {
-        final Lazy<Tuple3<Integer, Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2, 3));
+    public void shouldZip3WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3)).get()).isEqualTo(Tuple.of(null, 2, 3));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3)).get()).isEqualTo(Tuple.of(1, null, 3));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, null));
     }
 
     @Test
@@ -305,9 +306,11 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip4WithANullValue() {
-        final Lazy<Tuple4<Integer, Integer, Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2, 3, 4));
+    public void shouldZip4WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4)).get()).isEqualTo(Tuple.of(null, 2, 3, 4));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4)).get()).isEqualTo(Tuple.of(1, null, 3, 4));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4)).get()).isEqualTo(Tuple.of(1, 2, null, 4));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, null));
     }
 
     @Test
@@ -438,9 +441,12 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip5WithANullValue() {
-        final Lazy<Tuple5<Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5));
+    public void shouldZip5WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null));
     }
 
     @Test
@@ -587,9 +593,13 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip6WithANullValue() {
-        final Lazy<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6));
+    public void shouldZip6WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5, 6));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5, 6));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5, 6));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null, 6));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, null));
     }
 
     @Test
@@ -752,9 +762,14 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip7WithANullValue() {
-        final Lazy<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7));
+    public void shouldZip7WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5, 6, 7));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5, 6, 7));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5, 6, 7));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null, 6, 7));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.<Integer>of(() -> null), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, null, 7));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, null));
     }
 
     @Test
@@ -933,9 +948,15 @@ public class LazyZipTest {
     }
 
     @Test
-    public void shouldZip8WithANullValue() {
-        final Lazy<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8));
-        assertThat(zipped.get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7, 8));
+    public void shouldZip8WithANullValueAtEveryPosition() {
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5, 6, 7, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5, 6, 7, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5, 6, 7, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null, 6, 7, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.<Integer>of(() -> null), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, null, 7, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.<Integer>of(() -> null), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, null, 8));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, 7, null));
     }
 
     @Test

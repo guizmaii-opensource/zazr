@@ -1858,6 +1858,18 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
+              public void shouldConcatenateSeveralErrorsOfOneInvalidOf${n}InArgumentOrder() {
+                  final Validation<String, Integer> first = Validation.invalidAll($NonEmptyVector.of("e1a", "e1b"));
+                  $assertThat(Validation.zip(${(1 to n).gen(j => if (j == 1) "first" else if (j == n) invalid(j) else valid(j))(using ", ")})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1a", "e1b", "e$n")));
+                  $assertThat(Validation.zipWith(${(1 to n).gen(j => if (j == 1) "first" else if (j == n) invalid(j) else valid(j))(using ", ")}, ${notCalled(n)})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1a", "e1b", "e$n")));
+                  ${(n >= 3).gen(xs"""
+                    final Validation<String, Integer> middle = Validation.invalidAll($NonEmptyVector.of("e2a", "e2b"));
+                    $assertThat(Validation.zip(${(1 to n).gen(j => if (j == 2) "middle" else if (j == 1 || j == n) invalid(j) else valid(j))(using ", ")})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1", "e2a", "e2b", "e$n")));
+                    $assertThat(Validation.zipWith(${(1 to n).gen(j => if (j == 2) "middle" else if (j == 1 || j == n) invalid(j) else valid(j))(using ", ")}, ${notCalled(n)})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1", "e2a", "e2b", "e$n")));
+                  """)}
+              }
+
+              @$test
               public void shouldConcatenateTheErrorsOf${n}InvalidsInArgumentOrder() {
                   $assertThat(Validation.zip(${operands(n, valid, invalid, _ => true)})).isEqualTo(${errors(1 to n)});
                   $assertThat(Validation.zipWith(${operands(n, valid, invalid, _ => true)}, ${notCalled(n)})).isEqualTo(${errors(1 to n)});
@@ -1956,9 +1968,10 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldZip${n}WithANullValue() {
-                  final Lazy<${tupleType(n)}> zipped = Lazy.zip(${(1 to n).gen(j => if (j == 1) "Lazy.<Integer>of(() -> null)" else s"Lazy.of(() -> $j)")(using ", ")});
-                  $assertThat(zipped.get()).isEqualTo(Tuple.of(${(1 to n).gen(j => if (j == 1) "null" else s"$j")(using ", ")}));
+              public void shouldZip${n}WithANullValueAtEveryPosition() {
+                  ${(1 to n).gen(k => xs"""
+                    $assertThat(Lazy.zip(${(1 to n).gen(j => if (j == k) "Lazy.<Integer>of(() -> null)" else s"Lazy.of(() -> $j)")(using ", ")}).get()).isEqualTo(Tuple.of(${(1 to n).gen(j => if (j == k) "null" else s"$j")(using ", ")}));
+                  """)(using "\n")}
               }
 
               @$test
