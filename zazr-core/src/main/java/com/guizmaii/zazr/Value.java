@@ -1203,11 +1203,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * @return A {@link Try} representing this value.
      */
     default Try<T> toTry() {
-        if (this instanceof Try) {
-            return (Try<T>) this;
-        } else {
-            return Try.of(this::get);
-        }
+        return Try.of(this::get);
     }
 
     /**
