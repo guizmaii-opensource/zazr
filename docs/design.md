@@ -357,13 +357,18 @@ Notes:
 - `These<A,B>` is not ported either: every combinator needs a user-supplied merge for the left side.
 
 **Decided while implementing (#22):**
-- **The surface is the sketch above, plus `get()`, `mapBoth` and `toVector()`.** `get()` throws
+- **The surface is the sketch above plus the common member set of 3.2 and `get()`, `mapBoth`, `toVector()`.**
+  The sketch lists only what is specific to `Validation`; the members every control type has (`getOrElse(A)`,
+  `getOrElse(Supplier)`, `getOrElseThrow(Supplier)`, `getOrNull()`, `contains`, `exists`, `forAll`, the instance
+  `forEach(Consumer)`) stay, with `Either`'s right-side semantics (`forAll` holds vacuously on `Invalid`), next to
+  the `Function<NonEmptyVector<E>, ...>` forms of `getOrElse` and `getOrElseThrow`. `get()` throws
   `NoSuchElementException` on `Invalid`, like `Either.get()` and `Try.get()`; `mapBoth` and `toVector()` follow the
-  naming table and the conversion sets of 3.2. Everything else the Vavr type had is gone: `Builder..Builder8`,
-  `combine`, `ap`, `getError`, `flip`, `filter`, `narrow`, `isEmpty`, `getOrNull`, `contains`, `exists`, `forAll`,
-  the instance `forEach(Consumer)`, `getOrElse(Supplier)`, `getOrElseThrow(Supplier)`, `orElse(Validation)` and
-  the `Seq<E>`-accumulating `collectAll`/`forEach`. The `Invalid` errors are reached by the record accessor
-  `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or `toEither()`.
+  naming table and the conversion sets of 3.2. Not kept: `isEmpty` (a `Validation` has no empty case; `Invalid` is
+  a failure, not an absence, and `isInvalid()` is the question) and `orElse(Validation)` (`orElse(Supplier)` only).
+  Everything else the Vavr type had is gone: `Builder..Builder8`, `combine`, `ap`, `getError`, `flip`, `filter`,
+  `narrow` and the `Seq<E>`-accumulating `collectAll`/`forEach`. The `Invalid` errors are reached by the record
+  accessor `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or
+  `toEither()`.
 - **`fromPredicate(A, Predicate<A>, Function<A, E>)`**, as sketched, not the `Supplier<E>` of the 3.3 row: the
   function receives the rejected value so the error can name it. `Either.fromPredicate` keeps its supplier.
 - **`of(Callable, Function<Throwable, E>)` is `Try.of` followed by a conversion**, so it has exactly `Try.of`'s

@@ -518,6 +518,14 @@ public class ValidationTest {
         }
 
         @Test
+        public void shouldGetOrElseASuppliedValue() {
+            assertThat(Validation.<String, Integer>valid(1).getOrElse(() -> {
+                throw new AssertionError("must not be called");
+            })).isEqualTo(1);
+            assertThat(ValidationTest.<Integer>invalid("a").getOrElse(() -> 2)).isEqualTo(2);
+        }
+
+        @Test
         public void shouldGetOrElseAFunctionOfTheErrors() {
             assertThat(Validation.<String, Integer>valid(1).getOrElse(es -> {
                 throw new AssertionError("must not be called");
@@ -529,6 +537,48 @@ public class ValidationTest {
         public void shouldGetOrElseThrow() {
             assertThat(Validation.<String, Integer>valid(1).getOrElseThrow(es -> new IllegalStateException(es.mkString()))).isEqualTo(1);
             assertThatThrownBy(() -> invalid("a", "b").getOrElseThrow(es -> new IllegalStateException(es.mkString(", ")))).isInstanceOf(IllegalStateException.class).hasMessage("a, b");
+        }
+
+        @Test
+        public void shouldGetOrElseThrowASuppliedThrowable() {
+            assertThat(Validation.<String, Integer>valid(1).getOrElseThrow(() -> new IllegalStateException("no"))).isEqualTo(1);
+            assertThatThrownBy(() -> invalid("a").getOrElseThrow(() -> new IllegalStateException("no"))).isInstanceOf(IllegalStateException.class).hasMessage("no");
+        }
+
+        @Test
+        public void shouldGetOrNull() {
+            assertThat(Validation.valid(1).getOrNull()).isEqualTo(1);
+            assertThat(invalid("a").getOrNull()).isNull();
+        }
+
+        @Test
+        public void shouldContainTheValue() {
+            assertThat(Validation.valid(1).contains(1)).isTrue();
+            assertThat(Validation.valid(1).contains(2)).isFalse();
+            assertThat(Validation.valid(1).contains(null)).isFalse();
+            assertThat(ValidationTest.<Integer>invalid("a").contains(1)).isFalse();
+        }
+
+        @Test
+        public void shouldTestTheValueWithExists() {
+            assertThat(Validation.valid(1).exists(i -> i == 1)).isTrue();
+            assertThat(Validation.valid(1).exists(i -> i == 2)).isFalse();
+            assertThat(invalid("a").exists(_ -> true)).isFalse();
+        }
+
+        @Test
+        public void shouldTestTheValueWithForAll() {
+            assertThat(Validation.valid(1).forAll(i -> i == 1)).isTrue();
+            assertThat(Validation.valid(1).forAll(i -> i == 2)).isFalse();
+            assertThat(invalid("a").forAll(_ -> false)).isTrue();
+        }
+
+        @Test
+        public void shouldConsumeTheValueWithForEach() {
+            final java.util.List<Integer> seen = new ArrayList<>();
+            Validation.<String, Integer>valid(1).forEach(seen::add);
+            ValidationTest.<Integer>invalid("a").forEach(seen::add);
+            assertThat(seen).containsExactly(1);
         }
 
         @Test
@@ -562,7 +612,12 @@ public class ValidationTest {
             assertThatThrownBy(() -> Validation.valid(1).fold(null, i -> i)).isInstanceOf(NullPointerException.class).hasMessage("ifInvalid is null");
             assertThatThrownBy(() -> Validation.valid(1).fold(es -> es, null)).isInstanceOf(NullPointerException.class).hasMessage("ifValid is null");
             assertThatThrownBy(() -> Validation.valid(1).getOrElse((java.util.function.Function<NonEmptyVector<Object>, Integer>) null)).isInstanceOf(NullPointerException.class).hasMessage("other is null");
-            assertThatThrownBy(() -> Validation.valid(1).getOrElseThrow(null)).isInstanceOf(NullPointerException.class).hasMessage("exceptionFunction is null");
+            assertThatThrownBy(() -> Validation.valid(1).getOrElse((java.util.function.Supplier<Integer>) null)).isInstanceOf(NullPointerException.class).hasMessage("supplier is null");
+            assertThatThrownBy(() -> Validation.valid(1).getOrElseThrow((java.util.function.Function<NonEmptyVector<Object>, RuntimeException>) null)).isInstanceOf(NullPointerException.class).hasMessage("exceptionFunction is null");
+            assertThatThrownBy(() -> Validation.valid(1).getOrElseThrow((java.util.function.Supplier<RuntimeException>) null)).isInstanceOf(NullPointerException.class).hasMessage("exceptionSupplier is null");
+            assertThatThrownBy(() -> Validation.valid(1).exists(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
+            assertThatThrownBy(() -> Validation.valid(1).forAll(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
+            assertThatThrownBy(() -> Validation.valid(1).forEach(null)).isInstanceOf(NullPointerException.class).hasMessage("action is null");
             assertThatThrownBy(() -> Validation.valid(1).tap(null)).isInstanceOf(NullPointerException.class).hasMessage("action is null");
             assertThatThrownBy(() -> Validation.valid(1).tapError(null)).isInstanceOf(NullPointerException.class).hasMessage("action is null");
         }

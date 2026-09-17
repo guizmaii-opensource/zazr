@@ -562,6 +562,22 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     }
 
     /**
+     * Returns the value if this is {@code Valid}, otherwise the value supplied by {@code supplier}. The supplier is
+     * called only for an {@code Invalid}.
+     *
+     * @param supplier supplies the alternative
+     * @return the value or {@code supplier.get()}
+     * @throws NullPointerException if {@code supplier} is null
+     */
+    default A getOrElse(Supplier<? extends A> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> supplier.get();
+        };
+    }
+
+    /**
      * Returns the value if this is {@code Valid}, otherwise {@code other} applied to the errors.
      *
      * @param other builds the alternative from the errors; called only for an {@code Invalid}
@@ -573,6 +589,24 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         return switch (this) {
             case Valid(var value) -> value;
             case Invalid(var errors) -> other.apply(errors);
+        };
+    }
+
+    /**
+     * Returns the value if this is {@code Valid}, otherwise throws the supplied throwable. The supplier is called only
+     * for an {@code Invalid}.
+     *
+     * @param exceptionSupplier supplies the throwable
+     * @param <X>               the type of the throwable
+     * @return the value
+     * @throws X                    if this is {@code Invalid}
+     * @throws NullPointerException if {@code exceptionSupplier} is null
+     */
+    default <X extends Throwable> A getOrElseThrow(Supplier<X> exceptionSupplier) throws X {
+        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> throw exceptionSupplier.get();
         };
     }
 
@@ -591,6 +625,68 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
             case Valid(var value) -> value;
             case Invalid(var errors) -> throw exceptionFunction.apply(errors);
         };
+    }
+
+    /**
+     * Returns the value if this is {@code Valid}, otherwise {@code null}.
+     *
+     * @return the value or {@code null}
+     */
+    default @Nullable A getOrNull() {
+        return switch (this) {
+            case Valid(var value) -> value;
+            case Invalid<E, A> _ -> null;
+        };
+    }
+
+    /**
+     * Checks whether this {@code Validation} holds a value equal to {@code element}, as tested by
+     * {@link Objects#equals(Object, Object)}.
+     *
+     * @param element the element to look for, may be {@code null}
+     * @return {@code true} if this is {@code Valid(element)}, {@code false} otherwise (always for an {@code Invalid})
+     */
+    default boolean contains(@Nullable A element) {
+        return this instanceof Valid(var value) && Objects.equals(value, element);
+    }
+
+    /**
+     * Checks whether this {@code Validation} holds a value satisfying {@code predicate}.
+     *
+     * @param predicate the condition to test the value with
+     * @return {@code true} if this is {@code Valid} and the predicate holds for its value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean exists(Predicate<? super A> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return this instanceof Valid(var value) && predicate.test(value);
+    }
+
+    /**
+     * Checks whether {@code predicate} holds for the value of this {@code Validation}; it holds vacuously for an
+     * {@code Invalid}.
+     *
+     * @param predicate the condition to test the value with
+     * @return {@code true} if this is {@code Invalid} or the predicate holds for the value, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean forAll(Predicate<? super A> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return !(this instanceof Valid(var value)) || predicate.test(value);
+    }
+
+    /**
+     * Runs {@code action} on the value of a {@code Valid}; does nothing for an {@code Invalid}. The same as
+     * {@link #tap(Consumer)} without the return value.
+     *
+     * @param action what to do with the value
+     * @throws NullPointerException if {@code action} is null
+     */
+    default void forEach(Consumer<? super A> action) {
+        Objects.requireNonNull(action, "action is null");
+        if (this instanceof Valid(var value)) {
+            action.accept(value);
+        }
     }
 
     /**
