@@ -462,6 +462,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator over {@code n} occurrences of {@code element}
      */
     static <T extends @Nullable Object> Iterator<T> fill(int n, T element) {
+        Objects.requireNonNull(element, "Iterator.fill: element is null");
         return com.guizmaii.zazr.collection.Collections.fillObject(n, element);
     }
 
@@ -1138,6 +1139,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      */
     static <T extends @Nullable Object> Iterator<T> iterate(T seed, Function<? super T, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
+        Objects.requireNonNull(seed, "Iterator.iterate: element is null");
         return new AbstractIterator<T>() {
             Function<? super T, ? extends T> nextFunc = s -> {
                 nextFunc = f;
@@ -1169,6 +1171,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator that repeatedly returns {@code t}
      */
     static <T extends @Nullable Object> Iterator<T> continually(T t) {
+        Objects.requireNonNull(t, "Iterator.continually: element is null");
         return new AbstractIterator<T>() {
             @Override
             public boolean hasNext() {
@@ -1224,6 +1227,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator with {@code element} interleaved between the original elements
      */
     default Iterator<T> intersperse(T element) {
+        Objects.requireNonNull(element, "Iterator.intersperse: element is null");
         if (!hasNext()) {
             return empty();
         } else {
@@ -1295,6 +1299,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     @Override
     default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "Iterator.zipAll: element is null");
+        Objects.requireNonNull(thatElem, "Iterator.zipAll: element is null");
         final java.util.Iterator<? extends U> thatIt = that.iterator();
         if (isEmpty() && !thatIt.hasNext()) {
             return empty();
@@ -2052,6 +2058,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     @Override
     default <U extends @Nullable Object> Iterator<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         Objects.requireNonNull(operation, "operation is null");
+        Objects.requireNonNull(zero, "Iterator.scanLeft: element is null");
         if (isEmpty()) {
             return of(zero);
         } else {

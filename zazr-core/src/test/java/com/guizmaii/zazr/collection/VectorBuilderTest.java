@@ -340,6 +340,7 @@ public class VectorBuilderTest {
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         // the state check comes before the argument check
         assertThatThrownBy(() -> builder.addAll(null)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.add(null)).isInstanceOf(IllegalStateException.class);
         // the bulk loops too, even for zero elements, where no leaf boundary would be crossed
         assertThatThrownBy(() -> builder.addTabulated(0, i -> i)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.addRepeated(0, 1)).isInstanceOf(IllegalStateException.class);

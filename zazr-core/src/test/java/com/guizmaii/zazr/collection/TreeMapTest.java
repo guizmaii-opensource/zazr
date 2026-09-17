@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TreeMapTest extends AbstractSortedMapTest {
 
@@ -261,6 +262,14 @@ public class TreeMapTest extends AbstractSortedMapTest {
             final List<Tuple2<Integer, String>> expected = List.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             assertThat(actual.toList()).isEqualTo(expected);
         }
+
+        @Test
+        public void shouldRejectNullEntryInOfEntriesIterable() {
+            final java.util.List<Tuple2<Integer, String>> withNullEntry = new java.util.ArrayList<>();
+            withNullEntry.add(Tuple.of(1, "a"));
+            withNullEntry.add(null);
+            assertThatThrownBy(() -> TreeMap.ofEntries(withNullEntry)).isInstanceOf(NullPointerException.class);
+        }
     }
 
     @Nested
@@ -349,6 +358,12 @@ public class TreeMapTest extends AbstractSortedMapTest {
                     .mapKeys(Integer::toHexString).mapKeys(String::length);
             final TreeMap<Integer, String> expected = TreeMap.of(1, "3");
             assertThat(actual).isEqualTo(expected);
+        }
+
+        @Test
+        public void shouldRejectNullTupleFromMapMapper() {
+            final TreeMap<Integer, String> map = TreeMap.of(1, "a");
+            assertThatThrownBy(() -> map.map((k, v) -> null)).isInstanceOf(NullPointerException.class);
         }
     }
 

@@ -1533,12 +1533,13 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
          * @throws NullPointerException if {@code element} is null
          */
         public Builder<T> add(T element) {
-            Objects.requireNonNull(element, "Vector.Builder.add: element is null");
             // the hot path is one branch and one array store: the open check lives in growOrCloseLeaf(), reached
-            // through the zero-length DONE leaf, and the size is derived, not counted
+            // through the zero-length DONE leaf, and the size is derived, not counted. It runs before the null
+            // check so that add() on a closed builder always throws IllegalStateException, null argument or not.
             if (leafLength == leaf.length) {
                 growOrCloseLeaf();
             }
+            Objects.requireNonNull(element, "Vector.Builder.add: element is null");
             leaf[leafLength++] = element;
             return this;
         }

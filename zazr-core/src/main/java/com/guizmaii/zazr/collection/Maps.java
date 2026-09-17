@@ -15,15 +15,32 @@ import org.jspecify.annotations.Nullable;
  */
 final class Maps {
 
+    /**
+     * Marker for "no value stored under this key", compared by identity only. It exists purely to
+     * avoid allocating a {@link Option#some} on lookup hot paths: internal presence checks call
+     * {@link #getOrAbsent(Map, Object)} (which is {@link Map#getOrElse(Object, Object)} with this as
+     * the default) instead of {@link Map#get(Object)}, so no {@code Option} is boxed just to test
+     * {@code isDefined()}. It is never stored in a map and never returned to a caller: a value equal
+     * to it is impossible, because every value a caller can put is non-null and this instance is not
+     * reachable outside this package (design 3.9 forbids a stored {@code null}, which is the only
+     * thing this sentinel used to have to be told apart from).
+     */
+    static final Object ABSENT = new Object();
+
+    @SuppressWarnings("unchecked")
+    static <K extends @Nullable Object, V extends @Nullable Object> V getOrAbsent(Map<K, V> map, K key) {
+        return map.getOrElse(key, (V) ABSENT);
+    }
+
     private Maps() {
     }
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<V, M> computeIfAbsent(M map, K key, Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction, "mappingFunction is null");
-        final Option<V> value = map.get(key);
-        if (value.isDefined()) {
-            return Tuple.of(value.get(), map);
+        final V value = getOrAbsent(map, key);
+        if (value != ABSENT) {
+            return Tuple.of(value, map);
         } else {
             final V newValue = mappingFunction.apply(key);
             final M newMap = (M) map.put(key, newValue);
@@ -33,9 +50,9 @@ final class Maps {
 
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<Option<V>, M> computeIfPresent(M map, K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        final Option<V> value = map.get(key);
-        if (value.isDefined()) {
-            final V newValue = remappingFunction.apply(key, value.get());
+        final V value = getOrAbsent(map, key);
+        if (value != ABSENT) {
+            final V newValue = remappingFunction.apply(key, value);
             final M newMap = (M) map.put(key, newValue);
             return Tuple.of(Option.some(newValue), newMap);
         } else {
@@ -156,8 +173,8 @@ final class Maps {
             return that.foldLeft(map, (result, entry) -> {
                 final K key = entry._1();
                 final U value = entry._2();
-                final Option<V> current = result.get(key);
-                final V newValue = current.isDefined() ? collisionResolution.apply(current.get(), value) : value;
+                final V current = getOrAbsent(result, key);
+                final V newValue = current != ABSENT ? collisionResolution.apply(current, value) : value;
                 return (M) result.put(key, newValue);
             });
         }
@@ -204,11 +221,11 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, K key, U value,
             BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
-        final Option<V> currentValue = map.get(key);
-        if (currentValue.isEmpty()) {
+        final V currentValue = getOrAbsent(map, key);
+        if (currentValue == ABSENT) {
             return (M) map.put(key, value);
         } else {
-            return (M) map.put(key, merge.apply(currentValue.get(), value));
+            return (M) map.put(key, merge.apply(currentValue, value));
         }
     }
 
@@ -221,11 +238,11 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, Tuple2<? extends K, U> entry,
             BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
-        final Option<V> currentValue = map.get(entry._1());
-        if (currentValue.isEmpty()) {
+        final V currentValue = getOrAbsent(map, entry._1());
+        if (currentValue == ABSENT) {
             return put(map, entry);
         } else {
-            return put(map, entry.map2(value -> merge.apply(currentValue.get(), value)));
+            return put(map, entry.map2(value -> merge.apply(currentValue, value)));
         }
     }
 

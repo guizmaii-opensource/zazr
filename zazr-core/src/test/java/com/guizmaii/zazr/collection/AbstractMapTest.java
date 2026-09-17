@@ -962,20 +962,26 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNils() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(empty(), null, null);
+        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(empty(), Tuple.of(-1, "x"), "z");
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipAllEmptyAndNonNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), null, null);
-        assertThat(actual).isEqualTo(Stream.of(Tuple.of(null, 1)));
+        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), Tuple.of(-1, "x"), "z");
+        assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(-1, "x"), 1)));
     }
 
     @Test
     public void shouldZipAllNonEmptyAndNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().put(0, 1).zipAll(empty(), null, null);
-        assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(0, 1), null)));
+        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().put(0, 1).zipAll(empty(), Tuple.of(-1, "x"), "z");
+        assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(0, 1), "z")));
+    }
+
+    @Test
+    public void shouldRejectNullZipAllFillValues() {
+        assertThatNullPointerException().isThrownBy(() -> emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), null, "z"));
+        assertThatNullPointerException().isThrownBy(() -> emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), Tuple.of(-1, "x"), null));
     }
 
     @Test
@@ -1487,6 +1493,60 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
         public void shouldRejectMapKeysWithMergeResultingInNull() {
             final Map<String, String> map = mapOf("a", "1", "b", "2");
             assertThatNullPointerException().isThrownBy(() -> map.mapKeys(k -> "x", (v1, v2) -> null));
+        }
+    }
+
+    // -- the ABSENT sentinel (Maps.java) must never leak: every path that reads it internally
+    // must treat an absent key exactly like AbstractMapTest.get/getOrElse do, and the sentinel
+    // itself must never equal a real user value.
+
+    @Nested
+    class AbsentSentinelTests {
+
+        @Test
+        public void sentinelIsNotEqualToAnyUserObject() {
+            assertThat(Maps.ABSENT).isNotEqualTo("anything");
+            assertThat(Maps.ABSENT).isNotEqualTo((Object) null);
+            assertThat(Maps.ABSENT.equals(new Object())).isFalse();
+        }
+
+        @Test
+        public void containsTreatsAbsentKeyAsAbsent() {
+            final Map<String, String> map = mapOf("k", "v");
+            assertThat(map.contains(Tuple.of("missing", "v"))).isFalse();
+        }
+
+        @Test
+        public void computeIfAbsentOnAbsentKeyComputes() {
+            final Tuple2<String, ? extends Map<String, String>> result = AbstractMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
+            assertThat(result._1()).isEqualTo("computed");
+        }
+
+        @Test
+        public void computeIfPresentOnAbsentKeyIsNoop() {
+            final Map<String, String> map = mapOf("k", "v");
+            final Tuple2<Option<String>, ? extends Map<String, String>> result = map.computeIfPresent("missing", (k, v) -> "x");
+            assertThat(result._1()).isEqualTo(Option.none());
+            assertThat(result._2()).isSameAs(map);
+        }
+
+        @Test
+        public void mergeOnAbsentKeyTakesTheOtherMapsValue() {
+            final Map<String, String> map = mapOf("a", "1");
+            final Map<String, String> merged = map.merge(mapOf("b", "2"), (a, b) -> a);
+            assertThat(merged).isEqualTo(mapOf("a", "1", "b", "2"));
+        }
+
+        @Test
+        public void putWithMergeOnAbsentKeyPutsWithoutMerging() {
+            final Map<String, String> map = AbstractMapTest.this.<String, String>emptyMap().put("k", "v", (a, b) -> "merged");
+            assertThat(map).isEqualTo(mapOf("k", "v"));
+        }
+
+        @Test
+        public void mapKeysCollapsingOntoAbsentTargetTakesTheMappedValue() {
+            final Map<String, String> map = mapOf("a", "1");
+            assertThat(map.mapKeys(k -> "x", (v1, v2) -> "merged")).isEqualTo(mapOf("x", "1"));
         }
     }
 }

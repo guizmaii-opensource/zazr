@@ -2375,22 +2375,28 @@ public abstract class AbstractTraversableTest extends AbstractValueTest {
 
     @TestTemplate
     public void shouldZipAllNils() {
-        final Traversable<?> actual = empty().zipAll(empty(), null, null);
+        final Traversable<?> actual = empty().zipAll(empty(), 0, 0);
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipAllEmptyAndNonNil() {
-        final Traversable<?> actual = empty().zipAll(of(1), null, null);
-        final Traversable<Tuple2<Object, Integer>> expected = of(Tuple.of(null, 1));
+        final Traversable<?> actual = empty().zipAll(of(1), 0, 0);
+        final Traversable<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonEmptyAndNil() {
-        final Traversable<?> actual = of(1).zipAll(empty(), null, null);
-        final Traversable<Tuple2<Integer, Object>> expected = of(Tuple.of(1, null));
+        final Traversable<?> actual = of(1).zipAll(empty(), 0, 0);
+        final Traversable<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldRejectNullZipAllFillValues() {
+        assertThrows(NullPointerException.class, () -> empty().zipAll(of(1), null, 0));
+        assertThrows(NullPointerException.class, () -> empty().zipAll(of(1), 0, null));
     }
 
     @TestTemplate

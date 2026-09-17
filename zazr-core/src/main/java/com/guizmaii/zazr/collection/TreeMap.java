@@ -1491,6 +1491,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(entries, "entries is null");
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (Tuple2<K, V> entry : (Iterable<Tuple2<K, V>>) entries) {
+            Objects.requireNonNull(entry, "TreeMap.ofEntries: entry is null");
             tree = tree.insert(Tuple.of(requireKey(entry._1()), requireValue(entry._2())));
         }
         return new TreeMap<>(tree);
@@ -1500,7 +1501,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                                                                 Iterable<Tuple2<K, V>> entries, Function<Tuple2<K, V>, Tuple2<K2, V2>> entryMapper) {
         RedBlackTree<Tuple2<K2, V2>> tree = RedBlackTree.empty(entryComparator);
         for (Tuple2<K, V> entry : entries) {
-            final Tuple2<K2, V2> mapped = entryMapper.apply(entry);
+            final Tuple2<K2, V2> mapped = Objects.requireNonNull(entryMapper.apply(entry), "TreeMap.map: entry is null");
             tree = tree.insert(Tuple.of(requireKey(mapped._1()), requireValue(mapped._2())));
         }
         return new TreeMap<>(tree);

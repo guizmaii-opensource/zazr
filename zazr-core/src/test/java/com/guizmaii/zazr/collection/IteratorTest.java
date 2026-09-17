@@ -1001,4 +1001,129 @@ public class IteratorTest extends AbstractTraversableTest {
     public void shouldRejectNullElementOnOfVarargs() {
         assertThatNullPointerException().isThrownBy(() -> Iterator.of(1, null));
     }
+
+    @Test
+    public void shouldRejectNullElementOnTabulate() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.tabulate(1, i -> null).toList());
+    }
+
+    @Test
+    public void shouldRejectNullElementOnFillSupplier() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.<Integer> fill(1, () -> null).toList());
+    }
+
+    @Test
+    public void shouldRejectNullElementOnFillObject() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.fill(1, (Integer) null));
+    }
+
+    @Test
+    public void shouldRejectNullResultOnMap() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).map(i -> null).toList());
+    }
+
+    @Test
+    public void shouldRejectNullResultOnMapTo() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).mapTo(null).toList());
+    }
+
+    @Test
+    public void shouldRejectNullResultOnFlatMap() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).flatMap(i -> Iterator.of((Integer) null)).toList());
+    }
+
+    @Test
+    public void shouldRejectNullResultOnContinuallySupplier() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.continually(() -> null).next());
+    }
+
+    @Test
+    public void shouldRejectNullElementOnContinually() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.continually((Integer) null));
+    }
+
+    @Test
+    public void shouldRejectNullSeedOnIterate() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.iterate((Integer) null, i -> i));
+    }
+
+    @Test
+    public void shouldRejectNullResultOnIterate() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.iterate(1, i -> null).drop(1).next());
+    }
+
+    @Test
+    public void shouldRejectNullElementOnIntersperse() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1, 2).intersperse(null));
+    }
+
+    @Test
+    public void shouldRejectNullResultOnZipWith() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).zipWith(Iterator.of(2), (a, b) -> null).toList());
+    }
+
+    @Test
+    public void shouldRejectNullFillValuesOnZipAll() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).zipAll(Iterator.of(2), null, 9));
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).zipAll(Iterator.of(2), 9, null));
+    }
+
+    @Test
+    public void shouldRejectNullResultOnZipWithIndex() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).zipWithIndex((t, i) -> null).toList());
+    }
+
+    @Test
+    public void shouldRejectNullResultOnUnfold() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.unfold(1, i -> Option.some(Tuple.of(i, null))).toList());
+    }
+
+    @Test
+    public void shouldRejectNullZeroOnScanLeft() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).scanLeft(null, (acc, t) -> acc));
+    }
+
+    @Test
+    public void shouldRejectNullResultOnScanLeft() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1, 2).scanLeft(0, (acc, t) -> null).toList());
+    }
+
+    // -- every Iterator funnels through AbstractIterator.next(), the single place that rejects a
+    // null element produced by a user function; these pin the exact message at that one boundary.
+
+    @Test
+    public void shouldRejectNullFromMapAtTheFunnel() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).map(x -> null).next())
+                .withMessage("Iterator: element is null");
+    }
+
+    @Test
+    public void shouldRejectNullFromFlatMapAtTheFunnel() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).flatMap(x -> Iterator.of(2).map(i -> null)).next())
+                .withMessage("Iterator: element is null");
+    }
+
+    @Test
+    public void shouldRejectNullFromZipWithAtTheFunnel() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).zipWith(Iterator.of(2), (a, b) -> null).next())
+                .withMessage("Iterator: element is null");
+    }
+
+    @Test
+    public void shouldRejectNullFromTabulateAtTheFunnel() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.tabulate(1, i -> null).next())
+                .withMessage("Iterator: element is null");
+    }
+
+    @Test
+    public void shouldRejectNullFromFillSupplierAtTheFunnel() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.<Integer> fill(1, () -> null).next())
+                .withMessage("Iterator: element is null");
+    }
+
+    @Test
+    public void shouldRejectNullFromUnfoldAtTheFunnel() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.unfold(1, i -> Option.some(Tuple.of(i, (Integer) null))).next())
+                .withMessage("Iterator: element is null");
+    }
 }
