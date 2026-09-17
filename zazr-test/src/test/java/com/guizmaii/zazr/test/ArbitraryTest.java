@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.test;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
@@ -9,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.Random;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -154,7 +154,7 @@ public class ArbitraryTest {
         final Gen<String> arbitrary = Arbitrary.string(Gen.choose('a', 'b')).apply(2);
         List.range(0, 1000)
                 .map(i -> arbitrary.apply(RANDOM))
-                .groupBy(Function1.identity())
+                .groupBy(Function.identity())
                 .forEach((key, value) -> assertThat(value.length())
                         .describedAs(key)
                         .isGreaterThan(1));
@@ -165,7 +165,7 @@ public class ArbitraryTest {
         final Gen<String> distinctArbitrary = Arbitrary.string(Gen.choose('a', 'b')).distinct().apply(100);
         List.range(0, 1000)
                 .map(i -> distinctArbitrary.apply(RANDOM))
-                .groupBy(Function1.identity())
+                .groupBy(Function.identity())
                 .forEach((key, value) -> assertThat(value.length())
                         .describedAs(key)
                         .isEqualTo(1));
@@ -177,7 +177,7 @@ public class ArbitraryTest {
                 .distinctBy(Comparator.naturalOrder()).apply(100);
         List.range(0, 10000)
                 .map(i -> distinctByArbitrary.apply(RANDOM))
-                .groupBy(Function1.identity())
+                .groupBy(Function.identity())
                 .forEach((key, value) -> assertThat(value.length())
                         .describedAs(key)
                         .isEqualTo(1));
