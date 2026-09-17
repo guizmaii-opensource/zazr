@@ -1,54 +1,24 @@
 package com.guizmaii.zazr;
 
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static com.guizmaii.zazr.collection.Iterator.range;
 import static java.util.concurrent.CompletableFuture.runAsync;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class LazyTest extends AbstractValueTest {
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected <T> Undefined<T> empty() {
-        return (Undefined<T>) Undefined.INSTANCE;
-    }
-    
-    @Override
-    protected <T> Lazy<T> of(T element) {
-        return Lazy.of(() -> element);
-    }
-
-    @SafeVarargs
-    @Override
-    protected final <T> Lazy<T> of(T... elements) {
-        return of(elements[0]);
-    }
-    
-    @Override
-    protected boolean useIsEqualToInsteadOfIsSameAs() {
-        return false;
-    }
-    
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
+public class LazyTest {
 
     @Nested
     class StaticNarrowTests {
@@ -64,12 +34,6 @@ public class LazyTest extends AbstractValueTest {
     @Nested
     class OfSupplierTests {
         @Test
-        public void shouldNotChangeLazy() {
-            final Lazy<Integer> expected = Lazy.of(() -> 1);
-            assertThat(Lazy.of(expected)).isSameAs(expected);
-        }
-
-        @Test
         public void shouldThrowOnNullSupplier() {
             assertThrows(NullPointerException.class, () -> Lazy.of((Supplier<?>) null));
         }
@@ -83,15 +47,45 @@ public class LazyTest extends AbstractValueTest {
                 assertThat(actual).isEqualTo(expected);
             }
         }
+
+        @Test
+        public void shouldNotEvaluateOnCreation() {
+            final AtomicInteger evaluations = new AtomicInteger();
+            final Lazy<Integer> lazy = Lazy.of(evaluations::incrementAndGet);
+            assertThat(evaluations.get()).isEqualTo(0);
+            assertThat(lazy.get()).isEqualTo(1);
+            assertThat(lazy.get()).isEqualTo(1);
+            assertThat(evaluations.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldRetryAfterAFailedEvaluation() {
+            final AtomicInteger evaluations = new AtomicInteger();
+            final Lazy<Integer> lazy = Lazy.of(() -> {
+                if (evaluations.incrementAndGet() == 1) {
+                    throw new IllegalStateException("first attempt fails");
+                }
+                return evaluations.get();
+            });
+            assertThatThrownBy(lazy::get).isInstanceOf(IllegalStateException.class);
+            assertThat(lazy.isEvaluated()).isFalse();
+            assertThat(lazy.get()).isEqualTo(2);
+            assertThat(lazy.isEvaluated()).isTrue();
+        }
     }
 
     @Nested
-    class IterateTests {
+    class GetTests {
         @Test
-        public void shouldIterate() {
-            final Iterator<Integer> iterator = Lazy.of(() -> 1).iterator();
-            assertThat(iterator.next()).isEqualTo(1);
-            assertThat(iterator.hasNext()).isFalse();
+        public void shouldGetTheValue() {
+            assertThat(Lazy.of(() -> 1).get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldHoldNull() {
+            final Lazy<Object> lazy = Lazy.of(() -> null);
+            assertThat(lazy.get()).isNull();
+            assertThat(lazy.isEvaluated()).isTrue();
         }
     }
 
@@ -102,6 +96,20 @@ public class LazyTest extends AbstractValueTest {
             final Lazy<Integer> lazy = Lazy.of(() -> 1);
             final Lazy<Integer> peek = lazy.peek(v -> assertThat(v).isEqualTo(1));
             assertThat(peek).isSameAs(lazy);
+        }
+
+        @Test
+        public void shouldEvaluateOnPeek() {
+            final Lazy<Integer> lazy = Lazy.of(() -> 1);
+            final int[] effect = { 0 };
+            lazy.peek(i -> effect[0] = i);
+            assertThat(effect[0]).isEqualTo(1);
+            assertThat(lazy.isEvaluated()).isTrue();
+        }
+
+        @Test
+        public void shouldThrowOnNullAction() {
+            assertThrows(NullPointerException.class, () -> Lazy.of(() -> 1).peek(null));
         }
     }
 
@@ -136,81 +144,88 @@ public class LazyTest extends AbstractValueTest {
         }
 
         @Test
-        public void shouldMapOverLazyValue() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
-            final Lazy<Integer> expected = Lazy.of(() -> 21);
-
-            assertThat(testee.map(i -> i / 2)).isEqualTo(expected);
-        }
-
-        @Test
-        public void shouldFilterOverLazyValue() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
-            final Option<Integer> expectedPositive = Option.some(42);
-            final Option<Integer> expectedNegative = Option.none();
-
-            assertThat(testee.filter(i -> i % 2 == 0)).isEqualTo(expectedPositive);
-            assertThat(testee.filter(i -> i % 2 != 0)).isEqualTo(expectedNegative);
-        }
-
-        @Test
-        public void shouldTransformLazyValue() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
-            final Integer expected = 21;
-
-            final Integer actual = testee.transform(lazy -> lazy.get() / 2);
-
-            assertThat(actual).isEqualTo(expected);
-        }
-
-        @Test
-        public void shouldNotBeEmpty() {
-            assertThat(Lazy.of(Option::none).isEmpty()).isFalse();
-        }
-
-        @Test
-        public void shouldContainASingleValue() {
-            assertThat(Lazy.of(Option::none).isSingleValued()).isTrue();
+        public void shouldThrowWhenSequencingNull() {
+            assertThrows(NullPointerException.class, () -> Lazy.sequence(null));
         }
     }
 
     @Nested
-    class ValSupplierClassProxyTests {
+    class MapTests {
         @Test
-        public void shouldCreateLazyProxy() {
-
-            final String[] evaluated = new String[] { null };
-
-            final CharSequence chars = Lazy.val(() -> {
-                final String value = "Yay!";
-                evaluated[0] = value;
-                return value;
-            }, CharSequence.class);
-
-            assertThat(evaluated[0]).isEqualTo(null);
-            assertThat(chars).isEqualTo("Yay!");
-            assertThat(evaluated[0]).isEqualTo("Yay!");
+        public void shouldMapOverLazyValue() {
+            final Lazy<Integer> testee = Lazy.of(() -> 42);
+            final Lazy<Integer> expected = Lazy.of(() -> 21);
+            assertThat(testee.map(i -> i / 2)).isEqualTo(expected);
         }
 
         @Test
-        public void shouldThrowWhenCreatingLazyProxyAndSupplierIsNull() {
-            assertThrows(NullPointerException.class, () -> Lazy.val(null, CharSequence.class));
+        public void shouldNotEvaluateOnMap() {
+            final Lazy<Integer> testee = Lazy.of(() -> 42);
+            final Lazy<Integer> mapped = testee.map(i -> i / 2);
+            assertThat(testee.isEvaluated()).isFalse();
+            assertThat(mapped.isEvaluated()).isFalse();
+            assertThat(mapped.get()).isEqualTo(21);
+            assertThat(testee.isEvaluated()).isTrue();
         }
 
         @Test
-        public void shouldThrowWhenCreatingLazyProxyAndTypeIsNull() {
-            assertThrows(NullPointerException.class, () -> Lazy.val(() -> "", null));
+        public void shouldMapToNull() {
+            assertThat(Lazy.of(() -> 1).map(i -> null).get()).isNull();
         }
 
         @Test
-        public void shouldThrowWhenCreatingLazyProxyOfObjectType() {
-            assertThrows(IllegalArgumentException.class, () -> Lazy.val(() -> "", String.class));
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Lazy.of(() -> 1).map(null));
+        }
+    }
+
+    @Nested
+    class FlatMapTests {
+        @Test
+        public void shouldFlatMapOverLazyValue() {
+            final Lazy<Integer> testee = Lazy.of(() -> 42);
+            assertThat(testee.flatMap(i -> Lazy.of(() -> i / 2)).get()).isEqualTo(21);
         }
 
         @Test
-        public void shouldBehaveLikeValueWhenCreatingProxy() {
-            final CharSequence chars = Lazy.val(() -> "Yay!", CharSequence.class);
-            assertThat(chars.toString()).isEqualTo("Yay!");
+        public void shouldNotEvaluateOnFlatMap() {
+            final Lazy<Integer> testee = Lazy.of(() -> 42);
+            final Lazy<Integer> inner = Lazy.of(() -> 21);
+            final Lazy<Integer> result = testee.flatMap(i -> inner);
+            assertThat(testee.isEvaluated()).isFalse();
+            assertThat(inner.isEvaluated()).isFalse();
+            assertThat(result.isEvaluated()).isFalse();
+            assertThat(result.get()).isEqualTo(21);
+            assertThat(testee.isEvaluated()).isTrue();
+            assertThat(inner.isEvaluated()).isTrue();
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Lazy.of(() -> 1).flatMap(null));
+        }
+    }
+
+    @Nested
+    class ToSupplierTests {
+        @Test
+        public void shouldSupplyTheValue() {
+            final Lazy<Integer> lazy = Lazy.of(() -> 1);
+            final Supplier<Integer> supplier = lazy.toSupplier();
+            assertThat(lazy.isEvaluated()).isFalse();
+            assertThat(supplier.get()).isEqualTo(1);
+            assertThat(lazy.isEvaluated()).isTrue();
+        }
+
+        @Test
+        public void shouldShareMemoizationWithTheLazy() {
+            final AtomicInteger evaluations = new AtomicInteger();
+            final Lazy<Integer> lazy = Lazy.of(evaluations::incrementAndGet);
+            final Supplier<Integer> supplier = lazy.toSupplier();
+            assertThat(supplier.get()).isEqualTo(1);
+            assertThat(supplier.get()).isEqualTo(1);
+            assertThat(lazy.get()).isEqualTo(1);
+            assertThat(evaluations.get()).isEqualTo(1);
         }
     }
 
@@ -333,113 +348,5 @@ public class LazyTest extends AbstractValueTest {
             lazy.get();
             assertThat(lazy.toString()).isEqualTo("Lazy(1)");
         }
-    }
-
-    @Nested
-    class SpliteratorTests {
-        @Test
-        public void shouldHaveSizedSpliterator() {
-            assertThat(Lazy.of(() -> 1).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
-        }
-
-        @Test
-        public void shouldHaveOrderedSpliterator() {
-            assertThat(Lazy.of(() -> 1).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-        }
-
-        @Test
-        public void shouldReturnSizeWhenSpliterator() {
-            assertThat(Lazy.of(() -> 1).spliterator().getExactSizeIfKnown()).isEqualTo(1);
-        }
-    }
-
-    // === OVERRIDDEN
-
-    // -- isLazy
-
-    @Override
-    @Test
-    public void shouldVerifyLazyProperty() {
-        assertThat(empty().isLazy()).isTrue();
-        assertThat(of(1).isLazy()).isTrue();
-    }
-
-}
-
-/**
- * Lazy can't be empty. It is a placeholder for an existing value, but only evaluated when needed.
- * In order to reuse existing unit tests, that are valid for all Value implementations,
- * we provide here an _imaginary_ empty Lazy implementation, called 'undefined'.
- * <p>
- * Note: It is no good idea to leak it outside of the test scope into the core library (otherwise Undefined will be the new null).
- */
-final class Undefined<T> implements Value<T> {
-
-    static final Undefined<?> INSTANCE = new Undefined<>();
-
-    private Lazy<T> prototype = Lazy.of(() -> null);
-
-    private Undefined() {
-    }
-
-    @Override
-    public T get() {
-        throw new NoSuchElementException();
-    }
-
-    @Override
-    public boolean isAsync() {
-        return prototype.isAsync();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return true;
-    }
-
-    @Override
-    public boolean isLazy() {
-        return prototype.isLazy();
-    }
-
-    @Override
-    public boolean isSingleValued() {
-        return prototype.isSingleValued();
-    }
-
-    @Override
-    public Value<T> peek(Consumer<? super T> action) {
-        return this;
-    }
-
-    @Override
-    public String stringPrefix() {
-        return null;
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return Iterator.empty();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <U> Value<U> map(Function<? super T, ? extends U> mapper) {
-        return (Value<U>) this;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return o == INSTANCE;
-    }
-
-    @Override
-    public int hashCode() {
-        return 1;
-    }
-
-    @Override
-    public String toString() {
-        return "Lazy()";
     }
 }

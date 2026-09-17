@@ -1971,9 +1971,13 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
         final Lazy<Stream<T>> tail;
 
         Cons(T head, Supplier<Stream<T>> tail) {
-            Objects.requireNonNull(tail, "tail is null");
+            this(head, Lazy.of(Objects.requireNonNull(tail, "tail is null")));
+        }
+
+        // shares an already memoized tail instead of wrapping it in a second Lazy
+        Cons(T head, Lazy<Stream<T>> tail) {
             this.head = head;
-            this.tail = Lazy.of(tail);
+            this.tail = tail;
         }
 
         @Override
@@ -2043,6 +2047,10 @@ interface StreamModule {
         private final com.guizmaii.zazr.collection.Queue<T> queue;
 
         AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Supplier<Stream<T>> tail) {
+            this(head, queue, Lazy.of(tail));
+        }
+
+        AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Lazy<Stream<T>> tail) {
             super(head, tail);
             this.queue = queue;
         }

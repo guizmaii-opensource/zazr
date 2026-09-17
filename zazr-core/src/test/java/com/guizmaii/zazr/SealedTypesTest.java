@@ -360,12 +360,13 @@ public class SealedTypesTest {
         }
 
         @Test
-        public void shouldHoldNullInLazyButNotConvertIt() {
+        public void shouldHoldNullInLazy() {
+            // Lazy is a value, not a container (design 3.11): it holds null and offers no conversion but get()
             final Lazy<Object> lazy = Lazy.of(() -> null);
             assertThat(lazy.get()).isNull();
-            assertThatThrownBy(lazy::toOption).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> lazy.filter(x -> true)).isInstanceOf(NullPointerException.class);
-            assertThat(lazy.toTry().getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(lazy.map(x -> x).get()).isNull();
+            assertThatThrownBy(() -> Option.some(lazy.get())).isInstanceOf(NullPointerException.class);
+            assertThat(Option.ofNullable(lazy.get())).isSameAs(Option.none());
         }
     }
 

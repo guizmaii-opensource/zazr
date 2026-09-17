@@ -3,6 +3,7 @@ package com.guizmaii.zazr;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Queue;
 import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +38,7 @@ public class IterableTest {
         public void shouldEqNestedIterables() {
             // ((1, 2), ((3)))
             final Value<?> i1 = List.of(List.of(1, 2), Collections.singletonList(List.of(3)));
-            final Value<?> i2 = Queue.of(Stream.of(1, 2), List.of(Lazy.of(() -> 3)));
+            final Value<?> i2 = Queue.of(Stream.of(1, 2), List.of(Vector.of(3)));
             final Value<?> i3 = Queue.of(Stream.of(1, 2), List.of(List.of()));
             assertThat(i1.eq(i2)).isTrue();
             assertThat(i1.eq(i3)).isFalse();
