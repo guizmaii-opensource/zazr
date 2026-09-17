@@ -3,6 +3,7 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.JavaConverters.ListView;
 import com.guizmaii.zazr.collection.VectorModule.Combinations;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
@@ -753,6 +754,24 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return Iterator.unfold(seed, f).toVector();
     }
 
+    /**
+     * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten} in
+     * zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the inner elements, in order
+     * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
+     */
+    public static <T extends @Nullable Object> Vector<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        final Builder<T> builder = newBuilder();
+        for (Iterable<? extends T> inner : nested) {
+            builder.addAll(inner);
+        }
+        return builder.result();
+    }
+
     @Override
     public Vector<T> append(T element) { return appendAll(com.guizmaii.zazr.collection.List.of(element)); }
 
@@ -816,6 +835,46 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         final java.util.Set<U> seen = new java.util.HashSet<>(length());
         return filter(t -> seen.add(keyExtractor.apply(t)));
+    }
+
+    /**
+     * The complement of {@link #distinct()}: the elements occurring more than once, each once, in order of first
+     * occurrence. {@code isEmpty()} on the result is the "all distinct" test. O(n).
+     *
+     * @return the duplicated elements
+     */
+    public Vector<T> duplicates() { return duplicatesBy(Function.identity()); }
+
+    /**
+     * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
+     * occurrence. One pass, O(n).
+     *
+     * @param keyExtractor Computes the key
+     * @param <U>          Key type
+     * @return the first element of each duplicated key
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
+    public <U extends @Nullable Object> Vector<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key computed once
+        final java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
+        final java.util.HashSet<U> duplicated = new java.util.HashSet<>();
+        for (T element : this) {
+            final U key = keyExtractor.apply(element);
+            if (first.putIfAbsent(key, element) != null) {
+                duplicated.add(key);
+            }
+        }
+        if (duplicated.isEmpty()) {
+            return empty();
+        }
+        final Builder<T> builder = newBuilder(duplicated.size());
+        for (java.util.Map.Entry<U, T> entry : first.entrySet()) {
+            if (duplicated.contains(entry.getKey())) {
+                builder.add(entry.getValue());
+            }
+        }
+        return builder.result();
     }
 
     @Override
@@ -1066,6 +1125,29 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
             (predicate.test(t) ? left : right).add(t);
         }
         return Tuple.of(ofAll(left), ofAll(right));
+    }
+
+    /**
+     * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
+     * generalisation of {@link #partition(Predicate)}. Two builders, one pass, no intermediate list.
+     *
+     * @param f   Classifies an element
+     * @param <L> Component type of the left side
+     * @param <R> Component type of the right side
+     * @return the left values and the right values, each in order
+     * @throws NullPointerException if {@code f} is null or returns null
+     */
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Vector<L>, Vector<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+        Objects.requireNonNull(f, "f is null");
+        final Builder<L> lefts = newBuilder();
+        final Builder<R> rights = newBuilder();
+        for (T element : this) {
+            switch (Objects.requireNonNull(f.apply(element), "Vector.partitionMap: f returned null")) {
+                case Either.Left(var left) -> lefts.add(left);
+                case Either.Right(var right) -> rights.add(right);
+            }
+        }
+        return Tuple.of(lefts.result(), rights.result());
     }
 
     @Override
