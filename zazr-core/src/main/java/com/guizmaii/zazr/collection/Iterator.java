@@ -126,6 +126,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator containing only {@code element}
      */
     static <T extends @Nullable Object> Iterator<T> of(T element) {
+        Objects.requireNonNull(element, "Iterator.of: element is null");
         return new AbstractIterator<T>() {
 
             boolean hasNext = true;
@@ -153,6 +154,9 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     @SafeVarargs
     static <T extends @Nullable Object> Iterator<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
+        for (T element : elements) {
+            Objects.requireNonNull(element, "Iterator.of: element is null");
+        }
         if (elements.length == 0) {
             return empty();
         } else {
@@ -167,7 +171,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    return elements[index++];
+                    return Objects.requireNonNull(elements[index++], "Iterator.of: element is null");
                 }
             };
         }
@@ -217,7 +221,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    return iterator.next();
+                    return Objects.requireNonNull(iterator.next(), "Iterator: element is null");
                 }
             };
         }
@@ -1656,7 +1660,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
-                // a flag and a field, not an Option: a null element cannot be wrapped in Some
+                // a flag and a field, not an Option: cheaper on this hot loop, and elements can never be null anyway
                 private boolean nextDefined = false;
                 private @Nullable T next;
 

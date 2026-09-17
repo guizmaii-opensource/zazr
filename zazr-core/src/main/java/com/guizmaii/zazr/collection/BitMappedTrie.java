@@ -57,6 +57,11 @@ final class BitMappedTrie<T extends @Nullable Object> {
     }
 
     static <T extends @Nullable Object> BitMappedTrie<T> ofAll(Object array) {
+        if (array instanceof Object[] objects) {
+            for (Object element : objects) {
+                java.util.Objects.requireNonNull(element, "Vector: element is null");
+            }
+        }
         final ArrayType<T> type = ArrayType.of(array);
         final int size = type.lengthOf(array);
         return (size == 0) ? empty() : ofAll(array, type, size);
@@ -114,7 +119,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         return (array, index) -> {
             final Object copy = type.copy(array, BRANCHING_FACTOR);
             while (iterator.hasNext() && index >= 0) {
-                type.setAt(copy, index--, iterator.next());
+                type.setAt(copy, index--, java.util.Objects.requireNonNull(iterator.next(), "Vector: element is null"));
             }
             return copy;
         };
@@ -154,13 +159,14 @@ final class BitMappedTrie<T extends @Nullable Object> {
         return (array, index) -> {
             final Object copy = type.copy(array, leafSize);
             while (iterator.hasNext() && index < leafSize) {
-                type.setAt(copy, index++, iterator.next());
+                type.setAt(copy, index++, java.util.Objects.requireNonNull(iterator.next(), "Vector: element is null"));
             }
             return copy;
         };
     }
 
     BitMappedTrie<T> update(int index, T element) {
+        java.util.Objects.requireNonNull(element, "Vector.update: element is null");
         try {
             final Object root = modify(array, depthShift, offset + index, COPY_NODE, updateLeafWith(type, element));
             return new BitMappedTrie<>(type, root, offset, length, depthShift);

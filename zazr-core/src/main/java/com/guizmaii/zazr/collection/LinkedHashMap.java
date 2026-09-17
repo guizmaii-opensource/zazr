@@ -849,6 +849,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public LinkedHashMap<K, V> put(K key, V value) {
+        Objects.requireNonNull(key, "LinkedHashMap: key is null");
+        Objects.requireNonNull(value, "LinkedHashMap: value is null");
         final Slot<K, V> existing = slotOrNull(key);
         if (existing != null) {
             return new LinkedHashMap<>(list, map.put(key, new Slot<>(Tuple.of(key, value), existing.index())), offset, tombstones);
@@ -916,6 +918,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public LinkedHashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         Objects.requireNonNull(currentElement, "currentElement is null");
         Objects.requireNonNull(newElement, "newElement is null");
+        Objects.requireNonNull(newElement._1(), "LinkedHashMap: key is null");
+        Objects.requireNonNull(newElement._2(), "LinkedHashMap: value is null");
 
         // We replace the whole element, i.e. key and value have to be present.
         if (!Objects.equals(currentElement, newElement) && contains(currentElement)) {

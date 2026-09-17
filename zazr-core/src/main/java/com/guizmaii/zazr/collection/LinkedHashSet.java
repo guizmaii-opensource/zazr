@@ -100,6 +100,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(elements, "elements is null");
         LinkedHashMap<T, Object> map = LinkedHashMap.empty();
         for (T element : elements) {
+            Objects.requireNonNull(element, "LinkedHashSet.of: element is null");
             map = map.put(element, element);
         }
         return map.isEmpty() ? LinkedHashSet.empty() : new LinkedHashSet<>(map);
@@ -602,6 +603,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public LinkedHashSet<T> add(T element) {
+        Objects.requireNonNull(element, "LinkedHashSet.add: element is null");
         return contains(element) ? this : new LinkedHashSet<>(map.put(element, element));
     }
 
@@ -635,7 +637,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public boolean contains(T element) {
-        // containsKey, not get: a null element cannot be wrapped in Some
         return map.containsKey(element);
     }
 
@@ -1127,6 +1128,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
             Iterable<? extends T> additional) {
         LinkedHashMap<T, Object> that = initial;
         for (T t : additional) {
+            Objects.requireNonNull(t, "LinkedHashSet: element is null");
             that = that.put(t, t);
         }
         return that;

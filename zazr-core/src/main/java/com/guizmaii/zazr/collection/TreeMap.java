@@ -1039,9 +1039,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public V getOrElse(K key, V defaultValue) {
-        // through the entry, not get(): a stored null value cannot be wrapped in Some
-        final Option<Tuple2<K, V>> entry = entries.find(TreeMap.<K, V>lookupEntry(key));
-        return entry.isDefined() ? entry.get()._2() : defaultValue;
+        return get(key).getOrElse(defaultValue);
     }
 
     @Override
@@ -1240,6 +1238,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> put(K key, V value) {
+        Objects.requireNonNull(key, "TreeMap: key is null");
+        Objects.requireNonNull(value, "TreeMap: value is null");
         return new TreeMap<>(entries.insert(new Tuple2<>(key, value)));
     }
 
@@ -1491,7 +1491,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(entries, "entries is null");
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (Tuple2<K, V> entry : (Iterable<Tuple2<K, V>>) entries) {
-            tree = tree.insert(entry);
+            tree = tree.insert(Tuple.of(requireKey(entry._1()), requireValue(entry._2())));
         }
         return new TreeMap<>(tree);
     }
@@ -1500,7 +1500,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                                                                 Iterable<Tuple2<K, V>> entries, Function<Tuple2<K, V>, Tuple2<K2, V2>> entryMapper) {
         RedBlackTree<Tuple2<K2, V2>> tree = RedBlackTree.empty(entryComparator);
         for (Tuple2<K, V> entry : entries) {
-            tree = tree.insert(entryMapper.apply(entry));
+            final Tuple2<K2, V2> mapped = entryMapper.apply(entry);
+            tree = tree.insert(Tuple.of(requireKey(mapped._1()), requireValue(mapped._2())));
         }
         return new TreeMap<>(tree);
     }
@@ -1510,7 +1511,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(map, "map is null");
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (java.util.Map.Entry<K, V> entry : ((java.util.Map<K, V>) map).entrySet()) {
-            tree = tree.insert(Tuple.of(entry.getKey(), entry.getValue()));
+            tree = tree.insert(Tuple.of(requireKey(entry.getKey()), requireValue(entry.getValue())));
         }
         return new TreeMap<>(tree);
     }
@@ -1518,7 +1519,17 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @SuppressWarnings("unchecked")
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromTuple(EntryComparator<K, V> entryComparator, Tuple2<? extends K, ? extends V> entry) {
         Objects.requireNonNull(entry, "entry is null");
+        requireKey(entry._1());
+        requireValue(entry._2());
         return new TreeMap<>(RedBlackTree.of(entryComparator, (Tuple2<K, V>) entry));
+    }
+
+    private static <K extends @Nullable Object> K requireKey(K key) {
+        return Objects.requireNonNull(key, "TreeMap: key is null");
+    }
+
+    private static <V extends @Nullable Object> V requireValue(V value) {
+        return Objects.requireNonNull(value, "TreeMap: value is null");
     }
 
     @SuppressWarnings("unchecked")
@@ -1526,6 +1537,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(entries, "entries is null");
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (Tuple2<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "entries: entry is null");
+            requireKey(entry._1());
+            requireValue(entry._2());
             tree = tree.insert((Tuple2<K, V>) entry);
         }
         return new TreeMap<>(tree);
@@ -1536,8 +1550,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(entries, "entries is null");
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
-            final K key = entry.getKey();
-            final V value = entry.getValue();
+            final K key = requireKey(entry.getKey());
+            final V value = requireValue(entry.getValue());
             tree = tree.insert(Tuple.of(key, value));
         }
         return new TreeMap<>(tree);
@@ -1547,8 +1561,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromPairs(EntryComparator<K, V> entryComparator, Object ... pairs) {
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (int i = 0; i < pairs.length; i += 2) {
-            final K key = (K) pairs[i];
-            final V value = (V) pairs[i + 1];
+            final K key = requireKey((K) pairs[i]);
+            final V value = requireValue((V) pairs[i + 1]);
             tree = tree.insert(Tuple.of(key, value));
         }
         return new TreeMap<>(tree);

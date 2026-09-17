@@ -35,6 +35,7 @@ interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
 
     static <T extends @Nullable Object> RedBlackTree<T> of(Comparator<? super T> comparator, T value) {
         Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(value, "TreeSet: element is null");
         final Empty<T> empty = new Empty<>(comparator);
         return new Node<>(BLACK, 1, empty, value, empty, empty);
     }
@@ -76,6 +77,7 @@ interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
      * @return A new tree containing the given value.
      */
     default RedBlackTree<T> insert(T value) {
+        java.util.Objects.requireNonNull(value, "TreeSet: element is null");
         return Node.insert(this, value).color(BLACK);
     }
 
@@ -195,32 +197,6 @@ interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
      */
     default Option<T> min() {
         return isEmpty() ? Option.none() : Option.some(Node.minimum((Node<T>) this));
-    }
-
-    /**
-     * The maximum element of this non-empty tree. Unlike {@link #max()} it returns a stored {@code null} as is.
-     *
-     * @return the maximum element
-     * @throws NoSuchElementException if this tree is empty
-     */
-    default T maximum() {
-        if (isEmpty()) {
-            throw new NoSuchElementException("maximum of empty tree");
-        }
-        return Node.maximum((Node<T>) this);
-    }
-
-    /**
-     * The minimum element of this non-empty tree. Unlike {@link #min()} it returns a stored {@code null} as is.
-     *
-     * @return the minimum element
-     * @throws NoSuchElementException if this tree is empty
-     */
-    default T minimum() {
-        if (isEmpty()) {
-            throw new NoSuchElementException("minimum of empty tree");
-        }
-        return Node.minimum((Node<T>) this);
     }
 
     /**

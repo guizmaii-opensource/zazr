@@ -1527,11 +1527,13 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         /**
          * Appends one element.
          *
-         * @param element the element, may be null
+         * @param element the element, never null
          * @return this builder
          * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code element} is null
          */
         public Builder<T> add(T element) {
+            Objects.requireNonNull(element, "Vector.Builder.add: element is null");
             // the hot path is one branch and one array store: the open check lives in growOrCloseLeaf(), reached
             // through the zero-length DONE leaf, and the size is derived, not counted
             if (leafLength == leaf.length) {
@@ -1682,7 +1684,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                     leaf = this.leaf;
                     leafLength = this.leafLength;
                 }
-                leaf[leafLength++] = mapper.apply(type.getAt(source, i));
+                leaf[leafLength++] = Objects.requireNonNull(mapper.apply(type.getAt(source, i)), "Vector.map: element is null");
             }
             this.leafLength = leafLength;
         }
@@ -1699,7 +1701,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                     leaf = this.leaf;
                     leafLength = this.leafLength;
                 }
-                leaf[leafLength++] = f.apply(i);
+                leaf[leafLength++] = Objects.requireNonNull(f.apply(i), "Vector: element is null");
             }
             this.leafLength = leafLength;
         }
@@ -1707,6 +1709,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         /* appends the same element n times, one Arrays.fill per leaf */
         void addRepeated(int n, T element) {
             checkOpen();
+            Objects.requireNonNull(element, "Vector.fill: element is null");
             int remaining = n;
             while (remaining > 0) {
                 if (leafLength == leaf.length) {

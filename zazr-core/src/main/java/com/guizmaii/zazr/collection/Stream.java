@@ -247,6 +247,7 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
      */
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> Stream<T> cons(T head, Supplier<? extends Stream<? extends T>> tailSupplier) {
+        Objects.requireNonNull(head, "Stream: element is null");
         Objects.requireNonNull(tailSupplier, "tailSupplier is null");
         return new ConsImpl<>(head, (Supplier<Stream<T>>) tailSupplier);
     }
@@ -303,6 +304,9 @@ public interface Stream<T extends @Nullable Object> extends LinearSeq<T> {
     @SafeVarargs
     static <T extends @Nullable Object> Stream<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
+        for (T element : elements) {
+            Objects.requireNonNull(element, "Stream.of: element is null");
+        }
         return Stream.ofAll(new Iterator<T>() {
             int i = 0;
 
