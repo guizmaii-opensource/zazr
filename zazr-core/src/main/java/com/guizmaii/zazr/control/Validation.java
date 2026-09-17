@@ -1,5 +1,7 @@
 package com.guizmaii.zazr.control;
 
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Try.Failure;
@@ -192,6 +194,256 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         return switch (Try.of(f)) {
             case Success(var value) -> valid(value);
             case Failure(var cause) -> invalid(onError.apply(cause));
+        };
+    }
+
+    // -- accumulate
+
+    /**
+     * Accumulates {@code validations}: {@code Valid} of a {@link Vector} of all the values, in order, when every one is
+     * {@code Valid}; otherwise {@code Invalid} of the errors of <em>every</em> {@code Invalid}, in order. The empty
+     * iterable gives {@code Valid} of the empty {@code Vector}.
+     * <pre>{@code
+     * Validation.collectAll(List.of(valid(1), invalid("a"), invalid("b"))); // = Invalid("a", "b")
+     * }</pre>
+     *
+     * @param validations the validations to accumulate
+     * @param <E>         the error type
+     * @param <A>         the value type
+     * @return {@code Valid} of all the values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code validations} or one of its elements is null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, Vector<A>> collectAll(Iterable<? extends Validation<? extends E, ? extends A>> validations) {
+        Objects.requireNonNull(validations, "validations is null");
+        return forEach(validations, v -> v);
+    }
+
+    /**
+     * Applies {@code f} to every element and accumulates the results as {@link #collectAll(Iterable)} does: {@code Valid}
+     * of a {@link Vector} of the mapped values when every call returns a {@code Valid}, otherwise {@code Invalid} of
+     * the errors of every {@code Invalid}, in order. {@code f} is called for every element, whatever the earlier
+     * results were.
+     * <pre>{@code
+     * Validation.forEach(List.of("1", "x", "y"), s -> parse(s)); // = Invalid("x is not a number", "y is not a number")
+     * }</pre>
+     *
+     * @param values the elements to validate
+     * @param f      a function from an element to a {@code Validation}; it must not return {@code null}
+     * @param <E>    the error type
+     * @param <A>    the element type
+     * @param <B>    the value type of the results
+     * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Validation<E, Vector<B>> forEach(Iterable<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(values, "values is null");
+        Objects.requireNonNull(f, "f is null");
+        final Vector.Builder<B> results = Vector.newBuilder();
+        Vector.Builder<E> errors = null;
+        for (A value : values) {
+            final Validation<? extends E, ? extends B> validation = Objects.requireNonNull(f.apply(value), "f returned null");
+            if (validation instanceof Invalid(var es)) {
+                if (errors == null) {
+                    errors = Vector.newBuilder();
+                }
+                errors.addAll(es.toVector());
+            } else if (errors == null) {
+                results.add(validation.get());
+            }
+        }
+        return errors == null ? valid(results.result()) : new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+    }
+
+    /**
+     * {@link #forEach(Iterable, Function)} on a {@link NonEmptyVector}: as many results as inputs, so the {@code Valid}
+     * side is a {@code NonEmptyVector} too.
+     *
+     * @param values the elements to validate
+     * @param f      a function from an element to a {@code Validation}; it must not return {@code null}
+     * @param <E>    the error type
+     * @param <A>    the element type
+     * @param <B>    the value type of the results
+     * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Validation<E, NonEmptyVector<B>> forEach(NonEmptyVector<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(values, "values is null");
+        return forEach(values.toVector(), f).map(NonEmptyVector::unsafeFromVector);
+    }
+
+    /**
+     * Applies {@code f} to every element and splits the results: the errors of every {@code Invalid} on the left, in
+     * order, the values of every {@code Valid} on the right, in order. Cannot fail: an all-valid input has an empty
+     * left side, an all-invalid input an empty right side.
+     * <pre>{@code
+     * Validation.partition(List.of("1", "x", "2"), s -> parse(s)); // = (Vector("x is not a number"), Vector(1, 2))
+     * }</pre>
+     *
+     * @param values the elements to validate
+     * @param f      a function from an element to a {@code Validation}; it must not return {@code null}
+     * @param <E>    the error type
+     * @param <A>    the element type
+     * @param <B>    the value type of the results
+     * @return the errors and the values
+     * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
+     */
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Tuple2<Vector<E>, Vector<B>> partition(Iterable<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(values, "values is null");
+        Objects.requireNonNull(f, "f is null");
+        final Vector.Builder<E> errors = Vector.newBuilder();
+        final Vector.Builder<B> results = Vector.newBuilder();
+        for (A value : values) {
+            switch (Objects.requireNonNull(f.apply(value), "f returned null")) {
+                case Valid(var v) -> results.add(v);
+                case Invalid(var es) -> errors.addAll(es.toVector());
+            }
+        }
+        return Tuple.of(errors.result(), results.result());
+    }
+
+    /**
+     * Pairs this value with {@code that}'s, keeping <em>all</em> errors: {@code Valid((a, b))} when both are
+     * {@code Valid}, otherwise {@code Invalid} of this one's errors followed by {@code that}'s.
+     * <pre>{@code
+     * Validation.invalid("a").zip(Validation.invalid("b")); // = Invalid("a", "b")
+     * }</pre>
+     *
+     * @param that the other validation
+     * @param <B>  the value type of {@code that}
+     * @return the pair of values, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, Tuple2<A, B>> zip(Validation<? extends E, ? extends B> that) {
+        return zipWith(that, Tuple::of);
+    }
+
+    /**
+     * Combines this value with {@code that}'s through {@code f}, keeping <em>all</em> errors: {@code Valid(f(a, b))}
+     * when both are {@code Valid}, otherwise {@code Invalid} of this one's errors followed by {@code that}'s. {@code f}
+     * is called only when both are {@code Valid}.
+     *
+     * @param that the other validation
+     * @param f    combines the two values; it must not return {@code null}
+     * @param <B>  the value type of {@code that}
+     * @param <C>  the result type
+     * @return the combined value, or the accumulated errors
+     * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <B extends @Nullable Object, C extends @Nullable Object> Validation<E, C> zipWith(Validation<? extends E, ? extends B> that, BiFunction<? super A, ? super B, ? extends C> f) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var a) -> switch (that) {
+                case Valid(var b) -> valid(f.apply(a, b));
+                case Invalid<? extends E, ? extends B> invalid -> (Validation<E, C>) invalid;
+            };
+            case Invalid(var errors) -> switch (that) {
+                case Valid<?, ?> _ -> (Validation<E, C>) this;
+                case Invalid(var more) -> new Invalid<>(errors.appendAll(more));
+            };
+        };
+    }
+
+    /**
+     * {@link #zip(Validation)} keeping this value: {@code Valid(a)} when both are {@code Valid}, otherwise the
+     * accumulated errors.
+     *
+     * @param that the other validation
+     * @param <B>  the value type of {@code that}
+     * @return this value, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, A> zipLeft(Validation<? extends E, ? extends B> that) {
+        return zipWith(that, (a, _) -> a);
+    }
+
+    /**
+     * {@link #zip(Validation)} keeping {@code that}'s value: {@code Valid(b)} when both are {@code Valid}, otherwise
+     * the accumulated errors.
+     *
+     * @param that the other validation
+     * @param <B>  the value type of {@code that}
+     * @return {@code that}'s value, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, B> zipRight(Validation<? extends E, ? extends B> that) {
+        return zipWith(that, (_, b) -> b);
+    }
+
+    /**
+     * {@link #zip(Validation)} with an {@link Either} operand, seen as a validation with one error: {@code Left(e)}
+     * contributes {@code e} to the accumulated errors.
+     *
+     * @param that the other side
+     * @param <B>  the right type of {@code that}
+     * @return the pair of values, or the accumulated errors
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <B extends @Nullable Object> Validation<E, Tuple2<A, B>> zip(Either<? extends E, ? extends B> that) {
+        Objects.requireNonNull(that, "that is null");
+        return zip(fromEither(that));
+    }
+
+    /**
+     * Returns this if it is {@code Valid}, otherwise the supplied alternative. The errors of the discarded side are
+     * dropped: when both are {@code Invalid}, the result is the alternative's errors only. The supplier is called
+     * only when this is {@code Invalid}.
+     *
+     * @param that supplies the alternative; it must not return {@code null}
+     * @return this if {@code Valid}, otherwise {@code that.get()}
+     * @throws NullPointerException if {@code that} is null, or if it supplies null
+     */
+    @SuppressWarnings("unchecked")
+    default Validation<E, A> orElse(Supplier<? extends Validation<? extends E, ? extends A>> that) {
+        Objects.requireNonNull(that, "that is null");
+        return isValid() ? this : (Validation<E, A>) Objects.requireNonNull(that.get(), "that supplied null");
+    }
+
+    // -- short-circuit
+
+    /**
+     * Runs {@code f} on this value and returns its result. <strong>Short-circuits</strong>: {@code f} is not called
+     * when this is {@code Invalid}, and the errors of the validation it returns are never accumulated with this one's.
+     * <p>
+     * When we chain validations like this we only do the second validation if the first one is successful. If all we
+     * are doing is chaining then we don't actually need {@code Validation} and could just use {@link Either}. Use
+     * {@link #zip(Validation)}, {@link #zipWith(Validation, BiFunction)} or {@link #collectAll(Iterable)} to
+     * accumulate; use {@code flatMap} for a step that needs the previous value, e.g. a cross-field rule once the
+     * fields have been validated:
+     * <pre>{@code
+     * start.zip(end).flatMap(range -> range._1().isBefore(range._2()) ? valid(range) : invalid("start after end"));
+     * }</pre>
+     *
+     * @param f   the next validation; it must not return {@code null}
+     * @param <B> the value type of the result
+     * @return {@code f.apply(value)} if this is {@code Valid}, otherwise this
+     * @throws NullPointerException if {@code f} is null, or if it returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <B extends @Nullable Object> Validation<E, B> flatMap(Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> (Validation<E, B>) Objects.requireNonNull(f.apply(value), "f returned null");
+            case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
+        };
+    }
+
+    /**
+     * {@link #flatMap(Function)} for a step that returns an {@link Either}: {@code Left(e)} becomes {@code Invalid(e)}.
+     * Short-circuits like {@code flatMap}; the {@code Either} is a single rule, so there is nothing to accumulate.
+     *
+     * @param f   the next step; it must not return {@code null}
+     * @param <B> the value type of the result
+     * @return {@code fromEither(f.apply(value))} if this is {@code Valid}, otherwise this
+     * @throws NullPointerException if {@code f} is null, or if it returns null
+     */
+    @SuppressWarnings("unchecked")
+    default <B extends @Nullable Object> Validation<E, B> flatMapEither(Function<? super A, ? extends Either<? extends E, ? extends B>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return switch (this) {
+            case Valid(var value) -> fromEither(Objects.requireNonNull(f.apply(value), "f returned null"));
+            case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
         };
     }
 

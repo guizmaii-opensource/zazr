@@ -1,11 +1,14 @@
 package com.guizmaii.zazr.control;
 
+import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Validation.Invalid;
 import com.guizmaii.zazr.control.Validation.Valid;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -144,6 +147,299 @@ public class ValidationTest {
             assertThatThrownBy(() -> Validation.of(() -> {
                 throw new RuntimeException();
             }, _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("error is null");
+        }
+    }
+
+    @Nested
+    class ZipTests {
+
+        @Test
+        public void shouldPairTwoValids() {
+            assertThat(Validation.<String, Integer>valid(1).zip(Validation.valid("a"))).isEqualTo(Validation.valid(Tuple.of(1, "a")));
+        }
+
+        @Test
+        public void shouldKeepTheErrorsOfTheLeftInvalid() {
+            assertThat(ValidationTest.<Integer>invalid("a").zip(Validation.valid(1))).isEqualTo(invalid("a"));
+        }
+
+        @Test
+        public void shouldKeepTheErrorsOfTheRightInvalid() {
+            assertThat(Validation.<String, Integer>valid(1).zip(invalid("b"))).isEqualTo(invalid("b"));
+        }
+
+        @Test
+        public void shouldConcatenateTheErrorsOfTwoInvalidsInOrder() {
+            assertThat(ValidationTest.<Integer>invalid("a").zip(invalid("b"))).isEqualTo(invalid("a", "b"));
+            assertThat(ValidationTest.<Integer>invalid("b").zip(invalid("a"))).isEqualTo(invalid("b", "a"));
+            assertThat(ValidationTest.<Integer>invalid("a", "b").zip(invalid("c", "d"))).isEqualTo(invalid("a", "b", "c", "d"));
+        }
+
+        @Test
+        public void shouldReturnTheInvalidOperandItself() {
+            final Validation<String, Integer> invalid = invalid("a");
+            assertThat(invalid.zip(Validation.valid(1))).isSameAs(invalid);
+            assertThat(Validation.<String, Integer>valid(1).zip(invalid)).isSameAs(invalid);
+        }
+
+        @Test
+        public void shouldCombineWithZipWith() {
+            assertThat(Validation.<String, Integer>valid(1).zipWith(Validation.valid(2), Integer::sum)).isEqualTo(Validation.valid(3));
+            assertThat(ValidationTest.<Integer>invalid("a").zipWith(Validation.valid(2), Integer::sum)).isEqualTo(invalid("a"));
+            assertThat(Validation.<String, Integer>valid(1).zipWith(invalid("b"), Integer::sum)).isEqualTo(invalid("b"));
+            assertThat(ValidationTest.<Integer>invalid("a").zipWith(invalid("b"), Integer::sum)).isEqualTo(invalid("a", "b"));
+        }
+
+        @Test
+        public void shouldNotCallTheCombinerUnlessBothAreValid() {
+            assertThat(ValidationTest.<Integer>invalid("a").zipWith(Validation.valid(2), (_, _) -> {
+                throw new AssertionError("must not be called");
+            })).isEqualTo(invalid("a"));
+        }
+
+        @Test
+        public void shouldRejectANullCombinerResult() {
+            assertThatThrownBy(() -> Validation.valid(1).zipWith(Validation.valid(2), (_, _) -> null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
+        }
+
+        @Test
+        public void shouldKeepTheLeftValueWithZipLeft() {
+            assertThat(Validation.<String, Integer>valid(1).zipLeft(Validation.valid("a"))).isEqualTo(Validation.valid(1));
+            assertThat(ValidationTest.<Integer>invalid("a").zipLeft(invalid("b"))).isEqualTo(invalid("a", "b"));
+            assertThat(Validation.<String, Integer>valid(1).zipLeft(invalid("b"))).isEqualTo(invalid("b"));
+        }
+
+        @Test
+        public void shouldKeepTheRightValueWithZipRight() {
+            assertThat(Validation.<String, Integer>valid(1).zipRight(Validation.valid("a"))).isEqualTo(Validation.valid("a"));
+            assertThat(ValidationTest.<Integer>invalid("a").zipRight(invalid("b"))).isEqualTo(invalid("a", "b"));
+            assertThat(ValidationTest.<Integer>invalid("a").zipRight(Validation.valid("x"))).isEqualTo(invalid("a"));
+        }
+
+        @Test
+        public void shouldZipWithAnEither() {
+            assertThat(Validation.<String, Integer>valid(1).zip(Either.right("a"))).isEqualTo(Validation.valid(Tuple.of(1, "a")));
+            assertThat(Validation.<String, Integer>valid(1).zip(Either.left("b"))).isEqualTo(invalid("b"));
+            assertThat(ValidationTest.<Integer>invalid("a").zip(Either.right("x"))).isEqualTo(invalid("a"));
+            assertThat(ValidationTest.<Integer>invalid("a").zip(Either.left("b"))).isEqualTo(invalid("a", "b"));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            final Validation<String, Integer> valid = Validation.valid(1);
+            assertThatThrownBy(() -> valid.zip((Validation<String, Integer>) null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> valid.zip((Either<String, Integer>) null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> valid.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> valid.zipWith(Validation.valid(2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> valid.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> valid.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+        }
+    }
+
+    @Nested
+    class CollectAllTests {
+
+        @Test
+        public void shouldCollectNothing() {
+            assertThat(Validation.<String, Integer>collectAll(List.empty())).isEqualTo(Validation.valid(Vector.empty()));
+        }
+
+        @Test
+        public void shouldCollectAllValids() {
+            assertThat(Validation.collectAll(List.of(Validation.valid(1), Validation.valid(2), Validation.valid(3)))).isEqualTo(Validation.valid(Vector.of(1, 2, 3)));
+        }
+
+        @Test
+        public void shouldReturnTheErrorsOfTheOneInvalid() {
+            assertThat(Validation.collectAll(List.of(Validation.valid(1), invalid("a"), Validation.valid(3)))).isEqualTo(invalid("a"));
+        }
+
+        @Test
+        public void shouldAccumulateTheErrorsOfEveryInvalidInOrder() {
+            assertThat(Validation.collectAll(List.of(invalid("a", "b"), Validation.valid(2), invalid("c"), invalid("d")))).isEqualTo(invalid("a", "b", "c", "d"));
+        }
+
+        @Test
+        public void shouldAcceptAJavaCollection() {
+            assertThat(Validation.collectAll(java.util.List.of(Validation.valid(1), Validation.valid(2)))).isEqualTo(Validation.valid(Vector.of(1, 2)));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatThrownBy(() -> Validation.collectAll(null)).isInstanceOf(NullPointerException.class).hasMessage("validations is null");
+            assertThatThrownBy(() -> Validation.collectAll(java.util.Arrays.asList(Validation.valid(1), null))).isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class ForEachTests {
+
+        @Test
+        public void shouldValidateNothing() {
+            assertThat(Validation.forEach(List.<String>empty(), ValidationTest::parse)).isEqualTo(Validation.valid(Vector.empty()));
+        }
+
+        @Test
+        public void shouldValidateEveryElement() {
+            assertThat(Validation.forEach(List.of("1", "2", "3"), ValidationTest::parse)).isEqualTo(Validation.valid(Vector.of(1, 2, 3)));
+        }
+
+        @Test
+        public void shouldReturnTheErrorOfTheOneInvalidElement() {
+            assertThat(Validation.forEach(List.of("1", "x", "3"), ValidationTest::parse)).isEqualTo(invalid("not a number: x"));
+        }
+
+        @Test
+        public void shouldAccumulateTheErrorsOfEveryInvalidElementInOrder() {
+            assertThat(Validation.forEach(List.of("x", "2", "y", "z"), ValidationTest::parse)).isEqualTo(invalid("not a number: x", "not a number: y", "not a number: z"));
+        }
+
+        @Test
+        public void shouldCallTheFunctionForEveryElementEvenAfterAnInvalid() {
+            final java.util.List<String> seen = new ArrayList<>();
+            Validation.forEach(List.of("x", "2", "y"), s -> {
+                seen.add(s);
+                return parse(s);
+            });
+            assertThat(seen).containsExactly("x", "2", "y");
+        }
+
+        @Test
+        public void shouldReturnANonEmptyVectorForANonEmptyVector() {
+            final Validation<String, NonEmptyVector<Integer>> valid = Validation.forEach(NonEmptyVector.of("1", "2"), ValidationTest::parse);
+            assertThat(valid).isEqualTo(Validation.valid(NonEmptyVector.of(1, 2)));
+            assertThat(Validation.forEach(NonEmptyVector.of("x", "2", "y"), ValidationTest::parse)).isEqualTo(invalid("not a number: x", "not a number: y"));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatThrownBy(() -> Validation.forEach((Iterable<String>) null, ValidationTest::parse)).isInstanceOf(NullPointerException.class).hasMessage("values is null");
+            assertThatThrownBy(() -> Validation.forEach((NonEmptyVector<String>) null, ValidationTest::parse)).isInstanceOf(NullPointerException.class).hasMessage("values is null");
+            assertThatThrownBy(() -> Validation.forEach(List.of("1"), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> Validation.forEach(NonEmptyVector.of("1"), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> Validation.forEach(List.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+        }
+    }
+
+    @Nested
+    class PartitionTests {
+
+        @Test
+        public void shouldPartitionNothing() {
+            assertThat(Validation.partition(List.<String>empty(), ValidationTest::parse)).isEqualTo(Tuple.of(Vector.empty(), Vector.empty()));
+        }
+
+        @Test
+        public void shouldPutEveryValueOnTheRight() {
+            assertThat(Validation.partition(List.of("1", "2"), ValidationTest::parse)).isEqualTo(Tuple.of(Vector.empty(), Vector.of(1, 2)));
+        }
+
+        @Test
+        public void shouldPutTheOneErrorOnTheLeft() {
+            assertThat(Validation.partition(List.of("1", "x", "2"), ValidationTest::parse)).isEqualTo(Tuple.of(Vector.of("not a number: x"), Vector.of(1, 2)));
+        }
+
+        @Test
+        public void shouldFlattenTheErrorsOfEveryInvalidInOrder() {
+            assertThat(Validation.partition(List.of(1, 2, 3, 4), i -> i % 2 == 0 ? Validation.valid(i) : invalid(i + " odd", i + " really odd")))
+                    .isEqualTo(Tuple.of(Vector.of("1 odd", "1 really odd", "3 odd", "3 really odd"), Vector.of(2, 4)));
+        }
+
+        @Test
+        public void shouldPutEveryErrorOnTheLeft() {
+            assertThat(Validation.partition(List.of("x", "y"), ValidationTest::parse)).isEqualTo(Tuple.of(Vector.of("not a number: x", "not a number: y"), Vector.empty()));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatThrownBy(() -> Validation.partition(null, ValidationTest::parse)).isInstanceOf(NullPointerException.class).hasMessage("values is null");
+            assertThatThrownBy(() -> Validation.partition(List.of("1"), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> Validation.partition(List.of("1"), _ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+        }
+    }
+
+    @Nested
+    class OrElseTests {
+
+        @Test
+        public void shouldKeepAValidAndNotCallTheSupplier() {
+            final Validation<String, Integer> valid = Validation.valid(1);
+            assertThat(valid.orElse(() -> {
+                throw new AssertionError("must not be called");
+            })).isSameAs(valid);
+        }
+
+        @Test
+        public void shouldReplaceAnInvalidWithTheAlternative() {
+            assertThat(ValidationTest.<Integer>invalid("a").orElse(() -> Validation.valid(2))).isEqualTo(Validation.valid(2));
+        }
+
+        @Test
+        public void shouldDropTheErrorsOfTheDiscardedSide() {
+            assertThat(ValidationTest.<Integer>invalid("a").orElse(() -> invalid("b"))).isEqualTo(invalid("b"));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatThrownBy(() -> Validation.valid(1).orElse(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> invalid("a").orElse(() -> null)).isInstanceOf(NullPointerException.class).hasMessage("that supplied null");
+        }
+    }
+
+    @Nested
+    class FlatMapTests {
+
+        @Test
+        public void shouldChainOnValid() {
+            assertThat(Validation.<String, Integer>valid(1).flatMap(i -> Validation.valid(i + 1))).isEqualTo(Validation.valid(2));
+            assertThat(Validation.<String, Integer>valid(1).flatMap(_ -> invalid("b"))).isEqualTo(invalid("b"));
+        }
+
+        @Test
+        public void shouldShortCircuitWhereZipAccumulates() {
+            final Validation<String, Integer> first = invalid("a");
+            final AtomicInteger calls = new AtomicInteger();
+            final Validation<String, Integer> chained = first.flatMap(_ -> {
+                calls.incrementAndGet();
+                return invalid("b");
+            });
+            // the second validation is not evaluated and its errors are not accumulated...
+            assertThat(calls.get()).isZero();
+            assertThat(chained).isEqualTo(invalid("a"));
+            assertThat(chained).isSameAs(first);
+            // ...whereas zip evaluates both and keeps both errors
+            assertThat(first.zip(invalid("b"))).isEqualTo(invalid("a", "b"));
+        }
+
+        @Test
+        public void shouldRunACrossFieldRuleAfterTheFieldsAreValidated() {
+            final Validation<String, Integer> start = Validation.valid(1);
+            final Validation<String, Integer> end = Validation.valid(3);
+            final Validation<String, Integer> length = start.zip(end).flatMap(range -> range._1() < range._2() ? Validation.valid(range._2() - range._1()) : invalid("start after end"));
+            assertThat(length).isEqualTo(Validation.valid(2));
+            assertThat(end.zip(start).flatMap(range -> range._1() < range._2() ? Validation.valid(range._2() - range._1()) : invalid("start after end"))).isEqualTo(invalid("start after end"));
+        }
+
+        @Test
+        public void shouldChainAnEitherStep() {
+            assertThat(Validation.<String, Integer>valid(1).flatMapEither(i -> Either.right(i + 1))).isEqualTo(Validation.valid(2));
+            assertThat(Validation.<String, Integer>valid(1).flatMapEither(_ -> Either.left("b"))).isEqualTo(invalid("b"));
+        }
+
+        @Test
+        public void shouldShortCircuitTheEitherStep() {
+            final Validation<String, Integer> first = invalid("a");
+            assertThat(first.flatMapEither(_ -> {
+                throw new AssertionError("must not be called");
+            })).isSameAs(first);
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatThrownBy(() -> Validation.valid(1).flatMap(null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> Validation.valid(1).flatMap(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
+            assertThatThrownBy(() -> Validation.valid(1).flatMapEither(null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+            assertThatThrownBy(() -> Validation.valid(1).flatMapEither(_ -> null)).isInstanceOf(NullPointerException.class).hasMessage("f returned null");
         }
     }
 
