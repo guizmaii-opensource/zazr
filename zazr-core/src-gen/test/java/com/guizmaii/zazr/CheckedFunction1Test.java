@@ -88,6 +88,22 @@ public class CheckedFunction1Test {
     }
 
     @Test
+    public void shouldNotHandFatalThrowableToRecover() {
+        final CheckedFunction1<String, MessageDigest> fatal = (s1) -> { throw new OutOfMemoryError("fatal"); };
+        final Function<String, MessageDigest> recover =
+            fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+        assertThrows(OutOfMemoryError.class, () -> recover.apply("MD5"));
+    }
+
+    @Test
+    public void shouldHandNonFatalThrowableToRecover() {
+        final CheckedFunction1<String, MessageDigest> nonFatal = (s1) -> { throw new IllegalStateException("non-fatal"); };
+        final Function<String, MessageDigest> recover =
+            nonFatal.recover(throwable -> (s1) -> null);
+        assertThat(recover.apply("MD5")).isNull();
+    }
+
+    @Test
     public void shouldUncheckedWork() {
         final Function<String, MessageDigest> unchecked = digest.unchecked();
         final MessageDigest md5 = unchecked.apply("MD5");

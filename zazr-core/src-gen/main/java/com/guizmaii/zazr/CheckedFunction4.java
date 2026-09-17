@@ -4,6 +4,7 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
+import static com.guizmaii.zazr.Throwables.isFatal;
 import static com.guizmaii.zazr.Throwables.sneakyThrow;
 
 import com.guizmaii.zazr.control.Option;
@@ -86,7 +87,17 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being turned into {@code None}.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Function4<T1, T2, T3, T4, Option<R>> lift(CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4) -> Try.<R>of(() -> partialFunction.apply(t1, t2, t3, t4)).toOption();
+        return (t1, t2, t3, t4) -> {
+            try {
+                final R result = partialFunction.apply(t1, t2, t3, t4);
+                return result == null ? Option.<R>none() : Option.some(result);
+            } catch (Throwable t) {
+                if (isFatal(t)) {
+                    return sneakyThrow(t);
+                }
+                return Option.<R>none();
+            }
+        };
     }
 
     /**
@@ -187,10 +198,12 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
     }
 
     /**
-     * Return a composed function that first applies this CheckedFunction4 to the given arguments and in case of throwable
-     * try to get value from {@code recover} function with same arguments and throwable information.
+     * Return a composed function that first applies this CheckedFunction4 to the given arguments and in case of a
+     * non-fatal throwable tries to get a value from the {@code recover} function with the throwable information.
+     * A fatal throwable (see {@link Try}) is never handed to
+     * {@code recover}: it propagates unchanged instead.
      *
-     * @param recover the function applied in case of throwable
+     * @param recover the function applied in case of a non-fatal throwable
      * @return a function composed of this and recover
      * @throws NullPointerException if recover is null
      */
@@ -200,6 +213,9 @@ public interface CheckedFunction4<T1 extends @Nullable Object, T2 extends @Nulla
             try {
                 return this.apply(t1, t2, t3, t4);
             } catch (Throwable throwable) {
+                if (isFatal(throwable)) {
+                    return sneakyThrow(throwable);
+                }
                 final Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> func = recover.apply(throwable);
                 Objects.requireNonNull(func, () -> "recover return null for " + throwable.getClass() + ": " + throwable.getMessage());
                 return func.apply(t1, t2, t3, t4);

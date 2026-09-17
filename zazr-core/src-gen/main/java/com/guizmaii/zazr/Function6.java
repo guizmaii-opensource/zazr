@@ -4,6 +4,9 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
+import static com.guizmaii.zazr.Throwables.isFatal;
+import static com.guizmaii.zazr.Throwables.sneakyThrow;
+
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import java.util.Objects;
@@ -93,7 +96,17 @@ public interface Function6<T1 extends @Nullable Object, T2 extends @Nullable Obj
      *         instead of being turned into {@code None}.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Function6<T1, T2, T3, T4, T5, T6, Option<R>> lift(Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4, t5, t6) -> Try.<R>of(() -> partialFunction.apply(t1, t2, t3, t4, t5, t6)).toOption();
+        return (t1, t2, t3, t4, t5, t6) -> {
+            try {
+                final R result = partialFunction.apply(t1, t2, t3, t4, t5, t6);
+                return result == null ? Option.<R>none() : Option.some(result);
+            } catch (Throwable t) {
+                if (isFatal(t)) {
+                    return sneakyThrow(t);
+                }
+                return Option.<R>none();
+            }
+        };
     }
 
     /**

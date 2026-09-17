@@ -16,8 +16,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.control.TryModule.isFatal;
-import static com.guizmaii.zazr.control.TryModule.sneakyThrow;
+import static com.guizmaii.zazr.Throwables.isFatal;
+import static com.guizmaii.zazr.Throwables.sneakyThrow;
 
 /**
  * A control structure that allows writing safe code without explicitly managing try-catch blocks for exceptions.
@@ -1915,34 +1915,5 @@ interface TryModule {
     /** The Failure a capturing constructor returns when the computation yields null, which Success cannot hold. */
     static <T extends @Nullable Object> Try<T> nullResult(String constructor) {
         return new Try.Failure<>(new NullPointerException(constructor + ": the computation returned null"));
-    }
-
-    static boolean isFatal(Throwable throwable) {
-        return throwable instanceof InterruptedException
-                || throwable instanceof LinkageError
-                || ThreadDeathResolver.isThreadDeath(throwable)
-                || throwable instanceof VirtualMachineError;
-    }
-
-    // DEV-NOTE: we do not plan to expose this as public API
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable, R extends @Nullable Object> R sneakyThrow(Throwable t) throws T {
-        throw (T) t;
-    }
-
-    class ThreadDeathResolver {
-        static final @Nullable Class<?> THREAD_DEATH_CLASS = resolve();
-
-        static boolean isThreadDeath(Throwable throwable) {
-            return THREAD_DEATH_CLASS != null && THREAD_DEATH_CLASS.isInstance(throwable);
-        }
-
-        private static @Nullable Class<?> resolve() {
-            try {
-                return Class.forName("java.lang.ThreadDeath");
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
     }
 }

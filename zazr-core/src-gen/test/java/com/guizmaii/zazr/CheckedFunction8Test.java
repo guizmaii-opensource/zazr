@@ -93,6 +93,22 @@ public class CheckedFunction8Test {
     }
 
     @Test
+    public void shouldNotHandFatalThrowableToRecover() {
+        final CheckedFunction8<String, String, String, String, String, String, String, String, MessageDigest> fatal = (s1, s2, s3, s4, s5, s6, s7, s8) -> { throw new OutOfMemoryError("fatal"); };
+        final Function8<String, String, String, String, String, String, String, String, MessageDigest> recover =
+            fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+        assertThrows(OutOfMemoryError.class, () -> recover.apply("M", "D", "5", "", "", "", "", ""));
+    }
+
+    @Test
+    public void shouldHandNonFatalThrowableToRecover() {
+        final CheckedFunction8<String, String, String, String, String, String, String, String, MessageDigest> nonFatal = (s1, s2, s3, s4, s5, s6, s7, s8) -> { throw new IllegalStateException("non-fatal"); };
+        final Function8<String, String, String, String, String, String, String, String, MessageDigest> recover =
+            nonFatal.recover(throwable -> (s1, s2, s3, s4, s5, s6, s7, s8) -> null);
+        assertThat(recover.apply("M", "D", "5", "", "", "", "", "")).isNull();
+    }
+
+    @Test
     public void shouldUncheckedWork() {
         final Function8<String, String, String, String, String, String, String, String, MessageDigest> unchecked = digest.unchecked();
         final MessageDigest md5 = unchecked.apply("M", "D", "5", "", "", "", "", "");

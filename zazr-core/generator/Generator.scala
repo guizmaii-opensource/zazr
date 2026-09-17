@@ -144,9 +144,10 @@ def generateMainClasses(): Unit = {
           case _ => s"$i arguments"
         }
 
-        if (checked) {
-          im.getStatic("com.guizmaii.zazr.Throwables.sneakyThrow")
-        }
+        // lift() needs both regardless of checked-ness (a fatal throwable from an unchecked partialFunction
+        // must propagate too); unchecked()/recover() (checked only) reuse the same imports.
+        im.getStatic("com.guizmaii.zazr.Throwables.sneakyThrow")
+        im.getStatic("com.guizmaii.zazr.Throwables.isFatal")
 
         xs"""
           /**
@@ -209,13 +210,19 @@ def generateMainClasses(): Unit = {
                */
               static $fullGenericsDecl ${javaFunctionType(i, im)}$genericsOptionReturnType lift($fullGenericsType partialFunction) {
                   ${
-                    val func = "partialFunction"
-                    // Try.of takes a Callable (throws Exception only); a checked partialFunction.apply() now
-                    // declares `throws Exception` too, so this satisfies Callable directly, no wrapping needed.
-                    val supplier = s"() -> $func.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
-                      return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.<R>of($supplier).toOption();
+                      return $lambdaArgs -> {
+                          try {
+                              final R result = partialFunction.apply($params);
+                              return result == null ? ${im.getType("com.guizmaii.zazr.control.Option")}.<R>none() : ${im.getType("com.guizmaii.zazr.control.Option")}.some(result);
+                          } catch (Throwable t) {
+                              if (isFatal(t)) {
+                                  return sneakyThrow(t);
+                              }
+                              return ${im.getType("com.guizmaii.zazr.control.Option")}.<R>none();
+                          }
+                      };
                     """
                   }
               }
@@ -331,10 +338,12 @@ def generateMainClasses(): Unit = {
 
               ${checked.gen(xs"""
                 /$javadoc
-                 * Return a composed function that first applies this $className to the given arguments and in case of throwable
-                 * try to get value from {@code recover} function with same arguments and throwable information.
+                 * Return a composed function that first applies this $className to the given arguments and in case of a
+                 * non-fatal throwable tries to get a value from the {@code recover} function with the throwable information.
+                 * A fatal throwable (see {@link ${im.getType("com.guizmaii.zazr.control.Try")}}) is never handed to
+                 * {@code recover}: it propagates unchanged instead.
                  *
-                 * @param recover the function applied in case of throwable
+                 * @param recover the function applied in case of a non-fatal throwable
                  * @return a function composed of this and recover
                  * @throws NullPointerException if recover is null
                  */
@@ -344,6 +353,9 @@ def generateMainClasses(): Unit = {
                         try {
                             return this.apply($params);
                         } catch (Throwable throwable) {
+                            if (isFatal(throwable)) {
+                                return sneakyThrow(throwable);
+                            }
                             final ${fullGenericsTypeF(checked = false, i)} func = recover.apply(throwable);
                             Objects.requireNonNull(func, () -> "recover return null for " + throwable.getClass() + ": " + throwable.getMessage());
                             return func.$callApply;
@@ -1222,6 +1234,24 @@ def generateTestClasses(): Unit = {
                           assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
                           assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
                       }
+
+                      ${(i == 1 || i == N).gen(xs"""
+                        @$test
+                        public void shouldNotHandFatalThrowableToRecover() {
+                            final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
+                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                                fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+                            $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
+                        }
+
+                        @$test
+                        public void shouldHandNonFatalThrowableToRecover() {
+                            final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
+                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                                nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
+                            assertThat(recover.apply(${toArgList("MD5")})).isNull();
+                        }
+                      """)}
 
                       @$test
                       public void shouldUncheckedWork() {

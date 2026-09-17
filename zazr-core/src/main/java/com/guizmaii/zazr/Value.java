@@ -291,15 +291,31 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
     }
 
     /**
-     * Returns the underlying value if present, otherwise returns the result of {@code Try.of(supplier).get()}.
+     * Returns the underlying value if present, otherwise calls {@code supplier} and returns its result.
+     * <p>
+     * Any throwable the supplier raises propagates to the caller exactly as thrown (checked exceptions
+     * included, without needing to be declared, the same way {@link Try#of(Callable)}{@code .get()} would
+     * propagate it); a {@code null} result is rejected with a {@link NullPointerException}, since a value
+     * this method could return is never absent-but-present.
      *
      * @param supplier An alternative value supplier.
      * @return A value of type {@code T}.
-     * @throws NullPointerException if supplier is null
+     * @throws NullPointerException if supplier is null, or if it returns null
      */
     default T getOrElseTry(Callable<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? Try.of(supplier).get() : get();
+        if (isEmpty()) {
+            try {
+                final T value = supplier.call();
+                return value == null
+                        ? Throwables.sneakyThrow(new NullPointerException("getOrElseTry: the computation returned null"))
+                        : value;
+            } catch (Throwable t) {
+                return Throwables.sneakyThrow(t);
+            }
+        } else {
+            return get();
+        }
     }
 
     /**
