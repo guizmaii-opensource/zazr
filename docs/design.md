@@ -79,7 +79,7 @@ These are the rules every change below follows.
 **Decision.** zazr uses the newest Java features that fit, not just a Java 21 toolchain. The concrete list:
 
 **Baseline JDK: 25+ (decided).** Java 25 is the current LTS (September 2025); the fork has no users to
-keep on 21, and `<java.version>` in `pom.xml`, the CI matrix (`25, 26, 27-ea`) and the release workflow
+keep on 21, and `<java.version>` in `pom.xml`, the CI matrix (baseline 25 and the released versions above it; `25, 26, 27` as of September 2026; Amazon Corretto, which ships GA releases only, so no early-access slot) and the release workflow
 are already set to it. Over 21 this gives: unnamed variables and patterns (`_`) so `case Invalid(_) ->`
 compiles; Markdown javadoc (`///`, JEP 467) so the whole doc rewrite is written in Markdown; flexible
 constructor bodies (JEP 513) for validation before `super()`; `Stream.gather` and
