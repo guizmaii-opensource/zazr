@@ -1064,11 +1064,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * containing this value.
      */
     default <E extends @Nullable Object> Validation<E, T> toValidation(E invalid) {
-        if (this instanceof Validation) {
-            return ((Validation<?, T>) this).mapError(ignored -> invalid);
-        } else {
-            return isEmpty() ? Validation.invalid(invalid) : Validation.valid(get());
-        }
+        return isEmpty() ? Validation.invalid(invalid) : Validation.valid(get());
     }
 
     /**
@@ -1084,11 +1080,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      */
     default <E extends @Nullable Object> Validation<E, T> toValidation(Supplier<? extends E> invalidSupplier) {
         Objects.requireNonNull(invalidSupplier, "invalidSupplier is null");
-        if (this instanceof Validation) {
-            return ((Validation<?, T>) this).mapError(ignored -> invalidSupplier.get());
-        } else {
-            return isEmpty() ? Validation.invalid(invalidSupplier.get()) : Validation.valid(get());
-        }
+        return isEmpty() ? Validation.invalid(invalidSupplier.get()) : Validation.valid(get());
     }
 
     /**
