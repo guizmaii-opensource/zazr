@@ -1,9 +1,9 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.Vector;
+import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +66,7 @@ public class Euler42Test {
                 .exists(t -> t == n);
     }
 
-    private static final Function1<Integer, Boolean> isTriangleNumberMemoized = Function1.of(Euler42Test::isTriangleNumber).memoized();
+    private static final Function<Integer, Boolean> isTriangleNumberMemoized = Memoize.of(Euler42Test::isTriangleNumber);
 
     private static final Stream<Integer> TRIANGLE_NUMBERS = Stream.from(1).map(n -> 0.5 * n * (n + 1)).map(Double::intValue);
 

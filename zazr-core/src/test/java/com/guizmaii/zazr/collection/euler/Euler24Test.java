@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.collection.List;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static com.guizmaii.zazr.collection.euler.Utils.factorial;
@@ -63,5 +63,5 @@ public class Euler24Test {
         return List.of(sx.get(headCharPosition - 1)).mkString() + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);
     }
 
-    private static final Function1<Integer, Integer> memoizedFactorial = Function1.of((Integer i) -> factorial(i).intValue()).memoized();
+    private static final Function<Integer, Integer> memoizedFactorial = Memoize.of((Integer i) -> factorial(i).intValue());
 }

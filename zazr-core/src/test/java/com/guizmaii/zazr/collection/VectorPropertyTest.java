@@ -1,10 +1,10 @@
 package com.guizmaii.zazr.collection;
 
-import com.guizmaii.zazr.Function2;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import java.util.List;
 import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.assertj.core.api.Assertions;
@@ -344,7 +344,7 @@ public class VectorPropertyTest {
         }
     }
 
-    private static <T extends Seq<?>, P> T assertAreEqual(T previousActual, P param, Function2<T, P, T> actualProvider, Seq<?> expected) {
+    private static <T extends Seq<?>, P> T assertAreEqual(T previousActual, P param, BiFunction<T, P, T> actualProvider, Seq<?> expected) {
         final T actual = actualProvider.apply(previousActual, param);
         assertAreEqual(expected, actual);
         return actual; // makes debugging a lot easier, as the frame can be dropped and rerun on AssertError

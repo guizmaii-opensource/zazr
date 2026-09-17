@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.Tuple3;
 import com.guizmaii.zazr.control.Option;
@@ -20,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> component type
  * @author Daniel Dietrich
  */
-public interface Set<T extends @Nullable Object> extends Traversable<T>, Function1<T, Boolean> {
+public interface Set<T extends @Nullable Object> extends Traversable<T>, Predicate<T> {
 
     /**
      * Narrows a widened {@code Set<? extends T>} to {@code Set<T>}
@@ -61,11 +60,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Functio
      *
      * @param element the element to test for membership.
      * @return {@code true} if the given {@code element} is contained, {@code false} otherwise.
-     * @deprecated Will be removed
      */
     @Override
-    @Deprecated
-    default Boolean apply(T element) {
+    default boolean test(T element) {
         return contains(element);
     }
 

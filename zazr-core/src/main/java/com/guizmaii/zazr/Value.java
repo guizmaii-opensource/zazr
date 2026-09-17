@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -296,7 +297,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * @return A value of type {@code T}.
      * @throws NullPointerException if supplier is null
      */
-    default T getOrElseTry(CheckedFunction0<? extends T> supplier) {
+    default T getOrElseTry(Callable<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
         return isEmpty() ? Try.of(supplier).get() : get();
     }

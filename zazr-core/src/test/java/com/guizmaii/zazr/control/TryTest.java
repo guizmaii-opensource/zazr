@@ -276,48 +276,6 @@ public class TryTest extends AbstractValueTest {
     }
 
     @Nested
-    class TryOfsupplierTests {
-        @Test
-        public void shouldCreateSuccessWhenCallingTryOfSupplier() {
-            assertThat(Try.ofSupplier(() -> 1) instanceof Try.Success).isTrue();
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenCallingTryOfSupplier() {
-            assertThatThrownBy(() -> Try.ofSupplier(null)).isInstanceOf(NullPointerException.class)
-              .hasMessage("supplier is null");
-        }
-
-        @Test
-        public void shouldCreateFailureWhenCallingTryOfSupplier() {
-            assertThat(Try.ofSupplier(() -> {
-                throw new Error("error");
-            }) instanceof Try.Failure).isTrue();
-        }
-    }
-
-    @Nested
-    class TryOfcallableTests {
-        @Test
-        public void shouldCreateSuccessWhenCallingTryOfCallable() {
-            assertThat(Try.ofCallable(() -> 1) instanceof Try.Success).isTrue();
-        }
-
-        @Test
-        public void shouldCreateFailureWhenCallingTryOfCallable() {
-            assertThat(Try.ofCallable(() -> {
-                throw new Error("error");
-            }) instanceof Try.Failure).isTrue();
-        }
-
-        @Test
-        public void shouldThrowNullPointerExceptionWhenCallingTryOfCallable() {
-            assertThatThrownBy(() -> Try.ofCallable(null)).isInstanceOf(NullPointerException.class)
-              .hasMessage("callable is null");
-        }
-    }
-
-    @Nested
     class TryRunTests {
         @Test
         public void shouldCreateSuccessWhenCallingTryRunCheckedRunnable() {
@@ -942,7 +900,7 @@ public class TryTest extends AbstractValueTest {
 
         @Test
         public void shouldNotRecoverFailureWhenExceptionTypeIsntAssignable() {
-            final Throwable error = new IllegalStateException(FAILURE);
+            final RuntimeException error = new IllegalStateException(FAILURE);
             assertThat(Try.of(() -> {throw error;}).recoverWith(Error.class, success()).getCause()).isSameAs(error);
         }
     }
@@ -1806,16 +1764,6 @@ public class TryTest extends AbstractValueTest {
             assertThat(result.isFailure()).isTrue();
             assertThat(result.getCause()).isInstanceOf(NullPointerException.class);
             assertThat(result.getCause().getMessage()).isEqualTo("Try.of: the computation returned null");
-        }
-
-        @Test
-        public void shouldCaptureNullResultOfOfSupplierAsFailure() {
-            assertThat(Try.ofSupplier(() -> null).getCause()).isInstanceOf(NullPointerException.class);
-        }
-
-        @Test
-        public void shouldCaptureNullResultOfOfCallableAsFailure() {
-            assertThat(Try.ofCallable(() -> null).getCause()).isInstanceOf(NullPointerException.class);
         }
 
         @Test

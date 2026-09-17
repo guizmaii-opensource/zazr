@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.collection.Stream;
+import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +42,7 @@ public class Euler14Test {
                 .get()).isEqualTo(837799);
     }
 
-    private final static Function1<Long, Long> collatzRecursive = n -> {
+    private final static Function<Long, Long> collatzRecursive = n -> {
         if (n == 1) {
             return 1L;
         } else {
@@ -54,5 +54,5 @@ public class Euler14Test {
         }
     };
 
-    private final static Function1<Long, Long> collatzSequenceLength = collatzRecursive.memoized();
+    private final static Function<Long, Long> collatzSequenceLength = Memoize.of(collatzRecursive);
 }

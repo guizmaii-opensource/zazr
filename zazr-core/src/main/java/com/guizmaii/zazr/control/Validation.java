@@ -6,6 +6,7 @@ import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -860,8 +861,8 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
          * @param f   the function to apply
          * @return a Validation with the result or accumulated errors
          */
-        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(Function2<T1, T2, R> f) {
-            return v2.ap(v1.ap(Validation.valid(f.curried())));
+        public <R extends @Nullable Object> Validation<Seq<E>, R> ap(BiFunction<T1, T2, R> f) {
+            return v2.ap(v1.ap(Validation.valid(t1 -> t2 -> f.apply(t1, t2))));
         }
 
         /**

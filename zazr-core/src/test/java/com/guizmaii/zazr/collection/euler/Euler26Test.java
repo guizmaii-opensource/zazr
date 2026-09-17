@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function1;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.List;
@@ -9,6 +8,7 @@ import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,33 +83,33 @@ public class Euler26Test {
                 .getOrElse(0);
     }
 
-    private static Function1<Vector<Character>, Vector<Character>> removeLeadingZeroAndDecimalPoint() {
+    private static Function<Vector<Character>, Vector<Character>> removeLeadingZeroAndDecimalPoint() {
         return seq -> seq.drop(2);
     }
 
-    private static Function1<Vector<Character>, Vector<Character>> removeRoundingDigit() {
+    private static Function<Vector<Character>, Vector<Character>> removeRoundingDigit() {
         return seq -> seq.dropRight(1);
     }
 
-    private static Function1<Vector<Character>, Vector<Character>> removeTrailingZeroes() {
+    private static Function<Vector<Character>, Vector<Character>> removeTrailingZeroes() {
         return seq -> seq
                 .reverse()
                 .dropWhile(c -> c == '0') //Remove any trailing zeroes
                 .reverse();
     }
 
-    private static Function1<Stream<Character>, Stream<String>> createCandidateCycles() {
+    private static Function<Stream<Character>, Stream<String>> createCandidateCycles() {
         return reversedDecimalFractionPart -> reversedDecimalFractionPart
                 .map(String::valueOf)
                 .scan("", String::concat)
                 .drop(1); // Drop the first empty string created by scan
     }
 
-    private static Function1<Stream<String>, Stream<String>> removeCandidatesLongerThanHalfTheFullString(String decimalFractionPart) {
+    private static Function<Stream<String>, Stream<String>> removeCandidatesLongerThanHalfTheFullString(String decimalFractionPart) {
         return candidateCycles -> candidateCycles.filter(candidate -> decimalFractionPart.length() >= candidate.length() * 2);
     }
 
-    private static Function1<Stream<String>, Option<String>> findFirstRecurringCycle(String decimalFractionPart) {
+    private static Function<Stream<String>, Option<String>> findFirstRecurringCycle(String decimalFractionPart) {
         return reversedCandidateCycles -> reversedCandidateCycles
                 .map(s -> Vector.ofAll(s.toCharArray()).reverse().mkString())
                 .find(candidate -> candidate.equals(decimalFractionPart.substring(decimalFractionPart.length() - (candidate.length() * 2), decimalFractionPart.length() - candidate.length())));

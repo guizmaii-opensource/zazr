@@ -1,18 +1,18 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.Function2;
 import com.guizmaii.zazr.Function3;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Set;
 import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.control.Option;
+import java.util.function.BiFunction;
 
 final class Sieve {
 
     private Sieve() {
     }
 
-    private final static List<Function2<Integer, Integer, Option<Integer>>> RULES = List.of(
+    private final static List<BiFunction<Integer, Integer, Option<Integer>>> RULES = List.of(
             (x, y) -> Option.some((4 * x * x) + (y * y)).filter(n -> n % 12 == 1 || n % 12 == 5),
             (x, y) -> Option.some((3 * x * x) + (y * y)).filter(n -> n % 12 == 7),
             (x, y) -> Option.some((3 * x * x) - (y * y)).filter(n -> x > y && n % 12 == 11)
