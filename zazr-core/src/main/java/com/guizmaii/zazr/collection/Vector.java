@@ -960,7 +960,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public T head() {
-        if (nonEmpty()) {
+        if (!isEmpty()) {
             return get(0);
         } else {
             throw new NoSuchElementException("head of empty Vector");
@@ -985,7 +985,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> init() {
-        if (nonEmpty()) {
+        if (!isEmpty()) {
             return dropRight(1);
         } else {
             throw new UnsupportedOperationException("init of empty Vector");
@@ -1017,6 +1017,14 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public boolean isEmpty() { return length() == 0; }
+
+    /**
+     * Narrows to a {@link NonEmptyVector}, whose operations that cannot shrink keep that type and whose {@code head},
+     * {@code last}, {@code max}, {@code min} and {@code reduce} are total.
+     *
+     * @return {@code Some(nonEmptyVector)} sharing this Vector's elements, or {@code None} if this Vector is empty
+     */
+    public Option<NonEmptyVector<T>> nonEmpty() { return NonEmptyVector.fromVector(this); }
 
     @Override
     public Iterator<T> iterator() {
@@ -1413,7 +1421,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public Vector<T> tail() {
-        if (nonEmpty()) {
+        if (!isEmpty()) {
             return drop(1);
         } else {
             throw new UnsupportedOperationException("tail of empty Vector");

@@ -442,7 +442,7 @@ interface LinearSeqModule {
             final boolean lazy = !Collections.hasDefiniteSize(source);
             // length once, then counted down: List.length() walks the list
             int remaining = lazy ? 0 : source.length();
-            while (lazy ? source.nonEmpty() : remaining >= sliceLength) {
+            while (lazy ? !source.isEmpty() : remaining >= sliceLength) {
                 if (index >= from && source.startsWith(slice)) {
                     return index;
                 }

@@ -1519,14 +1519,6 @@ public abstract class AbstractTraversableTest {
         assertThat(cnt[0]).isEqualTo(3);
     }
 
-    // -- nonEmpty
-
-    @TestTemplate
-    public void shouldCalculateNonEmpty() {
-        assertThat(empty().nonEmpty()).isFalse();
-        assertThat(of(1).nonEmpty()).isTrue();
-    }
-
     // -- orElse
 
     @TestTemplate
