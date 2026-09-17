@@ -235,17 +235,17 @@ public class Tuple7Test {
     }
 
     @Test
-    public void shouldReturnTuple7OfSequence7() {
+    public void shouldReturnTuple7OfUnzip7() {
       final Seq<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4, 5, 6, 7, 8), Tuple.of(4, 5, 6, 7, 8, 9, 10), Tuple.of(6, 7, 8, 9, 10, 11, 12), Tuple.of(8, 9, 10, 11, 12, 13, 14), Tuple.of(10, 11, 12, 13, 14, 15, 16), Tuple.of(12, 13, 14, 15, 16, 17, 18), Tuple.of(14, 15, 16, 17, 18, 19, 20));
       final Tuple7<Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(2, 4, 6, 8, 10, 12, 14), Stream.of(3, 5, 7, 9, 11, 13, 15), Stream.of(4, 6, 8, 10, 12, 14, 16), Stream.of(5, 7, 9, 11, 13, 15, 17), Stream.of(6, 8, 10, 12, 14, 16, 18), Stream.of(7, 9, 11, 13, 15, 17, 19), Stream.of(8, 10, 12, 14, 16, 18, 20));
-      assertThat(Tuple.sequence7(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip7(iterable)).isEqualTo(expected);
     }
 
     @Test
-    public void shouldReturnTuple7OfSequence1() {
+    public void shouldReturnTuple7OfUnzip1() {
       final Seq<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3, 4, 5, 6, 7));
       final Tuple7<Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(1), Stream.of(2), Stream.of(3), Stream.of(4), Stream.of(5), Stream.of(6), Stream.of(7));
-      assertThat(Tuple.sequence7(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip7(iterable)).isEqualTo(expected);
     }
 
     @Test

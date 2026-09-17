@@ -119,17 +119,17 @@ public class Tuple2Test {
     }
 
     @Test
-    public void shouldReturnTuple2OfSequence2() {
+    public void shouldReturnTuple2OfUnzip2() {
       final Seq<Tuple2<Integer, Integer>> iterable = List.of(Tuple.of(2, 3), Tuple.of(4, 5));
       final Tuple2<Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(2, 4), Stream.of(3, 5));
-      assertThat(Tuple.sequence2(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip2(iterable)).isEqualTo(expected);
     }
 
     @Test
-    public void shouldReturnTuple2OfSequence1() {
+    public void shouldReturnTuple2OfUnzip1() {
       final Seq<Tuple2<Integer, Integer>> iterable = List.of(Tuple.of(1, 2));
       final Tuple2<Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(1), Stream.of(2));
-      assertThat(Tuple.sequence2(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip2(iterable)).isEqualTo(expected);
     }
 
     @Test

@@ -795,18 +795,49 @@ def generateMainClasses(): Unit = {
         val seqs = (1 to i).gen(j => s"Seq<T$j>")(using ", ")
         val Stream = im.getType("com.guizmaii.zazr.collection.Stream")
         val widenedGenerics = a.covariantGenerics
+        // Arities 2 and 3 have a hand-written counterpart on Seq: Seq#unzip / Seq#unzip3. Seq's own
+        // implementations (Vector.java, List.java, ...) build the *receiver's own kind* with a per-kind,
+        // single-pass loop and can't be reused here: this method's return type is always Seq-erased
+        // (Stream-backed), never the caller's concrete class, so routing Seq#unzip through this method
+        // would silently turn e.g. Vector.unzip into a pair of Streams. The other direction is safe,
+        // though: Stream is itself a Seq, Stream.ofAll on an already-lazy Stream returns the same
+        // instance (Stream.java:374), and Stream#unzip/#unzip3 already do exactly this split. Delegate
+        // to it so there is one implementation of the split; the cost is one extra lazy identity-map
+        // layer per element versus the previous direct s.map(Tuple$i::_j) calls, accepted because
+        // Stream's map is lazy (no eager pass added, only a thin extra cons wrapper). Arities 1 and
+        // 4..8 have no Seq counterpart to unify with, so they keep the direct implementation.
+        val streamUnzipName = i match {
+          case 2 => "unzip"
+          case 3 => "unzip3"
+          case _ => ""
+        }
+        val body =
+          if (streamUnzipName.nonEmpty) {
+            val Function = im.getType("java.util.function.Function")
+            val streamSeqs = (1 to i).gen(j => s"$Stream<T$j>")(using ", ")
+            xs"""
+                $Objects.requireNonNull(tuples, "tuples is null");
+                final Tuple$i<$streamSeqs> unzipped = $Stream.ofAll(tuples).$streamUnzipName($Function.identity());
+                return Tuple.of(${(1 to i).gen(j => s"unzipped._$j()")(using ", ")});
+            """
+          } else {
+            xs"""
+                $Objects.requireNonNull(tuples, "tuples is null");
+                final Stream<Tuple$i<$widenedGenerics>> s = $Stream.ofAll(tuples);
+                return new Tuple$i<>(${(1 to i).gen(j => s"s.map(Tuple$i::_$j)")(using s", ")});
+            """
+          }
         xs"""
             /**
-             * Turns a sequence of {@code Tuple$i} into a Tuple$i of {@code Seq}${(i > 1).gen("s")}.
+             * Splits a sequence of {@code Tuple$i} into a Tuple$i of {@code Seq}${(i > 1).gen("s")},
+             * one per component.
              *
              ${(1 to i).gen(j => s"* @param <T$j> ${j.ordinal} component type")(using "\n")}
              * @param tuples an {@code Iterable} of tuples
              * @return a tuple of ${i.numerus(s"{@link $Seq}")}.
              */
-            static <$genericsDecl> Tuple$i<$seqs> sequence$i(Iterable<? extends Tuple$i<$widenedGenerics>> tuples) {
-                $Objects.requireNonNull(tuples, "tuples is null");
-                final Stream<Tuple$i<$widenedGenerics>> s = $Stream.ofAll(tuples);
-                return new Tuple$i<>(${(1 to i).gen(j => s"s.map(Tuple$i::_$j)")(using s", ")});
+            static <$genericsDecl> Tuple$i<$seqs> unzip$i(Iterable<? extends Tuple$i<$widenedGenerics>> tuples) {
+                $body
             }
         """
       }
@@ -1519,19 +1550,19 @@ def generateTestClasses(): Unit = {
                 }
 
                 @$test
-                public void shouldReturnTuple${i}OfSequence$i() {
+                public void shouldReturnTuple${i}OfUnzip$i() {
                   final $seq<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> iterable = $list.of(${(1 to i).gen(j => xs"Tuple.of(${(1 to i).gen(k => xs"${k+2*j-1}")(using ", ")})")(using ", ")});
                   final Tuple$i<${(1 to i).gen(j => xs"$seq<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$stream.of(${(1 to i).gen(k => xs"${2*k+j-1}")(using ", ")})")(using ", ")});
-                  $assertThat(Tuple.sequence$i(iterable)).isEqualTo(expected);
+                  $assertThat(Tuple.unzip$i(iterable)).isEqualTo(expected);
                 }
               """)}
 
               ${(i > 1).gen(xs"""
                 @$test
-                public void shouldReturnTuple${i}OfSequence1() {
+                public void shouldReturnTuple${i}OfUnzip1() {
                   final $seq<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> iterable = $list.of(Tuple.of(${(1 to i).gen(k => xs"$k")(using ", ")}));
                   final Tuple$i<${(1 to i).gen(j => xs"$seq<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$stream.of($j)")(using ", ")});
-                  $assertThat(Tuple.sequence$i(iterable)).isEqualTo(expected);
+                  $assertThat(Tuple.unzip$i(iterable)).isEqualTo(expected);
                 }
               """)}
 

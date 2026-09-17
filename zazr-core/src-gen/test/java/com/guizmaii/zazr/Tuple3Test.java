@@ -127,17 +127,17 @@ public class Tuple3Test {
     }
 
     @Test
-    public void shouldReturnTuple3OfSequence3() {
+    public void shouldReturnTuple3OfUnzip3() {
       final Seq<Tuple3<Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4), Tuple.of(4, 5, 6), Tuple.of(6, 7, 8));
       final Tuple3<Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(2, 4, 6), Stream.of(3, 5, 7), Stream.of(4, 6, 8));
-      assertThat(Tuple.sequence3(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip3(iterable)).isEqualTo(expected);
     }
 
     @Test
-    public void shouldReturnTuple3OfSequence1() {
+    public void shouldReturnTuple3OfUnzip1() {
       final Seq<Tuple3<Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3));
       final Tuple3<Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(1), Stream.of(2), Stream.of(3));
-      assertThat(Tuple.sequence3(iterable)).isEqualTo(expected);
+      assertThat(Tuple.unzip3(iterable)).isEqualTo(expected);
     }
 
     @Test

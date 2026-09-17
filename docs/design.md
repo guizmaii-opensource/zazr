@@ -221,6 +221,7 @@ duplication is cheaper than a god interface).
 |---|---|---|
 | `ap`, `combine(...).ap(f)` | `zip`, `zipWith`, static `zip(a,b,c)`, `zipWith(a,b,c,f)` | Principle 4 |
 | `sequence(Iterable<F<A>>)` | `collectAll(Iterable<F<A>>)` | ZIO name; "sequence" means nothing to a Java dev |
+| `Tuple.sequence1..8(Iterable<TupleN<...>>)` | `Tuple.unzip1..8(Iterable<TupleN<...>>)` | not a `collectAll`: it splits a sequence of tuples into a tuple of `Seq`s, i.e. an unzip, matching `Seq.unzip`/`unzip3` (3.7) rather than the control-type `sequence`/`collectAll` family; `Tuple.unzip2`/`unzip3` delegate to `Stream`'s implementation so there is one implementation (#59) |
 | `traverse(Iterable<A>, A->F<B>)` | `forEach(Iterable<A>, A->F<B>)` | ZIO/prelude name. Static on the companion, so no clash with `Iterable.forEach`. |
 | `Either.sequence` (accumulates *both* sides) vs `sequenceRight` (short-circuits) | delete the accumulating one; `Either.collectAll` short-circuits. Accumulation is `Validation`'s job. | one semantics per name |
 | `bimap` | `mapBoth` | ZIO 2 rename |

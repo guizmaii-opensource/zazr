@@ -8,6 +8,7 @@ import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Stream;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -482,34 +483,37 @@ public interface Tuple {
     }
 
     /**
-     * Turns a sequence of {@code Tuple1} into a Tuple1 of {@code Seq}.
+     * Splits a sequence of {@code Tuple1} into a Tuple1 of {@code Seq},
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of one {@link Seq}.
      */
-    static <T1 extends @Nullable Object> Tuple1<Seq<T1>> sequence1(Iterable<? extends Tuple1<? extends T1>> tuples) {
+    static <T1 extends @Nullable Object> Tuple1<Seq<T1>> unzip1(Iterable<? extends Tuple1<? extends T1>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Stream<Tuple1<? extends T1>> s = Stream.ofAll(tuples);
         return new Tuple1<>(s.map(Tuple1::_1));
     }
 
     /**
-     * Turns a sequence of {@code Tuple2} into a Tuple2 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple2} into a Tuple2 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of two {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Seq<T1>, Seq<T2>> sequence2(Iterable<? extends Tuple2<? extends T1, ? extends T2>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Seq<T1>, Seq<T2>> unzip2(Iterable<? extends Tuple2<? extends T1, ? extends T2>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
-        final Stream<Tuple2<? extends T1, ? extends T2>> s = Stream.ofAll(tuples);
-        return new Tuple2<>(s.map(Tuple2::_1), s.map(Tuple2::_2));
+        final Tuple2<Stream<T1>, Stream<T2>> unzipped = Stream.ofAll(tuples).unzip(Function.identity());
+        return Tuple.of(unzipped._1(), unzipped._2());
     }
 
     /**
-     * Turns a sequence of {@code Tuple3} into a Tuple3 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple3} into a Tuple3 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
@@ -517,14 +521,15 @@ public interface Tuple {
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of three {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Seq<T1>, Seq<T2>, Seq<T3>> sequence3(Iterable<? extends Tuple3<? extends T1, ? extends T2, ? extends T3>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Seq<T1>, Seq<T2>, Seq<T3>> unzip3(Iterable<? extends Tuple3<? extends T1, ? extends T2, ? extends T3>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
-        final Stream<Tuple3<? extends T1, ? extends T2, ? extends T3>> s = Stream.ofAll(tuples);
-        return new Tuple3<>(s.map(Tuple3::_1), s.map(Tuple3::_2), s.map(Tuple3::_3));
+        final Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzipped = Stream.ofAll(tuples).unzip3(Function.identity());
+        return Tuple.of(unzipped._1(), unzipped._2(), unzipped._3());
     }
 
     /**
-     * Turns a sequence of {@code Tuple4} into a Tuple4 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple4} into a Tuple4 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
@@ -533,14 +538,15 @@ public interface Tuple {
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of 4 {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>> sequence4(Iterable<? extends Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>> unzip4(Iterable<? extends Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Stream<Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4>> s = Stream.ofAll(tuples);
         return new Tuple4<>(s.map(Tuple4::_1), s.map(Tuple4::_2), s.map(Tuple4::_3), s.map(Tuple4::_4));
     }
 
     /**
-     * Turns a sequence of {@code Tuple5} into a Tuple5 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple5} into a Tuple5 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
@@ -550,14 +556,15 @@ public interface Tuple {
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of 5 {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>> sequence5(Iterable<? extends Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>> unzip5(Iterable<? extends Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Stream<Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5>> s = Stream.ofAll(tuples);
         return new Tuple5<>(s.map(Tuple5::_1), s.map(Tuple5::_2), s.map(Tuple5::_3), s.map(Tuple5::_4), s.map(Tuple5::_5));
     }
 
     /**
-     * Turns a sequence of {@code Tuple6} into a Tuple6 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple6} into a Tuple6 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
@@ -568,14 +575,15 @@ public interface Tuple {
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of 6 {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>, Seq<T6>> sequence6(Iterable<? extends Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>, Seq<T6>> unzip6(Iterable<? extends Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Stream<Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6>> s = Stream.ofAll(tuples);
         return new Tuple6<>(s.map(Tuple6::_1), s.map(Tuple6::_2), s.map(Tuple6::_3), s.map(Tuple6::_4), s.map(Tuple6::_5), s.map(Tuple6::_6));
     }
 
     /**
-     * Turns a sequence of {@code Tuple7} into a Tuple7 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple7} into a Tuple7 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
@@ -587,14 +595,15 @@ public interface Tuple {
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of 7 {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>, Seq<T6>, Seq<T7>> sequence7(Iterable<? extends Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>, Seq<T6>, Seq<T7>> unzip7(Iterable<? extends Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Stream<Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7>> s = Stream.ofAll(tuples);
         return new Tuple7<>(s.map(Tuple7::_1), s.map(Tuple7::_2), s.map(Tuple7::_3), s.map(Tuple7::_4), s.map(Tuple7::_5), s.map(Tuple7::_6), s.map(Tuple7::_7));
     }
 
     /**
-     * Turns a sequence of {@code Tuple8} into a Tuple8 of {@code Seq}s.
+     * Splits a sequence of {@code Tuple8} into a Tuple8 of {@code Seq}s,
+     * one per component.
      *
      * @param <T1> 1st component type
      * @param <T2> 2nd component type
@@ -607,7 +616,7 @@ public interface Tuple {
      * @param tuples an {@code Iterable} of tuples
      * @return a tuple of 8 {@link Seq}s.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>, Seq<T6>, Seq<T7>, Seq<T8>> sequence8(Iterable<? extends Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<Seq<T1>, Seq<T2>, Seq<T3>, Seq<T4>, Seq<T5>, Seq<T6>, Seq<T7>, Seq<T8>> unzip8(Iterable<? extends Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Stream<Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8>> s = Stream.ofAll(tuples);
         return new Tuple8<>(s.map(Tuple8::_1), s.map(Tuple8::_2), s.map(Tuple8::_3), s.map(Tuple8::_4), s.map(Tuple8::_5), s.map(Tuple8::_6), s.map(Tuple8::_7), s.map(Tuple8::_8));
