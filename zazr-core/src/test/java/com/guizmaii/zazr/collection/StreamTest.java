@@ -504,13 +504,6 @@ public class StreamTest extends AbstractLinearSeqTest {
         }
     }
 
-    // -- peek
-
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 3;
-    }
-
     @Nested
     class StreamPermutationsTests {
         @Test
@@ -798,16 +791,6 @@ public class StreamTest extends AbstractLinearSeqTest {
     }
 
     @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
-        }
-    }
-
-    @Nested
     class UnfoldTests {
         @Test
         public void shouldUnfoldRightToEmpty() {
@@ -886,4 +869,33 @@ public class StreamTest extends AbstractLinearSeqTest {
         }
     }
 
+    @Nested
+    class CollectTests {
+
+        @Test
+        public void shouldCollectLazilyAfterTheFirstKeptElement() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Stream<Integer> actual = Stream.from(1).collect(i -> {
+                calls.incrementAndGet();
+                return i % 2 == 0 ? Option.some(i) : Option.none();
+            });
+            assertThat(calls.get()).isEqualTo(2); // 1 dropped, 2 kept as the head; the rest waits
+            assertThat(actual.take(3)).isEqualTo(Stream.of(2, 4, 6));
+        }
+
+        @Test
+        public void shouldCallTheCollectMapperOncePerElement() {
+            final AtomicInteger calls = new AtomicInteger();
+            Stream.of(1, 2, 3, 4).collect(i -> {
+                calls.incrementAndGet();
+                return i % 2 == 0 ? Option.some(i) : Option.none();
+            }).toList();
+            assertThat(calls.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void shouldReturnTheEmptyStreamWhenNothingIsKept() {
+            assertThat(Stream.of(1, 2, 3).collect(i -> Option.none())).isEqualTo(Stream.empty());
+        }
+    }
 }

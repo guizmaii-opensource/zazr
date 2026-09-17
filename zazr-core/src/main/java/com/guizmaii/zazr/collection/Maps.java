@@ -209,11 +209,9 @@ final class Maps {
         return Tuple.of(ofEntries.apply(left), ofEntries.apply(right));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M peek(M map, Consumer<? super Tuple2<K, V>> action) {
+    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M tap(M map, Consumer<? super Tuple2<K, V>> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!map.isEmpty()) {
-            action.accept(map.head());
-        }
+        map.forEach(action);
         return map;
     }
 

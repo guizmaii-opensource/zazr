@@ -240,7 +240,7 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     @Test
     public void shouldReturnSameSeqWhenNonEmptyAppendAllEmpty() {
         final Seq<Integer> seq = of(1, 2, 3);
-        if (seq.hasDefiniteSize()) {
+        if (!(seq instanceof Stream)) {
             assertThat(seq.appendAll(empty())).isSameAs(seq);
         } else {
             assertThat(seq.appendAll(empty())).isEqualTo(seq);
@@ -924,14 +924,6 @@ public abstract class AbstractSeqTest extends AbstractTraversableRangeTest {
     @Test
     public void shouldIntersperseMultipleElements() {
         assertThat(of('a', 'b').intersperse(',')).isEqualTo(of('a', ',', 'b'));
-    }
-
-    @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnTrueWhenIsSequentialCalled() {
-            assertThat(of(1, 2, 3).isSequential()).isTrue();
-        }
     }
 
     @Nested

@@ -406,15 +406,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     Iterator<? extends Traversable<T>> grouped(int size);
 
     /**
-     * Indicates whether this {@code Traversable} has a known finite size.
-     * <p>
-     * This should typically be implemented by concrete classes, not interfaces.
-     *
-     * @return {@code true} if the number of elements is finite and known, {@code false} otherwise.
-     */
-    boolean hasDefiniteSize();
-
-    /**
      * Returns the first element of this non-empty {@code Traversable}.
      *
      * @return the first element
@@ -523,15 +514,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     }
 
     /**
-     * Indicates whether this Traversable may contain only distinct elements.
-     *
-     * @return {@code true} if this Traversable may contain only distinct elements, {@code false} otherwise
-     */
-    default boolean isDistinct() {
-        return false;
-    }
-
-    /**
      * Checks if this Traversable contains no elements.
      *
      * @return {@code true} if empty, {@code false} otherwise
@@ -539,33 +521,6 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     default boolean isEmpty() {
         return length() == 0;
     }
-
-    /**
-     * Indicates whether this Traversable is ordered according to its natural or specified order.
-     *
-     * @return {@code true} if this Traversable is ordered, {@code false} otherwise
-     */
-    default boolean isOrdered() {
-        return false;
-    }
-
-    /**
-     * Indicates whether the elements of this Traversable appear in encounter (insertion) order.
-     *
-     * @return {@code true} if insertion order is preserved, {@code false} otherwise
-     */
-    default boolean isSequential() {
-        return false;
-    }
-
-    /**
-     * Checks if this Traversable can be traversed multiple times without side effects.
-     * <p>
-     * Implementations should provide the correct behavior; this is not meant for interfaces alone.
-     *
-     * @return {@code true} if this Traversable is guaranteed to be repeatably traversable, {@code false} otherwise
-     */
-    boolean isTraversableAgain();
 
     /**
      * Returns an iterator over the elements of this Traversable, implemented via {@link #head()} and {@link #tail()}.
@@ -632,13 +587,36 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     <U extends @Nullable Object> Traversable<U> map(Function<? super T, ? extends U> mapper);
 
     /**
-     * Replaces every element of this {@code Traversable} with the given value.
+     * Matches and transforms the elements in one pass: {@code mapper} returns {@code Some} of the new element for
+     * an element it accepts and {@code None} for one it drops. The result has the same collection kind and keeps
+     * the order of this collection. The {@code case} ergonomics come from a {@code switch} inside the lambda:
+     * <pre>{@code
+     * Vector<Double> radii = shapes.collect(s -> switch (s) {
+     *     case Circle c -> Option.some(c.radius());
+     *     default -> Option.none();
+     * });
+     * }</pre>
+     * This is {@code filter} and {@code map} in one step, without evaluating anything twice: each element is
+     * passed to the mapper exactly once. {@link Stream} and {@link Iterator} call the mapper lazily, as they do
+     * for {@code map}.
+     *
+     * @param mapper a function from an element to {@code Some} of its replacement or {@code None}; it must not
+     *               return {@code null}
+     * @param <U>    the type of the collected elements
+     * @return the collected elements, in order
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an element
+     */
+    <U extends @Nullable Object> Traversable<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    /**
+     * Replaces every element with {@code value}: the same shape, every element the same. The same as
+     * {@code map(ignored -> value)}.
      *
      * @param value the value every element is replaced with
      * @param <U>   the new element type
-     * @return a new {@code Traversable} of the same length whose elements are all {@code value}
+     * @return a {@code Traversable} of the same length whose elements are all {@code value}
      */
-    default <U extends @Nullable Object> Traversable<U> mapTo(U value) {
+    default <U extends @Nullable Object> Traversable<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -897,15 +875,16 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
 
 
     /**
-     * Performs the given {@code action} on the elements of this {@code Traversable}. Most implementations apply it
-     * immediately; {@link Stream} applies it to the head immediately and to the remaining elements as they are
-     * evaluated, and {@link Iterator} defers the action for every element until that element is consumed.
+     * Runs {@code action} on every element and returns this instance, to observe the elements in the middle of a
+     * chain of calls. The eager collections run it on every element before returning; {@link Stream} runs it on
+     * the head now and on each other element when that element is evaluated; {@link Iterator} runs it on each
+     * element when that element is consumed. Whatever the action throws propagates to the caller.
      *
-     * @param action the action performed on the elements
+     * @param action what to do with each element
      * @return this instance
      * @throws NullPointerException if {@code action} is null
      */
-    Traversable<T> peek(Consumer<? super T> action);
+    Traversable<T> tap(Consumer<? super T> action);
 
     /**
      * Calculates the product of the elements in this {@code Traversable}.
@@ -1275,7 +1254,7 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
      * @return A new Java array.
      */
     default Object[] toJavaArray() {
-        if (isTraversableAgain()) {
+        if (Collections.isTraversableAgain(this)) {
             final Object[] results = new Object[size()];
             final Iterator<T> iter = iterator();
             Arrays.setAll(results, i -> iter.next());
@@ -1741,22 +1720,10 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
 
     @Override
     default Spliterator<T> spliterator() {
-        int characteristics = Spliterator.IMMUTABLE;
-        if (isDistinct()) {
-            characteristics |= Spliterator.DISTINCT;
-        }
-        if (isOrdered()) {
-            characteristics |= (Spliterator.SORTED | Spliterator.ORDERED);
-        }
-        if (isSequential()) {
-            characteristics |= Spliterator.ORDERED;
-        }
-        if (hasDefiniteSize()) {
-            characteristics |= (Spliterator.SIZED | Spliterator.SUBSIZED);
-            return Spliterators.spliterator(iterator(), length(), characteristics);
-        } else {
-            return Spliterators.spliteratorUnknownSize(iterator(), characteristics);
-        }
+        final int characteristics = Collections.spliteratorCharacteristics(this);
+        return (characteristics & Spliterator.SIZED) != 0
+          ? Spliterators.spliterator(iterator(), length(), characteristics)
+          : Spliterators.spliteratorUnknownSize(iterator(), characteristics);
     }
 
     /**
@@ -1994,7 +1961,7 @@ interface TraversableModule {
     static <T extends @Nullable Object, R extends java.util.Collection<T>> R toJavaCollection(
             Traversable<T> traversable, Function<Integer, R> containerSupplier, int defaultInitialCapacity) {
         // a lazy or single-pass collection has no cheap size: the default capacity avoids a second traversal
-        final int size = traversable.hasDefiniteSize() ? traversable.size() : defaultInitialCapacity;
+        final int size = Collections.hasDefiniteSize(traversable) ? traversable.size() : defaultInitialCapacity;
         final R container = containerSupplier.apply(size);
         traversable.forEach(container::add);
         return container;

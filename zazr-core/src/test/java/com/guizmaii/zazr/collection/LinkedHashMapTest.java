@@ -327,14 +327,6 @@ public class LinkedHashMapTest extends AbstractMapTest {
     }
 
     @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnTrueWhenIsSequentialCalled() {
-            assertThat(LinkedHashMap.of(1, 2, 3, 4).isSequential()).isTrue();
-        }
-    }
-
-    @Nested
     class RetainAllTests {
         @Test
         public void shouldPreserveInsertionOrderWhenRetainingAll() {

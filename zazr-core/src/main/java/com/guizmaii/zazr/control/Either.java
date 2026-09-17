@@ -9,7 +9,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -21,7 +20,7 @@ import org.jspecify.annotations.Nullable;
  * This implementation is <strong>right-biased</strong>, meaning that most operations such as
  * {@code map}, {@code flatMap}, {@code filter}, etc., are defined for the {@code Right} value,
  * so computations chain fluently in the successful case. The {@code Left} side is reached with
- * {@link #mapLeft(Function)}, {@link #swap()} and {@link #fold(Function, Function)}.
+ * {@link #mapLeft(Function)}, {@link #flip()} and {@link #fold(Function, Function)}.
  * <p>
  * {@code Either} is a sealed interface with two record cases, {@link Left} and {@link Right}, so it is
  * eliminated with an exhaustive {@code switch}:
@@ -97,47 +96,25 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Returns an {@code Either<L, R>} based on the given test condition.
-     * <ul>
-     *   <li>If {@code test} is {@code true}, the result is a {@link Either.Right} created from {@code right}.</li>
-     *   <li>If {@code test} is {@code false}, the result is a {@link Either.Left} created from {@code left}.</li>
-     * </ul>
+     * Tests {@code value} with {@code predicate}: {@code Right(value)} if it holds, {@code Left(ifFalse.get())} if
+     * it does not. The supplier is called only when the predicate fails.
+     * <pre>{@code
+     * Either.fromPredicate(age, a -> a >= 18, () -> "minor"); // = Right(age) or Left("minor")
+     * }</pre>
      *
-     * @param test  the boolean condition to evaluate
-     * @param right a {@code Supplier<? extends R>} providing the right value if {@code test} is true
-     * @param left  a {@code Supplier<? extends L>} providing the left value if {@code test} is false
-     * @param <L>   the type of the left value
-     * @param <R>   the type of the right value
-     * @return an {@code Either<L, R>} containing the left or right value depending on {@code test}
-     * @throws NullPointerException if any argument is null
+     * @param value     the value to test, must not be {@code null}
+     * @param predicate the condition the value has to satisfy
+     * @param ifFalse   supplies the left value when the predicate fails; it must not return {@code null}
+     * @param <L>       the type of the left value
+     * @param <R>       the type of the right value
+     * @return {@code Right(value)} if the predicate holds, otherwise {@code Left} of the supplied value
+     * @throws NullPointerException if any argument is null, or if {@code ifFalse} supplies null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> cond(boolean test, Supplier<? extends R> right, Supplier<? extends L> left) {
-        Objects.requireNonNull(right, "right is null");
-        Objects.requireNonNull(left, "left is null");
-
-        return test ? right(right.get()) : left(left.get());
-    }
-
-    /**
-     * Returns an {@code Either<L, R>} based on the given test condition.
-     * <ul>
-     *   <li>If {@code test} is {@code true}, the result is a {@link Either.Right} containing {@code right}.</li>
-     *   <li>If {@code test} is {@code false}, the result is a {@link Either.Left} containing {@code left}.</li>
-     * </ul>
-     *
-     * @param test  the boolean condition to evaluate
-     * @param right the {@code R} value to return if {@code test} is true
-     * @param left  the {@code L} value to return if {@code test} is false
-     * @param <L>   the type of the left value
-     * @param <R>   the type of the right value
-     * @return an {@code Either<L, R>} containing either the left or right value depending on {@code test}
-     * @throws NullPointerException if any argument is null
-     */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> cond(boolean test, @NonNull R right, @NonNull L left) {
-        Objects.requireNonNull(right, "right is null");
-        Objects.requireNonNull(left, "left is null");
-
-        return cond(test, () -> right, () -> left);
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> fromPredicate(R value, Predicate<? super R> predicate, Supplier<? extends L> ifFalse) {
+        Objects.requireNonNull(value, "value is null");
+        Objects.requireNonNull(predicate, "predicate is null");
+        Objects.requireNonNull(ifFalse, "ifFalse is null");
+        return predicate.test(value) ? right(value) : left(ifFalse.get());
     }
 
     /**
@@ -163,21 +140,19 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     boolean isRight();
 
     /**
-     * Transforms the value of this {@code Either} by applying one of the given mapping functions.
-     * <ul>
-     *   <li>If this is a {@link Either.Left}, {@code leftMapper} is applied to the left value.</li>
-     *   <li>If this is a {@link Either.Right}, {@code rightMapper} is applied to the right value.</li>
-     * </ul>
+     * Maps both sides at once: {@code leftMapper} is applied to a {@code Left}, {@code rightMapper} to a
+     * {@code Right}; only one of them runs. The same as {@code mapLeft(leftMapper).map(rightMapper)}.
      * <p>
      * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
      *
-     * @param leftMapper  function to transform the left value if this is a {@code Left}
-     * @param rightMapper function to transform the right value if this is a {@code Right}
-     * @param <X>         the type of the left value in the resulting {@code Either}
-     * @param <Y>         the type of the right value in the resulting {@code Either}
-     * @return a new {@code Either} instance with the transformed value
+     * @param leftMapper  the function for a left value
+     * @param rightMapper the function for a right value
+     * @param <X>         the new left type
+     * @param <Y>         the new right type
+     * @return a {@code Left} or {@code Right} of the mapped value
+     * @throws NullPointerException if a mapper is null
      */
-    default <X extends @Nullable Object, Y extends @Nullable Object> Either<X, Y> bimap(Function<? super L, ? extends X> leftMapper, Function<? super R, ? extends Y> rightMapper) {
+    default <X extends @Nullable Object, Y extends @Nullable Object> Either<X, Y> mapBoth(Function<? super L, ? extends X> leftMapper, Function<? super R, ? extends Y> rightMapper) {
         Objects.requireNonNull(leftMapper, "leftMapper is null");
         Objects.requireNonNull(rightMapper, "rightMapper is null");
         if (isRight()) {
@@ -210,92 +185,22 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Transforms an {@link Iterable} of {@code Either<L, R>} into a single {@code Either<Seq<L>, Seq<R>>}.
-     * <p>
-     * If any of the given {@code Either}s is a {@link Either.Left}, the result is a {@link Either.Left}
-     * containing a non-empty {@link Seq} of all left values.
-     * <p>
-     * If all of the given {@code Either}s are {@link Either.Right}, the result is a {@link Either.Right}
-     * containing a (possibly empty) {@link Seq} of all right values.
-     *
+     * Turns many {@code Either}s into one {@code Either} of all their right values: {@code Right} of a {@link Seq}
+     * of the values in iteration order when every element is a {@code Right}, otherwise the first {@code Left}
+     * in iteration order. It stops at that first {@code Left}; collecting every left value is what
+     * {@link Validation} is for. The empty iterable gives {@code Right} of the empty {@code Seq}.
      * <pre>{@code
-     * // = Right(Seq())
-     * Either.sequence(List.empty())
-     *
-     * // = Right(Seq(1, 2))
-     * Either.sequence(List.of(Either.right(1), Either.right(2)))
-     *
-     * // = Left(Seq("x"))
-     * Either.sequence(List.of(Either.right(1), Either.left("x")))
+     * Either.collectAll(List.of(Either.right(1), Either.right(2)));                     // = Right(Seq(1, 2))
+     * Either.collectAll(List.of(Either.right(1), Either.left("x1"), Either.left("x2"))); // = Left("x1")
      * }</pre>
      *
-     * @param eithers an {@link Iterable} of {@code Either} instances
-     * @param <L>     the common type of left values
-     * @param <R>     the common type of right values
-     * @return an {@code Either} containing a {@link Seq} of left values if any {@code Either} was a {@link Either.Left},
-     *         otherwise a {@link Seq} of right values
+     * @param eithers the {@code Either}s to collect
+     * @param <L>     the left type
+     * @param <R>     the right type
+     * @return {@code Right} of all the right values, or the first {@code Left}
      * @throws NullPointerException if {@code eithers} is null
      */
-    @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<Seq<L>, Seq<R>> sequence(Iterable<? extends Either<? extends L, ? extends R>> eithers) {
-        Objects.requireNonNull(eithers, "eithers is null");
-        return Iterator.ofAll((Iterable<Either<L, R>>) eithers)
-          .partition(Either::isLeft)
-          .apply((leftPartition, rightPartition) -> leftPartition.hasNext()
-            ? Either.left(leftPartition.map(Either::getLeft).toVector())
-            : Either.right(rightPartition.map(Either::get).toVector())
-          );
-    }
-
-    /**
-     * Transforms an {@link Iterable} of values into a single {@code Either<Seq<L>, Seq<R>>} by applying a mapping function
-     * that returns an {@code Either} for each value.
-     * <p>
-     * If the mapper returns any {@link Either.Left}, the resulting {@code Either} is a {@link Either.Left}
-     * containing a {@link Seq} of all left values. Otherwise, the result is a {@link Either.Right} containing
-     * a {@link Seq} of all right values.
-     *
-     * @param values an {@code Iterable} of values to map
-     * @param mapper a function mapping each value to an {@code Either<L, R>}
-     * @param <L>    the type of left values
-     * @param <R>    the type of right values
-     * @param <T>    the type of the input values
-     * @return a single {@code Either} containing a {@link Seq} of left or right results
-     * @throws NullPointerException if {@code values} or {@code mapper} is null
-     */
-    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<Seq<L>, Seq<R>> traverse(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
-        Objects.requireNonNull(values, "values is null");
-        Objects.requireNonNull(mapper, "mapper is null");
-        return sequence(Iterator.ofAll(values).map(mapper));
-    }
-
-    /**
-     * Transforms an {@link Iterable} of {@code Either<L, R>} into a single {@code Either<L, Seq<R>>}.
-     * <p>
-     * If any of the given {@code Either}s is a {@link Either.Left}, the result is a {@link Either.Left}
-     * containing the first left value encountered in iteration order.
-     * <p>
-     * If all of the given {@code Either}s are {@link Either.Right}, the result is a {@link Either.Right}
-     * containing a (possibly empty) {@link Seq} of all right values.
-     *
-     * <pre>{@code
-     * // = Right(Seq())
-     * Either.sequenceRight(List.empty())
-     *
-     * // = Right(Seq(1, 2))
-     * Either.sequenceRight(List.of(Either.right(1), Either.right(2)))
-     *
-     * // = Left("x1")
-     * Either.sequenceRight(List.of(Either.right(1), Either.left("x1"), Either.left("x2")))
-     * }</pre>
-     *
-     * @param eithers an {@link Iterable} of {@code Either} instances
-     * @param <L>     the type of left values
-     * @param <R>     the type of right values
-     * @return an {@code Either} containing either the first left value if present, or a {@link Seq} of all right values
-     * @throws NullPointerException if {@code eithers} is null
-     */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Seq<R>> sequenceRight(Iterable<? extends Either<? extends L, ? extends R>> eithers) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Seq<R>> collectAll(Iterable<? extends Either<? extends L, ? extends R>> eithers) {
         Objects.requireNonNull(eithers, "eithers is null");
         Vector<R> rightValues = Vector.empty();
         for (Either<? extends L, ? extends R> either : eithers) {
@@ -309,27 +214,25 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Transforms an {@link Iterable} of values into a single {@code Either<L, Seq<R>>} by applying a mapping
-     * function that returns an {@code Either} for each element.
-     * <p>
-     * If the mapper returns any {@link Either.Left}, the result is a {@link Either.Left} containing the first
-     * left value encountered in iteration order.
-     * <p>
-     * If the mapper returns only {@link Either.Right}s, the result is a {@link Either.Right} containing a
-     * (possibly empty) {@link Seq} of all right values.
+     * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
+     * {@code Right} of a {@link Seq} of the mapped values when every call returns a {@code Right}, otherwise the
+     * first {@code Left}. The mapper is not called for the elements after that one.
+     * <pre>{@code
+     * Either.forEach(List.of("1", "2"), s -> parse(s)); // = Right(Seq(1, 2)) when both parse
+     * }</pre>
      *
-     * @param values an {@code Iterable} of values to map
-     * @param mapper a function mapping each value to an {@code Either<L, R>}
-     * @param <L>    the type of left values
-     * @param <R>    the type of right values
-     * @param <T>    the type of the input values
-     * @return an {@code Either} containing either the first left value if present, or a {@link Seq} of all right values
+     * @param values the elements to map
+     * @param mapper a function from an element to an {@code Either}; it must not return {@code null}
+     * @param <L>    the left type
+     * @param <R>    the right type
+     * @param <T>    the element type
+     * @return {@code Right} of all the mapped values, or the first {@code Left}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<L, Seq<R>> traverseRight(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
+    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<L, Seq<R>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return sequenceRight(Iterator.ofAll(values).map(mapper));
+        return collectAll(Iterator.ofAll(values).map(mapper));
     }
 
     /**
@@ -374,12 +277,13 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Returns the right value of this {@code Either}, or an alternative value if this is a {@link Either.Left}.
+     * Returns the right value, or the value {@code other} computes from the left value if this is a {@code Left}.
      *
-     * @param other a function that converts a left value to an alternative right value
-     * @return the right value if present, otherwise the alternative value produced by applying {@code other} to the left value
+     * @param other a function from the left value to a replacement right value, called only for a {@code Left}
+     * @return the right value if present, otherwise {@code other.apply(getLeft())}
+     * @throws NullPointerException if {@code other} is null
      */
-    default R getOrElseGet(Function<? super L, ? extends R> other) {
+    default R getOrElse(Function<? super L, ? extends R> other) {
         Objects.requireNonNull(other, "other is null");
         if (isRight()) {
             return get();
@@ -434,19 +338,6 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Executes the given action on the left value if this {@code Either} is a {@link Either.Left}; does nothing
-     * if it is a {@link Either.Right}.
-     *
-     * @param action a consumer that processes the left value
-     */
-    default void orElseRun(Consumer<? super L> action) {
-        Objects.requireNonNull(action, "action is null");
-        if (isLeft()) {
-            action.accept(getLeft());
-        }
-    }
-
-    /**
      * Returns this {@code Either} if it is a {@link Either.Right}, otherwise returns the given {@code other} Either.
      *
      * @param other an alternative {@code Either}
@@ -471,12 +362,12 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Swaps the sides of this {@code Either}, converting a {@link Either.Left} to a {@link Either.Right}
-     * and vice versa.
+     * Exchanges the sides: a {@code Left(l)} becomes {@code Right(l)}, a {@code Right(r)} becomes {@code Left(r)}.
+     * Useful to run the right-biased operations on the left value, then {@code flip()} back.
      *
-     * @return a new {@code Either} with the left and right values swapped
+     * @return this {@code Either} with its sides exchanged
      */
-    default Either<R, L> swap() {
+    default Either<R, L> flip() {
         if (isRight()) {
             return new Left<>(get());
         } else {
@@ -619,65 +510,6 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Transforms this {@code Either} into a value of type {@code U} using the given function.
-     *
-     * <pre>{@code
-     * // = "R:1"
-     * Either.right(1).transform(e -> e.fold(l -> "L:" + l, r -> "R:" + r));
-     *
-     * // = "L:error"
-     * Either.left("error").transform(e -> e.fold(l -> "L:" + l, r -> "R:" + r));
-     * }</pre>
-     *
-     * @param f   a function to transform this {@code Either}
-     * @param <U> the type of the result
-     * @return the result of applying {@code f} to this {@code Either}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U extends @Nullable Object> U transform(Function<? super Either<L, R>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
-    /**
-     * Filters this right-biased {@code Either} by testing the given predicate against the right value.
-     * <p>
-     * If this {@code Either} is a {@link Either.Left}, or a {@link Either.Right} whose value satisfies
-     * the predicate, {@code Option.some(this)} is returned. {@link Option#none()} is returned only if
-     * this is a {@link Either.Right} whose value does not satisfy the predicate.
-     * <p>
-     * Note that a {@code Left} always passes the filter unchanged and the predicate is not evaluated.
-     * Like {@code map} and {@code flatMap}, {@code filter} operates on the right side only and never
-     * discards a {@code Left}: the resulting {@link Option#none()} carries no left value, so mapping a
-     * {@code Left} to it would silently lose the left value and make a rejected right value
-     * indistinguishable from an already-present {@code Left}.
-     *
-     * <pre>{@code
-     * // = Some(Right(42))
-     * Either.right(42).filter(i -> i > 0);
-     *
-     * // = None
-     * Either.right(42).filter(i -> i < 0);
-     *
-     * // = Some(Left("error")), predicate is not evaluated
-     * Either.left("error").filter(i -> false);
-     * }</pre>
-     *
-     * To fall back to a {@code Left} instead of {@code None} when the predicate rejects the right value,
-     * use {@link #filterOrElse(Predicate, Function)}. To obtain {@code None} for a {@code Left} as well,
-     * use {@code either.toOption().filter(predicate)}.
-     *
-     * @param predicate a predicate to test the right value
-     * @return {@code Option.some(this)} if this is a {@code Left} or the right value satisfies the predicate, {@link Option#none()} otherwise
-     * @throws NullPointerException if {@code predicate} is null
-     * @see #filterOrElse(Predicate, Function)
-     */
-    default Option<Either<L, R>> filter(Predicate<? super R> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return isLeft() || predicate.test(get()) ? Option.some(this) : Option.none();
-    }
-
-    /**
      * Filters this right-biased {@code Either} using the given predicate.
      * <p>
      * If this {@code Either} is a {@link Either.Right} and the predicate evaluates to {@code false},
@@ -712,13 +544,14 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Performs the given action on the right value if this is a {@link Either.Right}; does nothing for a {@code Left}.
+     * Runs {@code action} on the right value if this is a {@code Right} and returns this {@code Either} unchanged;
+     * does nothing for a {@code Left}. Whatever the action throws propagates to the caller.
      *
-     * @param action a consumer of the right value
+     * @param action what to do with the right value
      * @return this {@code Either}
      * @throws NullPointerException if {@code action} is null
      */
-    default Either<L, R> peek(Consumer<? super R> action) {
+    default Either<L, R> tap(Consumer<? super R> action) {
         Objects.requireNonNull(action, "action is null");
         if (isRight()) {
             action.accept(get());
@@ -727,14 +560,14 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Performs the given action on the left value if this is a {@link Either.Left}.
-     * <p>
-     * If this is a {@link Either.Right}, no action is performed.
+     * Runs {@code action} on the left value if this is a {@code Left} and returns this {@code Either} unchanged;
+     * does nothing for a {@code Right}. The counterpart of {@link #tap(Consumer)}.
      *
-     * @param action a consumer that processes the left value
+     * @param action what to do with the left value
      * @return this {@code Either}
+     * @throws NullPointerException if {@code action} is null
      */
-    default Either<L, R> peekLeft(Consumer<? super L> action) {
+    default Either<L, R> tapLeft(Consumer<? super L> action) {
         Objects.requireNonNull(action, "action is null");
         if (isLeft()) {
             action.accept(getLeft());

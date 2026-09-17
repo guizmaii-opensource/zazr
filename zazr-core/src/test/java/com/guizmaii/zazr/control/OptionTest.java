@@ -53,19 +53,16 @@ public class OptionTest {
         @Test
         public void shouldWrapIfTrue() {
             assertThat(Option.when(true, () -> 1)).isEqualTo(Option.some(1));
-            assertThat(Option.when(true, 1)).isEqualTo(Option.some(1));
         }
 
         @Test
         public void shouldRejectNullIfTrue() {
             assertThatThrownBy(() -> Option.when(true, () -> null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> Option.when(true, (Object) null)).isInstanceOf(NullPointerException.class);
         }
 
         @Test
         public void shouldNotWrapIfFalse() {
             assertThat(Option.when(false, () -> null)).isEqualTo(Option.none());
-            assertThat(Option.when(false, (Object) null)).isEqualTo(Option.none());
         }
 
         @Test
@@ -103,11 +100,11 @@ public class OptionTest {
     }
 
     @Nested
-    class SequenceTests {
+    class CollectAllTests {
         @Test
         public void shouldConvertListOfNonEmptyOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.some("b"), Option.some("c"));
-            final Option<Seq<String>> reducedOption = Option.sequence(options);
+            final Option<Seq<String>> reducedOption = Option.collectAll(options);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
@@ -116,41 +113,41 @@ public class OptionTest {
         @Test
         public void shouldConvertListOfEmptyOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
-            final Option<Seq<String>> option = Option.sequence(options);
+            final Option<Seq<String>> option = Option.collectAll(options);
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldConvertListOfMixedOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
-            final Option<Seq<String>> option = Option.sequence(options);
+            final Option<Seq<String>> option = Option.collectAll(options);
             assertThat(option instanceof Option.None).isTrue();
         }
     }
 
     @Nested
-    class TraverseTests {
+    class ForEachTests {
         @Test
-        public void shouldTraverseListOfNonEmptyOptionsToOptionOfList() {
+        public void shouldForEachListOfNonEmptyOptionsToOptionOfList() {
             final java.util.List<String> options = Arrays.asList("a", "b", "c");
-            final Option<Seq<String>> reducedOption = Option.traverse(options, Option::some);
+            final Option<Seq<String>> reducedOption = Option.forEach(options, Option::some);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
         }
 
         @Test
-        public void shouldTraverseListOfEmptyOptionsToOptionOfList() {
+        public void shouldForEachListOfEmptyOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
-            final Option<Seq<String>> option = Option.traverse(options, Function.identity());
+            final Option<Seq<String>> option = Option.forEach(options, Function.identity());
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
-        public void shouldTraverseListOfMixedOptionsToOptionOfList() {
+        public void shouldForEachListOfMixedOptionsToOptionOfList() {
             final java.util.List<String> options = Arrays.asList("a", "b", "c");
             final Option<Seq<String>> option =
-                Option.traverse(options, x -> x.equals("b") ? Option.none() : Option.some(x));
+                Option.forEach(options, x -> x.equals("b") ? Option.none() : Option.some(x));
             assertThat(option instanceof Option.None).isTrue();
         }
     }
@@ -298,12 +295,12 @@ public class OptionTest {
     }
 
     @Nested
-    class OnemptyTests {
+    class TapNoneTests {
         @Test
-        public void shouldThrowNullPointerExceptionWhenNullOnEmptyActionPassed() {
+        public void shouldThrowNullPointerExceptionWhenNullTapNoneActionPassed() {
             try {
                 final Option<String> none = Option.none();
-                none.onEmpty(null);
+                none.tapNone(null);
                 Assertions.fail("No exception was thrown");
             } catch (NullPointerException exc) {
                 assertThat(exc.getMessage()).isEqualTo("action is null");
@@ -313,16 +310,16 @@ public class OptionTest {
         @Test
         public void shouldExecuteRunnableWhenOptionIsEmpty() {
             final AtomicBoolean state = new AtomicBoolean();
-            final Option<?> option = Option.none().onEmpty(() -> state.set(false));
+            final Option<?> option = Option.none().tapNone(() -> state.set(false));
             assertThat(state.get()).isFalse();
             assertThat(option).isSameAs(Option.none());
         }
 
         @Test
-        public void shouldNotThrowExceptionIfOnEmptySetAndOptionIsSome() {
+        public void shouldNotRunTapNoneActionOnSome() {
             try {
                 final Option<String> none = Option.some("value");
-                none.onEmpty(() -> {
+                none.tapNone(() -> {
                     throw new RuntimeException("Exception from empty option!");
                 });
             } catch (RuntimeException exc) {
@@ -677,19 +674,19 @@ public class OptionTest {
     }
 
     @Nested
-    class PeekTests {
+    class TapTests {
         @Test
-        public void shouldConsumePresentValueOnPeekWhenValueIsDefined() {
+        public void shouldConsumePresentValueOnTapWhenValueIsDefined() {
             final int[] actual = new int[] { -1 };
-            final Option<Integer> testee = Option.some(1).peek(i -> actual[0] = i);
+            final Option<Integer> testee = Option.some(1).tap(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(1);
             assertThat(testee).isEqualTo(Option.some(1));
         }
 
         @Test
-        public void shouldNotConsumeAnythingOnPeekWhenValueIsNotDefined() {
+        public void shouldNotConsumeAnythingOnTapWhenValueIsNotDefined() {
             final int[] actual = new int[] { -1 };
-            final Option<Integer> testee = Option.<Integer> none().peek(i -> actual[0] = i);
+            final Option<Integer> testee = Option.<Integer> none().tap(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(-1);
             assertThat(testee).isEqualTo(Option.none());
         }
@@ -697,33 +694,13 @@ public class OptionTest {
         @Test
         public void shouldReturnTheSameInstance() {
             final Option<Integer> some = Option.some(1);
-            assertThat(some.peek(i -> {})).isSameAs(some);
-            assertThat(Option.none().peek(i -> {})).isSameAs(Option.none());
+            assertThat(some.tap(i -> {})).isSameAs(some);
+            assertThat(Option.none().tap(i -> {})).isSameAs(Option.none());
         }
 
         @Test
         public void shouldThrowOnNullAction() {
-            assertThrows(NullPointerException.class, () -> Option.some(1).peek(null));
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        @Test
-        public void shouldThrowExceptionOnNullTransformFunction() {
-            assertThrows(NullPointerException.class, () -> Option.some(1).transform(null));
-        }
-
-        @Test
-        public void shouldApplyTransformFunctionToSome() {
-            final Option<Integer> option = Option.some(1);
-            final Function<Option<Integer>, String> f = o -> o.get().toString().concat("-transformed");
-            assertThat(option.transform(f)).isEqualTo("1-transformed");
-        }
-
-        @Test
-        public void shouldHandleTransformOnNone() {
-            assertThat(Option.none().<String> transform(self -> self.isEmpty() ? "ok" : "failed")).isEqualTo("ok");
+            assertThrows(NullPointerException.class, () -> Option.some(1).tap(null));
         }
     }
 
@@ -829,6 +806,48 @@ public class OptionTest {
         public void shouldThrowOnNullArguments() {
             assertThrows(NullPointerException.class, () -> Option.some(1).fold(null, i -> i));
             assertThrows(NullPointerException.class, () -> Option.some(1).fold(() -> 1, null));
+        }
+    }
+
+    @Nested
+    class CollectTests {
+        @Test
+        public void shouldCollectSomeToSome() {
+            assertThat(Option.some(2).collect(i -> Option.some(i * 10))).isEqualTo(Option.some(20));
+        }
+
+        @Test
+        public void shouldCollectSomeToNone() {
+            assertThat(Option.some(2).collect(i -> Option.none())).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldNotCallTheMapperOnNone() {
+            assertThat(Option.<Integer>none().collect(i -> {
+                throw new AssertionError("must not be called");
+            })).isSameAs(Option.none());
+        }
+
+        @Test
+        public void shouldCollectWithASwitchInsideTheLambda() {
+            final Option<Object> shape = Option.some("circle");
+            final Option<Integer> actual = shape.collect(s -> switch (s) {
+                case String str -> Option.some(str.length());
+                default -> Option.none();
+            });
+            assertThat(actual).isEqualTo(Option.some(6));
+        }
+
+        @Test
+        public void shouldRejectANullOptionFromTheMapper() {
+            assertThatThrownBy(() -> Option.some(1).collect(i -> null))
+              .isInstanceOf(NullPointerException.class)
+              .hasMessage("Option.collect: mapper returned null");
+        }
+
+        @Test
+        public void shouldThrowOnNullMapper() {
+            assertThrows(NullPointerException.class, () -> Option.some(1).collect(null));
         }
     }
 }

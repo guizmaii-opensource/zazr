@@ -64,21 +64,21 @@ public class Euler26Test {
         return Tuple.of(
                 divisor,
                 recurringCycleLengthInDecimalFractionPart(
-                        Vector.ofAll(BigDecimal.ONE.divide(BigDecimal.valueOf(divisor), 2000, RoundingMode.UP).toString().toCharArray())
-                                .transform(removeLeadingZeroAndDecimalPoint())
-                                .transform(removeRoundingDigit())
-                                .transform(removeTrailingZeroes())
+                        removeLeadingZeroAndDecimalPoint()
+                                .andThen(removeRoundingDigit())
+                                .andThen(removeTrailingZeroes())
+                                .apply(Vector.ofAll(BigDecimal.ONE.divide(BigDecimal.valueOf(divisor), 2000, RoundingMode.UP).toString().toCharArray()))
                                 .mkString()
                 ));
     }
 
     private static int recurringCycleLengthInDecimalFractionPart(String decimalFractionPart) {
-        return Vector.ofAll(decimalFractionPart.toCharArray())
-                .reverse()
-                .toStream() // Stream is lazy evaluated which ensures the rest is only evaluated until the recurring cycle is found.
-                .transform(createCandidateCycles())
-                .transform(removeCandidatesLongerThanHalfTheFullString(decimalFractionPart))
-                .transform(findFirstRecurringCycle(decimalFractionPart))
+        // Stream is lazy, so the rest is only evaluated until the recurring cycle is found.
+        final Stream<Character> reversed = Vector.ofAll(decimalFractionPart.toCharArray()).reverse().toStream();
+        return createCandidateCycles()
+                .andThen(removeCandidatesLongerThanHalfTheFullString(decimalFractionPart))
+                .andThen(findFirstRecurringCycle(decimalFractionPart))
+                .apply(reversed)
                 .map(String::length)
                 .getOrElse(0);
     }

@@ -132,17 +132,23 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Reduces many {@code Validation} instances into a single {@code Validation} by transforming an
-     * {@code Iterable<Validation<? extends T>>} into a {@code Validation<Seq<T>>}.
+     * Turns many {@code Validation}s into one {@code Validation} of all their values, keeping every error:
+     * {@code Valid} of a {@link Seq} of the values in iteration order when every element is a {@code Valid},
+     * otherwise {@code Invalid} of the errors of all the {@code Invalid} elements, concatenated in iteration order.
+     * Unlike {@link Either#collectAll(Iterable)}, it does not stop at the first error. The empty iterable gives
+     * {@code Valid} of the empty {@code Seq}.
+     * <pre>{@code
+     * Validation.collectAll(List.of(Validation.valid(1), Validation.valid(2)));                          // = Valid(Seq(1, 2))
+     * Validation.collectAll(List.of(Validation.invalid(List.of("a")), Validation.invalid(List.of("b")))); // = Invalid(Seq("a", "b"))
+     * }</pre>
      *
-     * @param <E>    value type in the case of invalid
-     * @param <T>    value type in the case of valid
-     * @param values An iterable of Validation instances.
-     * @return A valid Validation of a sequence of values if all Validation instances are valid
-     * or an invalid Validation containing an accumulated List of errors.
-     * @throws NullPointerException if values is null
+     * @param values the {@code Validation}s to collect; each error is a {@code Seq} of errors
+     * @param <E>    the error type
+     * @param <T>    the value type
+     * @return {@code Valid} of all the values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code values} is null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<Seq<E>, Seq<T>> sequence(Iterable<? extends Validation<? extends Seq<? extends E>, ? extends T>> values) {
+    static <E extends @Nullable Object, T extends @Nullable Object> Validation<Seq<E>, Seq<T>> collectAll(Iterable<? extends Validation<? extends Seq<? extends E>, ? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
         List<E> errors = List.empty();
         List<T> list = List.empty();
@@ -157,23 +163,28 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Maps the values of an iterable to a sequence of mapped values into a single {@code Validation} by
-     * transforming an {@code Iterable<? extends T>} into a {@code Validation<Seq<U>>}.
+     * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
+     * {@code Valid} of a {@link Seq} of the mapped values when every call returns a {@code Valid}, otherwise
+     * {@code Invalid} of all the errors. The mapper is called for every element.
+     * <pre>{@code
+     * Validation.forEach(List.of("1", "x"), s -> parse(s)); // = Invalid(Seq("x is not a number"))
+     * }</pre>
      *
-     * @param values   An {@code Iterable} of values.
-     * @param mapper   A mapper of values to Validations
-     * @param <T>      The type of the given values.
-     * @param <E>      The mapped error value type.
-     * @param <U>      The mapped valid value type.
-     * @return A {@code Validation} of a {@link Seq} of results.
-     * @throws NullPointerException if values or mapper is null.
+     * @param values the elements to map
+     * @param mapper a function from an element to a {@code Validation} whose error is a {@code Seq} of errors; it
+     *               must not return {@code null}
+     * @param <E>    the error type
+     * @param <T>    the element type
+     * @param <U>    the mapped value type
+     * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
+     * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object, U extends @Nullable Object> Validation<Seq<E>, Seq<U>> traverse(
-      Iterable<? extends T> values, 
+    static <E extends @Nullable Object, T extends @Nullable Object, U extends @Nullable Object> Validation<Seq<E>, Seq<U>> forEach(
+      Iterable<? extends T> values,
       Function<? super T, ? extends Validation<? extends Seq<? extends E>, ? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return sequence(Iterator.ofAll(values).map(mapper));
+        return collectAll(Iterator.ofAll(values).map(mapper));
     }
 
     /**
@@ -192,47 +203,25 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Decides which {@code Validation<E, T>} to return, depending on the test value -
-     * if it's true, the result will be a {@link Validation.Valid},
-     * if it's false - the result will be a {@link Validation.Invalid}
+     * Tests {@code value} with {@code predicate}: {@code Valid(value)} if it holds, {@code Invalid(ifFalse.get())}
+     * if it does not. The supplier is called only when the predicate fails.
+     * <pre>{@code
+     * Validation.fromPredicate(age, a -> a >= 18, () -> "minor"); // = Valid(age) or Invalid("minor")
+     * }</pre>
      *
-     * @param test   A {@code boolean} value to evaluate
-     * @param valid  A {@code Supplier<? extends T>} supplier of valid value, called if test is true
-     * @param error  A {@code Supplier<? extends E>} supplier of error, called if test is false
-     * @param <E>    Type of error
-     * @param <T>    Type of valid value
-     *
-     * @return {@code Validation<E, T>} with valid value or error, depending on the test condition evaluation
-     *
-     * @throws NullPointerException if any of the arguments is null, or if test is false and {@code error} supplies null
+     * @param value     the value to test, must not be {@code null}
+     * @param predicate the condition the value has to satisfy
+     * @param ifFalse   supplies the error when the predicate fails; it must not return {@code null}
+     * @param <E>       the error type
+     * @param <T>       the value type
+     * @return {@code Valid(value)} if the predicate holds, otherwise {@code Invalid} of the supplied error
+     * @throws NullPointerException if any argument is null, or if {@code ifFalse} supplies null
      */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> cond(boolean test, Supplier<? extends T> valid, Supplier<? extends E> error) {
-        Objects.requireNonNull(valid, "valid is null");
-        Objects.requireNonNull(error, "error is null");
-
-        return test ? valid(valid.get()) : invalid(error.get());
-    }
-
-    /**
-     * Decides which {@code Validation<E, T>} to return, depending on the test value -
-     * if it's true, the result will be a {@link Validation.Valid},
-     * if it's false - the result will be a {@link Validation.Invalid}
-     *
-     * @param test   A {@code boolean} value to evaluate
-     * @param valid  A {@code T} valid value, used as the result if test is true (required to be non-null regardless of test)
-     * @param error  An {@code E} error value, used as the result if test is false (required to be non-null regardless of test)
-     * @param <E>    Type of error
-     * @param <T>    Type of valid value
-     *
-     * @return {@code Validation<E, T>} with valid value or error, depending on the test condition evaluation
-     *
-     * @throws NullPointerException if any of the arguments is null
-     */
-    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> cond(boolean test, @NonNull T valid, @NonNull E error) {
-        Objects.requireNonNull(valid, "valid is null");
-        Objects.requireNonNull(error, "error is null");
-
-        return test ? valid(valid) : invalid(error);
+    static <E extends @Nullable Object, T extends @Nullable Object> Validation<E, T> fromPredicate(T value, Predicate<? super T> predicate, Supplier<? extends E> ifFalse) {
+        Objects.requireNonNull(value, "value is null");
+        Objects.requireNonNull(predicate, "predicate is null");
+        Objects.requireNonNull(ifFalse, "ifFalse is null");
+        return predicate.test(value) ? valid(value) : invalid(ifFalse.get());
     }
 
     /**
@@ -525,19 +514,15 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Gets the value if it is a Valid or an value calculated from the error.
+     * Returns the value, or the value {@code other} computes from the error if this is an {@code Invalid}.
      *
-     * @param other a function which converts an error to an alternative value
-     * @return the value, if the underlying Validation is a Valid, or else the alternative value
-     * provided by {@code other} by applying the error.
+     * @param other a function from the error to a replacement value, called only for an {@code Invalid}
+     * @return the value of this {@code Valid}, otherwise {@code other.apply(getError())}
+     * @throws NullPointerException if {@code other} is null
      */
-    default T getOrElseGet(Function<? super E, ? extends T> other) {
+    default T getOrElse(Function<? super E, ? extends T> other) {
         Objects.requireNonNull(other, "other is null");
-        if (isValid()) {
-            return get();
-        } else {
-            return other.apply(getError());
-        }
+        return isValid() ? get() : other.apply(getError());
     }
 
     /**
@@ -691,12 +676,12 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Flip the valid/invalid values for this Validation. If this is a Valid&lt;E,T&gt;, returns Invalid&lt;T,E&gt;.
-     * Or if this is an Invalid&lt;E,T&gt;, return a Valid&lt;T,E&gt;.
+     * Exchanges the sides: a {@code Valid(v)} becomes {@code Invalid(v)}, an {@code Invalid(e)} becomes
+     * {@code Valid(e)}. Useful to run the value-side operations on the error, then {@code flip()} back.
      *
-     * @return a flipped instance of Validation
+     * @return this {@code Validation} with its sides exchanged
      */
-    default Validation<T, E> swap() {
+    default Validation<T, E> flip() {
         if (isInvalid()) {
             final E error = this.getError();
             return Validation.valid(error);
@@ -720,22 +705,19 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Whereas map only performs a mapping on a valid Validation, and mapError performs a mapping on an invalid
-     * Validation, bimap allows you to provide mapping actions for both, and will give you the result based
-     * on what type of Validation this is. Without this, you would have to do something like:
-     *
-     * validation.map(...).mapError(...);
+     * Maps both sides at once: {@code errorMapper} is applied to an {@code Invalid}, {@code valueMapper} to a
+     * {@code Valid}; only one of them runs. The same as {@code mapError(errorMapper).map(valueMapper)}.
      * <p>
      * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Valid} nor {@code Invalid} holds {@code null} (design 3.9).
      *
-     * @param <E2>        type of the mapping result if this is an invalid
-     * @param <T2>        type of the mapping result if this is a valid
-     * @param errorMapper the invalid mapping operation
-     * @param valueMapper the valid mapping operation
-     * @return an instance of Validation&lt;E2,T2&gt;
-     * @throws NullPointerException if errorMapper or valueMapper is null, or if this is an Invalid and errorMapper returns null
+     * @param <E2>        the new error type
+     * @param <T2>        the new value type
+     * @param errorMapper the function for an error
+     * @param valueMapper the function for a value
+     * @return a {@code Valid} or {@code Invalid} of the mapped value
+     * @throws NullPointerException if a mapper is null
      */
-    default <E2 extends @Nullable Object, T2 extends @Nullable Object> Validation<E2, T2> bimap(Function<? super E, ? extends E2> errorMapper, Function<? super T, ? extends T2> valueMapper) {
+    default <E2 extends @Nullable Object, T2 extends @Nullable Object> Validation<E2, T2> mapBoth(Function<? super E, ? extends E2> errorMapper, Function<? super T, ? extends T2> valueMapper) {
         Objects.requireNonNull(errorMapper, "errorMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         if (isInvalid()) {
@@ -845,13 +827,14 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
     }
 
     /**
-     * Performs the given action on the value if this is a {@code Valid}; does nothing for an {@code Invalid}.
+     * Runs {@code action} on the value if this is a {@code Valid} and returns this {@code Validation} unchanged;
+     * does nothing for an {@code Invalid}. Whatever the action throws propagates to the caller.
      *
-     * @param action a consumer of the value
+     * @param action what to do with the value
      * @return this {@code Validation}
-     * @throws NullPointerException if action is null
+     * @throws NullPointerException if {@code action} is null
      */
-    default Validation<E, T> peek(Consumer<? super T> action) {
+    default Validation<E, T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isValid()) {
             action.accept(get());

@@ -100,9 +100,6 @@ public abstract class AbstractTraversableTest {
     // TODO: Eliminate this method. Switching the behavior of unit tests is evil. Tests should not contain additional logic. Also it seems currently to be used in different semantic contexts.
     abstract protected boolean useIsEqualToInsteadOfIsSameAs();
 
-    // returns the peek result of the specific Traversable implementation
-    abstract protected int getPeekNonNilPerformingAnAction();
-
     /**
      * The type name {@code toString()} prints before the parenthesised elements, e.g. {@code List} for
      * {@code List(1, 2)}, taken from the empty instance; a test class whose empty and non-empty instances print
@@ -113,12 +110,21 @@ public abstract class AbstractTraversableTest {
         return empty.substring(0, empty.length() - "()".length());
     }
 
+    // what the type guarantees, as the deleted isTraversableAgain/isOrdered/isDistinct/hasDefiniteSize flags said
     protected final boolean isTraversableAgain() {
-        return empty().isTraversableAgain();
+        return !(empty() instanceof Iterator);
     }
 
     protected final boolean isOrdered() {
-        return empty().isOrdered();
+        return empty() instanceof Ordered;
+    }
+
+    protected final boolean isDistinct() {
+        return empty() instanceof Set || empty() instanceof IntMap;
+    }
+
+    protected final boolean hasDefiniteSize() {
+        return !(empty() instanceof Iterator) && !(empty() instanceof Stream);
     }
 
     protected abstract <T> Collector<T, ?, ? extends Traversable<T>> collector();
@@ -442,7 +448,7 @@ public abstract class AbstractTraversableTest {
         final Traversable<Integer> actual = testee.distinct();
         final Traversable<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
-        if (testee.isDistinct()) {
+        if (isDistinct()) {
             assertThat(actual).isSameAs(testee);
         }
     }
@@ -805,6 +811,68 @@ public abstract class AbstractTraversableTest {
         assertThat(of(1, 2, 3).flatMap(v -> of(v, 0))).isEqualTo(of(1, 0, 2, 0, 3, 0));
     }
 
+    // -- collect
+
+    @TestTemplate
+    public void shouldCollectNothingFromEmpty() {
+        final AtomicInteger calls = new AtomicInteger();
+        final Traversable<Integer> actual = this.<Integer>empty().collect(i -> {
+            calls.incrementAndGet();
+            return Option.some(i);
+        });
+        assertThat(actual).isEqualTo(empty());
+        assertThat(calls.get()).isEqualTo(0);
+    }
+
+    @TestTemplate
+    public void shouldCollectNothingWhenEveryElementIsDropped() {
+        assertThat(of(1, 2, 3).collect(i -> Option.none())).isEqualTo(empty());
+    }
+
+    @TestTemplate
+    public void shouldCollectEveryElementWhenEveryElementIsKept() {
+        assertThat(of(1, 2, 3).collect(i -> Option.some(i * 10))).isEqualTo(of(10, 20, 30));
+    }
+
+    @TestTemplate
+    public void shouldCollectTheKeptElementsInOrder() {
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+    }
+
+    @TestTemplate
+    public void shouldCollectWithASwitchInsideTheLambda() {
+        final Traversable<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+            case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
+            default -> Option.none();
+        });
+        assertThat(actual).isEqualTo(of(10, 30));
+    }
+
+    @TestTemplate
+    public void shouldCallTheCollectMapperOncePerElement() {
+        final AtomicInteger calls = new AtomicInteger();
+        of(1, 2, 3).collect(i -> {
+            calls.incrementAndGet();
+            return i == 2 ? Option.none() : Option.some(i);
+        }).size();
+        assertThat(calls.get()).isEqualTo(3);
+    }
+
+    @TestTemplate
+    public void shouldRejectNullOptionFromCollectMapper() {
+        // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, Iterator...)
+        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
+        assertThatThrownBy(() -> of(1).collect(i -> null).size())
+          .isInstanceOf(NullPointerException.class)
+          .hasMessage(type + ".collect: mapper returned null");
+    }
+
+    @TestTemplate
+    public void shouldThrowOnCollectWithNullMapper() {
+        final Function<Integer, Option<Integer>> mapper = null;
+        assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
+    }
+
     // -- fold
 
     @TestTemplate
@@ -960,13 +1028,6 @@ public abstract class AbstractTraversableTest {
           .map(com.guizmaii.zazr.collection.Vector::ofAll);
         final List<Traversable<Integer>> expected = List.of(com.guizmaii.zazr.collection.Vector.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
-    }
-
-    // -- hasDefiniteSize
-
-    @TestTemplate
-    public void shouldReturnSomethingOnHasDefiniteSize() {
-        empty().hasDefiniteSize();
     }
 
     // -- head
@@ -2616,7 +2677,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldConformEmptyStringRepresentation() {
         final Traversable<Object> testee = empty();
-        if (!testee.hasDefiniteSize()) {
+        if (!hasDefiniteSize()) {
             assertThat(testee.toString()).isEqualTo(stringPrefix() + "()");
             testee.size(); // evaluates all elements of lazy collections
         }
@@ -2627,7 +2688,7 @@ public abstract class AbstractTraversableTest {
     public void shouldConformNonEmptyStringRepresentation() {
         final Traversable<Object> testee = of("a", "b", "c");
         if (isTraversableAgain()) {
-            if (!testee.hasDefiniteSize()) {
+            if (!hasDefiniteSize()) {
                 assertThat(testee.toString()).isEqualTo(stringPrefix() + "(a, ?)");
                 testee.size(); // evaluates all elements of lazy collections
             }
@@ -2829,14 +2890,15 @@ public abstract class AbstractTraversableTest {
         assertThat(of(1).isEmpty()).isFalse();
     }
 
-    // -- mapTo
+    // -- as
 
     @TestTemplate
-    public void shouldExecuteMapToCorrectly() {
-        assertThat(empty().mapTo(1)).isEqualTo(empty().mapTo(2));
-        assertThat(of(2).mapTo(1)).isEqualTo(of(3).mapTo(1));
-        assertThat(of(2).mapTo(1)).isEqualTo(of(3).map(ignored -> 1));
-        assertThat(of(3).mapTo(2)).isEqualTo(of(1).map(ignored -> 2));
+    public void shouldReplaceEveryElementWithAs() {
+        assertThat(empty().as(1)).isEqualTo(empty().as(2));
+        assertThat(of(2).as(1)).isEqualTo(of(3).as(1));
+        assertThat(of(2).as(1)).isEqualTo(of(3).map(ignored -> 1));
+        assertThat(of(3).as(2)).isEqualTo(of(1).map(ignored -> 2));
+        assertThat(of(1, 2, 3).as("x")).isEqualTo(of("x", "x", "x"));
     }
 
     // -- forEach
@@ -2854,32 +2916,52 @@ public abstract class AbstractTraversableTest {
         assertThrows(NullPointerException.class, () -> of(1).forEach(null));
     }
 
-    // -- peek
+    // -- tap
 
     @TestTemplate
-    public void shouldPeekNil() {
-        assertThat(empty().peek(t -> {})).isEqualTo(empty());
+    public void shouldTapNil() {
+        assertThat(empty().tap(t -> {})).isEqualTo(empty());
     }
 
     @TestTemplate
-    public void shouldPeekNonNilPerformingNoAction() {
-        assertThat(of(1).peek(t -> {})).isEqualTo(of(1));
+    public void shouldTapNonNilPerformingNoAction() {
+        assertThat(of(1).tap(t -> {})).isEqualTo(of(1));
     }
 
     @TestTemplate
-    public void shouldPeekSingleValuePerformingAnAction() {
+    public void shouldTapSingleValuePerformingAnAction() {
         final int[] effect = {0};
-        final Traversable<Integer> actual = of(1).peek(i -> effect[0] = i);
+        final Traversable<Integer> actual = of(1).tap(i -> effect[0] = i);
         assertThat(actual).isEqualTo(of(1));
         assertThat(effect[0]).isEqualTo(1);
     }
 
     @TestTemplate
-    public void shouldPeekNonNilPerformingAnAction() {
-        final int[] effect = {0};
-        final Traversable<Integer> actual = of(1, 2, 3).peek(i -> effect[0] = i);
-        assertThat(actual).isEqualTo(of(1, 2, 3)); // traverses all elements in the lazy case
-        assertThat(effect[0]).isEqualTo(getPeekNonNilPerformingAnAction());
+    public void shouldTapEveryElement() {
+        final int[] sum = {0};
+        final Traversable<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
+        assertThat(sum[0]).isEqualTo(6);
+    }
+
+    @TestTemplate
+    public void shouldReturnThisOnTapOfEagerCollection() {
+        final Traversable<Integer> testee = of(1, 2, 3);
+        if (hasDefiniteSize()) {
+            assertThat(testee.tap(i -> {})).isSameAs(testee);
+        }
+    }
+
+    @TestTemplate
+    public void shouldThrowOnTapWithNullAction() {
+        assertThrows(NullPointerException.class, () -> of(1).tap(null));
+    }
+
+    @TestTemplate
+    public void shouldPropagateWhatTheTapActionThrows() {
+        assertThrows(IllegalStateException.class, () -> of(1, 2).tap(i -> {
+            throw new IllegalStateException();
+        }).size());
     }
 
     // -- exists

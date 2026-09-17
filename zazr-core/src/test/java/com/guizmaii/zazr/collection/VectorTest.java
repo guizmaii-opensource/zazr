@@ -119,11 +119,6 @@ public class VectorTest extends AbstractIndexedSeqTest {
         return Vector.rangeBy(from, toExclusive, step);
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
     //fixme: delete, when useIsEqualToInsteadOfIsSameAs() will be eliminated from AbstractValueTest class
     @Override
     protected boolean useIsEqualToInsteadOfIsSameAs() {
@@ -264,16 +259,6 @@ public class VectorTest extends AbstractIndexedSeqTest {
     }
 
     @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
-        }
-    }
-
-    @Nested
     class UnfoldTests {
         @Test
         public void shouldUnfoldRightToEmpty() {
@@ -382,4 +367,60 @@ public class VectorTest extends AbstractIndexedSeqTest {
         }
     }
 
+    @Nested
+    class CollectTests {
+
+        // the 32-wide trie: empty, one leaf, a full leaf, one past it (a second level), and around the third level
+        private final int[] sizes = { 0, 1, 31, 32, 33, 1023, 1024, 1025 };
+
+        @Test
+        public void shouldCollectNothingWhenEveryElementIsDroppedAtTheLeafBoundaries() {
+            for (int n : sizes) {
+                assertThat(Vector.range(0, n).collect(i -> Option.none())).isEqualTo(Vector.empty());
+            }
+        }
+
+        @Test
+        public void shouldCollectEveryElementWhenEveryElementIsKeptAtTheLeafBoundaries() {
+            for (int n : sizes) {
+                final Vector<Integer> actual = Vector.range(0, n).collect(i -> Option.some(i + 1));
+                assertThat(actual).isEqualTo(Vector.range(1, n + 1));
+                assertThat(actual.length()).isEqualTo(n);
+            }
+        }
+
+        @Test
+        public void shouldCollectTheKeptElementsAtTheLeafBoundaries() {
+            for (int n : sizes) {
+                final Vector<Integer> actual = Vector.range(0, n).collect(i -> i % 2 == 0 ? Option.some(i) : Option.none());
+                assertThat(actual).isEqualTo(Vector.range(0, n).filter(i -> i % 2 == 0));
+                assertThat(actual.length()).isEqualTo((n + 1) / 2);
+            }
+        }
+
+        @Test
+        public void shouldCollectTheSameFromObjectLeavesAndPrimitiveLeaves() {
+            final Function<Integer, Option<Integer>> mapper = i -> i % 3 == 0 ? Option.some(i * 2) : Option.none();
+            for (int n : sizes) {
+                final Vector<Integer> primitive = Vector.range(0, n); // int[] leaves
+                final Vector<Integer> boxed = Vector.ofAll(primitive.toJavaList()); // Object[] leaves
+                assertThat(boxed.collect(mapper)).isEqualTo(primitive.collect(mapper));
+            }
+        }
+
+        @Test
+        public void shouldCollectAcrossTheLeafBoundaryInOrder() {
+            assertThat(Vector.range(0, 33).collect(i -> i >= 31 ? Option.some(i) : Option.none())).isEqualTo(Vector.of(31, 32));
+        }
+
+        @Test
+        public void shouldRejectANullOptionAtEveryPosition() {
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                final NullPointerException e = assertThrows(NullPointerException.class,
+                  () -> Vector.range(0, n).collect(i -> i == last ? null : Option.some(i)));
+                assertThat(e.getMessage()).isEqualTo("Vector.collect: mapper returned null");
+            }
+        }
+    }
 }

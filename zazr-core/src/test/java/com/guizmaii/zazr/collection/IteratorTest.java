@@ -181,11 +181,6 @@ public class IteratorTest extends AbstractTraversableTest {
         return true;
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 3;
-    }
-
     @Test
     public void shouldFailOfEmptyArgList() {
         assertThrows(NoSuchElementException.class, () -> of().next());
@@ -331,15 +326,6 @@ public class IteratorTest extends AbstractTraversableTest {
         @Test
         public void shouldConcatThisNonEmptyWithNonEmpty() {
             assertThat(Iterator.of(1).concat(Iterator.of(2))).isEqualTo(Iterator.of(1, 2));
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        @Test
-        public void shouldTransform() {
-            final Iterator<?> it = Iterator.of(1, 2).transform(ii -> ii.drop(1));
-            assertThat(it).isEqualTo(Iterator.of(2));
         }
     }
 
@@ -945,14 +931,6 @@ public class IteratorTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnTrueWhenIsSequentialCalled() {
-            assertThat(of(1, 2, 3).isSequential()).isTrue();
-        }
-    }
-
-    @Nested
     class FindlastTests {
         @Test
         public void shouldRejectFindLastOfNullElement() {
@@ -1023,8 +1001,8 @@ public class IteratorTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldRejectNullResultOnMapTo() {
-        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).mapTo(null).toList());
+    public void shouldRejectNullResultOnAs() {
+        assertThatNullPointerException().isThrownBy(() -> Iterator.of(1).as(null).toList());
     }
 
     @Test
@@ -1125,5 +1103,42 @@ public class IteratorTest extends AbstractTraversableTest {
     public void shouldRejectNullFromUnfoldAtTheFunnel() {
         assertThatNullPointerException().isThrownBy(() -> Iterator.unfold(1, i -> Option.some(Tuple.of(i, (Integer) null))).next())
                 .withMessage("Iterator: element is null");
+    }
+
+    @Nested
+    class CollectTests {
+
+        @Test
+        public void shouldNotCallTheCollectMapperBeforeTheFirstElementIsRequested() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Iterator<Integer> actual = Iterator.of(1, 2, 3).collect(i -> {
+                calls.incrementAndGet();
+                return Option.some(i);
+            });
+            assertThat(calls.get()).isEqualTo(0);
+            assertThat(actual.hasNext()).isTrue();
+            assertThat(calls.get()).isEqualTo(1);
+            assertThat(actual.next()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldCallTheCollectMapperOncePerElementAcrossHasNextCalls() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Iterator<Integer> actual = Iterator.of(1, 2, 3, 4).collect(i -> {
+                calls.incrementAndGet();
+                return i % 2 == 0 ? Option.some(i) : Option.none();
+            });
+            assertThat(actual.hasNext()).isTrue();
+            assertThat(actual.hasNext()).isTrue();
+            assertThat(actual.next()).isEqualTo(2);
+            assertThat(actual.next()).isEqualTo(4);
+            assertThat(actual.hasNext()).isFalse();
+            assertThat(calls.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void shouldReturnTheEmptyIteratorForAnEmptySource() {
+            assertThat(Iterator.<Integer>empty().collect(i -> Option.some(i))).isSameAs(Iterator.empty());
+        }
     }
 }

@@ -70,7 +70,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a new {@code Map}
      * @throws NullPointerException if {@code keyMapper} or {@code valueMapper} is null
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> bimap(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
     @Override
     default boolean contains(Tuple2<K, V> element) {
@@ -244,16 +244,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     V getOrElse(K key, V defaultValue);
 
     @Override
-    default boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
-    default boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     
     Iterator<Tuple2<K, V>> iterator();
 
@@ -306,10 +296,46 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
         return (Seq<U>) iterator().map(mapper).toStream();
     }
 
+    /**
+     * Matches and transforms the entries in one pass into a {@link Seq}; see {@link #collect(BiFunction)} for a
+     * result that is a {@code Map}.
+     *
+     * @param mapper a function from an entry to {@code Some} of the collected value or {@code None}; it must not
+     *               return {@code null}
+     * @param <U>    the type of the collected values
+     * @return the collected values, in the iteration order of this {@code Map}
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an entry
+     */
+    @SuppressWarnings("unchecked")
     @Override
-    default <U extends @Nullable Object> Seq<U> mapTo(U value) {
+    default <U extends @Nullable Object> Seq<U> collect(Function<? super Tuple2<K, V>, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // one String per call, only so that a null Option is reported under the concrete map type, as the other kinds do
+        final String nullMessage = getClass().getSimpleName() + ".collect: mapper returned null";
+        return (Seq<U>) iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), nullMessage)).toStream();
+    }
+
+    @Override
+    default <U extends @Nullable Object> Seq<U> as(U value) {
         return map(ignored -> value);
     }
+
+    /**
+     * Matches and transforms the entries in one pass into a {@code Map} of the same kind: {@code mapper} returns
+     * {@code Some} of the new entry for an entry it keeps and {@code None} for one it drops. Two kept entries with
+     * the same new key keep the later one in iteration order, as {@link #map(BiFunction)} does.
+     * <pre>{@code
+     * Map<String, Integer> adults = ages.collect((name, age) -> age >= 18 ? Option.some(Tuple.of(name, age)) : Option.none());
+     * }</pre>
+     *
+     * @param mapper a function from a key and a value to {@code Some} of the new entry or {@code None}; it must not
+     *               return {@code null}
+     * @param <K2>   the new key type
+     * @param <V2>   the new value type
+     * @return a {@code Map} of the collected entries
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an entry
+     */
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper);
 
     /**
      * Maps the entries of this {@code Map} to form a new {@code Map}.
@@ -502,19 +528,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     java.util.Map<K, V> toJavaMap();
 
     /**
-     * Transforms this {@code Map}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U extends @Nullable Object> U transform(Function<? super Map<K, V>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
-    /**
      * Unzips the entries of this {@code Map} by treating each key-value pair as an element,
      * and splitting them into two separate {@code Seq} collections - one for keys and one for values.
      *
@@ -663,11 +676,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> grouped(int size);
 
     @Override
-    default boolean isDistinct() {
-        return true;
-    }
-
-    @Override
     Map<K, V> init();
 
     @Override
@@ -683,7 +691,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Tuple2<? extends Map<K, V>, ? extends Map<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
 
     @Override
-    Map<K, V> peek(Consumer<? super Tuple2<K, V>> action);
+    Map<K, V> tap(Consumer<? super Tuple2<K, V>> action);
 
     @Override
     Map<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);

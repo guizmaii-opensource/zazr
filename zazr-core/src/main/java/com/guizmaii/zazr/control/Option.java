@@ -54,18 +54,20 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
-     * Reduces multiple {@code Option} values into a single {@code Option} by transforming
-     * an {@code Iterable<Option<? extends T>>} into an {@code Option<Seq<T>>}.
-     * <p>
-     * If any element is {@link Option.None}, the result is {@code None}.
-     * Otherwise, all contained values are collected into a {@link Seq} wrapped in {@code Some}.
+     * Turns many {@code Option}s into one {@code Option} of all their values: {@code Some} of a {@link Seq} of the
+     * values in iteration order when every element is a {@code Some}, {@code None} as soon as one element is
+     * {@code None}. The empty iterable gives {@code Some} of the empty {@code Seq}.
+     * <pre>{@code
+     * Option.collectAll(List.of(Option.some(1), Option.some(2))); // = Some(Seq(1, 2))
+     * Option.collectAll(List.of(Option.some(1), Option.none()));  // = None
+     * }</pre>
      *
-     * @param values an iterable of {@code Option} values
-     * @param <T>    the element type
-     * @return an {@code Option} containing a {@code Seq} of all values, or {@code None} if any value is empty
+     * @param values the {@code Option}s to collect
+     * @param <T>    the value type
+     * @return {@code Some} of all the values, or {@code None} if any element is {@code None}
      * @throws NullPointerException if {@code values} is null
      */
-    static <T extends @Nullable Object> Option<Seq<T>> sequence(Iterable<? extends Option<? extends T>> values) {
+    static <T extends @Nullable Object> Option<Seq<T>> collectAll(Iterable<? extends Option<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
         Vector<T> vector = Vector.empty();
         for (Option<? extends T> value : values) {
@@ -78,24 +80,24 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
-     * Maps the elements of an iterable into {@code Option} values and collects the results
-     * into a single {@code Option}.
-     * <p>
-     * Each element is transformed using {@code mapper}.
-     * If any mapped value is {@link Option.None}, the result is {@code None}.
-     * Otherwise, all mapped values are accumulated into a {@link Seq} wrapped in {@code Some}.
+     * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
+     * {@code Some} of a {@link Seq} of the mapped values when every call returns a {@code Some}, {@code None} as
+     * soon as one call returns {@code None}. The mapper is not called for the elements after that one.
+     * <pre>{@code
+     * Option.forEach(List.of("1", "2"), s -> Option.some(Integer.parseInt(s))); // = Some(Seq(1, 2))
+     * }</pre>
      *
-     * @param values an iterable of input values
-     * @param mapper a function mapping each value to an {@code Option}
-     * @param <T>    the input element type
-     * @param <U>    the mapped element type
-     * @return an {@code Option} containing a {@code Seq} of mapped values, or {@code None} if any mapping yields {@code None}
+     * @param values the elements to map
+     * @param mapper a function from an element to an {@code Option}; it must not return {@code null}
+     * @param <T>    the element type
+     * @param <U>    the mapped value type
+     * @return {@code Some} of all the mapped values, or {@code None} if one mapping is {@code None}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Option<Seq<U>> traverse(Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Option<Seq<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return sequence(Iterator.ofAll(values).map(mapper));
+        return collectAll(Iterator.ofAll(values).map(mapper));
     }
 
     /**
@@ -159,19 +161,6 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
-     * Returns {@code Some} of the given {@code value} if {@code condition} is true, or {@code None} otherwise.
-     *
-     * @param <T>       the type of the optional value
-     * @param condition the condition to test
-     * @param value     the value to wrap, must not be {@code null} when {@code condition} is true
-     * @return {@code Some} of {@code value} if {@code condition} is true, otherwise {@code None}
-     * @throws NullPointerException if {@code value} is null and {@code condition} is true
-     */
-    static <T extends @Nullable Object> Option<T> when(boolean condition, T value) {
-        return condition ? some(value) : none();
-    }
-
-    /**
      * Wraps a {@link java.util.Optional} in a new {@code Option}.
      *
      * @param optional the Java {@code Optional} to wrap
@@ -201,12 +190,14 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
-     * Executes the given {@link Runnable} if this {@code Option} is empty ({@code None}).
+     * Runs {@code action} if this is {@code None} and returns this {@code Option} unchanged; does nothing for a
+     * {@code Some}. The counterpart of {@link #tap(Consumer)}.
      *
-     * @param action a {@code Runnable} to execute
+     * @param action what to run when there is no value
      * @return this {@code Option}
+     * @throws NullPointerException if {@code action} is null
      */
-    default Option<T> onEmpty(Runnable action) {
+    default Option<T> tapNone(Runnable action) {
         Objects.requireNonNull(action, "action is null");
         if (isEmpty()) {
             action.run();
@@ -378,6 +369,31 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
+     * Matches and transforms the value in one step: {@code mapper} returns {@code Some} of the new value for a
+     * value it accepts and {@code None} for one it rejects. The {@code case} ergonomics come from a {@code switch}
+     * inside the lambda:
+     * <pre>{@code
+     * Option<Double> radius = shape.collect(s -> switch (s) {
+     *     case Circle c -> Option.some(c.radius());
+     *     default -> Option.none();
+     * });
+     * }</pre>
+     * On an {@code Option} this is the same operation as {@link #flatMap(Function)}, spelled the way it is spelled on
+     * the collections.
+     *
+     * @param mapper a function from the value to {@code Some} of its replacement or {@code None}; it must not
+     *               return {@code null}
+     * @param <U>    the type of the collected value
+     * @return the {@code Option} the mapper returned for a {@code Some}, {@code None} for a {@code None}
+     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Option<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return isEmpty() ? none() : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.collect: mapper returned null");
+    }
+
+    /**
      * Transforms the value of this {@code Some} using the given mapper and wraps it in a new {@code Some}.
      * Returns {@code None} if this is {@code None}.
      * <p>
@@ -430,32 +446,19 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
-     * Executes the given action on the contained value if this {@code Option} is defined ({@code Some}),
-     * otherwise does nothing.
+     * Runs {@code action} on the value if this is a {@code Some} and returns this {@code Option} unchanged; does
+     * nothing for {@code None}. Whatever the action throws propagates to the caller.
      *
-     * @param action a consumer to apply to the contained value
+     * @param action what to do with the value
      * @return this {@code Option}
      * @throws NullPointerException if {@code action} is null
      */
-    default Option<T> peek(Consumer<? super T> action) {
+    default Option<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isDefined()) {
             action.accept(get());
         }
         return this;
-    }
-
-    /**
-     * Transforms this {@code Option} into a value of type {@code U} using the given function.
-     *
-     * @param f   a function to transform this {@code Option}
-     * @param <U> the type of the result
-     * @return the result of applying {@code f} to this {@code Option}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U extends @Nullable Object> U transform(Function<? super Option<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     // -- conversions (design 3.2)

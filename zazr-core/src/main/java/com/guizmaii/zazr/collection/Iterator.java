@@ -1255,19 +1255,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    /**
-     * Applies a transformation function to this {@code Iterator} and returns the result.
-     *
-     * @param f   the function to transform this iterator; must not be {@code null}
-     * @param <U> the type of the result
-     * @return the result of applying {@code f} to this iterator
-     * @throws NullPointerException if {@code f} is {@code null}
-     */
-    default <U extends @Nullable Object> U transform(Function<? super Iterator<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
     @Override
     default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
@@ -1771,11 +1758,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
     
     @Override
-    default boolean hasDefiniteSize() {
-        return false;
-    }
-
-    @Override
     default T head() {
         if (!hasNext()) {
             throw new NoSuchElementException("head() on empty iterator");
@@ -1800,16 +1782,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     @Override
     default boolean isEmpty() {
         return !hasNext();
-    }
-
-    @Override
-    default boolean isTraversableAgain() {
-        return false;
-    }
-
-    @Override
-    default boolean isSequential() {
-        return true;
     }
 
     /**
@@ -1863,7 +1835,45 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
-    default <U extends @Nullable Object> Iterator<U> mapTo(U value) {
+    default <U extends @Nullable Object> Iterator<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<U>() {
+
+                // a flag and a field, not an Option, as in filter(): the mapper's Option is unwrapped as soon as it is seen
+                private boolean nextDefined = false;
+                private @Nullable U next;
+
+                @Override
+                public boolean hasNext() {
+                    while (!nextDefined && that.hasNext()) {
+                        final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(that.next()), "Iterator.collect: mapper returned null");
+                        if (collected.isDefined()) {
+                            next = collected.get();
+                            nextDefined = true;
+                        }
+                    }
+                    return nextDefined;
+                }
+
+                @Override
+                // hasNext() sets `next` whenever it sets `nextDefined`
+                @SuppressWarnings("NullAway")
+                public U getNext() {
+                    final U result = next;
+                    nextDefined = false;
+                    next = null;
+                    return result;
+                }
+            };
+        }
+    }
+
+    @Override
+    default <U extends @Nullable Object> Iterator<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -1897,17 +1907,16 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     /**
-     * Returns a new Iterator that lazily performs the given {@code action} on each
-     * element as it is pulled via {@link #next()}; unlike a lazy {@code Stream}
-     * implementations, not even the first element's action runs until the first
-     * element is actually requested.
+     * Returns an {@code Iterator} that runs {@code action} on each element as that element is pulled through
+     * {@link #next()}; unlike {@code Stream}, not even the first element's action runs until the first element
+     * is requested.
      *
-     * @param action a Consumer to apply to each element
-     * @return a new Iterator with the peek action attached
+     * @param action what to do with each element
+     * @return a new {@code Iterator} over the same elements
      * @throws NullPointerException if {@code action} is null
      */
     @Override
-    default Iterator<T> peek(Consumer<? super T> action) {
+    default Iterator<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (!hasNext()) {
             return empty();

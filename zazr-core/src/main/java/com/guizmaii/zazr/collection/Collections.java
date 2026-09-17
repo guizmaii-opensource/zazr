@@ -171,7 +171,7 @@ final class Collections {
     }
 
     private static <T extends @Nullable Object, C extends @Nullable Object> java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier) {
-        final java.util.Map<C, Collection<T>> results = new java.util.LinkedHashMap<>(source.isTraversableAgain() ? source.size() : 16);
+        final java.util.Map<C, Collection<T>> results = new java.util.LinkedHashMap<>(isTraversableAgain(source) ? source.size() : 16);
         for (T value : source) {
             final C key = Objects.requireNonNull(classifier.apply(value), "groupBy: key is null");
             results.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
@@ -202,7 +202,7 @@ final class Collections {
     }
 
     static Option<Integer> indexOption(int index) {
-        return Option.when(index >= 0, index);
+        return index >= 0 ? Option.some(index) : Option.none();
     }
 
     // @param iterable may not be null
@@ -212,9 +212,35 @@ final class Collections {
                 || !iterable.iterator().hasNext();
     }
 
-    static <T extends @Nullable Object> boolean isTraversableAgain(Iterable<? extends T> iterable) {
+    // Only an Iterator is consumed by a traversal; every other Traversable, and every java.util.Collection, can be
+    // walked again. Stream is lazy but memoizes, so it counts as traversable again.
+    static boolean isTraversableAgain(Iterable<?> iterable) {
         return (iterable instanceof Collection) ||
-                (iterable instanceof Traversable && ((Traversable<?>) iterable).isTraversableAgain());
+                (iterable instanceof Traversable && !(iterable instanceof Iterator));
+    }
+
+    // A size that is known without walking the elements: an Iterator has none, a Stream may be infinite.
+    static boolean hasDefiniteSize(Traversable<?> traversable) {
+        return !(traversable instanceof Iterator) && !(traversable instanceof Stream);
+    }
+
+    // The characteristics a Traversable reports through Spliterator: what the type guarantees about its elements.
+    static int spliteratorCharacteristics(Traversable<?> traversable) {
+        int characteristics = Spliterator.IMMUTABLE;
+        if (traversable instanceof Set || traversable instanceof Map) {
+            characteristics |= Spliterator.DISTINCT;
+        }
+        if (traversable instanceof Ordered) {
+            characteristics |= (Spliterator.SORTED | Spliterator.ORDERED);
+        }
+        if (traversable instanceof Seq || traversable instanceof Iterator
+                || traversable instanceof LinkedHashSet || traversable instanceof LinkedHashMap) {
+            characteristics |= Spliterator.ORDERED;
+        }
+        if (hasDefiniteSize(traversable)) {
+            characteristics |= (Spliterator.SIZED | Spliterator.SUBSIZED);
+        }
+        return characteristics;
     }
 
     static <T extends @Nullable Object> T last(Traversable<T> source){

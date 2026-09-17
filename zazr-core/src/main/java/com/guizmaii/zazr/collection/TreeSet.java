@@ -792,11 +792,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     @Override
-    public boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
     public T head() {
         if (isEmpty()) {
             throw new NoSuchElementException("head of empty TreeSet");
@@ -844,11 +839,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     @Override
-    public boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
     public Iterator<T> iterator() {
         return tree.iterator();
     }
@@ -887,6 +877,37 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     /**
+     * Matches and transforms the elements in one pass into a {@code TreeSet} ordered by {@code comparator}; see
+     * {@link #collect(Function)}.
+     *
+     * @param comparator the order of the collected elements
+     * @param mapper     a function from an element to {@code Some} of its replacement or {@code None}; it must
+     *                   not return {@code null}
+     * @param <U>        the type of the collected elements
+     * @return a {@code TreeSet} of the collected elements
+     * @throws NullPointerException if an argument is null, or if {@code mapper} returns {@code null} for an element
+     */
+    public <U extends @Nullable Object> TreeSet<U> collect(Comparator<? super U> comparator, Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        // the null check runs here so that the message names this type, not the Iterator that does the walking
+        return TreeSet.ofAll(comparator, iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), "TreeSet.collect: mapper returned null")));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The result is ordered by the natural order of {@code U}; use {@link #collect(Comparator, Function)} to
+     * choose the order.
+     *
+     * @throws ClassCastException if the collected elements are not mutually {@link Comparable}
+     */
+    @Override
+    public <U extends @Nullable Object> TreeSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        return collect(Comparators.naturalComparator(), mapper);
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * The resulting TreeSet is ordered by the natural comparator of {@code U}.
@@ -894,7 +915,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * @throws ClassCastException if this set has more than one element and {@code value} is not {@link Comparable}
      */
     @Override
-    public <U extends @Nullable Object> TreeSet<U> mapTo(U value) {
+    public <U extends @Nullable Object> TreeSet<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -930,11 +951,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     @Override
-    public TreeSet<T> peek(Consumer<? super T> action) {
+    public TreeSet<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(head());
-        }
+        forEach(action);
         return this;
     }
 
@@ -1063,19 +1082,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Objects.requireNonNull(predicate, "predicate is null");
         final TreeSet<T> treeSet = TreeSet.ofAll(tree.comparator(), iterator().takeWhile(predicate));
         return (treeSet.length() == length()) ? this : treeSet;
-    }
-
-    /**
-     * Transforms this {@code TreeSet}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    public <U extends @Nullable Object> U transform(Function<? super TreeSet<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

@@ -740,11 +740,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public boolean hasDefiniteSize() {
-        return true;
-    }
-
-    @Override
     public T head() {
         if (map.isEmpty()) {
             throw new NoSuchElementException("head of empty set");
@@ -787,16 +782,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public boolean isTraversableAgain() {
-        return true;
-    }
-
-    @Override
-    public boolean isSequential() {
-        return true;
-    }
-
-    @Override
     public Iterator<T> iterator() {
         return map.iterator().map(t -> t._1());
     }
@@ -826,7 +811,24 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> LinkedHashSet<U> mapTo(U value) {
+    public <U extends @Nullable Object> LinkedHashSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isEmpty()) {
+            return empty();
+        }
+        LinkedHashMap<U, Object> that = LinkedHashMap.empty();
+        for (T t : this) {
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.collect: mapper returned null");
+            if (collected.isDefined()) {
+                final U u = collected.get();
+                that = that.put(u, u);
+            }
+        }
+        return new LinkedHashSet<>(that);
+    }
+
+    @Override
+    public <U extends @Nullable Object> LinkedHashSet<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -851,11 +853,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public LinkedHashSet<T> peek(Consumer<? super T> action) {
+    public LinkedHashSet<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(iterator().head());
-        }
+        forEach(action);
         return this;
     }
 
@@ -969,19 +969,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(predicate, "predicate is null");
         final LinkedHashSet<T> taken = LinkedHashSet.ofAll(iterator().takeWhile(predicate));
         return taken.length() == length() ? this : taken;
-    }
-
-    /**
-     * Transforms this {@code LinkedHashSet}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    public <U extends @Nullable Object> U transform(Function<? super LinkedHashSet<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

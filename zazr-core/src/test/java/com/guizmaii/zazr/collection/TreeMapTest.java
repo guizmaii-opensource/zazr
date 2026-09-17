@@ -2,6 +2,7 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -112,16 +113,16 @@ public class TreeMapTest extends AbstractSortedMapTest {
         return TreeMap.fill(n, s);
     }
 
-    // -- bimap
+    // -- mapBoth
 
     @Test
-    public void shouldBiMapEmpty() {
-        assertThat(TreeMap.empty().bimap(Function.identity(), Function.identity())).isEmpty();
+    public void shouldMapBothEmpty() {
+        assertThat(TreeMap.empty().mapBoth(Function.identity(), Function.identity())).isEmpty();
     }
 
     @Test
-    public void shouldBiMapNonEmpty() {
-        final TreeMap<String, Integer> actual = TreeMap.of(1, "1", 2, "2").bimap(Comparators.naturalComparator(), String::valueOf, Integer::parseInt);
+    public void shouldMapBothNonEmpty() {
+        final TreeMap<String, Integer> actual = TreeMap.of(1, "1", 2, "2").mapBoth(Comparators.naturalComparator(), String::valueOf, Integer::parseInt);
         final TreeMap<String, Integer> expected = TreeMap.of("1", 1, "2", 2);
         assertThat(actual).isEqualTo(expected);
     }
@@ -386,5 +387,27 @@ public class TreeMapTest extends AbstractSortedMapTest {
             assertThat(actual.comparator()).isEqualTo(testee.comparator());
             assertThat(actual.toList()).isEqualTo(List.of(Tuple.of(3, "c3"), Tuple.of(2, "b2"), Tuple.of(1, "a1")));
         }
+    }
+
+    // -- collect(Comparator, BiFunction)
+
+    @Test
+    public void shouldCollectWithAKeyComparator() {
+        final TreeMap<String, Integer> actual = TreeMap.of(1, "a", 2, "b", 3, "c")
+          .collect(java.util.Comparator.reverseOrder(), (k, v) -> k == 2 ? Option.<Tuple2<String, Integer>>none() : Option.some(Tuple.of(v, k)));
+        assertThat(actual.keySet().mkString()).isEqualTo("ca");
+        assertThat(actual.comparator().compare("a", "b")).isGreaterThan(0);
+    }
+
+    @Test
+    public void shouldCollectWithTheNaturalKeyOrder() {
+        final TreeMap<String, Integer> actual = TreeMap.of(2, "b", 1, "a").collect((k, v) -> Option.some(Tuple.of(v, k)));
+        assertThat(actual.keySet().mkString()).isEqualTo("ab");
+    }
+
+    @Test
+    public void shouldThrowOnCollectWithNullComparator() {
+        org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class,
+          () -> TreeMap.of(1, "a").collect(null, (k, v) -> Option.some(Tuple.of(v, k))));
     }
 }

@@ -33,11 +33,6 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public boolean isDistinct() {
-        return original.isDistinct();
-    }
-
-    @Override
     public boolean equals(Object o) {
         final Object that = (o instanceof IntMap) ?((IntMap) o).original : o;
         return Collections.equals(original, that);
@@ -122,11 +117,6 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public boolean hasDefiniteSize() {
-        return original.hasDefiniteSize();
-    }
-
-    @Override
     public T head() {
         return original.head()._2();
     }
@@ -152,11 +142,6 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public boolean isTraversableAgain() {
-        return original.isTraversableAgain();
-    }
-
-    @Override
     public T last() {
         return original.last()._2();
     }
@@ -172,8 +157,13 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public <U> Seq<U> mapTo(U value) {
+    public <U> Seq<U> as(U value) {
         return map(ignored -> value);
+    }
+
+    @Override
+    public <U> Seq<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        return original.collect(e -> Objects.requireNonNull(mapper.apply(e._2()), "IntMap.collect: mapper returned null"));
     }
 
     @Override
@@ -194,8 +184,8 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public IntMap<T> peek(Consumer<? super T> action) {
-        original.peek(e -> action.accept(e._2()));
+    public IntMap<T> tap(Consumer<? super T> action) {
+        original.tap(e -> action.accept(e._2()));
         return this;
     }
 

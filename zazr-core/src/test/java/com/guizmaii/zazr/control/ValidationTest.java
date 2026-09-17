@@ -236,36 +236,32 @@ public class ValidationTest {
     }
 
     @Nested
-    public class CondTests {
+    public class FromPredicateTests {
 
         @Test
-        public void shouldReturnValidIfTestTrue() {
-            Validation<String, Integer> validation = Validation.cond(true, () -> 21, () -> "vavr");
+        public void shouldReturnValidWhenPredicateHolds() {
+            Validation<String, Integer> validation = Validation.fromPredicate(21, i -> i > 18, () -> "vavr");
             assertThat(validation).isEqualTo(Validation.valid(21));
         }
 
         @Test
-        public void shouldReturnInvalidIfTestFalse() {
-            Validation<String, Integer> validation = Validation.cond(false, () -> 21, () -> "vavr");
+        public void shouldReturnInvalidWhenPredicateFails() {
+            Validation<String, Integer> validation = Validation.fromPredicate(12, i -> i > 18, () -> "vavr");
             assertThat(validation).isEqualTo(Validation.invalid("vavr"));
         }
 
         @Test
-        public void shouldNotEvaluateValidSupplierOnFalse() {
-            Validation<String, Integer> validation = Validation.cond(false, () -> {
-                fail("Should not be called");
-                return 21;
-            }, () -> "vavr");
-            assertThat(validation).isEqualTo(Validation.invalid("vavr"));
-        }
-
-        @Test
-        public void shouldNotEvaluateErrorSupplierOnTrue() {
-            Validation<String, Integer> validation = Validation.cond(true, () -> 21, () -> {
+        public void shouldNotEvaluateErrorSupplierWhenPredicateHolds() {
+            Validation<String, Integer> validation = Validation.fromPredicate(21, i -> true, () -> {
                 fail("Should not be called");
                 return "vavr";
             });
             assertThat(validation).isEqualTo(Validation.valid(21));
+        }
+
+        @Test
+        public void shouldThrowWhenErrorSupplierReturnsNull() {
+            assertThrows(NullPointerException.class, () -> Validation.fromPredicate(1, i -> false, () -> null));
         }
 
         private class Car {
@@ -303,45 +299,34 @@ public class ValidationTest {
 
         @Test
         public void shouldBeFineWithCovariantError() {
-            Validation<Car, Integer> validation = Validation.cond(false, () -> 21, () -> new Hatchback("vavr"));
+            Validation<Car, Integer> validation = Validation.fromPredicate(21, i -> false, () -> new Hatchback("vavr"));
             assertThat(validation).isEqualTo(Validation.invalid(new Hatchback("vavr")));
         }
 
         @Test
         public void shouldBeFineWithCovariantValid() {
-            Validation<String, Car> validation = Validation.cond(true, () -> new Sedan("vavr"), () -> "vavr");
+            Validation<String, Car> validation = Validation.fromPredicate(new Sedan("vavr"), c -> true, () -> "vavr");
             assertThat(validation).isEqualTo(Validation.valid(new Sedan("vavr")));
         }
 
         @Test
-        public void shouldMakeTheSameDecisionNoMatterHowItsCalled() {
-            Validation<String, Integer> v1 = Validation.cond(true, () -> 21, () -> "vavr");
-            Validation<String, Integer> v2 = Validation.cond(true, 21, "vavr");
-
-            Validation<String, Integer> v3 = Validation.cond(false, () -> 21, () -> "vavr");
-            Validation<String, Integer> v4 = Validation.cond(false, 21, "vavr");
-
-            assertThat(List.of(v1, v2)).allMatch(e -> e.equals(Validation.valid(21)));
-            assertThat(List.of(v3, v4)).allMatch(e -> e.equals(Validation.invalid("vavr")));
-        }
-
-        @Test
         public void shouldThrowWhenProvidedWithNull() {
-            assertThrows(NullPointerException.class, () -> Validation.cond(false, 1, null));
-            assertThrows(NullPointerException.class, () -> Validation.cond(false, null, 2));
+            assertThrows(NullPointerException.class, () -> Validation.fromPredicate(null, i -> true, () -> "vavr"));
+            assertThrows(NullPointerException.class, () -> Validation.fromPredicate(1, null, () -> "vavr"));
+            assertThrows(NullPointerException.class, () -> Validation.fromPredicate(1, i -> true, null));
         }
     }
 
     @Nested
-    class ValidationSequenceTests {
+    class CollectAllTests {
         @Test
-        public void shouldThrowWhenSequencingNull() {
-            assertThrows(NullPointerException.class, () ->Validation.sequence(null));
+        public void shouldThrowWhenCollectingAllOfNull() {
+            assertThrows(NullPointerException.class, () ->Validation.collectAll(null));
         }
 
         @Test
-        public void shouldCreateValidWhenSequencingValids() {
-            final Validation<Seq<String>, Seq<Integer>> actual = Validation.sequence(List.of(
+        public void shouldCreateValidWhenCollectingAllValids() {
+            final Validation<Seq<String>, Seq<Integer>> actual = Validation.collectAll(List.of(
                     Validation.valid(1),
                     Validation.valid(2)
             ));
@@ -349,8 +334,8 @@ public class ValidationTest {
         }
 
         @Test
-        public void shouldCreateInvalidWhenSequencingAnInvalid() {
-            final Validation<Seq<String>, Seq<Integer>> actual = Validation.sequence(List.of(
+        public void shouldCreateInvalidWhenCollectingAllAnInvalid() {
+            final Validation<Seq<String>, Seq<Integer>> actual = Validation.collectAll(List.of(
                     Validation.valid(1),
                     Validation.invalid(List.of("error1", "error2")),
                     Validation.valid(2),
@@ -361,23 +346,23 @@ public class ValidationTest {
     }
 
     @Nested
-    class ValidationTraverseTests {
+    class ForEachTests {
         @Test
-        public void shouldThrowWhenTraversingNull() {
-            assertThrows(NullPointerException.class, () ->Validation.traverse(null, null));
+        public void shouldThrowWhenForEachOfNull() {
+            assertThrows(NullPointerException.class, () ->Validation.forEach(null, null));
         }
 
         @Test
-        public void shouldCreateValidWhenTraversingValids() {
+        public void shouldCreateValidWhenForEachValids() {
             final Validation<Seq<String>, Seq<Integer>> actual =
-                Validation.traverse(List.of(1, 2), t -> Validation.valid(t)); // NOTE: Compilation error with Java 8 if we use a method reference
+                Validation.forEach(List.of(1, 2), t -> Validation.valid(t)); // NOTE: Compilation error with Java 8 if we use a method reference
             assertThat(actual).isEqualTo(Validation.valid(List.of(1, 2)));
         }
 
         @Test
-        public void shouldCreateInvalidWhenTraversingAnInvalid() {
+        public void shouldCreateInvalidWhenForEachAnInvalid() {
             final Validation<Seq<String>, Seq<Integer>> actual =
-                Validation.traverse(
+                Validation.forEach(
                     List.of(1, -1, 2, -2),
                     x -> x >= 0
                         ? Validation.valid(x)
@@ -553,17 +538,17 @@ public class ValidationTest {
     }
 
     @Nested
-    class GetorelsegetTests {
+    class GetorelseFunctionTests {
         @Test
-        public void shouldReturnValueOnGetOrElseGetIfValid() {
+        public void shouldReturnValueOnGetOrElseFunctionIfValid() {
             Validation<Integer, String> validValidation = valid();
-            assertThat(validValidation.getOrElseGet(e -> "error" + e)).isEqualTo(OK);
+            assertThat(validValidation.getOrElse(e -> "error" + e)).isEqualTo(OK);
         }
 
         @Test
-        public void shouldReturnCalculationOnGetOrElseGetIfInvalid() {
+        public void shouldReturnCalculationOnGetOrElseFunctionIfInvalid() {
             Validation<Integer, String> invalidValidation = Validation.invalid(42);
-            assertThat(invalidValidation.getOrElseGet(e -> "error" + e)).isEqualTo("error42");
+            assertThat(invalidValidation.getOrElse(e -> "error" + e)).isEqualTo("error42");
         }
     }
 
@@ -585,17 +570,17 @@ public class ValidationTest {
     }
 
     @Nested
-    class SwapTests {
+    class FlipTests {
         @Test
-        public void shouldSwapSuccessToFailure() {
-            assertThat(valid().swap() instanceof Validation.Invalid).isTrue();
-            assertThat(valid().swap().getError()).isEqualTo(OK);
+        public void shouldFlipSuccessToFailure() {
+            assertThat(valid().flip() instanceof Validation.Invalid).isTrue();
+            assertThat(valid().flip().getError()).isEqualTo(OK);
         }
 
         @Test
-        public void shouldSwapFailureToSuccess() {
-            assertThat(invalid().swap() instanceof Validation.Valid).isTrue();
-            assertThat(invalid().swap().get()).isEqualTo(ERRORS);
+        public void shouldFlipFailureToSuccess() {
+            assertThat(invalid().flip() instanceof Validation.Valid).isTrue();
+            assertThat(invalid().flip().get()).isEqualTo(ERRORS);
         }
     }
 
@@ -618,11 +603,11 @@ public class ValidationTest {
     }
 
     @Nested
-    class BimapTests {
+    class MapBothTests {
         @Test
         public void shouldMapOnlySuccessValue() {
             Validation<Seq<String>, String> validValidation = valid();
-            Validation<Integer, Integer> validMapping = validValidation.bimap(Seq::length, String::length);
+            Validation<Integer, Integer> validMapping = validValidation.mapBoth(Seq::length, String::length);
             assertThat(validMapping instanceof Validation.Valid).isTrue();
             assertThat(validMapping.get()).isEqualTo(2);
         }
@@ -630,7 +615,7 @@ public class ValidationTest {
         @Test
         public void shouldMapOnlyFailureValue() {
             Validation<Seq<String>, String> invalidValidation = invalid();
-            Validation<Integer, Integer> invalidMapping = invalidValidation.bimap(Seq::length, String::length);
+            Validation<Integer, Integer> invalidMapping = invalidValidation.mapBoth(Seq::length, String::length);
             assertThat(invalidMapping instanceof Validation.Invalid).isTrue();
             assertThat(invalidMapping.getError()).isEqualTo(3);
         }
@@ -990,29 +975,43 @@ public class ValidationTest {
     }
 
     @Nested
-    class PeekTests {
+    class TapTests {
         @Test
-        public void shouldPeekValid() {
+        public void shouldTapValid() {
             java.util.List<String> accumulator = new ArrayList<>();
-            Validation.valid("hello").peek(accumulator::add);
+            Validation.valid("hello").tap(accumulator::add);
             assertThat(accumulator).containsExactly("hello");
         }
 
         @Test
-        public void shouldNotPeekInvalid() {
+        public void shouldNotTapInvalid() {
             java.util.List<String> accumulator = new ArrayList<>();
-            Validation.<String, String>invalid("error").peek(accumulator::add);
+            Validation.<String, String>invalid("error").tap(accumulator::add);
             assertThat(accumulator).isEmpty();
         }
 
         @Test
         public void shouldThrowOnNullActionWhenValid() {
-            assertThrows(NullPointerException.class, () -> Validation.valid("hello").peek(null));
+            assertThrows(NullPointerException.class, () -> Validation.valid("hello").tap(null));
         }
 
         @Test
         public void shouldThrowOnNullActionWhenInvalid() {
-            assertThrows(NullPointerException.class, () -> Validation.invalid("error").peek(null));
+            assertThrows(NullPointerException.class, () -> Validation.invalid("error").tap(null));
+        }
+    }
+
+    @Nested
+    class ForEachAccumulationTests {
+        @Test
+        public void shouldCallTheMapperForEveryElement() {
+            final java.util.List<Integer> seen = new ArrayList<>();
+            final Validation<Seq<String>, Seq<Integer>> actual = Validation.forEach(List.of(1, 2, 3), i -> {
+                seen.add(i);
+                return i == 2 ? Validation.invalid(List.of("e")) : Validation.valid(i);
+            });
+            assertThat(actual).isEqualTo(Validation.invalid(List.of("e")));
+            assertThat(seen).containsExactly(1, 2, 3);
         }
     }
 }

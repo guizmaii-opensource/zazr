@@ -54,12 +54,12 @@ public class ArbitraryTest {
         assertThat(evenInts.apply(10).apply(RANDOM)).isNotNull();
     }
 
-    // -- peek
+    // -- tap
 
     @Test
-    public void shouldPeekArbitrary() {
+    public void shouldTapArbitrary() {
         final int[] actual = new int[] { Integer.MIN_VALUE };
-        final int expected = Arbitrary.integer().peek(i -> actual[0] = i).apply(10).apply(RANDOM);
+        final int expected = Arbitrary.integer().tap(i -> actual[0] = i).apply(10).apply(RANDOM);
         assertThat(actual[0]).isEqualTo(expected);
     }
 
@@ -315,15 +315,6 @@ public class ArbitraryTest {
 
         assertThat(values.distinct().size()).isGreaterThan(100);
         assertThat(samples(gen)).isEqualTo(values);
-    }
-
-    // -- transform
-
-    @Test
-    public void shouldTransformArbitrary() {
-        final Arbitrary<Integer> arbitrary = ignored -> Gen.of(1);
-        final String s = arbitrary.transform(a -> a.apply(0).apply(RANDOM).toString());
-        assertThat(s).isEqualTo("1");
     }
 
     // helpers

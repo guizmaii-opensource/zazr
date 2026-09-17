@@ -111,35 +111,20 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Creates a {@link Try} instance from a {@link Runnable}.
-     * <p>
-     * If the runnable executes without throwing an exception, a {@link Success} containing the empty tuple
-     * {@link Tuple0} is returned, see {@link #run(CheckedRunnable)}. If a non-fatal exception occurs during
-     * execution, a {@link Failure} wrapping the thrown exception is returned; fatal throwables (see the class-level
-     * documentation) are rethrown instead.
+     * Turns many {@code Try}s into one {@code Try} of all their values: {@code Success} of a {@link Seq} of the
+     * values in iteration order when every element is a {@code Success}, otherwise the first {@code Failure} in
+     * iteration order. The empty iterable gives {@code Success} of the empty {@code Seq}.
+     * <pre>{@code
+     * Try.collectAll(List.of(Try.success(1), Try.success(2))); // = Success(Seq(1, 2))
+     * Try.collectAll(List.of(Try.success(1), Try.failure(e))); // = Failure(e)
+     * }</pre>
      *
-     * @param runnable the runnable to execute
-     * @return {@code Success(())} if the runnable completes successfully, or a {@link Failure} if an exception is thrown
-     * @throws NullPointerException if {@code runnable} is {@code null}
+     * @param values the {@code Try}s to collect
+     * @param <T>    the value type
+     * @return {@code Success} of all the values, or the first {@code Failure}
+     * @throws NullPointerException if {@code values} is null
      */
-    static Try<Tuple0> runRunnable(Runnable runnable) {
-        Objects.requireNonNull(runnable, "runnable is null");
-        return run(runnable::run);
-    }
-
-    /**
-     * Transforms an {@link Iterable} of {@link Try} instances into a single {@link Try} containing a {@link Seq}
-     * of all successful results. 
-     * <p>
-     * If any element in the input iterable is a {@link Try.Failure}, the resulting {@link Try} will also be a
-     * {@link Try.Failure}, containing the first encountered failure's cause.
-     *
-     * @param values an {@link Iterable} of {@code Try} instances
-     * @param <T>    the type of values contained in the {@code Try}s
-     * @return a {@link Try} containing a {@link Seq} of all successful results, or a {@link Try.Failure} if any input is a failure
-     * @throws NullPointerException if {@code values} is {@code null}
-     */
-    static <T extends @Nullable Object> Try<Seq<T>> sequence(Iterable<? extends Try<? extends T>> values) {
+    static <T extends @Nullable Object> Try<Seq<T>> collectAll(Iterable<? extends Try<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
         Vector<T> vector = Vector.empty();
         for (Try<? extends T> value : values) {
@@ -152,23 +137,26 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Transforms an {@link Iterable} of values into a single {@link Try} containing a {@link Seq} of mapped results.
-     * <p>
-     * Each value in the input iterable is mapped using the provided {@code mapper} function, which produces a
-     * {@link Try}. If all mappings succeed, a {@link Success} containing a {@link Seq} of results is returned.
-     * If any mapping results in a {@link Try.Failure}, the first encountered failure is returned.
+     * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
+     * {@code Success} of a {@link Seq} of the mapped values when every call returns a {@code Success}, otherwise
+     * the first {@code Failure}. The mapper is not called for the elements after that one; what it throws
+     * propagates to the caller, since it is a plain {@link Function}: build the {@code Try} inside it with
+     * {@link #of(Callable)}.
+     * <pre>{@code
+     * Try.forEach(List.of("1", "2"), s -> Try.of(() -> Integer.parseInt(s))); // = Success(Seq(1, 2))
+     * }</pre>
      *
-     * @param values an {@link Iterable} of input values
-     * @param mapper a function mapping each input value to a {@link Try} of the mapped result
-     * @param <T>    the type of the input values
-     * @param <U>    the type of the mapped results
-     * @return a {@link Try} containing a {@link Seq} of all mapped results, or a {@link Try.Failure} if any mapping fails
-     * @throws NullPointerException if {@code values} or {@code mapper} is {@code null}
+     * @param values the elements to map
+     * @param mapper a function from an element to a {@code Try}; it must not return {@code null}
+     * @param <T>    the element type
+     * @param <U>    the mapped value type
+     * @return {@code Success} of all the mapped values, or the first {@code Failure}
+     * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Try<Seq<U>> traverse(Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Try<Seq<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return sequence(Iterator.ofAll(values).map(mapper));
+        return collectAll(Iterator.ofAll(values).map(mapper));
     }
 
     /**
@@ -247,23 +235,6 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return new Failure<>(cause != null ? cause : e);
         }
         return value == null ? TryModule.nullResult("Try.fromCompletableFuture") : new Success<>(value);
-    }
-
-    /**
-     * Performs the given {@link Consumer} on the value of this {@code Try} if it is a {@link Success}.
-     * <p>
-     * This is a shortcut for {@code andThenTry(consumer::accept)}. If this {@code Try} is a {@link Failure},
-     * it is returned unchanged. If the consumer throws a non-fatal exception, a {@link Failure} is returned;
-     * fatal throwables (see the class-level documentation) are rethrown instead.
-     *
-     * @param consumer the consumer to execute on the value
-     * @return this {@code Try} if it is a {@link Failure} or the consumer succeeds, otherwise a {@link Failure} of the consumer
-     * @throws NullPointerException if {@code consumer} is {@code null}
-     * @see #andThenTry(CheckedConsumer)
-     */
-    default Try<T> andThen(Consumer<? super T> consumer) {
-        Objects.requireNonNull(consumer, "consumer is null");
-        return andThenTry(consumer::accept);
     }
 
     /**
@@ -361,137 +332,46 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Returns a {@code Success} containing the throwable if this {@code Try} is a {@link Failure}.
-     * <p>
-     * If this {@code Try} is a {@link Success}, a {@code Failure} containing a {@link NoSuchElementException} is returned.
+     * Keeps the value if {@code predicate} holds for it, otherwise fails with the throwable {@code ifFalse} builds
+     * from it. A {@code Failure} is returned unchanged and the predicate is not evaluated. The predicate and
+     * {@code ifFalse} run under {@code Try}: a non-fatal exception thrown by either becomes the {@code Failure}.
+     * <pre>{@code
+     * Try.success(3).filter(i -> i > 0, i -> new IllegalArgumentException("not positive: " + i)); // = Success(3)
+     * Try.success(-1).filter(i -> i > 0, i -> new IllegalArgumentException("not positive: " + i)); // = Failure(IllegalArgumentException: not positive: -1)
+     * }</pre>
      *
-     * @return a {@code Try<Throwable>} representing the throwable of this {@link Failure}, or a {@link Failure} if this is a {@link Success}
+     * @param predicate the condition the value has to satisfy
+     * @param ifFalse   builds the failure cause from the rejected value; it must not return {@code null} nor a
+     *                  fatal throwable
+     * @return this {@code Try} if it is a {@code Failure} or the predicate holds, otherwise a {@code Failure}
+     * @throws NullPointerException if {@code predicate} or {@code ifFalse} is null
      */
-    default Try<Throwable> failed() {
+    default Try<T> filter(Predicate<? super T> predicate, Function<? super T, ? extends Throwable> ifFalse) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        Objects.requireNonNull(ifFalse, "ifFalse is null");
         if (isFailure()) {
-            return new Success<>(getCause());
-        } else {
-            return new Failure<>(new NoSuchElementException("Success.failed()"));
+            return this;
+        }
+        try {
+            final T value = get();
+            return predicate.test(value) ? this : new Failure<>(ifFalse.apply(value));
+        } catch (Throwable t) {
+            return new Failure<>(t);
         }
     }
 
     /**
-     * Returns a {@code Try} if the given {@link Predicate} evaluates to {@code true}, otherwise returns a {@link Failure}
-     * created by the given {@link Supplier} of {@link Throwable}.
-     * <p>
-     * This is a shortcut for {@link #filterTry(CheckedPredicate, Supplier)}.
+     * Keeps the value if {@code predicate} holds for it, otherwise fails with a {@link NoSuchElementException}.
+     * See {@link #filter(Predicate, Function)} to choose the failure cause.
      *
-     * @param predicate         the predicate to test the value
-     * @param throwableSupplier a supplier providing a throwable if the predicate fails
-     * @return this {@code Try} if the predicate passes; otherwise a {@link Failure} from the throwable supplier,
-     *         or wrapping the thrown exception if the predicate or supplier throws
-     * @throws NullPointerException if {@code predicate} or {@code throwableSupplier} is {@code null}
-     */
-    default Try<T> filter(Predicate<? super T> predicate, Supplier<? extends Throwable> throwableSupplier) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        Objects.requireNonNull(throwableSupplier, "throwableSupplier is null");
-        return filterTry(predicate::test, throwableSupplier);
-    }
-
-    /**
-     * Returns a {@code Try} if the given {@link Predicate} evaluates to {@code true}, otherwise returns a {@link Failure}
-     * created by applying the given function to the value.
-     * <p>
-     * This is a shortcut for {@link #filterTry(CheckedPredicate, CheckedFunction1)}.
-     *
-     * @param predicate     the predicate to test the value
-     * @param errorProvider a function providing a throwable if the predicate fails
-     * @return this {@code Try} if the predicate passes; otherwise a {@link Failure} from the error provider,
-     *         or wrapping the thrown exception if the predicate or provider throws
-     * @throws NullPointerException if {@code predicate} or {@code errorProvider} is {@code null}
-     */
-    default Try<T> filter(Predicate<? super T> predicate, Function<? super T, ? extends Throwable> errorProvider) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        Objects.requireNonNull(errorProvider, "errorProvider is null");
-        return filterTry(predicate::test, errorProvider::apply);
-    }
-
-    /**
-     * Returns a {@code Try} if the given {@link Predicate} evaluates to {@code true}, otherwise returns a {@link Failure}.
-     * <p>
-     * This is a shortcut for {@link #filterTry(CheckedPredicate)}.
-     *
-     * @param predicate the predicate to test the value
-     * @return this {@code Try} if the predicate passes, otherwise a {@link Failure}
-     * @throws NullPointerException if {@code predicate} is {@code null}
+     * @param predicate the condition the value has to satisfy
+     * @return this {@code Try} if it is a {@code Failure} or the predicate holds, otherwise a {@code Failure} of a
+     *         {@code NoSuchElementException}
+     * @throws NullPointerException if {@code predicate} is null
      */
     default Try<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return filterTry(predicate::test);
-    }
-
-    /**
-     * Returns {@code this} if this {@code Try} is a {@link Failure} or if it is a {@link Success} and the value
-     * satisfies the given checked predicate.
-     * <p>
-     * If this is a {@link Success} and the predicate returns {@code false}, a new {@link Failure} is returned,
-     * wrapping the {@link Throwable} provided by the given {@code throwableSupplier}. If evaluating the predicate
-     * (or the {@code throwableSupplier}) throws an exception, a new {@link Failure} wrapping that thrown exception
-     * is returned instead.
-     *
-     * @param predicate         the checked predicate to test the value
-     * @param throwableSupplier a supplier providing the {@link Throwable} for the failure if the predicate does not hold
-     * @return this {@code Try} if it is a {@link Failure} or the predicate passes; a {@link Failure} from the supplier
-     *         if the predicate returns {@code false}; a {@link Failure} wrapping the thrown exception if the predicate
-     *         or the supplier throws
-     * @throws NullPointerException if {@code predicate} or {@code throwableSupplier} is {@code null}
-     */
-    default Try<T> filterTry(CheckedPredicate<? super T> predicate, Supplier<? extends Throwable> throwableSupplier) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        Objects.requireNonNull(throwableSupplier, "throwableSupplier is null");
-
-        if (isFailure()) {
-            return this;
-        } else {
-            try {
-                if (predicate.test(get())) {
-                    return this;
-                } else {
-                    return new Failure<>(throwableSupplier.get());
-                }
-            } catch (Throwable t) {
-                return new Failure<>(t);
-            }
-        }
-    }
-
-    /**
-     * Returns {@code this} if this {@code Try} is a {@link Failure} or if it is a {@link Success} and the value
-     * satisfies the given checked predicate.
-     * <p>
-     * If the predicate does not hold or throws an exception, a new {@link Failure} is returned. The returned
-     * failure wraps a {@link Throwable} provided by the given {@code errorProvider} function.
-     *
-     * @param predicate     the checked predicate to test the value
-     * @param errorProvider a function that provides a {@link Throwable} if the predicate fails
-     * @return this {@code Try} if it is a {@link Failure} or the predicate passes, otherwise a {@link Failure} from the error provider
-     * @throws NullPointerException if {@code predicate} or {@code errorProvider} is {@code null}
-     */
-    default Try<T> filterTry(CheckedPredicate<? super T> predicate, CheckedFunction1<? super T, ? extends Throwable> errorProvider) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        Objects.requireNonNull(errorProvider, "errorProvider is null");
-        return flatMapTry(t -> predicate.test(t) ? this : failure(errorProvider.apply(t)));
-    }
-
-    /**
-     * Returns {@code this} if this {@code Try} is a {@link Failure} or if it is a {@link Success} and the value
-     * satisfies the given checked predicate.
-     * <p>
-     * If the predicate does not hold or throws an exception, a new {@link Failure} wrapping a
-     * {@link NoSuchElementException} is returned.
-     *
-     * @param predicate the checked predicate to test the value
-     * @return this {@code Try} if it is a {@link Failure} or the predicate passes, otherwise a {@link Failure} with a {@link NoSuchElementException}
-     * @throws NullPointerException if {@code predicate} is {@code null}
-     */
-    default Try<T> filterTry(CheckedPredicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return filterTry(predicate, () -> new NoSuchElementException("Predicate does not hold for " + get()));
+        return filter(predicate, value -> new NoSuchElementException("Predicate does not hold for " + value));
     }
 
     /**
@@ -535,6 +415,43 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             } catch (Throwable t) {
                 return new Failure<>(t);
             }
+        }
+    }
+
+    /**
+     * Matches and transforms the value in one step: {@code mapper} returns {@code Some} of the new value for a
+     * value it accepts and {@code None} for one it rejects, which fails this {@code Try} with a
+     * {@link NoSuchElementException}. The {@code case} ergonomics come from a {@code switch} inside the lambda:
+     * <pre>{@code
+     * Try<Double> radius = shape.collect(s -> switch (s) {
+     *     case Circle c -> Option.some(c.radius());
+     *     default -> Option.none();
+     * });
+     * }</pre>
+     * The mapper runs under {@code Try}, as {@link #map(Function)} does: a non-fatal exception it throws, or a
+     * {@code null} it returns instead of an {@code Option}, becomes the {@code Failure}. A {@code Failure} is
+     * returned unchanged and the mapper is not called.
+     *
+     * @param mapper a function from the value to {@code Some} of its replacement or {@code None}
+     * @param <U>    the type of the collected value
+     * @return {@code Success} of the collected value, a {@code Failure} of a {@code NoSuchElementException} if the
+     *         mapper returned {@code None}, or this {@code Failure}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    @SuppressWarnings("unchecked")
+    default <U extends @Nullable Object> Try<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isFailure()) {
+            return (Failure<U>) this;
+        }
+        try {
+            final T value = get();
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(value), "Try.collect: mapper returned null");
+            return collected.isDefined()
+              ? new Success<>(collected.get())
+              : new Failure<>(new NoSuchElementException("Predicate does not hold for " + value));
+        } catch (Throwable t) {
+            return new Failure<>(t);
         }
     }
 
@@ -630,22 +547,19 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Performs the given action if this {@link Try} is a {@link Failure}.
-     * <p>
-     * Example:
+     * Runs {@code action} on the cause if this is a {@code Failure} and returns this {@code Try} unchanged; does
+     * nothing for a {@code Success}. The counterpart of {@link #tap(Consumer)}: what the action throws propagates
+     * to the caller.
      * <pre>{@code
-     * // does not print anything
-     * Try.success(1).onFailure(System.out::println);
-     *
-     * // prints "java.lang.Error"
-     * Try.failure(new Error()).onFailure(System.out::println);
+     * Try.failure(new IOException("disk")).tapError(e -> log.warn("failed", e)); // logs, stays the same Failure
+     * Try.success(1).tapError(e -> log.warn("failed", e));                       // does nothing
      * }</pre>
      *
-     * @param action a consumer of the throwable cause
-     * @return this {@code Try} instance
+     * @param action what to do with the cause
+     * @return this {@code Try}
      * @throws NullPointerException if {@code action} is null
      */
-    default Try<T> onFailure(Consumer<? super Throwable> action) {
+    default Try<T> tapError(Consumer<? super Throwable> action) {
         Objects.requireNonNull(action, "action is null");
         if (isFailure()) {
             action.accept(getCause());
@@ -654,55 +568,26 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Performs the given action if this {@link Try} is a {@link Failure} and the cause is an instance of the specified type.
-     * <p>
-     * Example:
+     * Runs {@code action} on the cause if this is a {@code Failure} whose cause is an instance of
+     * {@code exceptionType}, and returns this {@code Try} unchanged; does nothing otherwise.
      * <pre>{@code
-     * // does not print anything
-     * Try.success(1).onFailure(Error.class, System.out::println);
-     *
-     * // prints "Error"
-     * Try.failure(new Error())
-     *    .onFailure(RuntimeException.class, x -> System.out.println("Runtime exception"))
-     *    .onFailure(Error.class, x -> System.out.println("Error"));
+     * Try.failure(new IOException("disk"))
+     *    .tapError(IOException.class, e -> log.warn("io", e))        // runs
+     *    .tapError(IllegalStateException.class, e -> log.warn("?")); // does not run
      * }</pre>
      *
-     * @param exceptionType the type of exception to handle
-     * @param action        a consumer for the exception
-     * @param <X>           the type of exception that should be handled
-     * @return this {@code Try} instance
+     * @param exceptionType the type the cause has to be an instance of
+     * @param action        what to do with the cause
+     * @param <X>           the type of the cause
+     * @return this {@code Try}
      * @throws NullPointerException if {@code exceptionType} or {@code action} is null
      */
     @SuppressWarnings("unchecked")
-    default <X extends Throwable> Try<T> onFailure(Class<X> exceptionType, Consumer<? super X> action) {
+    default <X extends Throwable> Try<T> tapError(Class<X> exceptionType, Consumer<? super X> action) {
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(action, "action is null");
-        if (isFailure() && exceptionType.isAssignableFrom(getCause().getClass())) {
+        if (isFailure() && exceptionType.isInstance(getCause())) {
             action.accept((X) getCause());
-        }
-        return this;
-    }
-
-    /**
-     * Performs the given action if this {@link Try} is a {@link Success}.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * // prints "1"
-     * Try.success(1).onSuccess(System.out::println);
-     *
-     * // does not print anything
-     * Try.failure(new Error()).onSuccess(System.out::println);
-     * }</pre>
-     *
-     * @param action a consumer of the value
-     * @return this {@code Try} instance
-     * @throws NullPointerException if {@code action} is null
-     */
-    default Try<T> onSuccess(Consumer<? super T> action) {
-        Objects.requireNonNull(action, "action is null");
-        if (isSuccess()) {
-            action.accept(get());
         }
         return this;
     }
@@ -769,34 +654,15 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Returns the value of this {@code Success}, or applies the given function to the cause if this is a {@link Failure}.
+     * Returns the value, or the value {@code other} computes from the cause if this is a {@code Failure}.
      *
-     * @param other a function mapping the throwable cause to a replacement value
-     * @return the value of this {@link Success}, or the result of applying {@code other} to the failure cause
+     * @param other a function from the cause to a replacement value, called only for a {@code Failure}
+     * @return the value of this {@code Success}, otherwise {@code other.apply(getCause())}
      * @throws NullPointerException if {@code other} is null
      */
-    default T getOrElseGet(Function<? super Throwable, ? extends T> other) {
+    default T getOrElse(Function<? super Throwable, ? extends T> other) {
         Objects.requireNonNull(other, "other is null");
-        if (isFailure()) {
-            return other.apply(getCause());
-        } else {
-            return get();
-        }
-    }
-
-    /**
-     * Executes the given action if this {@code Try} is a {@link Failure}.
-     * <p>
-     * This method is typically used for side-effecting handling of failure cases.
-     *
-     * @param action a consumer of the throwable cause
-     * @throws NullPointerException if {@code action} is null
-     */
-    default void orElseRun(Consumer<? super Throwable> action) {
-        Objects.requireNonNull(action, "action is null");
-        if (isFailure()) {
-            action.accept(getCause());
-        }
+        return isFailure() ? other.apply(getCause()) : get();
     }
 
     /**
@@ -876,7 +742,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
 
     /**
      * Performs the given action on the value if this is a {@link Success}; does nothing for a {@code Failure}. Unlike
-     * {@link #andThen(Consumer)}, an exception thrown by the action propagates to the caller.
+     * {@link #andThenTry(CheckedConsumer)}, an exception thrown by the action propagates to the caller.
      *
      * @param action a consumer of the value
      * @throws NullPointerException if {@code action} is null
@@ -909,15 +775,15 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Performs the given action if this {@code Try} is a {@link Success}, otherwise does nothing.
-     * <p>
-     * This method is useful for side-effecting operations without transforming the value.
+     * Runs {@code action} on the value if this is a {@code Success} and returns this {@code Try} unchanged; does
+     * nothing for a {@code Failure}. What the action throws propagates to the caller; to capture it as a
+     * {@code Failure} instead, use {@link #andThenTry(CheckedConsumer)}.
      *
-     * @param action a consumer of the value
-     * @return this {@code Try} instance
+     * @param action what to do with the value
+     * @return this {@code Try}
      * @throws NullPointerException if {@code action} is null
      */
-    default Try<T> peek(Consumer<? super T> action) {
+    default Try<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isSuccess()) {
             action.accept(get());
@@ -926,292 +792,128 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Attempts to recover from a failure if the cause is an instance of the specified exception type.
-     * <p>
-     * If this {@code Try} is a {@link Success}, it is returned unchanged. If this is a {@link Failure} and the cause
-     * is an instance of (i.e. assignable to) {@code exceptionType}, the recovery function {@code f} is applied to
-     * the cause inside a new {@code Try}. Otherwise, the original {@code Failure} is returned.
-     * <p>
-     * Example:
+     * Recovers from any failure: {@code f} turns the cause into a replacement value. A {@code Success} is returned
+     * unchanged. The recovery runs under {@link #of(Callable)}: a non-fatal exception it throws, or a {@code null}
+     * it returns, is the new {@code Failure}.
      * <pre>{@code
-     * // = Success(13)
-     * Try.of(() -> 27/2).recover(ArithmeticException.class, x -> Integer.MAX_VALUE);
-     *
-     * // = Success(2147483647)
-     * Try.of(() -> 1/0)
-     *    .recover(Error.class, x -> -1)
-     *    .recover(ArithmeticException.class, x -> Integer.MAX_VALUE);
-     *
-     * // = Failure(java.lang.ArithmeticException: / by zero)
-     * Try.of(() -> 1/0).recover(Error.class, x -> Integer.MAX_VALUE);
+     * Try.of(() -> 1 / 0).catchAll(e -> Integer.MAX_VALUE); // = Success(2147483647)
+     * Try.success(13).catchAll(e -> Integer.MAX_VALUE);     // = Success(13)
      * }</pre>
-     * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
      *
-     * @param <X>           the type of exception to handle
-     * @param exceptionType the specific exception type that should be recovered
-     * @param f             a recovery function taking an exception of type {@code X} and producing a value
-     * @return a {@code Success} with the recovered value if the exception matches (or a {@code Failure} wrapping the
-     *         thrown exception if {@code f} itself throws), otherwise this {@code Try}
+     * @param f a function from the cause to the replacement value
+     * @return this {@code Success}, or the {@code Try} of the recovery
+     * @throws NullPointerException if {@code f} is null
+     */
+    default Try<T> catchAll(Function<? super Throwable, ? extends T> f) {
+        Objects.requireNonNull(f, "f is null");
+        return isFailure() ? Try.of(() -> f.apply(getCause())) : this;
+    }
+
+    /**
+     * Recovers from the failures whose cause is an instance of {@code exceptionType}: {@code f} turns the cause
+     * into a replacement value. A {@code Success}, or a {@code Failure} of another type, is returned unchanged. The
+     * recovery runs under {@link #of(Callable)}: a non-fatal exception it throws, or a {@code null} it returns, is
+     * the new {@code Failure}.
+     * <pre>{@code
+     * Try.of(() -> 1 / 0)
+     *    .catchSome(Error.class, e -> -1)                            // does not match, stays the Failure
+     *    .catchSome(ArithmeticException.class, e -> Integer.MAX_VALUE); // = Success(2147483647)
+     * }</pre>
+     *
+     * @param exceptionType the type the cause has to be an instance of
+     * @param f             a function from the cause to the replacement value
+     * @param <X>           the type of the cause
+     * @return this {@code Try}, or the {@code Try} of the recovery when the cause matches
      * @throws NullPointerException if {@code exceptionType} or {@code f} is null
      */
     @SuppressWarnings("unchecked")
-    default <X extends Throwable> Try<T> recover(Class<X> exceptionType, Function<? super X, ? extends T> f) {
+    default <X extends Throwable> Try<T> catchSome(Class<X> exceptionType, Function<? super X, ? extends T> f) {
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(f, "f is null");
-        if (isFailure()) {
-            final Throwable cause = getCause();
-            if (exceptionType.isAssignableFrom(cause.getClass())) {
-                return Try.of(() -> f.apply((X) cause));
-            }
-        }
-        return this;
+        return isFailure() && exceptionType.isInstance(getCause())
+          ? Try.of(() -> f.apply((X) getCause()))
+          : this;
     }
 
     /**
-     * Attempts to recover from a failure by applying the given recovery function if the cause matches the specified exception type.
-     * <p>
-     * If this {@code Try} is a {@link Success}, or if this is a {@link Failure} whose cause does not match
-     * {@code exceptionType}, it is returned unchanged. If this is a {@link Failure} and the cause is an instance
-     * of (i.e. assignable to) {@code exceptionType}, the recovery function {@code f} is applied to the cause and
-     * its result is returned as-is: a {@link Failure} returned by {@code f} means the recovery was unsuccessful;
-     * if {@code f} throws, a new {@link Failure} wrapping that exception is returned instead.
-     * <p>
-     * Example:
+     * Recovers from any failure with a {@code Try}: {@code f} turns the cause into the {@code Try} to continue
+     * with, which may itself be a {@code Failure}. A {@code Success} is returned unchanged. A non-fatal exception
+     * {@code f} throws is the new {@code Failure}; a {@code null} it returns is a {@code Failure} of a
+     * {@link NullPointerException}.
      * <pre>{@code
-     * // = Success(13)
-     * Try.of(() -> 27/2).recoverWith(ArithmeticException.class, x -> Try.success(Integer.MAX_VALUE));
-     *
-     * // = Success(2147483647)
-     * Try.of(() -> 1/0)
-     *    .recoverWith(Error.class, x -> Try.success(-1))
-     *    .recoverWith(ArithmeticException.class, x -> Try.success(Integer.MAX_VALUE));
-     *
-     * // = Failure(java.lang.ArithmeticException: / by zero)
-     * Try.of(() -> 1/0).recoverWith(Error.class, x -> Try.success(Integer.MAX_VALUE));
+     * Try.of(() -> readCache()).catchAllWith(e -> Try.of(() -> readDisk()));
      * }</pre>
      *
-     * @param <X>           the type of exception to handle
-     * @param exceptionType the specific exception type that should trigger recovery
-     * @param f             a recovery function that takes an exception of type {@code X} and returns a new {@code Try} instance
-     * @return a {@code Try} representing the recovered value if the exception matches, otherwise this {@code Try}
+     * @param f a function from the cause to the {@code Try} to continue with
+     * @return this {@code Success}, or the {@code Try} the recovery returned
+     * @throws NullPointerException if {@code f} is null
+     */
+    @SuppressWarnings("unchecked")
+    default Try<T> catchAllWith(Function<? super Throwable, ? extends Try<? extends T>> f) {
+        Objects.requireNonNull(f, "f is null");
+        if (isSuccess()) {
+            return this;
+        }
+        try {
+            return (Try<T>) Objects.requireNonNull(f.apply(getCause()), "Try.catchAllWith: f returned null");
+        } catch (Throwable t) {
+            return new Failure<>(t);
+        }
+    }
+
+    /**
+     * Recovers from the failures whose cause is an instance of {@code exceptionType} with a {@code Try}: {@code f}
+     * turns the cause into the {@code Try} to continue with, which may itself be a {@code Failure}. A
+     * {@code Success}, or a {@code Failure} of another type, is returned unchanged. A non-fatal exception {@code f}
+     * throws is the new {@code Failure}; a {@code null} it returns is a {@code Failure} of a
+     * {@link NullPointerException}.
+     * <pre>{@code
+     * Try.of(() -> readCache()).catchSomeWith(IOException.class, e -> Try.of(() -> readDisk()));
+     * }</pre>
+     *
+     * @param exceptionType the type the cause has to be an instance of
+     * @param f             a function from the cause to the {@code Try} to continue with
+     * @param <X>           the type of the cause
+     * @return this {@code Try}, or the {@code Try} the recovery returned when the cause matches
      * @throws NullPointerException if {@code exceptionType} or {@code f} is null
      */
     @SuppressWarnings("unchecked")
-    default <X extends Throwable> Try<T> recoverWith(Class<X> exceptionType, Function<? super X, Try<? extends T>> f) {
+    default <X extends Throwable> Try<T> catchSomeWith(Class<X> exceptionType, Function<? super X, ? extends Try<? extends T>> f) {
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(f, "f is null");
-        if (isFailure()) {
-            final Throwable cause = getCause();
-            if (exceptionType.isAssignableFrom(cause.getClass())) {
-                try {
-                    return narrow(f.apply((X) cause));
-                } catch (Throwable t) {
-                    return new Failure<>(t);
-                }
-            }
-        }
-        return this;
-    }
-
-    /**
-     * Recovers this {@code Try} with the given {@code recovered} value if this is a {@link Try.Failure}
-     * and the underlying cause is assignable to the specified {@code exceptionType}.
-     * <p>
-     * If this {@code Try} is a {@link Success}, or if the cause does not match {@code exceptionType},
-     * the original {@code Try} is returned unchanged.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * // = Success(13)
-     * Try.of(() -> 27/2).recoverWith(ArithmeticException.class, Try.success(Integer.MAX_VALUE));
-     *
-     * // = Success(2147483647)
-     * Try.of(() -> 1/0)
-     *    .recoverWith(Error.class, Try.success(-1))
-     *    .recoverWith(ArithmeticException.class, Try.success(Integer.MAX_VALUE));
-     *
-     * // = Failure(java.lang.ArithmeticException: / by zero)
-     * Try.of(() -> 1/0).recoverWith(Error.class, Try.success(Integer.MAX_VALUE));
-     * }</pre>
-     *
-     * @param <X>           the type of exception to handle
-     * @param exceptionType the exception type that triggers recovery
-     * @param recovered     a {@code Try} instance to return if the cause matches {@code exceptionType}
-     * @return the given {@code recovered} if the exception matches, otherwise this {@code Try}
-     * @throws NullPointerException if {@code exceptionType} or {@code recovered} is null
-     */
-    default <X extends Throwable> Try<T> recoverWith(Class<X> exceptionType, Try<? extends T> recovered) {
-        Objects.requireNonNull(exceptionType, "exceptionType is null");
-        Objects.requireNonNull(recovered, "recovered is null");
-        return (isFailure() && exceptionType.isAssignableFrom(getCause().getClass()))
-          ? narrow(recovered)
-          : this;
-    }
-
-    /**
-     * Recovers this {@code Try} with the given {@code value} if this is a {@link Try.Failure}
-     * and the underlying cause matches the specified {@code exceptionType}.
-     * <p>
-     * If this {@code Try} is a {@link Success}, or if the cause is not an instance of (i.e. not assignable to)
-     * {@code exceptionType}, the original {@code Try} is returned unchanged.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * // = Success(13)
-     * Try.of(() -> 27/2).recover(ArithmeticException.class, 13);
-     *
-     * // = Success(2147483647)
-     * Try.of(() -> 1/0)
-     *    .recover(Error.class, -1)
-     *    .recover(ArithmeticException.class, Integer.MAX_VALUE);
-     *
-     * // = Failure(java.lang.ArithmeticException: / by zero)
-     * Try.of(() -> 1/0).recover(Error.class, Integer.MAX_VALUE);
-     * }</pre>
-     * <p>
-     * {@code value} must not be {@code null}: {@code Success} cannot hold {@code null}, so this throws {@link NullPointerException} when the cause matches and {@code value} is {@code null}.
-     *
-     * @param <X>           the type of exception to handle
-     * @param exceptionType the exception type that triggers recovery
-     * @param value         the value to return in a {@link Try.Success} if the cause matches
-     * @return a {@code Try} containing the recovery value if the exception matches, otherwise this {@code Try}
-     * @throws NullPointerException if {@code exceptionType} is null
-     */
-    default <X extends Throwable> Try<T> recover(Class<X> exceptionType, T value) {
-        Objects.requireNonNull(exceptionType, "exceptionType is null");
-        return (isFailure() && exceptionType.isAssignableFrom(getCause().getClass()))
-          ? Try.success(value)
-          : this;
-    }
-
-    /**
-     * Recovers this {@code Try} if it is a {@link Try.Failure} by applying the given recovery function {@code f}
-     * to the underlying exception. The result of the function is wrapped in a {@link Try.Success}.
-     * <p>
-     * If this {@code Try} is already a {@link Success}, it is returned unchanged.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * // = Success(13)
-     * Try.of(() -> 27/2).recover(x -> Integer.MAX_VALUE);
-     *
-     * // = Success(2147483647)
-     * Try.of(() -> 1/0).recover(x -> Integer.MAX_VALUE);
-     * }</pre>
-     * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
-     *
-     * @param f A recovery function that takes the underlying exception and returns a value
-     * @return a {@code Try} containing either the original success value or the recovered value
-     * @throws NullPointerException if {@code f} is null
-     */
-    default Try<T> recover(Function<? super Throwable, ? extends T> f) {
-        Objects.requireNonNull(f, "f is null");
-        if (isFailure()) {
-            return Try.of(() -> f.apply(getCause()));
-        } else {
+        if (isSuccess() || !exceptionType.isInstance(getCause())) {
             return this;
         }
-    }
-
-    /**
-     * Recovers this {@code Try} if it is a {@link Try.Failure} by applying the given recovery function {@code f}
-     * to the underlying exception. The recovery function returns a new {@code Try} instance. 
-     * <p>
-     * If this {@code Try} is already a {@link Success}, it is returned unchanged.
-     * If a non-fatal exception occurs while executing the recovery function, a new {@link Try.Failure} is returned
-     * wrapping that exception; fatal throwables (see the class-level documentation) are rethrown instead.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * // = Success(13)
-     * Try.of(() -> 27/2).recoverWith(x -> Try.success(Integer.MAX_VALUE));
-     *
-     * // = Success(2147483647)
-     * Try.of(() -> 1/0).recoverWith(x -> Try.success(Integer.MAX_VALUE));
-     * }</pre>
-     *
-     * @param f A recovery function that takes the underlying exception and returns a new {@code Try}
-     * @return a {@code Try} containing either the original success value or the recovered {@code Try}
-     * @throws NullPointerException if {@code f} is null
-     */
-    @SuppressWarnings("unchecked")
-    default Try<T> recoverWith(Function<? super Throwable, ? extends Try<? extends T>> f) {
-        Objects.requireNonNull(f, "f is null");
-        if (isFailure()) {
-            try {
-                return (Try<T>) f.apply(getCause());
-            } catch (Throwable t) {
-                return new Failure<>(t);
-            }
-        } else {
-            return this;
+        try {
+            return (Try<T>) Objects.requireNonNull(f.apply((X) getCause()), "Try.catchSomeWith: f returned null");
+        } catch (Throwable t) {
+            return new Failure<>(t);
         }
     }
 
     /**
-     * Recovers from any failure by evaluating the given {@code recoveryAttempt} if this {@code Try} is a {@link Try.Failure}.
-     * <p>
-     * If this {@code Try} is already a {@link Success}, it is returned unchanged. The {@code recoveryAttempt} is
-     * evaluated using {@link Try#of(Callable)}, and its result is wrapped in a new {@code Try}.
-     * <p>
-     * Example:
+     * Replaces the cause of a {@code Failure} with the throwable {@code f} builds from it, typically to wrap it in
+     * a domain exception. A {@code Success} is returned unchanged. A non-fatal exception {@code f} throws is the
+     * new cause; a {@code null} it returns is a {@code Failure} of a {@link NullPointerException}, and a fatal
+     * throwable it returns is rethrown (see the class-level documentation).
      * <pre>{@code
-     * // = Success(5)
-     * Try.of(() -> 5)
-     *    .recoverAllAndTry(() -> 10);
-     *
-     * // = Success(10)
-     * Try.of(() -> 1/0)
-     *    .recoverAllAndTry(() -> 10);
+     * Try.of(() -> parse(input)).mapError(e -> new ConfigException("bad input", e));
      * }</pre>
-     * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
      *
-     * @param recoveryAttempt A checked supplier providing a fallback value in case of failure
-     * @return a {@code Try} containing either the original success value or the result of {@code recoveryAttempt}
-     * @throws NullPointerException if {@code recoveryAttempt} is null
+     * @param f a function from the cause to its replacement
+     * @return this {@code Success}, or a {@code Failure} of the mapped cause
+     * @throws NullPointerException if {@code f} is null
      */
-    default Try<T> recoverAllAndTry(Callable<? extends T> recoveryAttempt) {
-        Objects.requireNonNull(recoveryAttempt, "recoveryAttempt is null");
-        return isFailure() ? of(recoveryAttempt) : this;
-    }
-
-    /**
-     * Returns {@code this} if it is a {@link Try.Success}, or attempts to recover from a failure when the
-     * underlying cause is assignable to the specified {@code exceptionType} by evaluating the given
-     * {@code recoveryAttempt} (via {@link Try#of(Callable)}).
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // = Success(5)
-     * Try.of(() -> 5)
-     *    .recoverAndTry(ArithmeticException.class, () -> 10);
-     *
-     * // = Success(10)
-     * Try.of(() -> 1/0)
-     *    .recoverAndTry(ArithmeticException.class, () -> 10);
-     *
-     * // = Failure(java.lang.ArithmeticException: / by zero)
-     * Try.of(() -> 1/0)
-     *    .recoverAndTry(NullPointerException.class, () -> 10);
-     * }</pre>
-     * <p>
-     * A recovery that yields {@code null} is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold {@code null}: the recovery runs under {@link #of(Callable)}.
-     *
-     * @param <X>             The type of the exception that may be recovered
-     * @param exceptionType   The specific exception type that triggers the recovery
-     * @param recoveryAttempt A checked function providing a fallback value if the exception matches
-     * @return a {@code Try} containing either the original success value or the result of {@code recoveryAttempt}
-     * @throws NullPointerException if {@code exceptionType} or {@code recoveryAttempt} is null
-     */
-    default <X extends Throwable> Try<T> recoverAndTry(Class<X> exceptionType, Callable<? extends T> recoveryAttempt) {
-        Objects.requireNonNull(exceptionType, "exceptionType is null");
-        Objects.requireNonNull(recoveryAttempt, "recoveryAttempt is null");
-        return isFailure() && exceptionType.isAssignableFrom(getCause().getClass())
-          ? of(recoveryAttempt)
-          : this;
+    default Try<T> mapError(Function<? super Throwable, ? extends Throwable> f) {
+        Objects.requireNonNull(f, "f is null");
+        if (isSuccess()) {
+            return this;
+        }
+        try {
+            return new Failure<>(f.apply(getCause()));
+        } catch (Throwable t) {
+            return new Failure<>(t);
+        }
     }
 
     /**
@@ -1264,61 +966,30 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Transforms this {@code Try} into a value of another type using the provided function.
+     * Runs {@code finalizer} after this {@code Try} whatever its outcome, like a {@code finally} block, and returns
+     * this {@code Try} unchanged when the finalizer completes normally.
+     * <p>
+     * If the finalizer throws a non-fatal exception: on a {@code Success} the result is a {@code Failure} of that
+     * exception; on a {@code Failure} the original cause is kept and the exception is added to it as
+     * {@linkplain Throwable#addSuppressed(Throwable) suppressed}, the way {@code try}-with-resources attaches an
+     * exception thrown by {@code close()} to the primary one (JLS 14.20.3). A fatal throwable (see the class-level
+     * documentation) is rethrown whatever the state of this {@code Try}.
+     * <p>
+     * A {@link Runnable} lambda is a {@code CheckedRunnable} lambda; a {@code Runnable} variable is passed as
+     * {@code runnable::run}.
+     * <pre>{@code
+     * Try.of(() -> connection.query(sql)).ensuring(connection::close);
+     * }</pre>
      *
-     * @param f   a transformation function
-     * @param <U> the result type of the transformation
-     * @return the result of applying {@code f} to this {@code Try}
-     * @throws NullPointerException if {@code f} is null
+     * @param finalizer what to run after this {@code Try}
+     * @return this {@code Try} if the finalizer completes normally; a {@code Failure} of what it threw when this was
+     *         a {@code Success}; this same {@code Failure} with the thrown exception suppressed otherwise
+     * @throws NullPointerException if {@code finalizer} is null
      */
-    default <U extends @Nullable Object> U transform(Function<? super Try<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
-
-    /**
-     * Executes a given {@link Runnable} after this {@code Try}, regardless of whether it is a
-     * {@link Try.Success} or {@link Try.Failure}.
-     *
-     * <p>If this {@code Try} is already a {@link Try.Failure} and the runnable also throws, the
-     * original failure is preserved and the runnable's exception is added as
-     * {@linkplain Throwable#addSuppressed(Throwable) suppressed} — analogous to how Java's
-     * {@code try}-with-resources attaches an exception thrown by {@code close()} to the primary
-     * exception (JLS §14.20.3). A fatal throwable (see the class-level documentation) thrown by the
-     * runnable is rethrown instead, regardless of the state of this {@code Try}.</p>
-     *
-     * @param runnable a final action to perform
-     * @return this {@code Try} if the runnable succeeds; if the runnable throws, this same {@code Try} with the
-     *         exception added as {@linkplain Throwable#addSuppressed(Throwable) suppressed} when this was already
-     *         a {@link Try.Failure}, or a new {@link Try.Failure} wrapping the exception when this was a {@link Success}
-     * @throws NullPointerException if {@code runnable} is null
-     */
-    default Try<T> andFinally(Runnable runnable) {
-        Objects.requireNonNull(runnable, "runnable is null");
-        return andFinallyTry(runnable::run);
-    }
-
-    /**
-     * Executes a given {@link CheckedRunnable} after this {@code Try}, regardless of whether it is a
-     * {@link Try.Success} or {@link Try.Failure}.
-     *
-     * <p>If this {@code Try} is already a {@link Try.Failure} and the runnable also throws, the
-     * original failure is preserved and the runnable's exception is added as
-     * {@linkplain Throwable#addSuppressed(Throwable) suppressed} — analogous to how Java's
-     * {@code try}-with-resources attaches an exception thrown by {@code close()} to the primary
-     * exception (JLS §14.20.3). A fatal throwable (see the class-level documentation) thrown by the
-     * runnable is rethrown instead, regardless of the state of this {@code Try}.</p>
-     *
-     * @param runnable a checked final action to perform
-     * @return this {@code Try} if the runnable succeeds; if the runnable throws, this same {@code Try} with the
-     *         exception added as {@linkplain Throwable#addSuppressed(Throwable) suppressed} when this was already
-     *         a {@link Try.Failure}, or a new {@link Try.Failure} wrapping the exception when this was a {@link Success}
-     * @throws NullPointerException if {@code runnable} is null
-     */
-    default Try<T> andFinallyTry(CheckedRunnable runnable) {
-        Objects.requireNonNull(runnable, "runnable is null");
+    default Try<T> ensuring(CheckedRunnable finalizer) {
+        Objects.requireNonNull(finalizer, "finalizer is null");
         try {
-            runnable.run();
+            finalizer.run();
             return this;
         } catch (Throwable t) {
             if (isFailure() && !isFatal(t)) {
@@ -1473,471 +1144,34 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     // -- try with resources
 
     /**
-     * Creates a {@code Try}-with-resources builder that operates on one {@link AutoCloseable} resource.
+     * Runs {@code f} with a resource and closes the resource afterwards, like {@code try}-with-resources under
+     * {@code Try}: the resource is obtained from {@code resource}, passed to {@code f}, then closed whatever
+     * happened. The result is {@code Success} of what {@code f} returned, or a {@code Failure} of the first
+     * non-fatal exception thrown by the acquisition, by {@code f} or by {@code close()}; an exception thrown by
+     * {@code close()} after {@code f} threw is added to the cause as
+     * {@linkplain Throwable#addSuppressed(Throwable) suppressed}. A {@code null} result is a {@code Failure} of a
+     * {@link NullPointerException}, see {@link #of(Callable)}. Several resources nest:
+     * <pre>{@code
+     * Try<String> firstLine = Try.withResources(() -> new FileReader(path), reader ->
+     *     Try.withResources(() -> new BufferedReader(reader), BufferedReader::readLine).get());
+     * }</pre>
      *
-     * @param t1Supplier The supplier of the first resource.
-     * @param <T1> Type of the 1st resource.
-     * @return a new {@link WithResources1} instance.
+     * @param resource obtains the resource; called once
+     * @param f        the computation over the resource
+     * @param <R>      the resource type
+     * @param <T>      the result type
+     * @return {@code Success} of the result of {@code f}, or a {@code Failure}
+     * @throws NullPointerException if {@code resource} or {@code f} is null
      */
-    static <T1 extends AutoCloseable> WithResources1<T1> withResources(Callable<? extends T1> t1Supplier) {
-        return new WithResources1<>(t1Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on two {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @return a new {@link WithResources2} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable> WithResources2<T1, T2> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier) {
-        return new WithResources2<>(t1Supplier, t2Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on three {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param t3Supplier The supplier of the 3rd resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @return a new {@link WithResources3} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable> WithResources3<T1, T2, T3> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier) {
-        return new WithResources3<>(t1Supplier, t2Supplier, t3Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on four {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param t3Supplier The supplier of the 3rd resource.
-     * @param t4Supplier The supplier of the 4th resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @return a new {@link WithResources4} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable> WithResources4<T1, T2, T3, T4> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier) {
-        return new WithResources4<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on five {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param t3Supplier The supplier of the 3rd resource.
-     * @param t4Supplier The supplier of the 4th resource.
-     * @param t5Supplier The supplier of the 5th resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @return a new {@link WithResources5} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable> WithResources5<T1, T2, T3, T4, T5> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier) {
-        return new WithResources5<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on six {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param t3Supplier The supplier of the 3rd resource.
-     * @param t4Supplier The supplier of the 4th resource.
-     * @param t5Supplier The supplier of the 5th resource.
-     * @param t6Supplier The supplier of the 6th resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @param <T6> Type of the 6th resource.
-     * @return a new {@link WithResources6} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable> WithResources6<T1, T2, T3, T4, T5, T6> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier) {
-        return new WithResources6<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier, t6Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on seven {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param t3Supplier The supplier of the 3rd resource.
-     * @param t4Supplier The supplier of the 4th resource.
-     * @param t5Supplier The supplier of the 5th resource.
-     * @param t6Supplier The supplier of the 6th resource.
-     * @param t7Supplier The supplier of the 7th resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @param <T6> Type of the 6th resource.
-     * @param <T7> Type of the 7th resource.
-     * @return a new {@link WithResources7} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable> WithResources7<T1, T2, T3, T4, T5, T6, T7> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier) {
-        return new WithResources7<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier, t6Supplier, t7Supplier);
-    }
-
-    /**
-     * Creates a {@code Try}-with-resources builder that operates on eight {@link AutoCloseable} resources.
-     *
-     * @param t1Supplier The supplier of the 1st resource.
-     * @param t2Supplier The supplier of the 2nd resource.
-     * @param t3Supplier The supplier of the 3rd resource.
-     * @param t4Supplier The supplier of the 4th resource.
-     * @param t5Supplier The supplier of the 5th resource.
-     * @param t6Supplier The supplier of the 6th resource.
-     * @param t7Supplier The supplier of the 7th resource.
-     * @param t8Supplier The supplier of the 8th resource.
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @param <T6> Type of the 6th resource.
-     * @param <T7> Type of the 7th resource.
-     * @param <T8> Type of the 8th resource.
-     * @return a new {@link WithResources8} instance.
-     */
-    static <T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable, T8 extends AutoCloseable> WithResources8<T1, T2, T3, T4, T5, T6, T7, T8> withResources(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier, Callable<? extends T8> t8Supplier) {
-        return new WithResources8<>(t1Supplier, t2Supplier, t3Supplier, t4Supplier, t5Supplier, t6Supplier, t7Supplier, t8Supplier);
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on one {@link AutoCloseable} resource.
-     *
-     * @param <T1> Type of the 1st resource.
-     */
-    final class WithResources1<T1 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-
-        private WithResources1(Callable<? extends T1> t1Supplier) {
-            this.t1Supplier = t1Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes one {@code AutoClosable} resource.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction1<? super T1, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call()) {
-                    return f.apply(t1);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on two {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     */
-    final class WithResources2<T1 extends AutoCloseable, T2 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-
-        private WithResources2(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes two {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction2<? super T1, ? super T2, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call()) {
-                    return f.apply(t1, t2);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on three {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     */
-    final class WithResources3<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-        private final Callable<? extends T3> t3Supplier;
-
-        private WithResources3(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-            this.t3Supplier = t3Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes three {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction3<? super T1, ? super T2, ? super T3, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call()) {
-                    return f.apply(t1, t2, t3);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on four {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     */
-    final class WithResources4<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-        private final Callable<? extends T3> t3Supplier;
-        private final Callable<? extends T4> t4Supplier;
-
-        private WithResources4(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-            this.t3Supplier = t3Supplier;
-            this.t4Supplier = t4Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes four {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call()) {
-                    return f.apply(t1, t2, t3, t4);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on five {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     */
-    final class WithResources5<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-        private final Callable<? extends T3> t3Supplier;
-        private final Callable<? extends T4> t4Supplier;
-        private final Callable<? extends T5> t5Supplier;
-
-        private WithResources5(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-            this.t3Supplier = t3Supplier;
-            this.t4Supplier = t4Supplier;
-            this.t5Supplier = t5Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes five {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call()) {
-                    return f.apply(t1, t2, t3, t4, t5);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on six {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @param <T6> Type of the 6th resource.
-     */
-    final class WithResources6<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-        private final Callable<? extends T3> t3Supplier;
-        private final Callable<? extends T4> t4Supplier;
-        private final Callable<? extends T5> t5Supplier;
-        private final Callable<? extends T6> t6Supplier;
-
-        private WithResources6(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-            this.t3Supplier = t3Supplier;
-            this.t4Supplier = t4Supplier;
-            this.t5Supplier = t5Supplier;
-            this.t6Supplier = t6Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes six {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call()) {
-                    return f.apply(t1, t2, t3, t4, t5, t6);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on seven {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @param <T6> Type of the 6th resource.
-     * @param <T7> Type of the 7th resource.
-     */
-    final class WithResources7<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-        private final Callable<? extends T3> t3Supplier;
-        private final Callable<? extends T4> t4Supplier;
-        private final Callable<? extends T5> t5Supplier;
-        private final Callable<? extends T6> t6Supplier;
-        private final Callable<? extends T7> t7Supplier;
-
-        private WithResources7(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-            this.t3Supplier = t3Supplier;
-            this.t4Supplier = t4Supplier;
-            this.t5Supplier = t5Supplier;
-            this.t6Supplier = t6Supplier;
-            this.t7Supplier = t7Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes seven {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call(); T7 t7 = t7Supplier.call()) {
-                    return f.apply(t1, t2, t3, t4, t5, t6, t7);
-                }
-            });
-        }
-    }
-
-    /**
-     * A {@code Try}-with-resources builder that operates on eight {@link AutoCloseable} resources.
-     *
-     * @param <T1> Type of the 1st resource.
-     * @param <T2> Type of the 2nd resource.
-     * @param <T3> Type of the 3rd resource.
-     * @param <T4> Type of the 4th resource.
-     * @param <T5> Type of the 5th resource.
-     * @param <T6> Type of the 6th resource.
-     * @param <T7> Type of the 7th resource.
-     * @param <T8> Type of the 8th resource.
-     */
-    final class WithResources8<T1 extends AutoCloseable, T2 extends AutoCloseable, T3 extends AutoCloseable, T4 extends AutoCloseable, T5 extends AutoCloseable, T6 extends AutoCloseable, T7 extends AutoCloseable, T8 extends AutoCloseable> {
-
-        private final Callable<? extends T1> t1Supplier;
-        private final Callable<? extends T2> t2Supplier;
-        private final Callable<? extends T3> t3Supplier;
-        private final Callable<? extends T4> t4Supplier;
-        private final Callable<? extends T5> t5Supplier;
-        private final Callable<? extends T6> t6Supplier;
-        private final Callable<? extends T7> t7Supplier;
-        private final Callable<? extends T8> t8Supplier;
-
-        private WithResources8(Callable<? extends T1> t1Supplier, Callable<? extends T2> t2Supplier, Callable<? extends T3> t3Supplier, Callable<? extends T4> t4Supplier, Callable<? extends T5> t5Supplier, Callable<? extends T6> t6Supplier, Callable<? extends T7> t7Supplier, Callable<? extends T8> t8Supplier) {
-            this.t1Supplier = t1Supplier;
-            this.t2Supplier = t2Supplier;
-            this.t3Supplier = t3Supplier;
-            this.t4Supplier = t4Supplier;
-            this.t5Supplier = t5Supplier;
-            this.t6Supplier = t6Supplier;
-            this.t7Supplier = t7Supplier;
-            this.t8Supplier = t8Supplier;
-        }
-
-        /**
-         * Wraps the result of a computation that may fail in a {@code Try}.
-         *
-         * @param f A computation that takes eight {@code AutoClosable} resources.
-         * @param <R> Result type of the computation.
-         * @return A new {@code Try} instance.
-         */
-        @SuppressWarnings("try"/* https://bugs.openjdk.java.net/browse/JDK-8155591 */)
-        public <R extends @Nullable Object> Try<R> of(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
-            return Try.of(() -> {
-                try (T1 t1 = t1Supplier.call(); T2 t2 = t2Supplier.call(); T3 t3 = t3Supplier.call(); T4 t4 = t4Supplier.call(); T5 t5 = t5Supplier.call(); T6 t6 = t6Supplier.call(); T7 t7 = t7Supplier.call(); T8 t8 = t8Supplier.call()) {
-                    return f.apply(t1, t2, t3, t4, t5, t6, t7, t8);
-                }
-            });
-        }
+    @SuppressWarnings("try") /* https://bugs.openjdk.java.net/browse/JDK-8155591 */
+    static <R extends AutoCloseable, T extends @Nullable Object> Try<T> withResources(Callable<? extends R> resource, CheckedFunction1<? super R, ? extends T> f) {
+        Objects.requireNonNull(resource, "resource is null");
+        Objects.requireNonNull(f, "f is null");
+        return Try.of(() -> {
+            try (R r = resource.call()) {
+                return f.apply(r);
+            }
+        });
     }
 }
 

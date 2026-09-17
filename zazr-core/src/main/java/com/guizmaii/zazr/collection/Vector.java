@@ -915,9 +915,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     public Iterator<Vector<T>> grouped(int size) { return sliding(size, size); }
 
     @Override
-    public boolean hasDefiniteSize() { return true; }
-
-    @Override
     public int indexOf(T element, int from) {
         for (int i = Math.max(from, 0); i < length(); i++) {
             if (Objects.equals(get(i), element)) {
@@ -963,9 +960,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     public boolean isEmpty() { return length() == 0; }
 
     @Override
-    public boolean isTraversableAgain() { return true; }
-
-    @Override
     public Iterator<T> iterator() {
         return isEmpty() ? Iterator.empty()
                          : trie.iterator();
@@ -1002,7 +996,24 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> Vector<U> mapTo(U value) {
+    public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // one pass over the leaves straight into the builder, like flatMap: no intermediate collection
+        final Builder<U> builder = newBuilder();
+        trie.<Object> visit((index, leaf, start, end) -> {
+            for (int i = start; i < end; i++) {
+                final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(trie.type.getAt(leaf, i)), "Vector.collect: mapper returned null");
+                if (collected.isDefined()) {
+                    builder.add(collected.get());
+                }
+            }
+            return index + end - start;
+        });
+        return builder.result();
+    }
+
+    @Override
+    public <U extends @Nullable Object> Vector<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -1058,11 +1069,9 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
 
     @Override
-    public Vector<T> peek(Consumer<? super T> action) {
+    public Vector<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        if (!isEmpty()) {
-            action.accept(head());
-        }
+        forEach(action);
         return this;
     }
 
@@ -1362,19 +1371,6 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     public Vector<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeRightUntil(predicate.negate());
-    }
-
-    /**
-     * Transforms this {@code Vector}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    public <U extends @Nullable Object> U transform(Function<? super Vector<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
     }
 
     @Override

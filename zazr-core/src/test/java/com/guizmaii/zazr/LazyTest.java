@@ -90,62 +90,62 @@ public class LazyTest {
     }
 
     @Nested
-    class PeekTests {
+    class TapTests {
         @Test
-        public void shouldPeek() {
+        public void shouldTap() {
             final Lazy<Integer> lazy = Lazy.of(() -> 1);
-            final Lazy<Integer> peek = lazy.peek(v -> assertThat(v).isEqualTo(1));
-            assertThat(peek).isSameAs(lazy);
+            final Lazy<Integer> tapped = lazy.tap(v -> assertThat(v).isEqualTo(1));
+            assertThat(tapped).isSameAs(lazy);
         }
 
         @Test
-        public void shouldEvaluateOnPeek() {
+        public void shouldEvaluateOnTap() {
             final Lazy<Integer> lazy = Lazy.of(() -> 1);
             final int[] effect = { 0 };
-            lazy.peek(i -> effect[0] = i);
+            lazy.tap(i -> effect[0] = i);
             assertThat(effect[0]).isEqualTo(1);
             assertThat(lazy.isEvaluated()).isTrue();
         }
 
         @Test
         public void shouldThrowOnNullAction() {
-            assertThrows(NullPointerException.class, () -> Lazy.of(() -> 1).peek(null));
+            assertThrows(NullPointerException.class, () -> Lazy.of(() -> 1).tap(null));
         }
     }
 
     @Nested
-    class SequenceIterableTests {
+    class CollectAllTests {
         @Test
-        public void shouldSequenceEmpty() {
+        public void shouldCollectAllEmpty() {
             final List<Lazy<Integer>> testee = List.empty();
-            final Lazy<Seq<Integer>> sequence = Lazy.sequence(testee);
+            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.get()).isEqualTo(Vector.empty());
         }
 
         @Test
-        public void shouldSequenceNonEmptyLazy() {
+        public void shouldCollectAllNonEmptyLazy() {
             final List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
-            final Lazy<Seq<Integer>> sequence = Lazy.sequence(testee);
+            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.get()).isEqualTo(Vector.of(1, 2, 3));
         }
 
         @Test
-        public void shouldNotEvaluateEmptySequence() {
+        public void shouldNotEvaluateEmptyCollectAll() {
             final List<Lazy<Integer>> testee = List.empty();
-            final Lazy<Seq<Integer>> sequence = Lazy.sequence(testee);
+            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.isEvaluated()).isFalse();
         }
 
         @Test
-        public void shouldNotEvaluateNonEmptySequence() {
+        public void shouldNotEvaluateNonEmptyCollectAll() {
             final List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
-            final Lazy<Seq<Integer>> sequence = Lazy.sequence(testee);
+            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.isEvaluated()).isFalse();
         }
 
         @Test
-        public void shouldThrowWhenSequencingNull() {
-            assertThrows(NullPointerException.class, () -> Lazy.sequence(null));
+        public void shouldThrowWhenCollectingAllOfNull() {
+            assertThrows(NullPointerException.class, () -> Lazy.collectAll(null));
         }
     }
 

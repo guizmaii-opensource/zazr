@@ -391,7 +391,15 @@ public interface Gen<T> {
         return random -> mapper.apply(apply(random));
     }
 
-    default Gen<T> peek(Consumer<? super T> action) {
+    /**
+     * Runs {@code action} on every generated value and returns a generator of the same values.
+     *
+     * @param action what to do with each generated value
+     * @return a new generator
+     * @throws NullPointerException if {@code action} is null
+     */
+    default Gen<T> tap(Consumer<? super T> action) {
+        Objects.requireNonNull(action, "action is null");
         return random -> {
             final T t = apply(random);
             action.accept(t);
@@ -399,16 +407,4 @@ public interface Gen<T> {
         };
     }
 
-    /**
-     * Transforms this {@code Gen}.
-     *
-     * @param f   A transformation
-     * @param <U> Type of transformation result
-     * @return An instance of type {@code U}
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <U> U transform(Function<? super Gen<T>, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return f.apply(this);
-    }
 }

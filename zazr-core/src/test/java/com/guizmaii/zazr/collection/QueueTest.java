@@ -183,11 +183,6 @@ public class QueueTest extends AbstractLinearSeqTest {
         return Queue.transpose((Queue<Queue<T>>) rows);
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
     //fixme: delete, when useIsEqualToInsteadOfIsSameAs() will be eliminated from AbstractValueTest class
     @Override
     protected boolean useIsEqualToInsteadOfIsSameAs() {
@@ -383,16 +378,6 @@ public class QueueTest extends AbstractLinearSeqTest {
             assertThat(enqueued().lastIndexOf(1, 1)).isEqualTo(0);
 
             assertThat(enqueued().lastIndexOfOption(1, 1)).isEqualTo(Option.some(0));
-        }
-    }
-
-    @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
         }
     }
 

@@ -541,7 +541,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> bimap(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         final Iterator<Tuple2<K2, V2>> entries = iterator().map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
@@ -705,11 +705,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public boolean isSequential() {
-        return true;
-    }
-
-    @Override
     public Iterator<Tuple2<K, V>> iterator() {
         final Iterator<K> slots = list.iterator();
         return new AbstractIterator<Tuple2<K, V>>() {
@@ -758,6 +753,15 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public Tuple2<K, V> last() {
         return map.get(list.last()).get().entry();
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return foldLeft(LinkedHashMap.empty(), (acc, entry) -> {
+            final Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "LinkedHashMap.collect: mapper returned null");
+            return collected.isDefined() ? acc.put(collected.get()) : acc;
+        });
     }
 
     @Override
@@ -810,8 +814,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public LinkedHashMap<K, V> peek(Consumer<? super Tuple2<K, V>> action) {
-        return Maps.peek(this, action);
+    public LinkedHashMap<K, V> tap(Consumer<? super Tuple2<K, V>> action) {
+        return Maps.tap(this, action);
     }
 
     @Override

@@ -164,11 +164,6 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Predica
     Option<? extends Set<T>> initOption();
 
     @Override
-    default boolean isDistinct() {
-        return true;
-    }
-
-    @Override
     
     Iterator<T> iterator();
 
@@ -179,7 +174,10 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Predica
     <U extends @Nullable Object> Set<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
-    default <U extends @Nullable Object> Set<U> mapTo(U value) {
+    <U extends @Nullable Object> Set<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    @Override
+    default <U extends @Nullable Object> Set<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -193,7 +191,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T>, Predica
     Tuple2<? extends Set<T>, ? extends Set<T>> partition(Predicate<? super T> predicate);
 
     @Override
-    Set<T> peek(Consumer<? super T> action);
+    Set<T> tap(Consumer<? super T> action);
 
     @Override
     Set<T> replace(T currentElement, T newElement);

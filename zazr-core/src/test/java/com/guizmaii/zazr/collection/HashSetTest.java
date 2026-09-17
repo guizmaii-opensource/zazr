@@ -163,11 +163,6 @@ public class HashSetTest extends AbstractSetTest {
         return HashSet.fill(n, s);
     }
 
-    @Override
-    protected int getPeekNonNilPerformingAnAction() {
-        return 1;
-    }
-
     @Nested
     class StaticNarrowTests {
         @Test
@@ -295,16 +290,6 @@ public class HashSetTest extends AbstractSetTest {
         final HashSet<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
         final HashSet<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
-    }
-
-    @Nested
-    class TransformTests {
-        
-        @Test
-        void shouldTransform() {
-            final String transformed = of(42).transform(v -> String.valueOf(v.head()));
-            assertThat(transformed).isEqualTo("42");
-        }
     }
 
     // HashSet special cases
@@ -487,11 +472,4 @@ public class HashSetTest extends AbstractSetTest {
         }
     }
 
-    @Nested
-    class IssequentialTests {
-        @Test
-        public void shouldReturnFalseWhenIsSequentialCalled() {
-            assertThat(of(1, 2, 3).isSequential()).isFalse();
-        }
-    }
 }

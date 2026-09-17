@@ -119,15 +119,13 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
     SortedSet<T> intersect(Set<? extends T> elements);
 
     @Override
-    default boolean isOrdered() {
-        return true;
-    }
-
-    @Override
     <U extends @Nullable Object> SortedSet<U> map(Function<? super T, ? extends U> mapper);
 
     @Override
-    default <U extends @Nullable Object> SortedSet<U> mapTo(U value) {
+    <U extends @Nullable Object> SortedSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
+
+    @Override
+    default <U extends @Nullable Object> SortedSet<U> as(U value) {
         return map((o1, o2) -> 0, ignored -> value);
     }
 
@@ -141,7 +139,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
     Tuple2<? extends SortedSet<T>, ? extends SortedSet<T>> partition(Predicate<? super T> predicate);
 
     @Override
-    SortedSet<T> peek(Consumer<? super T> action);
+    SortedSet<T> tap(Consumer<? super T> action);
 
     @Override
     SortedSet<T> remove(T element);

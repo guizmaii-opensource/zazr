@@ -201,7 +201,7 @@ public class SealedTypesTest {
         @Test
         public void shouldRunToTheEmptyTuple() {
             assertThat(Try.run(() -> {})).isEqualTo(Try.success(Tuple.empty()));
-            assertThat(Try.runRunnable(() -> {}).get()).isSameAs(Tuple0.instance());
+            assertThat(Try.run(() -> {}).get()).isSameAs(Tuple0.instance());
             assertThat(Try.run(() -> {})).hasToString("Success(())");
         }
 
@@ -356,7 +356,7 @@ public class SealedTypesTest {
         @Test
         public void shouldCaptureNullMapperResultInTry() {
             assertThat(Try.success(1).map(x -> null).getCause()).isInstanceOf(NullPointerException.class);
-            assertThat(Try.failure(new RuntimeException()).recover(t -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(Try.failure(new RuntimeException()).catchAll(t -> null).getCause()).isInstanceOf(NullPointerException.class);
         }
 
         @Test
