@@ -862,6 +862,7 @@ public sealed interface Validation<E extends @Nullable Object, T extends @Nullab
          * @return a Validation with the result or accumulated errors
          */
         public <R extends @Nullable Object> Validation<Seq<E>, R> ap(BiFunction<T1, T2, R> f) {
+            Objects.requireNonNull(f, "f is null");
             return v2.ap(v1.ap(Validation.valid(t1 -> t2 -> f.apply(t1, t2))));
         }
 

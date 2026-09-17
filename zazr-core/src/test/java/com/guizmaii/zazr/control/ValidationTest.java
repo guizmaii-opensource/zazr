@@ -559,6 +559,13 @@ public class ValidationTest extends AbstractValueTest {
             assertThat(result.isInvalid()).isTrue();
             assertThat(result2.isInvalid()).isTrue();
         }
+
+        @Test
+        public void shouldThrowNullPointerExceptionWhenApplyingNullBiFunction() {
+            Validation<String, String> e1 = Validation.invalid("error1");
+            Validation<String, Integer> e2 = Validation.invalid("error2");
+            assertThrows(NullPointerException.class, () -> e1.combine(e2).ap(null));
+        }
     }
 
     // -- miscellaneous
