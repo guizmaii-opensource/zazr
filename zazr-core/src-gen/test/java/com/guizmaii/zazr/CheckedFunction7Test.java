@@ -12,6 +12,7 @@ import java.lang.CharSequence;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -45,12 +46,6 @@ public class CheckedFunction7Test {
     }
 
     @Test
-    public void shouldGetArity() {
-        final CheckedFunction7<Object, Object, Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5, o6, o7) -> null;
-        assertThat(f.arity()).isEqualTo(7);
-    }
-
-    @Test
     public void shouldConstant() throws Throwable {
         final CheckedFunction7<Object, Object, Object, Object, Object, Object, Object, Object> f = CheckedFunction7.constant(6);
         assertThat(f.apply(1, 2, 3, 4, 5, 6, 7)).isEqualTo(6);
@@ -59,7 +54,7 @@ public class CheckedFunction7Test {
     @Test
     public void shouldCurry() {
         final CheckedFunction7<Object, Object, Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5, o6, o7) -> null;
-        final Function1<Object, Function1<Object, Function1<Object, Function1<Object, Function1<Object, Function1<Object, CheckedFunction1<Object, Object>>>>>>> curried = f.curried();
+        final Function<Object, Function<Object, Function<Object, Function<Object, Function<Object, Function<Object, CheckedFunction1<Object, Object>>>>>>> curried = f.curried();
         assertThat(curried).isNotNull();
     }
 
@@ -68,49 +63,6 @@ public class CheckedFunction7Test {
         final CheckedFunction7<Object, Object, Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5, o6, o7) -> null;
         final CheckedFunction1<Tuple7<Object, Object, Object, Object, Object, Object, Object>, Object> tupled = f.tupled();
         assertThat(tupled).isNotNull();
-    }
-
-    @Test
-    public void shouldReverse() {
-        final CheckedFunction7<Object, Object, Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5, o6, o7) -> null;
-        assertThat(f.reversed()).isNotNull();
-    }
-
-    @Test
-    public void shouldMemoize() throws Throwable {
-        final AtomicInteger integer = new AtomicInteger();
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> f = (i1, i2, i3, i4, i5, i6, i7) -> i1 + i2 + i3 + i4 + i5 + i6 + i7 + integer.getAndIncrement();
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> memo = f.memoized();
-        // should apply f on first apply()
-        final int expected = memo.apply(1, 2, 3, 4, 5, 6, 7);
-        // should return memoized value of second apply()
-        assertThat(memo.apply(1, 2, 3, 4, 5, 6, 7)).isEqualTo(expected);
-        // should calculate new values when called subsequently with different parameters
-        assertThat(memo.apply(2 , 3 , 4 , 5 , 6 , 7 , 8 )).isEqualTo(2  + 3  + 4  + 5  + 6  + 7  + 8  + 1);
-        // should return memoized value of second apply() (for new value)
-        assertThat(memo.apply(2 , 3 , 4 , 5 , 6 , 7 , 8 )).isEqualTo(2  + 3  + 4  + 5  + 6  + 7  + 8  + 1);
-    }
-
-    @Test
-    public void shouldNotMemoizeAlreadyMemoizedFunction() throws Throwable {
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> f = (i1, i2, i3, i4, i5, i6, i7) -> null;
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> memo = f.memoized();
-        assertThat(memo.memoized() == memo).isTrue();
-    }
-
-    @Test
-    public void shouldMemoizeValueGivenNullArguments() throws Throwable {
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> f = (i1, i2, i3, i4, i5, i6, i7) -> null;
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> memo = f.memoized();
-        assertThat(memo.apply(null, null, null, null, null, null, null)).isNull();
-    }
-
-    @Test
-    public void shouldRecognizeMemoizedFunctions() {
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> f = (i1, i2, i3, i4, i5, i6, i7) -> null;
-        final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> memo = f.memoized();
-        assertThat(f.isMemoized()).isFalse();
-        assertThat(memo.isMemoized()).isTrue();
     }
 
     private static final CheckedFunction7<String, String, String, String, String, String, String, MessageDigest> digest = (s1, s2, s3, s4, s5, s6, s7) -> MessageDigest.getInstance(s1 + s2 + s3 + s4 + s5 + s6 + s7);
@@ -132,7 +84,7 @@ public class CheckedFunction7Test {
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
         assertThat(md5.getDigestLength()).isEqualTo(16);
-        final Try<MessageDigest> unknown = Function7.liftTry(recover).apply("U", "n", "k", "n", "o", "w", "n");
+        final Try<MessageDigest> unknown = Try.of(() -> recover.apply("U", "n", "k", "n", "o", "w", "n"));
         assertThat(unknown).isNotNull();
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -170,8 +122,7 @@ public class CheckedFunction7Test {
         assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
     }
 
-    private static final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> recurrent1 = (i1, i2, i3, i4, i5, i6, i7) -> i1 <= 0 ? i1 : CheckedFunction7Test.recurrent2.apply(i1 - 1, i2, i3, i4, i5, i6, i7) + 1;
-    private static final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> recurrent2 = CheckedFunction7Test.recurrent1.memoized();
+    private static final CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> recurrent1 = (i1, i2, i3, i4, i5, i6, i7) -> i1 <= 0 ? i1 : CheckedFunction7Test.recurrent1.apply(i1 - 1, i2, i3, i4, i5, i6, i7) + 1;
 
     @Test
     public void shouldCalculatedRecursively() throws Throwable {
@@ -193,49 +144,49 @@ public class CheckedFunction7Test {
       @Test
       public void shouldCompose1()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3", "s4", "s5", "s6", "s7")).isEqualTo("XXs2s3s4s5s6s7");
       }
 
       @Test
       public void shouldCompose2()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3", "s4", "s5", "s6", "s7")).isEqualTo("s1XXs3s4s5s6s7");
       }
 
       @Test
       public void shouldCompose3()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx", "s4", "s5", "s6", "s7")).isEqualTo("s1s2XXs4s5s6s7");
       }
 
       @Test
       public void shouldCompose4()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose4(toUpperCase).apply("s1", "s2", "s3", "xx", "s5", "s6", "s7")).isEqualTo("s1s2s3XXs5s6s7");
       }
 
       @Test
       public void shouldCompose5()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose5(toUpperCase).apply("s1", "s2", "s3", "s4", "xx", "s6", "s7")).isEqualTo("s1s2s3s4XXs6s7");
       }
 
       @Test
       public void shouldCompose6()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose6(toUpperCase).apply("s1", "s2", "s3", "s4", "s5", "xx", "s7")).isEqualTo("s1s2s3s4s5XXs7");
       }
 
       @Test
       public void shouldCompose7()  throws Throwable {
           final CheckedFunction7<String, String, String, String, String, String, String, String> concat = (String s1, String s2, String s3, String s4, String s5, String s6, String s7) -> s1 + s2 + s3 + s4 + s5 + s6 + s7;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose7(toUpperCase).apply("s1", "s2", "s3", "s4", "s5", "s6", "xx")).isEqualTo("s1s2s3s4s5s6XX");
       }
 

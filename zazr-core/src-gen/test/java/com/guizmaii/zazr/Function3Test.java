@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.guizmaii.zazr.control.Try;
 import java.lang.CharSequence;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -39,12 +40,6 @@ public class Function3Test {
     }
 
     @Test
-    public void shouldGetArity() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        assertThat(f.arity()).isEqualTo(3);
-    }
-
-    @Test
     public void shouldConstant() {
         final Function3<Object, Object, Object, Object> f = Function3.constant(6);
         assertThat(f.apply(1, 2, 3)).isEqualTo(6);
@@ -53,58 +48,15 @@ public class Function3Test {
     @Test
     public void shouldCurry() {
         final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        final Function1<Object, Function1<Object, Function1<Object, Object>>> curried = f.curried();
+        final Function<Object, Function<Object, Function<Object, Object>>> curried = f.curried();
         assertThat(curried).isNotNull();
     }
 
     @Test
     public void shouldTuple() {
         final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        final Function1<Tuple3<Object, Object, Object>, Object> tupled = f.tupled();
+        final Function<Tuple3<Object, Object, Object>, Object> tupled = f.tupled();
         assertThat(tupled).isNotNull();
-    }
-
-    @Test
-    public void shouldReverse() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        assertThat(f.reversed()).isNotNull();
-    }
-
-    @Test
-    public void shouldMemoize() {
-        final AtomicInteger integer = new AtomicInteger();
-        final Function3<Integer, Integer, Integer, Integer> f = (i1, i2, i3) -> i1 + i2 + i3 + integer.getAndIncrement();
-        final Function3<Integer, Integer, Integer, Integer> memo = f.memoized();
-        // should apply f on first apply()
-        final int expected = memo.apply(1, 2, 3);
-        // should return memoized value of second apply()
-        assertThat(memo.apply(1, 2, 3)).isEqualTo(expected);
-        // should calculate new values when called subsequently with different parameters
-        assertThat(memo.apply(2 , 3 , 4 )).isEqualTo(2  + 3  + 4  + 1);
-        // should return memoized value of second apply() (for new value)
-        assertThat(memo.apply(2 , 3 , 4 )).isEqualTo(2  + 3  + 4  + 1);
-    }
-
-    @Test
-    public void shouldNotMemoizeAlreadyMemoizedFunction() {
-        final Function3<Integer, Integer, Integer, Integer> f = (i1, i2, i3) -> null;
-        final Function3<Integer, Integer, Integer, Integer> memo = f.memoized();
-        assertThat(memo.memoized() == memo).isTrue();
-    }
-
-    @Test
-    public void shouldMemoizeValueGivenNullArguments() {
-        final Function3<Integer, Integer, Integer, Integer> f = (i1, i2, i3) -> null;
-        final Function3<Integer, Integer, Integer, Integer> memo = f.memoized();
-        assertThat(memo.apply(null, null, null)).isNull();
-    }
-
-    @Test
-    public void shouldRecognizeMemoizedFunctions() {
-        final Function3<Integer, Integer, Integer, Integer> f = (i1, i2, i3) -> null;
-        final Function3<Integer, Integer, Integer, Integer> memo = f.memoized();
-        assertThat(f.isMemoized()).isFalse();
-        assertThat(memo.isMemoized()).isTrue();
     }
 
     @Test
@@ -124,8 +76,7 @@ public class Function3Test {
         assertThat(res.get()).isEqualTo(10);
     }
 
-    private static final Function3<Integer, Integer, Integer, Integer> recurrent1 = (i1, i2, i3) -> i1 <= 0 ? i1 : Function3Test.recurrent2.apply(i1 - 1, i2, i3) + 1;
-    private static final Function3<Integer, Integer, Integer, Integer> recurrent2 = Function3Test.recurrent1.memoized();
+    private static final Function3<Integer, Integer, Integer, Integer> recurrent1 = (i1, i2, i3) -> i1 <= 0 ? i1 : Function3Test.recurrent1.apply(i1 - 1, i2, i3) + 1;
 
     @Test
     public void shouldCalculatedRecursively() {
@@ -136,7 +87,7 @@ public class Function3Test {
     @Test
     public void shouldComposeWithAndThen() {
         final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        final Function1<Object, Object> after = o -> null;
+        final Function<Object, Object> after = o -> null;
         final Function3<Object, Object, Object, Object> composed = f.andThen(after);
         assertThat(composed).isNotNull();
     }
@@ -147,21 +98,21 @@ public class Function3Test {
       @Test
       public void shouldCompose1() {
           final Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3")).isEqualTo("XXs2s3");
       }
 
       @Test
       public void shouldCompose2() {
           final Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3")).isEqualTo("s1XXs3");
       }
 
       @Test
       public void shouldCompose3() {
           final Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx")).isEqualTo("s1s2XX");
       }
 

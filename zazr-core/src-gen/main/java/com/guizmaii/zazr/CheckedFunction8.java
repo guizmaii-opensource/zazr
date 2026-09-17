@@ -8,10 +8,7 @@ import static com.guizmaii.zazr.CheckedFunction8Module.sneakyThrow;
 
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
@@ -59,15 +56,15 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html#syntax">lambda expression</a></li>
      * </ul>
      *
-     * Examples (w.l.o.g. referring to Function1):
+     * Examples (w.l.o.g. referring to CheckedFunction8):
      * <pre>{@code // using a lambda expression
-     * Function1<Integer, Integer> add1 = Function1.of(i -> i + 1);
+     * CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, T8, R> add1 = CheckedFunction8.of((t1, t2, t3, t4, t5, t6, t7, t8) -> t1 + t2 + t3 + t4 + t5 + t6 + t7 + t8);
      *
-     * // using a method reference (, e.g. Integer method(Integer i) { return i + 1; })
-     * Function1<Integer, Integer> add2 = Function1.of(this::method);
+     * // using a method reference
+     * CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, T8, R> add2 = CheckedFunction8.of(this::method);
      *
      * // using a lambda reference
-     * Function1<Integer, Integer> add3 = Function1.of(add1::apply);
+     * CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, T8, R> add3 = CheckedFunction8.of(add1::apply);
      * }</pre>
      *
      * @param methodReference (typically) a method reference, e.g. {@code Type::method}
@@ -105,7 +102,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being turned into {@code None}.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Function8<T1, T2, T3, T4, T5, T6, T7, T8, Option<R>> lift(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.<R>of(() -> partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8)).toOption();
+        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.<R>of(() -> { try { return partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8); } catch (Throwable t) { return sneakyThrow(t); } }).toOption();
     }
 
     /**
@@ -127,7 +124,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      *         instead of being wrapped.
      */
     static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Function8<T1, T2, T3, T4, T5, T6, T7, T8, Try<R>> liftTry(CheckedFunction8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> partialFunction) {
-        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.of(() -> partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8));
+        return (t1, t2, t3, t4, t5, t6, t7, t8) -> Try.of(() -> { try { return partialFunction.apply(t1, t2, t3, t4, t5, t6, t7, t8); } catch (Throwable t) { return sneakyThrow(t); } });
     }
 
     /**
@@ -258,20 +255,11 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
     }
 
     /**
-     * Returns the number of function arguments.
-     * @return an int value &gt;= 0
-     * @see <a href="http://en.wikipedia.org/wiki/Arity">Arity</a>
-     */
-    default int arity() {
-        return 8;
-    }
-
-    /**
      * Returns a curried version of this function.
      *
      * @return a curried function equivalent to this.
      */
-    default Function1<T1, Function1<T2, Function1<T3, Function1<T4, Function1<T5, Function1<T6, Function1<T7, CheckedFunction1<T8, R>>>>>>>> curried() {
+    default Function<T1, Function<T2, Function<T3, Function<T4, Function<T5, Function<T6, Function<T7, CheckedFunction1<T8, R>>>>>>>> curried() {
         return t1 -> t2 -> t3 -> t4 -> t5 -> t6 -> t7 -> t8 -> apply(t1, t2, t3, t4, t5, t6, t7, t8);
     }
 
@@ -282,57 +270,6 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      */
     default CheckedFunction1<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>, R> tupled() {
         return t -> apply(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8());
-    }
-
-    /**
-     * Returns a reversed version of this function. This may be useful in a recursive context.
-     *
-     * @return a reversed function equivalent to this.
-     */
-    default CheckedFunction8<T8, T7, T6, T5, T4, T3, T2, T1, R> reversed() {
-        return (t8, t7, t6, t5, t4, t3, t2, t1) -> apply(t1, t2, t3, t4, t5, t6, t7, t8);
-    }
-
-    /**
-     * Returns a memoizing version of this function, which computes the return value for given arguments only one time.
-     * On subsequent calls given the same arguments the memoized value is returned.
-     * <p>
-     * Note that {@code null} arguments and {@code null} return values are permitted; a {@code null} result
-     * is cached like any other value.
-     *
-     * @return a memoizing function equivalent to this.
-     */
-    default CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, T8, R> memoized() {
-        if (isMemoized()) {
-            return this;
-        } else {
-            final Map<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>, R> cache = new HashMap<>();
-            final ReentrantLock lock = new ReentrantLock();
-            return (CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, T8, R> & Memoized) (t1, t2, t3, t4, t5, t6, t7, t8) -> {
-                final Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> key = Tuple.of(t1, t2, t3, t4, t5, t6, t7, t8);
-                lock.lock();
-                try {
-                    if (cache.containsKey(key)) {
-                        return cache.get(key);
-                    } else {
-                        final R value = tupled().apply(key);
-                        cache.put(key, value);
-                        return value;
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            };
-        }
-    }
-
-    /**
-     * Checks if this function is memoizing (= caching) computed values.
-     *
-     * @return true, if this function is memoizing, false otherwise
-     */
-    default boolean isMemoized() {
-        return this instanceof Memoized;
     }
 
     /**
@@ -359,7 +296,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
     /**
      * Returns an unchecked function that will <em>sneaky throw</em> if an exceptions occurs when applying the function.
      *
-     * @return a new Function8 that throws a {@code Throwable}.
+     * @return a new unchecked function that throws a {@code Throwable}.
      */
     default Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> unchecked() {
         return (t1, t2, t3, t4, t5, t6, t7, t8) -> {
@@ -394,7 +331,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<S, T2, T3, T4, T5, T6, T7, T8, R> compose1(Function1<? super S, ? extends T1> before) {
+    default <S extends @Nullable Object> CheckedFunction8<S, T2, T3, T4, T5, T6, T7, T8, R> compose1(Function<? super S, ? extends T1> before) {
         Objects.requireNonNull(before, "before is null");
         return (S s, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) -> apply(before.apply(s), t2, t3, t4, t5, t6, t7, t8);
     }
@@ -408,7 +345,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, S, T3, T4, T5, T6, T7, T8, R> compose2(Function1<? super S, ? extends T2> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, S, T3, T4, T5, T6, T7, T8, R> compose2(Function<? super S, ? extends T2> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, S s, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) -> apply(t1, before.apply(s), t3, t4, t5, t6, t7, t8);
     }
@@ -422,7 +359,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, T2, S, T4, T5, T6, T7, T8, R> compose3(Function1<? super S, ? extends T3> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, T2, S, T4, T5, T6, T7, T8, R> compose3(Function<? super S, ? extends T3> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, S s, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) -> apply(t1, t2, before.apply(s), t4, t5, t6, t7, t8);
     }
@@ -436,7 +373,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, S, T5, T6, T7, T8, R> compose4(Function1<? super S, ? extends T4> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, S, T5, T6, T7, T8, R> compose4(Function<? super S, ? extends T4> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, S s, T5 t5, T6 t6, T7 t7, T8 t8) -> apply(t1, t2, t3, before.apply(s), t5, t6, t7, t8);
     }
@@ -450,7 +387,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, S, T6, T7, T8, R> compose5(Function1<? super S, ? extends T5> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, S, T6, T7, T8, R> compose5(Function<? super S, ? extends T5> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, T4 t4, S s, T6 t6, T7 t7, T8 t8) -> apply(t1, t2, t3, t4, before.apply(s), t6, t7, t8);
     }
@@ -464,7 +401,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, S, T7, T8, R> compose6(Function1<? super S, ? extends T6> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, S, T7, T8, R> compose6(Function<? super S, ? extends T6> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, S s, T7 t7, T8 t8) -> apply(t1, t2, t3, t4, t5, before.apply(s), t7, t8);
     }
@@ -478,7 +415,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, T6, S, T8, R> compose7(Function1<? super S, ? extends T7> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, T6, S, T8, R> compose7(Function<? super S, ? extends T7> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, S s, T8 t8) -> apply(t1, t2, t3, t4, t5, t6, before.apply(s), t8);
     }
@@ -492,7 +429,7 @@ public interface CheckedFunction8<T1 extends @Nullable Object, T2 extends @Nulla
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, S, R> compose8(Function1<? super S, ? extends T8> before) {
+    default <S extends @Nullable Object> CheckedFunction8<T1, T2, T3, T4, T5, T6, T7, S, R> compose8(Function<? super S, ? extends T8> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, S s) -> apply(t1, t2, t3, t4, t5, t6, t7, before.apply(s));
     }

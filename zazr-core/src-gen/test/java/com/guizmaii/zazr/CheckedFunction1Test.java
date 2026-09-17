@@ -12,6 +12,7 @@ import java.lang.CharSequence;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -41,12 +42,6 @@ public class CheckedFunction1Test {
     }
 
     @Test
-    public void shouldGetArity() {
-        final CheckedFunction1<Object, Object> f = (o1) -> null;
-        assertThat(f.arity()).isEqualTo(1);
-    }
-
-    @Test
     public void shouldConstant() throws Throwable {
         final CheckedFunction1<Object, Object> f = CheckedFunction1.constant(6);
         assertThat(f.apply(1)).isEqualTo(6);
@@ -66,54 +61,11 @@ public class CheckedFunction1Test {
         assertThat(tupled).isNotNull();
     }
 
-    @Test
-    public void shouldReverse() {
-        final CheckedFunction1<Object, Object> f = (o1) -> null;
-        assertThat(f.reversed()).isNotNull();
-    }
-
-    @Test
-    public void shouldMemoize() throws Throwable {
-        final AtomicInteger integer = new AtomicInteger();
-        final CheckedFunction1<Integer, Integer> f = (i1) -> i1 + integer.getAndIncrement();
-        final CheckedFunction1<Integer, Integer> memo = f.memoized();
-        // should apply f on first apply()
-        final int expected = memo.apply(1);
-        // should return memoized value of second apply()
-        assertThat(memo.apply(1)).isEqualTo(expected);
-        // should calculate new values when called subsequently with different parameters
-        assertThat(memo.apply(2 )).isEqualTo(2  + 1);
-        // should return memoized value of second apply() (for new value)
-        assertThat(memo.apply(2 )).isEqualTo(2  + 1);
-    }
-
-    @Test
-    public void shouldNotMemoizeAlreadyMemoizedFunction() throws Throwable {
-        final CheckedFunction1<Integer, Integer> f = (i1) -> null;
-        final CheckedFunction1<Integer, Integer> memo = f.memoized();
-        assertThat(memo.memoized() == memo).isTrue();
-    }
-
-    @Test
-    public void shouldMemoizeValueGivenNullArguments() throws Throwable {
-        final CheckedFunction1<Integer, Integer> f = (i1) -> null;
-        final CheckedFunction1<Integer, Integer> memo = f.memoized();
-        assertThat(memo.apply(null)).isNull();
-    }
-
-    @Test
-    public void shouldRecognizeMemoizedFunctions() {
-        final CheckedFunction1<Integer, Integer> f = (i1) -> null;
-        final CheckedFunction1<Integer, Integer> memo = f.memoized();
-        assertThat(f.isMemoized()).isFalse();
-        assertThat(memo.isMemoized()).isTrue();
-    }
-
     private static final CheckedFunction1<String, MessageDigest> digest = (s1) -> MessageDigest.getInstance(s1);
 
     @Test
     public void shouldRecover() {
-        final Function1<String, MessageDigest> recover = digest.recover(throwable -> (s1) -> null);
+        final Function<String, MessageDigest> recover = digest.recover(throwable -> (s1) -> null);
         final MessageDigest md5 = recover.apply("MD5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
@@ -123,12 +75,12 @@ public class CheckedFunction1Test {
 
     @Test
     public void shouldRecoverNonNull() {
-        final Function1<String, MessageDigest> recover = digest.recover(throwable -> null);
+        final Function<String, MessageDigest> recover = digest.recover(throwable -> null);
         final MessageDigest md5 = recover.apply("MD5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
         assertThat(md5.getDigestLength()).isEqualTo(16);
-        final Try<MessageDigest> unknown = Function1.liftTry(recover).apply("Unknown");
+        final Try<MessageDigest> unknown = Try.of(() -> recover.apply("Unknown"));
         assertThat(unknown).isNotNull();
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -137,7 +89,7 @@ public class CheckedFunction1Test {
 
     @Test
     public void shouldUncheckedWork() {
-        final Function1<String, MessageDigest> unchecked = digest.unchecked();
+        final Function<String, MessageDigest> unchecked = digest.unchecked();
         final MessageDigest md5 = unchecked.apply("MD5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
@@ -147,14 +99,14 @@ public class CheckedFunction1Test {
     @Test
     public void shouldUncheckedThrowIllegalState() {
         assertThrows(NoSuchAlgorithmException.class, () -> {
-            final Function1<String, MessageDigest> unchecked = digest.unchecked();
+            final Function<String, MessageDigest> unchecked = digest.unchecked();
             unchecked.apply("Unknown"); // Look ma, we throw an undeclared checked exception!
         });
     }
 
     @Test
     public void shouldLiftTryPartialFunction() {
-        final Function1<String, Try<MessageDigest>> liftTry = CheckedFunction1.liftTry(digest);
+        final Function<String, Try<MessageDigest>> liftTry = CheckedFunction1.liftTry(digest);
         final Try<MessageDigest> md5 = liftTry.apply("MD5");
         assertThat(md5.isSuccess()).isTrue();
         assertThat(md5.get()).isNotNull();
@@ -166,8 +118,7 @@ public class CheckedFunction1Test {
         assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
     }
 
-    private static final CheckedFunction1<Integer, Integer> recurrent1 = (i1) -> i1 <= 0 ? i1 : CheckedFunction1Test.recurrent2.apply(i1 - 1) + 1;
-    private static final CheckedFunction1<Integer, Integer> recurrent2 = CheckedFunction1Test.recurrent1.memoized();
+    private static final CheckedFunction1<Integer, Integer> recurrent1 = (i1) -> i1 <= 0 ? i1 : CheckedFunction1Test.recurrent1.apply(i1 - 1) + 1;
 
     @Test
     public void shouldCalculatedRecursively() throws Throwable {
@@ -189,7 +140,7 @@ public class CheckedFunction1Test {
       @Test
       public void shouldCompose1()  throws Throwable {
           final CheckedFunction1<String, String> concat = (String s1) -> s1;
-          final Function1<String, String> toUpperCase = String::toUpperCase;
+          final Function<String, String> toUpperCase = String::toUpperCase;
           assertThat(concat.compose1(toUpperCase).apply("xx")).isEqualTo("XX");
       }
 

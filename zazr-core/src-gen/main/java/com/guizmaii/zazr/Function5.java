@@ -6,10 +6,8 @@ package com.guizmaii.zazr;
 
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
@@ -51,15 +49,15 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html#syntax">lambda expression</a></li>
      * </ul>
      *
-     * Examples (w.l.o.g. referring to Function1):
+     * Examples (w.l.o.g. referring to Function5):
      * <pre>{@code // using a lambda expression
-     * Function1<Integer, Integer> add1 = Function1.of(i -> i + 1);
+     * Function5<T1, T2, T3, T4, T5, R> add1 = Function5.of((t1, t2, t3, t4, t5) -> t1 + t2 + t3 + t4 + t5);
      *
-     * // using a method reference (, e.g. Integer method(Integer i) { return i + 1; })
-     * Function1<Integer, Integer> add2 = Function1.of(this::method);
+     * // using a method reference
+     * Function5<T1, T2, T3, T4, T5, R> add2 = Function5.of(this::method);
      *
      * // using a lambda reference
-     * Function1<Integer, Integer> add3 = Function1.of(add1::apply);
+     * Function5<T1, T2, T3, T4, T5, R> add3 = Function5.of(add1::apply);
      * }</pre>
      *
      * @param methodReference (typically) a method reference, e.g. {@code Type::method}
@@ -172,7 +170,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @param t3 argument 3
      * @return a partial application of this function
      */
-    default Function2<T4, T5, R> apply(T1 t1, T2 t2, T3 t3) {
+    default BiFunction<T4, T5, R> apply(T1 t1, T2 t2, T3 t3) {
         return (T4 t4, T5 t5) -> apply(t1, t2, t3, t4, t5);
     }
 
@@ -185,17 +183,8 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @param t4 argument 4
      * @return a partial application of this function
      */
-    default Function1<T5, R> apply(T1 t1, T2 t2, T3 t3, T4 t4) {
+    default Function<T5, R> apply(T1 t1, T2 t2, T3 t3, T4 t4) {
         return (T5 t5) -> apply(t1, t2, t3, t4, t5);
-    }
-
-    /**
-     * Returns the number of function arguments.
-     * @return an int value &gt;= 0
-     * @see <a href="http://en.wikipedia.org/wiki/Arity">Arity</a>
-     */
-    default int arity() {
-        return 5;
     }
 
     /**
@@ -203,7 +192,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      *
      * @return a curried function equivalent to this.
      */
-    default Function1<T1, Function1<T2, Function1<T3, Function1<T4, Function1<T5, R>>>>> curried() {
+    default Function<T1, Function<T2, Function<T3, Function<T4, Function<T5, R>>>>> curried() {
         return t1 -> t2 -> t3 -> t4 -> t5 -> apply(t1, t2, t3, t4, t5);
     }
 
@@ -212,59 +201,8 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      *
      * @return a tupled function equivalent to this.
      */
-    default Function1<Tuple5<T1, T2, T3, T4, T5>, R> tupled() {
+    default Function<Tuple5<T1, T2, T3, T4, T5>, R> tupled() {
         return t -> apply(t._1(), t._2(), t._3(), t._4(), t._5());
-    }
-
-    /**
-     * Returns a reversed version of this function. This may be useful in a recursive context.
-     *
-     * @return a reversed function equivalent to this.
-     */
-    default Function5<T5, T4, T3, T2, T1, R> reversed() {
-        return (t5, t4, t3, t2, t1) -> apply(t1, t2, t3, t4, t5);
-    }
-
-    /**
-     * Returns a memoizing version of this function, which computes the return value for given arguments only one time.
-     * On subsequent calls given the same arguments the memoized value is returned.
-     * <p>
-     * Note that {@code null} arguments and {@code null} return values are permitted; a {@code null} result
-     * is cached like any other value.
-     *
-     * @return a memoizing function equivalent to this.
-     */
-    default Function5<T1, T2, T3, T4, T5, R> memoized() {
-        if (isMemoized()) {
-            return this;
-        } else {
-            final Map<Tuple5<T1, T2, T3, T4, T5>, R> cache = new HashMap<>();
-            final ReentrantLock lock = new ReentrantLock();
-            return (Function5<T1, T2, T3, T4, T5, R> & Memoized) (t1, t2, t3, t4, t5) -> {
-                final Tuple5<T1, T2, T3, T4, T5> key = Tuple.of(t1, t2, t3, t4, t5);
-                lock.lock();
-                try {
-                    if (cache.containsKey(key)) {
-                        return cache.get(key);
-                    } else {
-                        final R value = tupled().apply(key);
-                        cache.put(key, value);
-                        return value;
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            };
-        }
-    }
-
-    /**
-     * Checks if this function is memoizing (= caching) computed values.
-     *
-     * @return true, if this function is memoizing, false otherwise
-     */
-    default boolean isMemoized() {
-        return this instanceof Memoized;
     }
 
     /**
@@ -290,7 +228,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> Function5<S, T2, T3, T4, T5, R> compose1(Function1<? super S, ? extends T1> before) {
+    default <S extends @Nullable Object> Function5<S, T2, T3, T4, T5, R> compose1(Function<? super S, ? extends T1> before) {
         Objects.requireNonNull(before, "before is null");
         return (S s, T2 t2, T3 t3, T4 t4, T5 t5) -> apply(before.apply(s), t2, t3, t4, t5);
     }
@@ -304,7 +242,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> Function5<T1, S, T3, T4, T5, R> compose2(Function1<? super S, ? extends T2> before) {
+    default <S extends @Nullable Object> Function5<T1, S, T3, T4, T5, R> compose2(Function<? super S, ? extends T2> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, S s, T3 t3, T4 t4, T5 t5) -> apply(t1, before.apply(s), t3, t4, t5);
     }
@@ -318,7 +256,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> Function5<T1, T2, S, T4, T5, R> compose3(Function1<? super S, ? extends T3> before) {
+    default <S extends @Nullable Object> Function5<T1, T2, S, T4, T5, R> compose3(Function<? super S, ? extends T3> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, S s, T4 t4, T5 t5) -> apply(t1, t2, before.apply(s), t4, t5);
     }
@@ -332,7 +270,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> Function5<T1, T2, T3, S, T5, R> compose4(Function1<? super S, ? extends T4> before) {
+    default <S extends @Nullable Object> Function5<T1, T2, T3, S, T5, R> compose4(Function<? super S, ? extends T4> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, S s, T5 t5) -> apply(t1, t2, t3, before.apply(s), t5);
     }
@@ -346,7 +284,7 @@ public interface Function5<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <S extends @Nullable Object> Function5<T1, T2, T3, T4, S, R> compose5(Function1<? super S, ? extends T5> before) {
+    default <S extends @Nullable Object> Function5<T1, T2, T3, T4, S, R> compose5(Function<? super S, ? extends T5> before) {
         Objects.requireNonNull(before, "before is null");
         return (T1 t1, T2 t2, T3 t3, T4 t4, S s) -> apply(t1, t2, t3, t4, before.apply(s));
     }

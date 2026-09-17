@@ -84,10 +84,14 @@ def generateMainClasses(): Unit = {
    */
   def genFunctions(): Unit = {
 
-    (0 to N).foreach(i => {
+    // JDK functional interfaces first (docs/design.md 3.1): Function0..2 and CheckedFunction0 are adapters
+    // over java.util.function.Supplier/Function/BiFunction and java.util.concurrent.Callable respectively, so
+    // they are not generated. Function3..8 and CheckedFunction1..8 stay: the JDK has nothing at those arities,
+    // or with checked exceptions.
+    (1 to N).foreach(i => {
 
       genVavrFile("com.guizmaii.zazr", s"CheckedFunction$i")(genFunction("CheckedFunction", checked = true))
-      genVavrFile("com.guizmaii.zazr", s"Function$i")(genFunction("Function", checked = false))
+      if (i >= 3) genVavrFile("com.guizmaii.zazr", s"Function$i")(genFunction("Function", checked = false))
 
       def genFunction(name: String, checked: Boolean)(im: ImportManager, packageName: String, className: String): String = {
 
@@ -123,10 +127,13 @@ def generateMainClasses(): Unit = {
         }
         val callApply = s"$refApply($params)"
 
+        // Currying peels off one argument at a time: every intermediate step is a plain (non-throwing) function,
+        // since only the final application can invoke the underlying function and throw. Only the last step is a
+        // CheckedFunction1 when this is a checked function; every step is the JDK Function otherwise.
         def curriedType(max: Int, function: String, idx: Int = 1): String = max match {
           case 0 => s"$className<R>"
-          case 1 => s"${function}1<T$idx, R>"
-          case _ => s"Function1<T$idx, ${curriedType(max - 1, function, idx + 1)}>"
+          case 1 => if (checked) s"${function}1<T$idx, R>" else s"${javaFunctionType(1, im)}<T$idx, R>"
+          case _ => s"${javaFunctionType(1, im)}<T$idx, ${curriedType(max - 1, function, idx + 1)}>"
         }
 
         def arguments(count: Int): String = count match {
@@ -171,15 +178,15 @@ def generateMainClasses(): Unit = {
                * <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html#syntax">lambda expression</a></li>
                * </ul>
                *
-               * Examples (w.l.o.g. referring to Function1):
+               * Examples (w.l.o.g. referring to $className):
                * <pre>{@code // using a lambda expression
-               * Function1<Integer, Integer> add1 = Function1.of(i -> i + 1);
+               * $className$fullGenerics add1 = $className.of((${(1 to i).gen(j => s"t$j")(using ", ")}) -> ${(1 to i).gen(j => s"t$j")(using " + ")});
                *
-               * // using a method reference (, e.g. Integer method(Integer i) { return i + 1; })
-               * Function1<Integer, Integer> add2 = Function1.of(this::method);
+               * // using a method reference
+               * $className$fullGenerics add2 = $className.of(this::method);
                *
                * // using a lambda reference
-               * Function1<Integer, Integer> add3 = Function1.of(add1::apply);
+               * $className$fullGenerics add3 = $className.of(add1::apply);
                * }</pre>
                *
                * @param methodReference (typically) a method reference, e.g. {@code Type::method}
@@ -200,10 +207,15 @@ def generateMainClasses(): Unit = {
                *         throwable. Fatal throwables (see {@link ${im.getType("com.guizmaii.zazr.control.Try")}}) are rethrown
                *         instead of being turned into {@code None}.
                */
-              static $fullGenericsDecl ${im.getType(s"com.guizmaii.zazr.Function$i")}$genericsOptionReturnType lift($fullGenericsType partialFunction) {
+              static $fullGenericsDecl ${javaFunctionType(i, im)}$genericsOptionReturnType lift($fullGenericsType partialFunction) {
                   ${
                     val func = "partialFunction"
-                    val supplier = if (!checked && i == 0) s"$func::get" else if (checked && i == 0) s"$func::apply" else s"() -> $func.apply($params)"
+                    // Try.of takes a Callable (throws Exception only), but a checked partialFunction.apply()
+                    // declares `throws Throwable`; catch it here and sneaky-throw so the lambda declares
+                    // nothing checked, the same way unchecked() already does.
+                    val supplier =
+                      if (checked) s"() -> { try { return $func.apply($params); } catch (Throwable t) { return sneakyThrow(t); } }"
+                      else s"() -> $func.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
                       return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.<R>of($supplier).toOption();
@@ -221,9 +233,11 @@ def generateMainClasses(): Unit = {
                *         non-fatal throwable. Fatal throwables (see {@link ${im.getType("com.guizmaii.zazr.control.Try")}}) are rethrown
                *         instead of being wrapped.
                */
-              static $fullGenericsDecl ${im.getType(s"com.guizmaii.zazr.Function$i")}$genericsTryReturnType liftTry($fullGenericsType partialFunction) {
+              static $fullGenericsDecl ${javaFunctionType(i, im)}$genericsTryReturnType liftTry($fullGenericsType partialFunction) {
                   ${
-                    val supplier = if (!checked && i == 0) "partialFunction::get" else if (checked && i == 0) "partialFunction::apply" else s"() -> partialFunction.apply($params)"
+                    val supplier =
+                      if (checked) s"() -> { try { return partialFunction.apply($params); } catch (Throwable t) { return sneakyThrow(t); } }"
+                      else s"() -> partialFunction.apply($params)"
                     val lambdaArgs = if (i == 1) params else s"($params)"
                     xs"""
                       return $lambdaArgs -> ${im.getType("com.guizmaii.zazr.control.Try")}.of($supplier);
@@ -264,6 +278,11 @@ def generateMainClasses(): Unit = {
               R apply($paramsDecl)${checked.gen(" throws Throwable")};
 
               ${(1 until i).gen(j => {
+                val remaining = i - j
+                // The partial application's result type: the kept ${name}$remaining when the JDK has nothing
+                // at that arity (remaining >= 3, or this is a checked function, since CheckedFunction1..8 all
+                // stay), otherwise the JDK Supplier/Function/BiFunction at that arity.
+                val resultType = if (checked || remaining >= 3) s"$name$remaining" else javaFunctionType(remaining, im)
                 val partialApplicationArgs = (1 to j).gen(k => s"T$k t$k")(using ", ")
                 val resultFunctionGenerics = (j+1 to i).gen(k => s"T$k")(using ", ")
                 val resultFunctionArgs = (j+1 to i).gen(k => s"T$k t$k")(using ", ")
@@ -276,7 +295,7 @@ def generateMainClasses(): Unit = {
                    ${(1 to j).gen(k => s"* @param t$k argument $k")(using "\n")}
                    * @return a partial application of this function
                    */
-                  default $name${i - j}<$resultFunctionGenerics, R> apply($partialApplicationArgs) {
+                  default $resultType<$resultFunctionGenerics, R> apply($partialApplicationArgs) {
                       return ($resultFunctionArgs) -> apply($fixedApplyArgs, $variableApplyArgs);
                   }
                 """
@@ -297,15 +316,6 @@ def generateMainClasses(): Unit = {
               )}
 
               /**
-               * Returns the number of function arguments.
-               * @return an int value &gt;= 0
-               * @see <a href="http://en.wikipedia.org/wiki/Arity">Arity</a>
-               */
-              default int arity() {
-                  return $i;
-              }
-
-              /**
                * Returns a curried version of this function.
                *
                * @return a curried function equivalent to this.
@@ -319,104 +329,8 @@ def generateMainClasses(): Unit = {
                *
                * @return a tupled function equivalent to this.
                */
-              default ${name}1<Tuple$i$genericsTuple, R> tupled() {
+              default ${if (checked) s"${name}1" else javaFunctionType(1, im)}<Tuple$i$genericsTuple, R> tupled() {
                   return t -> apply($tupled);
-              }
-
-              /**
-               * Returns a reversed version of this function. This may be useful in a recursive context.
-               *
-               * @return a reversed function equivalent to this.
-               */
-              default $className<${genericsReversedFunction}R> reversed() {
-                  return ${if (i < 2) "this" else s"($paramsReversed) -> apply($params)"};
-              }
-
-              /**
-               ${if (i == 0) xs"""
-               * Returns a memoizing version of this function, which computes the return value only one time.
-               * On subsequent calls the memoized value is returned.
-               * <p>
-               * Note that a {@code null} return value is permitted and cached like any other value.
-               """ else xs"""
-               * Returns a memoizing version of this function, which computes the return value for given arguments only one time.
-               * On subsequent calls given the same arguments the memoized value is returned.
-               * <p>
-               * Note that {@code null} arguments and {@code null} return values are permitted; a {@code null} result
-               * is cached like any other value.
-               """}
-               *
-               * @return a memoizing function equivalent to this.
-               */
-              default $className$fullGenerics memoized() {
-                  if (isMemoized()) {
-                      return this;
-                  } else {
-                      ${if (i == 0) xs"""
-	                        ${if (checked) xs"""
-	                            final Lazy<R> lazy = Lazy.of(() -> {
-	                                try {
-	                                    return apply();
-	                                } catch (Throwable x) {
-                                      throw new RuntimeException(x);
-	                                }
-	                            });
-	                            return (CheckedFunction0<R> & Memoized) () -> {
-	                                try {
-	                                    return lazy.get();
-	                                } catch(RuntimeException x) {
-	                                    throw x.getCause();
-	                                }
-	                            };
-	                        """ else xs"""
-                              return ($className$fullGenerics & Memoized) Lazy.of(this)::get;
-	                        """}
-                      """ else if (i == 1) xs"""
-                        final ${im.getType("java.util.Map")}<$generics, R> cache = new ${im.getType("java.util.HashMap")}<>();
-                        final ${im.getType("java.util.concurrent.locks.ReentrantLock")} lock = new ${im.getType("java.util.concurrent.locks.ReentrantLock")}();
-                        return ($className$fullGenerics & Memoized) ($params) -> {
-                            lock.lock();
-                            try {
-                                if (cache.containsKey($params)) {
-                                    return cache.get($params);
-                                } else {
-                                    final R value = apply($params);
-                                    cache.put($params, value);
-                                    return value;
-                                }
-                            } finally {
-                                lock.unlock();
-                            }
-                        };
-                      """ else xs"""
-                        final ${im.getType("java.util.Map")}<Tuple$i<$generics>, R> cache = new ${im.getType("java.util.HashMap")}<>();
-                        final ${im.getType("java.util.concurrent.locks.ReentrantLock")} lock = new ${im.getType("java.util.concurrent.locks.ReentrantLock")}();
-                        return ($className$fullGenerics & Memoized) ($params) -> {
-                            final Tuple$i$genericsTuple key = Tuple.of($params);
-                            lock.lock();
-                            try {
-                                if (cache.containsKey(key)) {
-                                    return cache.get(key);
-                                } else {
-                                    final R value = tupled().apply(key);
-                                    cache.put(key, value);
-                                    return value;
-                                }
-                            } finally {
-                                lock.unlock();
-                            }
-                        };
-                      """}
-                  }
-              }
-
-              /**
-               * Checks if this function is memoizing (= caching) computed values.
-               *
-               * @return true, if this function is memoizing, false otherwise
-               */
-              default boolean isMemoized() {
-                  return this instanceof Memoized;
               }
 
 
@@ -429,7 +343,7 @@ def generateMainClasses(): Unit = {
                  * @return a function composed of this and recover
                  * @throws NullPointerException if recover is null
                  */
-                default Function$i$fullGenerics recover(${im.getType("java.util.function.Function")}<? super Throwable, ? extends ${fullGenericsTypeF(checked = false, i)}> recover) {
+                default ${javaFunctionType(i, im)}$fullGenerics recover(${im.getType("java.util.function.Function")}<? super Throwable, ? extends ${fullGenericsTypeF(checked = false, i)}> recover) {
                     Objects.requireNonNull(recover, "recover is null");
                     return ($params) -> {
                         try {
@@ -445,9 +359,9 @@ def generateMainClasses(): Unit = {
                 /$javadoc
                  * Returns an unchecked function that will <em>sneaky throw</em> if an exceptions occurs when applying the function.
                  *
-                 * @return a new Function$i that throws a {@code Throwable}.
+                 * @return a new unchecked function that throws a {@code Throwable}.
                  */
-                default Function$i$fullGenerics unchecked() {
+                default ${javaFunctionType(i, im)}$fullGenerics unchecked() {
                     return ($params) -> {
                         try {
                             return apply($params);
@@ -510,7 +424,7 @@ def generateMainClasses(): Unit = {
                    * @return a function composed of $fName and this
                    * @throws NullPointerException if $fName is null
                    */
-                  default <S $nullableBound> $className<$generics, R> compose$j(Function1<? super $fGeneric, ? extends T$j> $fName) {
+                  default <S $nullableBound> $className<$generics, R> compose$j(${javaFunctionType(1, im)}<? super $fGeneric, ? extends T$j> $fName) {
                       Objects.requireNonNull($fName, "$fName is null");
                       return ($applicationArgs) -> apply($applyArgs);
                   }
@@ -1179,10 +1093,10 @@ def generateTestClasses(): Unit = {
    */
   def genFunctionTests(): Unit = {
 
-    (0 to N).foreach(i => {
+    (1 to N).foreach(i => {
 
       genVavrFile("com.guizmaii.zazr", s"CheckedFunction${i}Test", baseDir = TARGET_TEST)(genFunctionTest("CheckedFunction", checked = true))
-      genVavrFile("com.guizmaii.zazr", s"Function${i}Test", baseDir = TARGET_TEST)(genFunctionTest("Function", checked = false))
+      if (i >= 3) genVavrFile("com.guizmaii.zazr", s"Function${i}Test", baseDir = TARGET_TEST)(genFunctionTest("Function", checked = false))
 
       def genFunctionTest(name: String, checked: Boolean)(im: ImportManager, packageName: String, className: String): String = {
 
@@ -1196,12 +1110,16 @@ def generateTestClasses(): Unit = {
         val test = im.getType("org.junit.jupiter.api.Test")
         val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
         val assertThrows = im.getStatic("org.junit.jupiter.api.Assertions.assertThrows")
-        val recFuncF1 = if (i == 0) "11;" else s"i1 <= 0 ? i1 : $className.recurrent2.apply(${(1 to i).gen(j => s"i$j" + (j == 1).gen(s" - 1"))(using ", ")}) + 1;"
+        val recFuncF1 = s"i1 <= 0 ? i1 : $className.recurrent1.apply(${(1 to i).gen(j => s"i$j" + (j == 1).gen(s" - 1"))(using ", ")}) + 1;"
+
+        // The unchecked JDK type at arity 1: java.util.function.Function. Used both for the plain
+        // unchecked companion (i == 1, 2) and for every andThen/composeJ argument (always arity 1).
+        val jdkFunction1 = javaFunctionType(1, im)
+        val uncheckedSelfType = javaFunctionType(i, im)
 
         def curriedType(max: Int, function: String): String = max match {
-          case 0 => s"${function}0<Object>"
-          case 1 => s"${function}1<Object, Object>"
-          case _ => s"Function1<Object, ${curriedType(max - 1, function)}>"
+          case 1 => if (checked) s"${function}1<Object, Object>" else s"$jdkFunction1<Object, Object>"
+          case _ => s"$jdkFunction1<Object, ${curriedType(max - 1, function)}>"
         }
 
         val wideGenericArgs = (1 to i).gen(j => "Number")(using ", ")
@@ -1239,17 +1157,6 @@ def generateTestClasses(): Unit = {
                 }
               """)}
 
-              ${(i == 0 && !checked).gen(
-                xs"""
-                  @$test
-                  public void shouldGetValue() {
-                      final String s = "test";
-                      final ${name}0<String> supplier = () -> s;
-                      assertThat(supplier.get()).isEqualTo(s);
-                  }
-                """
-              )}
-
               ${(i > 1).gen(xs"""
                 @$test
                 public void shouldPartiallyApply()${checked.gen(" throws Throwable")} {
@@ -1260,12 +1167,6 @@ def generateTestClasses(): Unit = {
                     })(using "\n")}
                 }
               """)}
-
-              @$test
-              public void shouldGetArity() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
-                  $assertThat(f.arity()).isEqualTo($i);
-              }
 
               @$test
               public void shouldConstant()${checked.gen(" throws Throwable")} {
@@ -1283,55 +1184,8 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldTuple() {
                   final $name$i<$generics> f = ($functionArgs) -> null;
-                  final ${name}1<Tuple$i${(i > 0).gen(s"<${(1 to i).gen(j => "Object")(using ", ")}>")}, Object> tupled = f.tupled();
+                  final ${if (checked) s"${name}1" else jdkFunction1}<Tuple$i<${(1 to i).gen(j => "Object")(using ", ")}>, Object> tupled = f.tupled();
                   $assertThat(tupled).isNotNull();
-              }
-
-              @$test
-              public void shouldReverse() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
-                  $assertThat(f.reversed()).isNotNull();
-              }
-
-              @$test
-              public void shouldMemoize()${checked.gen(" throws Throwable")} {
-                  final $AtomicInteger integer = new $AtomicInteger();
-                  final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> f = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> ${(1 to i).gen(j => s"i$j")(using " + ")}${(i > 0).gen(" + ")}integer.getAndIncrement();
-                  final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> memo = f.memoized();
-                  // should apply f on first apply()
-                  final int expected = memo.apply(${(1 to i).gen(j => s"$j")(using ", ")});
-                  // should return memoized value of second apply()
-                  $assertThat(memo.apply(${(1 to i).gen(j => s"$j")(using ", ")})).isEqualTo(expected);
-                  ${(i > 0).gen(xs"""
-                    $comment should calculate new values when called subsequently with different parameters
-                    $assertThat(memo.apply(${(1 to i).gen(j => s"${j + 1} ")(using ", ")})).isEqualTo(${(1 to i).gen(j => s"${j + 1} ")(using " + ")} + 1);
-                    $comment should return memoized value of second apply() (for new value)
-                    $assertThat(memo.apply(${(1 to i).gen(j => s"${j + 1} ")(using ", ")})).isEqualTo(${(1 to i).gen(j => s"${j + 1} ")(using " + ")} + 1);
-                  """)}
-              }
-
-              @$test
-              public void shouldNotMemoizeAlreadyMemoizedFunction()${checked.gen(" throws Throwable")} {
-                  final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> f = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> null;
-                  final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> memo = f.memoized();
-                  $assertThat(memo.memoized() == memo).isTrue();
-              }
-
-              ${(i > 0).gen(xs"""
-                @$test
-                public void shouldMemoizeValueGivenNullArguments()${checked.gen(" throws Throwable")} {
-                    final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> f = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> null;
-                    final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> memo = f.memoized();
-                    $assertThat(memo.apply(${(1 to i).gen(j => "null")(using ", ")})).isNull();
-                }
-              """)}
-
-              @$test
-              public void shouldRecognizeMemoizedFunctions() {
-                  final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> f = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> null;
-                  final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> memo = f.memoized();
-                  $assertThat(f.isMemoized()).isFalse();
-                  $assertThat(memo.isMemoized()).isTrue();
               }
 
               ${(!checked).gen(xs"""
@@ -1354,77 +1208,6 @@ def generateTestClasses(): Unit = {
               """)}
 
               ${checked.gen(xs"""
-                ${(i == 0).gen(xs"""
-                  @$test
-                  public void shouldRecover() {
-                      final $AtomicInteger integer = new $AtomicInteger();
-                      $name$i<MessageDigest> digest = () -> ${im.getType("java.security.MessageDigest")}.getInstance(integer.get() == 0 ? "MD5" : "Unknown");
-                      Function$i<MessageDigest> recover = digest.recover(throwable -> () -> null);
-                      MessageDigest md5 = recover.apply();
-                      assertThat(md5).isNotNull();
-                      assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
-                      assertThat(md5.getDigestLength()).isEqualTo(16);
-                      integer.incrementAndGet();
-                      assertThat(recover.apply()).isNull();
-                  }
-
-                  @$test
-                  public void shouldRecoverNonNull() {
-                      final $AtomicInteger integer = new $AtomicInteger();
-                      $name$i<MessageDigest> digest = () -> ${im.getType("java.security.MessageDigest")}.getInstance(integer.get() == 0 ? "MD5" : "Unknown");
-                      Function$i<MessageDigest> recover = digest.recover(throwable -> null);
-
-                      MessageDigest md5 = recover.apply();
-                      assertThat(md5).isNotNull();
-                      assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
-                      assertThat(md5.getDigestLength()).isEqualTo(16);
-
-                      integer.incrementAndGet();
-                      ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = Function$i.liftTry(recover).apply();
-                      assertThat(unknown).isNotNull();
-                      assertThat(unknown.isFailure()).isTrue();
-                      assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
-                      assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
-                  }
-
-                  @$test
-                  public void shouldUncheckedWork() {
-                      $name$i<MessageDigest> digest = () -> ${im.getType("java.security.MessageDigest")}.getInstance("MD5");
-                      Function$i<MessageDigest> unchecked = digest.unchecked();
-                      MessageDigest md5 = unchecked.apply();
-                      assertThat(md5).isNotNull();
-                      assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
-                      assertThat(md5.getDigestLength()).isEqualTo(16);
-                  }
-
-                  @$test
-                  public void shouldThrowCheckedExceptionWhenUnchecked() {
-                      $assertThrows(${im.getType("java.security.NoSuchAlgorithmException")}.class, () -> {
-                          $name$i<MessageDigest> digest = () -> ${im.getType("java.security.MessageDigest")}.getInstance("Unknown");
-                          Function$i<MessageDigest> unchecked = digest.unchecked();
-                          unchecked.apply(); $comment Look ma, we throw an undeclared checked exception!
-                      });
-                  }
-
-                  @$test
-                  public void shouldLiftTryPartialFunction() {
-                      final $AtomicInteger integer = new $AtomicInteger();
-                      $name$i<MessageDigest> digest = () -> ${im.getType("java.security.MessageDigest")}.getInstance(integer.get() == 0 ? "MD5" : "Unknown");
-                      Function$i<Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
-                      ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> md5 = liftTry.apply();
-                      assertThat(md5.isSuccess()).isTrue();
-                      assertThat(md5.get()).isNotNull();
-                      assertThat(md5.get().getAlgorithm()).isEqualToIgnoringCase("MD5");
-                      assertThat(md5.get().getDigestLength()).isEqualTo(16);
-
-                      integer.incrementAndGet();
-                      ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = liftTry.apply();
-                      assertThat(unknown.isFailure()).isTrue();
-                      assertThat(unknown.getCause()).isNotNull();
-                      assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
-                  }
-                """)}
-                ${(i > 0).gen(xs"""
                   ${
                     val types = s"<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest>"
                     def toArgList (s: String) = s.split("", i).mkString("\"", "\", \"", "\"") + (s.length + 2 to i).gen(j => ", \"\"")
@@ -1434,7 +1217,7 @@ def generateTestClasses(): Unit = {
 
                       @$test
                       public void shouldRecover() {
-                          final Function$i<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
                           final MessageDigest md5 = recover.apply(${toArgList("MD5")});
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
@@ -1444,12 +1227,12 @@ def generateTestClasses(): Unit = {
 
                       @$test
                       public void shouldRecoverNonNull() {
-                          final Function$i<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> null);
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> null);
                           final MessageDigest md5 = recover.apply(${toArgList("MD5")});
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.getDigestLength()).isEqualTo(16);
-                          final ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = Function$i.liftTry(recover).apply(${toArgList("Unknown")});
+                          final ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> unknown = ${im.getType("com.guizmaii.zazr.control.Try")}.of(() -> recover.apply(${toArgList("Unknown")}));
                           assertThat(unknown).isNotNull();
                           assertThat(unknown.isFailure()).isTrue();
                           assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -1458,7 +1241,7 @@ def generateTestClasses(): Unit = {
 
                       @$test
                       public void shouldUncheckedWork() {
-                          final Function$i<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
                           final MessageDigest md5 = unchecked.apply(${toArgList("MD5")});
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
@@ -1468,14 +1251,14 @@ def generateTestClasses(): Unit = {
                       @$test
                       public void shouldUncheckedThrowIllegalState() {
                           $assertThrows(${im.getType("java.security.NoSuchAlgorithmException")}.class, () -> {
-                              final Function$i<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
+                              final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
                               unchecked.apply(${toArgList("Unknown")}); $comment Look ma, we throw an undeclared checked exception!
                           });
                       }
 
                       @$test
                       public void shouldLiftTryPartialFunction() {
-                          final Function$i<${(1 to i).gen(j => "String")(using ", ")}, Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
                           final ${im.getType("com.guizmaii.zazr.control.Try")}<MessageDigest> md5 = liftTry.apply(${toArgList("MD5")});
                           assertThat(md5.isSuccess()).isTrue();
                           assertThat(md5.get()).isNotNull();
@@ -1488,13 +1271,9 @@ def generateTestClasses(): Unit = {
                       }
                     """
                   }
-                """)}
               """)}
 
               private static final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> recurrent1 = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> $recFuncF1
-              ${(i > 0).gen(xs"""
-                private static final $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> recurrent2 = $className.recurrent1.memoized();
-              """)}
 
               @$test
               public void shouldCalculatedRecursively()${checked.gen(" throws Throwable")} {
@@ -1505,7 +1284,7 @@ def generateTestClasses(): Unit = {
               @$test
               public void shouldComposeWithAndThen() {
                   final $name$i<$generics> f = ($functionArgs) -> null;
-                  final ${name}1<Object, Object> after = o -> null;
+                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> null;
                   final $name$i<$generics> composed = f.andThen(after);
                   $assertThat(composed).isNotNull();
               }
@@ -1523,7 +1302,7 @@ def generateTestClasses(): Unit = {
                   @$test
                   public void shouldCompose$j() ${checked.gen(" throws Throwable ")}{
                       final $name$i<$genArgs, String> concat = ($params) -> $concat;
-                      final Function1<String, String> toUpperCase = String::toUpperCase;
+                      final $jdkFunction1<String, String> toUpperCase = String::toUpperCase;
                       assertThat(concat.compose$j(toUpperCase).apply($values)).isEqualTo(\"$expected\");
                   }
 
@@ -1531,16 +1310,6 @@ def generateTestClasses(): Unit = {
                 )}
 
               }
-
-              ${(i == 0).gen(xs"""
-              @$test
-              public void shouldNarrow()${checked.gen(" throws Throwable")}{
-                  final $name$i<$wideGenericResult> wideFunction = () -> "Zero args";
-                  final $name$i<$narrowGenericResult> narrowFunction = $name$i.narrow(wideFunction);
-
-                  $assertThat(narrowFunction.apply()).isEqualTo("Zero args");
-              }
-              """)}
 
               ${(i > 0).gen(xs"""
               @$test
@@ -1730,7 +1499,7 @@ def generateTestClasses(): Unit = {
                 @$test
                 public void shouldMapComponents() {
                   final Tuple$i$generics tuple = createTuple();
-                  ${(1 to i).gen(j => xs"""final Function1<Object, Object> f$j = Function1.identity();""")(using "\n")}
+                  ${(1 to i).gen(j => xs"""final ${im.getType("java.util.function.Function")}<Object, Object> f$j = ${im.getType("java.util.function.Function")}.identity();""")(using "\n")}
                   final Tuple$i$generics actual = tuple.map(${(1 to i).gen(j => s"f$j")(using ", ")});
                   $assertThat(actual).isEqualTo(tuple);
                 }

@@ -11,6 +11,7 @@ import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Stream;
 import java.util.Comparator;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 public class Tuple3Test {
@@ -118,9 +119,9 @@ public class Tuple3Test {
     @Test
     public void shouldMapComponents() {
       final Tuple3<Object, Object, Object> tuple = createTuple();
-      final Function1<Object, Object> f1 = Function1.identity();
-      final Function1<Object, Object> f2 = Function1.identity();
-      final Function1<Object, Object> f3 = Function1.identity();
+      final Function<Object, Object> f1 = Function.identity();
+      final Function<Object, Object> f2 = Function.identity();
+      final Function<Object, Object> f3 = Function.identity();
       final Tuple3<Object, Object, Object> actual = tuple.map(f1, f2, f3);
       assertThat(actual).isEqualTo(tuple);
     }
