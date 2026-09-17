@@ -1033,11 +1033,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      * containing {@code left} if this value is empty, or a new {@link Either.Right} containing this value.
      */
     default <L extends @Nullable Object> Either<L, T> toEither(L left) {
-        if (this instanceof Either) {
-            return ((Either<?, T>) this).mapLeft(ignored -> left);
-        } else {
-            return isEmpty() ? Either.left(left) : Either.right(get());
-        }
+        return isEmpty() ? Either.left(left) : Either.right(get());
     }
 
     /**
@@ -1053,11 +1049,7 @@ public interface Value<T extends @Nullable Object> extends Iterable<T> {
      */
     default <L extends @Nullable Object> Either<L, T> toEither(Supplier<? extends L> leftSupplier) {
         Objects.requireNonNull(leftSupplier, "leftSupplier is null");
-        if (this instanceof Either) {
-            return ((Either<?, T>) this).mapLeft(ignored -> leftSupplier.get());
-        } else {
-            return isEmpty() ? Either.left(leftSupplier.get()) : Either.right(get());
-        }
+        return isEmpty() ? Either.left(leftSupplier.get()) : Either.right(get());
     }
 
     /**

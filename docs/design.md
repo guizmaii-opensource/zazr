@@ -203,7 +203,7 @@ What replaces it, per type, is a **short, explicit** conversion set:
 | Type | conversions kept |
 |---|---|
 | `Option` | `toEither(Supplier<L>)`, `toTry(Supplier<Throwable>)`, `toValidation(Supplier<E>)`, `toVector()`, `toList()`, `toOptional()`, `stream()` |
-| `Either` | `toOption()`, `toTry()` (requires `L extends Throwable`, otherwise `toTry(Function<L,Throwable>)`), `toValidation()`, `toVector()` |
+| `Either` | `toOption()`, `toTry(Function<L,Throwable>)` (Java cannot restrict an instance method to `L extends Throwable`, so the mapping is always explicit; `toTry(t -> t)` for an `Either<Throwable, R>`; decided 2026-09-17, #19), `toValidation()`, `toVector()` |
 | `Try` | `toOption()`, `toEither()`, `toValidation()`, `toVector()`, `toCompletableFuture()` |
 | `Validation` | `toOption()`, `toEither()` (`Either<NonEmptyVector<E>,A>`), `toEitherWith(Function<NonEmptyVector<E>,E2>)`, `toTry(Function<NonEmptyVector<E>,Throwable>)`, `toVector()` |
 | `Lazy` | none; `get()` is the conversion |
