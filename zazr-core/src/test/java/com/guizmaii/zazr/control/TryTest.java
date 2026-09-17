@@ -1031,7 +1031,7 @@ public class TryTest {
     }
 
     @Nested
-    class ForeachTests {
+    class ForEachConsumerTests {
         @Test
         public void shouldForEachOnFailure() {
             final List<String> actual = new ArrayList<>();
@@ -1217,7 +1217,7 @@ public class TryTest {
     }
 
     @Nested
-    class ForEachTests {
+    class ForEachIterableTests {
         @Test
         public void shouldForEachListOfSuccessToTryOfList() {
             final List<String> tries = Arrays.asList("a", "b", "c");

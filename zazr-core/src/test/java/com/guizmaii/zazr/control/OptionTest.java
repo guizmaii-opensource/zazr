@@ -126,7 +126,7 @@ public class OptionTest {
     }
 
     @Nested
-    class ForEachTests {
+    class ForEachIterableTests {
         @Test
         public void shouldForEachListOfNonEmptyOptionsToOptionOfList() {
             final java.util.List<String> options = Arrays.asList("a", "b", "c");
@@ -494,7 +494,7 @@ public class OptionTest {
     }
 
     @Nested
-    class ForeachTests {
+    class ForEachConsumerTests {
         @Test
         public void shouldConsumePresentValueOnForEachWhenValueIsDefined() {
             final int[] actual = new int[] { -1 };
