@@ -21,6 +21,7 @@ section 5 order. When a new rule or decision is given, record it in `docs/design
 - No category-theory vocabulary anywhere, code or comments: no Monad, Functor, Applicative, Semigroup,
   Monoid, `ap`, `pure`, `traverse`/`sequence`. Use the ZIO names (`zip`, `zipWith`, `collectAll`,
   `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`).
+- Scala code in this repository (the generator, the scripts) uses braces, never the indentation-based syntax.
 - When porting or citing Scala, prefer Scala 3 sources. Scala 3 ships the Scala 2.13 collection library
   unchanged, so for `Vector`, `HashMap`, `RedBlackTree` and their builders that library is the Scala 3
   one; say so rather than calling it "Scala 2.13".
