@@ -25,6 +25,8 @@ section 5 order. When a new rule or decision is given, record it in `docs/design
   unchanged, so for `Vector`, `HashMap`, `RedBlackTree` and their builders that library is the Scala 3
   one; say so rather than calling it "Scala 2.13".
 - No per-file copyright or license headers. Attribution to Vavr lives in `NOTICE`.
+- Comments and javadoc describe the code as it is, never the migration: no ticket numbers, no "was declared by",
+  no "until #N", no mention of a deleted type. The history lives in `docs/design.md` and in git (decided 2026-09-21).
 
 ## Build
 

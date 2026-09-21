@@ -568,7 +568,8 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   add the paragraph. `make complexity` (run by `make verify` and by the `complexity` CI job) runs
   `scripts/check-complexity.scala` (Scala, run with scala-cli) over the files listed in the Makefile (`Vector.java` for now; #67 adds `List`,
   `Queue`, `Stream`) and fails when a method whose name is in the script's fixed list of positional names is declared
-  without such a line; the javadoc checked is the block immediately preceding the declaration, annotations skipped.
+  without such a line; the files are parsed with the JDK's own compiler (`javax.tools`, `com.sun.source`), so the
+  javadoc checked is the doc comment javac attaches to the method, `/** */` or `///` alike.
 - **`Iterator`-returning methods stay as they are for now.** `crossProduct()`, `crossProduct(int)`,
   `crossProduct(Iterable)`, `grouped`, `sliding` and `slideBy` on `Vector` keep returning the lazy
   `Iterator<Vector<T>>` / `Iterator<Tuple2<...>>` they returned as a `Seq`, because `Traversable` still declares

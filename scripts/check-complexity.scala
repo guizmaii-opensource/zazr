@@ -4,17 +4,15 @@
 //
 //   scala-cli run scripts/check-complexity.scala -- zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java ...
 //
-// How a javadoc block is matched to a method: each file is read top to bottom. A `/** ... */` block, or a run of
-// `///` lines, is remembered as "the pending javadoc". Blank lines, annotations (`@Override`, `@SuppressWarnings`...)
-// and `//` comments between it and the next code line are skipped. The next code line then either declares a method
-// at class-member indentation (exactly four spaces, then modifiers or a return type, then `name(`), in which case the
-// pending javadoc is that method's, or it is something else (a field, a nested class, a statement of a one-line
-// method...), and the pending javadoc is dropped: a javadoc never attaches to a method further down. A method whose
-// name is in the list below and whose javadoc (if any) has no line containing "Complexity:" is reported. Every
-// overload is checked separately. Only names actually declared in the file at that indentation are checked, so a
-// nested class's methods (indented deeper) and names the file does not declare are ignored.
+// The files are parsed by the JDK's own compiler (javax.tools + com.sun.source), so the doc comment of a method is
+// whatever javac attaches to it, `/** */` or `///` alike, and multi-line signatures or annotations do not matter.
+// Only the direct members of the top-level types of each file are checked (methods of nested classes are not), and
+// only methods whose name is in the list below; every overload is checked separately.
 
-import scala.io.Source
+import com.sun.source.tree.{ClassTree, CompilationUnitTree, MethodTree}
+import com.sun.source.util.{DocTrees, JavacTask, TreePath}
+import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
+import scala.jdk.CollectionConverters.*
 
 val positional: Set[String] = Set(
   "get", "update", "insert", "insertAll", "removeAt", "head", "tail", "init", "last", "slice", "subSequence", "take",
@@ -27,62 +25,45 @@ val positional: Set[String] = Set(
   "span", "retainAll", "transpose", "tailOption", "initOption", "iterator"
 )
 
-// a member declaration: exactly 4 spaces (the fifth column is not a space, so statements of method bodies, indented
-// deeper, never match), optional modifiers, optional type parameters, a return type, the name, `(`
-val modifiers = """(?:(?:public|protected|private|static|final|abstract|default|synchronized|native)\s+)*"""
-val declaration = ("""^ {4}(?=\S)""" + modifiers + """(?:<[^{;=]*?>\s+)?[\w.<>,?\[\]@ ]+?\s+(\w+)\s*\(""").r.unanchored
-
 final case class Missing(file: String, line: Int, name: String)
 
-def check(file: String): (Int, List[Missing]) =
-  var doc = List.empty[String]     // the pending javadoc, lines in reverse order
-  var hasDoc = false
-  var inBlock = false              // inside a /** ... */ block
-  var markdown = false             // the pending javadoc is a run of /// lines
-  var checked = 0
-  val missing = List.newBuilder[Missing]
-  val source = Source.fromFile(file)
+/** Parses the files once and returns (declarations checked, the ones without a Complexity line). */
+def check(files: Seq[String]): (Int, List[Missing]) =
+  val compiler = ToolProvider.getSystemJavaCompiler
+  val diagnostics = DiagnosticCollector[JavaFileObject]()
+  val fileManager = compiler.getStandardFileManager(diagnostics, null, null)
   try
-    for (line, index) <- source.getLines().zipWithIndex do
-      val lineNo = index + 1
-      val trimmed = line.trim
-      if inBlock then
-        doc = line :: doc
-        if line.contains("*/") then
-          inBlock = false
-          hasDoc = true
-      else if trimmed.startsWith("/**") then
-        doc = List(line)
-        markdown = false
-        inBlock = !line.contains("*/")
-        hasDoc = !inBlock
-      else if trimmed.startsWith("///") then
-        if markdown && hasDoc then doc = line :: doc
-        else
-          doc = List(line)
-          markdown = true
-          hasDoc = true
-      else if trimmed.isEmpty || trimmed.startsWith("@") || trimmed.startsWith("//") then
-        () // skipped: the pending javadoc still belongs to the next code line
-      else
-        line match
-          case declaration(name) if positional(name) =>
-            checked += 1
-            if !(hasDoc && doc.exists(_.contains("Complexity:"))) then missing += Missing(file, lineNo, name)
-          case _ => ()
-        doc = Nil
-        hasDoc = false
-        markdown = false
-  finally source.close()
-  (checked, missing.result())
+    val units = fileManager.getJavaFileObjectsFromStrings(files.asJava)
+    val task = compiler.getTask(null, fileManager, diagnostics, java.util.List.of("-proc:none"), null, units).asInstanceOf[JavacTask]
+    val docs = DocTrees.instance(task)
+    val parsed = task.parse().asScala.toList
+    val errors = diagnostics.getDiagnostics.asScala.filter(_.getKind == javax.tools.Diagnostic.Kind.ERROR)
+    if errors.nonEmpty then
+      errors.foreach(d => System.err.println(s"${d.getSource.getName}:${d.getLineNumber}: ${d.getMessage(null)}"))
+      sys.exit(2)
+    var checked = 0
+    val missing = List.newBuilder[Missing]
+    for
+      unit <- parsed
+      typeDecl <- unit.getTypeDecls.asScala
+      cls <- Option(typeDecl).collect { case c: ClassTree => c }
+      member <- cls.getMembers.asScala
+      method <- Option(member).collect { case m: MethodTree if positional(m.getName.toString) => m }
+    do
+      checked += 1
+      val path = new TreePath(new TreePath(new TreePath(unit), cls), method)
+      val doc = Option(docs.getDocComment(path))
+      if !doc.exists(_.contains("Complexity:")) then
+        val line = unit.getLineMap.getLineNumber(docs.getSourcePositions.getStartPosition(unit, method))
+        missing += Missing(unit.getSourceFile.getName, line.toInt, method.getName.toString)
+    (checked, missing.result())
+  finally fileManager.close()
 
 @main def run(files: String*): Unit =
   if files.isEmpty then
     System.err.println("usage: scala-cli run scripts/check-complexity.scala -- FILE...")
     sys.exit(2)
-  val results = files.map(check)
-  val checked = results.map(_._1).sum
-  val missing = results.flatMap(_._2)
+  val (checked, missing) = check(files)
   missing.foreach(m => println(s"${m.file}:${m.line}: ${m.name}() has no 'Complexity:' line in its javadoc"))
   if checked == 0 then
     println(s"no positional method found in ${files.mkString(" ")}")
