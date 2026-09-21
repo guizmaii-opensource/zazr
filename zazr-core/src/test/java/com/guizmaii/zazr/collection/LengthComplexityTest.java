@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.collection;
 
 import java.time.Duration;
-import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,10 +37,10 @@ public class LengthComplexityTest {
     @Test
     public void shouldTakeRightAndDropRightOfIteratorInLinearTime() {
         assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(Iterator.range(0, N).takeRight(K).size()).isEqualTo(K);
-            assertThat(Iterator.range(0, N).dropRight(K).size()).isEqualTo(N - K);
-            assertThat(List.range(0, N).iterator().takeRight(K).size()).isEqualTo(K);
-            assertThat(List.range(0, N).iterator().dropRight(K).size()).isEqualTo(N - K);
+            assertThat(Iterator.range(0, N).takeRight(K).toVector().size()).isEqualTo(K);
+            assertThat(Iterator.range(0, N).dropRight(K).toVector().size()).isEqualTo(N - K);
+            assertThat(Iterator.ofAll(List.range(0, N)).takeRight(K).toVector().size()).isEqualTo(K);
+            assertThat(Iterator.ofAll(List.range(0, N)).dropRight(K).toVector().size()).isEqualTo(N - K);
         });
     }
 
@@ -57,16 +56,4 @@ public class LengthComplexityTest {
         });
     }
 
-    @Test
-    public void shouldTakeRightAndDropRightOfSetsAndMapsInLinearTime() {
-        assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(LinkedHashSet.ofAll(List.range(0, N)).takeRight(K).size()).isEqualTo(K);
-            assertThat(LinkedHashSet.ofAll(List.range(0, N)).dropRight(K).size()).isEqualTo(N - K);
-            assertThat(TreeSet.ofAll(List.range(0, N)).takeRight(K).size()).isEqualTo(K);
-            assertThat(List.range(0, N).toSortedMap(Function.identity(), Function.identity()).takeRight(K).size()).isEqualTo(K);
-            assertThat(List.range(0, N).toSortedMap(Function.identity(), Function.identity()).dropRight(K).size()).isEqualTo(N - K);
-            assertThat(List.range(0, N).toMap(Function.identity(), Function.identity()).takeRight(K).size()).isEqualTo(K);
-            assertThat(List.range(0, N).toLinkedMap(Function.identity(), Function.identity()).takeRight(K).size()).isEqualTo(K);
-        });
-    }
 }

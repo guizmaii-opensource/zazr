@@ -4,8 +4,6 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -497,7 +495,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Iterator<Tuple2<K2, V2>> entries = iterator().map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
+        final Iterator<Tuple2<K2, V2>> entries = Iterator.ofAll(this).map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
         return HashMap.ofEntries(entries);
     }
 
@@ -514,41 +512,6 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public boolean containsKey(K key) {
         return trie.containsKey(key);
-    }
-
-    @Override
-    public HashMap<K, V> distinct() {
-        return Maps.distinct(this);
-    }
-
-    @Override
-    public HashMap<K, V> distinctBy(Comparator<? super Tuple2<K, V>> comparator) {
-        return Maps.distinctBy(this, this::createFromEntries, comparator);
-    }
-
-    @Override
-    public <U extends @Nullable Object> HashMap<K, V> distinctBy(Function<? super Tuple2<K, V>, ? extends U> keyExtractor) {
-        return Maps.distinctBy(this, this::createFromEntries, keyExtractor);
-    }
-
-    @Override
-    public HashMap<K, V> drop(int n) {
-        return Maps.drop(this, this::createFromEntries, HashMap::empty, n);
-    }
-
-    @Override
-    public HashMap<K, V> dropRight(int n) {
-        return Maps.dropRight(this, this::createFromEntries, HashMap::empty, n);
-    }
-
-    @Override
-    public HashMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.dropUntil(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public HashMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.dropWhile(this, this::createFromEntries, predicate);
     }
 
     @Override
@@ -622,56 +585,18 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public Iterator<HashMap<K, V>> grouped(int size) {
-        return Maps.grouped(this, this::createFromEntries, size);
-    }
-
-    @Override
-    public Tuple2<K, V> head() {
-        if (isEmpty()) {
-            throw new NoSuchElementException("head of empty HashMap");
-        } else {
-            return iterator().next();
-        }
-    }
-
-    @Override
-    public HashMap<K, V> init() {
-        if (trie.isEmpty()) {
-            throw new UnsupportedOperationException("init of empty HashMap");
-        } else {
-            return remove(last()._1());
-        }
-    }
-
-    @Override
-    public Option<HashMap<K, V>> initOption() {
-        return Maps.initOption(this);
-    }
-
-    @Override
     public boolean isEmpty() {
         return trie.isEmpty();
     }
 
     @Override
-    public Iterator<Tuple2<K, V>> iterator() {
+    public java.util.Iterator<Tuple2<K, V>> iterator() {
         return trie.iterator();
     }
 
     @Override
     public Set<K> keySet() {
-        return HashSet.ofAll(iterator().map(Tuple2::_1));
-    }
-
-    @Override
-    public Iterator<K> keysIterator() {
-        return trie.keysIterator();
-    }
-
-    @Override
-    public Tuple2<K, V> last() {
-        return Collections.last(this);
+        return HashSet.ofAll(trie.keysIterator());
     }
 
     @Override
@@ -840,69 +765,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public HashMap<K, V> scan(
-      Tuple2<K, V> zero,
-      BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation) {
-        return Maps.scan(this, zero, operation, this::createFromEntries);
-    }
-
-    @Override
     public int size() {
         return trie.size();
-    }
-
-    @Override
-    public Iterator<HashMap<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier) {
-        return Maps.slideBy(this, this::createFromEntries, classifier);
-    }
-
-    @Override
-    public Iterator<HashMap<K, V>> sliding(int size) {
-        return Maps.sliding(this, this::createFromEntries, size);
-    }
-
-    @Override
-    public Iterator<HashMap<K, V>> sliding(int size, int step) {
-        return Maps.sliding(this, this::createFromEntries, size, step);
-    }
-
-    @Override
-    public Tuple2<HashMap<K, V>, HashMap<K, V>> span(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.span(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public HashMap<K, V> tail() {
-        if (trie.isEmpty()) {
-            throw new UnsupportedOperationException("tail of empty HashMap");
-        } else {
-            return remove(head()._1());
-        }
-    }
-
-    @Override
-    public Option<HashMap<K, V>> tailOption() {
-        return Maps.tailOption(this);
-    }
-
-    @Override
-    public HashMap<K, V> take(int n) {
-        return Maps.take(this, this::createFromEntries, n);
-    }
-
-    @Override
-    public HashMap<K, V> takeRight(int n) {
-        return Maps.takeRight(this, this::createFromEntries, n);
-    }
-
-    @Override
-    public HashMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.takeUntil(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public HashMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.takeWhile(this, this::createFromEntries, predicate);
     }
 
     @Override
@@ -911,13 +775,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public Stream<V> values() {
-        return trie.valuesIterator().toStream();
-    }
-
-    @Override
-    public Iterator<V> valuesIterator() {
-        return trie.valuesIterator();
+    public Vector<V> values() {
+        return Vector.ofAll(trie.valuesIterator());
     }
 
     @Override

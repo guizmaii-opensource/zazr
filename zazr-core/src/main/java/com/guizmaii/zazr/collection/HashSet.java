@@ -4,8 +4,6 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -626,63 +624,13 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public HashSet<T> distinct() {
-        return this;
-    }
-
-    @Override
-    public HashSet<T> distinctBy(Comparator<? super T> comparator) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        return HashSet.ofAll(iterator().distinctBy(comparator));
-    }
-
-    @Override
-    public <U extends @Nullable Object> HashSet<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
-        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        return HashSet.ofAll(iterator().distinctBy(keyExtractor));
-    }
-
-    @Override
-    public HashSet<T> drop(int n) {
-        if (n <= 0) {
-            return this;
-        } else {
-            return HashSet.ofAll(iterator().drop(n));
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * A {@code HashSet} has no defined element order, so this method is an alias of {@link #drop(int)}:
-     * it removes {@code n} elements from the front of the iteration order, not from the end.
-     */
-    @Override
-    public HashSet<T> dropRight(int n) {
-        return drop(n);
-    }
-
-    @Override
-    public HashSet<T> dropUntil(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return dropWhile(predicate.negate());
-    }
-
-    @Override
-    public HashSet<T> dropWhile(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final HashSet<T> dropped = HashSet.ofAll(iterator().dropWhile(predicate));
-        return dropped.length() == length() ? this : dropped;
-    }
-
-    @Override
     public HashSet<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final HashSet<T> filtered = HashSet.ofAll(iterator().filter(predicate));
+        final HashSet<T> filtered = HashSet.ofAll(Iterator.ofAll(this).filter(predicate));
 
         if (filtered.isEmpty()) {
             return empty();
-        } else if (filtered.length() == length()) {
+        } else if (filtered.size() == size()) {
             return this;
         } else {
             return filtered;
@@ -708,53 +656,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return iterator().foldRight(zero, f);
-    }
-
-    @Override
     public <C extends @Nullable Object> Map<C, HashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
         return Collections.groupBy(this, classifier, HashSet::ofAll);
-    }
-
-    @Override
-    public Iterator<HashSet<T>> grouped(int size) {
-        return sliding(size, size);
-    }
-
-    @Override
-    public T head() {
-        if (tree.isEmpty()) {
-            throw new NoSuchElementException("head of empty set");
-        }
-        return iterator().next();
-    }
-
-    @Override
-    public Option<T> headOption() {
-        return iterator().headOption();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * A {@code HashSet} has no defined element order, so this method is an alias of {@link #tail()}:
-     * it removes the first element in iteration order, not the last one.
-     */
-    @Override
-    public HashSet<T> init() {
-        return tail();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * A {@code HashSet} has no defined element order, so this method is an alias of {@link #tailOption()}.
-     */
-    @Override
-    public Option<HashSet<T>> initOption() {
-        return tailOption();
     }
 
     @Override
@@ -779,18 +682,13 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public Iterator<T> iterator() {
-        return tree.keysIterator();
-    }
-
-    @Override
-    public T last() {
-        return Collections.last(this);
-    }
-
-    @Override
-    public int length() {
+    public int size() {
         return tree.size();
+    }
+
+    @Override
+    public java.util.Iterator<T> iterator() {
+        return tree.keysIterator();
     }
 
     @Override
@@ -830,11 +728,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
-        return iterator().mkString(prefix, delimiter, suffix);
-    }
-
-    @Override
     public HashSet<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
@@ -864,7 +757,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
-        return Collections.removeAll(this, elements);
+        return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     @Override
@@ -883,96 +776,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public HashSet<T> retainAll(Iterable<? extends T> elements) {
-        return Collections.retainAll(this, elements);
-    }
-
-    @Override
-    public HashSet<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
-        return scanLeft(zero, operation);
-    }
-
-    @Override
-    public <U extends @Nullable Object> HashSet<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
-        return Collections.scanLeft(this, zero, operation, HashSet::ofAll);
-    }
-
-    @Override
-    public <U extends @Nullable Object> HashSet<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return Collections.scanRight(this, zero, operation, HashSet::ofAll);
-    }
-
-    @Override
-    public Iterator<HashSet<T>> slideBy(Function<? super T, ?> classifier) {
-        return iterator().slideBy(classifier).map(HashSet::ofAll);
-    }
-
-    @Override
-    public Iterator<HashSet<T>> sliding(int size) {
-        return sliding(size, 1);
-    }
-
-    @Override
-    public Iterator<HashSet<T>> sliding(int size, int step) {
-        return iterator().sliding(size, step).map(HashSet::ofAll);
-    }
-
-    @Override
-    public Tuple2<HashSet<T>, HashSet<T>> span(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final Tuple2<Iterator<T>, Iterator<T>> t = iterator().span(predicate);
-        return Tuple.of(HashSet.ofAll(t._1()), HashSet.ofAll(t._2()));
-    }
-
-    @Override
-    public HashSet<T> tail() {
-        if (tree.isEmpty()) {
-            throw new UnsupportedOperationException("tail of empty set");
-        }
-        return remove(head());
-    }
-
-    @Override
-    public Option<HashSet<T>> tailOption() {
-        if (tree.isEmpty()) {
-            return Option.none();
-        } else {
-            return Option.some(tail());
-        }
-    }
-
-    @Override
-    public HashSet<T> take(int n) {
-        if (n >= size() || isEmpty()) {
-            return this;
-        } else if (n <= 0) {
-            return empty();
-        } else {
-            return ofAll(() -> iterator().take(n));
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * A {@code HashSet} has no defined element order, so this method is an alias of {@link #take(int)}:
-     * it keeps the first {@code n} elements in iteration order, not the last {@code n}.
-     */
-    @Override
-    public HashSet<T> takeRight(int n) {
-        return take(n);
-    }
-
-    @Override
-    public HashSet<T> takeUntil(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return takeWhile(predicate.negate());
-    }
-
-    @Override
-    public HashSet<T> takeWhile(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final HashSet<T> taken = HashSet.ofAll(iterator().takeWhile(predicate));
-        return taken.length() == length() ? this : taken;
+        return Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     @Override
@@ -1000,63 +804,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
                 return new HashSet<>(that);
             }
         }
-    }
-
-    @Override
-    public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<HashSet<T1>, HashSet<T2>> unzip(
-      Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        final Tuple2<Iterator<T1>, Iterator<T2>> t = iterator().unzip(unzipper);
-        return Tuple.of(HashSet.ofAll(t._1()), HashSet.ofAll(t._2()));
-    }
-
-    @Override
-    public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<HashSet<T1>, HashSet<T2>, HashSet<T3>> unzip3(
-      Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        final Tuple3<Iterator<T1>, Iterator<T2>, Iterator<T3>> t = iterator().unzip3(unzipper);
-        return Tuple.of(HashSet.ofAll(t._1()), HashSet.ofAll(t._2()), HashSet.ofAll(t._3()));
-    }
-
-    @Override
-    public <U extends @Nullable Object> HashSet<Tuple2<T, U>> zip(Iterable<? extends U> that) {
-        return zipWith(that, Tuple::of);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Because the result is collected into a {@code HashSet}, equal results of {@code mapper} are merged,
-     * so the resulting size may be smaller than the length guaranteed by {@link Traversable#zipWith(Iterable, BiFunction)}.
-     */
-    @Override
-    public <U extends @Nullable Object, R extends @Nullable Object> HashSet<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
-        Objects.requireNonNull(that, "that is null");
-        Objects.requireNonNull(mapper, "mapper is null");
-        return HashSet.ofAll(iterator().zipWith(that, mapper));
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Because the result is collected into a {@code HashSet}, equal pairs are merged, so the resulting
-     * size may be smaller than the length guaranteed by {@link Traversable#zipAll(Iterable, Object, Object)}.
-     */
-    @Override
-    public <U extends @Nullable Object> HashSet<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
-        Objects.requireNonNull(that, "that is null");
-        return HashSet.ofAll(iterator().zipAll(that, thisElem, thatElem));
-    }
-
-    @Override
-    public HashSet<Tuple2<T, Integer>> zipWithIndex() {
-        return zipWithIndex(Tuple::of);
-    }
-
-    @Override
-    public <U extends @Nullable Object> HashSet<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return HashSet.ofAll(iterator().zipWithIndex(mapper));
     }
 
     // -- Object

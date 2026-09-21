@@ -8,6 +8,7 @@ import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
+import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
 import static com.guizmaii.zazr.collection.Collections.withSize;
@@ -808,12 +809,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)){
-            return this;
-        }
         if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
-            // a one-shot source (an Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
-            return appendAll(ofAll(iterable));
+            // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with the
+            // builder, which also answers whether there is anything to append, then appended by path copy
+            final Vector<T> elements = ofAll(iterable);
+            return elements.isEmpty() ? this : appendAll(elements);
+        }
+        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
+            return this;
         }
         return new Vector<>(trie.appendAll(iterable));
     }
@@ -911,65 +914,25 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * The Cartesian square of this Vector: every pair {@code (a, b)} of elements, {@code a} varying slowest.
-     * <p>
-     * Complexity: lazy; O(n^2) pairs when consumed.
-     *
-     * @return an iterator over the pairs
-     */
-    public Iterator<Tuple2<T, T>> crossProduct() {
-        return crossProduct(this);
-    }
-
-    /**
-     * The Cartesian power of this Vector: every Vector of {@code power} elements drawn from this one, in
-     * lexicographic position order. {@code power == 0} gives one empty Vector; a negative power gives no result.
-     * <p>
-     * Complexity: lazy; O(n^power) Vectors of size {@code power} when consumed.
-     *
-     * @param power the size of each result
-     * @return an iterator over the Vectors (its element type is decided in #68, with {@code sliding} and {@code grouped})
-     */
-    public Iterator<Vector<T>> crossProduct(int power) {
-        if (power < 0) {
-            return Iterator.empty();
-        }
-        return Iterator.range(0, power).foldLeft(Iterator.of(Vector.<T> empty()), (product, ignored) -> product.flatMap(el -> map(el::append)));
-    }
-
-    /**
-     * The Cartesian product of this Vector and {@code that}: every pair {@code (a, b)} with {@code a} from this
-     * Vector and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked lazily and memoised,
-     * so an infinite {@code that} works with {@code take}.
-     * <p>
-     * Complexity: lazy; O(n * m) pairs when consumed.
-     *
-     * @param that the right-hand elements
-     * @param <U>  their type
-     * @return an iterator over the pairs
-     * @throws NullPointerException if {@code that} is null
-     */
-    public <U extends @Nullable Object> Iterator<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
-        Objects.requireNonNull(that, "that is null");
-        // a lazy, memoising Stream, not Vector.ofAll: the result is lazy, so the argument stays lazy too
-        final Stream<U> other = Stream.ofAll(that);
-        return Iterator.ofAll(this).flatMap(a -> other.map(b -> Tuple.of(a, b)));
-    }
-
-    /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} containing the elements of this instance
+     * with all duplicates removed. Element equality is determined using {@code equals}.
      * <p>
      * Complexity: O(n).
+     *
+     * @return a new {@code Vector} without duplicate elements
      */
-    @Override
     public Vector<T> distinct() { return distinctBy(Function.identity()); }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} containing the elements of this instance
+     * without duplicates, as determined by the given {@code comparator}; the first of two equal elements is kept.
      * <p>
      * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator a comparator used to determine equality of elements
+     * @return a new {@code Vector} with duplicates removed
+     * @throws NullPointerException if {@code comparator} is null
      */
-    @Override
     public Vector<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         final java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
@@ -977,11 +940,18 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} containing the elements of this instance
+     * without duplicates, based on keys extracted from elements using {@code keyExtractor}.
+     * <p>
+     * The first occurrence of each key is retained in the resulting sequence.
      * <p>
      * Complexity: O(n).
+     *
+     * @param keyExtractor a function to extract keys for determining uniqueness
+     * @param <U>          the type of key
+     * @return a new {@code Vector} with duplicates removed based on keys
+     * @throws NullPointerException if {@code keyExtractor} is null
      */
-    @Override
     public <U extends @Nullable Object> Vector<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         final java.util.Set<U> seen = new java.util.HashSet<>(length());
@@ -1043,7 +1013,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> distinctByKeepLast(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return ofAll(iterator().distinctByKeepLast(comparator));
+        return ofAll(Iterator.ofAll(this).distinctByKeepLast(comparator));
     }
 
     /**
@@ -1058,25 +1028,32 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> Vector<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        return ofAll(iterator().distinctByKeepLast(keyExtractor));
+        return ofAll(Iterator.ofAll(this).distinctByKeepLast(keyExtractor));
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} without the first {@code n} elements,
+     * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: effectively O(1) (the path to the new first leaf is trimmed).
+     *
+     * @param n the number of elements to drop
+     * @return a new instance excluding the first {@code n} elements
      */
-    @Override
     public Vector<T> drop(int n) {
         return wrap(trie.drop(n));
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} starting from the first element
+     * that satisfies the given {@code predicate}, dropping all preceding elements.
      * <p>
      * Complexity: O(k) for k dropped elements, then one effectively O(1) {@code drop}.
+     *
+     * @param predicate a condition tested on each element
+     * @return a new instance starting from the first element matching the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Vector<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final int length = length();
@@ -1089,22 +1066,32 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} starting from the first element
+     * that does not satisfy the given {@code predicate}, dropping all preceding elements.
+     * <p>
+     * This is equivalent to {@code dropUntil(predicate.negate())}, which is useful
+     * for method references that cannot be negated directly.
      * <p>
      * Complexity: O(k) for k dropped elements, then one effectively O(1) {@code drop}.
+     *
+     * @param predicate a condition tested on each element
+     * @return a new instance starting from the first element not matching the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Vector<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropUntil(predicate.negate());
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} without the last {@code n} elements,
+     * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: effectively O(1) (the path to the new last leaf is trimmed).
+     *
+     * @param n the number of elements to drop from the end
+     * @return a new instance excluding the last {@code n} elements
      */
-    @Override
     public Vector<T> dropRight(int n) {
         return take(length() - n);
     }
@@ -1168,7 +1155,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return true;
     }
 
-    @Override
     public Vector<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         // stays on the trie, not the builder: the flat-array filter keeps primitive leaves unboxed and, measured, is
@@ -1176,13 +1162,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return wrap(trie.filter(predicate));
     }
 
-    @Override
     public Vector<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(predicate.negate());
     }
 
-    @Override
     public <U extends @Nullable Object> Vector<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         final Builder<U> builder = newBuilder();
@@ -1196,11 +1180,21 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Folds the elements from the right: starts with {@code zero} and combines each element, from the last to the
+     * first, with the accumulator.
+     * <pre>{@code
+     * // = 24
+     * List.of('4', '2').foldRight(0, (x, acc) -> acc * 10 + x - '0');
+     * }</pre>
      * <p>
      * Complexity: O(n), walking the elements from the last to the first without copying.
+     *
+     * @param <U>  the type of the accumulator
+     * @param zero the initial accumulator
+     * @param f    combines the next element (from the right) and the accumulator so far
+     * @return the final accumulator, {@code zero} on an empty sequence
+     * @throws NullPointerException if {@code f} is null
      */
-    @Override
     public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         U xs = zero;
@@ -1229,11 +1223,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     private boolean isValid(int index) { return (index >= 0) && (index < length()); }
 
     /**
-     * {@inheritDoc}
+     * Returns the first element of this non-empty {@code Vector}.
      * <p>
      * Complexity: effectively O(1).
+     *
+     * @return the first element
+     * @throws NoSuchElementException if this {@code Vector} is empty
      */
-    @Override
     public T head() {
         if (nonEmpty()) {
             return get(0);
@@ -1242,16 +1238,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
     }
 
-    @Override
     public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Vector::ofAll); }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(n) over all groups when consumed. The iterator element type is decided in #68.
-     */
-    @Override
-    public Iterator<Vector<T>> grouped(int size) { return sliding(size, size); }
 
     /**
      * The index of the first occurrence of {@code element}, or -1.
@@ -1415,11 +1402,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns all elements of this Vector except the last one.
+     * <p>
+     * This is the dual of {@link #tail()}.
      * <p>
      * Complexity: effectively O(1) (the path to the last leaf is trimmed).
+     *
+     * @return a new instance containing all elements except the last
+     * @throws UnsupportedOperationException if this Vector is empty
      */
-    @Override
     public Vector<T> init() {
         if (nonEmpty()) {
             return dropRight(1);
@@ -1429,11 +1420,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns all elements of this Vector except the last one, wrapped in an {@code Option}.
+     * <p>
+     * This is the dual of {@link #tailOption()}.
      * <p>
      * Complexity: effectively O(1) (one {@code init}).
+     *
+     * @return {@code Some(traversable)} if non-empty, or {@code None} if this Vector is empty
      */
-    @Override
     public Option<Vector<T>> initOption() { return isEmpty() ? Option.none() : Option.some(init()); }
 
     /**
@@ -1483,7 +1477,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector of 2n - 1 elements, or this Vector if it has fewer than two
      * @throws NullPointerException if {@code element} is null and this Vector has at least two elements
      */
-    public Vector<T> intersperse(T element) { return ofAll(iterator().intersperse(element)); }
+    public Vector<T> intersperse(T element) { return ofAll(Iterator.ofAll(this).intersperse(element)); }
 
     @Override
     public boolean isEmpty() { return length() == 0; }
@@ -1502,30 +1496,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.
      */
     @Override
-    public Iterator<T> iterator() {
+    public java.util.Iterator<T> iterator() {
         return isEmpty() ? Iterator.empty()
                          : trie.iterator();
     }
 
     /**
-     * An iterator over the elements from {@code index} on: {@code subSequence(index).iterator()}.
-     * <p>
-     * Complexity: effectively O(1) to create.
-     *
-     * @param index the first position to iterate, {@code 0 <= index <= length()}
-     * @return an iterator starting at {@code index}, empty when {@code index == length()}
-     * @throws IndexOutOfBoundsException if {@code index} is out of range
-     */
-    public Iterator<T> iterator(int index) {
-        return subSequence(index).iterator();
-    }
-
-    /**
-     * {@inheritDoc}
+     * Returns the last element of this Vector.
      * <p>
      * Complexity: effectively O(1).
+     *
+     * @return the last element
+     * @throws NoSuchElementException if this Vector is empty
      */
-    @Override
     public T last() {
         if (isEmpty()) {
             throw new NoSuchElementException("last of empty Vector");
@@ -1693,14 +1676,16 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the number of elements in this Vector.
+     * <p>
+     * Equivalent to {@link #size()}.
      * <p>
      * Complexity: O(1); the length is a field of the trie.
+     *
+     * @return the number of elements
      */
-    @Override
     public int length() { return trie.length(); }
 
-    @Override
     public <U extends @Nullable Object> Vector<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (trie.hasObjectLeaves()) {
@@ -1717,7 +1702,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return builder.result();
     }
 
-    @Override
     public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // one pass over the leaves straight into the builder, like flatMap: no intermediate collection
@@ -1734,17 +1718,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return builder.result();
     }
 
-    @Override
     public <U extends @Nullable Object> Vector<U> as(U value) {
         return map(ignored -> value);
     }
 
-    @Override
     public Vector<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
 
-    @Override
     public Vector<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         return isEmpty() ? ofAll(supplier.get()) : this;
     }
@@ -1808,7 +1789,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return result;
     }
 
-    @Override
     public Tuple2<Vector<T>, Vector<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final ArrayList<T> left = new ArrayList<>(), right = new ArrayList<>();
@@ -1842,7 +1822,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return Tuple.of(lefts.result(), rights.result());
     }
 
-    @Override
     public Vector<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         forEach(action);
@@ -1911,7 +1890,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)){
+        if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
+            // a one-shot source is read exactly once: built first, which also answers whether there is anything to prepend
+            final Vector<T> elements = ofAll(iterable);
+            return elements.isEmpty() ? this : prependAll(elements);
+        }
+        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
             return this;
         }
         return new Vector<>(trie.prependAll(iterable));
@@ -2002,7 +1986,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector without it, or this Vector if it is absent
      */
     public Vector<T> removeAll(T element) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, element, kept -> filter(kept));
     }
 
     /**
@@ -2015,7 +1999,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code elements} is null
      */
     public Vector<T> removeAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2035,11 +2019,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: O(n) to find the element, then one effectively O(1) {@code update}.
+     *
+     * @param currentElement the element to be replaced
+     * @param newElement     the replacement element
+     * @return a new Vector with the first occurrence of {@code currentElement} replaced by {@code newElement}
      */
-    @Override
     public Vector<T> replace(T currentElement, T newElement) {
         return indexOfOption(currentElement)
                 .map(i -> update(i, newElement))
@@ -2047,15 +2034,18 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Replaces all occurrences of {@code currentElement} with {@code newElement}.
      * <p>
      * Complexity: O(n) plus one effectively O(1) {@code update} per occurrence.
+     *
+     * @param currentElement the element to be replaced
+     * @param newElement     the replacement element
+     * @return a new Vector with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
-    @Override
     public Vector<T> replaceAll(T currentElement, T newElement) {
         Vector<T> result = this;
         int index = 0;
-        for (T value : iterator()) {
+        for (T value : this) {
             if (Objects.equals(value, currentElement)) {
                 result = result.update(index, newElement);
             }
@@ -2065,13 +2055,16 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Retains only the elements from this Vector that are contained in the given {@code elements}.
      * <p>
      * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     *
+     * @param elements the elements to keep
+     * @return a new Vector containing only the elements present in {@code elements}, in their original order
+     * @throws NullPointerException if {@code elements} is null
      */
-    @Override
     public Vector<T> retainAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
+        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2092,7 +2085,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      *
      * @return the reverse iterator
      */
-    public Iterator<T> reverseIterator() {
+    Iterator<T> reverseIterator() {
         return new AbstractIterator<T>() {
             private int i = Vector.this.length();
 
@@ -2143,31 +2136,49 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Computes a prefix scan of the elements of this Vector.
+     * <p>
+     * The neutral element {@code zero} may be applied more than once.
      * <p>
      * Complexity: O(n).
+     *
+     * @param zero      the neutral element for the operator
+     * @param operation an associative binary operator
+     * @return a new Vector containing the prefix scan of the elements
+     * @throws NullPointerException if {@code operation} is null
      */
-    @Override
     public Vector<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
         return scanLeft(zero, operation);
     }
 
     /**
-     * {@inheritDoc}
+     * Produces a collection containing cumulative results of applying the operator from left to right.
      * <p>
      * Complexity: O(n).
+     *
+     * @param <U>       the type of the resulting elements
+     * @param zero      the initial value
+     * @param operation a binary operator applied to the intermediate result and each element
+     * @return a new Vector containing the cumulative results
+     * @throws NullPointerException if {@code operation} is null
      */
-    @Override
     public <U extends @Nullable Object> Vector<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toVector);
     }
 
     /**
-     * {@inheritDoc}
+     * Produces a collection containing cumulative results of applying the operator from right to left.
+     * <p>
+     * The head of the result is the last cumulative result.
      * <p>
      * Complexity: O(n).
+     *
+     * @param <U>       the type of the resulting elements
+     * @param zero      the initial value
+     * @param operation a binary operator applied to each element and the intermediate result
+     * @return a new Vector containing the cumulative results
+     * @throws NullPointerException if {@code operation} is null
      */
-    @Override
     public <U extends @Nullable Object> Vector<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toVector);
     }
@@ -2260,36 +2271,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(n) over all groups when consumed. The iterator element type is decided in #68.
-     */
-    @Override
-    public Iterator<Vector<T>> slideBy(Function<? super T, ?> classifier) {
-        return iterator().slideBy(classifier).map(Vector::ofAll);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(size) per window when consumed. The iterator element type is decided in #68.
-     */
-    @Override
-    public Iterator<Vector<T>> sliding(int size) {
-        return sliding(size, 1);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(size) per window when consumed. The iterator element type is decided in #68.
-     */
-    @Override
-    public Iterator<Vector<T>> sliding(int size, int step) {
-        return iterator().sliding(size, step).map(Vector::ofAll);
-    }
-
-    /**
      * The elements sorted in natural order (a stable sort).
      * <p>
      * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and regrouped into leaves.
@@ -2302,7 +2283,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return this;
         } else {
             @SuppressWarnings("unchecked")
-            final T[] list = (T[]) toJavaArray();
+            final T[] list = (T[]) toArray();
             Arrays.sort(list);
             return Vector.of(list);
         }
@@ -2323,7 +2304,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return this;
         }
         @SuppressWarnings("unchecked")
-        final T[] array = (T[]) toJavaArray();
+        final T[] array = (T[]) toArray();
         Arrays.sort(array, comparator);
         return Vector.of(array);
     }
@@ -2360,11 +2341,17 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Splits this {@code Vector} into a prefix and remainder according to the given {@code predicate}.
+     * <p>
+     * The first element of the returned {@code Tuple} is the longest prefix of elements satisfying {@code predicate},
+     * and the second element is the remaining elements.
      * <p>
      * Complexity: O(k) for k elements before the split, then an effectively O(1) split.
+     *
+     * @param predicate a predicate used to determine the prefix
+     * @return a {@code Tuple} containing the prefix and remainder
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Tuple2<Vector<T>, Vector<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Tuple.of(takeWhile(predicate), dropWhile(predicate));
@@ -2513,11 +2500,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} without its first element.
      * <p>
      * Complexity: effectively O(1) (the path to the first leaf is trimmed).
+     *
+     * @return a new {@code Vector} containing all elements except the first
+     * @throws UnsupportedOperationException if this {@code Vector} is empty
      */
-    @Override
     public Vector<T> tail() {
         if (nonEmpty()) {
             return drop(1);
@@ -2527,29 +2516,40 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Vector} without its first element as an {@code Option}.
      * <p>
      * Complexity: effectively O(1) (one {@code tail}).
+     *
+     * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
-    @Override
     public Option<Vector<T>> tailOption() { return isEmpty() ? Option.none() : Option.some(tail()); }
 
     /**
-     * {@inheritDoc}
+     * Returns the first {@code n} elements of this {@code Vector}, or all elements if {@code n} exceeds the length.
+     * <p>
+     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
      * Complexity: effectively O(1) (the path to the new last leaf is trimmed).
+     *
+     * @param n the number of elements to take
+     * @return a new {@code Vector} containing the first {@code n} elements
      */
-    @Override
     public Vector<T> take(int n) {
         return wrap(trie.take(n));
     }
 
     /**
-     * {@inheritDoc}
+     * Takes elements from this {@code Vector} until the given predicate holds for an element.
+     * <p>
+     * Equivalent to {@code takeWhile(predicate.negate())}, but useful when using method references
+     * that cannot be negated directly.
      * <p>
      * Complexity: O(k) for k taken elements, then one effectively O(1) {@code take}.
+     *
+     * @param predicate a condition tested sequentially on the elements
+     * @return a new {@code Vector} containing all elements before the first one that satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Vector<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final int length = length();
@@ -2562,22 +2562,30 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Takes elements from this {@code Vector} while the given predicate holds.
      * <p>
      * Complexity: O(k) for k taken elements, then one effectively O(1) {@code take}.
+     *
+     * @param predicate a condition tested sequentially on the elements
+     * @return a new {@code Vector} containing all elements up to (but not including) the first one
+     *         that does not satisfy the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Vector<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeUntil(predicate.negate());
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the last {@code n} elements of this {@code Vector}, or all elements if {@code n} exceeds the length.
+     * <p>
+     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
      * Complexity: effectively O(1) (the path to the new first leaf is trimmed).
+     *
+     * @param n the number of elements to take from the end
+     * @return a new {@code Vector} containing the last {@code n} elements
      */
-    @Override
     public Vector<T> takeRight(int n) {
         return drop(length() - n);
     }
@@ -2700,57 +2708,94 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@code Vector} formed by pairing elements of this {@code Vector} with elements of another
+     * {@code Iterable}. Pairing stops when either collection runs out of elements; any remaining elements in the longer
+     * collection are ignored.
+     * <p>
+     * The length of the resulting {@code Vector} is the minimum of the lengths of this {@code Vector} and
+     * {@code that}.
      * <p>
      * Complexity: O(min(n, m)) for m elements of {@code that}.
+     *
+     * @param <U>  the type of elements in the second half of each pair
+     * @param that an {@code Iterable} providing the second element of each pair
+     * @return a new {@code Vector} containing pairs of corresponding elements
+     * @throws NullPointerException if {@code that} is null
      */
-    @Override
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@code Vector} by combining elements of this {@code Vector} with elements of another
+     * {@code Iterable} using a mapping function. Pairing stops when either collection runs out of elements.
+     * <p>
+     * The length of the resulting {@code Vector} is the minimum of the lengths of this {@code Vector} and
+     * {@code that}.
      * <p>
      * Complexity: O(min(n, m)) for m elements of {@code that}.
+     *
+     * @param <U>    the type of elements in the second parameter of the mapper
+     * @param <R>    the type of elements in the resulting {@code Vector}
+     * @param that   an {@code Iterable} providing the second parameter of the mapper
+     * @param mapper a function that combines elements from this and {@code that} into a new element
+     * @return a new {@code Vector} containing mapped elements
+     * @throws NullPointerException if {@code that} or {@code mapper} is null
      */
-    @Override
     public <U extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(iterator().zipWith(that, mapper));
+        return ofAll(Iterator.ofAll(this).zipWith(that, mapper));
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@code Vector} formed by pairing elements of this {@code Vector} with elements of another
+     * {@code Iterable}, filling in placeholder elements when one collection is shorter than the other.
+     * <p>
+     * The length of the resulting {@code Vector} is the maximum of the lengths of this {@code Vector} and
+     * {@code that}.
+     * <p>
+     * If this {@code Vector} is shorter than {@code that}, {@code thisElem} is used as a filler. Conversely, if
+     * {@code that} is shorter, {@code thatElem} is used.
      * <p>
      * Complexity: O(max(n, m)) for m elements of {@code that}.
+     *
+     * @param <U>      the type of elements in the second half of each pair
+     * @param that     an {@code Iterable} providing the second element of each pair
+     * @param thisElem the element used to fill missing values if this {@code Vector} is shorter than {@code that}
+     * @param thatElem the element used to fill missing values if {@code that} is shorter than this {@code Vector}
+     * @return a new {@code Vector} containing pairs of elements, including fillers as needed
+     * @throws NullPointerException if {@code that} is null
      */
-    @Override
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
-        return ofAll(iterator().zipAll(that, thisElem, thatElem));
+        return ofAll(Iterator.ofAll(this).zipAll(that, thisElem, thatElem));
     }
 
     /**
-     * {@inheritDoc}
+     * Zips this {@code Vector} with its indices, starting at 0.
      * <p>
      * Complexity: O(n).
+     *
+     * @return a new {@code Vector} containing each element paired with its index
      */
-    @Override
     public Vector<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
     /**
-     * {@inheritDoc}
+     * Zips this {@code Vector} with its indices and maps the resulting pairs using the provided mapper.
      * <p>
      * Complexity: O(n).
+     *
+     * @param <U>    the type of elements in the resulting {@code Vector}
+     * @param mapper a function mapping an element and its index to a new element
+     * @return a new {@code Vector} containing the mapped elements
+     * @throws NullPointerException if {@code mapper} is null
      */
-    @Override
     public <U extends @Nullable Object> Vector<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(iterator().zipWithIndex(mapper));
+        return ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
     }
 
     /**
@@ -3058,6 +3103,778 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             }
         }
     }
+
+    // -- windows and products
+
+    /**
+     * The elements in consecutive blocks of {@code size}: {@code Vector.of(1, 2, 3, 4, 5).grouped(2)} is
+     * {@code Vector(Vector(1, 2), Vector(3, 4), Vector(5))}; the last block is smaller when {@code size} does not
+     * divide the length. The same as {@code sliding(size, size)}.
+     * <p>
+     * Complexity: O(n / size) blocks, each an effectively O(1) slice sharing this Vector's leaves.
+     *
+     * @param size the block size, positive
+     * @return the blocks, in order; empty if this Vector is empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Vector<Vector<T>> grouped(int size) {
+        return sliding(size, size);
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements, each starting one element after the previous:
+     * {@code Vector.of(1, 2, 3, 4).sliding(3)} is {@code Vector(Vector(1, 2, 3), Vector(2, 3, 4))}. A Vector
+     * shorter than {@code size} is one window. The same as {@code sliding(size, 1)}.
+     * <p>
+     * Complexity: O(n) windows, each an effectively O(1) slice sharing this Vector's leaves.
+     *
+     * @param size the window size, positive
+     * @return the windows, in order; empty if this Vector is empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Vector<Vector<T>> sliding(int size) {
+        return sliding(size, 1);
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements, each starting {@code step} elements after the previous:
+     * {@code Vector.of(1, 2, 3, 4, 5).sliding(2, 3)} is {@code Vector(Vector(1, 2), Vector(4, 5))} and
+     * {@code sliding(2, 4)} is {@code Vector(Vector(1, 2), Vector(5))}. The last window is shorter than
+     * {@code size} when it reaches the end; a window whose elements all belong to the previous one is not
+     * produced, so {@code Vector.of(1, 2, 3, 4).sliding(3)} has two windows. A Vector shorter than {@code size} is
+     * one window; an empty Vector has none.
+     * <p>
+     * Complexity: O(n / step) windows, each an effectively O(1) slice sharing this Vector's leaves.
+     *
+     * @param size the window size, positive
+     * @param step the distance between two window starts, positive
+     * @return the windows, in order
+     * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
+     */
+    public Vector<Vector<T>> sliding(int size, int step) {
+        com.guizmaii.zazr.collection.Collections.checkWindow(size, step);
+        final int length = length();
+        if (length == 0) {
+            return empty();
+        }
+        final Builder<Vector<T>> builder = newBuilder();
+        // past the first, a window is produced only while it holds at least one element the previous one did not
+        for (long start = 0; start < length && (start == 0 || start - step + size < length); start += step) {
+            builder.add(slice((int) start, (int) Math.min(start + size, length)));
+        }
+        return builder.result();
+    }
+
+    /**
+     * The elements in maximal runs of consecutive elements with the same key, computed once per element by
+     * {@code classifier}: {@code Vector.of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10)} is
+     * {@code Vector(Vector(1, 2, 3), Vector(10, 12), Vector(5, 7), Vector(20, 29))}. The runs concatenate back to
+     * this Vector.
+     * <p>
+     * Complexity: O(n); each run is an effectively O(1) slice sharing this Vector's leaves.
+     *
+     * @param classifier the key of an element; two consecutive elements are in the same run when their keys are
+     *                   equal
+     * @return the runs, in order; empty if this Vector is empty
+     * @throws NullPointerException if {@code classifier} is null
+     */
+    public Vector<Vector<T>> slideBy(Function<? super T, ?> classifier) {
+        Objects.requireNonNull(classifier, "classifier is null");
+        if (isEmpty()) {
+            return empty();
+        }
+        final Builder<Vector<T>> builder = newBuilder();
+        final java.util.Iterator<T> iterator = iterator();
+        Object key = classifier.apply(iterator.next());
+        int start = 0;
+        int index = 1;
+        while (iterator.hasNext()) {
+            final Object next = classifier.apply(iterator.next());
+            if (!Objects.equals(key, next)) {
+                builder.add(slice(start, index));
+                start = index;
+                key = next;
+            }
+            index++;
+        }
+        builder.add(slice(start, index));
+        return builder.result();
+    }
+
+    /**
+     * The Cartesian square of this Vector: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * <p>
+     * Complexity: O(n^2); the pairs are built now.
+     *
+     * @return the pairs
+     */
+    public Vector<Tuple2<T, T>> crossProduct() {
+        return crossProduct(this);
+    }
+
+    /**
+     * The Cartesian power of this Vector: every Vector of {@code power} elements drawn from this one, in
+     * lexicographic position order. {@code power == 0} gives one empty Vector; a negative power gives no result.
+     * <p>
+     * Complexity: O(n^power) Vectors of size {@code power}, built now.
+     *
+     * @param power the size of each result
+     * @return the Vectors
+     */
+    public Vector<Vector<T>> crossProduct(int power) {
+        if (power < 0) {
+            return empty();
+        }
+        Vector<Vector<T>> product = Vector.of(Vector.<T> empty());
+        for (int i = 0; i < power; i++) {
+            product = product.flatMap(el -> map(el::append));
+        }
+        return product;
+    }
+
+    /**
+     * The Cartesian product of this Vector and {@code that}: every pair {@code (a, b)} with {@code a} from this
+     * Vector and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked once.
+     * <p>
+     * Complexity: O(n * m) for m elements of {@code that}; the pairs are built now.
+     *
+     * @param that the right-hand elements
+     * @param <U>  their type
+     * @return the pairs
+     * @throws NullPointerException if {@code that} is null
+     */
+    public <U extends @Nullable Object> Vector<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        final Vector<U> other = Vector.ofAll(that);
+        return flatMap(a -> other.map(b -> Tuple.of(a, b)));
+    }
+
+    /**
+     * Combines the elements from the right: the last with the one before it, the result with the one before that,
+     * and so on.
+     * <p>
+     * Complexity: O(n), walking the elements from the last to the first without copying.
+     *
+     * @param op combines the next element and the result so far
+     * @return the combined result
+     * @throws NoSuchElementException if this Vector is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    public T reduceRight(BiFunction<? super T, ? super T, ? extends T> op) {
+        Objects.requireNonNull(op, "op is null");
+        if (isEmpty()) {
+            throw new NoSuchElementException("reduceRight on empty Vector");
+        }
+        T xs = get(length() - 1);
+        for (int i = length() - 2; i >= 0; i--) {
+            xs = op.apply(get(i), xs);
+        }
+        return xs;
+    }
+
+    /**
+     * Whether exactly one element satisfies {@code predicate}.
+     *
+     * @param predicate the condition to test
+     * @return {@code true} if one and only one element matches, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public boolean existsUnique(Predicate<? super T> predicate) {
+        return TraversableModule.existsUnique(this, predicate);
+    }
+
+    /**
+     * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
+     * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     *
+     * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
+     * @throws ClassCastException if two or more elements are not {@code Comparable}
+     */
+    public Option<T> max() {
+        return TraversableModule.max(this);
+    }
+
+    /**
+     * The greatest element according to {@code comparator}; of equal greatest elements, the first in this
+     * Vector's order.
+     *
+     * @param comparator the order
+     * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public Option<T> maxBy(Comparator<? super T> comparator) {
+        return TraversableModule.maxBy(this, comparator);
+    }
+
+    /**
+     * The element whose key, computed once by {@code f}, is the greatest; of equal greatest keys, the first
+     * element in this Vector's order.
+     *
+     * @param f   the key of an element
+     * @param <U> the key type
+     * @return {@code Some(element)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <U extends Comparable<? super U>> Option<T> maxBy(Function<? super T, ? extends U> f) {
+        return TraversableModule.maxBy(this, f);
+    }
+
+    /**
+     * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
+     * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
+     * whenever one is present.
+     *
+     * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
+     * @throws ClassCastException if two or more elements are not {@code Comparable}
+     */
+    public Option<T> min() {
+        return TraversableModule.min(this);
+    }
+
+    /**
+     * The least element according to {@code comparator}; of equal least elements, the first in this Vector's
+     * order.
+     *
+     * @param comparator the order
+     * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public Option<T> minBy(Comparator<? super T> comparator) {
+        return TraversableModule.minBy(this, comparator);
+    }
+
+    /**
+     * The element whose key, computed once by {@code f}, is the least; of equal least keys, the first element in
+     * this Vector's order.
+     *
+     * @param f   the key of an element
+     * @param <U> the key type
+     * @return {@code Some(element)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <U extends Comparable<? super U>> Option<T> minBy(Function<? super T, ? extends U> f) {
+        return TraversableModule.minBy(this, f);
+    }
+
+    /**
+     * Folds the elements with {@code combine}, starting from {@code zero}, which must be its neutral element.
+     * The elements are combined from the left, so {@code combine} need not be associative.
+     *
+     * @param zero    the neutral element of {@code combine}
+     * @param combine combines two elements
+     * @return the folded result, {@code zero} on an empty Vector
+     * @throws NullPointerException if {@code combine} is null
+     */
+    public T fold(T zero, BiFunction<? super T, ? super T, ? extends T> combine) {
+        Objects.requireNonNull(combine, "combine is null");
+        return foldLeft(zero, combine);
+    }
+
+    /**
+     * Combines the elements with {@code op}, each result with the next element. The same as {@link #reduceLeft(BiFunction)}.
+     *
+     * @param op combines two elements
+     * @return the combined result
+     * @throws NoSuchElementException if this Vector is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    public T reduce(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeft(this, op);
+    }
+
+    /**
+     * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     *
+     * @param op combines two elements
+     * @return {@code Some(result)}, or {@code None} if this Vector is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    public Option<T> reduceOption(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeftOption(this, op);
+    }
+
+    /**
+     * The only element.
+     *
+     * @return the element
+     * @throws NoSuchElementException if this Vector is empty or has more than one element
+     */
+    public T single() {
+        return TraversableModule.single(this);
+    }
+
+    /**
+     * The only element as an {@code Option}.
+     *
+     * @return {@code Some(element)} if there is exactly one element, {@code None} otherwise
+     */
+    public Option<T> singleOption() {
+        return TraversableModule.singleOption(this);
+    }
+
+    /**
+     * Arranges the elements by a key that must be unique: {@code Some} of the map from each key to its element,
+     * or {@code None} as soon as two elements share a key. The same as {@code groupBy(getKey)} when every group is
+     * a singleton.
+     *
+     * @param getKey the key of an element
+     * @param <K>  the key type
+     * @return {@code Some(map)} if the keys are unique, {@code None} otherwise
+     * @throws NullPointerException if {@code getKey} is null
+     */
+    public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
+        Objects.requireNonNull(getKey, "getKey is null");
+        return TraversableModule.arrangeBy(groupBy(getKey));
+    }
+
+    /**
+     * The sum of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
+     * {@code Long} are summed as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
+     * arithmetic, any other {@code Number} as a {@code double} with Neumaier compensation. The arithmetic is chosen
+     * from the first element. {@code 0} on an empty Vector.
+     *
+     * @return the sum
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Number sum() {
+        return TraversableModule.sum(this);
+    }
+
+    /**
+     * The product of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
+     * {@code Long} are multiplied as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
+     * arithmetic, any other {@code Number} as a {@code double}. The arithmetic is chosen from the first element.
+     * {@code 1} on an empty Vector.
+     *
+     * @return the product
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Number product() {
+        return TraversableModule.product(this);
+    }
+
+    /**
+     * The average of the elements, which must be {@link Number}s, summed as {@code double}s with Neumaier
+     * compensation.
+     *
+     * @return {@code Some(average)} if there is an element, {@code None} otherwise
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Option<Double> average() {
+        return TraversableModule.average(this);
+    }
+
+    /**
+     * The last element, in order, that satisfies {@code predicate}.
+     * <p>
+     * Complexity: O(n); every element is tested.
+     *
+     * @param predicate the condition to test
+     * @return {@code Some(element)} of the last match, or {@code None} if no element matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<T> findLast(Predicate<? super T> predicate) {
+        return TraversableModule.findLast(this, predicate);
+    }
+
+    /**
+     * Runs {@code action} on each element with its position, from {@code 0}, without boxing the index.
+     *
+     * @param action what to do with each element and its index
+     * @throws NullPointerException if {@code action} is null
+     */
+    public void forEachWithIndex(ObjIntConsumer<? super T> action) {
+        TraversableModule.forEachWithIndex(this, action);
+    }
+
+    /**
+     * The first element as an {@code Option}.
+     * <p>
+     * Complexity: that of {@link #head()}.
+     *
+     * @return {@code Some(head)}, or {@code None} if this Vector is empty
+     */
+    public Option<T> headOption() {
+        return isEmpty() ? Option.none() : Option.some(head());
+    }
+
+    /**
+     * The last element as an {@code Option}.
+     * <p>
+     * Complexity: that of {@link #last()}.
+     *
+     * @return {@code Some(last)}, or {@code None} if this Vector is empty
+     */
+    public Option<T> lastOption() {
+        return isEmpty() ? Option.none() : Option.some(last());
+    }
+
+    /**
+     * Combines the elements from the left: the first with the second, the result with the third, and so on.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param op combines the result so far and the next element
+     * @return the combined result
+     * @throws NoSuchElementException if this Vector is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    public T reduceLeft(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeft(this, op);
+    }
+
+    /**
+     * {@link #reduceLeft(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     *
+     * @param op combines the result so far and the next element
+     * @return {@code Some(result)}, or {@code None} if this Vector is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    public Option<T> reduceLeftOption(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeftOption(this, op);
+    }
+
+    /**
+     * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     *
+     * @param op combines the next element and the result so far
+     * @return {@code Some(result)}, or {@code None} if this Vector is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    public Option<T> reduceRightOption(BiFunction<? super T, ? super T, ? extends T> op) {
+        Objects.requireNonNull(op, "op is null");
+        return isEmpty() ? Option.none() : Option.some(reduceRight(op));
+    }
+
+    /**
+     * The number of elements; the same as {@link #length()}.
+     * <p>
+     * Complexity: that of {@link #length()}.
+     *
+     * @return the number of elements
+     */
+    @Override
+    public int size() {
+        return length();
+    }
+
+    /**
+     * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.
+     *
+     * @param <A>       the collector's accumulation type
+     * @param <R>       the result type
+     * @param collector the collector
+     * @return the collected result
+     */
+    public <R extends @Nullable Object, A extends @Nullable Object> R collect(Collector<? super T, A, R> collector) {
+        return stream().collect(collector);
+    }
+
+    /**
+     * Collects the elements with a supplier, an accumulator and a combiner, as
+     * {@code stream().collect(supplier, accumulator, combiner)} does.
+     *
+     * @param <R>         the result type
+     * @param supplier    makes a new result container
+     * @param accumulator adds an element to a container
+     * @param combiner    merges two containers
+     * @return the collected result
+     */
+    public <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
+        return stream().collect(supplier, accumulator, combiner);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.Collection} that {@code factory} makes for the given
+     * capacity, in this Vector's order: {@code toJavaCollection(java.util.LinkedHashSet::new)}.
+     *
+     * @param factory makes an empty mutable collection with the given initial capacity
+     * @param <C>     the collection type
+     * @return the new collection, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    public <C extends java.util.Collection<T>> C toJavaCollection(Function<Integer, C> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * The elements copied into a new {@link java.util.ArrayList}, in this Vector's order.
+     *
+     * @return the new list
+     */
+    public java.util.List<T> toJavaList() {
+        return TraversableModule.toJavaCollection(this, ArrayList::new, 10);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.List} that {@code factory} makes for the given
+     * capacity, in this Vector's order: {@code toJavaList(capacity -> new java.util.LinkedList<>())}.
+     *
+     * @param factory makes an empty mutable list with the given initial capacity
+     * @param <LIST>  the list type
+     * @return the new list, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    public <LIST extends java.util.List<T>> LIST toJavaList(Function<Integer, LIST> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * The elements as the entries of a new {@link java.util.HashMap}, each mapped to a key and a value by
+     * {@code f}; of two entries with the same key, the later one in this Vector's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> toJavaMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return TraversableModule.toJavaMap(this, java.util.HashMap::new, f);
+    }
+
+    /**
+     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
+     * to a key by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the
+     * later one in this Vector's order wins.
+     *
+     * @param factory     makes an empty mutable map
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @param <MAP>       the map type
+     * @return the new map, filled
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return TraversableModule.toJavaMap(this, factory, TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
+     * to a key and a value by {@code f}; of two entries with the same key, the later one in this Vector's order
+     * wins.
+     *
+     * @param factory makes an empty mutable map
+     * @param f       the entry an element becomes
+     * @param <K>     the key type
+     * @param <V>     the value type
+     * @param <MAP>   the map type
+     * @return the new map, filled
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return TraversableModule.toJavaMap(this, factory, f);
+    }
+
+    /**
+     * The distinct elements copied into a new {@link java.util.HashSet}.
+     *
+     * @return the new set
+     */
+    public java.util.Set<T> toJavaSet() {
+        return TraversableModule.toJavaCollection(this, java.util.HashSet::new, 16);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.Set} that {@code factory} makes for the given
+     * capacity: {@code toJavaSet(capacity -> new java.util.TreeSet<>(Comparator.reverseOrder()))}.
+     *
+     * @param factory makes an empty mutable set with the given initial capacity
+     * @param <SET>   the set type
+     * @return the new set, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    public <SET extends java.util.Set<T>> SET toJavaSet(Function<Integer, SET> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * A parallel {@link java.util.stream.Stream} over the elements, built on {@link #spliterator()}.
+     *
+     * @return a new parallel {@code java.util.stream.Stream}
+     */
+    public java.util.stream.Stream<T> toJavaParallelStream() {
+        return StreamSupport.stream(spliterator(), true);
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}, each mapped to a key by {@code keyMapper} and to a
+     * value by {@code valueMapper}; of two entries with the same key, the later one in this Vector's order wins.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}, each mapped to a key and a value by {@code f}; of two
+     * entries with the same key, the later one in this Vector's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in this Vector's order, each mapped to a key by
+     * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
+     * wins the value and the earlier one the position.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toLinkedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in this Vector's order, each mapped to a key
+     * and a value by {@code f}; of two entries with the same key, the later one wins the value and the earlier one
+     * the position.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
+     * by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
+     * in this Vector's order wins.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toSortedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
+     * and a value by {@code f}; of two entries with the same key, the later one in this Vector's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return toSortedMap(Comparator.naturalOrder(), f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key by
+     * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one in
+     * this Vector's order wins.
+     *
+     * @param comparator  the order of the keys
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toSortedMap(comparator, TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key and
+     * a value by {@code f}; of two entries with the same key, the later one in this Vector's order wins.
+     *
+     * @param comparator the order of the keys
+     * @param f          the entry an element becomes
+     * @param <K>        the key type
+     * @param <V>        the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+    }
+
+    /**
+     * The elements as a {@link Queue}, in this Vector's order.
+     *
+     * @return a {@code Queue} of the elements
+     */
+    public Queue<T> toQueue() {
+        return TraversableModule.toTraversable(this, Queue.empty(), Queue::ofAll);
+    }
+
+    /**
+     * The distinct elements as a {@link LinkedHashSet}, in this Vector's order.
+     *
+     * @return a {@code LinkedHashSet} of the elements
+     */
+    public Set<T> toLinkedSet() {
+        return TraversableModule.toTraversable(this, LinkedHashSet.empty(), LinkedHashSet::ofAll);
+    }
+
+    /**
+     * The distinct elements as a {@link TreeSet} in their natural order; a {@code TreeSet} returns itself.
+     *
+     * @return a {@code TreeSet} of the elements
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    public SortedSet<T> toSortedSet() {
+        return TraversableModule.toSortedSet(this);
+    }
+
+    /**
+     * The distinct elements as a {@link TreeSet} ordered by {@code comparator}.
+     *
+     * @param comparator the order
+     * @return a {@code TreeSet} of the elements
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public SortedSet<T> toSortedSet(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        return TraversableModule.toTraversable(this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
+    }
+
+    /**
+     * The elements as a {@link Stream}, in this Vector's order.
+     *
+     * @return a {@code Stream} of the elements
+     */
+    public Stream<T> toStream() {
+        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    }
+
 }
 
 interface VectorModule {

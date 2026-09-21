@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection.euler;
 
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Stream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,7 +49,7 @@ final class Utils {
 
     static Stream<String> readLines(File file) {
         try {
-            return Stream.ofAll(new Iterator<String>() {
+            final java.util.Iterator<String> lines = new java.util.Iterator<String>() {
 
                 final Scanner scanner = new Scanner(file);
 
@@ -67,7 +66,8 @@ final class Utils {
                 public String next() {
                     return scanner.nextLine();
                 }
-            });
+            };
+            return Stream.ofAll((Iterable<String>) () -> lines);
         } catch (FileNotFoundException e) {
             return Stream.empty();
         }

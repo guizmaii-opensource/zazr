@@ -1,15 +1,16 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.Tuple3;
 import com.guizmaii.zazr.control.Option;
 import java.util.Comparator;
-import java.util.function.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code SortedSet} interface.
- *
+ * A {@link Set} whose elements are kept in the order of a {@link Comparator}; {@link TreeSet} is the implementation.
  * <p>
  * Specific SortedSet operations:
  *
@@ -22,7 +23,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> Component type
  * @author Daniel Dietrich
  */
-public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T> {
+public interface SortedSet<T extends @Nullable Object> extends Set<T> {
 
     /**
      * Narrows a widened {@code SortedSet<? extends T>} to {@code SortedSet<T>}
@@ -39,6 +40,13 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
     static <T extends @Nullable Object> SortedSet<T> narrow(SortedSet<? extends T> sortedSet) {
         return (SortedSet<T>) sortedSet;
     }
+
+    /**
+     * The comparator that orders the elements; the iteration order is consistent with it.
+     *
+     * @return the comparator defining the order
+     */
+    Comparator<T> comparator();
 
     /**
      * Same as {@link #flatMap(Function)} but using a specific comparator for values of the codomain of the given
@@ -74,27 +82,6 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
     SortedSet<T> diff(Set<? extends T> elements);
 
     @Override
-    SortedSet<T> distinct();
-
-    @Override
-    SortedSet<T> distinctBy(Comparator<? super T> comparator);
-
-    @Override
-    <U extends @Nullable Object> SortedSet<T> distinctBy(Function<? super T, ? extends U> keyExtractor);
-
-    @Override
-    SortedSet<T> drop(int n);
-
-    @Override
-    SortedSet<T> dropRight(int n);
-
-    @Override
-    SortedSet<T> dropUntil(Predicate<? super T> predicate);
-
-    @Override
-    SortedSet<T> dropWhile(Predicate<? super T> predicate);
-
-    @Override
     SortedSet<T> filter(Predicate<? super T> predicate);
 
     @Override
@@ -105,15 +92,6 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
 
     @Override
     <C extends @Nullable Object> Map<C, ? extends SortedSet<T>> groupBy(Function<? super T, ? extends C> classifier);
-
-    @Override
-    Iterator<? extends SortedSet<T>> grouped(int size);
-
-    @Override
-    SortedSet<T> init();
-
-    @Override
-    Option<? extends SortedSet<T>> initOption();
 
     @Override
     SortedSet<T> intersect(Set<? extends T> elements);
@@ -157,70 +135,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T>, Ordered<T
     SortedSet<T> retainAll(Iterable<? extends T> elements);
 
     @Override
-    SortedSet<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation);
-
-    // DEV-NOTE: The return type is either Set or SortedSet, depending whether U is Comparable
-    @Override
-    <U extends @Nullable Object> Set<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation);
-
-    // DEV-NOTE: The return type is either Set or SortedSet, depending whether U is Comparable
-    @Override
-    <U extends @Nullable Object> Set<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation);
-
-    @Override
-    Iterator<? extends SortedSet<T>> slideBy(Function<? super T, ?> classifier);
-
-    @Override
-    Iterator<? extends SortedSet<T>> sliding(int size);
-
-    @Override
-    Iterator<? extends SortedSet<T>> sliding(int size, int step);
-
-    @Override
-    Tuple2<? extends SortedSet<T>, ? extends SortedSet<T>> span(Predicate<? super T> predicate);
-
-    @Override
-    SortedSet<T> tail();
-
-    @Override
-    Option<? extends SortedSet<T>> tailOption();
-
-    @Override
-    SortedSet<T> take(int n);
-
-    @Override
-    SortedSet<T> takeRight(int n);
-
-    @Override
-    SortedSet<T> takeUntil(Predicate<? super T> predicate);
-
-    @Override
-    SortedSet<T> takeWhile(Predicate<? super T> predicate);
-
-    @Override
     java.util.SortedSet<T> toJavaSet();
 
     @Override
     SortedSet<T> union(Set<? extends T> elements);
-
-    @Override
-    <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<? extends SortedSet<T1>, ? extends SortedSet<T2>> unzip(Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper);
-
-    @Override
-    <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<? extends SortedSet<T1>, ? extends SortedSet<T2>, ? extends SortedSet<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper);
-
-    @Override
-    <U extends @Nullable Object> SortedSet<Tuple2<T, U>> zip(Iterable<? extends U> that);
-
-    @Override
-    <U extends @Nullable Object, R extends @Nullable Object> SortedSet<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper);
-
-    @Override
-    <U extends @Nullable Object> SortedSet<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem);
-
-    @Override
-    SortedSet<Tuple2<T, Integer>> zipWithIndex();
-
-    @Override
-    <U extends @Nullable Object> SortedSet<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper);
 }

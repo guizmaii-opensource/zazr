@@ -68,12 +68,12 @@ public class LinkedHashMapRemoveTest {
         }
         int lo = 0, hi = n - 1;
         while (lo < hi) {
-            assertThat(map.head()).isEqualTo(Tuple.of(lo, lo));
-            assertThat(map.last()).isEqualTo(Tuple.of(hi, hi));
+            assertThat(map.iterator().next()).isEqualTo(Tuple.of(lo, lo));
+            assertThat(map.toList().last()).isEqualTo(Tuple.of(hi, hi));
             map = map.remove(lo++).remove(hi--);
         }
         assertThat(map.size()).isEqualTo(1);
-        assertThat(map.head()).isEqualTo(map.last());
+        assertThat(map.iterator().next()).isEqualTo(map.toList().last());
     }
 
     @Test
@@ -86,10 +86,10 @@ public class LinkedHashMapRemoveTest {
         for (int i = 0; i < n; i += 2) {
             map = map.remove(i);
         }
-        assertThat(map.keysIterator().toJavaList())
-                .isEqualTo(Iterator.range(0, n).filter(i -> i % 2 == 1).toJavaList());
-        assertThat(map.head()).isEqualTo(Tuple.of(1, 1));
-        assertThat(map.last()).isEqualTo(Tuple.of(n - 1, n - 1));
+        assertThat(map.keySet().toList())
+                .isEqualTo(List.range(0, n).filter(i -> i % 2 == 1));
+        assertThat(map.iterator().next()).isEqualTo(Tuple.of(1, 1));
+        assertThat(map.toList().last()).isEqualTo(Tuple.of(n - 1, n - 1));
     }
 
     @Test
@@ -97,11 +97,11 @@ public class LinkedHashMapRemoveTest {
         LinkedHashMap<String, Integer> map = LinkedHashMap.of("a", 1, "b", 2, "c", 3)
                 .remove("b")
                 .put("b", 4);
-        assertThat(map.keysIterator().toJavaList()).containsExactly("a", "c", "b");
+        assertThat(map.keySet().toJavaList()).containsExactly("a", "c", "b");
     }
 
     @Test
-    public void shouldSupportTailAndInitAfterInteriorRemovals() {
+    public void shouldKeepTheOrderWhenRemovingEitherEndAfterInteriorRemovals() {
         LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
         for (int i = 0; i < 100; i++) {
             map = map.put(i, i);
@@ -109,9 +109,9 @@ public class LinkedHashMapRemoveTest {
         for (int i = 10; i < 90; i += 3) {
             map = map.remove(i);
         }
-        final java.util.List<Integer> keys = map.keysIterator().toJavaList();
-        assertThat(map.tail().keysIterator().toJavaList()).isEqualTo(keys.subList(1, keys.size()));
-        assertThat(map.init().keysIterator().toJavaList()).isEqualTo(keys.subList(0, keys.size() - 1));
+        final java.util.List<Integer> keys = map.keySet().toJavaList();
+        assertThat(map.remove(keys.get(0)).keySet().toJavaList()).isEqualTo(keys.subList(1, keys.size()));
+        assertThat(map.remove(keys.get(keys.size() - 1)).keySet().toJavaList()).isEqualTo(keys.subList(0, keys.size() - 1));
     }
 
 }

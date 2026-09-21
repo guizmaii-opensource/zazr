@@ -14,9 +14,6 @@ public class CollectionsTest {
     public void shouldNameTheEmptySourceWhenLastOfEmptyThrows() {
         assertThatThrownBy(() -> List.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty List()");
         assertThatThrownBy(() -> Stream.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty Stream()");
-        assertThatThrownBy(() -> HashSet.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty HashSet()");
-        assertThatThrownBy(() -> HashMap.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty HashMap()");
-        assertThatThrownBy(() -> Iterator.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty EmptyIterator()");
     }
 
     @Test

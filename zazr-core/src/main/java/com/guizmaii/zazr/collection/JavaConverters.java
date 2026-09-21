@@ -46,6 +46,86 @@ class JavaConverters {
     // -- private view implementations
 
     /**
+     * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
+     * the delegate's iterator and size, nothing copied, every mutator throwing {@link UnsupportedOperationException}
+     * whether or not it would change anything, as {@link java.util.Collections#unmodifiableCollection} does.
+     *
+     * @param <T> the element type
+     */
+    static final class CollectionView<T extends @Nullable Object> extends AbstractCollection<T> {
+
+        private final Traversable<T> delegate;
+
+        CollectionView(Traversable<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        Traversable<T> getDelegate() {
+            return delegate;
+        }
+
+        @Override
+        public java.util.Iterator<T> iterator() {
+            return delegate.iterator();
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.isEmpty();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return delegate.toArray();
+        }
+
+        @Override
+        public java.util.stream.Stream<T> stream() {
+            return delegate.stream();
+        }
+
+        @Override
+        public boolean add(T element) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> elements) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(@Nullable Object element) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> elements) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeIf(java.util.function.Predicate<? super T> filter) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> elements) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Encapsulates the access to delegate and performs mutability checks.
      *
      * @param <C> The zazr collection type
@@ -243,6 +323,13 @@ class JavaConverters {
         }
 
         @Override
+        public boolean removeIf(java.util.function.Predicate<? super T> filter) {
+            Objects.requireNonNull(filter, "filter is null");
+            ensureMutable(); // an immutable view refuses the call even when no element matches
+            return java.util.List.super.removeIf(filter);
+        }
+
+        @Override
         public boolean retainAll(Collection<?> collection) {
             Objects.requireNonNull(collection, "collection is null");
             @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
@@ -283,7 +370,7 @@ class JavaConverters {
 
         @Override
         public Object [] toArray() {
-            return getDelegate().toJavaArray();
+            return getDelegate().toArray();
         }
 
         // Collection.toArray(T[]) mandates writing null just past the last element, even when
@@ -294,7 +381,7 @@ class JavaConverters {
             Objects.requireNonNull(array, "array is null");
             final U[] target;
             final C delegate = getDelegate();
-            final int length = delegate.length();
+            final int length = delegate.size();
             if (array.length < length) {
                 final Class<? extends Object[]> newType = array.getClass();
                 target = (newType == Object[].class)

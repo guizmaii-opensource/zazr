@@ -3,7 +3,6 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.control.Option;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
@@ -60,55 +59,6 @@ final class Maps {
         }
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M distinct(M map) {
-        return map;
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M distinctBy(M map, OfEntries<K, V, M> ofEntries,
-            Comparator<? super Tuple2<K, V>> comparator) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        return ofEntries.apply(map.iterator().distinctBy(comparator));
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, U extends @Nullable Object, M extends Map<K, V>> M distinctBy(
-            M map, OfEntries<K, V, M> ofEntries, Function<? super Tuple2<K, V>, ? extends U> keyExtractor) {
-        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        return ofEntries.apply(map.iterator().distinctBy(keyExtractor));
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M drop(M map, OfEntries<K, V, M> ofEntries, Supplier<M> emptySupplier, int n) {
-        if (n <= 0) {
-            return map;
-        } else if (n >= map.size()) {
-            return emptySupplier.get();
-        } else {
-            return ofEntries.apply(map.iterator().drop(n));
-        }
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M dropRight(M map, OfEntries<K, V, M> ofEntries, Supplier<M> emptySupplier,
-            int n) {
-        if (n <= 0) {
-            return map;
-        } else if (n >= map.size()) {
-            return emptySupplier.get();
-        } else {
-            return ofEntries.apply(map.iterator().dropRight(n));
-        }
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M dropUntil(M map, OfEntries<K, V, M> ofEntries,
-            Predicate<? super Tuple2<K, V>> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return dropWhile(map, ofEntries, predicate.negate());
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M dropWhile(M map, OfEntries<K, V, M> ofEntries,
-            Predicate<? super Tuple2<K, V>> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return ofEntries.apply(map.iterator().dropWhile(predicate));
-    }
-
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
             BiPredicate<? super K, ? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -118,7 +68,7 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return ofEntries.apply(map.iterator().filter(predicate));
+        return ofEntries.apply(Iterator.ofAll(map).filter(predicate));
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(M map, OfEntries<K, V, M> ofEntries,
@@ -136,15 +86,6 @@ final class Maps {
     static <K extends @Nullable Object, V extends @Nullable Object, C extends @Nullable Object, M extends Map<K, V>> Map<C, M> groupBy(M map, OfEntries<K, V, M> ofEntries,
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
         return Collections.groupBy(map, classifier, ofEntries);
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Iterator<M> grouped(M map, OfEntries<K, V, M> ofEntries, int size) {
-        return sliding(map, ofEntries, size, size);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Option<M> initOption(M map) {
-        return map.isEmpty() ? Option.none() : Option.some((M) map.init());
     }
 
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M merge(M map, OfEntries<K, V, M> ofEntries,
@@ -292,67 +233,6 @@ final class Maps {
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceValue(M map, K key, V value) {
         return map.containsKey(key) ? (M) map.put(key, value) : map;
-    }
-
-    @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M scan(M map, Tuple2<K, V> zero,
-            BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation,
-            Function<Iterator<Tuple2<K, V>>, Traversable<Tuple2<K, V>>> finisher) {
-        return (M) Collections.scanLeft(map, zero, operation, finisher);
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Iterator<M> slideBy(M map, OfEntries<K, V, M> ofEntries,
-            Function<? super Tuple2<K, V>, ?> classifier) {
-        return map.iterator().slideBy(classifier).map(ofEntries);
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Iterator<M> sliding(M map, OfEntries<K, V, M> ofEntries, int size) {
-        return sliding(map, ofEntries, size, 1);
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Iterator<M> sliding(M map, OfEntries<K, V, M> ofEntries, int size, int step) {
-        return map.iterator().sliding(size, step).map(ofEntries);
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> span(M map, OfEntries<K, V, M> ofEntries,
-            Predicate<? super Tuple2<K, V>> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final Tuple2<Iterator<Tuple2<K, V>>, Iterator<Tuple2<K, V>>> t = map.iterator().span(predicate);
-        return Tuple.of(ofEntries.apply(t._1()), ofEntries.apply(t._2()));
-    }
-
-    @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Option<M> tailOption(M map) {
-        return map.isEmpty() ? Option.none() : Option.some((M) map.tail());
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M take(M map, OfEntries<K, V, M> ofEntries, int n) {
-        if (n >= map.size()) {
-            return map;
-        } else {
-            return ofEntries.apply(map.iterator().take(n));
-        }
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M takeRight(M map, OfEntries<K, V, M> ofEntries, int n) {
-        if (n >= map.size()) {
-            return map;
-        } else {
-            return ofEntries.apply(map.iterator().takeRight(n));
-        }
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M takeUntil(M map, OfEntries<K, V, M> ofEntries,
-            Predicate<? super Tuple2<K, V>> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return takeWhile(map, ofEntries, predicate.negate());
-    }
-
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M takeWhile(M map, OfEntries<K, V, M> ofEntries,
-            Predicate<? super Tuple2<K, V>> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final M taken = ofEntries.apply(map.iterator().takeWhile(predicate));
-        return taken.size() == map.size() ? map : taken;
     }
 
     @FunctionalInterface

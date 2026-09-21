@@ -5,7 +5,6 @@ import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -947,41 +946,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public TreeMap<K, V> distinct() {
-        return Maps.distinct(this);
-    }
-
-    @Override
-    public TreeMap<K, V> distinctBy(Comparator<? super Tuple2<K, V>> comparator) {
-        return Maps.distinctBy(this, this::createFromEntries, comparator);
-    }
-
-    @Override
-    public <U extends @Nullable Object> TreeMap<K, V> distinctBy(Function<? super Tuple2<K, V>, ? extends U> keyExtractor) {
-        return Maps.distinctBy(this, this::createFromEntries, keyExtractor);
-    }
-
-    @Override
-    public TreeMap<K, V> drop(int n) {
-        return Maps.drop(this, this::createFromEntries, this::emptyInstance, n);
-    }
-
-    @Override
-    public TreeMap<K, V> dropRight(int n) {
-        return Maps.dropRight(this, this::createFromEntries, this::emptyInstance, n);
-    }
-
-    @Override
-    public TreeMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.dropUntil(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public TreeMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.dropWhile(this, this::createFromEntries, predicate);
-    }
-
-    @Override
     public TreeMap<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
         return Maps.filter(this, this::createFromEntries, predicate);
     }
@@ -1048,90 +1012,18 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public Iterator<TreeMap<K, V>> grouped(int size) {
-        return Maps.grouped(this, this::createFromEntries, size);
-    }
-
-    @Override
-    public Tuple2<K, V> head() {
-        if (isEmpty()) {
-            throw new NoSuchElementException("head of empty TreeMap");
-        } else {
-            return entries.min().get();
-        }
-    }
-
-    @Override
-    public Tuple2<K, V> last() {
-        if (isEmpty()) {
-            throw new NoSuchElementException("last of empty TreeMap");
-        } else {
-            return entries.max().get();
-        }
-    }
-
-    @Override
-    public TreeMap<K, V> init() {
-        if (isEmpty()) {
-            throw new UnsupportedOperationException("init of empty TreeMap");
-        } else {
-            final Tuple2<K, V> max = entries.max().get();
-            return new TreeMap<>(entries.delete(max));
-        }
-    }
-
-    @Override
-    public Option<TreeMap<K, V>> initOption() {
-        return Maps.initOption(this);
-    }
-
-    @Override
     public boolean isEmpty() {
         return entries.isEmpty();
     }
 
     @Override
-    public Iterator<Tuple2<K, V>> iterator() {
+    public java.util.Iterator<Tuple2<K, V>> iterator() {
         return entries.iterator();
     }
 
     @Override
-    public Iterator<K> keysIterator() {
-        return new Iterator<>() {
-            private final Iterator<Tuple2<K, V>> it = entries.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            @Override
-            public K next() {
-                return it.next()._1();
-            }
-        };
-    }
-
-    @Override
-    public Iterator<V> valuesIterator() {
-        return new Iterator<>() {
-            private final Iterator<Tuple2<K, V>> it = entries.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            @Override
-            public V next() {
-                return it.next()._2();
-            }
-        };
-    }
-
-    @Override
     public SortedSet<K> keySet() {
-        return TreeSet.ofAll(comparator(), iterator().map(Tuple2::_1));
+        return TreeSet.ofAll(comparator(), Iterator.ofAll(this).map(Tuple2::_1));
     }
 
     @Override
@@ -1330,70 +1222,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public TreeMap<K, V> scan(
-      Tuple2<K, V> zero,
-      BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation) {
-        return Maps.scan(this, zero, operation, this::createFromEntries);
-    }
-
-    @Override
     public int size() {
         return entries.size();
-    }
-
-    @Override
-    public Iterator<TreeMap<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier) {
-        return Maps.slideBy(this, this::createFromEntries, classifier);
-    }
-
-    @Override
-    public Iterator<TreeMap<K, V>> sliding(int size) {
-        return Maps.sliding(this, this::createFromEntries, size);
-    }
-
-    @Override
-    public Iterator<TreeMap<K, V>> sliding(int size, int step) {
-        return Maps.sliding(this, this::createFromEntries, size, step);
-    }
-
-    @Override
-    public Tuple2<TreeMap<K, V>, TreeMap<K, V>> span(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.span(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public TreeMap<K, V> tail() {
-        if (isEmpty()) {
-            throw new UnsupportedOperationException("tail of empty TreeMap");
-        } else {
-            final Tuple2<K, V> min = entries.min().get();
-            return new TreeMap<>(entries.delete(min));
-        }
-    }
-
-    @Override
-    public Option<TreeMap<K, V>> tailOption() {
-        return Maps.tailOption(this);
-    }
-
-    @Override
-    public TreeMap<K, V> take(int n) {
-        return Maps.take(this, this::createFromEntries, n);
-    }
-
-    @Override
-    public TreeMap<K, V> takeRight(int n) {
-        return Maps.takeRight(this, this::createFromEntries, n);
-    }
-
-    @Override
-    public TreeMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.takeUntil(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public TreeMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.takeWhile(this, this::createFromEntries, predicate);
     }
 
     @Override
@@ -1402,8 +1232,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public Stream<V> values() {
-        return map(Tuple2::_2);
+    public Vector<V> values() {
+        return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
     }
 
     // -- Object

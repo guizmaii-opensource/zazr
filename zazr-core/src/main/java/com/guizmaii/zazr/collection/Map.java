@@ -4,6 +4,8 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.Collector;
+import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -120,7 +122,12 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * specified value
      */
     default boolean containsValue(V value) {
-        return iterator().map(Tuple2::_2).contains(value);
+        for (Tuple2<K, V> entry : this) {
+            if (Objects.equals(entry._2(), value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -189,28 +196,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper);
 
     /**
-     * Flat-maps this entries to a sequence of values.
-     * <p>
-     * Please use {@link #flatMap(BiFunction)} if the result should be a {@code Map}
-     *
-     * @param mapper A mapper
-     * @param <U>    Component type
-     * @return A sequence of flat-mapped values.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    default <U extends @Nullable Object> Stream<U> flatMap(Function<? super Tuple2<K, V>, ? extends Iterable<? extends U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return iterator().flatMap(mapper).toStream();
-    }
-
-    @Override
-    default <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super Tuple2<K, V>, ? super U, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return iterator().foldRight(zero, f);
-    }
-
-    /**
      * Performs an action on key, value pair.
      *
      * @param action A {@code BiConsumer}
@@ -243,82 +228,12 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     V getOrElse(K key, V defaultValue);
 
-    @Override
-    
-    Iterator<Tuple2<K, V>> iterator();
-
-    /**
-     * Iterates this Map sequentially, mapping the (key, value) pairs to elements.
-     *
-     * @param mapper A function that maps (key, value) pairs to elements of type U
-     * @param <U> The type of the resulting elements
-     * @return An iterator through the mapped elements.
-     */
-    default <U extends @Nullable Object> Iterator<U> iterator(BiFunction<K, V, ? extends U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return iterator().map(t -> mapper.apply(t._1(), t._2()));
-    }
-
     /**
      * Returns the keys contained in this map.
      *
      * @return {@code Set} of the keys contained in this map.
      */
     com.guizmaii.zazr.collection.Set<K> keySet();
-
-    /**
-     * Returns the keys contained in this map as an iterator.
-     *
-     * @return {@code Iterator} of the keys contained in this map.
-     */
-    default Iterator<K> keysIterator() {
-        return iterator().map(Tuple2::_1);
-    }
-
-    @Override
-    default int length() {
-        return size();
-    }
-
-    /**
-     * Maps the {@code Map} entries to a sequence of values.
-     * <p>
-     * Please use {@link #map(BiFunction)} if the result has to be of type {@code Map}.
-     *
-     * @param mapper A mapper
-     * @param <U>    Component type
-     * @return A sequence of mapped values.
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    default <U extends @Nullable Object> Stream<U> map(Function<? super Tuple2<K, V>, ? extends U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return (Stream<U>) iterator().map(mapper).toStream();
-    }
-
-    /**
-     * Matches and transforms the entries in one pass into a {@link Stream}; see {@link #collect(BiFunction)} for a
-     * result that is a {@code Map}.
-     *
-     * @param mapper a function from an entry to {@code Some} of the collected value or {@code None}; it must not
-     *               return {@code null}
-     * @param <U>    the type of the collected values
-     * @return the collected values, in the iteration order of this {@code Map}
-     * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an entry
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    default <U extends @Nullable Object> Stream<U> collect(Function<? super Tuple2<K, V>, ? extends Option<? extends U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        // one String per call, only so that a null Option is reported under the concrete map type, as the other kinds do
-        final String nullMessage = getClass().getSimpleName() + ".collect: mapper returned null";
-        return (Stream<U>) iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), nullMessage)).toStream();
-    }
-
-    @Override
-    default <U extends @Nullable Object> Stream<U> as(U value) {
-        return map(ignored -> value);
-    }
 
     /**
      * Matches and transforms the entries in one pass into a {@code Map} of the same kind: {@code mapper} returns
@@ -507,16 +422,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Map<K, V> removeValues(Predicate<? super V> predicate);
 
     @Override
-    default <U extends @Nullable Object> List<U> scanLeft(U zero, BiFunction<? super U, ? super Tuple2<K, V>, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toList);
-    }
-
-    @Override
-    default <U extends @Nullable Object> List<U> scanRight(U zero, BiFunction<? super Tuple2<K, V>, ? super U, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toList);
-    }
-
-    @Override
     int size();
 
     /**
@@ -528,172 +433,95 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     java.util.Map<K, V> toJavaMap();
 
     /**
-     * Unzips the entries of this {@code Map} by treating each key-value pair as an element,
-     * and splitting them into two separate {@code Stream}s - one for keys and one for values.
-     *
-     * @return a {@code Tuple2} containing two {@code Stream}s: first with all keys, second with all values
-     */
-    default Tuple2<Stream<K>, Stream<V>> unzip() {
-        return unzip(Function.identity());
-    }
-
-    /**
-     * Unzips the entries of this {@code Map} by mapping each key-value pair to a tuple.
-     * The unzipper function transforms each entry into a {@code Tuple2}, and then all first elements
-     * are collected into the first {@code Stream} and all second elements into the second {@code Stream}.
-     *
-     * @param unzipper a function that maps key-value pairs of this {@code Map} to tuples
-     * @param <T1>     type of the first element in the resulting pairs
-     * @param <T2>     type of the second element in the resulting pairs
-     * @return a {@code Tuple2} containing two {@code Stream}s with the split elements
-     * @throws NullPointerException if {@code unzipper} is null
-     */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Stream<T1>, Stream<T2>> unzip(BiFunction<? super K, ? super V, Tuple2<? extends T1, ? extends T2>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        return unzip(entry -> unzipper.apply(entry._1(), entry._2()));
-    }
-
-    @Override
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Stream<T1>, Stream<T2>> unzip(Function<? super Tuple2<K, V>, Tuple2<? extends T1, ? extends T2>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        return iterator().unzip(unzipper).map(Stream::ofAll, Stream::ofAll);
-    }
-
-    /**
-     * Unzips the entries of this {@code Map} by mapping each key-value pair to a triple.
-     * The unzipper function transforms each entry into a {@code Tuple3}, and then elements are
-     * distributed to respective {@code Stream}s by their position in the tuple: all first
-     * elements into the first {@code Stream}, all second elements into the second {@code Stream},
-     * and all third elements into the third {@code Stream}.
-     *
-     * @param unzipper a function that maps key-value pairs of this {@code Map} to triples
-     * @param <T1>     type of the first element in the resulting triples
-     * @param <T2>     type of the second element in the resulting triples
-     * @param <T3>     type of the third element in the resulting triples
-     * @return a {@code Tuple3} containing three {@code Stream}s with the split elements
-     * @throws NullPointerException if {@code unzipper} is null
-     */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(BiFunction<? super K, ? super V, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        return unzip3(entry -> unzipper.apply(entry._1(), entry._2()));
-    }
-
-    @Override
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(
-      Function<? super Tuple2<K, V>, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        return iterator().unzip3(unzipper).map(Stream::ofAll, Stream::ofAll, Stream::ofAll);
-    }
-
-    /**
-     * Returns a new {@link Stream} that contains the values of this {@code Map}.
+     * The values of this map as a {@link Vector}, in this map's iteration order; the same key order as
+     * {@link #keySet()} on the ordered maps.
      *
      * <pre>{@code
-     * // = Stream("a", "b", "c")
-     * HashMap.of(1, "a", 2, "b", 3, "c").values()
+     * // = Vector("a", "b", "c")
+     * TreeMap.of(1, "a", 2, "b", 3, "c").values()
      * }</pre>
      *
-     * @return a new {@link Stream}
+     * @return the values
      */
-    Stream<V> values();
+    Vector<V> values();
+
+    // -- the entry-wise operations a map keeps
 
     /**
-     * Returns the values in this map.
+     * The entries that satisfy {@code predicate}.
      *
-     * <pre>{@code
-     * // = Iterator.of("a", "b", "c")
-     * HashMap.of(1, "a", 2, "b", 3, "c").valuesIterator()
-     * }</pre>
-     *
-     * @return a new {@link Iterator}
+     * @param predicate the condition to keep an entry
+     * @return a map of the matching entries; may be this instance if all of them match
+     * @throws NullPointerException if {@code predicate} is null
      */
-    default Iterator<V> valuesIterator() {
-        return iterator().map(Tuple2::_2);
-    }
-
-    @Override
-    default <U extends @Nullable Object> Stream<Tuple2<Tuple2<K, V>, U>> zip(Iterable<? extends U> that) {
-        return zipWith(that, Tuple::of);
-    }
-
-    @Override
-    default <U extends @Nullable Object, R extends @Nullable Object> Stream<R> zipWith(Iterable<? extends U> that, BiFunction<? super Tuple2<K, V>, ? super U, ? extends R> mapper) {
-        Objects.requireNonNull(that, "that is null");
-        Objects.requireNonNull(mapper, "mapper is null");
-        return Stream.ofAll(iterator().zipWith(that, mapper));
-    }
-
-    @Override
-    default <U extends @Nullable Object> Stream<Tuple2<Tuple2<K, V>, U>> zipAll(Iterable<? extends U> that, Tuple2<K, V> thisElem, U thatElem) {
-        Objects.requireNonNull(that, "that is null");
-        return Stream.ofAll(iterator().zipAll(that, thisElem, thatElem));
-    }
-
-    @Override
-    default Stream<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
-        return zipWithIndex(Tuple::of);
-    }
-
-    @Override
-    default <U extends @Nullable Object> Stream<U> zipWithIndex(BiFunction<? super Tuple2<K, V>, ? super Integer, ? extends U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return Stream.ofAll(iterator().zipWithIndex(mapper));
-    }
-
-    // -- Adjusted return types of Traversable methods
-
-    @Override
-    Map<K, V> distinct();
-
-    @Override
-    Map<K, V> distinctBy(Comparator<? super Tuple2<K, V>> comparator);
-
-    @Override
-    <U extends @Nullable Object> Map<K, V> distinctBy(Function<? super Tuple2<K, V>, ? extends U> keyExtractor);
-
-    @Override
-    Map<K, V> drop(int n);
-
-    @Override
-    Map<K, V> dropRight(int n);
-
-    @Override
-    Map<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate);
-
-    @Override
-    Map<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate);
-
-    @Override
     Map<K, V> filter(Predicate<? super Tuple2<K, V>> predicate);
 
-    @Override
+    /**
+     * The entries that do not satisfy {@code predicate}; the same as {@code filter(predicate.negate())}.
+     *
+     * @param predicate the condition to drop an entry
+     * @return a map of the entries that do not match; may be this instance if none of them matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
     Map<K, V> reject(Predicate<? super Tuple2<K, V>> predicate);
 
-    @Override
+    /**
+     * Groups the entries by the key {@code classifier} computes for each of them.
+     *
+     * @param classifier the group key of an entry
+     * @param <C>        the group key type
+     * @return a map from each group key to the map of the entries with that key
+     * @throws NullPointerException if {@code classifier} is null
+     */
     <C extends @Nullable Object> Map<C, ? extends Map<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier);
 
-    @Override
-    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> grouped(int size);
-
-    @Override
-    Map<K, V> init();
-
-    @Override
-    Option<? extends Map<K, V>> initOption();
-
-    @Override
+    /**
+     * This map if it is non-empty, otherwise a map of the entries of {@code other}.
+     *
+     * @param other the entries to fall back on
+     * @return this map if non-empty, otherwise a map of {@code other}
+     * @throws NullPointerException if this map is empty and {@code other} is null
+     */
     Map<K, V> orElse(Iterable<? extends Tuple2<K, V>> other);
 
-    @Override
+    /**
+     * This map if it is non-empty, otherwise a map of the entries {@code supplier} provides; the supplier is only
+     * called when this map is empty.
+     *
+     * @param supplier provides the entries to fall back on
+     * @return this map if non-empty, otherwise a map of {@code supplier.get()}
+     * @throws NullPointerException if this map is empty and {@code supplier} is null
+     */
     Map<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier);
 
-    @Override
+    /**
+     * Splits the entries into those that satisfy {@code predicate} and those that do not.
+     *
+     * @param predicate the condition
+     * @return the matching entries and the others, as two maps
+     * @throws NullPointerException if {@code predicate} is null
+     */
     Tuple2<? extends Map<K, V>, ? extends Map<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
 
-    @Override
+    /**
+     * Runs {@code action} on every entry and returns this map, to observe the entries in the middle of a chain of
+     * calls. Whatever the action throws propagates to the caller.
+     *
+     * @param action what to do with each entry
+     * @return this map
+     * @throws NullPointerException if {@code action} is null
+     */
     Map<K, V> tap(Consumer<? super Tuple2<K, V>> action);
 
-    @Override
+    /**
+     * Replaces the entry {@code currentElement}, if it is one of the entries, with {@code newElement}: the key of
+     * {@code currentElement} is removed and {@code newElement} is put.
+     *
+     * @param currentElement the entry to replace
+     * @param newElement     its replacement
+     * @return a map with the replacement made; this map if {@code currentElement} is not an entry
+     * @throws NullPointerException if an argument is null
+     */
     Map<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);
 
     /**
@@ -723,44 +551,495 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     Map<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function);
 
-    @Override
+    /**
+     * The same as {@link #replace(Tuple2, Tuple2)}: a map holds an entry at most once.
+     *
+     * @param currentElement the entry to replace
+     * @param newElement     its replacement
+     * @return a map with the replacement made; this map if {@code currentElement} is not an entry
+     */
     Map<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);
 
-    @Override
+    /**
+     * Keeps only the entries that are also in {@code elements}.
+     *
+     * @param elements the entries to keep
+     * @return a map of the entries of this map that are in {@code elements}; may be this instance if all are
+     * @throws NullPointerException if {@code elements} is null
+     */
     Map<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements);
 
-    @Override
-    Map<K, V> scan(Tuple2<K, V> zero,
-                   BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation);
+    // -- reductions and conversions
 
-    @Override
-    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier);
+    /**
+     * Whether exactly one element satisfies {@code predicate}.
+     *
+     * @param predicate the condition to test
+     * @return {@code true} if one and only one element matches, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default boolean existsUnique(Predicate<? super Tuple2<K, V>> predicate) {
+        return TraversableModule.existsUnique(this, predicate);
+    }
 
-    @Override
-    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> sliding(int size);
+    /**
+     * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
+     * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     *
+     * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
+     * @throws ClassCastException if two or more elements are not {@code Comparable}
+     */
+    default Option<Tuple2<K, V>> max() {
+        return TraversableModule.max(this);
+    }
 
-    @Override
-    com.guizmaii.zazr.collection.Iterator<? extends Map<K, V>> sliding(int size, int step);
+    /**
+     * The greatest element according to {@code comparator}; of equal greatest elements, the first in this
+     * Map's order.
+     *
+     * @param comparator the order
+     * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    default Option<Tuple2<K, V>> maxBy(Comparator<? super Tuple2<K, V>> comparator) {
+        return TraversableModule.maxBy(this, comparator);
+    }
 
-    @Override
-    Tuple2<? extends Map<K, V>, ? extends Map<K, V>> span(Predicate<? super Tuple2<K, V>> predicate);
+    /**
+     * The element whose key, computed once by {@code f}, is the greatest; of equal greatest keys, the first
+     * element in this Map's order.
+     *
+     * @param f   the key of an element
+     * @param <U> the key type
+     * @return {@code Some(element)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code f} is null
+     */
+    default <U extends Comparable<? super U>> Option<Tuple2<K, V>> maxBy(Function<? super Tuple2<K, V>, ? extends U> f) {
+        return TraversableModule.maxBy(this, f);
+    }
 
-    @Override
-    Map<K, V> tail();
+    /**
+     * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
+     * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
+     * whenever one is present.
+     *
+     * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
+     * @throws ClassCastException if two or more elements are not {@code Comparable}
+     */
+    default Option<Tuple2<K, V>> min() {
+        return TraversableModule.min(this);
+    }
 
-    @Override
-    Option<? extends Map<K, V>> tailOption();
+    /**
+     * The least element according to {@code comparator}; of equal least elements, the first in this Map's
+     * order.
+     *
+     * @param comparator the order
+     * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    default Option<Tuple2<K, V>> minBy(Comparator<? super Tuple2<K, V>> comparator) {
+        return TraversableModule.minBy(this, comparator);
+    }
 
-    @Override
-    Map<K, V> take(int n);
+    /**
+     * The element whose key, computed once by {@code f}, is the least; of equal least keys, the first element in
+     * this Map's order.
+     *
+     * @param f   the key of an element
+     * @param <U> the key type
+     * @return {@code Some(element)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code f} is null
+     */
+    default <U extends Comparable<? super U>> Option<Tuple2<K, V>> minBy(Function<? super Tuple2<K, V>, ? extends U> f) {
+        return TraversableModule.minBy(this, f);
+    }
 
-    @Override
-    Map<K, V> takeRight(int n);
+    /**
+     * Folds the elements with {@code combine}, starting from {@code zero}, which must be its neutral element.
+     * The elements are combined in this Map's iteration order, which a {@code HashMap} does not define: {@code combine} should be associative and commutative for the result to be independent of it.
+     *
+     * @param zero    the neutral element of {@code combine}
+     * @param combine combines two elements
+     * @return the folded result, {@code zero} on an empty Map
+     * @throws NullPointerException if {@code combine} is null
+     */
+    default Tuple2<K, V> fold(Tuple2<K, V> zero, BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> combine) {
+        Objects.requireNonNull(combine, "combine is null");
+        return foldLeft(zero, combine);
+    }
 
-    @Override
-    Map<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate);
+    /**
+     * Combines the elements with {@code op}, each result with the next element. The elements are combined in this Map's iteration order, which a {@code HashMap} does not define: {@code op} should be associative and commutative for the result to be independent of it.
+     *
+     * @param op combines two elements
+     * @return the combined result
+     * @throws NoSuchElementException if this Map is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    default Tuple2<K, V> reduce(BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> op) {
+        return TraversableModule.reduceLeft(this, op);
+    }
 
-    @Override
-    Map<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate);
+    /**
+     * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty Map.
+     *
+     * @param op combines two elements
+     * @return {@code Some(result)}, or {@code None} if this Map is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    default Option<Tuple2<K, V>> reduceOption(BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> op) {
+        return TraversableModule.reduceLeftOption(this, op);
+    }
 
+    /**
+     * The only element.
+     *
+     * @return the element
+     * @throws NoSuchElementException if this Map is empty or has more than one element
+     */
+    default Tuple2<K, V> single() {
+        return TraversableModule.single(this);
+    }
+
+    /**
+     * The only element as an {@code Option}.
+     *
+     * @return {@code Some(element)} if there is exactly one element, {@code None} otherwise
+     */
+    default Option<Tuple2<K, V>> singleOption() {
+        return TraversableModule.singleOption(this);
+    }
+
+    /**
+     * Arranges the elements by a key that must be unique: {@code Some} of the map from each key to its element,
+     * or {@code None} as soon as two elements share a key. The same as {@code groupBy(getKey)} when every group is
+     * a singleton.
+     *
+     * @param getKey the key of an element
+     * @param <K2>  the key type
+     * @return {@code Some(map)} if the keys are unique, {@code None} otherwise
+     * @throws NullPointerException if {@code getKey} is null
+     */
+    default <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(Function<? super Tuple2<K, V>, ? extends K2> getKey) {
+        Objects.requireNonNull(getKey, "getKey is null");
+        return TraversableModule.arrangeBy(groupBy(getKey));
+    }
+
+    /**
+     * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.
+     *
+     * @param <A>       the collector's accumulation type
+     * @param <R>       the result type
+     * @param collector the collector
+     * @return the collected result
+     */
+    default <R extends @Nullable Object, A extends @Nullable Object> R collect(Collector<? super Tuple2<K, V>, A, R> collector) {
+        return stream().collect(collector);
+    }
+
+    /**
+     * Collects the elements with a supplier, an accumulator and a combiner, as
+     * {@code stream().collect(supplier, accumulator, combiner)} does.
+     *
+     * @param <R>         the result type
+     * @param supplier    makes a new result container
+     * @param accumulator adds an element to a container
+     * @param combiner    merges two containers
+     * @return the collected result
+     */
+    default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
+        return stream().collect(supplier, accumulator, combiner);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.Collection} that {@code factory} makes for the given
+     * capacity, in this Map's order: {@code toJavaCollection(java.util.LinkedHashSet::new)}.
+     *
+     * @param factory makes an empty mutable collection with the given initial capacity
+     * @param <C>     the collection type
+     * @return the new collection, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    default <C extends java.util.Collection<Tuple2<K, V>>> C toJavaCollection(Function<Integer, C> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * The elements copied into a new {@link java.util.ArrayList}, in this Map's order.
+     *
+     * @return the new list
+     */
+    default java.util.List<Tuple2<K, V>> toJavaList() {
+        return TraversableModule.toJavaCollection(this, ArrayList::new, 10);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.List} that {@code factory} makes for the given
+     * capacity, in this Map's order: {@code toJavaList(capacity -> new java.util.LinkedList<>())}.
+     *
+     * @param factory makes an empty mutable list with the given initial capacity
+     * @param <LIST>  the list type
+     * @return the new list, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    default <LIST extends java.util.List<Tuple2<K, V>>> LIST toJavaList(Function<Integer, LIST> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * The elements as the entries of a new {@link java.util.HashMap}, each mapped to a key and a value by
+     * {@code f}; of two entries with the same key, the later one in this Map's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K2> the key type
+     * @param <V2> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> java.util.Map<K2, V2> toJavaMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        return TraversableModule.toJavaMap(this, java.util.HashMap::new, f);
+    }
+
+    /**
+     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
+     * to a key by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the
+     * later one in this Map's order wins.
+     *
+     * @param factory     makes an empty mutable map
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K2>         the key type
+     * @param <V2>         the value type
+     * @param <MAP>       the map type
+     * @return the new map, filled
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object, MAP extends java.util.Map<K2, V2>> MAP toJavaMap(Supplier<MAP> factory, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return TraversableModule.toJavaMap(this, factory, TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
+     * to a key and a value by {@code f}; of two entries with the same key, the later one in this Map's order
+     * wins.
+     *
+     * @param factory makes an empty mutable map
+     * @param f       the entry an element becomes
+     * @param <K2>     the key type
+     * @param <V2>     the value type
+     * @param <MAP>   the map type
+     * @return the new map, filled
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object, MAP extends java.util.Map<K2, V2>> MAP toJavaMap(Supplier<MAP> factory, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        return TraversableModule.toJavaMap(this, factory, f);
+    }
+
+    /**
+     * The distinct elements copied into a new {@link java.util.HashSet}.
+     *
+     * @return the new set
+     */
+    default java.util.Set<Tuple2<K, V>> toJavaSet() {
+        return TraversableModule.toJavaCollection(this, java.util.HashSet::new, 16);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.Set} that {@code factory} makes for the given
+     * capacity: {@code toJavaSet(capacity -> new java.util.TreeSet<>(Comparator.reverseOrder()))}.
+     *
+     * @param factory makes an empty mutable set with the given initial capacity
+     * @param <SET>   the set type
+     * @return the new set, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    default <SET extends java.util.Set<Tuple2<K, V>>> SET toJavaSet(Function<Integer, SET> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * A parallel {@link java.util.stream.Stream} over the elements, built on {@link #spliterator()}.
+     *
+     * @return a new parallel {@code java.util.stream.Stream}
+     */
+    default java.util.stream.Stream<Tuple2<K, V>> toJavaParallelStream() {
+        return StreamSupport.stream(spliterator(), true);
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}, each mapped to a key by {@code keyMapper} and to a
+     * value by {@code valueMapper}; of two entries with the same key, the later one in this Map's order wins.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K2>         the key type
+     * @param <V2>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return toMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}, each mapped to a key and a value by {@code f}; of two
+     * entries with the same key, the later one in this Map's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K2> the key type
+     * @param <V2> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = HashMap::ofEntries;
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in this Map's order, each mapped to a key by
+     * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
+     * wins the value and the earlier one the position.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K2>         the key type
+     * @param <V2>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return toLinkedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in this Map's order, each mapped to a key
+     * and a value by {@code f}; of two entries with the same key, the later one wins the value and the earlier one
+     * the position.
+     *
+     * @param f   the entry an element becomes
+     * @param <K2> the key type
+     * @param <V2> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = LinkedHashMap::ofEntries;
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
+     * by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
+     * in this Map's order wins.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K2>         the key type
+     * @param <V2>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return toSortedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
+     * and a value by {@code f}; of two entries with the same key, the later one in this Map's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K2> the key type
+     * @param <V2> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return toSortedMap(Comparator.naturalOrder(), f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key by
+     * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one in
+     * this Map's order wins.
+     *
+     * @param comparator  the order of the keys
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K2>         the key type
+     * @param <V2>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return toSortedMap(comparator, TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key and
+     * a value by {@code f}; of two entries with the same key, the later one in this Map's order wins.
+     *
+     * @param comparator the order of the keys
+     * @param f          the entry an element becomes
+     * @param <K2>        the key type
+     * @param <V2>        the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, SortedMap<K2, V2>> ofAll = t -> TreeMap.ofEntries(comparator, t);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+    }
+
+    /**
+     * The elements as a {@link Queue}, in this Map's order.
+     *
+     * @return a {@code Queue} of the elements
+     */
+    default Queue<Tuple2<K, V>> toQueue() {
+        return TraversableModule.toTraversable(this, Queue.empty(), Queue::ofAll);
+    }
+
+    /**
+     * The distinct elements as a {@link LinkedHashSet}, in this Map's order.
+     *
+     * @return a {@code LinkedHashSet} of the elements
+     */
+    default Set<Tuple2<K, V>> toLinkedSet() {
+        return TraversableModule.toTraversable(this, LinkedHashSet.empty(), LinkedHashSet::ofAll);
+    }
+
+    /**
+     * The distinct elements as a {@link TreeSet} in their natural order; a {@code TreeSet} returns itself.
+     *
+     * @return a {@code TreeSet} of the elements
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    default SortedSet<Tuple2<K, V>> toSortedSet() {
+        return TraversableModule.toSortedSet(this);
+    }
+
+    /**
+     * The distinct elements as a {@link TreeSet} ordered by {@code comparator}.
+     *
+     * @param comparator the order
+     * @return a {@code TreeSet} of the elements
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    default SortedSet<Tuple2<K, V>> toSortedSet(Comparator<? super Tuple2<K, V>> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        return TraversableModule.toTraversable(this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
+    }
+
+    /**
+     * The elements as a {@link Stream}, in this Map's order.
+     *
+     * @return a {@code Stream} of the elements
+     */
+    default Stream<Tuple2<K, V>> toStream() {
+        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    }
 }

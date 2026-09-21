@@ -8,6 +8,9 @@ import com.guizmaii.zazr.collection.JavaConverters.ListView;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -21,18 +24,20 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 
+import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 /**
- * Tests Vector's whole API: the Traversable cases (inherited), the sequence cases that were shared through
- * {@code AbstractSeqTest} while Vector shared the sequence interface (folded in with #66), and the Vector-specific
- * ones.
+ * Tests Vector's whole API: the cases every collection has (through the shared hooks and the ones declared
+ * below), the sequence cases and the Vector-specific ones.
  */
-public class VectorTest extends AbstractTraversableRangeTest {
+public class VectorTest extends AbstractTraversableTest {
 
     @Override
     protected <T> Collector<T, Vector.Builder<T>, Vector<T>> collector() {
@@ -120,78 +125,58 @@ public class VectorTest extends AbstractTraversableRangeTest {
         return Vector.fill(n, element);
     }
 
-    @Override
     protected Vector<Character> range(char from, char toExclusive) {
         return Vector.range(from, toExclusive);
     }
 
-    @Override
     protected Vector<Character> rangeBy(char from, char toExclusive, int step) {
         return Vector.rangeBy(from, toExclusive, step);
     }
 
-    @Override
     protected Vector<Double> rangeBy(double from, double toExclusive, double step) {
         return Vector.rangeBy(from, toExclusive, step);
     }
 
-    //fixme: delete, when useIsEqualToInsteadOfIsSameAs() will be eliminated from AbstractValueTest class
-    @Override
-    protected boolean useIsEqualToInsteadOfIsSameAs() {
-        return false;
-    }
-
-    @Override
     protected Vector<Integer> range(int from, int toExclusive) {
         return Vector.range(from, toExclusive);
     }
 
-    @Override
     protected Vector<Integer> rangeBy(int from, int toExclusive, int step) {
         return Vector.rangeBy(from, toExclusive, step);
     }
 
-    @Override
     protected Vector<Long> range(long from, long toExclusive) {
         return Vector.range(from, toExclusive);
     }
 
-    @Override
     protected Vector<Long> rangeBy(long from, long toExclusive, long step) {
         return Vector.rangeBy(from, toExclusive, step);
     }
 
-    @Override
     protected Vector<Character> rangeClosed(char from, char toInclusive) {
         return Vector.rangeClosed(from, toInclusive);
     }
 
-    @Override
     protected Vector<Character> rangeClosedBy(char from, char toInclusive, int step) {
         return Vector.rangeClosedBy(from, toInclusive, step);
     }
 
-    @Override
     protected Vector<Double> rangeClosedBy(double from, double toInclusive, double step) {
         return Vector.rangeClosedBy(from, toInclusive, step);
     }
 
-    @Override
     protected Vector<Integer> rangeClosed(int from, int toInclusive) {
         return Vector.rangeClosed(from, toInclusive);
     }
 
-    @Override
     protected Vector<Integer> rangeClosedBy(int from, int toInclusive, int step) {
         return Vector.rangeClosedBy(from, toInclusive, step);
     }
 
-    @Override
     protected Vector<Long> rangeClosed(long from, long toInclusive) {
         return Vector.rangeClosed(from, toInclusive);
     }
 
-    @Override
     protected Vector<Long> rangeClosedBy(long from, long toInclusive, long step) {
         return Vector.rangeClosedBy(from, toInclusive, step);
     }
@@ -807,7 +792,7 @@ public class VectorTest extends AbstractTraversableRangeTest {
     class CrossproductTests {
         @Test
         public void shouldCalculateCrossProductOfNil() {
-            final Iterator<Tuple2<Object, Object>> actual = empty().crossProduct();
+            final Vector<Tuple2<Object, Object>> actual = empty().crossProduct();
             assertThat(actual).isEmpty();
         }
 
@@ -831,8 +816,9 @@ public class VectorTest extends AbstractTraversableRangeTest {
         }
 
         @Test
-        public void shouldCrossProductPowerBeLazy() {
-            assertThat(range(0, 10).crossProduct(100).take(1).head()).isEqualTo(tabulate(100, i -> 0));
+        public void shouldCrossProductPowerStartWithTheFirstElementRepeated() {
+            assertThat(range(0, 3).crossProduct(4).take(1).head()).isEqualTo(tabulate(4, i -> 0));
+            assertThat(range(0, 3).crossProduct(4).size()).isEqualTo(81);
         }
 
         @Test
@@ -845,19 +831,19 @@ public class VectorTest extends AbstractTraversableRangeTest {
     class CrossproductIterableTests {
         @Test
         public void shouldCalculateCrossProductOfNilAndNil() {
-            final Iterator<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
+            final Vector<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNilAndNonNil() {
-            final Iterator<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
+            final Vector<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNil() {
-            final Iterator<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
+            final Vector<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
@@ -873,6 +859,14 @@ public class VectorTest extends AbstractTraversableRangeTest {
         @Test
         public void shouldThrowWhenCalculatingCrossProductAndThatIsNull() {
             assertThrows(NullPointerException.class, () -> empty().crossProduct(null));
+        }
+
+        @Test
+        public void shouldCalculateCrossProductWithAOneShotArgument() {
+            // a java.util.stream can be iterated once: the argument is read exactly once
+            final Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
+            assertThat(of(1, 2).crossProduct(oneShot).toList())
+                    .isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b')));
         }
     }
 
@@ -1378,27 +1372,6 @@ public class VectorTest extends AbstractTraversableRangeTest {
         assertThat(of('a', 'b').intersperse(',')).isEqualTo(of('a', ',', 'b'));
     }
 
-    @Nested
-    class IteratorIntTests {
-        @Test
-        public void shouldThrowWhenNilIteratorStartingAtIndex() {
-            assertThrows(IndexOutOfBoundsException.class, () -> empty().iterator(1));
-        }
-
-        @Test
-        public void shouldIterateFirstElementOfNonNilStartingAtIndex() {
-            assertThat(of(1, 2, 3).iterator(1).next()).isEqualTo(2);
-        }
-
-        @Test
-        public void shouldFullyIterateNonNilStartingAtIndex() {
-            int actual = -1;
-            for (Iterator<Integer> iter = of(1, 2, 3).iterator(1); iter.hasNext(); ) {
-                actual = iter.next();
-            }
-            assertThat(actual).isEqualTo(3);
-        }
-    }
 
     @Nested
     class PadtoTests {
@@ -1932,21 +1905,21 @@ public class VectorTest extends AbstractTraversableRangeTest {
         }
     }
 
-    // -- reverseIterator
+    // -- reverse().iterator()
 
     @Test
     public void shouldCreateReverseIteratorOfEmpty() {
-        assertThat(ofAll(empty()).reverseIterator()).isEmpty();
+        assertThat(ofAll(empty()).reverse().iterator().hasNext()).isFalse();
     }
 
     @Test
     public void shouldCreateReverseIteratorOfSingle() {
-        assertThat(ofAll(this.of("a")).reverseIterator().toList()).isEqualTo(Iterator.of("a").toList());
+        assertThat(List.ofAll((Iterable<String>) () -> ofAll(this.of("a")).reverse().iterator())).isEqualTo(List.of("a"));
     }
 
     @Test
     public void shouldCreateReverseIteratorOfNonEmpty() {
-        assertThat(ofAll(of("a", "b", "c")).reverseIterator().toList()).isEqualTo(Iterator.of("c", "b", "a").toList());
+        assertThat(List.ofAll((Iterable<String>) () -> ofAll(of("a", "b", "c")).reverse().iterator())).isEqualTo(List.of("c", "b", "a"));
     }
 
     @Nested
@@ -2858,7 +2831,7 @@ public class VectorTest extends AbstractTraversableRangeTest {
             assertThat(Vector.class.getInterfaces()).containsExactly(Traversable.class);
             assertThat(Vector.class.getSuperclass()).isEqualTo(Object.class);
             // no sequence interface above Traversable: a Vector reaches Traversable directly
-            assertThat(supertypeNames(Vector.class)).containsExactlyInAnyOrder("Traversable", "Foldable", "Iterable");
+            assertThat(supertypeNames(Vector.class)).containsExactlyInAnyOrder("Traversable", "Iterable");
         }
 
         @Test
@@ -3202,8 +3175,9 @@ public class VectorTest extends AbstractTraversableRangeTest {
                     java.util.Collections.reverse(expected);
                     assertThat(vector.reverse().toJavaList()).isEqualTo(expected);
                     assertThat(vector.reverse().reverse()).isEqualTo(vector);
-                    final Iterator<Integer> iterator = vector.reverseIterator();
-                    assertThat(iterator.toJavaList()).isEqualTo(expected);
+                    final java.util.Iterator<Integer> iterator = vector.reverse().iterator();
+                    assertThat(new java.util.ArrayList<>(vector.reverse().asJava())).isEqualTo(expected);
+                    expected.forEach(element -> assertThat(iterator.next()).isEqualTo(element));
                     assertThat(iterator.hasNext()).isFalse();
                     assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
                     if (n <= 1) {
@@ -3245,17 +3219,20 @@ public class VectorTest extends AbstractTraversableRangeTest {
             assertThat(Vector.range(0, 33).crossProduct(vector).size()).isEqualTo(99);
             assertThat(vector.crossProduct(Vector.empty())).isEmpty();
             assertThat(Vector.empty().crossProduct(vector)).isEmpty();
-            // the argument stays lazy: an infinite iterator works with take
-            assertThat(vector.crossProduct(Iterator.from(0)).take(3).toList()).isEqualTo(List.of(Tuple.of(1, 0), Tuple.of(1, 1), Tuple.of(1, 2)));
-            assertThat(Vector.of(1).crossProduct(Iterator.from(0)).take(3).toList()).isEqualTo(List.of(Tuple.of(1, 0), Tuple.of(1, 1), Tuple.of(1, 2)));
-            assertThat(vector.crossProduct(Iterator.from(0)).take(5).toList().last()).isEqualTo(Tuple.of(1, 4));
-            // and a one-shot argument is walked once, memoised for the next element of the receiver
+            // a one-shot argument is walked once, for every element of the receiver
             assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator).toList()).isEqualTo(expected);
+            final int[] walks = { 0 };
+            final Iterable<Character> counted = () -> {
+                walks[0]++;
+                return java.util.List.of('a', 'b').iterator();
+            };
+            assertThat(vector.crossProduct(counted).toList()).isEqualTo(expected);
+            assertThat(walks[0]).isEqualTo(1);
             assertThatNullPointerException().isThrownBy(() -> vector.crossProduct((Iterable<Integer>) null)).withMessage("that is null");
         }
 
         @Test
-        public void shouldComputeThePowerLazilyWithVectorResults() {
+        public void shouldComputeThePowerWithVectorResults() {
             final Vector<Integer> vector = of(0, 1, 2);
             assertThat(vector.crossProduct(-1).toList()).isEqualTo(List.empty());
             assertThat(vector.crossProduct(0).toList()).isEqualTo(List.of(Vector.empty()));
@@ -3270,7 +3247,8 @@ public class VectorTest extends AbstractTraversableRangeTest {
                 assertThat(cube).isInstanceOf(Vector.class);
             }
             assertThat(Vector.range(0, 33).crossProduct(2).size()).isEqualTo(33 * 33);
-            assertThat(Vector.range(0, 10).crossProduct(100).take(1).head()).isEqualTo(Vector.fill(100, 0));
+            assertThat(Vector.range(0, 10).crossProduct(3).take(1).head()).isEqualTo(Vector.fill(3, 0));
+            assertThat(Vector.range(0, 10).crossProduct(3).size()).isEqualTo(1000);
             assertThat(Vector.<Integer> empty().crossProduct(2)).isEmpty();
             assertThat(Vector.<Integer> empty().crossProduct(0).toList()).isEqualTo(List.of(Vector.empty()));
         }
@@ -3607,22 +3585,6 @@ public class VectorTest extends AbstractTraversableRangeTest {
         }
     }
 
-    @Nested
-    class IteratorFromIndexTests {
-        @Test
-        public void shouldIterateFromAnyValidIndexAtEveryBoundary() {
-            for (int n : BOUNDARIES) {
-                for (Vector<Integer> vector : representations(n)) {
-                    for (int k : positions(n)) {
-                        assertThat(vector.iterator(k).toList()).isEqualTo(vector.drop(k).toList());
-                    }
-                    assertThat(vector.iterator(n).hasNext()).isFalse();
-                    assertThatThrownBy(() -> vector.iterator(n + 1)).isInstanceOf(IndexOutOfBoundsException.class);
-                    assertThatThrownBy(() -> vector.iterator(-1)).isInstanceOf(IndexOutOfBoundsException.class);
-                }
-            }
-        }
-    }
 
     @Nested
     class EqualityAcrossSequenceTypesTests {
@@ -3761,4 +3723,2995 @@ public class VectorTest extends AbstractTraversableRangeTest {
             }
         }
     }
+
+    // -- the cases every collection had, on this type
+
+    // -- average
+
+    @TestTemplate
+    public void shouldReturnNoneWhenComputingAverageOfNil() {
+        assertThat(empty().average()).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenComputingAverageOfStrings() {
+        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").average());
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfByte() {
+        assertThat(of((byte) 1, (byte) 2).average().get()).isEqualTo(1.5);
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfDouble() {
+        assertThat(of(.1, .2, .3).average().get()).isEqualTo(.2, within(10e-17));
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfFloat() {
+        assertThat(of(.1f, .2f, .3f).average().get()).isEqualTo(.2, within(10e-9));
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfInt() {
+        assertThat(of(1, 2, 3).average().get()).isEqualTo(2);
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfLong() {
+        assertThat(of(1L, 2L, 3L).average().get()).isEqualTo(2);
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfShort() {
+        assertThat(of((short) 1, (short) 2, (short) 3).average().get()).isEqualTo(2);
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfBigInteger() {
+        assertThat(of(BigInteger.ZERO, BigInteger.ONE).average().get()).isEqualTo(.5);
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageOfBigDecimal() {
+        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).average().get()).isEqualTo(.5);
+    }
+
+    @TestTemplate
+    public void shouldComputeAverageAndCompensateErrors() {
+        // Kahan's summation algorithm (used by DoubleStream.average()) returns 0.0 (false)
+        // Neumaier's modification of Kahan's algorithm returns 0.75 (correct)
+        assertThat(of(1.0, +10e100, 2.0, -10e100).average().get()).isEqualTo(0.75);
+    }
+
+    @TestTemplate
+    public void shouldCalculateAverageOfDoublesContainingNaN() {
+        assertThat(of(1.0, Double.NaN, 2.0).average().get()).isNaN();
+    }
+
+    @TestTemplate
+    public void shouldCalculateAverageOfFloatsContainingNaN() {
+        assertThat(of(1.0f, Float.NaN, 2.0f).average().get()).isNaN();
+    }
+
+    @TestTemplate
+    public void shouldCalculateAverageOfDoubleAndFloat() {
+        assertThat(this.<Number>of(1.0, 1.0f).average().get()).isEqualTo(1.0);
+    }
+
+    @TestTemplate
+    public void shouldCalculateAverageOfDoublePositiveAndNegativeInfinity() {
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).average().get()).isNaN();
+    }
+
+    @TestTemplate
+    public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).average().get()).isNaN();
+    }
+
+    // -- distinct
+
+    @TestTemplate
+    public void shouldComputeDistinctOfEmptyTraversable() {
+            assertThat(empty().distinct()).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldComputeDistinctOfNonEmptyTraversable() {
+        final Vector<Integer> testee = of(1, 1, 2, 2, 3, 3);
+        final Vector<Integer> actual = testee.distinct();
+        final Vector<Integer> expected = of(1, 2, 3);
+        assertThat(actual).isEqualTo(expected);
+        if (isDistinct()) {
+            assertThat(actual).isSameAs(testee);
+        }
+    }
+
+    // -- distinctBy(Comparator)
+
+    @TestTemplate
+    public void shouldComputeDistinctByOfEmptyTraversableUsingComparator() {
+        final Comparator<Integer> comparator = comparingInt(i -> i);
+            assertThat(this.<Integer>empty().distinctBy(comparator)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldComputeDistinctByOfNonEmptyTraversableUsingComparator() {
+        final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
+        final Vector<String> distinct = of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator)
+          .map(s -> s.substring(1));
+        assertThat(distinct).isEqualTo(of("a", "b", "c"));
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenDistinctByComparatorEmptyTraversable() {
+        final Vector<?> empty = empty();
+        assertThat(empty.distinctBy(Comparators.naturalComparator())).isSameAs(empty);
+    }
+
+    // -- distinctBy(Function)
+
+    @TestTemplate
+    public void shouldComputeDistinctByOfEmptyTraversableUsingKeyExtractor() {
+            assertThat(empty().distinctBy(Function.identity())).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldComputeDistinctByOfNonEmptyTraversableUsingKeyExtractor() {
+        final Function<String, Character> function = c -> c.charAt(1);
+        final Vector<String> distinct = of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function)
+          .map(s -> s.substring(1));
+        assertThat(distinct).isEqualTo(of("a", "b", "c"));
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenDistinctByFunctionEmptyTraversable() {
+        final Vector<?> empty = empty();
+        assertThat(empty.distinctBy(Function.identity())).isSameAs(empty);
+    }
+
+    // -- drop
+
+    @TestTemplate
+    public void shouldDropNoneOnNil() {
+            assertThat(empty().drop(1)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldDropNoneIfCountIsNegative() {
+        assertThat(of(1, 2, 3).drop(-1)).isEqualTo(of(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldDropAsExpectedIfCountIsLessThanSize() {
+        assertThat(of(1, 2, 3).drop(2)).isEqualTo(of(3));
+    }
+
+    @TestTemplate
+    public void shouldDropAllIfCountExceedsSize() {
+            assertThat(of(1, 2, 3).drop(4)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenDropZeroCount() {
+        final Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.drop(0)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenDropNegativeCount() {
+        final Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.drop(-1)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenEmptyDropOne() {
+        final Vector<?> empty = empty();
+        assertThat(empty.drop(1)).isSameAs(empty);
+    }
+
+    // -- dropRight
+
+    @TestTemplate
+    public void shouldDropRightNoneOnNil() {
+            assertThat(empty().dropRight(1)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldDropRightNoneIfCountIsNegative() {
+        assertThat(of(1, 2, 3).dropRight(-1)).isEqualTo(of(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldDropRightAsExpectedIfCountIsLessThanSize() {
+        assertThat(of(1, 2, 3).dropRight(2)).isEqualTo(of(1));
+    }
+
+    @TestTemplate
+    public void shouldDropRightAllIfCountExceedsSize() {
+            assertThat(of(1, 2, 3).dropRight(4)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenDropRightZeroCount() {
+        final Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.dropRight(0)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenDropRightNegativeCount() {
+        final Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.dropRight(-1)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenEmptyDropRightOne() {
+        final Vector<?> empty = empty();
+        assertThat(empty.dropRight(1)).isSameAs(empty);
+    }
+
+    // -- dropUntil
+
+    @TestTemplate
+    public void shouldDropUntilNoneOnNil() {
+            assertThat(empty().dropUntil(ignored -> true)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldDropUntilNoneIfPredicateIsTrue() {
+            final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.dropUntil(ignored -> true)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldDropUntilAllIfPredicateIsFalse() {
+            assertThat(of(1, 2, 3).dropUntil(ignored -> false)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldDropUntilCorrect() {
+        assertThat(of(1, 2, 3).dropUntil(i -> i >= 2)).isEqualTo(of(2, 3));
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenEmptyDropUntil() {
+        final Vector<?> empty = empty();
+        assertThat(empty.dropUntil(ignored -> true)).isSameAs(empty);
+    }
+
+    // -- dropWhile
+
+    @TestTemplate
+    public void shouldDropWhileNoneOnNil() {
+        final Vector<?> empty = empty();
+        final Vector<?> actual = empty.dropWhile(ignored -> true);
+            assertThat(actual).isSameAs(empty);
+    }
+
+    @TestTemplate
+    public void shouldDropWhileNoneIfPredicateIsFalse() {
+            final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.dropWhile(ignored -> false)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldDropWhileAllIfPredicateIsTrue() {
+        final Vector<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
+            assertThat(actual).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldDropWhileAccordingToPredicate() {
+        assertThat(of(1, 2, 3).dropWhile(i -> i < 2)).isEqualTo(of(2, 3));
+    }
+
+    @TestTemplate
+    public void shouldDropWhileAndNotTruncate() {
+        assertThat(of(1, 2, 3).dropWhile(i -> i % 2 == 1)).isEqualTo(of(2, 3));
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenEmptyDropWhile() {
+        final Vector<?> empty = empty();
+        assertThat(empty.dropWhile(ignored -> true)).isSameAs(empty);
+    }
+
+    // -- existsUnique
+
+    @TestTemplate
+    public void shouldBeAwareOfExistingUniqueElement() {
+        assertThat(of(1, 2).existsUnique(i -> i == 1)).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldBeAwareOfNonExistingUniqueElement() {
+        assertThat(this.<Integer>empty().existsUnique(i -> i == 1)).isFalse();
+    }
+
+    @TestTemplate
+    public void shouldBeAwareOfExistingNonUniqueElement() {
+        assertThat(of(1, 1, 2).existsUnique(i -> i == 1)).isFalse();
+    }
+
+    // -- filter
+
+    @TestTemplate
+    public void shouldFilterExistingElements() {
+        assertThat(of(1, 2, 3).filter(i -> i == 1)).isEqualTo(of(1));
+        assertThat(of(1, 2, 3).filter(i -> i == 2)).isEqualTo(of(2));
+        assertThat(of(1, 2, 3).filter(i -> i == 3)).isEqualTo(of(3));
+            final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.filter(ignore -> true)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldFilterNonExistingElements() {
+            assertThat(this.<Integer>empty().filter(i -> i == 0)).isSameAs(empty());
+            assertThat(of(1, 2, 3).filter(i -> i == 0)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
+        final Vector<?> empty = empty();
+        assertThat(empty.filter(v -> true)).isSameAs(empty);
+    }
+
+    // -- reject
+
+    @TestTemplate
+    public void shouldRejectExistingElements() {
+        assertThat(of(1, 2, 3).reject(i -> i == 1)).isEqualTo(of(2, 3));
+        assertThat(of(1, 2, 3).reject(i -> i == 2)).isEqualTo(of(1, 3));
+        assertThat(of(1, 2, 3).reject(i -> i == 3)).isEqualTo(of(1, 2));
+            final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.reject(ignore -> false)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldRejectNonExistingElements() {
+            assertThat(this.<Integer>empty().reject(i -> i == 0)).isSameAs(empty());
+            assertThat(of(1, 2, 3).reject(i -> i > 0)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
+        final Vector<?> empty = empty();
+        assertThat(empty.reject(v -> true)).isSameAs(empty);
+    }
+
+    // -- findLast
+
+    @TestTemplate
+    public void shouldFindLastOfNil() {
+        assertThat(empty().findLast(ignored -> true)).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldFindLastOfNonNil() {
+        assertThat(of(1, 2, 3, 4).findLast(i -> i % 2 == 0)).isEqualTo(Option.some(4));
+    }
+
+    // -- flatMap
+
+    @TestTemplate
+    public void shouldFlatMapEmpty() {
+            assertThat(empty().flatMap(v -> of(v, 0))).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldFlatMapNonEmpty() {
+        assertThat(of(1, 2, 3).flatMap(v -> of(v, 0))).isEqualTo(of(1, 0, 2, 0, 3, 0));
+    }
+
+    // -- collect
+
+    @TestTemplate
+    public void shouldCollectNothingFromEmpty() {
+        final AtomicInteger calls = new AtomicInteger();
+        final Vector<Integer> actual = this.<Integer>empty().collect(i -> {
+            calls.incrementAndGet();
+            return Option.some(i);
+        });
+        assertThat(actual).isEqualTo(empty());
+        assertThat(calls.get()).isEqualTo(0);
+    }
+
+    @TestTemplate
+    public void shouldCollectNothingWhenEveryElementIsDropped() {
+        assertThat(of(1, 2, 3).collect(i -> Option.none())).isEqualTo(empty());
+    }
+
+    @TestTemplate
+    public void shouldCollectEveryElementWhenEveryElementIsKept() {
+        assertThat(of(1, 2, 3).collect(i -> Option.some(i * 10))).isEqualTo(of(10, 20, 30));
+    }
+
+    @TestTemplate
+    public void shouldCollectTheKeptElementsInOrder() {
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+    }
+
+    @TestTemplate
+    public void shouldCollectWithASwitchInsideTheLambda() {
+        final Vector<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+            case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
+            default -> Option.none();
+        });
+        assertThat(actual).isEqualTo(of(10, 30));
+    }
+
+    @TestTemplate
+    public void shouldCallTheCollectMapperOncePerElement() {
+        final AtomicInteger calls = new AtomicInteger();
+        of(1, 2, 3).collect(i -> {
+            calls.incrementAndGet();
+            return i == 2 ? Option.none() : Option.some(i);
+        }).size();
+        assertThat(calls.get()).isEqualTo(3);
+    }
+
+    @TestTemplate
+    public void shouldRejectNullOptionFromCollectMapper() {
+        // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, Iterator...)
+        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
+        assertThatThrownBy(() -> of(1).collect(i -> null).size())
+          .isInstanceOf(NullPointerException.class)
+          .hasMessage(type + ".collect: mapper returned null");
+    }
+
+    @TestTemplate
+    public void shouldThrowOnCollectWithNullMapper() {
+        final Function<Integer, Option<Integer>> mapper = null;
+        assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
+    }
+
+    // -- fold
+
+    @TestTemplate
+    public void shouldFoldNil() {
+        assertThat(this.<String>empty().fold("", (a, b) -> a + b)).isEqualTo("");
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenFoldNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().fold(null, null));
+    }
+
+    @TestTemplate
+    public void shouldFoldSingleElement() {
+        assertThat(of(1).fold(0, (a, b) -> a + b)).isEqualTo(1);
+    }
+
+    @TestTemplate
+    public void shouldFoldMultipleElements() {
+        assertThat(of(1, 2, 3).fold(0, (a, b) -> a + b)).isEqualTo(6);
+    }
+
+    // -- foldRight
+
+    @TestTemplate
+    public void shouldFoldRightNil() {
+        assertThat(this.<String>empty().foldRight("", (x, xs) -> x + xs)).isEqualTo("");
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenFoldRightNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().foldRight(null, null));
+    }
+
+    @TestTemplate
+    public void shouldFoldRightNonNil() {
+        assertThat(of("a", "b", "c").foldRight("!", (x, xs) -> x + xs)).isEqualTo("abc!");
+    }
+
+    // -- forEachWithIndex
+
+    @TestTemplate
+    public void shouldConsumeNoElementWithIndexWhenEmpty() {
+        final boolean[] actual = {false};
+        final boolean[] expected = {false};
+        empty().forEachWithIndex((chr, index) -> actual[0] = true);
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldConsumeEachElementWithIndexWhenNonEmpty() {
+        final java.util.List<Tuple2<Character, Integer>> actual = new java.util.ArrayList<>();
+        final java.util.List<Tuple2<Character, Integer>> expected = Arrays.asList(Tuple.of('a', 0), Tuple.of('b', 1), Tuple.of('c', 2));
+        ofAll('a', 'b', 'c').forEachWithIndex((chr, index) -> actual.add(Tuple.of(chr, index)));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- groupBy
+
+    @TestTemplate
+    public void shouldNilGroupBy() {
+        assertThat(empty().groupBy(Function.identity())).isEqualTo(LinkedHashMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldNonNilGroupByIdentity() {
+        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
+        final Map<?, ?> expected = LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldNonNilGroupByEqual() {
+        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
+        final Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- arrangeBy
+
+    @TestTemplate
+    public void shouldNilArrangeBy() {
+        assertThat(empty().arrangeBy(Function.identity())).isEqualTo(Option.some(LinkedHashMap.empty()));
+    }
+
+    @TestTemplate
+    public void shouldNonNilArrangeByIdentity() {
+        final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
+        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldNonNilArrangeByEqual() {
+        final Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
+        final Option<Map<?, ?>> expected = Option.none();
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- grouped
+
+    @TestTemplate
+    public void shouldGroupedNil() {
+        assertThat(empty().grouped(1).isEmpty()).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenGroupedWithSizeZero() {
+        assertThrows(IllegalArgumentException.class, () -> empty().grouped(0));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenGroupedWithNegativeSize() {
+        assertThrows(IllegalArgumentException.class, () -> empty().grouped(-1));
+    }
+
+    @TestTemplate
+    public void shouldGroupedTraversableWithEqualSizedBlocks() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2), of(3, 4));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldGroupedTraversableWithRemainder() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2), of(3, 4), of(5));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldGroupedWhenTraversableLengthIsSmallerThanBlockSize() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2, 3, 4));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- head
+
+    @TestTemplate
+    public void shouldThrowWhenHeadOnNil() {
+        assertThrows(NoSuchElementException.class, () -> empty().head());
+    }
+
+    @TestTemplate
+    public void shouldReturnHeadOfNonNil() {
+        assertThat(of(1, 2, 3).head()).isEqualTo(1);
+    }
+
+    // -- headOption
+
+    @TestTemplate
+    public void shouldReturnNoneWhenCallingHeadOptionOnNil() {
+        assertThat(empty().headOption().isEmpty()).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldReturnSomeHeadWhenCallingHeadOptionOnNonNil() {
+        assertThat(of(1, 2, 3).headOption()).isEqualTo(Option.some(1));
+    }
+
+    // -- init
+
+    @TestTemplate
+    public void shouldThrowWhenInitOfNil() {
+        assertThrows(UnsupportedOperationException.class, () -> empty().init());
+    }
+
+    @TestTemplate
+    public void shouldGetInitOfNonNil() {
+        assertThat(of(1, 2, 3).init()).isEqualTo(of(1, 2));
+    }
+
+    // -- initOption
+
+    @TestTemplate
+    public void shouldReturnNoneWhenCallingInitOptionOnNil() {
+        assertThat(empty().initOption().isEmpty()).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldReturnSomeInitWhenCallingInitOptionOnNonNil() {
+        assertThat(of(1, 2, 3).initOption()).isEqualTo(Option.some(of(1, 2)));
+    }
+
+    // -- last
+
+    @TestTemplate
+    public void shouldThrowWhenLastOnNil() {
+        assertThrows(NoSuchElementException.class, () -> empty().last());
+    }
+
+    @TestTemplate
+    public void shouldReturnLastOfNonNil() {
+        assertThat(of(1, 2, 3).last()).isEqualTo(3);
+    }
+
+    // -- lastOption
+
+    @TestTemplate
+    public void shouldReturnNoneWhenCallingLastOptionOnNil() {
+        assertThat(empty().lastOption().isEmpty()).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldReturnSomeLastWhenCallingLastOptionOnNonNil() {
+        assertThat(of(1, 2, 3).lastOption()).isEqualTo(Option.some(3));
+    }
+
+    // -- length
+
+    @TestTemplate
+    public void shouldComputeLengthOfNil() {
+        assertThat(empty().length()).isEqualTo(0);
+    }
+
+    @TestTemplate
+    public void shouldComputeLengthOfNonNil() {
+        assertThat(of(1, 2, 3).length()).isEqualTo(3);
+    }
+
+    // -- max
+
+    @TestTemplate
+    public void shouldReturnNoneWhenComputingMaxOfNil() {
+        assertThat(empty().max()).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfOneValue() {
+        assertThat(of(5).max()).isEqualTo(Option.some(5));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfStrings() {
+        assertThat(of("1", "2", "3").max()).isEqualTo(Option.some("3"));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfBoolean() {
+        assertThat(of(true, false).max()).isEqualTo(Option.some(true));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfByte() {
+        assertThat(of((byte) 1, (byte) 2).max()).isEqualTo(Option.some((byte) 2));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfChar() {
+        assertThat(of('a', 'b', 'c').max()).isEqualTo(Option.some('c'));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfDouble() {
+        assertThat(of(.1, .2, .3).max()).isEqualTo(Option.some(.3));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfFloat() {
+        assertThat(of(.1f, .2f, .3f).max()).isEqualTo(Option.some(.3f));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfInt() {
+        assertThat(of(1, 2, 3).max()).isEqualTo(Option.some(3));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfLong() {
+        assertThat(of(1L, 2L, 3L).max()).isEqualTo(Option.some(3L));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfShort() {
+        assertThat(of((short) 1, (short) 2, (short) 3).max()).isEqualTo(Option.some((short) 3));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfBigInteger() {
+        assertThat(of(BigInteger.ZERO, BigInteger.ONE).max()).isEqualTo(Option.some(BigInteger.ONE));
+    }
+
+    @TestTemplate
+    public void shouldComputeMaxOfBigDecimal() {
+        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).max()).isEqualTo(Option.some(BigDecimal.ONE));
+    }
+
+    @TestTemplate
+    public void shouldThrowNPEWhenMaxOfNullAndInt() {
+        assertThrows(NullPointerException.class, () -> of(null, 1).max());
+    }
+
+    @TestTemplate
+    public void shouldThrowNPEWhenMaxOfIntAndNull() {
+        assertThrows(NullPointerException.class, () -> of(1, null).max());
+    }
+
+    @TestTemplate
+    public void shouldCalculateMaxOfDoublesContainingNaN() {
+        assertThat(of(1.0, Double.NaN, 2.0).max().get()).isNaN();
+    }
+
+    @TestTemplate
+    public void shouldCalculateMaxOfFloatsContainingNaN() {
+        assertThat(of(1.0f, Float.NaN, 2.0f).max().get()).isEqualTo(Float.NaN);
+    }
+
+    @TestTemplate
+    public void shouldThrowClassCastExceptionWhenTryingToCalculateMaxOfDoubleAndFloat() {
+        assertThatThrownBy(() -> this.<Number>of(1.0, 1.0f).max()).isInstanceOf(ClassCastException.class);
+    }
+
+    @TestTemplate
+    public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max()
+          .get()).isEqualTo(Double.POSITIVE_INFINITY);
+    }
+
+    @TestTemplate
+    public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get()).isEqualTo(Float.POSITIVE_INFINITY);
+    }
+
+    // -- maxBy(Comparator)
+
+    @TestTemplate
+    public void shouldThrowWhenMaxByWithNullComparator() {
+        assertThrows(NullPointerException.class, () -> of(1).maxBy((Comparator<Integer>) null));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenMaxByOfNil() {
+        assertThat(empty().maxBy((o1, o2) -> 0)).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldCalculateMaxByOfInts() {
+        assertThat(of(1, 2, 3).maxBy(comparingInt(i -> i))).isEqualTo(Option.some(3));
+    }
+
+    @TestTemplate
+    public void shouldCalculateInverseMaxByOfInts() {
+        assertThat(of(1, 2, 3).maxBy((i1, i2) -> i2 - i1)).isEqualTo(Option.some(1));
+    }
+
+    // -- maxBy(Function)
+
+    @TestTemplate
+    public void shouldThrowWhenMaxByWithNullFunction() {
+        assertThrows(NullPointerException.class, () -> of(1).maxBy((Function<Integer, Integer>) null));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenMaxByFunctionOfNil() {
+        assertThat(this.<Integer>empty().maxBy(i -> i)).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldCalculateMaxByFunctionOfInts() {
+        assertThat(of(1, 2, 3).maxBy(i -> i)).isEqualTo(Option.some(3));
+    }
+
+    @TestTemplate
+    public void shouldCalculateInverseMaxByFunctionOfInts() {
+        assertThat(of(1, 2, 3).maxBy(i -> -i)).isEqualTo(Option.some(1));
+    }
+
+    @TestTemplate
+    public void shouldCallMaxFunctionOncePerElement() {
+        final int[] cnt = {0};
+        assertThat(of(1, 2, 3).maxBy(i -> {
+            cnt[0]++;
+            return i;
+        })).isEqualTo(Option.some(3));
+        assertThat(cnt[0]).isEqualTo(3);
+    }
+
+    // -- min
+
+    @TestTemplate
+    public void shouldReturnNoneWhenComputingMinOfNil() {
+        assertThat(empty().min()).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfOneValue() {
+        assertThat(of(5).min()).isEqualTo(Option.some(5));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfStrings() {
+        assertThat(of("1", "2", "3").min()).isEqualTo(Option.some("1"));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfBoolean() {
+        assertThat(of(true, false).min()).isEqualTo(Option.some(false));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfByte() {
+        assertThat(of((byte) 1, (byte) 2).min()).isEqualTo(Option.some((byte) 1));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfChar() {
+        assertThat(of('a', 'b', 'c').min()).isEqualTo(Option.some('a'));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfDouble() {
+        assertThat(of(.1, .2, .3).min()).isEqualTo(Option.some(.1));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfFloat() {
+        assertThat(of(.1f, .2f, .3f).min()).isEqualTo(Option.some(.1f));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfInt() {
+        assertThat(of(1, 2, 3).min()).isEqualTo(Option.some(1));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfLong() {
+        assertThat(of(1L, 2L, 3L).min()).isEqualTo(Option.some(1L));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfShort() {
+        assertThat(of((short) 1, (short) 2, (short) 3).min()).isEqualTo(Option.some((short) 1));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfBigInteger() {
+        assertThat(of(BigInteger.ZERO, BigInteger.ONE).min()).isEqualTo(Option.some(BigInteger.ZERO));
+    }
+
+    @TestTemplate
+    public void shouldComputeMinOfBigDecimal() {
+        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).min()).isEqualTo(Option.some(BigDecimal.ZERO));
+    }
+
+    @TestTemplate
+    public void shouldThrowNPEWhenMinOfNullAndInt() {
+        assertThrows(NullPointerException.class, () -> of(null, 1).min());
+    }
+
+    @TestTemplate
+    public void shouldThrowNPEWhenMinOfIntAndNull() {
+        assertThrows(NullPointerException.class, () -> of(1, null).min());
+    }
+
+    @TestTemplate
+    public void shouldCalculateMinOfDoublesContainingNaN() {
+        assertThat(of(1.0, Double.NaN, 2.0).min().get()).isNaN();
+    }
+
+    @TestTemplate
+    public void shouldCalculateMinOfFloatsContainingNaN() {
+        assertThat(of(1.0f, Float.NaN, 2.0f).min().get()).isEqualTo(Float.NaN);
+    }
+
+    @TestTemplate
+    public void shouldThrowClassCastExceptionWhenTryingToCalculateMinOfDoubleAndFloat() {
+        assertThatThrownBy(() -> this.<Number>of(1.0, 1.0f).min()).isInstanceOf(ClassCastException.class);
+    }
+
+    @TestTemplate
+    public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
+          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+    }
+
+    @TestTemplate
+    public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
+          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+    }
+
+    // -- minBy(Comparator)
+
+    @TestTemplate
+    public void shouldThrowWhenMinByWithNullComparator() {
+        assertThrows(NullPointerException.class, () -> of(1).minBy((Comparator<Integer>) null));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenMinByOfNil() {
+        assertThat(empty().minBy((o1, o2) -> 0)).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldCalculateMinByOfInts() {
+        assertThat(of(1, 2, 3).minBy(comparingInt(i -> i))).isEqualTo(Option.some(1));
+    }
+
+    @TestTemplate
+    public void shouldCalculateInverseMinByOfInts() {
+        assertThat(of(1, 2, 3).minBy((i1, i2) -> i2 - i1)).isEqualTo(Option.some(3));
+    }
+
+    // -- minBy(Function)
+
+    @TestTemplate
+    public void shouldThrowWhenMinByWithNullFunction() {
+        assertThrows(NullPointerException.class, () -> of(1).minBy((Function<Integer, Integer>) null));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenMinByFunctionOfNil() {
+        assertThat(this.<Integer>empty().minBy(i -> i)).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldCalculateMinByFunctionOfInts() {
+        assertThat(of(1, 2, 3).minBy(i -> i)).isEqualTo(Option.some(1));
+    }
+
+    @TestTemplate
+    public void shouldCalculateInverseMinByFunctionOfInts() {
+        assertThat(of(1, 2, 3).minBy(i -> -i)).isEqualTo(Option.some(3));
+    }
+
+    @TestTemplate
+    public void shouldCallMinFunctionOncePerElement() {
+        final int[] cnt = {0};
+        assertThat(of(1, 2, 3).minBy(i -> {
+            cnt[0]++;
+            return i;
+        })).isEqualTo(Option.some(1));
+        assertThat(cnt[0]).isEqualTo(3);
+    }
+
+    // -- orElse
+
+    @TestTemplate
+    public void shouldCaclEmptyOrElseSameOther() {
+        final Iterable<Integer> other = of(42);
+        assertThat(empty().orElse(other)).isSameAs(other);
+    }
+
+    @TestTemplate
+    public void shouldCaclEmptyOrElseEqualOther() {
+        assertThat(empty().orElse(Arrays.asList(1, 2))).isEqualTo(of(1, 2));
+    }
+
+    @TestTemplate
+    public void shouldCaclNonemptyOrElseOther() {
+        final Vector<Integer> src = of(42);
+        assertThat(src.orElse(List.of(1))).isSameAs(src);
+    }
+
+    @TestTemplate
+    public void shouldCaclEmptyOrElseSameSupplier() {
+        final Iterable<Integer> other = of(42);
+        final Supplier<Iterable<Integer>> supplier = () -> other;
+        assertThat(empty().orElse(supplier)).isSameAs(other);
+    }
+
+    @TestTemplate
+    public void shouldCaclEmptyOrElseEqualSupplier() {
+        assertThat(empty().orElse(() -> Arrays.asList(1, 2))).isEqualTo(of(1, 2));
+    }
+
+    @TestTemplate
+    public void shouldCaclNonemptyOrElseSupplier() {
+        final Vector<Integer> src = of(42);
+        assertThat(src.orElse(() -> List.of(1))).isSameAs(src);
+    }
+
+    // -- partition
+
+    @TestTemplate
+    public void shouldThrowWhenPartitionNilAndPredicateIsNull() {
+        assertThrows(NullPointerException.class, () -> empty().partition(null));
+    }
+
+    @TestTemplate
+    public void shouldPartitionNil() {
+        assertThat(empty().partition(e -> true)).isEqualTo(Tuple.of(empty(), empty()));
+    }
+
+    @TestTemplate
+    public void shouldPartitionIntsInOddAndEvenHavingOddAndEvenNumbers() {
+        assertThat(of(1, 2, 3, 4).partition(i -> i % 2 != 0)).isEqualTo(Tuple.of(of(1, 3), of(2, 4)));
+    }
+
+    @TestTemplate
+    public void shouldPartitionIntsInOddAndEvenHavingOnlyOddNumbers() {
+        assertThat(of(1, 3).partition(i -> i % 2 != 0)).isEqualTo(Tuple.of(of(1, 3), empty()));
+    }
+
+    @TestTemplate
+    public void shouldPartitionIntsInOddAndEvenHavingOnlyEvenNumbers() {
+        assertThat(of(2, 4).partition(i -> i % 2 != 0)).isEqualTo(Tuple.of(empty(), of(2, 4)));
+    }
+
+    // -- product
+
+    @TestTemplate
+    public void shouldComputeProductOfNil() {
+        assertThat(empty().product()).isEqualTo(1);
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenComputingProductOfStrings() {
+        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").product());
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfByte() {
+        assertThat(of((byte) 1, (byte) 2).product()).isEqualTo(2L);
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfDouble() {
+        assertThat(of(.1, .2, .3).product().doubleValue()).isEqualTo(.006, within(10e-18));
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfFloat() {
+        assertThat(of(.1f, .2f, .3f).product().doubleValue()).isEqualTo(.006, within(10e-10));
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfInt() {
+        assertThat(of(1, 2, 3).product()).isEqualTo(6L);
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfLong() {
+        assertThat(of(1L, 2L, 3L).product()).isEqualTo(6L);
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfShort() {
+        assertThat(of((short) 1, (short) 2, (short) 3).product()).isEqualTo(6L);
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfBigInteger() {
+        assertThat(of(BigInteger.ZERO, BigInteger.ONE).product()).isEqualTo(BigInteger.ZERO);
+    }
+
+    @TestTemplate
+    public void shouldComputeProductOfBigDecimal() {
+        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).product()).isEqualTo(BigDecimal.ZERO);
+    }
+
+    // -- reduceOption
+
+    @TestTemplate
+    public void shouldThrowWhenReduceOptionNil() {
+        assertThat(this.<String>empty().reduceOption((a, b) -> a + b)).isSameAs(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenReduceOptionNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().reduceOption(null));
+    }
+
+    @TestTemplate
+    public void shouldReduceOptionNonNil() {
+        assertThat(of(1, 2, 3).reduceOption((a, b) -> a + b)).isEqualTo(Option.some(6));
+    }
+
+    // -- reduce
+
+    @TestTemplate
+    public void shouldThrowWhenReduceNil() {
+        assertThrows(NoSuchElementException.class, () -> this.<String>empty().reduce((a, b) -> a + b));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenReduceNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().reduce(null));
+    }
+
+    @TestTemplate
+    public void shouldReduceNonNil() {
+        assertThat(of(1, 2, 3).reduce((a, b) -> a + b)).isEqualTo(6);
+    }
+
+    // -- reduceLeftOption
+
+    @TestTemplate
+    public void shouldThrowWhenReduceLeftOptionNil() {
+        assertThat(this.<String>empty().reduceLeftOption((a, b) -> a + b)).isSameAs(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenReduceLeftOptionNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().reduceLeftOption(null));
+    }
+
+    @TestTemplate
+    public void shouldReduceLeftOptionNonNil() {
+        assertThat(of("a", "b", "c").reduceLeftOption((xs, x) -> xs + x)).isEqualTo(Option.some("abc"));
+    }
+
+    // -- reduceLeft
+
+    @TestTemplate
+    public void shouldThrowWhenReduceLeftNil() {
+        assertThrows(NoSuchElementException.class, () -> this.<String>empty().reduceLeft((a, b) -> a + b));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenReduceLeftNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().reduceLeft(null));
+    }
+
+    @TestTemplate
+    public void shouldReduceLeftNonNil() {
+        assertThat(of("a", "b", "c").reduceLeft((xs, x) -> xs + x)).isEqualTo("abc");
+    }
+
+    // -- reduceRightOption
+
+    @TestTemplate
+    public void shouldThrowWhenReduceRightOptionNil() {
+        assertThat(this.<String>empty().reduceRightOption((a, b) -> a + b)).isSameAs(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenReduceRightOptionNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().reduceRightOption(null));
+    }
+
+    @TestTemplate
+    public void shouldReduceRightOptionNonNil() {
+        assertThat(of("a", "b", "c").reduceRightOption((x, xs) -> x + xs)).isEqualTo(Option.some("abc"));
+    }
+
+    // -- reduceRight
+
+    @TestTemplate
+    public void shouldThrowWhenReduceRightNil() {
+        assertThrows(NoSuchElementException.class, () -> this.<String>empty().reduceRight((a, b) -> a + b));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenReduceRightNullOperator() {
+        assertThrows(NullPointerException.class, () -> this.<String>empty().reduceRight(null));
+    }
+
+    @TestTemplate
+    public void shouldReduceRightNonNil() {
+        assertThat(of("a", "b", "c").reduceRight((x, xs) -> x + xs)).isEqualTo("abc");
+    }
+
+    // -- replace(curr, new)
+
+    @TestTemplate
+    public void shouldReplaceElementOfNilUsingCurrNew() {
+            assertThat(this.<Integer>empty().replace(1, 2)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldReplaceFirstOccurrenceOfNonNilUsingCurrNewWhenMultipleOccurrencesExist() {
+        final Vector<Integer> testee = of(0, 1, 2, 1);
+        final Vector<Integer> actual = testee.replace(1, 3);
+        final Vector<Integer> expected = of(0, 3, 2, 1);
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldReplaceElementOfNonNilUsingCurrNewWhenOneOccurrenceExists() {
+        assertThat(of(0, 1, 2).replace(1, 3)).isEqualTo(of(0, 3, 2));
+    }
+
+    @TestTemplate
+    public void shouldReplaceElementOfNonNilUsingCurrNewWhenNoOccurrenceExists() {
+            final Vector<Integer> src = of(0, 1, 2);
+            assertThat(src.replace(33, 3)).isSameAs(src);
+    }
+
+    // -- replaceAll(curr, new)
+
+    @TestTemplate
+    public void shouldReplaceAllElementsOfNilUsingCurrNew() {
+            assertThat(this.<Integer>empty().replaceAll(1, 2)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldReplaceAllElementsOfNonNilUsingCurrNonExistingNew() {
+            final Vector<Integer> src = of(0, 1, 2, 1);
+            assertThat(src.replaceAll(33, 3)).isSameAs(src);
+    }
+
+    @TestTemplate
+    public void shouldReplaceAllElementsOfNonNilUsingCurrNew() {
+        assertThat(of(0, 1, 2, 1).replaceAll(1, 3)).isEqualTo(of(0, 3, 2, 3));
+    }
+
+    // -- retainAll
+
+    @TestTemplate
+    public void shouldRetainAllElementsFromNil() {
+        final Vector<Object> empty = empty();
+        final Vector<Object> actual = empty.retainAll(of(1, 2, 3));
+            assertThat(actual).isSameAs(empty);
+    }
+
+    @TestTemplate
+    public void shouldRetainAllExistingElementsFromNonNil() {
+        final Vector<Integer> src = of(1, 2, 3, 2, 1, 3);
+        final Vector<Integer> expected = of(1, 2, 2, 1);
+        final Vector<Integer> actual = src.retainAll(of(1, 2));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldRetainAllElementsFromNonNil() {
+        final Vector<Integer> src = of(1, 2, 1, 2, 2);
+        final Vector<Integer> expected = of(1, 2, 1, 2, 2);
+        final Vector<Integer> actual = src.retainAll(of(1, 2));
+            assertThat(actual).isSameAs(src);
+    }
+
+    @TestTemplate
+    public void shouldNotRetainAllNonExistingElementsFromNonNil() {
+        final Vector<Integer> src = of(1, 2, 3);
+        final Vector<Object> expected = empty();
+        final Vector<Integer> actual = src.retainAll(of(4, 5));
+            assertThat(actual).isSameAs(expected);
+    }
+
+    // -- scan, scanLeft, scanRight
+
+    @TestTemplate
+    public void shouldScanEmpty() {
+        final Vector<Integer> testee = empty();
+        final Vector<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
+        assertThat(actual).isEqualTo(this.of(0));
+    }
+
+    @TestTemplate
+    public void shouldScanLeftEmpty() {
+        final Vector<Integer> testee = empty();
+        final Vector<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
+        assertThat(actual).isEqualTo(of(0));
+    }
+
+    @TestTemplate
+    public void shouldScanRightEmpty() {
+        final Vector<Integer> testee = empty();
+        final Vector<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
+        assertThat(actual).isEqualTo(of(0));
+    }
+
+    @TestTemplate
+    public void shouldScanNonEmpty() {
+        final Vector<Integer> testee = of(1, 2, 3);
+        final Vector<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
+        assertThat(actual).isEqualTo(of(0, 1, 3, 6));
+    }
+
+    @TestTemplate
+    public void shouldScanLeftNonEmpty() {
+        final Vector<Integer> testee = of(1, 2, 3);
+        final Vector<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
+        assertThat(actual).isEqualTo(of("x", "x1", "x12", "x123"));
+    }
+
+    @TestTemplate
+    public void shouldScanRightNonEmpty() {
+        final Vector<Integer> testee = of(1, 2, 3);
+        final Vector<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
+        assertThat(actual).isEqualTo(of("x321", "x32", "x3", "x"));
+    }
+
+    @TestTemplate
+    public void shouldScanWithNonComparable() {
+        final Vector<NonComparable> testee = of(new NonComparable("a"));
+        final List<NonComparable> actual = List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        assertThat(actual).containsAll(expected);
+        assertThat(expected).containsAll(actual);
+        assertThat(actual.length()).isEqualTo(expected.length());
+    }
+
+    @TestTemplate
+    public void shouldScanLeftWithNonComparable() {
+        final Vector<NonComparable> testee = of(new NonComparable("a"));
+        final List<NonComparable> actual = List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        assertThat(actual).containsAll(expected);
+        assertThat(expected).containsAll(actual);
+        assertThat(actual.length()).isEqualTo(expected.length());
+    }
+
+    @TestTemplate
+    public void shouldScanRightWithNonComparable() {
+        final Vector<NonComparable> testee = of(new NonComparable("a"));
+        final List<NonComparable> actual = List.ofAll(testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
+        assertThat(actual).containsAll(expected);
+        assertThat(expected).containsAll(actual);
+        assertThat(actual.length()).isEqualTo(expected.length());
+    }
+
+    // -- slideBy(classifier)
+
+    @TestTemplate
+    public void shouldSlideNilByClassifier() {
+        assertThat(empty().slideBy(Function.identity())).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldTerminateSlideByClassifier() {
+        assertTimeout(Duration.ofSeconds(1),() -> {
+            AtomicInteger ai = new AtomicInteger(0);
+            List<List<String>> expected = List.of(List.of("a", "-"), List.of("-"), List.of("d"));
+            List<List<String>> actual = List.of("a", "-", "-", "d")
+              .slideBy(x -> x.equals("-") ? ai.getAndIncrement() : ai.get())
+              .toList();
+            assertThat(actual).containsAll(expected);
+            assertThat(expected).containsAll(actual);
+        });
+    }
+
+    @TestTemplate
+    public void shouldSlideSingularByClassifier() {
+        final List<Vector<Integer>> actual = of(1).slideBy(Function.identity()).toList();
+        final List<Vector<Integer>> expected = List.of(of(1));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlideNonNilByIdentityClassifier() {
+        final List<Vector<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList();
+        final List<Vector<Integer>> expected = List.of(of(1), of(2), of(3));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlideNonNilByConstantClassifier() {
+        final List<Vector<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2, 3));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlideNonNilBySomeClassifier() {
+        final List<Vector<Integer>> actual = of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
+        final List<Vector<Integer>> expected = List.of(of(10, 20, 30), of(42, 52), of(60), of(72));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlideByClassifierReturningNull() {
+        final List<Vector<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2, 3));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- sliding(size)
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNilByZeroSize() {
+        assertThrows(IllegalArgumentException.class, () -> empty().sliding(0));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNilByNegativeSize() {
+        assertThrows(IllegalArgumentException.class, () -> empty().sliding(-1));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNonNilByZeroSize() {
+        assertThrows(IllegalArgumentException.class, () -> of(1).sliding(0));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNonNilByNegativeSize() {
+        assertThrows(IllegalArgumentException.class, () -> of(1).sliding(-1));
+    }
+
+    @TestTemplate
+    public void shouldSlideNilBySize() {
+        assertThat(empty().sliding(1)).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldSlideNonNilBySize1() {
+        final List<Vector<Integer>> actual = of(1, 2, 3).sliding(1).toList();
+        final List<Vector<Integer>> expected = List.of(of(1), of(2), of(3));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlideNonNilBySize2() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2), of(2, 3), of(3, 4), of(4, 5));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- sliding(size, step)
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNilByPositiveStepAndNegativeSize() {
+        assertThrows(IllegalArgumentException.class, () -> empty().sliding(-1, 1));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNilByNegativeStepAndNegativeSize() {
+        assertThrows(IllegalArgumentException.class, () -> empty().sliding(-1, -1));
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenSlidingNilByNegativeStepAndPositiveSize() {
+        assertThrows(IllegalArgumentException.class, () -> empty().sliding(1, -1));
+    }
+
+    @TestTemplate
+    public void shouldSlideNilBySizeAndStep() {
+        assertThat(empty().sliding(1, 1).isEmpty()).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldSlide5ElementsBySize2AndStep3() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2), of(4, 5));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlide5ElementsBySize2AndStep4() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2), of(5));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlide5ElementsBySize2AndStep5() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlide4ElementsBySize5AndStep3() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2, 3, 4));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlide7ElementsBySize1AndStep3() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
+        final List<Vector<Integer>> expected = List.of(of(1), of(4), of(7));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldSlide7ElementsBySize2AndStep3() {
+        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
+        final List<Vector<Integer>> expected = List.of(of(1, 2), of(4, 5), of(7));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- span
+
+    @TestTemplate
+    public void shouldSpanNil() {
+        assertThat(this.<Integer>empty().span(i -> i < 2)).isEqualTo(Tuple.of(empty(), empty()));
+    }
+
+    @TestTemplate
+    public void shouldSpanNonNil() {
+        assertThat(of(0, 1, 2, 3).span(i -> i < 2)).isEqualTo(Tuple.of(of(0, 1), of(2, 3)));
+    }
+
+    @TestTemplate
+    public void shouldSpanAndNotTruncate() {
+        assertThat(of(1, 1, 2, 2, 3, 3).span(x -> x % 2 == 1)).isEqualTo(Tuple.of(of(1, 1), of(2, 2, 3, 3)));
+        assertThat(of(1, 1, 2, 2, 4, 4).span(x -> x == 1)).isEqualTo(Tuple.of(of(1, 1), of(2, 2, 4, 4)));
+    }
+
+    // -- sum
+
+    @TestTemplate
+    public void shouldComputeSumOfNil() {
+        assertThat(empty().sum()).isEqualTo(0);
+    }
+
+    @TestTemplate
+    public void shouldThrowWhenComputingSumOfStrings() {
+        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfByte() {
+        assertThat(of((byte) 1, (byte) 2).sum()).isEqualTo(3L);
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfDouble() {
+        assertThat(of(.1, .2, .3).sum().doubleValue()).isEqualTo(.6, within(10e-16));
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfFloat() {
+        assertThat(of(.1f, .2f, .3f).sum().doubleValue()).isEqualTo(.6, within(10e-8));
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfInt() {
+        assertThat(of(1, 2, 3).sum()).isEqualTo(6L);
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfLong() {
+        assertThat(of(1L, 2L, 3L).sum()).isEqualTo(6L);
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfShort() {
+        assertThat(of((short) 1, (short) 2, (short) 3).sum()).isEqualTo(6L);
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfBigInteger() {
+        assertThat(of(BigInteger.ZERO, BigInteger.ONE).sum()).isEqualTo(BigInteger.ONE);
+    }
+
+    @TestTemplate
+    public void shouldComputeSumOfBigDecimal() {
+        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).sum()).isEqualTo(BigDecimal.ONE);
+    }
+
+    // -- take
+
+    @TestTemplate
+    public void shouldTakeNoneOnNil() {
+            assertThat(empty().take(1)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeNoneIfCountIsNegative() {
+            assertThat(of(1, 2, 3).take(-1)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeAsExpectedIfCountIsLessThanSize() {
+        assertThat(of(1, 2, 3).take(2)).isEqualTo(of(1, 2));
+    }
+
+    @TestTemplate
+    public void shouldTakeAllIfCountExceedsSize() {
+            final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.take(4)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceIfTakeAll() {
+        final Vector<?> t = of(1, 2, 3);
+        assertThat(t.take(3)).isSameAs(t);
+        assertThat(t.take(4)).isSameAs(t);
+    }
+
+    // -- takeRight
+
+    @TestTemplate
+    public void shouldTakeRightNoneOnNil() {
+            assertThat(empty().takeRight(1)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeRightNoneIfCountIsNegative() {
+            assertThat(of(1, 2, 3).takeRight(-1)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeRightAsExpectedIfCountIsLessThanSize() {
+        assertThat(of(1, 2, 3).takeRight(2)).isEqualTo(of(2, 3));
+    }
+
+    @TestTemplate
+    public void shouldTakeRightAllIfCountExceedsSize() {
+            final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.takeRight(4)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceIfTakeRightAll() {
+        final Vector<?> t = of(1, 2, 3);
+        assertThat(t.takeRight(3)).isSameAs(t);
+        assertThat(t.takeRight(4)).isSameAs(t);
+    }
+
+    // -- takeUntil
+
+    @TestTemplate
+    public void shouldTakeUntilNoneOnNil() {
+            assertThat(empty().takeUntil(x -> true)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeUntilAllOnFalseCondition() {
+        final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.takeUntil(x -> false)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldTakeUntilAllOnTrueCondition() {
+            assertThat(of(1, 2, 3).takeUntil(x -> true)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeUntilAsExpected() {
+        assertThat(of(2, 4, 5, 6).takeUntil(x -> x % 2 != 0)).isEqualTo(of(2, 4));
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenEmptyTakeUntil() {
+        final Vector<?> empty = empty();
+        assertThat(empty.takeUntil(ignored -> false)).isSameAs(empty);
+    }
+
+    // -- takeWhile
+
+    @TestTemplate
+    public void shouldTakeWhileNoneOnNil() {
+            assertThat(empty().takeWhile(x -> true)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeWhileAllOnFalseCondition() {
+            assertThat(of(1, 2, 3).takeWhile(x -> false)).isSameAs(empty());
+    }
+
+    @TestTemplate
+    public void shouldTakeWhileAllOnTrueCondition() {
+        final Vector<Integer> t = of(1, 2, 3);
+            assertThat(t.takeWhile(x -> true)).isSameAs(t);
+    }
+
+    @TestTemplate
+    public void shouldTakeWhileAsExpected() {
+        assertThat(of(2, 4, 5, 6).takeWhile(x -> x % 2 == 0)).isEqualTo(of(2, 4));
+    }
+
+    @TestTemplate
+    public void shouldReturnSameInstanceWhenEmptyTakeWhile() {
+        final Vector<?> empty = empty();
+        assertThat(empty.takeWhile(ignored -> false)).isSameAs(empty);
+    }
+
+    // -- tail
+
+    @TestTemplate
+    public void shouldThrowWhenTailOnNil() {
+        assertThrows(UnsupportedOperationException.class, () -> empty().tail());
+    }
+
+    @TestTemplate
+    public void shouldReturnTailOfNonNil() {
+        assertThat(of(1, 2, 3).tail()).isEqualTo(of(2, 3));
+    }
+
+    // -- tailOption
+
+    @TestTemplate
+    public void shouldReturnNoneWhenCallingTailOptionOnNil() {
+        assertThat(empty().tailOption().isEmpty()).isTrue();
+    }
+
+    @TestTemplate
+    public void shouldReturnSomeTailWhenCallingTailOptionOnNonNil() {
+        assertThat(of(1, 2, 3).tailOption()).isEqualTo(Option.some(of(2, 3)));
+    }
+
+    // -- unzip
+
+    @TestTemplate
+    public void shouldUnzipNil() {
+        assertThat(empty().unzip(x -> Tuple.of(x, x))).isEqualTo(Tuple.of(empty(), empty()));
+    }
+
+    @TestTemplate
+    public void shouldUnzipNonNil() {
+        final Tuple actual = of(0, 1).unzip(i -> Tuple.of(i, (char) ((short) 'a' + i)));
+        final Tuple expected = Tuple.of(of(0, 1), of('a', 'b'));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldUnzip3Nil() {
+        assertThat(empty().unzip3(x -> Tuple.of(x, x, x))).isEqualTo(Tuple.of(empty(), empty(), empty()));
+    }
+
+    @TestTemplate
+    public void shouldUnzip3NonNil() {
+        final Tuple actual = of(0, 1).unzip3(i -> Tuple.of(i, (char) ((short) 'a' + i), (char) ((short) 'a' + i + 1)));
+        final Tuple expected = Tuple.of(of(0, 1), of('a', 'b'), of('b', 'c'));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- zip
+
+    @TestTemplate
+    public void shouldZipNils() {
+        final Vector<?> actual = empty().zip(empty());
+        assertThat(actual).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldZipEmptyAndNonNil() {
+        final Vector<?> actual = empty().zip(of(1));
+        assertThat(actual).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldZipNonEmptyAndNil() {
+        final Vector<?> actual = of(1).zip(empty());
+        assertThat(actual).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldZipNonNilsIfThisIsSmaller() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
+        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldZipNonNilsIfThatIsSmaller() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
+        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldZipNonNilsOfSameSize() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
+        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    @SuppressWarnings("unchecked")
+    public void shouldZipWithNonNilsOfSameSize() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
+        final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldThrowIfZipWithThatIsNull() {
+        assertThrows(NullPointerException.class, () -> empty().zip(null));
+    }
+
+    // -- zipAll
+
+    @TestTemplate
+    public void shouldZipAllNils() {
+        final Vector<?> actual = empty().zipAll(empty(), 0, 0);
+        assertThat(actual).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldZipAllEmptyAndNonNil() {
+        final Vector<?> actual = empty().zipAll(of(1), 0, 0);
+        final Vector<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldZipAllNonEmptyAndNil() {
+        final Vector<?> actual = of(1).zipAll(empty(), 0, 0);
+        final Vector<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldRejectNullZipAllFillValues() {
+        assertThrows(NullPointerException.class, () -> empty().zipAll(of(1), null, 0));
+        assertThrows(NullPointerException.class, () -> empty().zipAll(of(1), 0, null));
+    }
+
+    @TestTemplate
+    public void shouldZipAllNonNilsIfThisIsSmaller() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
+        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldZipAllNonNilsIfThatIsSmaller() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
+        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldZipAllNonNilsOfSameSize() {
+        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
+        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldThrowIfZipAllWithThatIsNull() {
+        assertThrows(NullPointerException.class, () -> empty().zipAll(null, null, null));
+    }
+
+    // -- zipWithIndex
+
+    @TestTemplate
+    public void shouldZipNilWithIndex() {
+        assertThat(this.<String>empty().zipWithIndex()).isEqualTo(this.<Tuple2<String, Integer>>empty());
+    }
+
+    @TestTemplate
+    public void shouldZipNonNilWithIndex() {
+        final Vector<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
+        @SuppressWarnings("unchecked") final Vector<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    @SuppressWarnings("unchecked")
+    public void shouldZipNonNilWithIndexWithMapper() {
+        final Vector<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
+        final Vector<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    // -- toArray(IntFunction)
+
+    @TestTemplate
+    public void shouldConvertNilToJavaArray() {
+        final Integer[] actual = List.<Integer>empty().toArray(Integer[]::new);
+        final Integer[] expected = new Integer[]{};
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @TestTemplate
+    public void shouldConvertNonNilToJavaArray() {
+        final Integer[] array = of(1, 2).toArray(Integer[]::new);
+        final Integer[] expected = new Integer[]{1, 2};
+        assertThat(array).isEqualTo(expected);
+    }
+
+    // -- toJavaList
+
+    @TestTemplate
+    public void shouldConvertNilToArrayList() {
+        assertThat(this.<Integer>empty().toJavaList()).isEqualTo(new ArrayList<Integer>());
+    }
+
+    @TestTemplate
+    public void shouldConvertNonNilToArrayList() {
+        assertThat(of(1, 2, 3).toJavaList()).isEqualTo(asList(1, 2, 3));
+    }
+
+    // -- toJavaMap(Function)
+
+    @TestTemplate
+    public void shouldConvertNilToHashMap() {
+        assertThat(this.<Integer>empty().toJavaMap(x -> Tuple.of(x, x))).isEqualTo(new java.util.HashMap<>());
+    }
+
+    @TestTemplate
+    public void shouldConvertNonNilToHashMap() {
+        final java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
+        expected.put(1, 1);
+        expected.put(2, 2);
+        assertThat(of(1, 2).toJavaMap(x -> Tuple.of(x, x))).isEqualTo(expected);
+    }
+
+    // -- toJavaSet
+
+    @TestTemplate
+    public void shouldConvertNilToHashSet() {
+        assertThat(this.<Integer>empty().toJavaSet()).isEqualTo(new java.util.HashSet<>());
+    }
+
+    @TestTemplate
+    public void shouldConvertNonNilToHashSet() {
+        final java.util.Set<Integer> expected = new java.util.HashSet<>();
+        expected.add(2);
+        expected.add(1);
+        expected.add(3);
+        assertThat(of(1, 2, 2, 3).toJavaSet()).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    // -- single
+
+    @TestTemplate
+    public void shouldSingleFailEmpty() {
+        assertThrows(NoSuchElementException.class, () -> empty().single());
+    }
+
+    @TestTemplate
+    public void shouldSingleFailTwo() {
+        assertThrows(NoSuchElementException.class, () -> of(1, 2).single());
+    }
+
+    @TestTemplate
+    public void shouldSingleWork() {
+        assertThat(of(1).single()).isEqualTo(1);
+    }
+
+    // -- singleOption
+
+    @TestTemplate
+    public void shouldSingleOptionFailEmpty() {
+        assertThat(empty().singleOption()).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldSingleOptionFailTwo() {
+        assertThat(of(1, 2).singleOption()).isEqualTo(Option.none());
+    }
+
+    @TestTemplate
+    public void shouldSingleOptionWork() {
+        assertThat(of(1).singleOption()).isEqualTo(Option.some(1));
+    }
+
+    // -- as
+
+    @TestTemplate
+    public void shouldReplaceEveryElementWithAs() {
+        assertThat(empty().as(1)).isEqualTo(empty().as(2));
+        assertThat(of(2).as(1)).isEqualTo(of(3).as(1));
+        assertThat(of(2).as(1)).isEqualTo(of(3).map(ignored -> 1));
+        assertThat(of(3).as(2)).isEqualTo(of(1).map(ignored -> 2));
+        assertThat(of(1, 2, 3).as("x")).isEqualTo(of("x", "x", "x"));
+    }
+
+    // -- tap
+
+    @TestTemplate
+    public void shouldTapNil() {
+        assertThat(empty().tap(t -> {})).isEqualTo(empty());
+    }
+
+    @TestTemplate
+    public void shouldTapNonNilPerformingNoAction() {
+        assertThat(of(1).tap(t -> {})).isEqualTo(of(1));
+    }
+
+    @TestTemplate
+    public void shouldTapSingleValuePerformingAnAction() {
+        final int[] effect = {0};
+        final Vector<Integer> actual = of(1).tap(i -> effect[0] = i);
+        assertThat(actual).isEqualTo(of(1));
+        assertThat(effect[0]).isEqualTo(1);
+    }
+
+    @TestTemplate
+    public void shouldTapEveryElement() {
+        final int[] sum = {0};
+        final Vector<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
+        assertThat(sum[0]).isEqualTo(6);
+    }
+
+    @TestTemplate
+    public void shouldReturnThisOnTapOfEagerCollection() {
+        final Vector<Integer> testee = of(1, 2, 3);
+        if (hasDefiniteSize()) {
+            assertThat(testee.tap(i -> {})).isSameAs(testee);
+        }
+    }
+
+    @TestTemplate
+    public void shouldThrowOnTapWithNullAction() {
+        assertThrows(NullPointerException.class, () -> of(1).tap(null));
+    }
+
+    @TestTemplate
+    public void shouldPropagateWhatTheTapActionThrows() {
+        assertThrows(IllegalStateException.class, () -> of(1, 2).tap(i -> {
+            throw new IllegalStateException();
+        }).size());
+    }
+
+    // -- collect(Collector)
+
+    @TestTemplate
+    public void shouldCollectWithACollector() {
+        final java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
+    }
+
+    @TestTemplate
+    public void shouldCollectWithSupplierAccumulatorAndCombiner() {
+        final ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
+    }
+
+    // -- Conversions toXxx()
+
+    @TestTemplate
+    public void shouldConvertToHashMap() {
+        assertThat(of(9, 5, 1).toMap(i -> Tuple.of(i, i))).isEqualTo(HashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(empty().toMap(i -> Tuple.of(i, i))).isSameAs(HashMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToHashMapTwoFunctions() {
+        assertThat(of(9, 5, 1).toMap(Function.identity(), Function.identity())).isEqualTo(HashMap.of(1, 1, 5, 5, 9, 9));
+    }
+
+    @TestTemplate
+    public void shouldConvertToLinkedMap() {
+        assertThat(of(1, 5, 9).toLinkedMap(i -> Tuple.of(i, i))).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(empty().toLinkedMap(i -> Tuple.of(i, i))).isSameAs(LinkedHashMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToLinkedMapTwoFunctions() {
+        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity())).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMap() {
+        assertThat(of(9, 5, 1).toSortedMap(i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(this.<Integer>empty().toSortedMap(i -> Tuple.of(i, i))).isEqualTo(TreeMap.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMapTwoFunctions() {
+        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity())).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMapWithComparator() {
+        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
+        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity())).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+    }
+
+    @TestTemplate
+    public void shouldConvertToQueue() {
+        assertThat(of(1, 2, 3).toQueue()).isEqualTo(Queue.of(1, 2, 3));
+        assertThat(empty().toQueue()).isSameAs(Queue.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToLinkedSet() {
+        final Vector<Integer> value = of(3, 7, 1, 15, 0);
+        final Set<Integer> set = value.toLinkedSet();
+        final List<Integer> itemsInOrder = value.toList();
+        assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
+        assertThat(empty().toLinkedSet()).isSameAs(LinkedHashSet.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedSetWithoutComparatorOnComparable() {
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet()).isEqualTo(TreeSet.of(0, 1, 3, 7, 15));
+    }
+
+    @TestTemplate
+    public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
+        assertThrows(ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
+    }
+
+    @TestTemplate
+    public void shouldConvertToSortedSet() {
+        final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed())).isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+    }
+
+    @TestTemplate
+    public void shouldConvertToStream() {
+        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
+        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaCollectionUsingSupplier() {
+        final java.util.List<Integer> ints = of(1, 2, 3).toJavaCollection(ArrayList::new);
+        assertThat(ints).isEqualTo(asList(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaList() {
+        final java.util.List<Integer> list = of(1, 2, 3).toJavaList();
+        assertThat(list).isEqualTo(asList(1, 2, 3));
+        assertThat(empty().toJavaList()).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaListUsingSupplier() {
+        final java.util.List<Integer> ints = of(1, 2, 3).toJavaList(ArrayList::new);
+        assertThat(ints).isEqualTo(asList(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaMapUsingFunction() {
+        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(v -> Tuple.of(v, v));
+        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
+        assertThat(empty().toJavaMap(v -> Tuple.of(v, v))).isEqualTo(java.util.Map.of());
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaMapUsingSupplierAndFunction() {
+        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, i -> Tuple.of(i, i));
+        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaMapUsingSupplierAndTwoFunction() {
+        final java.util.Map<Integer, String> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, Function.identity(), String::valueOf);
+        assertThat(map).isEqualTo(java.util.Map.of(1, "1", 2, "2", 3, "3"));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaSet() {
+        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet();
+        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
+        assertThat(empty().toJavaSet()).isEmpty();
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaSetUsingSupplier() {
+        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet(java.util.HashSet::new);
+        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
+    }
+
+    @TestTemplate
+    public void shouldConvertToJavaParallelStream() {
+        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).toJavaParallelStream();
+        assertThat(s1.isParallel()).isTrue();
+        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
+        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
+    }
+
+    // -- the range factories
+
+    // ------------------------------------------------------------------------
+    // static range, rangeBy, rangeClosed, rangeCloseBy tests
+    //
+    // Basically there are the following tests scenarios:
+    //
+    // * step == 0
+    // * from == to, step < 0
+    // * from == to, step > 0
+    // * from < to, step < 0
+    // * from < to, step > 0
+    // * from > to, step < 0
+    // * from > to, step > 0
+    //
+    // Additionally we have to test these special cases
+    // (where MIN/MAX may also be NEGATIVE_INFINITY, POSITIVE_INFINITY):
+    //
+    // * from = MAX, to = MAX, step < 0
+    // * from = MAX, to = MAX, step > 0
+    // * from = MIN, to = MIN, step < 0
+    // * from = MIN, to = MIN, step > 0
+    // * from = MAX - x, to = MAX, step > 0, 0 < x < step
+    // * from = MAX - step, to = MAX, step > 0
+    // * from = MAX - x, to = MAX, step > 0, x > step
+    // * from = MIN, to = MIN - x, step < 0, 0 > x > step
+    // * from = MIN, to = MIN - step, step < 0
+    // * from = MIN, to = MIN - x, step < 0, x < step
+    //
+    // All of these scenarios are multiplied with
+    //
+    // * the inclusive and exclusive case
+    // * the with and without step case
+    //
+    // ------------------------------------------------------------------------
+
+    @Nested
+    class StaticRangeclosedTests {
+        @Test
+        public void shouldCreateRangeClosedWhereFromIsGreaterThanTo() {
+            assertThat(rangeClosed('b', 'a')).isEmpty();
+            assertThat(rangeClosed(1, 0)).isEmpty();
+            assertThat(rangeClosed(1L, 0L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeClosedWhereFromEqualsTo() {
+            assertThat(rangeClosed('a', 'a')).isEqualTo(of('a'));
+            assertThat(rangeClosed(0, 0)).isEqualTo(of(0));
+            assertThat(rangeClosed(0L, 0L)).isEqualTo(of(0L));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedWhereFromIsLessThanTo() {
+            assertThat(rangeClosed('a', 'c')).isEqualTo(of('a', 'b', 'c'));
+            assertThat(rangeClosed(1, 3)).isEqualTo(of(1, 2, 3));
+            assertThat(rangeClosed(1L, 3L)).isEqualTo(of(1L, 2L, 3L));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedWhereFromAndToEqualMIN_VALUE() {
+            assertThat(rangeClosed(Character.MIN_VALUE, Character.MIN_VALUE)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosed(Integer.MIN_VALUE, Integer.MIN_VALUE)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosed(Long.MIN_VALUE, Long.MIN_VALUE)).isEqualTo(of(Long.MIN_VALUE));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedWhereFromAndToEqualMAX_VALUE() {
+            assertThat(rangeClosed(Character.MAX_VALUE, Character.MAX_VALUE)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosed(Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(of(Integer.MAX_VALUE));
+            assertThat(rangeClosed(Long.MAX_VALUE, Long.MAX_VALUE)).isEqualTo(of(Long.MAX_VALUE));
+        }
+    }
+
+    @Nested
+    class StaticRangeclosedbyTests {
+        @Test
+        public void shouldCreateRangeClosedByWhereFromIsGreaterThanToAndStepWrongDirection() {
+
+            // char
+            assertThat(rangeClosedBy('b', 'a', 1)).isEmpty();
+            assertThat(rangeClosedBy('b', 'a', 3)).isEmpty();
+            assertThat(rangeClosedBy('a', 'b', -1)).isEmpty();
+            assertThat(rangeClosedBy('a', 'b', -3)).isEmpty();
+
+            // double
+            assertThat(rangeClosedBy(1.0, 0.0, 1.0)).isEmpty();
+            assertThat(rangeClosedBy(1.0, 0.0, 3.0)).isEmpty();
+            assertThat(rangeClosedBy(0.0, 1.0, -1.0)).isEmpty();
+            assertThat(rangeClosedBy(0.0, 1.0, -3.0)).isEmpty();
+
+            // int
+            assertThat(rangeClosedBy(1, 0, 1)).isEmpty();
+            assertThat(rangeClosedBy(1, 0, 3)).isEmpty();
+            assertThat(rangeClosedBy(0, 1, -1)).isEmpty();
+            assertThat(rangeClosedBy(0, 1, -3)).isEmpty();
+
+            // long
+            assertThat(rangeClosedBy(1L, 0L, 1L)).isEmpty();
+            assertThat(rangeClosedBy(1L, 0L, 3L)).isEmpty();
+            assertThat(rangeClosedBy(0L, 1L, -1L)).isEmpty();
+            assertThat(rangeClosedBy(0L, 1L, -3L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeClosedByWhereFromEqualsTo() {
+
+            // char
+            assertThat(rangeClosedBy('a', 'a', 1)).isEqualTo(of('a'));
+            assertThat(rangeClosedBy('a', 'a', 3)).isEqualTo(of('a'));
+            assertThat(rangeClosedBy('a', 'a', -1)).isEqualTo(of('a'));
+            assertThat(rangeClosedBy('a', 'a', -3)).isEqualTo(of('a'));
+
+            // double
+            assertThat(rangeClosedBy(0.0, 0.0, 1.0)).isEqualTo(of(0.0));
+            assertThat(rangeClosedBy(0.0, 0.0, 3.0)).isEqualTo(of(0.0));
+            assertThat(rangeClosedBy(0.0, 0.0, -1.0)).isEqualTo(of(0.0));
+            assertThat(rangeClosedBy(0.0, 0.0, -3.0)).isEqualTo(of(0.0));
+
+            // int
+            assertThat(rangeClosedBy(0, 0, 1)).isEqualTo(of(0));
+            assertThat(rangeClosedBy(0, 0, 3)).isEqualTo(of(0));
+            assertThat(rangeClosedBy(0, 0, -1)).isEqualTo(of(0));
+            assertThat(rangeClosedBy(0, 0, -3)).isEqualTo(of(0));
+
+            // long
+            assertThat(rangeClosedBy(0L, 0L, 1L)).isEqualTo(of(0L));
+            assertThat(rangeClosedBy(0L, 0L, 3L)).isEqualTo(of(0L));
+            assertThat(rangeClosedBy(0L, 0L, -1L)).isEqualTo(of(0L));
+            assertThat(rangeClosedBy(0L, 0L, -3L)).isEqualTo(of(0L));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedByWhereFromIsLessThanToAndStepCorrectDirection() {
+
+            // char
+            assertThat(rangeClosedBy('a', 'c', 1)).isEqualTo(of('a', 'b', 'c'));
+            assertThat(rangeClosedBy('a', 'e', 2)).isEqualTo(of('a', 'c', 'e'));
+            assertThat(rangeClosedBy('a', 'f', 2)).isEqualTo(of('a', 'c', 'e'));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 2)));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
+            assertThat(rangeClosedBy('c', 'a', -1)).isEqualTo(of('c', 'b', 'a'));
+            assertThat(rangeClosedBy('e', 'a', -2)).isEqualTo(of('e', 'c', 'a'));
+            assertThat(rangeClosedBy('e', (char) ('a' - 1), -2)).isEqualTo(of('e', 'c', 'a'));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 2)));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
+
+            // double
+            assertThat(rangeClosedBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0, 3.0));
+            assertThat(rangeClosedBy(1.0, 5.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
+            assertThat(rangeClosedBy(1.0, 6.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
+            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 2.0E307));
+            assertThat(rangeClosedBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0, 1.0));
+            assertThat(rangeClosedBy(5.0, 1.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
+            assertThat(rangeClosedBy(5.0, 0.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
+
+            // int
+            assertThat(rangeClosedBy(1, 3, 1)).isEqualTo(of(1, 2, 3));
+            assertThat(rangeClosedBy(1, 5, 2)).isEqualTo(of(1, 3, 5));
+            assertThat(rangeClosedBy(1, 6, 2)).isEqualTo(of(1, 3, 5));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(3, 1, -1)).isEqualTo(of(3, 2, 1));
+            assertThat(rangeClosedBy(5, 1, -2)).isEqualTo(of(5, 3, 1));
+            assertThat(rangeClosedBy(5, 0, -2)).isEqualTo(of(5, 3, 1));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
+
+            // long
+            assertThat(rangeClosedBy(1L, 3L, 1)).isEqualTo(of(1L, 2L, 3L));
+            assertThat(rangeClosedBy(1L, 5L, 2)).isEqualTo(of(1L, 3L, 5L));
+            assertThat(rangeClosedBy(1L, 6L, 2)).isEqualTo(of(1L, 3L, 5L));
+            assertThat(rangeClosedBy(Long.MAX_VALUE - 2, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
+            assertThat(rangeClosedBy(3L, 1L, -1)).isEqualTo(of(3L, 2L, 1L));
+            assertThat(rangeClosedBy(5L, 1L, -2)).isEqualTo(of(5L, 3L, 1L));
+            assertThat(rangeClosedBy(5L, 0L, -2)).isEqualTo(of(5L, 3L, 1L));
+            assertThat(rangeClosedBy(Long.MIN_VALUE + 2, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedByWhereFromAndToEqualMIN_VALUE() {
+
+            // char
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3)).isEqualTo(of(Character.MIN_VALUE));
+
+            // double
+            assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 1)).isEqualTo(of(-Double.MAX_VALUE));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 3)).isEqualTo(of(-Double.MAX_VALUE));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, -1)).isEqualTo(of(-Double.MAX_VALUE));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, -3)).isEqualTo(of(-Double.MAX_VALUE));
+
+            // int
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE, 1)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE, 3)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE, -1)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE));
+
+            // long
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE, 1)).isEqualTo(of(Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE, 3)).isEqualTo(of(Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE, -1)).isEqualTo(of(Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedByWhereFromAndToEqualMAX_VALUE() {
+
+            // char
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3)).isEqualTo(of(Character.MAX_VALUE));
+
+            // double
+            assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, 1)).isEqualTo(of(Double.MAX_VALUE));
+            assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, 3)).isEqualTo(of(Double.MAX_VALUE));
+            assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, -1)).isEqualTo(of(Double.MAX_VALUE));
+            assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, -3)).isEqualTo(of(Double.MAX_VALUE));
+
+            // int
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE, 1)).isEqualTo(of(Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE, -1)).isEqualTo(of(Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE, -3)).isEqualTo(of(Integer.MAX_VALUE));
+
+            // long
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE, 1)).isEqualTo(of(Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE, -1)).isEqualTo(of(Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE, -3)).isEqualTo(of(Long.MAX_VALUE));
+        }
+
+        @Test
+        public void shouldCreateRangeClosedByStartingAtTypeBoundary() {
+
+            // int
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE)).isEqualTo(of(Integer.MAX_VALUE, -1));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5)).isEqualTo(of(Integer.MIN_VALUE));
+
+            // long
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE)).isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE)).isEqualTo(of(Long.MAX_VALUE, -1L));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 1, 5L)).isEqualTo(of(Long.MIN_VALUE));
+        }
+    }
+
+    @Nested
+    class StaticRangeTests {
+        @Test
+        public void shouldCreateRangeWhereFromIsGreaterThanTo() {
+            assertThat(range('b', 'a').isEmpty());
+            assertThat(range(1, 0)).isEmpty();
+            assertThat(range(1L, 0L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeWhereFromEqualsTo() {
+            assertThat(range('a', 'a')).isEmpty();
+            assertThat(range(0, 0)).isEmpty();
+            assertThat(range(0L, 0L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeWhereFromIsLessThanTo() {
+            assertThat(range('a', 'c')).isEqualTo(of('a', 'b'));
+            assertThat(range(1, 3)).isEqualTo(of(1, 2));
+            assertThat(range(1L, 3L)).isEqualTo(of(1L, 2L));
+        }
+
+        @Test
+        public void shouldCreateRangeWhereFromAndToEqualMIN_VALUE() {
+            assertThat(range(Character.MIN_VALUE, Character.MIN_VALUE)).isEmpty();
+            assertThat(range(Integer.MIN_VALUE, Integer.MIN_VALUE)).isEmpty();
+            assertThat(range(Long.MIN_VALUE, Long.MIN_VALUE)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeWhereFromAndToEqualMAX_VALUE() {
+            assertThat(range(Character.MAX_VALUE, Character.MAX_VALUE)).isEmpty();
+            assertThat(range(Integer.MAX_VALUE, Integer.MAX_VALUE)).isEmpty();
+            assertThat(range(Long.MAX_VALUE, Long.MAX_VALUE)).isEmpty();
+        }
+    }
+
+    @Nested
+    class StaticRangebyTests {
+        @Test
+        public void shouldCreateRangeByWhereFromIsGreaterThanToAndStepWrongDirection() {
+
+            // char
+            assertThat(rangeBy('b', 'a', 1)).isEmpty();
+            assertThat(rangeBy('b', 'a', 3)).isEmpty();
+            assertThat(rangeBy('a', 'b', -1)).isEmpty();
+            assertThat(rangeBy('a', 'b', -3)).isEmpty();
+
+            // double
+            assertThat(rangeBy(1.0, 0.0, 1.0)).isEmpty();
+            assertThat(rangeBy(1.0, 0.0, 3.0)).isEmpty();
+            assertThat(rangeBy(0.0, 1.0, -1.0)).isEmpty();
+            assertThat(rangeBy(0.0, 1.0, -3.0)).isEmpty();
+
+            // int
+            assertThat(rangeBy(1, 0, 1)).isEmpty();
+            assertThat(rangeBy(1, 0, 3)).isEmpty();
+            assertThat(rangeBy(0, 1, -1)).isEmpty();
+            assertThat(rangeBy(0, 1, -3)).isEmpty();
+
+            // long
+            assertThat(rangeBy(1L, 0L, 1L)).isEmpty();
+            assertThat(rangeBy(1L, 0L, 3L)).isEmpty();
+            assertThat(rangeBy(0L, 1L, -1L)).isEmpty();
+            assertThat(rangeBy(0L, 1L, -3L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeByWithBigStep() {
+            // step * (from - toExclusive) < 0 because of overflow
+            // int
+            assertThat(rangeBy(3_721, 2_000_000, 3_721)).isNotEmpty();
+            // long
+            assertThat(rangeBy(3_221_000L, 200_000_000_000L, 154_221_000L)).isNotEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeByWhereFromEqualsTo() {
+
+            // char
+            assertThat(rangeBy('a', 'a', 1)).isEmpty();
+            assertThat(rangeBy('a', 'a', 3)).isEmpty();
+            assertThat(rangeBy('a', 'a', -1)).isEmpty();
+            assertThat(rangeBy('a', 'a', -3)).isEmpty();
+
+            // double
+            assertThat(rangeBy(0.0, 0.0, 1.0)).isEmpty();
+            assertThat(rangeBy(0.0, 0.0, 3.0)).isEmpty();
+            assertThat(rangeBy(0.0, 0.0, -1.0)).isEmpty();
+            assertThat(rangeBy(0.0, 0.0, -3.0)).isEmpty();
+
+            // int
+            assertThat(rangeBy(0, 0, 1)).isEmpty();
+            assertThat(rangeBy(0, 0, 3)).isEmpty();
+            assertThat(rangeBy(0, 0, -1)).isEmpty();
+            assertThat(rangeBy(0, 0, -3)).isEmpty();
+
+            // long
+            assertThat(rangeBy(0L, 0L, 1L)).isEmpty();
+            assertThat(rangeBy(0L, 0L, 3L)).isEmpty();
+            assertThat(rangeBy(0L, 0L, -1L)).isEmpty();
+            assertThat(rangeBy(0L, 0L, -3L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeByWhereFromIsLessThanToAndStepCorrectDirection() {
+
+            // char
+            assertThat(rangeBy('a', 'c', 1)).isEqualTo(of('a', 'b'));
+            assertThat(rangeBy('a', 'd', 2)).isEqualTo(of('a', 'c'));
+            assertThat(rangeBy('c', 'a', -1)).isEqualTo(of('c', 'b'));
+            assertThat(rangeBy('d', 'a', -2)).isEqualTo(of('d', 'b'));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
+
+            // double
+            assertThat(rangeBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0));
+            assertThat(rangeBy(1.0, 4.0, 2.0)).isEqualTo(of(1.0, 3.0));
+            assertThat(rangeBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0));
+            assertThat(rangeBy(4.0, 1.0, -2.0)).isEqualTo(of(4.0, 2.0));
+            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 3.0E307));
+            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
+
+            // int
+            assertThat(rangeBy(1, 3, 1)).isEqualTo(of(1, 2));
+            assertThat(rangeBy(1, 4, 2)).isEqualTo(of(1, 3));
+            assertThat(rangeBy(3, 1, -1)).isEqualTo(of(3, 2));
+            assertThat(rangeBy(4, 1, -2)).isEqualTo(of(4, 2));
+            assertThat(rangeBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3));
+            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3));
+            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
+
+            // long
+            assertThat(rangeBy(1L, 3L, 1L)).isEqualTo(of(1L, 2L));
+            assertThat(rangeBy(1L, 4L, 2L)).isEqualTo(of(1L, 3L));
+            assertThat(rangeBy(3L, 1L, -1L)).isEqualTo(of(3L, 2L));
+            assertThat(rangeBy(4L, 1L, -2L)).isEqualTo(of(4L, 2L));
+            assertThat(rangeBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3));
+            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3));
+            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
+        }
+
+        @Test
+        public void shouldCreateRangeByWhereFromAndToEqualMIN_VALUE() {
+
+            // char
+            assertThat(rangeBy(Character.MIN_VALUE, Character.MIN_VALUE, 1)).isEmpty();
+            assertThat(rangeBy(Character.MIN_VALUE, Character.MIN_VALUE, 3)).isEmpty();
+            assertThat(rangeBy(Character.MIN_VALUE, Character.MIN_VALUE, -1)).isEmpty();
+            assertThat(rangeBy(Character.MIN_VALUE, Character.MIN_VALUE, -3)).isEmpty();
+
+            // double
+            assertThat(rangeBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 1.0)).isEmpty();
+            assertThat(rangeBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 3.0)).isEmpty();
+            assertThat(rangeBy(-Double.MAX_VALUE, -Double.MAX_VALUE, -1.0)).isEmpty();
+            assertThat(rangeBy(-Double.MAX_VALUE, -Double.MAX_VALUE, -3.0)).isEmpty();
+
+            // int
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE, 1)).isEmpty();
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE, 3)).isEmpty();
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE, -1)).isEmpty();
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE, -3)).isEmpty();
+
+            // long
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE, 1L)).isEmpty();
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE, 3L)).isEmpty();
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE, -1L)).isEmpty();
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE, -3L)).isEmpty();
+        }
+
+        @Test
+        public void shouldCreateRangeByWhereFromAndToEqualMAX_VALUE() {
+
+            // char
+            assertThat(rangeBy(Character.MAX_VALUE, Character.MAX_VALUE, 1)).isEmpty();
+            assertThat(rangeBy(Character.MAX_VALUE, Character.MAX_VALUE, 3)).isEmpty();
+            assertThat(rangeBy(Character.MAX_VALUE, Character.MAX_VALUE, -1)).isEmpty();
+            assertThat(rangeBy(Character.MAX_VALUE, Character.MAX_VALUE, -3)).isEmpty();
+
+            // double
+            assertThat(rangeBy(Double.MAX_VALUE, Double.MAX_VALUE, 1.0)).isEmpty();
+            assertThat(rangeBy(Double.MAX_VALUE, Double.MAX_VALUE, 3.0)).isEmpty();
+            assertThat(rangeBy(Double.MAX_VALUE, Double.MAX_VALUE, -1.0)).isEmpty();
+            assertThat(rangeBy(Double.MAX_VALUE, Double.MAX_VALUE, -3.0)).isEmpty();
+
+            // int
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE, 1)).isEmpty();
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE, 3)).isEmpty();
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE, -1)).isEmpty();
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE, -3)).isEmpty();
+
+            // long
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE, 1L)).isEmpty();
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE, 3L)).isEmpty();
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE, -1L)).isEmpty();
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE, -3L)).isEmpty();
+        }
+
+        // step == 0
+
+        @Test
+        public void shouldProhibitCharRangeByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy('a', 'b', 0));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy(0.0, 1.0, 0.0));
+        }
+
+        @Test
+        public void shouldProhibitIntRangeByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy(0, 1, 0));
+        }
+
+        @Test
+        public void shouldProhibitLongRangeByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy(0L, 1L, 0L));
+        }
+
+        @Test
+        public void shouldProhibitCharRangeClosedByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy('a', 'b', 0));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeClosedByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(0.0, 1.0, 0.0));
+        }
+
+        @Test
+        public void shouldProhibitIntRangeClosedByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(0, 1, 0));
+        }
+
+        @Test
+        public void shouldProhibitLongRangeClosedByStepZero() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(0L, 1L, 0L));
+        }
+
+        @Test
+        public void shouldProhibitRangeClosedByStepZeroWhenFromEqualsTo() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy('a', 'a', 0));
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(1.0, 1.0, 0.0));
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(1, 1, 0));
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(1L, 1L, 0L));
+        }
+
+        // toExclusive at the type boundary
+
+        @Test
+        public void shouldCreateRangeByWhereToExclusiveIsTypeBoundary() {
+
+            // int
+            assertThat(rangeBy(5, Integer.MIN_VALUE, 1)).isEmpty();
+            assertThat(rangeBy(5, Integer.MAX_VALUE, -1)).isEmpty();
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
+
+            // long
+            assertThat(rangeBy(5L, Long.MIN_VALUE, 1L)).isEmpty();
+            assertThat(rangeBy(5L, Long.MAX_VALUE, -1L)).isEmpty();
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
+        }
+
+        // double special cases
+
+        @Test
+        public void shouldProhibitDoubleRangeClosedByToEqualsNaN() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(0.0, Double.NaN, 1.0));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeClosedByFromEqualNaN() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(Double.NaN, 0.0, 1.0));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeClosedByStepEqualNaN() {
+            assertThrows(IllegalArgumentException.class, () -> rangeClosedBy(0.0, 10.0, Double.NaN));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeByToEqualsNaN() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy(0.0, Double.NaN, 1.0));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeByFromEqualNaN() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy(Double.NaN, 0.0, 1.0));
+        }
+
+        @Test
+        public void shouldProhibitDoubleRangeByStepEqualNaN() {
+            assertThrows(IllegalArgumentException.class, () -> rangeBy(0.0, 10.0, Double.NaN));
+        }
+    }
+
+
+    @Nested
+    class WindowsOfVectorsTests {
+
+        @Test
+        public void shouldGroupIntoVectorsOfVectorsAtEveryBoundary() {
+            for (int n : BOUNDARIES) {
+                for (Vector<Integer> vector : representations(n)) {
+                    for (int size : new int[] { 1, 2, 31, 32, 33, 1024, n + 1 }) {
+                        final Vector<Vector<Integer>> groups = vector.grouped(size);
+                        assertThat(groups).isInstanceOf(Vector.class);
+                        assertThat(groups.size()).isEqualTo((n + size - 1) / size);
+                        for (int i = 0; i < groups.size(); i++) {
+                            assertThat(groups.get(i)).isInstanceOf(Vector.class);
+                            assertThat(groups.get(i)).isEqualTo(vector.slice(i * size, Math.min((i + 1) * size, n)));
+                        }
+                        assertThat(groups.flatMap(Function.identity())).isEqualTo(vector);
+                    }
+                    if (n == 0) {
+                        assertThat(vector.grouped(3)).isSameAs(Vector.empty());
+                    }
+                }
+            }
+        }
+
+        @Test
+        public void shouldSlideIntoVectorsOfVectorsAtEveryBoundary() {
+            for (int n : BOUNDARIES) {
+                for (Vector<Integer> vector : representations(n)) {
+                    for (int size : new int[] { 1, 2, 32, 33 }) {
+                        for (int step : new int[] { 1, 2, 31, 32, 33 }) {
+                            final Vector<Vector<Integer>> windows = vector.sliding(size, step);
+                            assertThat(windows).isInstanceOf(Vector.class);
+                            int expected = 0;
+                            int start = 0;
+                            for (int i = 0; i < windows.size(); i++) {
+                                assertThat(windows.get(i)).isInstanceOf(Vector.class);
+                                assertThat(windows.get(i)).isEqualTo(vector.slice(start, Math.min(start + size, n)));
+                                start += step;
+                            }
+                            for (long s = 0; s < n && (s == 0 || s - step + size < n); s += step) {
+                                expected++;
+                            }
+                            assertThat(windows.size()).isEqualTo(expected);
+                        }
+                    }
+                    assertThat(vector.sliding(2)).isEqualTo(vector.sliding(2, 1));
+                }
+            }
+        }
+
+        @Test
+        public void shouldSlideFollowingTheWindowRules() {
+            assertThat(Vector.of(1, 2, 3, 4).sliding(3)).isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)));
+            assertThat(Vector.of(1, 2, 3, 4, 5).sliding(2, 3)).isEqualTo(Vector.of(Vector.of(1, 2), Vector.of(4, 5)));
+            assertThat(Vector.of(1, 2, 3, 4, 5).sliding(2, 4)).isEqualTo(Vector.of(Vector.of(1, 2), Vector.of(5)));
+            assertThat(Vector.of(1, 2, 3, 4, 5).sliding(3, 2)).isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)));
+            assertThat(Vector.of(1, 2, 3, 4, 5, 6).sliding(3, 2)).isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)));
+            assertThat(Vector.of(1, 2, 3).sliding(1, 3)).isEqualTo(Vector.of(Vector.of(1)));
+            assertThat(Vector.of(1, 2).sliding(5)).isEqualTo(Vector.of(Vector.of(1, 2)));
+            assertThat(Vector.of(1).sliding(1)).isEqualTo(Vector.of(Vector.of(1)));
+            assertThat(Vector.<Integer> empty().sliding(1)).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer> empty().sliding(2, 3)).isSameAs(Vector.empty());
+            // a huge step does not overflow the window start
+            assertThat(Vector.range(0, 40).sliding(3, Integer.MAX_VALUE)).isEqualTo(Vector.of(Vector.range(0, 3)));
+            assertThat(Vector.range(0, 40).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(Vector.of(Vector.range(0, 40)));
+        }
+
+        @Test
+        public void shouldRejectANonPositiveWindowSizeOrStep() {
+            for (Vector<Integer> vector : java.util.List.of(Vector.<Integer> empty(), Vector.of(1), Vector.range(0, 33))) {
+                assertThrows(IllegalArgumentException.class, () -> vector.grouped(0));
+                assertThrows(IllegalArgumentException.class, () -> vector.grouped(-1));
+                assertThrows(IllegalArgumentException.class, () -> vector.sliding(0));
+                assertThrows(IllegalArgumentException.class, () -> vector.sliding(2, 0));
+                assertThrows(IllegalArgumentException.class, () -> vector.sliding(0, 2));
+                assertThrows(IllegalArgumentException.class, () -> vector.sliding(-1, -1));
+            }
+        }
+
+        @Test
+        public void shouldSlideByAClassifierIntoVectorsOfVectorsAtEveryBoundary() {
+            for (int n : BOUNDARIES) {
+                for (Vector<Integer> vector : representations(n)) {
+                    final int[] calls = { 0 };
+                    final Vector<Vector<Integer>> runs = vector.slideBy(x -> {
+                        calls[0]++;
+                        return x / 32;
+                    });
+                    assertThat(calls[0]).isEqualTo(n);
+                    assertThat(runs).isInstanceOf(Vector.class);
+                    assertThat(runs.size()).isEqualTo((n + 31) / 32);
+                    for (int i = 0; i < runs.size(); i++) {
+                        assertThat(runs.get(i)).isInstanceOf(Vector.class);
+                        assertThat(runs.get(i)).isEqualTo(vector.slice(i * 32, Math.min((i + 1) * 32, n)));
+                    }
+                    assertThat(runs.flatMap(Function.identity())).isEqualTo(vector);
+                    assertThat(vector.slideBy(x -> "same").size()).isEqualTo(n == 0 ? 0 : 1);
+                    assertThat(vector.slideBy(Function.identity()).size()).isEqualTo(n);
+                    if (n == 0) {
+                        assertThat(runs).isSameAs(Vector.empty());
+                    }
+                }
+            }
+            assertThat(Vector.of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10))
+                    .isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(5, 7), Vector.of(20, 29)));
+            assertThat(Vector.of(1, 1, 2).slideBy(x -> x)).isEqualTo(Vector.of(Vector.of(1, 1), Vector.of(2)));
+            assertThrows(NullPointerException.class, () -> Vector.of(1).slideBy(null));
+        }
+    }
+
+    @Nested
+    class ProductsOfVectorsTests {
+
+        @Test
+        public void shouldBuildTheCartesianSquareAsAVectorAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 31, 32, 33 }) {
+                for (Vector<Integer> vector : representations(n)) {
+                    final Vector<Tuple2<Integer, Integer>> pairs = vector.crossProduct();
+                    assertThat(pairs).isInstanceOf(Vector.class);
+                    assertThat(pairs.size()).isEqualTo(n * n);
+                    if (n > 0) {
+                        assertThat(pairs.head()).isEqualTo(Tuple.of(0, 0));
+                        assertThat(pairs.last()).isEqualTo(Tuple.of(n - 1, n - 1));
+                    }
+                    if (n > 1) {
+                        assertThat(pairs.get(n)).isEqualTo(Tuple.of(1, 0));
+                        assertThat(pairs.get(n * n - 2)).isEqualTo(Tuple.of(n - 1, n - 2));
+                    }
+                    if (n == 0) {
+                        assertThat(pairs).isSameAs(Vector.empty());
+                    }
+                }
+            }
+        }
+
+        @Test
+        public void shouldBuildTheProductWithAnIterableNow() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                for (Vector<Integer> vector : representations(n)) {
+                    final int[] walks = { 0 };
+                    final Iterable<Character> counted = () -> {
+                        walks[0]++;
+                        return java.util.List.of('a', 'b').iterator();
+                    };
+                    final Vector<Tuple2<Integer, Character>> pairs = vector.crossProduct(counted);
+                    assertThat(walks[0]).isEqualTo(1);
+                    assertThat(pairs).isInstanceOf(Vector.class);
+                    assertThat(pairs.size()).isEqualTo(2 * n);
+                    for (int i = 0; i < n; i++) {
+                        assertThat(pairs.get(2 * i)).isEqualTo(Tuple.of(i, 'a'));
+                        assertThat(pairs.get(2 * i + 1)).isEqualTo(Tuple.of(i, 'b'));
+                    }
+                    assertThat(vector.crossProduct(Vector.<Character> empty())).isSameAs(Vector.empty());
+                    assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator)).isEqualTo(pairs);
+                }
+            }
+            assertThat(Vector.<Integer> empty().crossProduct(Vector.of(1, 2))).isSameAs(Vector.empty());
+        }
+
+        @Test
+        public void shouldBuildThePowerAsVectorsOfVectorsAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 31, 32, 33 }) {
+                for (Vector<Integer> vector : representations(n)) {
+                    assertThat(vector.crossProduct(-1)).isSameAs(Vector.empty());
+                    assertThat(vector.crossProduct(0)).isEqualTo(Vector.of(Vector.empty()));
+                    final Vector<Vector<Integer>> singles = vector.crossProduct(1);
+                    assertThat(singles).isInstanceOf(Vector.class);
+                    assertThat(singles.size()).isEqualTo(n);
+                    for (int i = 0; i < n; i++) {
+                        assertThat(singles.get(i)).isEqualTo(Vector.of(i));
+                    }
+                    final Vector<Vector<Integer>> squares = vector.crossProduct(2);
+                    assertThat(squares.size()).isEqualTo(n * n);
+                    if (n > 1) {
+                        assertThat(squares.head()).isEqualTo(Vector.of(0, 0));
+                        assertThat(squares.get(1)).isEqualTo(Vector.of(0, 1));
+                        assertThat(squares.get(n)).isEqualTo(Vector.of(1, 0));
+                        assertThat(squares.last()).isEqualTo(Vector.of(n - 1, n - 1));
+                        assertThat(squares.distinct().size()).isEqualTo(n * n);
+                    }
+                    squares.forEach(square -> assertThat(square).isInstanceOf(Vector.class));
+                    if (n == 0) {
+                        assertThat(squares).isSameAs(Vector.empty());
+                    }
+                }
+            }
+            assertThat(Vector.of(1).crossProduct(5)).isEqualTo(Vector.of(Vector.of(1, 1, 1, 1, 1)));
+        }
+    }
+
+
+    // -- one-shot arguments (a java.util.stream can be iterated once): every argument is read exactly once
+
+    @Nested
+    class OneShotArgumentTests {
+        private <T> Iterable<T> oneShot(T... elements) {
+            return java.util.stream.Stream.of(elements)::iterator;
+        }
+
+        @Test
+        public void shouldAppendAllFromAOneShotArgument() {
+            assertThat(of(1).appendAll(oneShot(2, 3))).isEqualTo(of(1, 2, 3));
+            assertThat(of(1).appendAll(oneShot())).isEqualTo(of(1));
+            assertThat(empty().appendAll(oneShot(2, 3))).isEqualTo(of(2, 3));
+        }
+
+        @Test
+        public void shouldReturnThisWhenAppendingAnEmptyOneShotArgument() {
+            final Vector<Integer> vector = of(1);
+            assertThat(vector.appendAll(oneShot())).isSameAs(vector);
+        }
+
+        @Test
+        public void shouldPrependAllFromAOneShotArgument() {
+            final Vector<Integer> vector = of(3);
+            assertThat(vector.prependAll(oneShot(1, 2))).isEqualTo(of(1, 2, 3));
+            assertThat(vector.prependAll(oneShot())).isSameAs(vector);
+            assertThat(empty().prependAll(oneShot(1, 2))).isEqualTo(of(1, 2));
+        }
+
+        @Test
+        public void shouldInsertAllFromAOneShotArgument() {
+            assertThat(of(1, 4).insertAll(1, oneShot(2, 3))).isEqualTo(of(1, 2, 3, 4));
+            assertThat(of(1, 4).insertAll(0, oneShot(2, 3))).isEqualTo(of(2, 3, 1, 4));
+            assertThat(of(1, 4).insertAll(2, oneShot(2, 3))).isEqualTo(of(1, 4, 2, 3));
+        }
+
+        @Test
+        public void shouldPatchFromAOneShotArgument() {
+            assertThat(of(1, 2, 3, 4).patch(1, oneShot(9, 8), 2)).isEqualTo(of(1, 9, 8, 4));
+            assertThat(of(1, 2, 3, 4).patch(0, oneShot(9), 0)).isEqualTo(of(9, 1, 2, 3, 4));
+        }
+
+        @Test
+        public void shouldFindTheLastIndexOfAOneShotSlice() {
+            assertThat(of(1, 2, 3, 4).lastIndexOfSlice(oneShot(2, 3))).isEqualTo(1);
+            assertThat(of(1, 2, 3, 2, 3).lastIndexOfSlice(oneShot(2, 3))).isEqualTo(3);
+            assertThat(of(1, 2, 3, 4).lastIndexOfSlice(oneShot(2, 3), 0)).isEqualTo(-1);
+            assertThat(of(1, 2, 3, 4).lastIndexOfSlice(oneShot())).isEqualTo(4);
+            assertThat(empty().lastIndexOfSlice(oneShot(2, 3))).isEqualTo(-1);
+            assertThat(of(1, 2, 3, 4).indexOfSlice(oneShot(2, 3))).isEqualTo(1);
+        }
+    }
+
 }

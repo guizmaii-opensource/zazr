@@ -53,7 +53,7 @@ public class VectorBuilderBenchmark {
 
     @Benchmark
     public Vector<Integer> ofAll_iterator() {
-        return Vector.ofAll(Iterator.ofAll(list.iterator()));
+        return Vector.ofAll((Iterable<Integer>) list::iterator);
     }
 
     @Benchmark
@@ -105,11 +105,11 @@ public class VectorBuilderBenchmark {
     /* independent of size: a three-element one-shot source appended to a million-element Vector */
     @Benchmark
     public Vector<Integer> appendAll_smallIteratorToLargeVector() {
-        return large.appendAll(Iterator.of(1, 2, 3));
+        return large.appendAll((Iterable<Integer>) () -> java.util.List.of(1, 2, 3).iterator());
     }
 
     @Benchmark
     public Vector<Integer> appendAll_iterator() {
-        return vector.appendAll(Iterator.ofAll(list.iterator()));
+        return vector.appendAll((Iterable<Integer>) list::iterator);
     }
 }

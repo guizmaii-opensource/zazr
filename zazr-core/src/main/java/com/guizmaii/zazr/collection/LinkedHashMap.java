@@ -4,7 +4,6 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -544,7 +543,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Iterator<Tuple2<K2, V2>> entries = iterator().map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
+        final Iterator<Tuple2<K2, V2>> entries = Iterator.ofAll(this).map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
         return LinkedHashMap.ofEntries(entries);
     }
 
@@ -561,41 +560,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public boolean containsKey(K key) {
         return map.containsKey(key);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> distinct() {
-        return Maps.distinct(this);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> distinctBy(Comparator<? super Tuple2<K, V>> comparator) {
-        return Maps.distinctBy(this, this::createFromEntries, comparator);
-    }
-
-    @Override
-    public <U extends @Nullable Object> LinkedHashMap<K, V> distinctBy(Function<? super Tuple2<K, V>, ? extends U> keyExtractor) {
-        return Maps.distinctBy(this, this::createFromEntries, keyExtractor);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> drop(int n) {
-        return Maps.drop(this, this::createFromEntries, LinkedHashMap::empty, n);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> dropRight(int n) {
-        return Maps.dropRight(this, this::createFromEntries, LinkedHashMap::empty, n);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.dropUntil(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.dropWhile(this, this::createFromEntries, predicate);
     }
 
     @Override
@@ -676,37 +640,13 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public Iterator<LinkedHashMap<K, V>> grouped(int size) {
-        return Maps.grouped(this, this::createFromEntries, size);
-    }
-
-    @Override
-    public Tuple2<K, V> head() {
-        return map.get(list.head()).get().entry();
-    }
-
-    @Override
-    public LinkedHashMap<K, V> init() {
-        if (isEmpty()) {
-            throw new UnsupportedOperationException("init of empty LinkedHashMap");
-        } else {
-            return remove(list.last());
-        }
-    }
-
-    @Override
-    public Option<LinkedHashMap<K, V>> initOption() {
-        return Maps.initOption(this);
-    }
-
-    @Override
     public boolean isEmpty() {
         return map.isEmpty();
     }
 
     @Override
-    public Iterator<Tuple2<K, V>> iterator() {
-        final Iterator<K> slots = list.iterator();
+    public java.util.Iterator<Tuple2<K, V>> iterator() {
+        final java.util.Iterator<K> slots = list.iterator();
         return new AbstractIterator<Tuple2<K, V>>() {
             private @Nullable K nextKey;
             private boolean nextKeyDefined;
@@ -734,25 +674,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         };
     }
 
-    @Override
-    public Iterator<K> keysIterator() {
-        return iterator().map(entry -> entry._1());
-    }
-
-    @Override
-    public Iterator<V> valuesIterator() {
-        return iterator().map(entry -> entry._2());
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public Set<K> keySet() {
         return LinkedHashSet.wrap((LinkedHashMap<K, Object>) this);
-    }
-
-    @Override
-    public Tuple2<K, V> last() {
-        return map.get(list.last()).get().entry();
     }
 
     @Override
@@ -964,14 +889,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     @Override
     public LinkedHashMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
-        return Collections.retainAll(this, elements);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> scan(
-      Tuple2<K, V> zero,
-      BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation) {
-        return Maps.scan(this, zero, operation, this::createFromEntries);
+        return Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     @Override
@@ -980,67 +898,13 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public Iterator<LinkedHashMap<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier) {
-        return Maps.slideBy(this, this::createFromEntries, classifier);
-    }
-
-    @Override
-    public Iterator<LinkedHashMap<K, V>> sliding(int size) {
-        return Maps.sliding(this, this::createFromEntries, size);
-    }
-
-    @Override
-    public Iterator<LinkedHashMap<K, V>> sliding(int size, int step) {
-        return Maps.sliding(this, this::createFromEntries, size, step);
-    }
-
-    @Override
-    public Tuple2<LinkedHashMap<K, V>, LinkedHashMap<K, V>> span(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.span(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> tail() {
-        if (isEmpty()) {
-            throw new UnsupportedOperationException("tail of empty LinkedHashMap");
-        } else {
-            return remove(list.head());
-        }
-    }
-
-    @Override
-    public Option<LinkedHashMap<K, V>> tailOption() {
-        return Maps.tailOption(this);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> take(int n) {
-        return Maps.take(this, this::createFromEntries, n);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> takeRight(int n) {
-        return Maps.takeRight(this, this::createFromEntries, n);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.takeUntil(this, this::createFromEntries, predicate);
-    }
-
-    @Override
-    public LinkedHashMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.takeWhile(this, this::createFromEntries, predicate);
-    }
-
-    @Override
     public java.util.LinkedHashMap<K, V> toJavaMap() {
         return toJavaMap(java.util.LinkedHashMap::new, t -> t);
     }
 
     @Override
-    public Stream<V> values() {
-        return map(t -> t._2());
+    public Vector<V> values() {
+        return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
     }
 
     @Override

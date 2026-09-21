@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.test;
 
 import com.guizmaii.zazr.Tuple;
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Stream;
 import java.time.LocalDateTime;
@@ -198,7 +197,7 @@ public class ArbitraryTest {
         final Gen<String> arbitrary = Arbitrary.of("test")
                 .intersperse(Arbitrary.of("content"))
                 .apply(10);
-        final Iterator<Stream<String>> generatedStringPairs = Stream.range(0, 10)
+        final Stream<Stream<String>> generatedStringPairs = Stream.range(0, 10)
                 .map(i -> arbitrary.apply(RANDOM))
                 .grouped(2);
         for (Stream<String> stringPairs : generatedStringPairs) {

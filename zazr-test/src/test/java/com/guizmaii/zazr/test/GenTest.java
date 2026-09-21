@@ -47,6 +47,24 @@ public class GenTest {
         assertThat(gen.apply(RANDOM)).isEqualTo(3);
     }
 
+    @Test
+    public void shouldThrowWhenSeedOrFunctionIsNull() {
+        assertThrows(NullPointerException.class, () -> Gen.of(null, i -> 1));
+        assertThrows(NullPointerException.class, () -> Gen.<Integer>of(1, null));
+    }
+
+    @Test
+    public void shouldThrowWhenTheFunctionReturnsNull() {
+        final Gen<Integer> gen = Gen.of(1, i -> null);
+        assertThat(gen.apply(RANDOM)).isEqualTo(1);
+        assertThrows(NullPointerException.class, () -> gen.apply(RANDOM));
+    }
+
+    @Test
+    public void shouldThrowWhenInterspersedGenIsNull() {
+        assertThrows(NullPointerException.class, () -> Gen.of(0).intersperse(null));
+    }
+
     // -- random number generator (rng)
 
     @Test
@@ -285,7 +303,7 @@ public class GenTest {
     public void shouldNotFavorPositionsInExplicitChoices() {
         final List<Integer> values = List.range(0, 10);
         final List<Gen<Integer>> generators = values.map(Gen::of);
-        assertUniformChoices(Gen.choose(values.toJavaArray(Integer[]::new)));
+        assertUniformChoices(Gen.choose(values.toArray(Integer[]::new)));
         assertUniformChoices(Gen.choose(values));
         assertUniformChoices(Gen.choose("0123456789".toCharArray()).map(c -> c - '0'));
         assertUniformChoices(Gen.oneOf(generators));

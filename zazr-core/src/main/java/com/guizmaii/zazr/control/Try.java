@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.*;
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -156,7 +155,15 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     static <T extends @Nullable Object, U extends @Nullable Object> Try<Vector<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return collectAll(Iterator.ofAll(values).map(mapper));
+        final Vector.Builder<U> builder = Vector.newBuilder();
+        for (T value : values) {
+            final Try<? extends U> mapped = Objects.requireNonNull(mapper.apply(value), "Try.forEach: mapper returned null");
+            if (mapped.isFailure()) {
+                return Try.failure(mapped.getCause());
+            }
+            builder.add(mapped.get());
+        }
+        return Try.success(builder.result());
     }
 
     /**
