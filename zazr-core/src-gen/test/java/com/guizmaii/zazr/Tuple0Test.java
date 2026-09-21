@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.Comparator;
 import org.junit.jupiter.api.Test;
 
@@ -27,9 +27,9 @@ public class Tuple0Test {
     }
 
     @Test
-    public void shouldConvertToSeq() {
-        final Seq<?> actual = createIntTuple().toSeq();
-        assertThat(actual).isEqualTo(List.of());
+    public void shouldConvertToVector() {
+        final Vector<?> actual = createIntTuple().toVector();
+        assertThat(actual).isEqualTo(Vector.of());
     }
 
     @Test

@@ -15,7 +15,6 @@ import com.guizmaii.zazr.Tuple6;
 import com.guizmaii.zazr.Tuple7;
 import com.guizmaii.zazr.Tuple8;
 import com.guizmaii.zazr.collection.Iterator;
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -200,12 +199,12 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Turns many {@code Either}s into one {@code Either} of all their right values: {@code Right} of a {@link Seq}
-     * of the values in iteration order when every element is a {@code Right}, otherwise the first {@code Left}
-     * in iteration order. It stops at that first {@code Left}; collecting every left value is what
-     * {@link Validation} is for. The empty iterable gives {@code Right} of the empty {@code Seq}.
+     * Turns many {@code Either}s into one {@code Either} of all their right values: {@code Right} of a
+     * {@link Vector} of the values in iteration order when every element is a {@code Right}, otherwise the first
+     * {@code Left} in iteration order. It stops at that first {@code Left}; collecting every left value is what
+     * {@link Validation} is for. The empty iterable gives {@code Right} of the empty {@code Vector}.
      * <pre>{@code
-     * Either.collectAll(List.of(Either.right(1), Either.right(2)));                     // = Right(Seq(1, 2))
+     * Either.collectAll(List.of(Either.right(1), Either.right(2)));                     // = Right(Vector(1, 2))
      * Either.collectAll(List.of(Either.right(1), Either.left("x1"), Either.left("x2"))); // = Left("x1")
      * }</pre>
      *
@@ -215,25 +214,25 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of all the right values, or the first {@code Left}
      * @throws NullPointerException if {@code eithers} is null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Seq<R>> collectAll(Iterable<? extends Either<? extends L, ? extends R>> eithers) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Vector<R>> collectAll(Iterable<? extends Either<? extends L, ? extends R>> eithers) {
         Objects.requireNonNull(eithers, "eithers is null");
-        Vector<R> rightValues = Vector.empty();
+        final Vector.Builder<R> rightValues = Vector.newBuilder();
         for (Either<? extends L, ? extends R> either : eithers) {
             if (either.isRight()) {
-                rightValues = rightValues.append(either.get());
+                rightValues.add(either.get());
             } else {
                 return Either.left(either.getLeft());
             }
         }
-        return Either.right(rightValues);
+        return Either.right(rightValues.result());
     }
 
     /**
      * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
-     * {@code Right} of a {@link Seq} of the mapped values when every call returns a {@code Right}, otherwise the
+     * {@code Right} of a {@link Vector} of the mapped values when every call returns a {@code Right}, otherwise the
      * first {@code Left}. The mapper is not called for the elements after that one.
      * <pre>{@code
-     * Either.forEach(List.of("1", "2"), s -> parse(s)); // = Right(Seq(1, 2)) when both parse
+     * Either.forEach(List.of("1", "2"), s -> parse(s)); // = Right(Vector(1, 2)) when both parse
      * }</pre>
      *
      * @param values the elements to map
@@ -244,7 +243,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of all the mapped values, or the first {@code Left}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<L, Seq<R>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
+    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<L, Vector<R>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return collectAll(Iterator.ofAll(values).map(mapper));

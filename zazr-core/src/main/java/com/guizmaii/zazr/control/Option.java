@@ -17,7 +17,6 @@ import com.guizmaii.zazr.Tuple7;
 import com.guizmaii.zazr.Tuple8;
 import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -69,11 +68,11 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
-     * Turns many {@code Option}s into one {@code Option} of all their values: {@code Some} of a {@link Seq} of the
-     * values in iteration order when every element is a {@code Some}, {@code None} as soon as one element is
-     * {@code None}. The empty iterable gives {@code Some} of the empty {@code Seq}.
+     * Turns many {@code Option}s into one {@code Option} of all their values: {@code Some} of a {@link Vector} of
+     * the values in iteration order when every element is a {@code Some}, {@code None} as soon as one element is
+     * {@code None}. The empty iterable gives {@code Some} of the empty {@code Vector}.
      * <pre>{@code
-     * Option.collectAll(List.of(Option.some(1), Option.some(2))); // = Some(Seq(1, 2))
+     * Option.collectAll(List.of(Option.some(1), Option.some(2))); // = Some(Vector(1, 2))
      * Option.collectAll(List.of(Option.some(1), Option.none()));  // = None
      * }</pre>
      *
@@ -82,24 +81,24 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of all the values, or {@code None} if any element is {@code None}
      * @throws NullPointerException if {@code values} is null
      */
-    static <T extends @Nullable Object> Option<Seq<T>> collectAll(Iterable<? extends Option<? extends T>> values) {
+    static <T extends @Nullable Object> Option<Vector<T>> collectAll(Iterable<? extends Option<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
-        Vector<T> vector = Vector.empty();
+        final Vector.Builder<T> builder = Vector.newBuilder();
         for (Option<? extends T> value : values) {
             if (value.isEmpty()) {
                 return Option.none();
             }
-            vector = vector.append(value.get());
+            builder.add(value.get());
         }
-        return Option.some(vector);
+        return Option.some(builder.result());
     }
 
     /**
      * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
-     * {@code Some} of a {@link Seq} of the mapped values when every call returns a {@code Some}, {@code None} as
+     * {@code Some} of a {@link Vector} of the mapped values when every call returns a {@code Some}, {@code None} as
      * soon as one call returns {@code None}. The mapper is not called for the elements after that one.
      * <pre>{@code
-     * Option.forEach(List.of("1", "2"), s -> Option.some(Integer.parseInt(s))); // = Some(Seq(1, 2))
+     * Option.forEach(List.of("1", "2"), s -> Option.some(Integer.parseInt(s))); // = Some(Vector(1, 2))
      * }</pre>
      *
      * @param values the elements to map
@@ -109,7 +108,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of all the mapped values, or {@code None} if one mapping is {@code None}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Option<Seq<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Option<Vector<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return collectAll(Iterator.ofAll(values).map(mapper));

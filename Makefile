@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary bench javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity bench javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,14 +38,21 @@ package: ## build the jars (runs tests)
 install: ## install the jars into ~/.m2 (runs tests)
 	$(MVN) install
 
-verify: ## what CI runs: full build with tests, formatting, nullness and vocabulary checks
+verify: ## what CI runs: full build with tests, formatting, nullness, vocabulary and complexity checks
 	$(MVN) verify
 	$(MVN) -Pnullaway compile
 	$(MAKE) vocabulary
+	$(MAKE) complexity
 
 vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE.md: use the ZIO names)
 	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs ':!docs/design.md')"; \
 	if [ -n "$$hits" ]; then echo "$$hits"; echo "category-theory vocabulary found; use the ZIO names (see CLAUDE.md)"; exit 1; fi
+
+# The files whose positional methods must document their cost (design.md 3.7); #67 adds List, Queue and Stream.
+COMPLEXITY_FILES := zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java
+
+complexity: ## fail when a positional method of a collection lacks a "Complexity:" javadoc line (design.md 3.7)
+	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_FILES)
 
 fmt: ## format the sources (spotless apply)
 	$(MVN) spotless:apply

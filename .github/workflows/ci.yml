@@ -43,6 +43,22 @@ jobs:
       - name: Grep for the forbidden words
         run: make vocabulary
 
+  complexity:
+    runs-on: ubuntu-latest
+    name: Complexity note on every positional method
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup scala-cli
+        uses: VirtusLab/scala-cli-setup@v1
+      # after scala-cli-setup, so that JAVA_HOME is this JDK: the script parses Java 25 sources with the system javac
+      - name: Setup JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+      - name: Check the javadoc of the positional methods
+        run: make complexity
+
   nullness:
     runs-on: ubuntu-latest
     name: Verify JSpecify nullness contract
@@ -60,7 +76,7 @@ jobs:
 
   deploy-snapshot:
     runs-on: ubuntu-latest
-    needs: [build, nullness, vocabulary]
+    needs: [build, nullness, vocabulary, complexity]
     if: github.ref == 'refs/heads/main'
 
     steps:

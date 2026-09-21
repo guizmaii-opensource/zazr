@@ -1,6 +1,5 @@
 package com.guizmaii.zazr;
 
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
@@ -78,17 +77,24 @@ public final class Lazy<T extends @Nullable Object> {
     }
 
     /**
-     * Turns many {@code Lazy} values into one {@code Lazy} of a {@link Seq} of their values, in iteration order.
-     * Nothing is evaluated until the returned {@code Lazy} is, which then evaluates every element.
+     * Turns many {@code Lazy} values into one {@code Lazy} of a {@link Vector} of their values, in iteration order.
+     * Nothing is evaluated until the returned {@code Lazy} is, which then evaluates every element, once, straight
+     * into a {@link Vector.Builder}.
      *
      * @param <T>    the value type
      * @param values the {@code Lazy} values to collect
      * @return an unevaluated {@code Lazy} of all the values
      * @throws NullPointerException if {@code values} is null
      */
-    public static <T extends @Nullable Object> Lazy<Seq<T>> collectAll(Iterable<? extends Lazy<? extends T>> values) {
+    public static <T extends @Nullable Object> Lazy<Vector<T>> collectAll(Iterable<? extends Lazy<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
-        return Lazy.of(() -> Vector.ofAll(values).map(Lazy::get));
+        return Lazy.of(() -> {
+            final Vector.Builder<T> builder = Vector.newBuilder();
+            for (Lazy<? extends T> value : values) {
+                builder.add(value.get());
+            }
+            return builder.result();
+        });
     }
 
     /**

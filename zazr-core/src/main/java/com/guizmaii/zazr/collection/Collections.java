@@ -46,34 +46,6 @@ final class Collections {
         }
     }
 
-    // DEV-NOTE: Use this method for non-infinite and direct-access collection only
-    // because of O(N) complexity of get() and infinite loop in size()
-    // see https://github.com/vavr-io/vavr/issues/2007
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, S extends IndexedSeq<T>> S dropRightUntil(S seq, Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = seq.length() - 1; i >= 0; i--) {
-            if (predicate.test(seq.get(i))) {
-                return (S) seq.take(i + 1);
-            }
-        }
-        return (S) seq.take(0);
-    }
-
-    // DEV-NOTE: Use this method for non-infinite and direct-access collection only
-    // because of O(N) complexity of get() and infinite loop in size()
-    // see https://github.com/vavr-io/vavr/issues/2007
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, S extends IndexedSeq<T>> S dropUntil(S seq, Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = 0; i < seq.length(); i++) {
-            if (predicate.test(seq.get(i))) {
-                return (S) seq.drop(i);
-            }
-        }
-        return (S) seq.take(0);
-    }
-
     @SuppressWarnings("unchecked")
     static <K extends @Nullable Object, V extends @Nullable Object> boolean equals(Map<K, V> source, @Nullable Object object) {
         if (source == object) {
@@ -94,16 +66,29 @@ final class Collections {
         }
     }
 
-    @SuppressWarnings("unchecked")
     static <V extends @Nullable Object> boolean equals(Seq<V> source, @Nullable Object object) {
+        return equalsSequence(source, object);
+    }
+
+    static <V extends @Nullable Object> boolean equals(Vector<V> source, @Nullable Object object) {
+        return equalsSequence(source, object);
+    }
+
+    // Vector and the Seq types are equal to each other when their elements are equal in order; #68 settles whether
+    // that survives the deletion of Seq
+    private static boolean equalsSequence(Traversable<?> source, @Nullable Object object) {
         if (object == source) {
             return true;
-        } else if (source != null && object instanceof Seq) {
-            final Seq<V> seq = (Seq<V>) object;
-            return seq.size() == source.size() && areEqual(source, seq);
+        } else if (object instanceof Traversable<?> sequence && isSequence(sequence)) {
+            return sequence.size() == source.size() && areEqual(source, sequence);
         } else {
             return false;
         }
+    }
+
+    // the ordered sequence types, equal to each other element by element in order
+    static boolean isSequence(@Nullable Object object) {
+        return object instanceof Vector || object instanceof Seq;
     }
 
     @SuppressWarnings("unchecked")
@@ -233,7 +218,7 @@ final class Collections {
         if (traversable instanceof Ordered) {
             characteristics |= (Spliterator.SORTED | Spliterator.ORDERED);
         }
-        if (traversable instanceof Seq || traversable instanceof Iterator
+        if (isSequence(traversable) || traversable instanceof Iterator
                 || traversable instanceof LinkedHashSet || traversable instanceof LinkedHashMap) {
             characteristics |= Spliterator.ORDERED;
         }
@@ -325,6 +310,8 @@ final class Collections {
     static <T extends @Nullable Object> Iterator<T> reverseIterator(Iterable<T> iterable) {
         if (iterable instanceof java.util.List) {
             return reverseListIterator((java.util.List<T>) iterable);
+        } else if (iterable instanceof Vector) {
+            return ((Vector<T>) iterable).reverseIterator();
         } else if (iterable instanceof Seq) {
             return ((Seq<T>) iterable).reverseIterator();
         } else {
@@ -404,7 +391,7 @@ final class Collections {
                 .collect(collector);
     }
 
-    static <T extends @Nullable Object, S extends Seq<T>> S shuffle(S source, Function<? super Iterable<T>, S> ofAll) {
+    static <T extends @Nullable Object, S extends Traversable<T>> S shuffle(S source, Function<? super Iterable<T>, S> ofAll) {
         if (source.length() <= 1) {
             return source;
         }
@@ -460,35 +447,7 @@ final class Collections {
         }
     }
 
-    // DEV-NOTE: Use this method for non-infinite and direct-access collection only
-    // because of O(N) complexity of get() and infinite loop in size()
-    // see https://github.com/vavr-io/vavr/issues/2007
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, S extends IndexedSeq<T>> S takeRightUntil(S seq, Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = seq.length() - 1; i >= 0; i--) {
-            if (predicate.test(seq.get(i))) {
-                return (S) seq.drop(i + 1);
-            }
-        }
-        return seq;
-    }
-
-    // DEV-NOTE: Use this method for non-infinite and direct-access collection only
-    // because of O(N) complexity of get() and infinite loop in size()
-    // see https://github.com/vavr-io/vavr/issues/2007
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, S extends IndexedSeq<T>> S takeUntil(S seq, Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = 0; i < seq.length(); i++) {
-            if (predicate.test(seq.get(i))) {
-                return (S) seq.take(i);
-            }
-        }
-        return seq;
-    }
-
-    static <T extends @Nullable Object, U extends Seq<T>, V extends Seq<U>> V transpose(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
+    static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>> V transpose(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
         Objects.requireNonNull(matrix, "matrix is null");
         if (matrix.isEmpty() || (matrix.length() == 1 && matrix.head().length() <= 1)) {
             return matrix;
@@ -497,7 +456,7 @@ final class Collections {
         }
     }
 
-    private static <T extends @Nullable Object, U extends Seq<T>, V extends Seq<U>> V transposeNonEmptyMatrix(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
+    private static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>> V transposeNonEmptyMatrix(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
         final int newHeight = matrix.head().size(), newWidth = matrix.size();
         @SuppressWarnings("unchecked") final T[][] results = (T[][]) new Object[newHeight][newWidth];
 

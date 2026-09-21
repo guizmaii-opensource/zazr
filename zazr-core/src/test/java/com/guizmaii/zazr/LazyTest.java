@@ -1,7 +1,6 @@
 package com.guizmaii.zazr;
 
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Try;
 import java.util.ArrayList;
@@ -119,28 +118,28 @@ public class LazyTest {
         @Test
         public void shouldCollectAllEmpty() {
             final List<Lazy<Integer>> testee = List.empty();
-            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
+            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.get()).isEqualTo(Vector.empty());
         }
 
         @Test
         public void shouldCollectAllNonEmptyLazy() {
             final List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
-            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
+            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.get()).isEqualTo(Vector.of(1, 2, 3));
         }
 
         @Test
         public void shouldNotEvaluateEmptyCollectAll() {
             final List<Lazy<Integer>> testee = List.empty();
-            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
+            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.isEvaluated()).isFalse();
         }
 
         @Test
         public void shouldNotEvaluateNonEmptyCollectAll() {
             final List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
-            final Lazy<Seq<Integer>> sequence = Lazy.collectAll(testee);
+            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.isEvaluated()).isFalse();
         }
 

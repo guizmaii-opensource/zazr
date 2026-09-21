@@ -7,7 +7,7 @@ import com.guizmaii.zazr.CheckedPredicate;
 import com.guizmaii.zazr.CheckedRunnable;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
-import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -1194,7 +1194,7 @@ public class TryTest {
         @Test
         public void shouldConvertListOfSuccessToTryOfList() {
             final List<Try<String>> tries = Arrays.asList(Try.success("a"), Try.success("b"), Try.success("c"));
-            final Try<Seq<String>> reducedTry = Try.collectAll(tries);
+            final Try<Vector<String>> reducedTry = Try.collectAll(tries);
             assertThat(reducedTry instanceof Try.Success).isTrue();
             assertThat(reducedTry.get().size()).isEqualTo(3);
             assertThat(reducedTry.get().mkString()).isEqualTo("abc");
@@ -1204,7 +1204,7 @@ public class TryTest {
         public void shouldConvertListOfFailureToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<Try<String>> tries = Arrays.asList(Try.failure(t), Try.failure(t), Try.failure(t));
-            final Try<Seq<String>> reducedTry = Try.collectAll(tries);
+            final Try<Vector<String>> reducedTry = Try.collectAll(tries);
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
 
@@ -1212,7 +1212,7 @@ public class TryTest {
         public void shouldConvertListOfMixedTryToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<Try<String>> tries = Arrays.asList(Try.success("a"), Try.failure(t), Try.success("c"));
-            final Try<Seq<String>> reducedTry = Try.collectAll(tries);
+            final Try<Vector<String>> reducedTry = Try.collectAll(tries);
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
     }
@@ -1222,7 +1222,7 @@ public class TryTest {
         @Test
         public void shouldForEachListOfSuccessToTryOfList() {
             final List<String> tries = Arrays.asList("a", "b", "c");
-            final Try<Seq<String>> reducedTry = Try.forEach(tries, Try::success);
+            final Try<Vector<String>> reducedTry = Try.forEach(tries, Try::success);
             assertThat(reducedTry instanceof Try.Success).isTrue();
             assertThat(reducedTry.get().size()).isEqualTo(3);
             assertThat(reducedTry.get().mkString()).isEqualTo("abc");
@@ -1232,7 +1232,7 @@ public class TryTest {
         public void shouldForEachListOfFailureToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<Throwable> tries = Arrays.asList(t, t, t);
-            final Try<Seq<String>> reducedTry = Try.forEach(tries, Try::failure);
+            final Try<Vector<String>> reducedTry = Try.forEach(tries, Try::failure);
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
 
@@ -1240,7 +1240,7 @@ public class TryTest {
         public void shouldForEachListOfMixedTryToTryOfList() {
             final Throwable t = new RuntimeException("failure");
             final List<String> tries = Arrays.asList("a", "b", "c");
-            final Try<Seq<String>> reducedTry = Try.forEach(tries, x -> x.equals("b") ? Try.failure(t) : Try.success(x));
+            final Try<Vector<String>> reducedTry = Try.forEach(tries, x -> x.equals("b") ? Try.failure(t) : Try.success(x));
             assertThat(reducedTry instanceof Try.Failure).isTrue();
         }
     }

@@ -559,6 +559,46 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
 `append` is O(n), `prepend`/`head`/`tail` are O(1)); on `Vector` the same (effectively O(1) for `get`,
 `update`, `append`, `prepend`, `take`, `drop`).
 
+**Decided while implementing step 1 (#66, `Vector`):**
+
+- **The `Complexity:` convention.** Every positional or complexity-sensitive method carries, in its javadoc, one
+  paragraph starting with `Complexity:` (e.g. `Complexity: effectively O(1) (O(log32 n) trie access).`,
+  `Complexity: O(n).`, `Complexity: O(k) for k taken elements, then one effectively O(1) take.`). "Effectively
+  O(1)" means O(log32 n) on the trie. Methods that only override a `Traversable` default keep `{@inheritDoc}` and
+  add the paragraph. `make complexity` (run by `make verify` and by the `complexity` CI job) runs
+  `scripts/check-complexity.scala` (Scala, run with scala-cli) over the files listed in the Makefile (`Vector.java` for now; #67 adds `List`,
+  `Queue`, `Stream`) and fails when a method whose name is in the script's fixed list of positional names is declared
+  without such a line; the files are parsed with the JDK's own compiler (`javax.tools`, `com.sun.source`), so the
+  javadoc checked is the doc comment javac attaches to the method, `/** */` or `///` alike.
+- **`Iterator`-returning methods stay as they are for now.** `crossProduct()`, `crossProduct(int)`,
+  `crossProduct(Iterable)`, `grouped`, `sliding` and `slideBy` on `Vector` keep returning the lazy
+  `Iterator<Vector<T>>` / `Iterator<Tuple2<...>>` they returned as a `Seq`, because `Traversable` still declares
+  `grouped`/`sliding`/`slideBy` with an `Iterator` result; #68 decides the final shape when `Traversable` is slimmed.
+  A lazy result keeps its argument lazy: `crossProduct(Iterable)` memoises `that` with `Stream.ofAll` (as the `Seq`
+  default did; `Stream` survives as `LazyList`, #28), so `Vector.of(1).crossProduct(Iterator.from(0)).take(3)` works.
+- **`Seq` methods kept on `Vector` although 3.7 does not list them** (unused or slated for deletion elsewhere, kept
+  so that nothing changes behaviour or loses a test in this step): `asJava(Consumer)`, `asJavaMutable()`,
+  `asJavaMutable(Consumer)` (3.1 deletes the mutable views and the consumer scopes; that is #26's PR),
+  `removeAll(Predicate)` (deprecated, `reject`), `iterator(int)`, `containsSlice`, `indexOfSlice`/`lastIndexOfSlice`
+  and the `*Option` variants of every index search, `prefixLength`/`segmentLength`, `distinctByKeepLast`,
+  `dropRightUntil`/`dropRightWhile`/`takeRightUntil`/`takeRightWhile`, `splitAtInclusive`, `leftPadTo`,
+  `reverseIterator`, `unzip`/`unzip3`. `endsWith` takes an `Iterable` (it took a `Seq`).
+- **Equality across sequence types is unchanged for now**: a `Vector` equals any ordered sequence (`Vector`,
+  `List`, `Queue`, `Stream`) with the same elements in the same order, and vice versa, as it did as a `Seq`
+  (`Collections.isSequence`). #68 decides whether that survives once `Seq` is gone.
+- **`java.util.List` views without a shared sequence interface.** `JavaConverters.ListView` is abstract over
+  the delegate type and calls the positional operations through per-type hooks (`VectorListView`, and
+  `SeqListView` for `List`/`Queue`/`Stream` until #67): the view asks the concrete type, no package-private
+  mini-`Seq` is reintroduced.
+- **`Option`, `Either`, `Try`, `Lazy` and `Tuple.unzip1..8` return `Vector`**, built with one `Vector.Builder` per
+  side in one pass (no `Stream` round trip). `Tuple.toSeq()` is renamed `toVector()`, since its result is a `Vector`.
+- **Two `Seq`-typed signatures that returned a `Vector` at runtime.** `Iterator.grouped`/`sliding` now say
+  `Iterator<Vector<T>>` (their groups always were Vectors, one leaf array each; `Vector.sliding` keeps its cost).
+  `Map.scanLeft`/`scanRight` still say `Seq<U>` and build a `List` instead of a `Vector`; both leave `Map` in #68.
+- `VectorTest` no longer shares `AbstractSeqTest` (its hooks return `Seq<T>`, which a `Vector` is not): the `Seq`
+  cases are folded into `VectorTest`, as #67 does for `ListTest`, `QueueTest` and `StreamTest`; the two `narrow`
+  tests of `Seq`/`IndexedSeq` go with the interfaces.
+
 Which concrete collections survive (decided):
 
 | Keep | Why |
@@ -894,7 +934,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #21 | `NonEmptyVector` | 3.6 | #20 |
 | #22 | `Validation` with a `NonEmptyVector` error side | 3.5 | #21 |
 | #23 | Generated `zip`/`zipWith` at arities 2..8 | 3.4 | #22 |
-| #24 | Remove `Seq`; concrete collection APIs; complexity notes | 3.7 | #20 |
+| #24 | Remove `Seq`; concrete collection APIs; complexity notes. Three stacked steps: #66 (`Vector` declares its own API, `IndexedSeq` deleted), #67 (`List`, `Queue`, `Stream`; `Seq`, `LinearSeq` deleted), #68 (`Traversable` slimmed, `Foldable`/`Ordered` deleted, `Map`/`Set` lose the sequence methods, `Iterator` leaves the hierarchy) | 3.7 | #20 |
 | #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
 | #26 | `asJava` views for sets and maps | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |
