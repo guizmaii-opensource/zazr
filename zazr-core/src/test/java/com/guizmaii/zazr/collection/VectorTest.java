@@ -29,7 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests Vector's whole API: the Traversable cases (inherited), the sequence cases that were shared through
- * {@code AbstractSeqTest} while Vector was a {@code Seq} (folded in with #66), and the Vector-specific ones.
+ * {@code AbstractSeqTest} while Vector shared the sequence interface (folded in with #66), and the Vector-specific
+ * ones.
  */
 public class VectorTest extends AbstractTraversableRangeTest {
 
@@ -487,6 +488,14 @@ public class VectorTest extends AbstractTraversableRangeTest {
             assertThat(Vector.of("b", "aa", "e", "cc").duplicatesBy(String::length)).isEqualTo(Vector.of("b", "aa"));
             assertThat(Vector.of("a", "bb").duplicatesBy(String::length)).isEqualTo(Vector.empty());
             assertThatNullPointerException().isThrownBy(() -> Vector.of(1).duplicatesBy(null)).withMessage("keyExtractor is null");
+        }
+
+        @Test
+        public void shouldFindDuplicatesOfANullKey() {
+            // a Vector never holds a null element, but a key extractor may return null for several of them
+            assertThat(Vector.of("a", "b").duplicatesBy(s -> null)).isEqualTo(Vector.of("a"));
+            assertThat(Vector.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s)).isEqualTo(Vector.of("a"));
+            assertThat(Vector.of("a").duplicatesBy(s -> null)).isEqualTo(Vector.empty());
         }
 
         @Test
@@ -1984,6 +1993,14 @@ public class VectorTest extends AbstractTraversableRangeTest {
     @Nested
     class RotaterightTests {
         @Test
+        public void shouldRotateByTheMostNegativeDistance() {
+            // Integer.MIN_VALUE has no positive negation: the distance is taken modulo the length, not negated
+            assertThat(of(1, 2, 3, 4).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateLeft(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3, 4).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateRight(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(2, 3, 1));
+            assertThat(of(1, 2, 3).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(3, 1, 2));
+        }
+        @Test
         public void shouldRotateRightOnEmpty() {
             assertThat(empty().rotateRight(1)).isSameAs(empty());
         }
@@ -2834,13 +2851,14 @@ public class VectorTest extends AbstractTraversableRangeTest {
     }
 
     @Nested
-    class NotASeqTests {
+    class TraversableOnlyTests {
         @Test
         public void shouldImplementTraversableOnly() {
-            assertThat(Seq.class.isAssignableFrom(Vector.class)).isFalse();
             assertThat(Traversable.class.isAssignableFrom(Vector.class)).isTrue();
             assertThat(Vector.class.getInterfaces()).containsExactly(Traversable.class);
             assertThat(Vector.class.getSuperclass()).isEqualTo(Object.class);
+            // no sequence interface above Traversable: a Vector reaches Traversable directly
+            assertThat(supertypeNames(Vector.class)).containsExactlyInAnyOrder("Traversable", "Foldable", "Iterable");
         }
 
         @Test
@@ -3008,7 +3026,7 @@ public class VectorTest extends AbstractTraversableRangeTest {
                             continue;
                         }
                         final Vector<Integer> slice = vector.slice(k, k + 3);
-                        // a Vector, a JDK list (traversable again), a Stream (a lazy Seq) and a one-shot Iterator
+                        // a Vector, a JDK list (traversable again), a lazy Stream and a one-shot Iterator
                         for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>> of(slice, slice.toJavaList(), Stream.ofAll(slice))) {
                             assertThat(vector.indexOfSlice(shape)).isEqualTo(k);
                             assertThat(vector.indexOfSliceOption(shape)).isEqualTo(Option.some(k));

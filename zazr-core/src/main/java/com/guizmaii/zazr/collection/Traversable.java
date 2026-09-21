@@ -212,17 +212,17 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     /**
      * Determines whether this collection is equal to the given object.
      * <p>
-     * In Vavr, there are three basic collection types:
+     * There are three basic collection kinds:
      * <ul>
-     *     <li>{@code Seq} – sequential elements</li>
+     *     <li>sequences – elements in a defined order ({@code Vector}, {@code List}, {@code Queue}, {@code Stream})</li>
      *     <li>{@code Set} – distinct elements</li>
      *     <li>{@code Map} – key-value pairs</li>
      * </ul>
      * Two collections are considered equal if and only if:
      * <ul>
-     *     <li>They are of the same collection type (Seq, Set, Map)</li>
+     *     <li>They are of the same collection kind (sequence, Set, Map)</li>
      *     <li>They contain the same elements</li>
-     *     <li>For {@code Seq}, the element order is the same</li>
+     *     <li>For a sequence, the element order is the same</li>
      * </ul>
      * <p>
      * For {@code Map}, two entries {@code (key1, value1)} and {@code (key2, value2)}
@@ -233,7 +233,7 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
      *     <li>No collection equals {@code null} (e.g., {@code Queue(1) != null})</li>
      *     <li>Null elements are allowed and treated as expected
      *         (e.g., {@code List(null, 1) == Stream(null, 1)}, {@code HashMap((null,1)) == LinkedHashMap((null,1))})</li>
-     *     <li>Element order matters only for {@code Seq}</li>
+     *     <li>Element order matters only for sequences</li>
      *     <li>Other collection classes are equal if their types and elements are equal, regardless of iteration order</li>
      *     <li>Iterators are compared by reference only</li>
      * </ul>
@@ -426,8 +426,8 @@ public interface Traversable<T extends @Nullable Object> extends Foldable<T>, It
     /**
      * Returns the hash code of this collection.
      *
-     * <p>Vavr distinguishes between collections with predictable iteration order (like {@code Seq}) and
-     * collections with arbitrary iteration order (like {@code Set} and {@code Map}).
+     * <p>Collections with a predictable iteration order (the sequences) and collections with an arbitrary
+     * iteration order (like {@code Set} and {@code Map}) hash differently.
      * In all cases, the hash of an empty collection is defined as {@code 1}.</p>
      *
      * <p>For collections with predictable iteration order, the hash is computed as:</p>

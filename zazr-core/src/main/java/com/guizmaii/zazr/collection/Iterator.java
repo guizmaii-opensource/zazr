@@ -2082,13 +2082,13 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
-    default Iterator<Seq<T>> slideBy(Function<? super T, ?> classifier) {
+    default Iterator<Stream<T>> slideBy(Function<? super T, ?> classifier) {
         Objects.requireNonNull(classifier, "classifier is null");
         if (!hasNext()) {
             return empty();
         } else {
             final CachedIterator<T> source = new CachedIterator<>(this);
-            return new AbstractIterator<Seq<T>>() {
+            return new AbstractIterator<Stream<T>>() {
                 private @Nullable Stream<T> next = null;
 
                 @Override

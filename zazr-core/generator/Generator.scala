@@ -794,7 +794,7 @@ def generateMainClasses(): Unit = {
         val vectors = (1 to i).gen(j => s"$Vector<T$j>")(using ", ")
         val widenedGenerics = a.covariantGenerics
         // One pass over the tuples with one Vector.Builder per component: no intermediate collection, and the
-        // result is the concrete Vector, not a Seq-erased Stream (design 3.7).
+        // result is the concrete Vector (design 3.7).
         xs"""
             /**
              * Splits an iterable of {@code Tuple$i} into a Tuple$i of {@link $Vector}${(i > 1).gen("s")}, one per

@@ -566,8 +566,8 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     class ValuesTests {
         @Test
         @SuppressWarnings("unchecked")
-        public void shouldReturnValuesSeq() {
-            final Seq<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).values();
+        public void shouldReturnValuesStream() {
+            final Stream<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).values();
             assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.Iterator.of(11, 22, 33));
         }
 
@@ -588,8 +588,8 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapBothNonEmpty() {
-        final Seq<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        final Seq<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").mapBoth(i -> i + 1, s -> s + "!").toStream();
+        final Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
+        final Stream<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").mapBoth(i -> i + 1, s -> s + "!").toStream();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -621,7 +621,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     @Test
     public void shouldMapNonEmpty() {
         final Vector<Integer> expected = com.guizmaii.zazr.collection.Vector.of(1, 2);
-        final Seq<Integer> actual = emptyInt().put(1, "1").put(2, "2").map(Tuple2::_1);
+        final Stream<Integer> actual = emptyInt().put(1, "1").put(2, "2").map(Tuple2::_1);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -881,25 +881,25 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipNils() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zip(com.guizmaii.zazr.collection.List.empty());
+        final Stream<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zip(com.guizmaii.zazr.collection.List.empty());
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipEmptyAndNonNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Integer>> actual = emptyInt().zip(com.guizmaii.zazr.collection.List.of(1));
+        final Stream<Tuple2<Tuple2<Integer, Object>, Integer>> actual = emptyInt().zip(com.guizmaii.zazr.collection.List.of(1));
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipNonEmptyAndNil() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, Object>> actual = emptyIntInt().put(0, 1).zip(com.guizmaii.zazr.collection.List.empty());
+        final Stream<Tuple2<Tuple2<Integer, Integer>, Object>> actual = emptyIntInt().put(0, 1).zip(com.guizmaii.zazr.collection.List.empty());
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipNonNilsIfThisIsSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
                 .put(0, 0)
                 .put(1, 1)
                 .zip(com.guizmaii.zazr.collection.List.of(5, 6, 7));
@@ -908,7 +908,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipNonNilsIfThatIsSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
                 .put(0, 0)
                 .put(1, 1)
                 .put(2, 2)
@@ -918,7 +918,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipNonNilsOfSameSize() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
                 .put(0, 0)
                 .put(1, 1)
                 .put(2, 2)
@@ -941,7 +941,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipNonNilWithIndex() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, Integer>> actual = emptyIntInt()
                 .put(0, 0)
                 .put(1, 1)
                 .put(2, 2)
@@ -954,19 +954,19 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNils() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(empty(), Tuple.of(-1, "x"), "z");
+        final Stream<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(empty(), Tuple.of(-1, "x"), "z");
         assertThat(actual).isEqualTo(Stream.empty());
     }
 
     @Test
     public void shouldZipAllEmptyAndNonNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), Tuple.of(-1, "x"), "z");
+        final Stream<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().zipAll(com.guizmaii.zazr.collection.List.of(1), Tuple.of(-1, "x"), "z");
         assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(-1, "x"), 1)));
     }
 
     @Test
     public void shouldZipAllNonEmptyAndNil() {
-        final Seq<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().put(0, 1).zipAll(empty(), Tuple.of(-1, "x"), "z");
+        final Stream<Tuple2<Tuple2<Integer, Object>, Object>> actual = emptyInt().put(0, 1).zipAll(empty(), Tuple.of(-1, "x"), "z");
         assertThat(actual).isEqualTo(Stream.of(Tuple.of(Tuple.of(0, 1), "z")));
     }
 
@@ -978,59 +978,59 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldZipAllNonNilsIfThisIsSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
                 .put(1, 1)
                 .put(2, 2)
                 .zipAll(of("a", "b", "c"), Tuple.of(9, 10), "z");
-        final Seq<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
+        final Stream<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
                 Tuple.of(Tuple.of(2, 2), "b"), Tuple.of(Tuple.of(9, 10), "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldZipAllNonNilsIfThisIsMoreSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
                 .put(1, 1)
                 .put(2, 2)
                 .zipAll(of("a", "b", "c", "d"), Tuple.of(9, 10), "z");
-        final Seq<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
+        final Stream<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
                 Tuple.of(Tuple.of(2, 2), "b"), Tuple.of(Tuple.of(9, 10), "c"), Tuple.of(Tuple.of(9, 10), "d"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldZipAllNonNilsIfThatIsSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
                 .put(1, 1)
                 .put(2, 2)
                 .put(3, 3)
                 .zipAll(this.of("a", "b"), Tuple.of(9, 10), "z");
-        final Seq<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
+        final Stream<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
                 Tuple.of(Tuple.of(2, 2), "b"), Tuple.of(Tuple.of(3, 3), "z"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldZipAllNonNilsIfThatIsMoreSmaller() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
                 .put(1, 1)
                 .put(2, 2)
                 .put(3, 3)
                 .put(4, 4)
                 .zipAll(of("a", "b"), Tuple.of(9, 10), "z");
-        final Seq<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
+        final Stream<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
                 Tuple.of(Tuple.of(2, 2), "b"), Tuple.of(Tuple.of(3, 3), "z"), Tuple.of(Tuple.of(4, 4), "z"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldZipAllNonNilsOfSameSize() {
-        final Seq<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
+        final Stream<Tuple2<Tuple2<Integer, Integer>, String>> actual = emptyIntInt()
                 .put(1, 1)
                 .put(2, 2)
                 .put(3, 3)
                 .zipAll(of("a", "b", "c"), Tuple.of(9, 10), "z");
-        final Seq<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
+        final Stream<Tuple2<Tuple2<Object, Object>, String>> expected = Stream.of(Tuple.of(Tuple.of(1, 1), "a"),
                 Tuple.of(Tuple.of(2, 2), "b"), Tuple.of(Tuple.of(3, 3), "c"));
         assertThat(actual).isEqualTo(expected);
     }
@@ -1576,8 +1576,8 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldCollectEntriesIntoASeq() {
-        final Seq<String> actual = mapOf(1, "a", 2, "b").collect(t -> t._1() == 2 ? Option.some(t._2()) : Option.none());
+    public void shouldCollectEntriesIntoAStream() {
+        final Stream<String> actual = mapOf(1, "a", 2, "b").collect(t -> t._1() == 2 ? Option.some(t._2()) : Option.none());
         assertThat(actual).isEqualTo(com.guizmaii.zazr.collection.Vector.of("b"));
     }
 

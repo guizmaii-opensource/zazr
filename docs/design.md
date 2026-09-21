@@ -599,6 +599,60 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   cases are folded into `VectorTest`, as #67 does for `ListTest`, `QueueTest` and `StreamTest`; the two `narrow`
   tests of `Seq`/`IndexedSeq` go with the interfaces.
 
+**Decided while implementing step 2 (#67, `List`, `Queue`, `Stream`):**
+
+- **`Seq` methods kept on the three types although 3.7 does not list them**, for the same reason as on `Vector` (unused
+  or slated for deletion elsewhere, kept so that nothing changes behaviour or loses a test in this step):
+  `asJava(Consumer)`, `asJavaMutable()`, `asJavaMutable(Consumer)`, `removeAll(Predicate)` (deprecated, `reject`),
+  `iterator(int)`, `containsSlice`, `indexOfSlice`/`lastIndexOfSlice` and the `*Option` variants of every index
+  search, `prefixLength`/`segmentLength`, `distinctByKeepLast`, `dropRightUntil`/`dropRightWhile`/
+  `takeRightUntil`/`takeRightWhile`, `splitAtInclusive`, `leftPadTo`, `reverseIterator`, `unzip`/`unzip3`. As on
+  `Vector`, `endsWith` takes an `Iterable` (it took a `Seq`), so any sequence, a JDK collection or a one-shot
+  iterator is accepted.
+- **Where a `Seq` return type was named, the type that was already returned at runtime is declared.**
+  `Map.map`, `flatMap`, `collect`, `as`, `zip`, `zipWith`, `zipAll`, `zipWithIndex`, `unzip`, `unzip3` and
+  `values()` say `Stream` (they all build one through `Iterator.toStream` / `Stream.ofAll`; `HashMap.values()`
+  already said `Stream`). `Map.scanLeft`/`scanRight` say `List` (they finish with `Iterator::toList`).
+  `Iterator.slideBy` says `Iterator<Stream<T>>` (its groups always were `Stream`s, unlike `grouped`/`sliding`,
+  whose groups are `Vector`s). All of these leave `Map` and `Iterator` in #68.
+- **Implementation sources.** Where a `Seq`/`LinearSeq` default was written over `iterator()` or a `Collections`
+  helper and is right for the type, the helper is called and its bound generalised from `Seq` to `Traversable`
+  (`shuffle`, `removeAll`, `retainAll`, `scanLeft`/`scanRight`, `groupBy`, `reject`, `last`). Where the type has a
+  better native implementation it is used: a cons-list walk on `List` (`indexOf`, `indexWhere`, `lastIndexWhere`,
+  `segmentLength`, `endsWith`, `ListModule.Slice`, `ListModule.Search`), front/rear on `Queue` (`reverseIterator`
+  walks the rear, which is already stored reversed, then the front; everything that needs a single ordered walk
+  goes through `toList()`, as `Queue.lastIndexOf` already did), and a lazy cons walk on `Stream`
+  (`indexWhere`, `lastIndexWhere`, `segmentLength`, `StreamModule.Slice`, which never computes the length so that
+  an infinite `Stream` can still be searched). The four `Seq`-bound helpers that could not be generalised
+  (`Collections.asJava`, `crossProduct`, `rotateLeft`, `rotateRight`, `sortBy`) are deleted and inlined on each
+  type, as #66 did on `Vector`: `rotateLeft`/`rotateRight` use `Math.floorMod`, so `Integer.MIN_VALUE` no longer
+  recurses forever, and `sortBy(comparator, mapper)` is `sorted` over the composed comparator (the same stable sort
+  the helper performed).
+- **`java.util.List` views**: `JavaConverters.SeqListView` becomes one `ListView` subclass per type
+  (`ListListView`, `QueueListView`, `StreamListView`, beside `VectorListView`), each calling its own type's
+  methods, so the unchecked casts the shared subclass needed are gone.
+- **Cross-type equality is unchanged**: `Collections.isSequence` now names the four sequence types
+  (`Vector`, `List`, `Queue`, `Stream`), so a sequence still equals any other sequence with the same elements in
+  the same order, and `hashCode` is still the ordered hash. #68 decides whether that survives.
+- **`duplicates`/`duplicatesBy` on `List`** have `Vector`'s contract and algorithm (one `LinkedHashMap` of first
+  occurrences plus a `HashSet` of the keys seen again, one pass, the key computed once), building a `List`. A null
+  key is handled: an element is never null, so `putIfAbsent` still tells a first occurrence from a repeat.
+- **The complexity list grows with the three types' own names**: `scripts/check-complexity.scala` adds
+  `asJavaMutable`, `length`, `reverseIterator`, `containsSlice`, `indexOfSlice`, `lastIndexOfSlice`,
+  `prefixLength`, `segmentLength`, `splitAtInclusive`, `distinctByKeepLast`, `dropRightUntil`/`dropRightWhile`/
+  `takeRightUntil`/`takeRightWhile`, `duplicates`/`duplicatesBy`, the stack names (`peek`, `peekOption`, `pop`,
+  `popOption`, `pop2`, `pop2Option`, `push`, `pushAll`), the queue names (`enqueue`, `enqueueAll`, `dequeue`,
+  `dequeueOption`) and the lazy-list names (`cycle`, `extend`, `appendSelf`). The `*Option` index variants stay
+  out: they are one-line wrappers whose javadoc points at the method that carries the cost. On a lazy type the
+  note says what is forced and what is deferred (`Complexity: lazy; each element is forced when the result reaches
+  it.`, `Complexity: O(n); the whole Stream is forced, so it does not terminate on an infinite Stream.`).
+- **`AbstractSeqTest` and `AbstractLinearSeqTest` are deleted**, their cases folded into `ListTest`, `QueueTest`
+  and `StreamTest`, each now extending `AbstractTraversableRangeTest` as `VectorTest` does. Every case is kept per
+  type; the only cases that go are the two `narrow` tests of `Seq` and `LinearSeq`, which go with the interfaces
+  (each type keeps its own `narrow` test). Where `StreamTest` already overrode a shared case for laziness, its
+  version is the one kept. Each test class gains a `TraversableOnlyTests` case that walks the reflective supertype
+  chain, so no sequence interface can come back above `Traversable` unnoticed.
+
 Which concrete collections survive (decided):
 
 | Keep | Why |

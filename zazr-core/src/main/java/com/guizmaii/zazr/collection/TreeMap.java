@@ -1402,7 +1402,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public Seq<V> values() {
+    public Stream<V> values() {
         return map(Tuple2::_2);
     }
 

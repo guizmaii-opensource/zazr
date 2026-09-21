@@ -199,7 +199,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     @SuppressWarnings("unchecked")
     @Override
-    default <U extends @Nullable Object> Seq<U> flatMap(Function<? super Tuple2<K, V>, ? extends Iterable<? extends U>> mapper) {
+    default <U extends @Nullable Object> Stream<U> flatMap(Function<? super Tuple2<K, V>, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return iterator().flatMap(mapper).toStream();
     }
@@ -291,13 +291,13 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     @SuppressWarnings("unchecked")
     @Override
-    default <U extends @Nullable Object> Seq<U> map(Function<? super Tuple2<K, V>, ? extends U> mapper) {
+    default <U extends @Nullable Object> Stream<U> map(Function<? super Tuple2<K, V>, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return (Seq<U>) iterator().map(mapper).toStream();
+        return (Stream<U>) iterator().map(mapper).toStream();
     }
 
     /**
-     * Matches and transforms the entries in one pass into a {@link Seq}; see {@link #collect(BiFunction)} for a
+     * Matches and transforms the entries in one pass into a {@link Stream}; see {@link #collect(BiFunction)} for a
      * result that is a {@code Map}.
      *
      * @param mapper a function from an entry to {@code Some} of the collected value or {@code None}; it must not
@@ -308,15 +308,15 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     @SuppressWarnings("unchecked")
     @Override
-    default <U extends @Nullable Object> Seq<U> collect(Function<? super Tuple2<K, V>, ? extends Option<? extends U>> mapper) {
+    default <U extends @Nullable Object> Stream<U> collect(Function<? super Tuple2<K, V>, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // one String per call, only so that a null Option is reported under the concrete map type, as the other kinds do
         final String nullMessage = getClass().getSimpleName() + ".collect: mapper returned null";
-        return (Seq<U>) iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), nullMessage)).toStream();
+        return (Stream<U>) iterator().collect(t -> Objects.requireNonNull(mapper.apply(t), nullMessage)).toStream();
     }
 
     @Override
-    default <U extends @Nullable Object> Seq<U> as(U value) {
+    default <U extends @Nullable Object> Stream<U> as(U value) {
         return map(ignored -> value);
     }
 
@@ -506,14 +506,13 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     @Deprecated
     Map<K, V> removeValues(Predicate<? super V> predicate);
 
-    // the declared result type is Seq, so the result is a List
     @Override
-    default <U extends @Nullable Object> Seq<U> scanLeft(U zero, BiFunction<? super U, ? super Tuple2<K, V>, ? extends U> operation) {
+    default <U extends @Nullable Object> List<U> scanLeft(U zero, BiFunction<? super U, ? super Tuple2<K, V>, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toList);
     }
 
     @Override
-    default <U extends @Nullable Object> Seq<U> scanRight(U zero, BiFunction<? super Tuple2<K, V>, ? super U, ? extends U> operation) {
+    default <U extends @Nullable Object> List<U> scanRight(U zero, BiFunction<? super Tuple2<K, V>, ? super U, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toList);
     }
 
@@ -530,32 +529,32 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Unzips the entries of this {@code Map} by treating each key-value pair as an element,
-     * and splitting them into two separate {@code Seq} collections - one for keys and one for values.
+     * and splitting them into two separate {@code Stream}s - one for keys and one for values.
      *
-     * @return a {@code Tuple2} containing two {@code Seq} collections: first with all keys, second with all values
+     * @return a {@code Tuple2} containing two {@code Stream}s: first with all keys, second with all values
      */
-    default Tuple2<Seq<K>, Seq<V>> unzip() {
+    default Tuple2<Stream<K>, Stream<V>> unzip() {
         return unzip(Function.identity());
     }
 
     /**
      * Unzips the entries of this {@code Map} by mapping each key-value pair to a tuple.
      * The unzipper function transforms each entry into a {@code Tuple2}, and then all first elements
-     * are collected into the first {@code Seq} and all second elements into the second {@code Seq}.
+     * are collected into the first {@code Stream} and all second elements into the second {@code Stream}.
      *
      * @param unzipper a function that maps key-value pairs of this {@code Map} to tuples
      * @param <T1>     type of the first element in the resulting pairs
      * @param <T2>     type of the second element in the resulting pairs
-     * @return a {@code Tuple2} containing two {@code Seq} collections with the split elements
+     * @return a {@code Tuple2} containing two {@code Stream}s with the split elements
      * @throws NullPointerException if {@code unzipper} is null
      */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Seq<T1>, Seq<T2>> unzip(BiFunction<? super K, ? super V, Tuple2<? extends T1, ? extends T2>> unzipper) {
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Stream<T1>, Stream<T2>> unzip(BiFunction<? super K, ? super V, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return unzip(entry -> unzipper.apply(entry._1(), entry._2()));
     }
 
     @Override
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Seq<T1>, Seq<T2>> unzip(Function<? super Tuple2<K, V>, Tuple2<? extends T1, ? extends T2>> unzipper) {
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Stream<T1>, Stream<T2>> unzip(Function<? super Tuple2<K, V>, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return iterator().unzip(unzipper).map(Stream::ofAll, Stream::ofAll);
     }
@@ -563,40 +562,40 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     /**
      * Unzips the entries of this {@code Map} by mapping each key-value pair to a triple.
      * The unzipper function transforms each entry into a {@code Tuple3}, and then elements are
-     * distributed to respective {@code Seq} collections by their position in the tuple: all first
-     * elements into the first {@code Seq}, all second elements into the second {@code Seq},
-     * and all third elements into the third {@code Seq}.
+     * distributed to respective {@code Stream}s by their position in the tuple: all first
+     * elements into the first {@code Stream}, all second elements into the second {@code Stream},
+     * and all third elements into the third {@code Stream}.
      *
      * @param unzipper a function that maps key-value pairs of this {@code Map} to triples
      * @param <T1>     type of the first element in the resulting triples
      * @param <T2>     type of the second element in the resulting triples
      * @param <T3>     type of the third element in the resulting triples
-     * @return a {@code Tuple3} containing three {@code Seq} collections with the split elements
+     * @return a {@code Tuple3} containing three {@code Stream}s with the split elements
      * @throws NullPointerException if {@code unzipper} is null
      */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Seq<T1>, Seq<T2>, Seq<T3>> unzip3(BiFunction<? super K, ? super V, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(BiFunction<? super K, ? super V, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return unzip3(entry -> unzipper.apply(entry._1(), entry._2()));
     }
 
     @Override
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Seq<T1>, Seq<T2>, Seq<T3>> unzip3(
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(
       Function<? super Tuple2<K, V>, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return iterator().unzip3(unzipper).map(Stream::ofAll, Stream::ofAll, Stream::ofAll);
     }
 
     /**
-     * Returns a new {@link Seq} that contains the values of this {@code Map}.
+     * Returns a new {@link Stream} that contains the values of this {@code Map}.
      *
      * <pre>{@code
-     * // = Seq("a", "b", "c")
+     * // = Stream("a", "b", "c")
      * HashMap.of(1, "a", 2, "b", 3, "c").values()
      * }</pre>
      *
-     * @return a new {@link Seq}
+     * @return a new {@link Stream}
      */
-    Seq<V> values();
+    Stream<V> values();
 
     /**
      * Returns the values in this map.
@@ -613,30 +612,30 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     }
 
     @Override
-    default <U extends @Nullable Object> Seq<Tuple2<Tuple2<K, V>, U>> zip(Iterable<? extends U> that) {
+    default <U extends @Nullable Object> Stream<Tuple2<Tuple2<K, V>, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
     @Override
-    default <U extends @Nullable Object, R extends @Nullable Object> Seq<R> zipWith(Iterable<? extends U> that, BiFunction<? super Tuple2<K, V>, ? super U, ? extends R> mapper) {
+    default <U extends @Nullable Object, R extends @Nullable Object> Stream<R> zipWith(Iterable<? extends U> that, BiFunction<? super Tuple2<K, V>, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return Stream.ofAll(iterator().zipWith(that, mapper));
     }
 
     @Override
-    default <U extends @Nullable Object> Seq<Tuple2<Tuple2<K, V>, U>> zipAll(Iterable<? extends U> that, Tuple2<K, V> thisElem, U thatElem) {
+    default <U extends @Nullable Object> Stream<Tuple2<Tuple2<K, V>, U>> zipAll(Iterable<? extends U> that, Tuple2<K, V> thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         return Stream.ofAll(iterator().zipAll(that, thisElem, thatElem));
     }
 
     @Override
-    default Seq<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
+    default Stream<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
     @Override
-    default <U extends @Nullable Object> Seq<U> zipWithIndex(BiFunction<? super Tuple2<K, V>, ? super Integer, ? extends U> mapper) {
+    default <U extends @Nullable Object> Stream<U> zipWithIndex(BiFunction<? super Tuple2<K, V>, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return Stream.ofAll(iterator().zipWithIndex(mapper));
     }

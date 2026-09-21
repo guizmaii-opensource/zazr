@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.collection.euler;
 
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +49,7 @@ public class Euler08Test {
     private static long largestProductOfConsecutives(int sizeOfConsecutive, String num) {
         return digits(num)
                 .sliding(sizeOfConsecutive)
-                .map(Seq::product)
+                .map(List::product)
                 .max().get().longValue();
     }
 

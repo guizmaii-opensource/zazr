@@ -8,8 +8,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * THIS CLASS IS INTENDED TO BE USED INTERNALLY ONLY!
  * <p>
- * This helper class provides methods that return {@link java.util.List} views on zazr sequences ({@link Vector} and
- * the {@link Seq} types). The view creation and back conversion take O(1).
+ * This helper class provides methods that return {@link java.util.List} views on the zazr sequences ({@link Vector},
+ * {@link List}, {@link Queue} and {@link Stream}). The view creation and back conversion take O(1).
  *
  * @author Daniel Dietrich
  */
@@ -22,8 +22,16 @@ class JavaConverters {
         return new VectorListView<>(vector, changePolicy.isMutable());
     }
 
-    static <T extends @Nullable Object, C extends Seq<T>> ListView<T, C> asJava(C seq, ChangePolicy changePolicy) {
-        return new SeqListView<>(seq, changePolicy.isMutable());
+    static <T extends @Nullable Object> ListView<T, List<T>> asJava(List<T> list, ChangePolicy changePolicy) {
+        return new ListListView<>(list, changePolicy.isMutable());
+    }
+
+    static <T extends @Nullable Object> ListView<T, Queue<T>> asJava(Queue<T> queue, ChangePolicy changePolicy) {
+        return new QueueListView<>(queue, changePolicy.isMutable());
+    }
+
+    static <T extends @Nullable Object> ListView<T, Stream<T>> asJava(Stream<T> stream, ChangePolicy changePolicy) {
+        return new StreamListView<>(stream, changePolicy.isMutable());
     }
 
     enum ChangePolicy {
@@ -86,7 +94,8 @@ class JavaConverters {
     /**
      * A {@link java.util.List} view over a persistent sequence. There is no shared sequence interface to call (design
      * 3.7), so everything positional goes through the abstract hooks below, implemented once per delegate type:
-     * {@link VectorListView} for {@link Vector}, {@link SeqListView} for the {@link Seq} types.
+     * one per sequence type ({@link VectorListView}, {@link ListListView}, {@link QueueListView},
+     * {@link StreamListView}).
      *
      * @param <T> the element type
      * @param <C> the delegate type
@@ -534,71 +543,171 @@ class JavaConverters {
         ListView<T, Vector<T>> view(Vector<T> delegate, boolean mutable) { return new VectorListView<>(delegate, mutable); }
     }
 
-    /** The view over a {@link Seq} (List, Queue, Stream). */
-    static final class SeqListView<T extends @Nullable Object, C extends Seq<T>> extends ListView<T, C> {
+    /** The view over a {@link List}: every hook is the List method of the same name. */
+    static final class ListListView<T extends @Nullable Object> extends ListView<T, List<T>> {
 
-        SeqListView(C delegate, boolean mutable) {
+        ListListView(List<T> delegate, boolean mutable) {
             super(delegate, mutable);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
-        C delegateAppend(C delegate, T element) { return (C) delegate.append(element); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateInsert(C delegate, int index, T element) { return (C) delegate.insert(index, element); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateAppendAll(C delegate, Iterable<? extends T> elements) { return (C) delegate.appendAll(elements); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateInsertAll(C delegate, int index, Iterable<? extends T> elements) { return (C) delegate.insertAll(index, elements); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateTake(C delegate, int n) { return (C) delegate.take(n); }
+        List<T> delegateAppend(List<T> delegate, T element) { return delegate.append(element); }
 
         @Override
-        T delegateGet(C delegate, int index) { return delegate.get(index); }
+        List<T> delegateInsert(List<T> delegate, int index, T element) { return delegate.insert(index, element); }
 
         @Override
-        int delegateIndexOf(C delegate, T element) { return delegate.indexOf(element); }
+        List<T> delegateAppendAll(List<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
 
         @Override
-        int delegateLastIndexOf(C delegate, T element) { return delegate.lastIndexOf(element); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateRemoveAt(C delegate, int index) { return (C) delegate.removeAt(index); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateRemove(C delegate, T element) { return (C) delegate.remove(element); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateRemoveAll(C delegate, Iterable<? extends T> elements) { return (C) delegate.removeAll(elements); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateRetainAll(C delegate, Iterable<? extends T> elements) { return (C) delegate.retainAll(elements); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateUpdate(C delegate, int index, T element) { return (C) delegate.update(index, element); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateSorted(C delegate, Comparator<? super T> comparator) { return (C) delegate.sorted(comparator); }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        C delegateSubSequence(C delegate, int beginIndex, int endIndex) { return (C) delegate.subSequence(beginIndex, endIndex); }
+        List<T> delegateInsertAll(List<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
 
         @Override
-        ListView<T, C> view(C delegate, boolean mutable) { return new SeqListView<>(delegate, mutable); }
+        List<T> delegateTake(List<T> delegate, int n) { return delegate.take(n); }
+
+        @Override
+        T delegateGet(List<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        int delegateIndexOf(List<T> delegate, T element) { return delegate.indexOf(element); }
+
+        @Override
+        int delegateLastIndexOf(List<T> delegate, T element) { return delegate.lastIndexOf(element); }
+
+        @Override
+        List<T> delegateRemoveAt(List<T> delegate, int index) { return delegate.removeAt(index); }
+
+        @Override
+        List<T> delegateRemove(List<T> delegate, T element) { return delegate.remove(element); }
+
+        @Override
+        List<T> delegateRemoveAll(List<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
+
+        @Override
+        List<T> delegateRetainAll(List<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
+
+        @Override
+        List<T> delegateUpdate(List<T> delegate, int index, T element) { return delegate.update(index, element); }
+
+        @Override
+        List<T> delegateSorted(List<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
+
+        @Override
+        List<T> delegateSubSequence(List<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+
+        @Override
+        ListView<T, List<T>> view(List<T> delegate, boolean mutable) { return new ListListView<>(delegate, mutable); }
+    }
+
+    /** The view over a {@link Queue}: every hook is the Queue method of the same name. */
+    static final class QueueListView<T extends @Nullable Object> extends ListView<T, Queue<T>> {
+
+        QueueListView(Queue<T> delegate, boolean mutable) {
+            super(delegate, mutable);
+        }
+
+        @Override
+        Queue<T> delegateAppend(Queue<T> delegate, T element) { return delegate.append(element); }
+
+        @Override
+        Queue<T> delegateInsert(Queue<T> delegate, int index, T element) { return delegate.insert(index, element); }
+
+        @Override
+        Queue<T> delegateAppendAll(Queue<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
+
+        @Override
+        Queue<T> delegateInsertAll(Queue<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
+
+        @Override
+        Queue<T> delegateTake(Queue<T> delegate, int n) { return delegate.take(n); }
+
+        @Override
+        T delegateGet(Queue<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        int delegateIndexOf(Queue<T> delegate, T element) { return delegate.indexOf(element); }
+
+        @Override
+        int delegateLastIndexOf(Queue<T> delegate, T element) { return delegate.lastIndexOf(element); }
+
+        @Override
+        Queue<T> delegateRemoveAt(Queue<T> delegate, int index) { return delegate.removeAt(index); }
+
+        @Override
+        Queue<T> delegateRemove(Queue<T> delegate, T element) { return delegate.remove(element); }
+
+        @Override
+        Queue<T> delegateRemoveAll(Queue<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
+
+        @Override
+        Queue<T> delegateRetainAll(Queue<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
+
+        @Override
+        Queue<T> delegateUpdate(Queue<T> delegate, int index, T element) { return delegate.update(index, element); }
+
+        @Override
+        Queue<T> delegateSorted(Queue<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
+
+        @Override
+        Queue<T> delegateSubSequence(Queue<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+
+        @Override
+        ListView<T, Queue<T>> view(Queue<T> delegate, boolean mutable) { return new QueueListView<>(delegate, mutable); }
+    }
+
+    /** The view over a {@link Stream}: every hook is the Stream method of the same name. */
+    static final class StreamListView<T extends @Nullable Object> extends ListView<T, Stream<T>> {
+
+        StreamListView(Stream<T> delegate, boolean mutable) {
+            super(delegate, mutable);
+        }
+
+        @Override
+        Stream<T> delegateAppend(Stream<T> delegate, T element) { return delegate.append(element); }
+
+        @Override
+        Stream<T> delegateInsert(Stream<T> delegate, int index, T element) { return delegate.insert(index, element); }
+
+        @Override
+        Stream<T> delegateAppendAll(Stream<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
+
+        @Override
+        Stream<T> delegateInsertAll(Stream<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
+
+        @Override
+        Stream<T> delegateTake(Stream<T> delegate, int n) { return delegate.take(n); }
+
+        @Override
+        T delegateGet(Stream<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        int delegateIndexOf(Stream<T> delegate, T element) { return delegate.indexOf(element); }
+
+        @Override
+        int delegateLastIndexOf(Stream<T> delegate, T element) { return delegate.lastIndexOf(element); }
+
+        @Override
+        Stream<T> delegateRemoveAt(Stream<T> delegate, int index) { return delegate.removeAt(index); }
+
+        @Override
+        Stream<T> delegateRemove(Stream<T> delegate, T element) { return delegate.remove(element); }
+
+        @Override
+        Stream<T> delegateRemoveAll(Stream<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
+
+        @Override
+        Stream<T> delegateRetainAll(Stream<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
+
+        @Override
+        Stream<T> delegateUpdate(Stream<T> delegate, int index, T element) { return delegate.update(index, element); }
+
+        @Override
+        Stream<T> delegateSorted(Stream<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
+
+        @Override
+        Stream<T> delegateSubSequence(Stream<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+
+        @Override
+        ListView<T, Stream<T>> view(Stream<T> delegate, boolean mutable) { return new StreamListView<>(delegate, mutable); }
     }
 }
