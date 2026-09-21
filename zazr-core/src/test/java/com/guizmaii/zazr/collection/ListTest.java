@@ -1803,6 +1803,20 @@ public class ListTest extends AbstractTraversableRangeTest {
         }
 
         @Test
+        public void shouldRotateByZeroWithoutWalkingTheElements() {
+            // the zero fast path answers before length(), which walks a List
+            final List<Integer> none = empty();
+            final List<Integer> one = of(1);
+            final List<Integer> many = of(1, 2, 3, 4, 5);
+            assertThat(none.rotateLeft(0)).isSameAs(none);
+            assertThat(none.rotateRight(0)).isSameAs(none);
+            assertThat(one.rotateLeft(0)).isSameAs(one);
+            assertThat(one.rotateRight(0)).isSameAs(one);
+            assertThat(many.rotateLeft(0)).isSameAs(many);
+            assertThat(many.rotateRight(0)).isSameAs(many);
+        }
+
+        @Test
         public void shouldRotateLeftForNegativeLessThatLen() {
             assertThat(of(1, 2, 3, 4, 5).rotateLeft(-2)).isEqualTo(of(4, 5, 1, 2, 3));
         }

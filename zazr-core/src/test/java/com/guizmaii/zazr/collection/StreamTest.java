@@ -2240,6 +2240,26 @@ public class StreamTest extends AbstractTraversableRangeTest {
         }
 
         @Test
+        public void shouldRotateLeftByZeroOnAnInfiniteStream() {
+            // == on purpose: a failure must not make AssertJ format an infinite Stream
+            final Stream<Integer> naturals = Stream.from(1);
+            assertThat(naturals.rotateLeft(0) == naturals).as("rotateLeft(0) returns the receiver").isTrue();
+            assertThat(naturals.rotateLeft(0).take(3)).isEqualTo(Stream.of(1, 2, 3));
+        }
+
+        @Test
+        public void shouldNotForceTheStreamToRotateLeftByZero() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> counted = Stream.from(1).map(i -> {
+                forced.incrementAndGet();
+                return i;
+            });
+            final int before = forced.get();
+            assertThat(counted.rotateLeft(0)).isSameAs(counted);
+            assertThat(forced.get()).isEqualTo(before);
+        }
+
+        @Test
         public void shouldRotateLeftForNegativeLessThatLen() {
             assertThat(of(1, 2, 3, 4, 5).rotateLeft(-2)).isEqualTo(of(4, 5, 1, 2, 3));
         }
@@ -2286,6 +2306,26 @@ public class StreamTest extends AbstractTraversableRangeTest {
         public void shouldRotateRightForZero() {
             Stream<Integer> seq = of(1, 2, 3, 4, 5);
             assertThat(seq.rotateRight(0)).isSameAs(seq);
+        }
+
+        @Test
+        public void shouldRotateRightByZeroOnAnInfiniteStream() {
+            // == on purpose: a failure must not make AssertJ format an infinite Stream
+            final Stream<Integer> naturals = Stream.from(1);
+            assertThat(naturals.rotateRight(0) == naturals).as("rotateRight(0) returns the receiver").isTrue();
+            assertThat(naturals.rotateRight(0).take(3)).isEqualTo(Stream.of(1, 2, 3));
+        }
+
+        @Test
+        public void shouldNotForceTheStreamToRotateRightByZero() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> counted = Stream.from(1).map(i -> {
+                forced.incrementAndGet();
+                return i;
+            });
+            final int before = forced.get();
+            assertThat(counted.rotateRight(0)).isSameAs(counted);
+            assertThat(forced.get()).isEqualTo(before);
         }
 
         @Test

@@ -2321,13 +2321,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Rotates the elements {@code n} positions to the left: {@code List(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code List(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
      *
      * @param n the distance
      * @return the rotated List, or this List if the rotation is a multiple of the length
      */
     default List<T> rotateLeft(int n) {
-        if (isEmpty()) {
+        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        if (n == 0 || isEmpty()) {
             return this;
         }
         final int k = Math.floorMod(n, length());
@@ -2338,13 +2339,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Rotates the elements {@code n} positions to the right: {@code List(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code List(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
      *
      * @param n the distance
      * @return the rotated List, or this List if the rotation is a multiple of the length
      */
     default List<T> rotateRight(int n) {
-        if (isEmpty()) {
+        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        if (n == 0 || isEmpty()) {
             return this;
         }
         final int k = Math.floorMod(n, length());

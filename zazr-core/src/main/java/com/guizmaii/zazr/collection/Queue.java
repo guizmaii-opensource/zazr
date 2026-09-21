@@ -1959,13 +1959,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Rotates the elements {@code n} positions to the left: {@code Queue(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code Queue(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
      *
      * @param n the distance
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
      */
     public Queue<T> rotateLeft(int n) {
-        if (isEmpty()) {
+        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        if (n == 0 || isEmpty()) {
             return this;
         }
         final int k = Math.floorMod(n, length());
@@ -1976,13 +1977,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Rotates the elements {@code n} positions to the right: {@code Queue(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Queue(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
      *
      * @param n the distance
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
      */
     public Queue<T> rotateRight(int n) {
-        if (isEmpty()) {
+        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        if (n == 0 || isEmpty()) {
             return this;
         }
         final int k = Math.floorMod(n, length());

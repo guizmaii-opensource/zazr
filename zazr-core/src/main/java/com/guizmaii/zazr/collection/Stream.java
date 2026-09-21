@@ -2352,13 +2352,15 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Rotates the elements {@code n} positions to the left: {@code Stream(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code Stream(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); the whole Stream is forced, because its length decides the rotation.
+     * Complexity: O(n); the whole Stream is forced, because its length decides the rotation. {@code n == 0} is
+     * O(1) and forces nothing, so it works on an infinite Stream.
      *
      * @param n the distance
      * @return the rotated Stream, or this Stream if the rotation is a multiple of the length
      */
     default Stream<T> rotateLeft(int n) {
-        if (isEmpty()) {
+        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        if (n == 0 || isEmpty()) {
             return this;
         }
         final int k = Math.floorMod(n, length());
@@ -2369,13 +2371,15 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Rotates the elements {@code n} positions to the right: {@code Stream(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Stream(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); the whole Stream is forced, because its length decides the rotation.
+     * Complexity: O(n); the whole Stream is forced, because its length decides the rotation. {@code n == 0} is
+     * O(1) and forces nothing, so it works on an infinite Stream.
      *
      * @param n the distance
      * @return the rotated Stream, or this Stream if the rotation is a multiple of the length
      */
     default Stream<T> rotateRight(int n) {
-        if (isEmpty()) {
+        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        if (n == 0 || isEmpty()) {
             return this;
         }
         final int k = Math.floorMod(n, length());
