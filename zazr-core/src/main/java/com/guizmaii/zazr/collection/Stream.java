@@ -1747,7 +1747,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(n); the whole Stream is forced, because the last matching element decides.
      *
      * @param predicate the condition, tested from the end
-     * @return a new Stream, or this Stream if its last element satisfies the predicate
+     * @return a new Stream
      * @throws NullPointerException if {@code predicate} is null
      */
     default Stream<T> dropRightUntil(Predicate<? super T> predicate) {
@@ -1762,7 +1762,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(n); the whole Stream is forced, because the last matching element decides.
      *
      * @param predicate the condition, tested from the end
-     * @return a new Stream, or this Stream if its last element does not satisfy the predicate
+     * @return a new Stream
      * @throws NullPointerException if {@code predicate} is null
      */
     default Stream<T> dropRightWhile(Predicate<? super T> predicate) {
@@ -1944,7 +1944,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; one element is forced, the rest on demand.
      *
      * @param element the separator
-     * @return a new Stream, or this Stream if it has fewer than two elements
+     * @return a new Stream, or this Stream if it is empty
      */
     default Stream<T> intersperse(T element) {
         if (isEmpty()) {
@@ -2035,7 +2035,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param length  the target length
      * @param element the padding element
-     * @return a new Stream, or this Stream if it is already at least {@code length} long
+     * @return a new Stream, or this Stream if {@code length} is not positive
      */
     default Stream<T> padTo(int length, T element) {
         if (length <= 0) {
@@ -2186,7 +2186,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; the elements are forced until the first occurrence, the rest on demand.
      *
      * @param element the element to remove
-     * @return a new Stream, or this Stream if the element is absent
+     * @return a new Stream, or this Stream if it is empty
      */
     default Stream<T> remove(T element) {
         if (isEmpty()) {
@@ -2203,7 +2203,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; the elements are forced until the first match, the rest on demand.
      *
      * @param predicate the condition
-     * @return a new Stream, or this Stream if no element satisfies the predicate
+     * @return a new Stream, or this Stream if it is empty
      * @throws NullPointerException if {@code predicate} is null
      */
     default Stream<T> removeFirst(Predicate<T> predicate) {
@@ -2222,7 +2222,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(n); the whole Stream is forced, because the last match decides.
      *
      * @param predicate the condition
-     * @return a new Stream, or this Stream if no element satisfies the predicate
+     * @return a new Stream, or this Stream if it is empty
      * @throws NullPointerException if {@code predicate} is null
      */
     default Stream<T> removeLast(Predicate<T> predicate) {
@@ -2257,7 +2257,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; each element is forced when the result reaches it.
      *
      * @param element the element to remove
-     * @return a new Stream, or this Stream if the element is absent
+     * @return a new Stream
      */
     default Stream<T> removeAll(T element) {
         return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
@@ -2269,7 +2269,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; the removed elements are hashed once, then each element is forced when the result reaches it.
      *
      * @param elements the elements to remove
-     * @return a new Stream, or this Stream if none of them occurs
+     * @return a new Stream
      * @throws NullPointerException if {@code elements} is null
      */
     default Stream<T> removeAll(Iterable<? extends T> elements) {
@@ -2342,7 +2342,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: O(n); the whole Stream is forced.
      *
-     * @return a new Stream, or this Stream if it has fewer than two elements
+     * @return a new Stream, or this Stream if it is empty
      */
     default Stream<T> reverse() {
         return isEmpty() ? this : foldLeft(Stream.empty(), Stream::prepend);

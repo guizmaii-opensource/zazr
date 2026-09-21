@@ -1139,7 +1139,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Complexity: O(n); the List is reversed twice.
      *
      * @param predicate the condition, tested from the end
-     * @return a new List, or this List if its last element satisfies the predicate
+     * @return a new List
      * @throws NullPointerException if {@code predicate} is null
      */
     default List<T> dropRightUntil(Predicate<? super T> predicate) {
@@ -1154,7 +1154,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Complexity: O(n); the List is reversed twice.
      *
      * @param predicate the condition, tested from the end
-     * @return a new List, or this List if its last element does not satisfy the predicate
+     * @return a new List
      * @throws NullPointerException if {@code predicate} is null
      */
     default List<T> dropRightWhile(Predicate<? super T> predicate) {
@@ -1592,7 +1592,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Complexity: O(n).
      *
      * @param element the separator
-     * @return a new List, or this List if it has fewer than two elements
+     * @return a new List, or this List if it is empty
      */
     default List<T> intersperse(T element) {
         return ofAll(iterator().intersperse(element));

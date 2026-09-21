@@ -1895,6 +1895,14 @@ public class QueueTest extends AbstractTraversableRangeTest {
     @Nested
     class RotaterightTests {
         @Test
+        public void shouldRotateByTheMostNegativeDistance() {
+            // Integer.MIN_VALUE has no positive negation: the distance is taken modulo the length, not negated
+            assertThat(of(1, 2, 3, 4).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateLeft(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3, 4).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateRight(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(2, 3, 1));
+            assertThat(of(1, 2, 3).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(3, 1, 2));
+        }
+        @Test
         public void shouldRotateRightOnEmpty() {
             assertThat(empty().rotateRight(1)).isSameAs(empty());
         }

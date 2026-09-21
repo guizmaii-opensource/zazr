@@ -1422,7 +1422,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Complexity: O(n).
      *
      * @param predicate the condition, tested from the end
-     * @return a new Queue, or this Queue if its last element satisfies the predicate
+     * @return a new Queue
      * @throws NullPointerException if {@code predicate} is null
      */
     public Queue<T> dropRightUntil(Predicate<? super T> predicate) {
@@ -1437,7 +1437,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Complexity: O(n).
      *
      * @param predicate the condition, tested from the end
-     * @return a new Queue, or this Queue if its last element does not satisfy the predicate
+     * @return a new Queue
      * @throws NullPointerException if {@code predicate} is null
      */
     public Queue<T> dropRightWhile(Predicate<? super T> predicate) {
@@ -1651,7 +1651,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Complexity: O(n).
      *
      * @param element the separator
-     * @return a new Queue, or this Queue if it has fewer than two elements
+     * @return a new Queue, or this Queue if it is empty
      */
     public Queue<T> intersperse(T element) {
         if (isEmpty()) {
@@ -1949,7 +1949,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n).
      *
-     * @return a new Queue, or this Queue if it has fewer than two elements
+     * @return a new Queue, or this Queue if it is empty
      */
     public Queue<T> reverse() {
         return isEmpty() ? this : ofAll(toList().reverse());
