@@ -8,8 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
-import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.Comparator;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -146,9 +145,9 @@ public class Tuple8Test {
     }
 
     @Test
-    public void shouldConvertToSeq() {
-        final Seq<?> actual = createIntTuple(1, 0, 0, 0, 0, 0, 0, 0).toSeq();
-        assertThat(actual).isEqualTo(List.of(1, 0, 0, 0, 0, 0, 0, 0));
+    public void shouldConvertToVector() {
+        final Vector<?> actual = createIntTuple(1, 0, 0, 0, 0, 0, 0, 0).toVector();
+        assertThat(actual).isEqualTo(Vector.of(1, 0, 0, 0, 0, 0, 0, 0));
     }
 
     @Test
@@ -268,15 +267,28 @@ public class Tuple8Test {
 
     @Test
     public void shouldReturnTuple8OfUnzip8() {
-      final Seq<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4, 5, 6, 7, 8, 9), Tuple.of(4, 5, 6, 7, 8, 9, 10, 11), Tuple.of(6, 7, 8, 9, 10, 11, 12, 13), Tuple.of(8, 9, 10, 11, 12, 13, 14, 15), Tuple.of(10, 11, 12, 13, 14, 15, 16, 17), Tuple.of(12, 13, 14, 15, 16, 17, 18, 19), Tuple.of(14, 15, 16, 17, 18, 19, 20, 21), Tuple.of(16, 17, 18, 19, 20, 21, 22, 23));
-      final Tuple8<Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(2, 4, 6, 8, 10, 12, 14, 16), Stream.of(3, 5, 7, 9, 11, 13, 15, 17), Stream.of(4, 6, 8, 10, 12, 14, 16, 18), Stream.of(5, 7, 9, 11, 13, 15, 17, 19), Stream.of(6, 8, 10, 12, 14, 16, 18, 20), Stream.of(7, 9, 11, 13, 15, 17, 19, 21), Stream.of(8, 10, 12, 14, 16, 18, 20, 22), Stream.of(9, 11, 13, 15, 17, 19, 21, 23));
+      final List<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4, 5, 6, 7, 8, 9), Tuple.of(4, 5, 6, 7, 8, 9, 10, 11), Tuple.of(6, 7, 8, 9, 10, 11, 12, 13), Tuple.of(8, 9, 10, 11, 12, 13, 14, 15), Tuple.of(10, 11, 12, 13, 14, 15, 16, 17), Tuple.of(12, 13, 14, 15, 16, 17, 18, 19), Tuple.of(14, 15, 16, 17, 18, 19, 20, 21), Tuple.of(16, 17, 18, 19, 20, 21, 22, 23));
+      final Tuple8<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(2, 4, 6, 8, 10, 12, 14, 16), Vector.of(3, 5, 7, 9, 11, 13, 15, 17), Vector.of(4, 6, 8, 10, 12, 14, 16, 18), Vector.of(5, 7, 9, 11, 13, 15, 17, 19), Vector.of(6, 8, 10, 12, 14, 16, 18, 20), Vector.of(7, 9, 11, 13, 15, 17, 19, 21), Vector.of(8, 10, 12, 14, 16, 18, 20, 22), Vector.of(9, 11, 13, 15, 17, 19, 21, 23));
       assertThat(Tuple.unzip8(iterable)).isEqualTo(expected);
     }
 
     @Test
+    public void shouldUnzip8Nothing() {
+      final Tuple8<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty());
+      assertThat(Tuple.unzip8(List.<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> empty())).isEqualTo(expected);
+      assertThat(Tuple.unzip8(List.<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> empty())._1()).isSameAs(Vector.empty());
+    }
+
+    @Test
+    public void shouldRejectNullOnUnzip8() {
+      assertThrows(NullPointerException.class, () -> Tuple.unzip8(null));
+      assertThrows(NullPointerException.class, () -> Tuple.unzip8(List.of(Tuple.of((Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null))));
+    }
+
+    @Test
     public void shouldReturnTuple8OfUnzip1() {
-      final Seq<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8));
-      final Tuple8<Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(1), Stream.of(2), Stream.of(3), Stream.of(4), Stream.of(5), Stream.of(6), Stream.of(7), Stream.of(8));
+      final List<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8));
+      final Tuple8<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(1), Vector.of(2), Vector.of(3), Vector.of(4), Vector.of(5), Vector.of(6), Vector.of(7), Vector.of(8));
       assertThat(Tuple.unzip8(iterable)).isEqualTo(expected);
     }
 

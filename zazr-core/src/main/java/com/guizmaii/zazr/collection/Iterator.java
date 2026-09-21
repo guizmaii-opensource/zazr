@@ -1753,7 +1753,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
-    default Iterator<Seq<T>> grouped(int size) {
+    default Iterator<Vector<T>> grouped(int size) {
         return new GroupedIterator<>(this, size, size);
     }
     
@@ -2118,12 +2118,12 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     @Override
-    default Iterator<Seq<T>> sliding(int size) {
+    default Iterator<Vector<T>> sliding(int size) {
         return sliding(size, 1);
     }
 
     @Override
-    default Iterator<Seq<T>> sliding(int size, int step) {
+    default Iterator<Vector<T>> sliding(int size, int step) {
         return new GroupedIterator<>(this, size, step);
     }
     
@@ -2468,7 +2468,8 @@ interface IteratorModule {
         }
     }
 
-    final class GroupedIterator<T extends @Nullable Object> implements Iterator<Seq<T>> {
+    /* the groups are Vectors (one leaf array each); the iterator says so since Vector is no longer a Seq (#66) */
+    final class GroupedIterator<T extends @Nullable Object> implements Iterator<Vector<T>> {
 
         private final Iterator<T> that;
         private final int size;
@@ -2501,7 +2502,7 @@ interface IteratorModule {
         }
 
         @Override
-        public Seq<T> next() {
+        public Vector<T> next() {
             if (buffer.length == 0) {
                 throw new NoSuchElementException();
             }

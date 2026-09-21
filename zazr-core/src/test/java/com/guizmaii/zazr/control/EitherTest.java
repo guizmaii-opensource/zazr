@@ -2,7 +2,6 @@ package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -105,32 +104,32 @@ public class EitherTest {
         @Test
         public void shouldCollectAllEmptyIterableOfEither() {
             final Iterable<Either<Integer, String>> eithers = List.empty();
-            final Either<Integer, Seq<String>> actual = Either.collectAll(eithers);
-            final Either<Integer, Seq<String>> expected = Either.right(Vector.empty());
+            final Either<Integer, Vector<String>> actual = Either.collectAll(eithers);
+            final Either<Integer, Vector<String>> expected = Either.right(Vector.empty());
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldCollectAllNonEmptyIterableOfRight() {
             final Iterable<Either<Integer, String>> eithers = List.of(Either.right("a"), Either.right("b"), Either.right("c"));
-            final Either<Integer, Seq<String>> actual = Either.collectAll(eithers);
-            final Either<Integer, Seq<String>> expected = Either.right(Vector.of("a", "b", "c"));
+            final Either<Integer, Vector<String>> actual = Either.collectAll(eithers);
+            final Either<Integer, Vector<String>> expected = Either.right(Vector.of("a", "b", "c"));
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldCollectAllNonEmptyIterableOfLeft() {
             final Iterable<Either<Integer, String>> eithers = List.of(Either.left(1), Either.left(2), Either.left(3));
-            final Either<Integer, Seq<String>> actual = Either.collectAll(eithers);
-            final Either<Integer, Seq<String>> expected = Either.left(1);
+            final Either<Integer, Vector<String>> actual = Either.collectAll(eithers);
+            final Either<Integer, Vector<String>> expected = Either.left(1);
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldCollectAllNonEmptyIterableOfMixedEither() {
             final Iterable<Either<Integer, String>> eithers = List.of(Either.right("a"), Either.left(1), Either.right("c"), Either.left(3));
-            final Either<Integer, Seq<String>> actual = Either.collectAll(eithers);
-            final Either<Integer, Seq<String>> expected = Either.left(1);
+            final Either<Integer, Vector<String>> actual = Either.collectAll(eithers);
+            final Either<Integer, Vector<String>> expected = Either.left(1);
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -147,33 +146,33 @@ public class EitherTest {
         @Test
         public void shouldForEachEmptyIterableOfEither() {
             final Iterable<String> values = List.empty();
-            final Either<Integer, Seq<String>> actual = Either.forEach(values, Either::right);
-            final Either<Integer, Seq<String>> expected = Either.right(Vector.empty());
+            final Either<Integer, Vector<String>> actual = Either.forEach(values, Either::right);
+            final Either<Integer, Vector<String>> expected = Either.right(Vector.empty());
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldForEachNonEmptyIterableOfRight() {
             final Iterable<String> values = List.of("a", "b", "c");
-            final Either<Integer, Seq<String>> actual = Either.forEach(values, Either::right);
-            final Either<Integer, Seq<String>> expected = Either.right(Vector.of("a", "b", "c"));
+            final Either<Integer, Vector<String>> actual = Either.forEach(values, Either::right);
+            final Either<Integer, Vector<String>> expected = Either.right(Vector.of("a", "b", "c"));
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldForEachNonEmptyIterableOfLeft() {
             final Iterable<Integer> values = List.of(1, 2, 3);
-            final Either<Integer, Seq<String>> actual = Either.forEach(values, Either::left);
-            final Either<Integer, Seq<String>> expected = Either.left(1);
+            final Either<Integer, Vector<String>> actual = Either.forEach(values, Either::left);
+            final Either<Integer, Vector<String>> expected = Either.left(1);
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldForEachNonEmptyIterableOfMixedEither() {
             final Iterable<String> values = List.of("a", "1", "c", "3");
-            final Either<Integer, Seq<String>> actual =
+            final Either<Integer, Vector<String>> actual =
               Either.forEach(values, x -> x.matches("^\\d+$") ? Either.left(Integer.parseInt(x)) : Either.right(x));
-            final Either<Integer, Seq<String>> expected = Either.left(1);
+            final Either<Integer, Vector<String>> expected = Either.left(1);
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -768,7 +767,7 @@ public class EitherTest {
         @Test
         public void shouldStopCallingTheMapperAfterTheFirstLeft() {
             final java.util.List<Integer> seen = new java.util.ArrayList<>();
-            final Either<String, Seq<Integer>> actual = Either.forEach(List.of(1, 2, 3), i -> {
+            final Either<String, Vector<Integer>> actual = Either.forEach(List.of(1, 2, 3), i -> {
                 seen.add(i);
                 return i == 2 ? Either.left("stop") : Either.right(i);
             });

@@ -8,8 +8,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * THIS CLASS IS INTENDED TO BE USED INTERNALLY ONLY!
  * <p>
- * This helper class provides methods that return {@link java.util.List} views on Vavr {@link Seq} collections.
- * The view creation and back conversion take O(1).
+ * This helper class provides methods that return {@link java.util.List} views on zazr sequences ({@link Vector} and,
+ * until #67, the {@link Seq} types). The view creation and back conversion take O(1).
  *
  * @author Daniel Dietrich
  */
@@ -18,8 +18,12 @@ class JavaConverters {
     private JavaConverters() {
     }
 
+    static <T extends @Nullable Object> ListView<T, Vector<T>> asJava(Vector<T> vector, ChangePolicy changePolicy) {
+        return new VectorListView<>(vector, changePolicy.isMutable());
+    }
+
     static <T extends @Nullable Object, C extends Seq<T>> ListView<T, C> asJava(C seq, ChangePolicy changePolicy) {
-        return new ListView<>(seq, changePolicy.isMutable());
+        return new SeqListView<>(seq, changePolicy.isMutable());
     }
 
     enum ChangePolicy {
@@ -36,7 +40,7 @@ class JavaConverters {
     /**
      * Encapsulates the access to delegate and performs mutability checks.
      *
-     * @param <C> The Vavr collection type
+     * @param <C> The zazr collection type
      */
     private static abstract class HasDelegate<C extends Traversable<?>> {
 
@@ -79,47 +83,86 @@ class JavaConverters {
         }
     }
 
-    static class ListView<T extends @Nullable Object, C extends Seq<T>> extends HasDelegate<C> implements java.util.List<T> {
+    /**
+     * A {@link java.util.List} view over a persistent sequence. There is no shared sequence interface to call (design
+     * 3.7), so everything positional goes through the abstract hooks below, implemented once per delegate type:
+     * {@link VectorListView} for {@link Vector}, {@link SeqListView} for the {@link Seq} types until #67.
+     *
+     * @param <T> the element type
+     * @param <C> the delegate type
+     */
+    static abstract class ListView<T extends @Nullable Object, C extends Traversable<T>> extends HasDelegate<C> implements java.util.List<T> {
 
         ListView(C delegate, boolean mutable) {
             super(delegate, mutable);
         }
 
-        @SuppressWarnings("unchecked")
+        // -- the delegate operations a java.util.List needs and Traversable does not declare
+
+        abstract C delegateAppend(C delegate, T element);
+
+        abstract C delegateInsert(C delegate, int index, T element);
+
+        abstract C delegateAppendAll(C delegate, Iterable<? extends T> elements);
+
+        abstract C delegateInsertAll(C delegate, int index, Iterable<? extends T> elements);
+
+        abstract C delegateTake(C delegate, int n);
+
+        abstract T delegateGet(C delegate, int index);
+
+        abstract int delegateIndexOf(C delegate, T element);
+
+        abstract int delegateLastIndexOf(C delegate, T element);
+
+        abstract C delegateRemoveAt(C delegate, int index);
+
+        abstract C delegateRemove(C delegate, T element);
+
+        abstract C delegateRemoveAll(C delegate, Iterable<? extends T> elements);
+
+        abstract C delegateRetainAll(C delegate, Iterable<? extends T> elements);
+
+        abstract C delegateUpdate(C delegate, int index, T element);
+
+        abstract C delegateSorted(C delegate, Comparator<? super T> comparator);
+
+        abstract C delegateSubSequence(C delegate, int beginIndex, int endIndex);
+
+        abstract ListView<T, C> view(C delegate, boolean mutable);
+
+        // -- java.util.List
+
         @Override
         public boolean add(T element) {
-            setDelegate(() -> (C) getDelegate().append(element));
+            setDelegate(() -> delegateAppend(getDelegate(), element));
             return true;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void add(int index, T element) {
-            setDelegate(() -> (C) getDelegate().insert(index, element));
+            setDelegate(() -> delegateInsert(getDelegate(), index, element));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean addAll(Collection<? extends T> collection) {
             Objects.requireNonNull(collection, "collection is null");
-            return setDelegateAndCheckChanged(() -> (C) getDelegate().appendAll(collection));
+            return setDelegateAndCheckChanged(() -> delegateAppendAll(getDelegate(), collection));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean addAll(int index, Collection<? extends T> collection) {
             Objects.requireNonNull(collection, "collection is null");
-            return setDelegateAndCheckChanged(() -> (C) getDelegate().insertAll(index, collection));
+            return setDelegateAndCheckChanged(() -> delegateInsertAll(getDelegate(), index, collection));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void clear() {
             // DEV-NOTE: acts like Java: works for empty immutable collections
             if (isEmpty()) {
                 return;
             }
-            setDelegate(() -> (C) getDelegate().take(0));
+            setDelegate(() -> delegateTake(getDelegate(), 0));
         }
 
         @Override
@@ -137,13 +180,13 @@ class JavaConverters {
 
         @Override
         public T get(int index) {
-            return getDelegate().get(index);
+            return delegateGet(getDelegate(), index);
         }
 
         @Override
         public int indexOf(Object obj) {
             @SuppressWarnings("unchecked") final T that = (T) obj;
-            return getDelegate().indexOf(that);
+            return delegateIndexOf(getDelegate(), that);
         }
 
         @Override
@@ -159,7 +202,7 @@ class JavaConverters {
         @Override
         public int lastIndexOf(Object obj) {
             @SuppressWarnings("unchecked") final T that = (T) obj;
-            return getDelegate().lastIndexOf(that);
+            return delegateLastIndexOf(getDelegate(), that);
         }
 
         @Override
@@ -172,39 +215,34 @@ class JavaConverters {
             return new ListIterator<>(this, index);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public T remove(int index) {
-            return setDelegateAndGetPreviousElement(index, () -> (C) getDelegate().removeAt(index));
+            return setDelegateAndGetPreviousElement(index, () -> delegateRemoveAt(getDelegate(), index));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean remove(Object obj) {
-            final T that = (T) obj;
-            return setDelegateAndCheckChanged(() -> (C) getDelegate().remove(that));
+            @SuppressWarnings("unchecked") final T that = (T) obj;
+            return setDelegateAndCheckChanged(() -> delegateRemove(getDelegate(), that));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean removeAll(Collection<?> collection) {
             Objects.requireNonNull(collection, "collection is null");
             @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
-            return setDelegateAndCheckChanged(() -> (C) getDelegate().removeAll(that));
+            return setDelegateAndCheckChanged(() -> delegateRemoveAll(getDelegate(), that));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public boolean retainAll(Collection<?> collection) {
             Objects.requireNonNull(collection, "collection is null");
             @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
-            return setDelegateAndCheckChanged(() -> (C) getDelegate().retainAll(that));
+            return setDelegateAndCheckChanged(() -> delegateRetainAll(getDelegate(), that));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public T set(int index, T element) {
-            return setDelegateAndGetPreviousElement(index, () -> (C) getDelegate().update(index, element));
+            return setDelegateAndGetPreviousElement(index, () -> delegateUpdate(getDelegate(), index, element));
         }
 
         @Override
@@ -212,14 +250,13 @@ class JavaConverters {
             return getDelegate().size();
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void sort(Comparator<? super T> comparator) {
             Objects.requireNonNull(comparator, "comparator is null");
             if (isEmpty()) {
                 return;
             }
-            setDelegate(() -> (C) getDelegate().sorted(comparator));
+            setDelegate(() -> delegateSorted(getDelegate(), comparator));
         }
 
         /**
@@ -232,7 +269,7 @@ class JavaConverters {
          */
         @Override
         public java.util.List<T> subList(int fromIndex, int toIndex) {
-            return new ListView<>(getDelegate().subSequence(fromIndex, toIndex), isMutable());
+            return view(delegateSubSequence(getDelegate(), fromIndex, toIndex), isMutable());
         }
 
         @Override
@@ -289,12 +326,12 @@ class JavaConverters {
 
         private T setDelegateAndGetPreviousElement(int index, Supplier<C> delegate) {
             ensureMutable();
-            final T previousElement = getDelegate().get(index);
+            final T previousElement = get(index);
             setDelegate(delegate);
             return previousElement;
         }
 
-        private static class Iterator<T extends @Nullable Object, C extends Seq<T>> implements java.util.Iterator<T> {
+        private static class Iterator<T extends @Nullable Object, C extends Traversable<T>> implements java.util.Iterator<T> {
 
             ListView<T, C> list;
             int expectedSize;
@@ -364,7 +401,7 @@ class JavaConverters {
             }
         }
 
-        private static class ListIterator<T extends @Nullable Object, C extends Seq<T>> extends ListView.Iterator<T, C> implements java.util.ListIterator<T> {
+        private static class ListIterator<T extends @Nullable Object, C extends Traversable<T>> extends ListView.Iterator<T, C> implements java.util.ListIterator<T> {
 
             ListIterator(ListView<T, C> list, int index) {
                 super(list);
@@ -439,5 +476,129 @@ class JavaConverters {
                 }
             }
         }
+    }
+
+    /** The view over a {@link Vector}: every hook is the Vector method of the same name. */
+    static final class VectorListView<T extends @Nullable Object> extends ListView<T, Vector<T>> {
+
+        VectorListView(Vector<T> delegate, boolean mutable) {
+            super(delegate, mutable);
+        }
+
+        @Override
+        Vector<T> delegateAppend(Vector<T> delegate, T element) { return delegate.append(element); }
+
+        @Override
+        Vector<T> delegateInsert(Vector<T> delegate, int index, T element) { return delegate.insert(index, element); }
+
+        @Override
+        Vector<T> delegateAppendAll(Vector<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
+
+        @Override
+        Vector<T> delegateInsertAll(Vector<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
+
+        @Override
+        Vector<T> delegateTake(Vector<T> delegate, int n) { return delegate.take(n); }
+
+        @Override
+        T delegateGet(Vector<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        int delegateIndexOf(Vector<T> delegate, T element) { return delegate.indexOf(element); }
+
+        @Override
+        int delegateLastIndexOf(Vector<T> delegate, T element) { return delegate.lastIndexOf(element); }
+
+        @Override
+        Vector<T> delegateRemoveAt(Vector<T> delegate, int index) { return delegate.removeAt(index); }
+
+        @Override
+        Vector<T> delegateRemove(Vector<T> delegate, T element) { return delegate.remove(element); }
+
+        @Override
+        Vector<T> delegateRemoveAll(Vector<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
+
+        @Override
+        Vector<T> delegateRetainAll(Vector<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
+
+        @Override
+        Vector<T> delegateUpdate(Vector<T> delegate, int index, T element) { return delegate.update(index, element); }
+
+        @Override
+        Vector<T> delegateSorted(Vector<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
+
+        @Override
+        Vector<T> delegateSubSequence(Vector<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+
+        @Override
+        ListView<T, Vector<T>> view(Vector<T> delegate, boolean mutable) { return new VectorListView<>(delegate, mutable); }
+    }
+
+    /** The view over a {@link Seq} (List, Queue, Stream), until #67 gives each its own. */
+    static final class SeqListView<T extends @Nullable Object, C extends Seq<T>> extends ListView<T, C> {
+
+        SeqListView(C delegate, boolean mutable) {
+            super(delegate, mutable);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateAppend(C delegate, T element) { return (C) delegate.append(element); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateInsert(C delegate, int index, T element) { return (C) delegate.insert(index, element); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateAppendAll(C delegate, Iterable<? extends T> elements) { return (C) delegate.appendAll(elements); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateInsertAll(C delegate, int index, Iterable<? extends T> elements) { return (C) delegate.insertAll(index, elements); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateTake(C delegate, int n) { return (C) delegate.take(n); }
+
+        @Override
+        T delegateGet(C delegate, int index) { return delegate.get(index); }
+
+        @Override
+        int delegateIndexOf(C delegate, T element) { return delegate.indexOf(element); }
+
+        @Override
+        int delegateLastIndexOf(C delegate, T element) { return delegate.lastIndexOf(element); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateRemoveAt(C delegate, int index) { return (C) delegate.removeAt(index); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateRemove(C delegate, T element) { return (C) delegate.remove(element); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateRemoveAll(C delegate, Iterable<? extends T> elements) { return (C) delegate.removeAll(elements); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateRetainAll(C delegate, Iterable<? extends T> elements) { return (C) delegate.retainAll(elements); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateUpdate(C delegate, int index, T element) { return (C) delegate.update(index, element); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateSorted(C delegate, Comparator<? super T> comparator) { return (C) delegate.sorted(comparator); }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        C delegateSubSequence(C delegate, int beginIndex, int endIndex) { return (C) delegate.subSequence(beginIndex, endIndex); }
+
+        @Override
+        ListView<T, C> view(C delegate, boolean mutable) { return new SeqListView<>(delegate, mutable); }
     }
 }

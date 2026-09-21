@@ -8,8 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
-import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.Comparator;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -74,9 +73,9 @@ public class Tuple4Test {
     }
 
     @Test
-    public void shouldConvertToSeq() {
-        final Seq<?> actual = createIntTuple(1, 0, 0, 0).toSeq();
-        assertThat(actual).isEqualTo(List.of(1, 0, 0, 0));
+    public void shouldConvertToVector() {
+        final Vector<?> actual = createIntTuple(1, 0, 0, 0).toVector();
+        assertThat(actual).isEqualTo(Vector.of(1, 0, 0, 0));
     }
 
     @Test
@@ -152,15 +151,28 @@ public class Tuple4Test {
 
     @Test
     public void shouldReturnTuple4OfUnzip4() {
-      final Seq<Tuple4<Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4, 5), Tuple.of(4, 5, 6, 7), Tuple.of(6, 7, 8, 9), Tuple.of(8, 9, 10, 11));
-      final Tuple4<Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(2, 4, 6, 8), Stream.of(3, 5, 7, 9), Stream.of(4, 6, 8, 10), Stream.of(5, 7, 9, 11));
+      final List<Tuple4<Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4, 5), Tuple.of(4, 5, 6, 7), Tuple.of(6, 7, 8, 9), Tuple.of(8, 9, 10, 11));
+      final Tuple4<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(2, 4, 6, 8), Vector.of(3, 5, 7, 9), Vector.of(4, 6, 8, 10), Vector.of(5, 7, 9, 11));
       assertThat(Tuple.unzip4(iterable)).isEqualTo(expected);
     }
 
     @Test
+    public void shouldUnzip4Nothing() {
+      final Tuple4<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty());
+      assertThat(Tuple.unzip4(List.<Tuple4<Integer, Integer, Integer, Integer>> empty())).isEqualTo(expected);
+      assertThat(Tuple.unzip4(List.<Tuple4<Integer, Integer, Integer, Integer>> empty())._1()).isSameAs(Vector.empty());
+    }
+
+    @Test
+    public void shouldRejectNullOnUnzip4() {
+      assertThrows(NullPointerException.class, () -> Tuple.unzip4(null));
+      assertThrows(NullPointerException.class, () -> Tuple.unzip4(List.of(Tuple.of((Integer) null, (Integer) null, (Integer) null, (Integer) null))));
+    }
+
+    @Test
     public void shouldReturnTuple4OfUnzip1() {
-      final Seq<Tuple4<Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3, 4));
-      final Tuple4<Seq<Integer>, Seq<Integer>, Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(1), Stream.of(2), Stream.of(3), Stream.of(4));
+      final List<Tuple4<Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3, 4));
+      final Tuple4<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(1), Vector.of(2), Vector.of(3), Vector.of(4));
       assertThat(Tuple.unzip4(iterable)).isEqualTo(expected);
     }
 

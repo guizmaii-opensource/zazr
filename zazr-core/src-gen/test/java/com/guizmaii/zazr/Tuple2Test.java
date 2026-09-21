@@ -8,8 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
-import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
@@ -52,9 +51,9 @@ public class Tuple2Test {
     }
 
     @Test
-    public void shouldConvertToSeq() {
-        final Seq<?> actual = createIntTuple(1, 0).toSeq();
-        assertThat(actual).isEqualTo(List.of(1, 0));
+    public void shouldConvertToVector() {
+        final Vector<?> actual = createIntTuple(1, 0).toVector();
+        assertThat(actual).isEqualTo(Vector.of(1, 0));
     }
 
     @Test
@@ -120,15 +119,28 @@ public class Tuple2Test {
 
     @Test
     public void shouldReturnTuple2OfUnzip2() {
-      final Seq<Tuple2<Integer, Integer>> iterable = List.of(Tuple.of(2, 3), Tuple.of(4, 5));
-      final Tuple2<Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(2, 4), Stream.of(3, 5));
+      final List<Tuple2<Integer, Integer>> iterable = List.of(Tuple.of(2, 3), Tuple.of(4, 5));
+      final Tuple2<Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(2, 4), Vector.of(3, 5));
       assertThat(Tuple.unzip2(iterable)).isEqualTo(expected);
     }
 
     @Test
+    public void shouldUnzip2Nothing() {
+      final Tuple2<Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.empty(), Vector.empty());
+      assertThat(Tuple.unzip2(List.<Tuple2<Integer, Integer>> empty())).isEqualTo(expected);
+      assertThat(Tuple.unzip2(List.<Tuple2<Integer, Integer>> empty())._1()).isSameAs(Vector.empty());
+    }
+
+    @Test
+    public void shouldRejectNullOnUnzip2() {
+      assertThrows(NullPointerException.class, () -> Tuple.unzip2(null));
+      assertThrows(NullPointerException.class, () -> Tuple.unzip2(List.of(Tuple.of((Integer) null, (Integer) null))));
+    }
+
+    @Test
     public void shouldReturnTuple2OfUnzip1() {
-      final Seq<Tuple2<Integer, Integer>> iterable = List.of(Tuple.of(1, 2));
-      final Tuple2<Seq<Integer>, Seq<Integer>> expected = Tuple.of(Stream.of(1), Stream.of(2));
+      final List<Tuple2<Integer, Integer>> iterable = List.of(Tuple.of(1, 2));
+      final Tuple2<Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(1), Vector.of(2));
       assertThat(Tuple.unzip2(iterable)).isEqualTo(expected);
     }
 

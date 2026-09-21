@@ -344,13 +344,13 @@ public class VectorPropertyTest {
         }
     }
 
-    private static <T extends Seq<?>, P> T assertAreEqual(T previousActual, P param, BiFunction<T, P, T> actualProvider, Seq<?> expected) {
+    private static <T extends Traversable<?>, P> T assertAreEqual(T previousActual, P param, BiFunction<T, P, T> actualProvider, Traversable<?> expected) {
         final T actual = actualProvider.apply(previousActual, param);
         assertAreEqual(expected, actual);
         return actual; // makes debugging a lot easier, as the frame can be dropped and rerun on AssertError
     }
 
-    private static void assertAreEqual(Seq<?> expected, Seq<?> actual) {
+    private static void assertAreEqual(Traversable<?> expected, Traversable<?> actual) {
         final List<?> actualList = actual.toJavaList();
         final List<?> expectedList = expected.toJavaList();
         assertThat(actualList).isEqualTo(expectedList); // a lot faster than `hasSameElementsAs`

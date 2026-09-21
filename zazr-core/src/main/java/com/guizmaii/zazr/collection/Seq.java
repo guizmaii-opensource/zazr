@@ -994,7 +994,7 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Searches for a specified element in this sequence, which must be sorted in ascending natural order.
      * <p>
-     * If the sequence is an {@code IndexedSeq}, a binary search is used; otherwise, a linear search is performed.
+     * A linear search; {@code Vector.search} is a binary search.
      *
      * @param element the element to search for
      * @return the index of the element if found; otherwise, {@code -(insertion point) - 1}, 
@@ -1007,7 +1007,7 @@ public interface Seq<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Searches for a specified element in this sequence, which must be sorted according to the given comparator.
      * <p>
-     * If the sequence is an {@code IndexedSeq}, a binary search is used; otherwise, a linear search is performed.
+     * A linear search; {@code Vector.search} is a binary search.
      *
      * @param element    the element to search for
      * @param comparator the comparator defining the order of the sequence

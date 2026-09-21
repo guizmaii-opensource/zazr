@@ -620,7 +620,7 @@ public abstract class AbstractMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapNonEmpty() {
-        final Seq<Integer> expected = com.guizmaii.zazr.collection.Vector.of(1, 2);
+        final Vector<Integer> expected = com.guizmaii.zazr.collection.Vector.of(1, 2);
         final Seq<Integer> actual = emptyInt().put(1, "1").put(2, "2").map(Tuple2::_1);
         assertThat(actual).isEqualTo(expected);
     }

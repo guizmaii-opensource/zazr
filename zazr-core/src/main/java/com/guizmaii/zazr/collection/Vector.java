@@ -15,15 +15,19 @@ import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE
 import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
 
 /**
- * Vector is the default Seq implementation that provides effectively constant time access to any element.
- * Many other operations (e.g. `tail`, `drop`, `slice`) are also effectively constant.
- *
- * The implementation is based on a `bit-mapped trie`, a very wide and shallow tree (i.e. depth ≤ 6).
+ * The default sequence: an immutable, indexed sequence with effectively constant time access to any element.
+ * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
+ * {@code slice}) are effectively constant too.
+ * <p>
+ * The implementation is based on a `bit-mapped trie`, a very wide and shallow tree (i.e. depth ≤ 6). Vector declares
+ * its whole API itself and implements only {@link Traversable} (design 3.7): every positional method carries a
+ * {@code Complexity:} line in its javadoc, where "effectively O(1)" means O(log32 n), a trie access or a path copy
+ * of at most six nodes.
  *
  * @param <T> Component type of the Vector.
  * @author Ruslan Sennov, Pap Lőrinc
  */
-public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
+public final class Vector<T extends @Nullable Object> implements Traversable<T> {
 
     private static final Vector<?> EMPTY = new Vector<>(BitMappedTrie.empty());
 
@@ -772,10 +776,31 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return builder.result();
     }
 
-    @Override
+    // -- the sequence API. Vector implements only Traversable (design 3.7): every method below that was declared by
+    // Seq or IndexedSeq is declared here with Vector return types, and every positional method states its cost.
+    // "Effectively O(1)" means O(log32 n): a trie access or a path copy of at most six nodes.
+
+    /**
+     * Appends an element.
+     * <p>
+     * Complexity: effectively O(1) (a path copy; the last leaf is copied).
+     *
+     * @param element the element to append
+     * @return a new Vector ending with {@code element}
+     * @throws NullPointerException if {@code element} is null
+     */
     public Vector<T> append(T element) { return appendAll(com.guizmaii.zazr.collection.List.of(element)); }
 
-    @Override
+    /**
+     * Appends all elements of the given iterable, in iteration order.
+     * <p>
+     * Complexity: O(m) for m appended elements (one leaf copy per 32 elements plus a path copy); O(1) when this
+     * Vector is empty and {@code iterable} is a Vector, which is returned as is.
+     *
+     * @param iterable the elements to append
+     * @return a new Vector ending with the given elements, or this Vector if there are none
+     * @throws NullPointerException if {@code iterable} or one of its elements is null
+     */
     public Vector<T> appendAll(Iterable<? extends T> iterable) {
         Objects.requireNonNull(iterable, "iterable is null");
         if (isEmpty()) {
@@ -785,44 +810,161 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
             return this;
         }
         if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
-            // a one-shot source (a Vavr Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
+            // a one-shot source (an Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
             return appendAll(ofAll(iterable));
         }
         return new Vector<>(trie.appendAll(iterable));
     }
 
-    @Override
+    /**
+     * Returns an immutable {@link java.util.List} view of this Vector: reads go through to this Vector, mutators
+     * throw {@link UnsupportedOperationException}.
+     * <p>
+     * Complexity: O(1); {@code get} on the view is effectively O(1).
+     *
+     * @return an immutable {@code java.util.List} view
+     */
     public java.util.List<T> asJava() {
         return JavaConverters.asJava(this, IMMUTABLE);
     }
 
-    @Override
+    /**
+     * Passes an immutable {@link java.util.List} view of this Vector to {@code action} and returns this Vector.
+     * <p>
+     * Complexity: O(1) to create the view.
+     *
+     * @param action receives the view
+     * @return this Vector
+     * @throws NullPointerException if {@code action} is null
+     * @see #asJava()
+     */
     public Vector<T> asJava(Consumer<? super java.util.List<T>> action) {
-        return Collections.asJava(this, action, IMMUTABLE);
+        Objects.requireNonNull(action, "action is null");
+        action.accept(asJava());
+        return this;
     }
 
-    @Override
+    /**
+     * Returns a mutable {@link java.util.List} view of this Vector: every mutator replaces the view's underlying
+     * Vector by a new one; this Vector is never modified.
+     * <p>
+     * Complexity: O(1); each mutator costs what the corresponding Vector operation costs.
+     *
+     * @return a mutable {@code java.util.List} view
+     */
     public java.util.List<T> asJavaMutable() {
         return JavaConverters.asJava(this, MUTABLE);
     }
 
-    @Override
+    /**
+     * Passes a mutable {@link java.util.List} view of this Vector to {@code action} and returns the Vector the view
+     * holds afterwards: this Vector if the action only read, a new one reflecting the writes otherwise.
+     * <p>
+     * Complexity: O(1) to create the view.
+     *
+     * @param action receives the view
+     * @return this Vector, or a new Vector reflecting the modifications made through the view
+     * @throws NullPointerException if {@code action} is null
+     * @see #asJavaMutable()
+     */
     public Vector<T> asJavaMutable(Consumer<? super java.util.List<T>> action) {
-        return Collections.asJava(this, action, MUTABLE);
+        Objects.requireNonNull(action, "action is null");
+        final ListView<T, Vector<T>> view = JavaConverters.asJava(this, MUTABLE);
+        action.accept(view);
+        return view.getDelegate();
     }
 
-    @Override
+    /**
+     * All combinations of the elements, for every size from 0 to {@code length()}, by position:
+     * {@code Vector(1, 2).combinations()} is {@code Vector(Vector(), Vector(1), Vector(2), Vector(1, 2))}.
+     * <p>
+     * Complexity: O(2^n) combinations, each of size up to n.
+     *
+     * @return the combinations, ordered by size, then by position
+     */
     public Vector<Vector<T>> combinations() { return rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity()); }
 
-    @Override
+    /**
+     * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
+     * <p>
+     * Complexity: O(C(n, k)) combinations of size k.
+     *
+     * @param k the size of each combination; {@code k <= 0} gives one empty combination
+     * @return the k-combinations, in position order
+     */
     public Vector<Vector<T>> combinations(int k) { return Combinations.apply(this, Math.max(k, 0)); }
 
-    @Override
-    public Iterator<Vector<T>> crossProduct(int power) { return com.guizmaii.zazr.collection.Collections.crossProduct(empty(), this, power); }
+    /**
+     * Whether this Vector contains {@code that} as a contiguous slice.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to look for
+     * @return true if {@code that} occurs contiguously in this Vector (an empty slice always does)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean containsSlice(Iterable<? extends T> that) {
+        Objects.requireNonNull(that, "that is null");
+        return indexOfSlice(that) >= 0;
+    }
 
+    /**
+     * The Cartesian square of this Vector: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * <p>
+     * Complexity: lazy; O(n^2) pairs when consumed.
+     *
+     * @return an iterator over the pairs
+     */
+    public Iterator<Tuple2<T, T>> crossProduct() {
+        return crossProduct(this);
+    }
+
+    /**
+     * The Cartesian power of this Vector: every Vector of {@code power} elements drawn from this one, in
+     * lexicographic position order. {@code power <= 0} gives one empty Vector; a negative power gives no result.
+     * <p>
+     * Complexity: lazy; O(n^power) Vectors of size {@code power} when consumed.
+     *
+     * @param power the size of each result
+     * @return an iterator over the Vectors (its element type is decided in #68, with {@code sliding} and {@code grouped})
+     */
+    public Iterator<Vector<T>> crossProduct(int power) {
+        if (power < 0) {
+            return Iterator.empty();
+        }
+        return Iterator.range(0, power).foldLeft(Iterator.of(Vector.<T> empty()), (product, ignored) -> product.flatMap(el -> map(el::append)));
+    }
+
+    /**
+     * The Cartesian product of this Vector and {@code that}: every pair {@code (a, b)} with {@code a} from this
+     * Vector and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is materialised once.
+     * <p>
+     * Complexity: lazy; O(n * m) pairs when consumed.
+     *
+     * @param that the right-hand elements
+     * @param <U>  their type
+     * @return an iterator over the pairs
+     * @throws NullPointerException if {@code that} is null
+     */
+    public <U extends @Nullable Object> Iterator<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        final Vector<U> other = ofAll(that);
+        return Iterator.ofAll(this).flatMap(a -> other.iterator().map(b -> Tuple.of(a, b)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Vector<T> distinct() { return distinctBy(Function.identity()); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     */
     @Override
     public Vector<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
@@ -830,6 +972,11 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return filter(seen::add);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Vector<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
@@ -877,48 +1024,140 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return builder.result();
     }
 
-    @Override
+    /**
+     * Removes the duplicates under {@code comparator}, keeping the last occurrence of each.
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator decides which elements are equal
+     * @return the distinct elements, each at the position of its last occurrence
+     * @throws NullPointerException if {@code comparator} is null
+     */
     public Vector<T> distinctByKeepLast(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(iterator().distinctByKeepLast(comparator));
     }
 
-    @Override
+    /**
+     * Removes the duplicates under {@code keyExtractor}, keeping the last occurrence of each key.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param keyExtractor computes the key
+     * @param <U>          the key type
+     * @return the elements with a distinct key, each at the position of its last occurrence
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
     public <U extends @Nullable Object> Vector<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         return ofAll(iterator().distinctByKeepLast(keyExtractor));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (the path to the new first leaf is trimmed).
+     */
     @Override
     public Vector<T> drop(int n) {
         return wrap(trie.drop(n));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for k dropped elements, then one effectively O(1) {@code drop}.
+     */
     @Override
     public Vector<T> dropUntil(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.dropUntil(this, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        final int length = length();
+        for (int i = 0; i < length; i++) {
+            if (predicate.test(get(i))) {
+                return drop(i);
+            }
+        }
+        return empty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for k dropped elements, then one effectively O(1) {@code drop}.
+     */
     @Override
     public Vector<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropUntil(predicate.negate());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (the path to the new last leaf is trimmed).
+     */
     @Override
     public Vector<T> dropRight(int n) {
         return take(length() - n);
     }
 
-    @Override
+    /**
+     * Drops elements from the end until one satisfies {@code predicate}; that element is kept.
+     * <p>
+     * Complexity: O(k) for k dropped elements, then one effectively O(1) {@code take}.
+     *
+     * @param predicate tested from the last element backwards
+     * @return this Vector up to and including the last element satisfying {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> dropRightUntil(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.dropRightUntil(this, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        for (int i = length() - 1; i >= 0; i--) {
+            if (predicate.test(get(i))) {
+                return take(i + 1);
+            }
+        }
+        return empty();
     }
 
-    @Override
+    /**
+     * Drops elements from the end while they satisfy {@code predicate}: {@code dropRightUntil(predicate.negate())}.
+     * <p>
+     * Complexity: O(k) for k dropped elements, then one effectively O(1) {@code take}.
+     *
+     * @param predicate tested from the last element backwards
+     * @return this Vector up to and including the last element not satisfying {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> dropRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropRightUntil(predicate.negate());
+    }
+
+    /**
+     * Whether this Vector ends with {@code that}. A Vector argument is compared in place; any other iterable is
+     * materialised once.
+     * <p>
+     * Complexity: O(m) for m elements of {@code that}.
+     *
+     * @param that the suffix to test
+     * @return true if the last {@code m} elements equal {@code that} (an empty {@code that} is always a suffix)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean endsWith(Iterable<? extends T> that) {
+        Objects.requireNonNull(that, "that is null");
+        final Vector<? extends T> suffix = ofAll(that);
+        final int suffixLength = suffix.length();
+        int i = length() - suffixLength;
+        if (i < 0) {
+            return false;
+        }
+        for (int j = 0; j < suffixLength; j++, i++) {
+            if (!Objects.equals(get(i), suffix.get(j))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -948,7 +1187,30 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return builder.result();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), walking the elements from the last to the first without copying.
+     */
     @Override
+    public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
+        Objects.requireNonNull(f, "f is null");
+        U xs = zero;
+        for (int i = length() - 1; i >= 0; i--) {
+            xs = f.apply(get(i), xs);
+        }
+        return xs;
+    }
+
+    /**
+     * The element at {@code index}.
+     * <p>
+     * Complexity: effectively O(1) (O(log32 n) trie access).
+     *
+     * @param index a position, {@code 0 <= index < length()}
+     * @return the element at that position
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     */
     public T get(int index) {
         if (isValid(index)) {
             return trie.get(index);
@@ -958,6 +1220,11 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     }
     private boolean isValid(int index) { return (index >= 0) && (index < length()); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1).
+     */
     @Override
     public T head() {
         if (nonEmpty()) {
@@ -970,10 +1237,36 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     @Override
     public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Vector::ofAll); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(n) over all groups when consumed. The iterator element type is decided in #68.
+     */
     @Override
     public Iterator<Vector<T>> grouped(int size) { return sliding(size, size); }
 
-    @Override
+    /**
+     * The index of the first occurrence of {@code element}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return its first index, or -1 if absent
+     */
+    public int indexOf(T element) {
+        return indexOf(element, 0);
+    }
+
+    /**
+     * The index of the first occurrence of {@code element} at or after {@code from}, or -1. A negative
+     * {@code from} counts as 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @param from    the first position to look at
+     * @return the first index {@code >= from} of the element, or -1 if absent
+     */
     public int indexOf(T element, int from) {
         for (int i = Math.max(from, 0); i < length(); i++) {
             if (Objects.equals(get(i), element)) {
@@ -983,6 +1276,141 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return -1;
     }
 
+    /**
+     * {@link #indexOf(Object)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @return {@code Some(index)} of its first occurrence, or {@code None}
+     */
+    public Option<Integer> indexOfOption(T element) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element));
+    }
+
+    /**
+     * {@link #indexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @param from    the first position to look at
+     * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
+     */
+    public Option<Integer> indexOfOption(T element, int from) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element, from));
+    }
+
+    /**
+     * The first index at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int indexOfSlice(Iterable<? extends T> that) {
+        return indexOfSlice(that, 0);
+    }
+
+    /**
+     * The first index at or after {@code from} at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @param from the first position to look at
+     * @return the index of its first occurrence at or after {@code from}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int indexOfSlice(Iterable<? extends T> that, int from) {
+        Objects.requireNonNull(that, "that is null");
+        return VectorModule.Slice.indexOfSlice(this, that, from);
+    }
+
+    /**
+     * {@link #indexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @return {@code Some(index)} of its first occurrence, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that));
+    }
+
+    /**
+     * {@link #indexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @param from the first position to look at
+     * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that, from));
+    }
+
+    /**
+     * The index of the first element satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the first index of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int indexWhere(Predicate<? super T> predicate) {
+        return indexWhere(predicate, 0);
+    }
+
+    /**
+     * The index of the first element at or after {@code from} satisfying {@code predicate}, or -1. A negative
+     * {@code from} counts as 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return the first index {@code >= from} of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int indexWhere(Predicate<? super T> predicate, int from) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        final int length = length();
+        for (int i = Math.max(from, 0); i < length; i++) {
+            if (predicate.test(get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * {@link #indexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @return {@code Some(index)} of the first satisfying element, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> indexWhereOption(Predicate<? super T> predicate) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate));
+    }
+
+    /**
+     * {@link #indexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return {@code Some(index)} of the first satisfying element at or after {@code from}, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> indexWhereOption(Predicate<? super T> predicate, int from) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate, from));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (the path to the last leaf is trimmed).
+     */
     @Override
     public Vector<T> init() {
         if (nonEmpty()) {
@@ -995,10 +1423,31 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     @Override
     public Option<Vector<T>> initOption() { return isEmpty() ? Option.none() : Option.some(init()); }
 
-    @Override
+    /**
+     * Inserts an element at {@code index}; the elements from that position on shift right by one.
+     * <p>
+     * Complexity: O(min(i, n - i)): the shorter side is re-appended or re-prepended element by element.
+     *
+     * @param index   a position, {@code 0 <= index <= length()}
+     * @param element the element to insert
+     * @return a new Vector with {@code element} at {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     * @throws NullPointerException      if {@code element} is null
+     */
     public Vector<T> insert(int index, T element) { return insertAll(index, Iterator.of(element)); }
 
-    @Override
+    /**
+     * Inserts the given elements at {@code index}, in iteration order; the elements from that position on shift
+     * right.
+     * <p>
+     * Complexity: O(m + min(i, n - i)) for m inserted elements.
+     *
+     * @param index    a position, {@code 0 <= index <= length()}
+     * @param elements the elements to insert
+     * @return a new Vector with the elements at {@code index}, or this Vector if there are none
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     * @throws NullPointerException      if {@code elements} or one of them is null
+     */
     public Vector<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if ((index >= 0) && (index <= length())) {
@@ -1012,7 +1461,15 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * Puts {@code element} between every two elements.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the separator
+     * @return a new Vector of 2n - 1 elements, or this Vector if it has fewer than two
+     * @throws NullPointerException if {@code element} is null and this Vector has at least two elements
+     */
     public Vector<T> intersperse(T element) { return ofAll(iterator().intersperse(element)); }
 
     @Override
@@ -1032,7 +1489,54 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                          : trie.iterator();
     }
 
+    /**
+     * An iterator over the elements from {@code index} on: {@code subSequence(index).iterator()}.
+     * <p>
+     * Complexity: effectively O(1) to create.
+     *
+     * @param index the first position to iterate, {@code 0 <= index <= length()}
+     * @return an iterator starting at {@code index}, empty when {@code index == length()}
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     */
+    public Iterator<T> iterator(int index) {
+        return subSequence(index).iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1).
+     */
     @Override
+    public T last() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("last of empty Vector");
+        }
+        return get(length() - 1);
+    }
+
+    /**
+     * The index of the last occurrence of {@code element}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return its last index, or -1 if absent
+     */
+    public int lastIndexOf(T element) {
+        return lastIndexOf(element, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The index of the last occurrence of {@code element} at or before {@code end}, or -1. An {@code end} beyond
+     * the last index counts as the last index.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @param end     the last position to look at
+     * @return the last index {@code <= end} of the element, or -1 if absent
+     */
     public int lastIndexOf(T element, int end) {
         for (int i = Math.min(end, length() - 1); i >= 0; i--) {
             if (Objects.equals(get(i), element)) {
@@ -1040,6 +1544,134 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
             }
         }
         return -1;
+    }
+
+    /**
+     * {@link #lastIndexOf(Object)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @return {@code Some(index)} of its last occurrence, or {@code None}
+     */
+    public Option<Integer> lastIndexOfOption(T element) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element));
+    }
+
+    /**
+     * {@link #lastIndexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @param end     the last position to look at
+     * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
+     */
+    public Option<Integer> lastIndexOfOption(T element, int end) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element, end));
+    }
+
+    /**
+     * The last index at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @return the index of its last occurrence, or -1 (an empty slice occurs at {@code length()})
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int lastIndexOfSlice(Iterable<? extends T> that) {
+        return lastIndexOfSlice(that, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @param end  the last position to look at
+     * @return the index of its last occurrence at or before {@code end}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int lastIndexOfSlice(Iterable<? extends T> that, int end) {
+        Objects.requireNonNull(that, "that is null");
+        return VectorModule.Slice.lastIndexOfSlice(this, that, end);
+    }
+
+    /**
+     * {@link #lastIndexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @return {@code Some(index)} of its last occurrence, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that));
+    }
+
+    /**
+     * {@link #lastIndexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @param end  the last position to look at
+     * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that, int end) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that, end));
+    }
+
+    /**
+     * The index of the last element satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the last index of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int lastIndexWhere(Predicate<? super T> predicate) {
+        return lastIndexWhere(predicate, length() - 1);
+    }
+
+    /**
+     * The index of the last element at or before {@code end} satisfying {@code predicate}, or -1. An {@code end}
+     * beyond the last index counts as the last index; a negative one gives -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @param end       the last position to look at
+     * @return the last index {@code <= end} of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int lastIndexWhere(Predicate<? super T> predicate, int end) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        int i = Math.max(-1, Math.min(end, length() - 1));
+        while (i >= 0 && !predicate.test(get(i))) {
+            i--;
+        }
+        return i;
+    }
+
+    /**
+     * {@link #lastIndexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @return {@code Some(index)} of the last satisfying element, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate));
+    }
+
+    /**
+     * {@link #lastIndexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @param end       the last position to look at
+     * @return {@code Some(index)} of the last satisfying element at or before {@code end}, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate, int end) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
     @Override
@@ -1094,7 +1726,16 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return isEmpty() ? ofAll(supplier.get()) : this;
     }
 
-    @Override
+    /**
+     * Appends copies of {@code element} until the Vector has {@code length} elements.
+     * <p>
+     * Complexity: O(k) for the k elements appended.
+     *
+     * @param length  the target length
+     * @param element the padding element
+     * @return this Vector if it already has {@code length} or more elements, otherwise a new one padded to it
+     * @throws NullPointerException if {@code element} is null and padding is needed
+     */
     public Vector<T> padTo(int length, T element) {
         final int actualLength = length();
         return (length <= actualLength)
@@ -1103,7 +1744,16 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                 .take(length - actualLength));
     }
 
-    @Override
+    /**
+     * Prepends copies of {@code element} until the Vector has {@code length} elements.
+     * <p>
+     * Complexity: O(k) for the k elements prepended.
+     *
+     * @param length  the target length
+     * @param element the padding element
+     * @return this Vector if it already has {@code length} or more elements, otherwise a new one padded to it
+     * @throws NullPointerException if {@code element} is null and padding is needed
+     */
     public Vector<T> leftPadTo(int length, T element) {
         if (length <= length()) {
             return this;
@@ -1113,7 +1763,18 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * Replaces the {@code replaced} elements from {@code from} on by the elements of {@code that}. A negative
+     * {@code from} or {@code replaced} counts as 0; a {@code from} beyond the end appends.
+     * <p>
+     * Complexity: O(n + m) for m elements of {@code that}.
+     *
+     * @param from     the first position to replace
+     * @param that     the replacement elements
+     * @param replaced how many elements to replace
+     * @return a new Vector with the slice replaced
+     * @throws NullPointerException if {@code that} or one of its elements is null
+     */
     public Vector<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
@@ -1165,7 +1826,13 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return this;
     }
 
-    @Override
+    /**
+     * All distinct permutations of the elements, in the order the distinct elements first occur.
+     * <p>
+     * Complexity: O(n! * n) in the worst case (all elements distinct).
+     *
+     * @return the permutations; none for the empty Vector
+     */
     public Vector<Vector<T>> permutations() {
         if (isEmpty()) {
             return empty();
@@ -1182,10 +1849,40 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The length of the longest prefix whose elements all satisfy {@code predicate}: {@code segmentLength(predicate, 0)}.
+     * <p>
+     * Complexity: O(k) for a prefix of k elements.
+     *
+     * @param predicate the condition
+     * @return the prefix length
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int prefixLength(Predicate<? super T> predicate) {
+        return segmentLength(predicate, 0);
+    }
+
+    /**
+     * Prepends an element.
+     * <p>
+     * Complexity: effectively O(1) (a path copy; the first leaf is copied).
+     *
+     * @param element the element to prepend
+     * @return a new Vector starting with {@code element}
+     * @throws NullPointerException if {@code element} is null
+     */
     public Vector<T> prepend(T element) { return prependAll(com.guizmaii.zazr.collection.List.of(element)); }
 
-    @Override
+    /**
+     * Prepends all elements of the given iterable, keeping their order.
+     * <p>
+     * Complexity: O(m) for m prepended elements (one leaf copy per 32 elements plus a path copy); O(1) when this
+     * Vector is empty and {@code iterable} is a Vector, which is returned as is.
+     *
+     * @param iterable the elements to prepend
+     * @return a new Vector starting with the given elements, or this Vector if there are none
+     * @throws NullPointerException if {@code iterable} or one of its elements is null
+     */
     public Vector<T> prependAll(Iterable<? extends T> iterable) {
         Objects.requireNonNull(iterable, "iterable is null");
         if (isEmpty()) {
@@ -1197,7 +1894,14 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return new Vector<>(trie.prependAll(iterable));
     }
 
-    @Override
+    /**
+     * Removes the first occurrence of {@code element}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to remove
+     * @return a new Vector without that occurrence, or this Vector if the element is absent
+     */
     public Vector<T> remove(T element) {
         for (int i = 0; i < length(); i++) {
             if (Objects.equals(get(i), element)) {
@@ -1207,7 +1911,15 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return this;
     }
 
-    @Override
+    /**
+     * Removes the first element satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return a new Vector without that element, or this Vector if none satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> removeFirst(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         for (int i = 0; i < length(); i++) {
@@ -1218,7 +1930,15 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return this;
     }
 
-    @Override
+    /**
+     * Removes the last element satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return a new Vector without that element, or this Vector if none satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> removeLast(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         for (int i = length() - 1; i >= 0; i--) {
@@ -1229,7 +1949,15 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return this;
     }
 
-    @Override
+    /**
+     * Removes the element at {@code index}; the elements after it shift left by one.
+     * <p>
+     * Complexity: O(min(i, n - i)): the shorter side is re-appended or re-prepended element by element.
+     *
+     * @param index a position, {@code 0 <= index < length()}
+     * @return a new Vector without the element at {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     */
     public Vector<T> removeAt(int index) {
         if (isValid(index)) {
             final Vector<T> begin = take(index);
@@ -1242,23 +1970,52 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * Removes every occurrence of {@code element}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to remove
+     * @return a new Vector without it, or this Vector if it is absent
+     */
     public Vector<T> removeAll(T element) {
         return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
     }
 
-    @Override
+    /**
+     * Removes every occurrence of every given element.
+     * <p>
+     * Complexity: O(n + m) for m given elements.
+     *
+     * @param elements the elements to remove
+     * @return a new Vector without them, or this Vector if none is present
+     * @throws NullPointerException if {@code elements} is null
+     */
     public Vector<T> removeAll(Iterable<? extends T> elements) {
         return com.guizmaii.zazr.collection.Collections.removeAll(this, elements);
     }
 
-    @Override
+    /**
+     * Removes every element satisfying {@code predicate}: {@link #reject(Predicate)}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return a new Vector of the elements not satisfying it, or this Vector if none does
+     * @throws NullPointerException if {@code predicate} is null
+     * @deprecated use {@link #reject(Predicate)}
+     */
     @Deprecated
     public Vector<T> removeAll(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reject(predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) to find the element, then one effectively O(1) {@code update}.
+     */
     @Override
     public Vector<T> replace(T currentElement, T newElement) {
         return indexOfOption(currentElement)
@@ -1266,6 +2023,11 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
                 .getOrElse(this);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) plus one effectively O(1) {@code update} per occurrence.
+     */
     @Override
     public Vector<T> replaceAll(T currentElement, T newElement) {
         Vector<T> result = this;
@@ -1284,42 +2046,181 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
     }
 
-    @Override
+    /**
+     * The elements in reverse order.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return a new Vector, or this Vector if it has fewer than two elements
+     */
     public Vector<T> reverse() {
         return (length() <= 1) ? this : ofAll(reverseIterator());
     }
 
-    @Override
+    /**
+     * An iterator over the elements from the last to the first, without copying.
+     * <p>
+     * Complexity: O(1) to create; each step is effectively O(1).
+     *
+     * @return the reverse iterator
+     */
+    public Iterator<T> reverseIterator() {
+        return new AbstractIterator<T>() {
+            private int i = Vector.this.length();
+
+            @Override
+            public boolean hasNext() {
+                return i > 0;
+            }
+
+            @Override
+            public T getNext() {
+                return Vector.this.get(--i);
+            }
+        };
+    }
+
+    /**
+     * Rotates the elements {@code n} positions to the left: {@code Vector(1, 2, 3, 4, 5).rotateLeft(2)} is
+     * {@code Vector(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
+     * <p>
+     * Complexity: O(k) for the k = n mod length elements moved to the end.
+     *
+     * @param n the distance
+     * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
+     */
     public Vector<T> rotateLeft(int n) {
-        return Collections.rotateLeft(this, n);
+        if (isEmpty()) {
+            return this;
+        }
+        final int k = Math.floorMod(n, length());
+        return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
-    @Override
+    /**
+     * Rotates the elements {@code n} positions to the right: {@code Vector(1, 2, 3, 4, 5).rotateRight(2)} is
+     * {@code Vector(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
+     * <p>
+     * Complexity: O(length - k) for k = n mod length: the elements before the moved suffix are re-appended.
+     *
+     * @param n the distance
+     * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
+     */
     public Vector<T> rotateRight(int n) {
-        return Collections.rotateRight(this, n);
+        if (isEmpty()) {
+            return this;
+        }
+        final int k = Math.floorMod(n, length());
+        return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Vector<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
         return scanLeft(zero, operation);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Vector<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toVector);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Vector<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toVector);
     }
 
-    @Override
+    /**
+     * Binary search for {@code element} in this Vector, which must be sorted in natural order (otherwise the result
+     * is undefined).
+     * <p>
+     * Complexity: O(log n) comparisons, each an effectively O(1) access.
+     *
+     * @param element the element to find
+     * @return its index if present, otherwise {@code -(insertion point) - 1}, the insertion point being the index
+     *         at which it would be inserted; the result is {@code >= 0} exactly when the element is present
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    @SuppressWarnings("unchecked")
+    public int search(T element) {
+        return VectorModule.Search.binarySearch(this, midIndex -> ((Comparable<? super T>) get(midIndex)).compareTo(element));
+    }
+
+    /**
+     * Binary search for {@code element} in this Vector, which must be sorted by {@code comparator} (otherwise the
+     * result is undefined).
+     * <p>
+     * Complexity: O(log n) comparisons, each an effectively O(1) access.
+     *
+     * @param element    the element to find
+     * @param comparator the order of this Vector
+     * @return its index if present, otherwise {@code -(insertion point) - 1}, the insertion point being the index
+     *         at which it would be inserted; the result is {@code >= 0} exactly when the element is present
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public int search(T element, Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        return VectorModule.Search.binarySearch(this, midIndex -> comparator.compare(get(midIndex), element));
+    }
+
+    /**
+     * The length of the longest run of elements starting at {@code from} that all satisfy {@code predicate}. A
+     * negative {@code from} counts as 0; a {@code from} at or beyond the end gives 0.
+     * <p>
+     * Complexity: O(k) for a run of k elements.
+     *
+     * @param predicate the condition
+     * @param from      the first position of the run
+     * @return the run length
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int segmentLength(Predicate<? super T> predicate, int from) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        final int len = length();
+        final int start = Math.max(from, 0);
+        int i = start;
+        while (i < len && predicate.test(get(i))) {
+            i++;
+        }
+        return i - start;
+    }
+
+    /**
+     * The elements in a uniformly random order.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return a new Vector, or this Vector if it has fewer than two elements
+     */
     public Vector<T> shuffle() {
         return com.guizmaii.zazr.collection.Collections.shuffle(this, Vector::ofAll);
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} (inclusive) to {@code endIndex} (exclusive). Out-of-range indices are
+     * clamped, and an empty or reversed range gives the empty Vector: {@code Vector(1, 2).slice(-10, 10)} is the
+     * whole Vector, {@code slice(1, 0)} is empty. {@link #subSequence(int, int)} throws instead of clamping.
+     * <p>
+     * Complexity: effectively O(1) (the paths to the new first and last leaves are trimmed).
+     *
+     * @param beginIndex the first position (inclusive)
+     * @param endIndex   the last position (exclusive)
+     * @return the slice; this Vector when it covers everything
+     */
     public Vector<T> slice(int beginIndex, int endIndex) {
         if ((beginIndex >= endIndex) || (beginIndex >= size()) || isEmpty()) {
             return empty();
@@ -1330,22 +2231,44 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(n) over all groups when consumed. The iterator element type is decided in #68.
+     */
     @Override
     public Iterator<Vector<T>> slideBy(Function<? super T, ?> classifier) {
         return iterator().slideBy(classifier).map(Vector::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per window when consumed. The iterator element type is decided in #68.
+     */
     @Override
     public Iterator<Vector<T>> sliding(int size) {
         return sliding(size, 1);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per window when consumed. The iterator element type is decided in #68.
+     */
     @Override
     public Iterator<Vector<T>> sliding(int size, int step) {
         return iterator().sliding(size, step).map(Vector::ofAll);
     }
 
-    @Override
+    /**
+     * The elements sorted in natural order (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and regrouped into leaves.
+     *
+     * @return a new sorted Vector, or this Vector if it is empty
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
     public Vector<T> sorted() {
         if (isEmpty()) {
             return this;
@@ -1357,20 +2280,55 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The elements sorted by {@code comparator} (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and regrouped into leaves.
+     *
+     * @param comparator the order
+     * @return a new sorted Vector, or this Vector if it is empty
+     * @throws NullPointerException if {@code comparator} is null
+     */
     public Vector<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return isEmpty() ? this : toJavaStream().sorted(comparator).collect(collector());
+        if (isEmpty()) {
+            return this;
+        }
+        @SuppressWarnings("unchecked")
+        final T[] array = (T[]) toJavaArray();
+        Arrays.sort(array, comparator);
+        return Vector.of(array);
     }
 
-    @Override
+    /**
+     * The elements sorted by the natural order of the key {@code mapper} computes (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     *
+     * @param mapper computes the sort key
+     * @param <U>    the key type
+     * @return a new sorted Vector, or this Vector if it is empty
+     * @throws NullPointerException if {@code mapper} is null
+     */
     public <U extends Comparable<? super U>> Vector<T> sortBy(Function<? super T, ? extends U> mapper) {
         return sortBy(U::compareTo, mapper);
     }
 
-    @Override
+    /**
+     * The elements sorted by {@code comparator} applied to the key {@code mapper} computes (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     *
+     * @param comparator the order of the keys
+     * @param mapper     computes the sort key
+     * @param <U>        the key type
+     * @return a new sorted Vector, or this Vector if it is empty
+     * @throws NullPointerException if {@code comparator} or {@code mapper} is null
+     */
     public <U extends @Nullable Object> Vector<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
-        return Collections.sortBy(this, comparator, mapper, collector());
+        Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
     }
 
     @Override
@@ -1379,19 +2337,43 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return Tuple.of(takeWhile(predicate), dropWhile(predicate));
     }
 
-    @Override
+    /**
+     * Splits at {@code n}: {@code (take(n), drop(n))}.
+     * <p>
+     * Complexity: effectively O(1).
+     *
+     * @param n the split position; clamped to {@code [0, length()]}
+     * @return the first {@code n} elements and the rest
+     */
     public Tuple2<Vector<T>, Vector<T>> splitAt(int n) {
         return Tuple.of(take(n), drop(n));
     }
 
-    @Override
+    /**
+     * Splits before the first element satisfying {@code predicate}; that element starts the second part.
+     * <p>
+     * Complexity: O(k) for k elements before the split, then an effectively O(1) split.
+     *
+     * @param predicate the condition
+     * @return the elements before the first match and the rest; everything and the empty Vector if none matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Tuple2<Vector<T>, Vector<T>> splitAt(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final Vector<T> init = takeWhile(predicate.negate());
         return Tuple.of(init, drop(init.size()));
     }
 
-    @Override
+    /**
+     * Splits after the first element satisfying {@code predicate}; that element ends the first part.
+     * <p>
+     * Complexity: O(k) for k elements up to the split, then an effectively O(1) split.
+     *
+     * @param predicate the condition
+     * @return the elements up to and including the first match and the rest; everything and the empty Vector if
+     *         none matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Tuple2<Vector<T>, Vector<T>> splitAtInclusive(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         for (int i = 0; i < length(); i++) {
@@ -1404,7 +2386,74 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return Tuple.of(this, empty());
     }
 
-    @Override
+    /**
+     * Whether this Vector starts with {@code that}: {@code startsWith(that, 0)}.
+     * <p>
+     * Complexity: O(m) for m elements of {@code that}.
+     *
+     * @param that the prefix to test
+     * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean startsWith(Iterable<? extends T> that) {
+        return startsWith(that, 0);
+    }
+
+    /**
+     * Whether the elements from {@code offset} on start with {@code that}. A Vector argument is compared by index;
+     * any other iterable is walked once, so a one-shot iterator is accepted.
+     * <p>
+     * Complexity: O(m) for m elements of {@code that}.
+     *
+     * @param that   the prefix to test
+     * @param offset the position in this Vector at which the prefix should start
+     * @return false if {@code offset} is negative; otherwise true if {@code that} equals the {@code m} elements from
+     *         {@code offset} on (an empty {@code that} is always a prefix, even beyond the end)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean startsWith(Iterable<? extends T> that, int offset) {
+        Objects.requireNonNull(that, "that is null");
+        if (offset < 0) {
+            return false;
+        }
+        final int thisLength = length();
+        if (that instanceof Vector<?> vector) {
+            @SuppressWarnings("unchecked")
+            final Vector<? extends T> thatVector = (Vector<? extends T>) vector;
+            final int thatLength = thatVector.length();
+            if (thatLength == 0) {
+                return true; // an empty prefix starts anywhere, even past the end
+            }
+            if (thatLength > thisLength - offset) {
+                return false;
+            }
+            for (int i = offset, j = 0; j < thatLength; i++, j++) {
+                if (!Objects.equals(get(i), thatVector.get(j))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        int i = offset;
+        final java.util.Iterator<? extends T> thatElements = that.iterator();
+        while (i < thisLength && thatElements.hasNext()) {
+            if (!Objects.equals(get(i), thatElements.next())) {
+                return false;
+            }
+            i++;
+        }
+        return !thatElements.hasNext();
+    }
+
+    /**
+     * The elements from {@code beginIndex} on. Unlike {@link #drop(int)}, an out-of-range index throws.
+     * <p>
+     * Complexity: effectively O(1).
+     *
+     * @param beginIndex the first position, {@code 0 <= beginIndex <= length()}
+     * @return the elements from {@code beginIndex} on; this Vector when it is 0
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is out of range
+     */
     public Vector<T> subSequence(int beginIndex) {
         if ((beginIndex >= 0) && (beginIndex <= length())) {
             return drop(beginIndex);
@@ -1413,12 +2462,28 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} (inclusive) to {@code endIndex} (exclusive). Unlike
+     * {@link #slice(int, int)}, out-of-range or reversed indices throw.
+     * <p>
+     * Complexity: effectively O(1).
+     *
+     * @param beginIndex the first position (inclusive), {@code >= 0}
+     * @param endIndex   the last position (exclusive), {@code <= length()}
+     * @return the elements in the range; this Vector when it covers everything
+     * @throws IndexOutOfBoundsException if {@code beginIndex < 0} or {@code endIndex > length()}
+     * @throws IllegalArgumentException  if {@code beginIndex > endIndex}
+     */
     public Vector<T> subSequence(int beginIndex, int endIndex) {
         Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
         return slice(beginIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (the path to the first leaf is trimmed).
+     */
     @Override
     public Vector<T> tail() {
         if (nonEmpty()) {
@@ -1431,67 +2496,147 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
     @Override
     public Option<Vector<T>> tailOption() { return isEmpty() ? Option.none() : Option.some(tail()); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (the path to the new last leaf is trimmed).
+     */
     @Override
     public Vector<T> take(int n) {
         return wrap(trie.take(n));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for k taken elements, then one effectively O(1) {@code take}.
+     */
     @Override
     public Vector<T> takeUntil(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.takeUntil(this, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        final int length = length();
+        for (int i = 0; i < length; i++) {
+            if (predicate.test(get(i))) {
+                return take(i);
+            }
+        }
+        return this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for k taken elements, then one effectively O(1) {@code take}.
+     */
     @Override
     public Vector<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeUntil(predicate.negate());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (the path to the new first leaf is trimmed).
+     */
     @Override
     public Vector<T> takeRight(int n) {
         return drop(length() - n);
     }
 
-    @Override
+    /**
+     * Takes elements from the end until one satisfies {@code predicate}; that element is excluded.
+     * <p>
+     * Complexity: O(k) for k taken elements, then one effectively O(1) {@code drop}.
+     *
+     * @param predicate tested from the last element backwards
+     * @return the elements after the last one satisfying {@code predicate}; this Vector if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> takeRightUntil(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.takeRightUntil(this, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        for (int i = length() - 1; i >= 0; i--) {
+            if (predicate.test(get(i))) {
+                return drop(i + 1);
+            }
+        }
+        return this;
     }
 
-    @Override
+    /**
+     * Takes elements from the end while they satisfy {@code predicate}: {@code takeRightUntil(predicate.negate())}.
+     * <p>
+     * Complexity: O(k) for k taken elements, then one effectively O(1) {@code drop}.
+     *
+     * @param predicate tested from the last element backwards
+     * @return the elements after the last one not satisfying {@code predicate}; this Vector if all do
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeRightUntil(predicate.negate());
     }
 
-    @Override
+    /**
+     * Splits every element into two with {@code unzipper} and collects the halves: two builders, one pass.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param unzipper splits an element
+     * @param <T1>     the type of the first halves
+     * @param <T2>     the type of the second halves
+     * @return the first halves and the second halves, each in order
+     * @throws NullPointerException if {@code unzipper} is null, returns null, or returns a tuple with a null component
+     */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Vector<T1>, Vector<T2>> unzip(Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        Vector<T1> xs = empty();
-        Vector<T2> ys = empty();
-        for (int i = 0; i < length(); i++) {
-            final Tuple2<? extends T1, ? extends T2> t = unzipper.apply(get(i));
-            xs = xs.append(t._1());
-            ys = ys.append(t._2());
+        final Builder<T1> xs = newBuilder(length());
+        final Builder<T2> ys = newBuilder(length());
+        for (T element : this) {
+            final Tuple2<? extends T1, ? extends T2> t = unzipper.apply(element);
+            xs.add(t._1());
+            ys.add(t._2());
         }
-        return Tuple.of(xs, ys);
+        return Tuple.of(xs.result(), ys.result());
     }
 
-    @Override
+    /**
+     * Splits every element into three with {@code unzipper} and collects the thirds: three builders, one pass.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param unzipper splits an element
+     * @param <T1>     the type of the first thirds
+     * @param <T2>     the type of the second thirds
+     * @param <T3>     the type of the third thirds
+     * @return the three Vectors of thirds, each in order
+     * @throws NullPointerException if {@code unzipper} is null, returns null, or returns a tuple with a null component
+     */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Vector<T1>, Vector<T2>, Vector<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        Vector<T1> xs = empty();
-        Vector<T2> ys = empty();
-        Vector<T3> zs = empty();
-        for (int i = 0; i < length(); i++) {
-            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(get(i));
-            xs = xs.append(t._1());
-            ys = ys.append(t._2());
-            zs = zs.append(t._3());
+        final Builder<T1> xs = newBuilder(length());
+        final Builder<T2> ys = newBuilder(length());
+        final Builder<T3> zs = newBuilder(length());
+        for (T element : this) {
+            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(element);
+            xs.add(t._1());
+            ys.add(t._2());
+            zs.add(t._3());
         }
-        return Tuple.of(xs, ys, zs);
+        return Tuple.of(xs.result(), ys.result(), zs.result());
     }
 
-    @Override
+    /**
+     * Replaces the element at {@code index}.
+     * <p>
+     * Complexity: effectively O(1) (a path copy; the leaf holding the element is copied).
+     *
+     * @param index   a position, {@code 0 <= index < length()}
+     * @param element the new element
+     * @return a new Vector with {@code element} at {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     * @throws NullPointerException      if {@code element} is null
+     */
     public Vector<T> update(int index, T element) {
         if (isValid(index)) {
             return wrap(trie.update(index, element));
@@ -1500,17 +2645,37 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * Replaces the element at {@code index} by {@code updater} applied to it.
+     * <p>
+     * Complexity: effectively O(1) (one access and one path copy).
+     *
+     * @param index   a position, {@code 0 <= index < length()}
+     * @param updater computes the new element from the current one
+     * @return a new Vector with the updated element at {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is out of range
+     * @throws NullPointerException      if {@code updater} is null or returns null
+     */
     public Vector<T> update(int index, Function<? super T, ? extends T> updater) {
         Objects.requireNonNull(updater, "updater is null");
         return update(index, updater.apply(get(index)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)) for m elements of {@code that}.
+     */
     @Override
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)) for m elements of {@code that}.
+     */
     @Override
     public <U extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
@@ -1518,23 +2683,45 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
         return ofAll(iterator().zipWith(that, mapper));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(max(n, m)) for m elements of {@code that}.
+     */
     @Override
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         return ofAll(iterator().zipAll(that, thisElem, thatElem));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Vector<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Vector<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return ofAll(iterator().zipWithIndex(mapper));
     }
 
+    /**
+     * Whether {@code o} is a sequence with equal elements in the same order: another Vector, or, until #68 decides
+     * the final rule, one of the other ordered sequence types.
+     *
+     * @param o any object
+     * @return true if {@code o} is an ordered sequence of the same elements
+     */
     @Override
     public boolean equals(@Nullable Object o) {
         return com.guizmaii.zazr.collection.Collections.equals(this, o);
@@ -1547,6 +2734,7 @@ public final class Vector<T extends @Nullable Object> implements IndexedSeq<T> {
 
     @Override
     public String toString() { return mkString("Vector(", ", ", ")"); }
+
     /**
      * A mutable, single-use accumulator that builds a {@link Vector} element by element. Its invariant is that there is
      * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is handed
@@ -1844,4 +3032,75 @@ interface VectorModule {
         }
     }
 
+    /* contiguous-slice search by index; the slice is materialised once (O(1) when it already is a Vector) */
+    final class Slice {
+
+        static <T extends @Nullable Object> int indexOfSlice(Vector<T> source, Iterable<? extends T> slice, int from) {
+            if (source.isEmpty()) {
+                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
+            }
+            final Vector<? extends T> _slice = Vector.ofAll(slice);
+            final int maxIndex = source.length() - _slice.length();
+            return findSlice(source, _slice, Math.max(from, 0), maxIndex);
+        }
+
+        static <T extends @Nullable Object> int lastIndexOfSlice(Vector<T> source, Iterable<? extends T> slice, int end) {
+            if (end < 0) {
+                return -1;
+            } else if (source.isEmpty()) {
+                return Collections.isEmpty(slice) ? 0 : -1;
+            } else if (Collections.isEmpty(slice)) {
+                final int len = source.length();
+                return len < end ? len : end;
+            }
+            int index = 0;
+            int result = -1;
+            final Vector<? extends T> _slice = Vector.ofAll(slice);
+            final int maxIndex = source.length() - _slice.length();
+            while (index <= maxIndex) {
+                int indexOfSlice = findSlice(source, _slice, index, maxIndex);
+                if (indexOfSlice < 0) {
+                    return result;
+                }
+                if (indexOfSlice <= end) {
+                    result = indexOfSlice;
+                    index = indexOfSlice + 1;
+                } else {
+                    return result;
+                }
+            }
+            return result;
+        }
+
+        private static <T extends @Nullable Object> int findSlice(Vector<T> source, Vector<? extends T> slice, int index, int maxIndex) {
+            while (index <= maxIndex) {
+                if (source.startsWith(slice, index)) {
+                    return index;
+                }
+                index++;
+            }
+            return -1;
+        }
+    }
+
+    /* binary search over the indices; `comparison` compares the element at an index with the searched element */
+    final class Search {
+
+        static int binarySearch(Vector<?> vector, IntUnaryOperator comparison) {
+            int low = 0;
+            int high = vector.length() - 1;
+            while (low <= high) {
+                final int mid = (low + high) >>> 1;
+                final int cmp = comparison.applyAsInt(mid);
+                if (cmp < 0) {
+                    low = mid + 1;
+                } else if (cmp > 0) {
+                    high = mid - 1;
+                } else {
+                    return mid;
+                }
+            }
+            return -(low + 1);
+        }
+    }
 }

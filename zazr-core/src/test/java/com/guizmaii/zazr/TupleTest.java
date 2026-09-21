@@ -1,6 +1,5 @@
 package com.guizmaii.zazr;
 
-import com.guizmaii.zazr.collection.List;
 import java.math.BigDecimal;
 import java.util.AbstractMap;
 import org.assertj.core.api.Assertions;
@@ -29,8 +28,8 @@ public class TupleTest {
         }
 
         @Test
-        public void shouldReturnCorrectSeqOfTuple0() {
-            Assertions.assertThat(tuple0().toSeq()).isEqualTo(List.empty());
+        public void shouldReturnCorrectVectorOfTuple0() {
+            Assertions.assertThat(tuple0().toVector()).isSameAs(com.guizmaii.zazr.collection.Vector.empty());
         }
 
         @SuppressWarnings("EqualsWithItself")

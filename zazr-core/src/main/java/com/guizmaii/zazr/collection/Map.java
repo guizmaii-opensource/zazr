@@ -506,14 +506,15 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     @Deprecated
     Map<K, V> removeValues(Predicate<? super V> predicate);
 
+    // a List, not a Vector, since Vector is no longer a Seq (#66); Map loses scanLeft/scanRight in #68
     @Override
     default <U extends @Nullable Object> Seq<U> scanLeft(U zero, BiFunction<? super U, ? super Tuple2<K, V>, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toVector);
+        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toList);
     }
 
     @Override
     default <U extends @Nullable Object> Seq<U> scanRight(U zero, BiFunction<? super Tuple2<K, V>, ? super U, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toVector);
+        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, com.guizmaii.zazr.collection.Iterator::toList);
     }
 
     @Override

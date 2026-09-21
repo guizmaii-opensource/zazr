@@ -2,7 +2,6 @@ package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.Iterator;
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -112,11 +111,11 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Turns many {@code Try}s into one {@code Try} of all their values: {@code Success} of a {@link Seq} of the
+     * Turns many {@code Try}s into one {@code Try} of all their values: {@code Success} of a {@link Vector} of the
      * values in iteration order when every element is a {@code Success}, otherwise the first {@code Failure} in
-     * iteration order. The empty iterable gives {@code Success} of the empty {@code Seq}.
+     * iteration order. The empty iterable gives {@code Success} of the empty {@code Vector}.
      * <pre>{@code
-     * Try.collectAll(List.of(Try.success(1), Try.success(2))); // = Success(Seq(1, 2))
+     * Try.collectAll(List.of(Try.success(1), Try.success(2))); // = Success(Vector(1, 2))
      * Try.collectAll(List.of(Try.success(1), Try.failure(e))); // = Failure(e)
      * }</pre>
      *
@@ -125,26 +124,26 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of all the values, or the first {@code Failure}
      * @throws NullPointerException if {@code values} is null
      */
-    static <T extends @Nullable Object> Try<Seq<T>> collectAll(Iterable<? extends Try<? extends T>> values) {
+    static <T extends @Nullable Object> Try<Vector<T>> collectAll(Iterable<? extends Try<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
-        Vector<T> vector = Vector.empty();
+        final Vector.Builder<T> builder = Vector.newBuilder();
         for (Try<? extends T> value : values) {
             if (value.isFailure()) {
                 return Try.failure(value.getCause());
             }
-            vector = vector.append(value.get());
+            builder.add(value.get());
         }
-        return Try.success(vector);
+        return Try.success(builder.result());
     }
 
     /**
      * Applies {@code mapper} to every element and collects the results as {@link #collectAll(Iterable)} does:
-     * {@code Success} of a {@link Seq} of the mapped values when every call returns a {@code Success}, otherwise
+     * {@code Success} of a {@link Vector} of the mapped values when every call returns a {@code Success}, otherwise
      * the first {@code Failure}. The mapper is not called for the elements after that one; what it throws
      * propagates to the caller, since it is a plain {@link Function}: build the {@code Try} inside it with
      * {@link #of(Callable)}.
      * <pre>{@code
-     * Try.forEach(List.of("1", "2"), s -> Try.of(() -> Integer.parseInt(s))); // = Success(Seq(1, 2))
+     * Try.forEach(List.of("1", "2"), s -> Try.of(() -> Integer.parseInt(s))); // = Success(Vector(1, 2))
      * }</pre>
      *
      * @param values the elements to map
@@ -154,7 +153,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of all the mapped values, or the first {@code Failure}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Try<Seq<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Try<Vector<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return collectAll(Iterator.ofAll(values).map(mapper));

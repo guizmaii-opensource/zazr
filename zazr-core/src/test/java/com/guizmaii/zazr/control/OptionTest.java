@@ -2,7 +2,6 @@ package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -107,7 +106,7 @@ public class OptionTest {
         @Test
         public void shouldConvertListOfNonEmptyOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.some("b"), Option.some("c"));
-            final Option<Seq<String>> reducedOption = Option.collectAll(options);
+            final Option<Vector<String>> reducedOption = Option.collectAll(options);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
@@ -116,14 +115,14 @@ public class OptionTest {
         @Test
         public void shouldConvertListOfEmptyOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
-            final Option<Seq<String>> option = Option.collectAll(options);
+            final Option<Vector<String>> option = Option.collectAll(options);
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldConvertListOfMixedOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
-            final Option<Seq<String>> option = Option.collectAll(options);
+            final Option<Vector<String>> option = Option.collectAll(options);
             assertThat(option instanceof Option.None).isTrue();
         }
     }
@@ -133,7 +132,7 @@ public class OptionTest {
         @Test
         public void shouldForEachListOfNonEmptyOptionsToOptionOfList() {
             final java.util.List<String> options = Arrays.asList("a", "b", "c");
-            final Option<Seq<String>> reducedOption = Option.forEach(options, Option::some);
+            final Option<Vector<String>> reducedOption = Option.forEach(options, Option::some);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
@@ -142,14 +141,14 @@ public class OptionTest {
         @Test
         public void shouldForEachListOfEmptyOptionsToOptionOfList() {
             final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
-            final Option<Seq<String>> option = Option.forEach(options, Function.identity());
+            final Option<Vector<String>> option = Option.forEach(options, Function.identity());
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldForEachListOfMixedOptionsToOptionOfList() {
             final java.util.List<String> options = Arrays.asList("a", "b", "c");
-            final Option<Seq<String>> option =
+            final Option<Vector<String>> option =
                 Option.forEach(options, x -> x.equals("b") ? Option.none() : Option.some(x));
             assertThat(option instanceof Option.None).isTrue();
         }

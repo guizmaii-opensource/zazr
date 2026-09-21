@@ -4,8 +4,7 @@ package com.guizmaii.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Seq;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -319,8 +318,8 @@ public record Tuple6<T1 extends @Nullable Object, T2 extends @Nullable Object, T
     }
 
     @Override
-    public Seq<?> toSeq() {
-        return List.of(_1, _2, _3, _4, _5, _6);
+    public Vector<?> toVector() {
+        return Vector.of(_1, _2, _3, _4, _5, _6);
     }
 
     /**
