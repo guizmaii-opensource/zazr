@@ -2468,7 +2468,7 @@ interface IteratorModule {
         }
     }
 
-    /* the groups are Vectors (one leaf array each); the iterator says so since Vector is no longer a Seq (#66) */
+    /* the groups are Vectors, one leaf array each */
     final class GroupedIterator<T extends @Nullable Object> implements Iterator<Vector<T>> {
 
         private final Iterator<T> that;

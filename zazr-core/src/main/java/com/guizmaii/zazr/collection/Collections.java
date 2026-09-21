@@ -86,7 +86,7 @@ final class Collections {
         }
     }
 
-    // the ordered sequence types: Vector, and the Seq types until #67 deletes Seq
+    // the ordered sequence types, equal to each other element by element in order
     static boolean isSequence(@Nullable Object object) {
         return object instanceof Vector || object instanceof Seq;
     }

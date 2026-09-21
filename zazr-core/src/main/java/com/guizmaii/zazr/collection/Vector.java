@@ -778,8 +778,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return builder.result();
     }
 
-    // -- the sequence API. Vector implements only Traversable (design 3.7): every method below that was declared by
-    // Seq or IndexedSeq is declared here with Vector return types, and every positional method states its cost.
+    // -- the sequence API (design 3.7). Vector implements only Traversable and declares every sequence method itself,
+    // with Vector return types; every positional method states its cost.
     // "Effectively O(1)" means O(log32 n): a trie access or a path copy of at most six nodes.
 
     /**
@@ -2745,8 +2745,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * Whether {@code o} is a sequence with equal elements in the same order: another Vector, or, until #68 decides
-     * the final rule, one of the other ordered sequence types.
+     * Whether {@code o} is a sequence with equal elements in the same order: another Vector or one of the other
+     * ordered sequence types.
      *
      * @param o any object
      * @return true if {@code o} is an ordered sequence of the same elements

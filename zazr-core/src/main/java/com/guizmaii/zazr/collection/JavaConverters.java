@@ -8,8 +8,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * THIS CLASS IS INTENDED TO BE USED INTERNALLY ONLY!
  * <p>
- * This helper class provides methods that return {@link java.util.List} views on zazr sequences ({@link Vector} and,
- * until #67, the {@link Seq} types). The view creation and back conversion take O(1).
+ * This helper class provides methods that return {@link java.util.List} views on zazr sequences ({@link Vector} and
+ * the {@link Seq} types). The view creation and back conversion take O(1).
  *
  * @author Daniel Dietrich
  */
@@ -86,7 +86,7 @@ class JavaConverters {
     /**
      * A {@link java.util.List} view over a persistent sequence. There is no shared sequence interface to call (design
      * 3.7), so everything positional goes through the abstract hooks below, implemented once per delegate type:
-     * {@link VectorListView} for {@link Vector}, {@link SeqListView} for the {@link Seq} types until #67.
+     * {@link VectorListView} for {@link Vector}, {@link SeqListView} for the {@link Seq} types.
      *
      * @param <T> the element type
      * @param <C> the delegate type
@@ -534,7 +534,7 @@ class JavaConverters {
         ListView<T, Vector<T>> view(Vector<T> delegate, boolean mutable) { return new VectorListView<>(delegate, mutable); }
     }
 
-    /** The view over a {@link Seq} (List, Queue, Stream), until #67 gives each its own. */
+    /** The view over a {@link Seq} (List, Queue, Stream). */
     static final class SeqListView<T extends @Nullable Object, C extends Seq<T>> extends ListView<T, C> {
 
         SeqListView(C delegate, boolean mutable) {

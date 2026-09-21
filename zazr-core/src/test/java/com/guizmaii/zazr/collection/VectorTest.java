@@ -569,7 +569,7 @@ public class VectorTest extends AbstractTraversableRangeTest {
         }
     }
 
-    // -- the sequence cases shared through AbstractSeqTest until #66 (Vector is no longer a Seq)
+    // -- the sequence cases
 
     @Nested
     class FillIntSupplierTests {
@@ -2814,8 +2814,8 @@ public class VectorTest extends AbstractTraversableRangeTest {
         }
     }
 
-    // -- Vector declares its own API (design 3.7, #66): every method it used to inherit from Seq/IndexedSeq is tested
-    // here at the 32-wide trie boundaries, on int[] and Object[] leaves, with and without a trie offset
+    // -- the sequence methods Vector declares itself (design 3.7), tested at the 32-wide trie boundaries, on int[] and
+    // Object[] leaves, with and without a trie offset
 
     static final int[] BOUNDARIES = { 0, 1, 31, 32, 33, 1023, 1024, 1025 };
 
