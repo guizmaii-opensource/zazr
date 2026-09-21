@@ -1,4 +1,4 @@
-//> using scala 3.8.1
+//> using scala 3.9.0
 //
 // Fails when a positional method of a collection lacks a "Complexity:" line in its javadoc (design.md 3.7).
 //
