@@ -5,6 +5,7 @@ import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
+import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
 import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
@@ -770,36 +771,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * The Cartesian square of this Queue: every pair {@code (a, b)} of elements, {@code a} varying slowest.
-     * <p>
-     * Complexity: lazy; O(n^2) pairs when consumed.
-     *
-     * @return an iterator over the pairs
-     */
-    public Iterator<Tuple2<T, T>> crossProduct() {
-        return crossProduct(this);
-    }
-
-    /**
-     * The Cartesian product of this Queue and {@code that}: every pair {@code (a, b)} with {@code a} from this Queue
-     * and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked lazily and memoised, so an
-     * infinite {@code that} works with {@code take}.
-     * <p>
-     * Complexity: lazy; O(n * m) pairs when consumed.
-     *
-     * @param that the right-hand elements
-     * @param <U>  their type
-     * @return an iterator over the pairs
-     * @throws NullPointerException if {@code that} is null
-     */
-    public <U extends @Nullable Object> Iterator<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
-        Objects.requireNonNull(that, "that is null");
-        // a lazy, memoising Stream: the result is lazy, so the argument stays lazy too
-        final Stream<U> other = Stream.ofAll(that);
-        return Iterator.ofAll(this).flatMap(a -> other.map(b -> Tuple.of(a, b)));
-    }
-
-    /**
      * Whether this Queue ends with {@code that}.
      * <p>
      * Complexity: O(n + m) for m elements of {@code that}.
@@ -877,19 +848,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public int indexWhere(Predicate<? super T> predicate, int from) {
         return toList().indexWhere(predicate, from);
-    }
-
-    /**
-     * An iterator over the elements from {@code index} on.
-     * <p>
-     * Complexity: O(index) to reach the start, then O(1) per step.
-     *
-     * @param index the first position to iterate from
-     * @return an iterator over the suffix
-     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
-     */
-    public Iterator<T> iterator(int index) {
-        return subSequence(index).iterator();
     }
 
     /**
@@ -978,8 +936,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @return the reverse iterator
      */
-    public Iterator<T> reverseIterator() {
-        return rear.iterator().concat(front.reverseIterator());
+    Iterator<T> reverseIterator() {
+        return Iterator.ofAll(rear).concat(front.reverse().iterator());
     }
 
     /**
@@ -1175,12 +1133,22 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Folds the elements from the right: starts with {@code zero} and combines each element, from the last to the
+     * first, with the accumulator.
+     * <pre>{@code
+     * // = 24
+     * List.of('4', '2').foldRight(0, (x, acc) -> acc * 10 + x - '0');
+     * }</pre>
      * <p>
      * The elements are folded from the end: they are copied into a {@code List} first, then folded from the left, so
      * the recursion depth does not grow with the length.
+     *
+     * @param <U>  the type of the accumulator
+     * @param zero the initial accumulator
+     * @param f    combines the next element (from the right) and the accumulator so far
+     * @return the final accumulator, {@code zero} on an empty sequence
+     * @throws NullPointerException if {@code f} is null
      */
-    @Override
     public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         return toList().foldRight(zero, f);
@@ -1294,48 +1262,45 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * The Cartesian power of this Queue: every Queue of {@code power} elements drawn from this one, in lexicographic
-     * position order. {@code power == 0} gives one empty Queue; a negative power gives no result.
-     * <p>
-     * Complexity: lazy; O(n^power) Queues of size {@code power} when consumed.
-     *
-     * @param power the size of each result
-     * @return an iterator over the Lists
-     */
-    public Iterator<Queue<T>> crossProduct(int power) {
-        if (power < 0) {
-            return Iterator.empty();
-        }
-        return Iterator.range(0, power).foldLeft(Iterator.of(Queue.<T> empty()), (product, ignored) -> product.flatMap(el -> map(el::append)));
-    }
-
-    /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} containing the elements of this instance
+     * with all duplicates removed. Element equality is determined using {@code equals}.
      * <p>
      * Complexity: O(n).
+     *
+     * @return a new {@code Queue} without duplicate elements
      */
-    @Override
     public Queue<T> distinct() {
         return ofAll(toList().distinct());
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} containing the elements of this instance
+     * without duplicates, as determined by the given {@code comparator}; the first of two equal elements is kept.
      * <p>
      * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator a comparator used to determine equality of elements
+     * @return a new {@code Queue} with duplicates removed
+     * @throws NullPointerException if {@code comparator} is null
      */
-    @Override
     public Queue<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(toList().distinctBy(comparator));
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} containing the elements of this instance
+     * without duplicates, based on keys extracted from elements using {@code keyExtractor}.
+     * <p>
+     * The first occurrence of each key is retained in the resulting sequence.
      * <p>
      * Complexity: O(n), one key per element.
+     *
+     * @param keyExtractor a function to extract keys for determining uniqueness
+     * @param <U>          the type of key
+     * @return a new {@code Queue} with duplicates removed based on keys
+     * @throws NullPointerException if {@code keyExtractor} is null
      */
-    @Override
     public <U extends @Nullable Object> Queue<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         return ofAll(toList().distinctBy(keyExtractor));
@@ -1373,11 +1338,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} without the first {@code n} elements,
+     * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(n); the front and the rear are both walked.
+     *
+     * @param n the number of elements to drop
+     * @return a new instance excluding the first {@code n} elements
      */
-    @Override
     public Queue<T> drop(int n) {
         if (n <= 0) {
             return this;
@@ -1389,11 +1357,18 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} starting from the first element
+     * that does not satisfy the given {@code predicate}, dropping all preceding elements.
+     * <p>
+     * This is equivalent to {@code dropUntil(predicate.negate())}, which is useful
+     * for method references that cannot be negated directly.
      * <p>
      * Complexity: O(n).
+     *
+     * @param predicate a condition tested on each element
+     * @return a new instance starting from the first element not matching the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Queue<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final List<T> dropped = toList().dropWhile(predicate);
@@ -1401,11 +1376,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} without the last {@code n} elements,
+     * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(n); the front and the rear are both walked.
+     *
+     * @param n the number of elements to drop from the end
+     * @return a new instance excluding the last {@code n} elements
      */
-    @Override
     public Queue<T> dropRight(int n) {
         if (n <= 0) {
             return this;
@@ -1446,11 +1424,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new traversable containing only the elements that satisfy the given predicate.
      * <p>
      * Complexity: O(n).
+     *
+     * @param predicate the condition to test elements
+     * @return a traversable with elements matching the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Queue<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final com.guizmaii.zazr.collection.List<T> filtered = toList().filter(predicate);
@@ -1464,7 +1445,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         }
     }
 
-    @Override
     public <U extends @Nullable Object> Queue<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
@@ -1509,27 +1489,18 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         }
     }
 
-    @Override
     public <C extends @Nullable Object> Map<C, Queue<T>> groupBy(Function<? super T, ? extends C> classifier) {
         return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Queue::ofAll);
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(size) per group when consumed.
-     */
-    @Override
-    public Iterator<Queue<T>> grouped(int size) {
-        return sliding(size, size);
-    }
-
-    /**
-     * {@inheritDoc}
+     * Returns the first element of this non-empty {@code Queue}.
      * <p>
      * Complexity: O(1); the head of the front list.
+     *
+     * @return the first element
+     * @throws NoSuchElementException if this {@code Queue} is empty
      */
-    @Override
     public T head() {
         if (isEmpty()) {
             throw new NoSuchElementException("head of empty Queue");
@@ -1561,11 +1532,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns all elements of this Queue except the last one.
+     * <p>
+     * This is the dual of {@link #tail()}.
      * <p>
      * Complexity: amortised O(1); the last element is the head of the rear list, unless the rear is empty and the front is walked.
+     *
+     * @return a new instance containing all elements except the last
+     * @throws UnsupportedOperationException if this Queue is empty
      */
-    @Override
     public Queue<T> init() {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty Queue");
@@ -1674,16 +1649,18 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Complexity: O(m) to create, for the m elements of the rear list, which is reversed; then O(1) per step.
      */
     @Override
-    public Iterator<T> iterator() {
-        return front.iterator().concat(rear.reverseIterator());
+    public java.util.Iterator<T> iterator() {
+        return Iterator.ofAll(front).concat(rear.reverse().iterator());
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the last element of this Queue.
      * <p>
      * Complexity: O(1) when the rear is non-empty, O(n) when it is empty and the front is walked.
+     *
+     * @return the last element
+     * @throws NoSuchElementException if this Queue is empty
      */
-    @Override
     public T last() {
         return rear.isEmpty() ? front.last() : rear.head();
     }
@@ -1702,39 +1679,37 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the number of elements in this Queue.
+     * <p>
+     * Equivalent to {@link #size()}.
      * <p>
      * Complexity: O(n); the front and the rear are counted.
+     *
+     * @return the number of elements
      */
-    @Override
     public int length() {
         return front.length() + rear.length();
     }
 
-    @Override
     public <U extends @Nullable Object> Queue<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new Queue<>(front.map(mapper), rear.map(mapper));
     }
 
-    @Override
     public <U extends @Nullable Object> Queue<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // the null check runs here so that the message names this type, not the List that does the walking
         return isEmpty() ? empty() : new Queue<>(toList().collect(t -> Objects.requireNonNull(mapper.apply(t), "Queue.collect: mapper returned null")), com.guizmaii.zazr.collection.List.empty());
     }
 
-    @Override
     public <U extends @Nullable Object> Queue<U> as(U value) {
         return map(ignored -> value);
     }
 
-    @Override
     public Queue<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
 
-    @Override
     public Queue<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         return isEmpty() ? ofAll(supplier.get()) : this;
     }
@@ -1796,7 +1771,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return result;
     }
 
-    @Override
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return toList().partition(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
@@ -1908,15 +1882,18 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if the element is absent
      */
     public Queue<T> removeAll(T element) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
+        return com.guizmaii.zazr.collection.Collections.removeAll(this, element, kept -> filter(kept));
     }
 
     /**
-     * {@inheritDoc}
+     * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: O(n).
+     *
+     * @param currentElement the element to be replaced
+     * @param newElement     the replacement element
+     * @return a new Queue with the first occurrence of {@code currentElement} replaced by {@code newElement}
      */
-    @Override
     public Queue<T> replace(T currentElement, T newElement) {
         final com.guizmaii.zazr.collection.List<T> newFront = front.replace(currentElement, newElement);
         if (newFront != front) {
@@ -1931,11 +1908,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Replaces all occurrences of {@code currentElement} with {@code newElement}.
      * <p>
      * Complexity: O(n).
+     *
+     * @param currentElement the element to be replaced
+     * @param newElement     the replacement element
+     * @return a new Queue with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
-    @Override
     public Queue<T> replaceAll(T currentElement, T newElement) {
         final com.guizmaii.zazr.collection.List<T> newFront = front.replaceAll(currentElement, newElement);
         final com.guizmaii.zazr.collection.List<T> newRear = rear.replaceAll(currentElement, newElement);
@@ -1992,31 +1972,49 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Computes a prefix scan of the elements of this Queue.
+     * <p>
+     * The neutral element {@code zero} may be applied more than once.
      * <p>
      * Complexity: O(n).
+     *
+     * @param zero      the neutral element for the operator
+     * @param operation an associative binary operator
+     * @return a new Queue containing the prefix scan of the elements
+     * @throws NullPointerException if {@code operation} is null
      */
-    @Override
     public Queue<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
         return scanLeft(zero, operation);
     }
 
     /**
-     * {@inheritDoc}
+     * Produces a collection containing cumulative results of applying the operator from left to right.
      * <p>
      * Complexity: O(n).
+     *
+     * @param <U>       the type of the resulting elements
+     * @param zero      the initial value
+     * @param operation a binary operator applied to the intermediate result and each element
+     * @return a new Queue containing the cumulative results
+     * @throws NullPointerException if {@code operation} is null
      */
-    @Override
     public <U extends @Nullable Object> Queue<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
     }
 
     /**
-     * {@inheritDoc}
+     * Produces a collection containing cumulative results of applying the operator from right to left.
+     * <p>
+     * The head of the result is the last cumulative result.
      * <p>
      * Complexity: O(n).
+     *
+     * @param <U>       the type of the resulting elements
+     * @param zero      the initial value
+     * @param operation a binary operator applied to each element and the intermediate result
+     * @return a new Queue containing the cumulative results
+     * @throws NullPointerException if {@code operation} is null
      */
-    @Override
     public <U extends @Nullable Object> Queue<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toQueue);
     }
@@ -2044,31 +2042,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> slice(int beginIndex, int endIndex) {
         return ofAll(toList().slice(beginIndex, endIndex));
-    }
-
-    @Override
-    public Iterator<Queue<T>> slideBy(Function<? super T, ?> classifier) {
-        return iterator().slideBy(classifier).map(Queue::ofAll);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(size) per window when consumed.
-     */
-    @Override
-    public Iterator<Queue<T>> sliding(int size) {
-        return sliding(size, 1);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: lazy; O(size) per window when consumed.
-     */
-    @Override
-    public Iterator<Queue<T>> sliding(int size, int step) {
-        return iterator().sliding(size, step).map(Queue::ofAll);
     }
 
     /**
@@ -2129,11 +2102,17 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Splits this {@code Queue} into a prefix and remainder according to the given {@code predicate}.
+     * <p>
+     * The first element of the returned {@code Tuple} is the longest prefix of elements satisfying {@code predicate},
+     * and the second element is the remaining elements.
      * <p>
      * Complexity: O(n).
+     *
+     * @param predicate a predicate used to determine the prefix
+     * @return a {@code Tuple} containing the prefix and remainder
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Tuple2<Queue<T>, Queue<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return toList().span(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
@@ -2233,11 +2212,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} without its first element.
      * <p>
      * Complexity: amortised O(1); the front loses its head, and the rear is reversed onto it only when the front runs out.
+     *
+     * @return a new {@code Queue} containing all elements except the first
+     * @throws UnsupportedOperationException if this {@code Queue} is empty
      */
-    @Override
     public Queue<T> tail() {
         if (isEmpty()) {
             throw new UnsupportedOperationException("tail of empty Queue");
@@ -2247,11 +2228,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the first {@code n} elements of this {@code Queue}, or all elements if {@code n} exceeds the length.
+     * <p>
+     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
      * Complexity: O(n).
+     *
+     * @param n the number of elements to take
+     * @return a new {@code Queue} containing the first {@code n} elements
      */
-    @Override
     public Queue<T> take(int n) {
         if (n <= 0) {
             return empty();
@@ -2270,11 +2255,17 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Takes elements from this {@code Queue} until the given predicate holds for an element.
+     * <p>
+     * Equivalent to {@code takeWhile(predicate.negate())}, but useful when using method references
+     * that cannot be negated directly.
      * <p>
      * Complexity: O(n).
+     *
+     * @param predicate a condition tested sequentially on the elements
+     * @return a new {@code Queue} containing all elements before the first one that satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Queue<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final com.guizmaii.zazr.collection.List<T> taken = toList().takeUntil(predicate);
@@ -2282,11 +2273,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the last {@code n} elements of this {@code Queue}, or all elements if {@code n} exceeds the length.
+     * <p>
+     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
      * Complexity: O(n).
+     *
+     * @param n the number of elements to take from the end
+     * @return a new {@code Queue} containing the last {@code n} elements
      */
-    @Override
     public Queue<T> takeRight(int n) {
         if (n <= 0) {
             return empty();
@@ -2333,14 +2328,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return takeRightUntil(predicate.negate());
     }
 
-    @Override
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Queue<T1>, Queue<T2>> unzip(
       Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return toList().unzip(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Queue<T1>, Queue<T2>, Queue<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return toList().unzip3(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
@@ -2377,22 +2370,41 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@code Queue} formed by pairing elements of this {@code Queue} with elements of another
+     * {@code Iterable}. Pairing stops when either collection runs out of elements; any remaining elements in the longer
+     * collection are ignored.
+     * <p>
+     * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
+     * {@code that}.
      * <p>
      * Complexity: O(min(n, m)) for an argument of m elements.
+     *
+     * @param <U>  the type of elements in the second half of each pair
+     * @param that an {@code Iterable} providing the second element of each pair
+     * @return a new {@code Queue} containing pairs of corresponding elements
+     * @throws NullPointerException if {@code that} is null
      */
-    @Override
     public <U extends @Nullable Object> Queue<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@code Queue} by combining elements of this {@code Queue} with elements of another
+     * {@code Iterable} using a mapping function. Pairing stops when either collection runs out of elements.
+     * <p>
+     * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
+     * {@code that}.
      * <p>
      * Complexity: O(min(n, m)) for an argument of m elements.
+     *
+     * @param <U>    the type of elements in the second parameter of the mapper
+     * @param <R>    the type of elements in the resulting {@code Queue}
+     * @param that   an {@code Iterable} providing the second parameter of the mapper
+     * @param mapper a function that combines elements from this and {@code that} into a new element
+     * @return a new {@code Queue} containing mapped elements
+     * @throws NullPointerException if {@code that} or {@code mapper} is null
      */
     @SuppressWarnings("unchecked")
-    @Override
     public <U extends @Nullable Object, R extends @Nullable Object> Queue<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
@@ -2400,32 +2412,50 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@code Queue} formed by pairing elements of this {@code Queue} with elements of another
+     * {@code Iterable}, filling in placeholder elements when one collection is shorter than the other.
+     * <p>
+     * The length of the resulting {@code Queue} is the maximum of the lengths of this {@code Queue} and
+     * {@code that}.
+     * <p>
+     * If this {@code Queue} is shorter than {@code that}, {@code thisElem} is used as a filler. Conversely, if
+     * {@code that} is shorter, {@code thatElem} is used.
      * <p>
      * Complexity: O(max(n, m)) for an argument of m elements.
+     *
+     * @param <U>      the type of elements in the second half of each pair
+     * @param that     an {@code Iterable} providing the second element of each pair
+     * @param thisElem the element used to fill missing values if this {@code Queue} is shorter than {@code that}
+     * @param thatElem the element used to fill missing values if {@code that} is shorter than this {@code Queue}
+     * @return a new {@code Queue} containing pairs of elements, including fillers as needed
+     * @throws NullPointerException if {@code that} is null
      */
-    @Override
     public <U extends @Nullable Object> Queue<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         return ofAll(toList().zipAll(that, thisElem, thatElem));
     }
 
     /**
-     * {@inheritDoc}
+     * Zips this {@code Queue} with its indices, starting at 0.
      * <p>
      * Complexity: O(n).
+     *
+     * @return a new {@code Queue} containing each element paired with its index
      */
-    @Override
     public Queue<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
     /**
-     * {@inheritDoc}
+     * Zips this {@code Queue} with its indices and maps the resulting pairs using the provided mapper.
      * <p>
      * Complexity: O(n).
+     *
+     * @param <U>    the type of elements in the resulting {@code Queue}
+     * @param mapper a function mapping an element and its index to a new element
+     * @return a new {@code Queue} containing the mapped elements
+     * @throws NullPointerException if {@code mapper} is null
      */
-    @Override
     public <U extends @Nullable Object> Queue<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return ofAll(toList().zipWithIndex(mapper));
@@ -2514,11 +2544,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} starting from the first element
+     * that satisfies the given {@code predicate}, dropping all preceding elements.
      * <p>
      * Complexity: O(n).
+     *
+     * @param predicate a condition tested on each element
+     * @return a new instance starting from the first element matching the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Queue<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropWhile(predicate.negate());
@@ -2536,23 +2570,27 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a new {@code Queue} without its first element as an {@code Option}.
      * <p>
      * Complexity: amortised O(1); see {@link #tail()}.
+     *
+     * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
-    @Override
     public Option<Queue<T>> tailOption() {
         return isEmpty() ? Option.none() : Option.some(tail());
     }
 
     /**
-     * {@inheritDoc}
+     * Retains only the elements from this Queue that are contained in the given {@code elements}.
      * <p>
      * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     *
+     * @param elements the elements to keep
+     * @return a new Queue containing only the elements present in {@code elements}, in their original order
+     * @throws NullPointerException if {@code elements} is null
      */
-    @Override
     public Queue<T> retainAll(Iterable<? extends T> elements) {
-        return Collections.retainAll(this, elements);
+        return Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2565,7 +2603,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code elements} is null
      */
     public Queue<T> removeAll(Iterable<? extends T> elements) {
-        return Collections.removeAll(this, elements);
+        return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2584,23 +2622,25 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return reject(predicate);
     }
 
-    @Override
     public Queue<T> reject(Predicate<? super T> predicate) {
-        return Collections.reject(this, predicate);
+        return Collections.reject(this, predicate, kept -> filter(kept));
     }
 
     /**
-     * {@inheritDoc}
+     * Takes elements from this {@code Queue} while the given predicate holds.
      * <p>
      * Complexity: O(n).
+     *
+     * @param predicate a condition tested sequentially on the elements
+     * @return a new {@code Queue} containing all elements up to (but not including) the first one
+     *         that does not satisfy the predicate
+     * @throws NullPointerException if {@code predicate} is null
      */
-    @Override
     public Queue<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeUntil(predicate.negate());
     }
 
-    @Override
     public Queue<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         forEach(action);
@@ -2611,4 +2651,744 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public String toString() {
         return mkString("Queue(", ", ", ")");
     }
+
+    // -- windows and products
+
+    /**
+     * The elements in consecutive blocks of {@code size}: {@code Queue.of(1, 2, 3, 4, 5).grouped(2)} is
+     * {@code Queue(Queue(1, 2), Queue(3, 4), Queue(5))}; the last block is smaller when {@code size} does not
+     * divide the length. The same as {@code sliding(size, size)}.
+     * <p>
+     * Complexity: O(n); each block is copied into its own Queue.
+     *
+     * @param size the block size, positive
+     * @return the blocks, in order; empty if this Queue is empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Queue<Queue<T>> grouped(int size) {
+        return sliding(size, size);
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements, each starting one element after the previous:
+     * {@code Queue.of(1, 2, 3, 4).sliding(3)} is {@code Queue(Queue(1, 2, 3), Queue(2, 3, 4))}. A Queue shorter
+     * than {@code size} is one window. The same as {@code sliding(size, 1)}.
+     * <p>
+     * Complexity: O(n * size); each window is copied into its own Queue.
+     *
+     * @param size the window size, positive
+     * @return the windows, in order; empty if this Queue is empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Queue<Queue<T>> sliding(int size) {
+        return sliding(size, 1);
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements, each starting {@code step} elements after the previous:
+     * {@code Queue.of(1, 2, 3, 4, 5).sliding(2, 3)} is {@code Queue(Queue(1, 2), Queue(4, 5))} and
+     * {@code sliding(2, 4)} is {@code Queue(Queue(1, 2), Queue(5))}. The last window is shorter than {@code size}
+     * when it reaches the end; a window whose elements all belong to the previous one is not produced, so
+     * {@code Queue.of(1, 2, 3, 4).sliding(3)} has two windows. A Queue shorter than {@code size} is one window; an
+     * empty Queue has none.
+     * <p>
+     * Complexity: O(n * size / step); each window is copied into its own Queue.
+     *
+     * @param size the window size, positive
+     * @param step the distance between two window starts, positive
+     * @return the windows, in order
+     * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
+     */
+    public Queue<Queue<T>> sliding(int size, int step) {
+        return ofAll(Iterator.ofAll(this).sliding(size, step).map(Queue::ofAll));
+    }
+
+    /**
+     * The elements in maximal runs of consecutive elements with the same key, computed once per element by
+     * {@code classifier}: {@code Queue.of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10)} is
+     * {@code Queue(Queue(1, 2, 3), Queue(10, 12), Queue(5, 7), Queue(20, 29))}. The runs concatenate back to this
+     * Queue.
+     * <p>
+     * Complexity: O(n); each run is copied into its own Queue.
+     *
+     * @param classifier the key of an element; two consecutive elements are in the same run when their keys are
+     *                   equal
+     * @return the runs, in order; empty if this Queue is empty
+     * @throws NullPointerException if {@code classifier} is null
+     */
+    public Queue<Queue<T>> slideBy(Function<? super T, ?> classifier) {
+        Objects.requireNonNull(classifier, "classifier is null");
+        return ofAll(Iterator.ofAll(this).slideBy(classifier).map(Queue::ofAll));
+    }
+
+    /**
+     * The Cartesian square of this Queue: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * <p>
+     * Complexity: O(n^2); the pairs are built now.
+     *
+     * @return the pairs
+     */
+    public Queue<Tuple2<T, T>> crossProduct() {
+        return crossProduct(this);
+    }
+
+    /**
+     * The Cartesian power of this Queue: every Queue of {@code power} elements drawn from this one, in
+     * lexicographic position order. {@code power == 0} gives one empty Queue; a negative power gives no result.
+     * <p>
+     * Complexity: O(n^power) Queues of size {@code power}, built now.
+     *
+     * @param power the size of each result
+     * @return the Queues
+     */
+    public Queue<Queue<T>> crossProduct(int power) {
+        if (power < 0) {
+            return empty();
+        }
+        Queue<Queue<T>> product = Queue.of(Queue.<T> empty());
+        for (int i = 0; i < power; i++) {
+            product = product.flatMap(el -> map(el::append));
+        }
+        return product;
+    }
+
+    /**
+     * The Cartesian product of this Queue and {@code that}: every pair {@code (a, b)} with {@code a} from this
+     * Queue and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked once.
+     * <p>
+     * Complexity: O(n * m) for m elements of {@code that}; the pairs are built now.
+     *
+     * @param that the right-hand elements
+     * @param <U>  their type
+     * @return the pairs
+     * @throws NullPointerException if {@code that} is null
+     */
+    public <U extends @Nullable Object> Queue<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        final Queue<U> other = Queue.ofAll(that);
+        return flatMap(a -> other.map(b -> Tuple.of(a, b)));
+    }
+
+    /**
+     * Combines the elements from the right: the last with the one before it, the result with the one before that,
+     * and so on.
+     * <p>
+     * Complexity: O(n); the elements are walked once as a List, in reverse.
+     *
+     * @param op combines the next element and the result so far
+     * @return the combined result
+     * @throws NoSuchElementException if this Queue is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    public T reduceRight(BiFunction<? super T, ? super T, ? extends T> op) {
+        Objects.requireNonNull(op, "op is null");
+        if (isEmpty()) {
+            throw new NoSuchElementException("reduceRight on empty Queue");
+        }
+        return toList().reduceRight(op);
+    }
+
+    /**
+     * Whether exactly one element satisfies {@code predicate}.
+     *
+     * @param predicate the condition to test
+     * @return {@code true} if one and only one element matches, {@code false} otherwise
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public boolean existsUnique(Predicate<? super T> predicate) {
+        return TraversableModule.existsUnique(this, predicate);
+    }
+
+    /**
+     * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
+     * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     *
+     * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
+     * @throws ClassCastException if two or more elements are not {@code Comparable}
+     */
+    public Option<T> max() {
+        return TraversableModule.max(this);
+    }
+
+    /**
+     * The greatest element according to {@code comparator}; of equal greatest elements, the first in this
+     * Queue's order.
+     *
+     * @param comparator the order
+     * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public Option<T> maxBy(Comparator<? super T> comparator) {
+        return TraversableModule.maxBy(this, comparator);
+    }
+
+    /**
+     * The element whose key, computed once by {@code f}, is the greatest; of equal greatest keys, the first
+     * element in this Queue's order.
+     *
+     * @param f   the key of an element
+     * @param <U> the key type
+     * @return {@code Some(element)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <U extends Comparable<? super U>> Option<T> maxBy(Function<? super T, ? extends U> f) {
+        return TraversableModule.maxBy(this, f);
+    }
+
+    /**
+     * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
+     * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
+     * whenever one is present.
+     *
+     * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
+     * @throws ClassCastException if two or more elements are not {@code Comparable}
+     */
+    public Option<T> min() {
+        return TraversableModule.min(this);
+    }
+
+    /**
+     * The least element according to {@code comparator}; of equal least elements, the first in this Queue's
+     * order.
+     *
+     * @param comparator the order
+     * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public Option<T> minBy(Comparator<? super T> comparator) {
+        return TraversableModule.minBy(this, comparator);
+    }
+
+    /**
+     * The element whose key, computed once by {@code f}, is the least; of equal least keys, the first element in
+     * this Queue's order.
+     *
+     * @param f   the key of an element
+     * @param <U> the key type
+     * @return {@code Some(element)} if there is an element, {@code None} otherwise
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <U extends Comparable<? super U>> Option<T> minBy(Function<? super T, ? extends U> f) {
+        return TraversableModule.minBy(this, f);
+    }
+
+    /**
+     * Folds the elements with {@code combine}, starting from {@code zero}, which must be its neutral element.
+     * The elements are combined from the left, so {@code combine} need not be associative.
+     *
+     * @param zero    the neutral element of {@code combine}
+     * @param combine combines two elements
+     * @return the folded result, {@code zero} on an empty Queue
+     * @throws NullPointerException if {@code combine} is null
+     */
+    public T fold(T zero, BiFunction<? super T, ? super T, ? extends T> combine) {
+        Objects.requireNonNull(combine, "combine is null");
+        return foldLeft(zero, combine);
+    }
+
+    /**
+     * Combines the elements with {@code op}, each result with the next element. The same as {@link #reduceLeft(BiFunction)}.
+     *
+     * @param op combines two elements
+     * @return the combined result
+     * @throws NoSuchElementException if this Queue is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    public T reduce(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeft(this, op);
+    }
+
+    /**
+     * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty Queue.
+     *
+     * @param op combines two elements
+     * @return {@code Some(result)}, or {@code None} if this Queue is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    public Option<T> reduceOption(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeftOption(this, op);
+    }
+
+    /**
+     * The only element.
+     *
+     * @return the element
+     * @throws NoSuchElementException if this Queue is empty or has more than one element
+     */
+    public T single() {
+        return TraversableModule.single(this);
+    }
+
+    /**
+     * The only element as an {@code Option}.
+     *
+     * @return {@code Some(element)} if there is exactly one element, {@code None} otherwise
+     */
+    public Option<T> singleOption() {
+        return TraversableModule.singleOption(this);
+    }
+
+    /**
+     * Arranges the elements by a key that must be unique: {@code Some} of the map from each key to its element,
+     * or {@code None} as soon as two elements share a key. The same as {@code groupBy(getKey)} when every group is
+     * a singleton.
+     *
+     * @param getKey the key of an element
+     * @param <K>  the key type
+     * @return {@code Some(map)} if the keys are unique, {@code None} otherwise
+     * @throws NullPointerException if {@code getKey} is null
+     */
+    public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
+        Objects.requireNonNull(getKey, "getKey is null");
+        return TraversableModule.arrangeBy(groupBy(getKey));
+    }
+
+    /**
+     * The sum of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
+     * {@code Long} are summed as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
+     * arithmetic, any other {@code Number} as a {@code double} with Neumaier compensation. The arithmetic is chosen
+     * from the first element. {@code 0} on an empty Queue.
+     *
+     * @return the sum
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Number sum() {
+        return TraversableModule.sum(this);
+    }
+
+    /**
+     * The product of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
+     * {@code Long} are multiplied as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
+     * arithmetic, any other {@code Number} as a {@code double}. The arithmetic is chosen from the first element.
+     * {@code 1} on an empty Queue.
+     *
+     * @return the product
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Number product() {
+        return TraversableModule.product(this);
+    }
+
+    /**
+     * The average of the elements, which must be {@link Number}s, summed as {@code double}s with Neumaier
+     * compensation.
+     *
+     * @return {@code Some(average)} if there is an element, {@code None} otherwise
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Option<Double> average() {
+        return TraversableModule.average(this);
+    }
+
+    /**
+     * The last element, in order, that satisfies {@code predicate}.
+     * <p>
+     * Complexity: O(n); every element is tested.
+     *
+     * @param predicate the condition to test
+     * @return {@code Some(element)} of the last match, or {@code None} if no element matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<T> findLast(Predicate<? super T> predicate) {
+        return TraversableModule.findLast(this, predicate);
+    }
+
+    /**
+     * Runs {@code action} on each element with its position, from {@code 0}, without boxing the index.
+     *
+     * @param action what to do with each element and its index
+     * @throws NullPointerException if {@code action} is null
+     */
+    public void forEachWithIndex(ObjIntConsumer<? super T> action) {
+        TraversableModule.forEachWithIndex(this, action);
+    }
+
+    /**
+     * The first element as an {@code Option}.
+     * <p>
+     * Complexity: that of {@link #head()}.
+     *
+     * @return {@code Some(head)}, or {@code None} if this Queue is empty
+     */
+    public Option<T> headOption() {
+        return isEmpty() ? Option.none() : Option.some(head());
+    }
+
+    /**
+     * The last element as an {@code Option}.
+     * <p>
+     * Complexity: that of {@link #last()}.
+     *
+     * @return {@code Some(last)}, or {@code None} if this Queue is empty
+     */
+    public Option<T> lastOption() {
+        return isEmpty() ? Option.none() : Option.some(last());
+    }
+
+    /**
+     * Combines the elements from the left: the first with the second, the result with the third, and so on.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param op combines the result so far and the next element
+     * @return the combined result
+     * @throws NoSuchElementException if this Queue is empty
+     * @throws NullPointerException   if {@code op} is null
+     */
+    public T reduceLeft(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeft(this, op);
+    }
+
+    /**
+     * {@link #reduceLeft(BiFunction)} as an {@code Option}: {@code None} on an empty Queue.
+     *
+     * @param op combines the result so far and the next element
+     * @return {@code Some(result)}, or {@code None} if this Queue is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    public Option<T> reduceLeftOption(BiFunction<? super T, ? super T, ? extends T> op) {
+        return TraversableModule.reduceLeftOption(this, op);
+    }
+
+    /**
+     * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty Queue.
+     *
+     * @param op combines the next element and the result so far
+     * @return {@code Some(result)}, or {@code None} if this Queue is empty
+     * @throws NullPointerException if {@code op} is null
+     */
+    public Option<T> reduceRightOption(BiFunction<? super T, ? super T, ? extends T> op) {
+        Objects.requireNonNull(op, "op is null");
+        return isEmpty() ? Option.none() : Option.some(reduceRight(op));
+    }
+
+    /**
+     * The number of elements; the same as {@link #length()}.
+     * <p>
+     * Complexity: that of {@link #length()}.
+     *
+     * @return the number of elements
+     */
+    @Override
+    public int size() {
+        return length();
+    }
+
+    /**
+     * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.
+     *
+     * @param <A>       the collector's accumulation type
+     * @param <R>       the result type
+     * @param collector the collector
+     * @return the collected result
+     */
+    public <R extends @Nullable Object, A extends @Nullable Object> R collect(Collector<? super T, A, R> collector) {
+        return stream().collect(collector);
+    }
+
+    /**
+     * Collects the elements with a supplier, an accumulator and a combiner, as
+     * {@code stream().collect(supplier, accumulator, combiner)} does.
+     *
+     * @param <R>         the result type
+     * @param supplier    makes a new result container
+     * @param accumulator adds an element to a container
+     * @param combiner    merges two containers
+     * @return the collected result
+     */
+    public <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
+        return stream().collect(supplier, accumulator, combiner);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.Collection} that {@code factory} makes for the given
+     * capacity, in this Queue's order: {@code toJavaCollection(java.util.LinkedHashSet::new)}.
+     *
+     * @param factory makes an empty mutable collection with the given initial capacity
+     * @param <C>     the collection type
+     * @return the new collection, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    public <C extends java.util.Collection<T>> C toJavaCollection(Function<Integer, C> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * The elements copied into a new {@link java.util.ArrayList}, in this Queue's order.
+     *
+     * @return the new list
+     */
+    public java.util.List<T> toJavaList() {
+        return TraversableModule.toJavaCollection(this, ArrayList::new, 10);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.List} that {@code factory} makes for the given
+     * capacity, in this Queue's order: {@code toJavaList(capacity -> new java.util.LinkedList<>())}.
+     *
+     * @param factory makes an empty mutable list with the given initial capacity
+     * @param <LIST>  the list type
+     * @return the new list, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    public <LIST extends java.util.List<T>> LIST toJavaList(Function<Integer, LIST> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * The elements as the entries of a new {@link java.util.HashMap}, each mapped to a key and a value by
+     * {@code f}; of two entries with the same key, the later one in this Queue's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> toJavaMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return TraversableModule.toJavaMap(this, java.util.HashMap::new, f);
+    }
+
+    /**
+     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
+     * to a key by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the
+     * later one in this Queue's order wins.
+     *
+     * @param factory     makes an empty mutable map
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @param <MAP>       the map type
+     * @return the new map, filled
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return TraversableModule.toJavaMap(this, factory, TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
+     * to a key and a value by {@code f}; of two entries with the same key, the later one in this Queue's order
+     * wins.
+     *
+     * @param factory makes an empty mutable map
+     * @param f       the entry an element becomes
+     * @param <K>     the key type
+     * @param <V>     the value type
+     * @param <MAP>   the map type
+     * @return the new map, filled
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return TraversableModule.toJavaMap(this, factory, f);
+    }
+
+    /**
+     * The distinct elements copied into a new {@link java.util.HashSet}.
+     *
+     * @return the new set
+     */
+    public java.util.Set<T> toJavaSet() {
+        return TraversableModule.toJavaCollection(this, java.util.HashSet::new, 16);
+    }
+
+    /**
+     * The elements copied into a new mutable {@link java.util.Set} that {@code factory} makes for the given
+     * capacity: {@code toJavaSet(capacity -> new java.util.TreeSet<>(Comparator.reverseOrder()))}.
+     *
+     * @param factory makes an empty mutable set with the given initial capacity
+     * @param <SET>   the set type
+     * @return the new set, filled
+     * @throws NullPointerException if {@code factory} is null
+     */
+    public <SET extends java.util.Set<T>> SET toJavaSet(Function<Integer, SET> factory) {
+        return TraversableModule.toJavaCollection(this, factory);
+    }
+
+    /**
+     * A parallel {@link java.util.stream.Stream} over the elements, built on {@link #spliterator()}.
+     *
+     * @return a new parallel {@code java.util.stream.Stream}
+     */
+    public java.util.stream.Stream<T> toJavaParallelStream() {
+        return StreamSupport.stream(spliterator(), true);
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}, each mapped to a key by {@code keyMapper} and to a
+     * value by {@code valueMapper}; of two entries with the same key, the later one in this Queue's order wins.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}, each mapped to a key and a value by {@code f}; of two
+     * entries with the same key, the later one in this Queue's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in this Queue's order, each mapped to a key by
+     * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
+     * wins the value and the earlier one the position.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toLinkedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in this Queue's order, each mapped to a key
+     * and a value by {@code f}; of two entries with the same key, the later one wins the value and the earlier one
+     * the position.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
+     * by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
+     * in this Queue's order wins.
+     *
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toSortedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
+     * and a value by {@code f}; of two entries with the same key, the later one in this Queue's order wins.
+     *
+     * @param f   the entry an element becomes
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return the new map
+     * @throws NullPointerException if {@code f} is null
+     */
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Objects.requireNonNull(f, "f is null");
+        return toSortedMap(Comparator.naturalOrder(), f);
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key by
+     * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one in
+     * this Queue's order wins.
+     *
+     * @param comparator  the order of the keys
+     * @param keyMapper   the key of an element
+     * @param valueMapper the value of an element
+     * @param <K>         the key type
+     * @param <V>         the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+        return toSortedMap(comparator, TraversableModule.entryMapper(keyMapper, valueMapper));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key and
+     * a value by {@code f}; of two entries with the same key, the later one in this Queue's order wins.
+     *
+     * @param comparator the order of the keys
+     * @param f          the entry an element becomes
+     * @param <K>        the key type
+     * @param <V>        the value type
+     * @return the new map
+     * @throws NullPointerException if an argument is null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+    }
+
+    /**
+     * The elements as a {@link Queue}, in this Queue's order.
+     *
+     * @return a {@code Queue} of the elements
+     */
+    public Queue<T> toQueue() {
+        return TraversableModule.toTraversable(this, Queue.empty(), Queue::ofAll);
+    }
+
+    /**
+     * The distinct elements as a {@link LinkedHashSet}, in this Queue's order.
+     *
+     * @return a {@code LinkedHashSet} of the elements
+     */
+    public Set<T> toLinkedSet() {
+        return TraversableModule.toTraversable(this, LinkedHashSet.empty(), LinkedHashSet::ofAll);
+    }
+
+    /**
+     * The distinct elements as a {@link TreeSet} in their natural order; a {@code TreeSet} returns itself.
+     *
+     * @return a {@code TreeSet} of the elements
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    public SortedSet<T> toSortedSet() {
+        return TraversableModule.toSortedSet(this);
+    }
+
+    /**
+     * The distinct elements as a {@link TreeSet} ordered by {@code comparator}.
+     *
+     * @param comparator the order
+     * @return a {@code TreeSet} of the elements
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public SortedSet<T> toSortedSet(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        return TraversableModule.toTraversable(this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
+    }
+
+    /**
+     * The elements as a {@link Stream}, in this Queue's order.
+     *
+     * @return a {@code Stream} of the elements
+     */
+    public Stream<T> toStream() {
+        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    }
+
 }

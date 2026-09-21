@@ -402,7 +402,7 @@ public class VectorBuilderTest {
         assertThat(built.reverse().head()).isEqualTo(5000);
         assertThat(built.map(i -> i * 2).get(2500)).isEqualTo(5000);
         assertThat(built.filter(i -> i % 2 == 0).size()).isEqualTo(2501);
-        assertThat(built.iterator().toList().size()).isEqualTo(5001);
+        assertThat(List.ofAll(built).size()).isEqualTo(5001);
     }
 
     @Test

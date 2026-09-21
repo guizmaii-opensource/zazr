@@ -158,7 +158,11 @@ value with no copy: `Vector.asJava() : java.util.List<A>` (hence `SequencedColle
 `HashSet.asJava() : java.util.Set<A>`, `LinkedHashSet.asJava() : SequencedSet<A>`,
 `TreeSet.asJava() : NavigableSet<A>`, `HashMap.asJava() : java.util.Map<K,V>`,
 `LinkedHashMap.asJava() : SequencedMap<K,V>`, `TreeMap.asJava() : NavigableMap<K,V>`. Mutators on the
-view throw `UnsupportedOperationException`, as `Collections.unmodifiableList` does. This is what Vavr
+view throw `UnsupportedOperationException`, as `Collections.unmodifiableList` does. `Traversable.asJava()` itself
+is an O(1) unmodifiable `java.util.Collection<T>` view (step 3 of #24, 3.7), which every type has today; the
+sequences override it with their `java.util.List` view. A map is a `Traversable<Tuple2<K, V>>`, so its `asJava()`
+is a `Collection` of entries and cannot be overridden with a `java.util.Map`: the map views above are named
+`asJavaMap()` (decided in step 3 of #24, implemented by #26), the set views keep `asJava()`. This is what Vavr
 already has for sequences (`Seq.asJava()` → `JavaConverters.ListView`, `Seq.java:130`,
 `JavaConverters.java:104`, 469 lines) and what `scala.jdk.CollectionConverters` does; zazr keeps
 `ListView`, adds `SetView`/`MapView` (plus the `Sequenced*`/`Navigable*` variants), and deletes the rest of
@@ -653,6 +657,101 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   version is the one kept. Each test class gains a `TraversableOnlyTests` case that walks the reflective supertype
   chain, so no sequence interface can come back above `Traversable` unnoticed.
 
+**Decided while implementing step 3 (#68, `Traversable`, `Set`, `Map`, `Iterator`):**
+
+- **`Traversable` declares exactly** (decided): `iterator()` (a `java.util.Iterator`), `size`, `isEmpty`, `nonEmpty`,
+  `contains`, `containsAll`, `exists`, `forAll`, `count`, `find`, `foldLeft`, `mkString` ×3, `forEach`, `toVector`,
+  `toList`, `toSet`, `stream()`, `toArray()`/`toArray(IntFunction)`, `asJava()`, plus `spliterator()` (an `Iterable`
+  member, overridden so that `stream()` reports the size and the `DISTINCT`/`SORTED`/`ORDERED` characteristics of the
+  type) and the static `narrow`. `Foldable` and `Ordered` are deleted (`SortedSet`/`SortedMap` declare `comparator()`
+  themselves); `Set` no longer extends `Predicate` and `Map` has no function supertype. The equality contract
+  (sequences equal sequences element by element in order, sets equal sets, maps equal maps, `hashCode` ordered or
+  summed accordingly) is stated in the interface javadoc, and `AbstractTraversableTest` asserts the exact member set
+  reflectively, so no member can come back unnoticed. Everything else `Traversable` declared is declared by the
+  concrete types with the same names and semantics: the sequences take all of it, the sets and maps what is
+  order-agnostic (below). The bodies live once in `TraversableModule` (a package-private helper next to the
+  interface), each type declaring a one-line delegation with its own javadoc; the `toJava*` copies and the `to*`
+  conversions move with the rest and are deleted by #26, as 3.1 says.
+- **`toArray`, not `toJavaArray`** (decided): the JDK's own name (`Collection.toArray`, `java.util.stream.Stream.toArray`),
+  with the same two overloads as the JDK stream (`toArray()` to `Object[]`, `toArray(IntFunction<T[]>)` to a typed
+  array); unlike `toList`/`toJavaList` there is no zazr array type the `Java` prefix would tell apart. The deprecated
+  `toJavaArray(Class)` is deleted with it. `toJavaStream()` is `stream()`, as 3.1 wanted; `toJavaParallelStream()`
+  moves to the concrete types until #26.
+- **`Traversable.asJava()`** (decided) returns an O(1) unmodifiable `java.util.Collection<T>` view
+  (`JavaConverters.CollectionView`: the delegate's iterator and size, the `AbstractCollection` mutators throw
+  `UnsupportedOperationException`); the sequences keep their `java.util.List` view as a covariant override.
+  Consequence for 3.1: a map's `asJava()` is that `Collection<Tuple2<K, V>>` (a `java.util.Map` is not a
+  `Collection`, so it cannot be the override), and the `java.util.Map` views of 3.1 take the name `asJavaMap()` in
+  #26; the set views stay `asJava()` (a `java.util.Set` is a `Collection`).
+- **The zazr `Iterator` leaves the public API** (decided): `interface Iterator<T> extends java.util.Iterator<T>,
+  Iterable<T>` is package-private in `com.guizmaii.zazr.collection`, no longer a `Traversable`, and keeps only what
+  the internals compose: the `range*`/`from`/`continually`/`iterate`/`unfold*`/`tabulate`/`fill`/`concat`/`of`/`ofAll`
+  factories, the lazy `map`, `filter`, `collect`, `flatMap`, `take*`, `drop*`, `zip*`, `intersperse`,
+  `distinctBy`/`distinctByKeepLast`, `scanLeft`, `sliding`, `slideBy` (its runs are `Vector`s now), `span`, and the
+  one-pass `foldLeft`, `find`, `headOption`, `mkString`, `toList`/`toVector`/`toQueue`/`toStream`. The
+  `AbstractIterator.next()` funnel still rejects a null element. `Iterator.ofAll(x)` returns `x` itself when it
+  already is one, so `Iterator.ofAll(this).map(...)` inside a collection allocates no wrapper: every public
+  `iterator()` returns a `java.util.Iterator` and the internals re-enter the helper through `ofAll`. `IteratorTest` is
+  a package-private test of the helper. The control types, `Lazy`, `zazr-test` (`Gen`: a stateful lambda for
+  `of(seed, next)`, a toggle for `intersperse`, `Vector` for `choose`/`frequency`) and `zazr-benchmark` no longer
+  import it.
+- **Own-type results for the windows and the products** (decided): `grouped`, `sliding` ×2 and `slideBy` return
+  `Vector<Vector<T>>`, `List<List<T>>`, `Queue<Queue<T>>`, `Stream<Stream<T>>`; `crossProduct()` returns
+  `X<Tuple2<T, T>>`, `crossProduct(int)` `X<X<T>>`, `crossProduct(Iterable)` `X<Tuple2<T, U>>`. They are eager on
+  `Vector` (each window or run is an effectively O(1) slice sharing the leaves; `crossProduct(Iterable)` walks
+  `that` once into a `Vector`), `List` and `Queue` (each window copied), and lazy on `Stream` in both dimensions:
+  head-strict as every `Stream` operation is, so the first window is built when the method is called and each
+  further one when the result reaches it, and `that` is memoised as a `Stream` so that an infinite argument works
+  with `take`. The window rule is unchanged (`[1, 2, 3, 4, 5].sliding(2, 4)` is `[[1, 2], [5]]`; a window whose
+  elements all belong to the previous one is not produced). The sets and maps lose them. `reverseIterator()` and
+  `iterator(int)` are deleted everywhere (`reverse().iterator()`, `drop(n).iterator()`); `Vector` and `Queue` keep
+  a package-private `reverseIterator()` for `Collections.reverseIterator`, which `prependAll` and `scanRight` use,
+  because it is O(1) to create on both.
+- **Cross-type sequence equality stays** (decided, final): `Vector`, `List`, `Queue` and `Stream` equal each other
+  element by element in order with the ordered `hashCode` (`Collections.isSequence`); sets equal sets, maps equal
+  maps, and no kind equals another.
+- **What `Set` keeps** (decided): the set algebra (`add`, `addAll`, `remove`, `removeAll(Iterable)`, `union`,
+  `intersect`, `diff`, `contains`), `filter`, `reject`, `map`, `flatMap`, `collect(Function)`, `as`, `partition`,
+  `groupBy`, `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
+  `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average`, `fold`/`reduce`/`reduceOption`, `single`/
+  `singleOption`, `arrangeBy`, `collect(Collector)` ×2, the `toJava*` and `to*` conversions, `toJavaSet()`;
+  `SortedSet` adds `comparator()` and the comparator-taking `map`/`flatMap`/`collect`. **What it drops**: `head`,
+  `headOption`, `last`, `lastOption`, `init`, `initOption`, `tail`, `tailOption`, `take`/`takeRight`/`takeUntil`/
+  `takeWhile`, `drop`/`dropRight`/`dropUntil`/`dropWhile`, `zip`/`zipAll`/`zipWith`/`zipWithIndex` ×2, `unzip`/
+  `unzip3`, `sliding` ×2, `slideBy`, `grouped`, `scan`/`scanLeft`/`scanRight`, `span`, `distinct` (a set is
+  distinct), `distinctBy` ×2 (which representative survives depends on the iteration order), `foldRight`,
+  `reduceLeft`/`reduceRight` and their `Option` variants (they name a direction), `findLast`, `forEachWithIndex`,
+  `length` (`size`), `test` (with the `Predicate` supertype). A `TreeSet` thus has no `head`/`last`: its first
+  element is `iterator().next()`, and the `NavigableSet` view of #26 gives `first()`/`last()`.
+- **What `Map` keeps** (decided): the map API (`get`, `getOrElse`, `put` ×4, `remove`, `removeAll` ×2, `containsKey`,
+  `containsValue`, `keySet`, `values()` as a `Vector<V>` in iteration order, `filter`/`reject` in both the
+  `Predicate` and the `BiPredicate` form, `filterKeys`/`rejectKeys`/`filterValues`/`rejectValues`, the deprecated
+  `removeKeys`/`removeValues`, `map(BiFunction)`, `mapBoth`, `mapKeys` ×2, `mapValues`, `flatMap(BiFunction)`,
+  `collect(BiFunction)`, `merge` ×2, `replace(K, V, V)`, `replaceValue`, `replaceAll(BiFunction)`, the entry-typed
+  `replace`/`replaceAll`, `retainAll`, `partition`, `groupBy`, `orElse` ×2, `tap`, `forEach(BiConsumer)`,
+  `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over
+  the entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and
+  the conversions; `SortedMap` adds `comparator()` and the comparator-taking forms. **What it drops**: the same
+  positional names as `Set`, `length`, `sum`/`product`/`average` (entries are never numbers), and every
+  sequence-shaped method step 2 had typed `Stream`: `map(Function)`, `flatMap(Function)`, `collect(Function)`,
+  `as`, `zip`/`zipWith`/`zipAll`/`zipWithIndex` ×2, `unzip` ×3, `unzip3` ×2, `scanLeft`/`scanRight`, together with
+  `keysIterator`, `valuesIterator` and `iterator(BiFunction)` (`keySet()` and `values()` are the replacements).
+- **`fold`, `reduce`, `reduceOption` on the sets and the maps** combine the elements in the iteration order, which a
+  `HashSet`/`HashMap` does not define: their javadoc says the operation should be associative and commutative for
+  the result to be independent of it. On the sequences `reduce` is `reduceLeft`.
+- **The complexity guard is unchanged**: the six set and map files stay out of `COMPLEXITY_FILES` because after this
+  step they declare no positional member; the names they still share with the guard's list (`remove`,
+  `removeAll`, `replace`, `replaceAll`, `retainAll`, `get`, `iterator`) are keyed lookups on a set or a map, not
+  positions. `crossProduct`, `grouped`, `sliding` and `reverseIterator` keep their notes on the sequences.
+- **Tests**: `AbstractTraversableTest` is rewritten as the shared class of the 3.7 members (plus the factories every
+  type has, `empty`/`of`/`ofAll`/`tabulate`/`fill`/`collector`, equality and `toString`), run by all ten concrete
+  test classes through the same factory hooks (`IntMap`, the `Traversable` view of a map's values, is trimmed to the
+  slim interface); `AbstractTraversableRangeTest`, `AbstractSetTest`, `AbstractSortedSetTest`, `AbstractMapTest` and
+  `AbstractSortedMapTest` are folded into the per-type classes, every case of a surviving member kept, the cases of
+  the dropped members removed with them.
+- **`Option.forEach`, `Either.forEach`, `Try.forEach`** loop over the elements straight into the `Vector.Builder`
+  (the mapper stops at the first `None`/`Left`/`Failure`, as before, and a null result is rejected by name).
+
 Which concrete collections survive (decided):
 
 | Keep | Why |
@@ -988,7 +1087,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #21 | `NonEmptyVector` | 3.6 | #20 |
 | #22 | `Validation` with a `NonEmptyVector` error side | 3.5 | #21 |
 | #23 | Generated `zip`/`zipWith` at arities 2..8 | 3.4 | #22 |
-| #24 | Remove `Seq`; concrete collection APIs; complexity notes. Three stacked steps: #66 (`Vector` declares its own API, `IndexedSeq` deleted), #67 (`List`, `Queue`, `Stream`; `Seq`, `LinearSeq` deleted), #68 (`Traversable` slimmed, `Foldable`/`Ordered` deleted, `Map`/`Set` lose the sequence methods, `Iterator` leaves the hierarchy) | 3.7 | #20 |
+| #24 | Remove `Seq`; concrete collection APIs; complexity notes. Done in three stacked steps: #66 (`Vector` declares its own API, `IndexedSeq` deleted; PR #69), #67 (`List`, `Queue`, `Stream`; `Seq`, `LinearSeq` deleted; PR #70), #68 (`Traversable` slimmed to the 3.7 list, `Foldable`/`Ordered` deleted, `Map`/`Set` lose the sequence methods, `Iterator` leaves the public API, own-type `grouped`/`sliding`/`crossProduct`) | 3.7 | #20 |
 | #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
 | #26 | `asJava` views for sets and maps | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |

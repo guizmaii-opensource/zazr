@@ -4,7 +4,7 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Map;
-import com.guizmaii.zazr.collection.Traversable;
+import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +57,7 @@ public class Euler17Test {
     private interface SolutionProblem17 {
         int letterCount(int num);
 
-        default int letterCount(Traversable<Integer> range) {
+        default int letterCount(Stream<Integer> range) {
             return range.map(this::letterCount)
                     .sum().intValue();
         }
@@ -137,7 +137,7 @@ public class Euler17Test {
         }
 
         private static String asText(int number) {
-            return LENGTHS.foldRight(Tuple.of(Vector.<String> empty(), number), (magnitudeAndText, lengthsAndRemainder) -> {
+            return LENGTHS.toList().foldRight(Tuple.of(Vector.<String> empty(), number), (magnitudeAndText, lengthsAndRemainder) -> {
                 final int magnitude = magnitudeAndText._1();
                 final int remainder = lengthsAndRemainder._2();
 

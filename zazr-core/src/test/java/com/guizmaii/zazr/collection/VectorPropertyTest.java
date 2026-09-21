@@ -86,7 +86,7 @@ public class VectorPropertyTest {
         com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 1000);
         Vector<Integer> actual = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
-            final Iterator<Integer> expectedIterator = expected.iterator();
+            final java.util.Iterator<Integer> expectedIterator = expected.iterator();
             actual.trie.<int[]> visit((index, leaf, start, end) -> {
                 for (int i = start; i < end; i++) {
                     assertThat(leaf[i]).isEqualTo(expectedIterator.next());
@@ -350,8 +350,8 @@ public class VectorPropertyTest {
     }
 
     private static void assertAreEqual(Traversable<?> expected, Traversable<?> actual) {
-        final java.util.List<?> actualList = actual.toJavaList();
-        final java.util.List<?> expectedList = expected.toJavaList();
+        final java.util.List<?> actualList = new java.util.ArrayList<>(actual.asJava());
+        final java.util.List<?> expectedList = new java.util.ArrayList<>(expected.asJava());
         assertThat(actualList).isEqualTo(expectedList); // a lot faster than `hasSameElementsAs`
     }
 }

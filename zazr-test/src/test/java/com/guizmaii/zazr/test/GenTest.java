@@ -285,7 +285,7 @@ public class GenTest {
     public void shouldNotFavorPositionsInExplicitChoices() {
         final List<Integer> values = List.range(0, 10);
         final List<Gen<Integer>> generators = values.map(Gen::of);
-        assertUniformChoices(Gen.choose(values.toJavaArray(Integer[]::new)));
+        assertUniformChoices(Gen.choose(values.toArray(Integer[]::new)));
         assertUniformChoices(Gen.choose(values));
         assertUniformChoices(Gen.choose("0123456789".toCharArray()).map(c -> c - '0'));
         assertUniformChoices(Gen.oneOf(generators));

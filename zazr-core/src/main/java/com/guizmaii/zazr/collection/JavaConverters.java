@@ -46,6 +46,50 @@ class JavaConverters {
     // -- private view implementations
 
     /**
+     * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
+     * the delegate's iterator and size, nothing copied, every mutator refused by {@link AbstractCollection}.
+     *
+     * @param <T> the element type
+     */
+    static final class CollectionView<T extends @Nullable Object> extends AbstractCollection<T> {
+
+        private final Traversable<T> delegate;
+
+        CollectionView(Traversable<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        Traversable<T> getDelegate() {
+            return delegate;
+        }
+
+        @Override
+        public java.util.Iterator<T> iterator() {
+            return delegate.iterator();
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.isEmpty();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return delegate.toArray();
+        }
+
+        @Override
+        public java.util.stream.Stream<T> stream() {
+            return delegate.stream();
+        }
+    }
+
+    /**
      * Encapsulates the access to delegate and performs mutability checks.
      *
      * @param <C> The zazr collection type
@@ -283,7 +327,7 @@ class JavaConverters {
 
         @Override
         public Object [] toArray() {
-            return getDelegate().toJavaArray();
+            return getDelegate().toArray();
         }
 
         // Collection.toArray(T[]) mandates writing null just past the last element, even when
@@ -294,7 +338,7 @@ class JavaConverters {
             Objects.requireNonNull(array, "array is null");
             final U[] target;
             final C delegate = getDelegate();
-            final int length = delegate.length();
+            final int length = delegate.size();
             if (array.length < length) {
                 final Class<? extends Object[]> newType = array.getClass();
                 target = (newType == Object[].class)

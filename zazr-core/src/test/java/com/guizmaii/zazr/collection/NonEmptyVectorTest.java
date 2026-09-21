@@ -53,7 +53,7 @@ public class NonEmptyVectorTest {
             assertThat(NonEmptyVector.of(1).toVector()).isEqualTo(Vector.of(1));
             assertThat(NonEmptyVector.of(1, 2).toVector()).isEqualTo(Vector.of(1, 2));
             for (int n : SIZES) {
-                final Integer[] tail = Vector.range(1, n).toJavaArray(Integer[]::new);
+                final Integer[] tail = Vector.range(1, n).toArray(Integer[]::new);
                 assertThat(NonEmptyVector.of(0, tail).toVector()).isEqualTo(Vector.range(0, n));
                 assertThat(NonEmptyVector.of(0, tail).size()).isEqualTo(n);
             }
@@ -65,7 +65,7 @@ public class NonEmptyVectorTest {
                 final Vector<Integer> expected = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromIterable(0, Vector.range(1, n)).toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(0, Vector.range(1, n).toJavaList()).toVector()).isEqualTo(expected);
-                assertThat(NonEmptyVector.fromIterable(0, Vector.range(1, n).iterator()).toVector()).isEqualTo(expected);
+                assertThat(NonEmptyVector.fromIterable(0, (Iterable<Integer>) () -> Vector.range(1, n).iterator()).toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(0, List.<Integer> empty()).toVector()).isEqualTo(Vector.of(0));
             }
         }
@@ -111,7 +111,7 @@ public class NonEmptyVectorTest {
             for (int n : SIZES) {
                 final Vector<Integer> expected = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromIterable(expected.toJavaList()).get().toVector()).isEqualTo(expected);
-                assertThat(NonEmptyVector.fromIterable(expected.iterator()).get().toVector()).isEqualTo(expected);
+                assertThat(NonEmptyVector.fromIterable((Iterable<Integer>) expected::iterator).get().toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(expected.toList()).get().toVector()).isEqualTo(expected);
             }
         }

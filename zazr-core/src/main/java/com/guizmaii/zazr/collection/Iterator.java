@@ -7,7 +7,6 @@ import com.guizmaii.zazr.collection.IteratorModule.GroupedIterator;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
 
@@ -20,32 +19,21 @@ import static java.lang.Double.POSITIVE_INFINITY;
 import static java.math.RoundingMode.HALF_UP;
 
 /**
- * A compositional alternative to {@code java.util.Iterator} designed for single-pass
- * traversal of a sequence.
- *
- * <p><strong>Note:</strong> Iterators maintain an internal mutable state.
- * They are not thread-safe and must not be reused or shared across operations
- * (for example, after passing them to
- * {@linkplain com.guizmaii.zazr.collection.List#ofAll(Iterable)}).
- *
- * <p>The abstraction defines two fundamental operations:
- * {@code hasNext()}, which checks whether another element is available,
- * and {@code next()}, which consumes and returns that element. If
- * {@code hasNext()} returns {@code false}, {@code next()} will throw
- * {@code NoSuchElementException}.
- *
- * <p><strong>Caution:</strong> Methods other than {@code hasNext()} and
- * {@code next()} are single-use. Once such a method has been invoked, further
- * method calls on the same iterator are not guaranteed to succeed.
- *
- * <p>In essence, an Iterator represents a traversal cursor over a collection
- * rather than the collection itself, and can therefore be consumed only once.
+ * The single-pass cursor the collections are built with: a {@link java.util.Iterator} with the lazy combinators
+ * ({@code map}, {@code filter}, {@code take}, {@code zip}, {@code sliding}, ...) that the implementations compose
+ * before materialising a result, and the numeric ranges the {@code range*} factories of the collections are
+ * built on. It is not part of the public API: every public method returns a collection or a
+ * {@code java.util.Iterator}.
+ * <p>
+ * An {@code Iterator} keeps mutable state, is not thread-safe and is consumed by one traversal: once a combinator
+ * has been called on it, only the result may be used. {@code Iterator.ofAll(iterable)} wraps any
+ * {@code java.util.Iterator} once, or returns it unchanged when it already is one of these.
  *
  * @param <T> the element type
  * @author Daniel Dietrich
  */
 // DEV-NOTE: we prefer returning empty() over this if !hasNext() == true in order to free memory.
-public interface Iterator<T extends @Nullable Object> extends java.util.Iterator<T>, Traversable<T> {
+interface Iterator<T extends @Nullable Object> extends java.util.Iterator<T>, Iterable<T> {
 
     /**
      * Creates an {@code Iterator} that traverses the elements of the provided
@@ -102,20 +90,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> Iterator<T> empty() {
         return (Iterator<T>) EmptyIterator.INSTANCE;
-    }
-
-    /**
-     * Narrows an {@code Iterator<? extends T>} to {@code Iterator<T>} using a
-     * type-safe cast. This is valid because the iterator is read-only with
-     * respect to element types.
-     *
-     * @param iterator the iterator to narrow
-     * @param <T>      the element type
-     * @return the same iterator, viewed as {@code Iterator<T>}
-     */
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> Iterator<T> narrow(Iterator<? extends T> iterator) {
-        return (Iterator<T>) iterator;
     }
 
     /**
@@ -1255,12 +1229,10 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
-    @Override
     default <U extends @Nullable Object, R extends @Nullable Object> Iterator<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1283,7 +1255,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(thisElem, "Iterator.zipAll: element is null");
@@ -1309,12 +1280,10 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default Iterator<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
-    @Override
     default <U extends @Nullable Object> Iterator<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
@@ -1334,30 +1303,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                     return mapper.apply(it1.next(), index++);
                 }
             };
-        }
-    }
-
-    @Override
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Iterator<T1>, Iterator<T2>> unzip(
-      Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        if (!hasNext()) {
-            return Tuple.of(empty(), empty());
-        } else {
-            final Stream<Tuple2<? extends T1, ? extends T2>> source = Stream.ofAll(this.map(unzipper));
-            return Tuple.of(source.map(t -> (T1) t._1()).iterator(), source.map(t -> (T2) t._2()).iterator());
-        }
-    }
-
-    @Override
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Iterator<T1>, Iterator<T2>, Iterator<T3>> unzip3(
-      Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        if (!hasNext()) {
-            return Tuple.of(empty(), empty(), empty());
-        } else {
-            final Stream<Tuple3<? extends T1, ? extends T2, ? extends T3>> source = Stream.ofAll(this.map(unzipper));
-            return Tuple.of(source.map(t -> (T1) t._1()).iterator(), source.map(t -> (T2) t._2()).iterator(), source.map(t -> (T3) t._3()).iterator());
         }
     }
 
@@ -1413,9 +1358,9 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      */
     static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
         Objects.requireNonNull(f, "f is null");
-        return Stream.<U> ofAll(
+        return Iterator.ofAll(Stream.<U> ofAll(
                 unfoldRight(seed, f.andThen(tupleOpt -> tupleOpt.map(t -> Tuple.of(t._2(), t._1())))))
-                .reverse().iterator();
+                .reverse());
     }
 
     /**
@@ -1462,18 +1407,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         };
     }
 
-    // -- Overridden methods of Traversable
+    // -- the lazy combinators
 
-    @Override
-    default Iterator<T> distinct() {
-        if (!hasNext()) {
-            return empty();
-        } else {
-            return new DistinctIterator<>(this, com.guizmaii.zazr.collection.HashSet.empty(), Function.identity());
-        }
-    }
-
-    @Override
     default Iterator<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         if (!hasNext()) {
@@ -1483,7 +1418,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default <U extends @Nullable Object> Iterator<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         if (!hasNext()) {
@@ -1558,7 +1492,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return this iterator, if {@code n <= 0}; the empty iterator, if this iterator is
      *         empty; otherwise a new iterator without the first {@code n} elements.
      */
-    @Override
     default Iterator<T> drop(int n) {
         if (n <= 0) {
             return this;
@@ -1587,7 +1520,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default Iterator<T> dropRight(int n) {
         if (n <= 0) {
             return this;
@@ -1618,13 +1550,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
-    default Iterator<T> dropUntil(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return dropWhile(predicate.negate());
-    }
-
-    @Override
     default Iterator<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (!hasNext()) {
@@ -1644,7 +1569,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param predicate A predicate
      * @return A new Iterator
      */
-    @Override
     default Iterator<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (!hasNext()) {
@@ -1682,29 +1606,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
-    default Iterator<T> reject(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return filter(predicate.negate());
-    }
-
-    @Override
-    // `found` is set together with `last`, so `last` is a real element whenever it is read
-    @SuppressWarnings("NullAway")
-    default Option<T> findLast(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        @Nullable T last = null;
-        boolean found = false;
-        while (hasNext()) {
-            final T elem = next();
-            if (predicate.test(elem)) {
-                last = elem;
-                found = true;
-            }
-        }
-        return found ? Option.some(last) : Option.none();
-    }
-
     /**
      * FlatMaps the elements of this Iterator to Iterables, which are iterated in the order of occurrence.
      *
@@ -1712,7 +1613,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param <U>    Component type
      * @return A new Iterator
      */
-    @Override
     default <U extends @Nullable Object> Iterator<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (!hasNext()) {
@@ -1741,47 +1641,62 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
-    default <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return Stream.ofAll(this).foldRight(zero, f);
-    }
-
-    @Override
-    default <C extends @Nullable Object> Map<C, Iterator<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Iterator::ofAll);
-    }
-
-    @Override
-    default Iterator<Vector<T>> grouped(int size) {
-        return new GroupedIterator<>(this, size, size);
-    }
-    
-    @Override
-    default T head() {
-        if (!hasNext()) {
-            throw new NoSuchElementException("head() on empty iterator");
-        }
-        return next();
-    }
-
-    @Override
-    default Iterator<T> init() {
-        if (!hasNext()) {
-            throw new UnsupportedOperationException();
-        } else {
-            return dropRight(1);
-        }
-    }
-
-    @Override
-    default Option<Iterator<T>> initOption() {
-        return hasNext() ? Option.some(init()) : Option.none();
-    }
-
-    @Override
     default boolean isEmpty() {
         return !hasNext();
+    }
+
+    default <U extends @Nullable Object> U foldLeft(U zero, BiFunction<? super U, ? super T, ? extends U> f) {
+        Objects.requireNonNull(f, "f is null");
+        U xs = zero;
+        while (hasNext()) {
+            xs = f.apply(xs, next());
+        }
+        return xs;
+    }
+
+    default Option<T> headOption() {
+        return hasNext() ? Option.some(next()) : Option.none();
+    }
+
+    default Option<T> find(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        while (hasNext()) {
+            final T t = next();
+            if (predicate.test(t)) {
+                return Option.some(t);
+            }
+        }
+        return Option.none();
+    }
+
+    default String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
+        final StringBuilder builder = new StringBuilder(prefix);
+        boolean first = true;
+        while (hasNext()) {
+            if (first) {
+                first = false;
+            } else {
+                builder.append(delimiter);
+            }
+            builder.append(next());
+        }
+        return builder.append(suffix).toString();
+    }
+
+    default List<T> toList() {
+        return hasNext() ? List.ofAll(this) : List.empty();
+    }
+
+    default Queue<T> toQueue() {
+        return hasNext() ? Queue.ofAll(this) : Queue.empty();
+    }
+
+    default Stream<T> toStream() {
+        return hasNext() ? Stream.ofAll(this) : Stream.empty();
+    }
+
+    default Vector<T> toVector() {
+        return hasNext() ? Vector.ofAll(this) : Vector.empty();
     }
 
     /**
@@ -1790,19 +1705,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      *
      * @return this instance
      */
-    @Override
     default Iterator<T> iterator() {
         return this;
-    }
-
-    @Override
-    default T last() {
-        return Collections.last(this);
-    }
-
-    @Override
-    default int length() {
-        return foldLeft(0, (n, ignored) -> n + 1);
     }
 
     /**
@@ -1812,7 +1716,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param <U>    Component type
      * @return A new Iterator
      */
-    @Override
     default <U extends @Nullable Object> Iterator<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (!hasNext()) {
@@ -1834,7 +1737,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default <U extends @Nullable Object> Iterator<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (!hasNext()) {
@@ -1872,166 +1774,11 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
-    default <U extends @Nullable Object> Iterator<U> as(U value) {
-        return map(ignored -> value);
-    }
-
-    @Override
-    default Iterator<T> orElse(Iterable<? extends T> other) {
-        return isEmpty() ? ofAll(other) : this;
-    }
-
-    /**
-     * Returns this {@code Iterator} if it is not empty, otherwise returns an {@code Iterator}
-     * over the elements produced by the given {@code supplier}.
-     *
-     * @param supplier an alternative {@code Iterable} supplier
-     * @return this instance, if it is not empty, otherwise an iterator over the elements of {@code supplier.get()}
-     * @throws NullPointerException if this iterator is empty and {@code supplier} is {@code null}
-     */
-    @Override
-    default Iterator<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
-    }
-
-    @Override
-    default Tuple2<Iterator<T>, Iterator<T>> partition(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        if (!hasNext()) {
-            return Tuple.of(empty(), empty());
-        } else {
-            final Tuple2<Iterator<T>, Iterator<T>> dup = IteratorModule.duplicate(this);
-            return Tuple.of(dup._1().filter(predicate), dup._2().filter(predicate.negate()));
-        }
-    }
-
-    /**
-     * Returns an {@code Iterator} that runs {@code action} on each element as that element is pulled through
-     * {@link #next()}; unlike {@code Stream}, not even the first element's action runs until the first element
-     * is requested.
-     *
-     * @param action what to do with each element
-     * @return a new {@code Iterator} over the same elements
-     * @throws NullPointerException if {@code action} is null
-     */
-    @Override
-    default Iterator<T> tap(Consumer<? super T> action) {
-        Objects.requireNonNull(action, "action is null");
-        if (!hasNext()) {
-            return empty();
-        } else {
-            final Iterator<T> that = this;
-            return new AbstractIterator<T>() {
-                @Override
-                public boolean hasNext() {
-                    return that.hasNext();
-                }
-
-                @Override
-                public T getNext() {
-                    final T next = that.next();
-                    action.accept(next);
-                    return next;
-                }
-            };
-        }
-    }
-
-    @Override
-    default T reduceLeft(BiFunction<? super T, ? super T, ? extends T> op) {
-        Objects.requireNonNull(op, "op is null");
-        if (isEmpty()) {
-            throw new NoSuchElementException("reduceLeft on Nil");
-        } else {
-            T xs = next();
-            while (hasNext()) {
-                xs = op.apply(xs, next());
-            }
-            return xs;
-        }
-    }
-
-    @Override
-    default T reduceRight(BiFunction<? super T, ? super T, ? extends T> op) {
-        Objects.requireNonNull(op, "op is null");
-        if (isEmpty()) {
-            throw new NoSuchElementException("reduceRight on Nil");
-        } else {
-            final Stream<T> reversed = Stream.ofAll(this).reverse();
-            return reversed.reduceLeft((xs, x) -> op.apply(x, xs));
-        }
-    }
-
-    @Override
-    default Iterator<T> replace(T currentElement, T newElement) {
-        if (!hasNext()) {
-            return empty();
-        } else {
-            final Iterator<T> that = this;
-            return new AbstractIterator<T>() {
-                boolean isFirst = true;
-
-                @Override
-                public boolean hasNext() {
-                    return that.hasNext();
-                }
-
-                @Override
-                public T getNext() {
-                    final T elem = that.next();
-                    if (isFirst && Objects.equals(currentElement, elem)) {
-                        isFirst = false;
-                        return newElement;
-                    } else {
-                        return elem;
-                    }
-                }
-            };
-        }
-    }
-
-    @Override
-    default Iterator<T> replaceAll(T currentElement, T newElement) {
-        if (!hasNext()) {
-            return empty();
-        } else {
-            final Iterator<T> that = this;
-            return new AbstractIterator<T>() {
-
-                @Override
-                public boolean hasNext() {
-                    return that.hasNext();
-                }
-
-                @Override
-                public T getNext() {
-                    final T elem = that.next();
-                    if (Objects.equals(currentElement, elem)) {
-                        return newElement;
-                    } else {
-                        return elem;
-                    }
-                }
-            };
-        }
-    }
-
-    @Override
-    default Iterator<T> retainAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
-    }
-
-    @Override
-    default Traversable<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
-        return scanLeft(zero, operation);
-    }
-
     /**
      * Produces a new Iterator containing cumulative results of applying the operator
      * going left to right, including the initial value.
      * <p>
-     * Unlike the general {@link Traversable#scanLeft} contract, this lazy implementation
+     * This lazy implementation
      * terminates even for infinite iterators: each accumulated value is computed only
      * when consumed via {@link #next()}.
      *
@@ -2039,7 +1786,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param operation the associative operation to apply
      * @return a new Iterator of accumulated values
      */
-    @Override
     default <U extends @Nullable Object> Iterator<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         Objects.requireNonNull(operation, "operation is null");
         Objects.requireNonNull(zero, "Iterator.scanLeft: element is null");
@@ -2070,37 +1816,35 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    // not lazy!
-    @Override
-    default <U extends @Nullable Object> Iterator<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        Objects.requireNonNull(operation, "operation is null");
-        if (isEmpty()) {
-            return of(zero);
-        } else {
-            return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Function.identity());
-        }
-    }
-
-    @Override
-    default Iterator<Stream<T>> slideBy(Function<? super T, ?> classifier) {
+    default Iterator<Vector<T>> slideBy(Function<? super T, ?> classifier) {
         Objects.requireNonNull(classifier, "classifier is null");
         if (!hasNext()) {
             return empty();
         } else {
             final CachedIterator<T> source = new CachedIterator<>(this);
-            return new AbstractIterator<Stream<T>>() {
-                private @Nullable Stream<T> next = null;
+            return new AbstractIterator<Vector<T>>() {
+                private @Nullable Vector<T> next = null;
+                // the key of the element that ended the previous run, which starts the next one: classified once
+                private @Nullable Object pendingKey = null;
+                private boolean pendingKeyDefined = false;
 
                 @Override
                 public boolean hasNext() {
                     if (next == null && source.hasNext()) {
-                        final Object key = classifier.apply(source.touch());
+                        final Object key = pendingKeyDefined ? pendingKey : classifier.apply(source.touch());
+                        pendingKeyDefined = false;
                         final java.util.List<T> acc = new ArrayList<>();
                         acc.add(source.next());
-                        while (source.hasNext() && Objects.equals(key, classifier.apply(source.touch()))) {
+                        while (source.hasNext()) {
+                            final Object candidate = classifier.apply(source.touch());
+                            if (!Objects.equals(key, candidate)) {
+                                pendingKey = candidate;
+                                pendingKeyDefined = true;
+                                break;
+                            }
                             acc.add(source.getNext());
                         }
-                        next = Stream.ofAll(acc);
+                        next = Vector.ofAll(acc);
                     }
                     return next != null;
                 }
@@ -2108,8 +1852,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 @Override
                 // hasNext() fills the buffer, and AbstractIterator only calls getNext() after it
                 @SuppressWarnings("NullAway")
-                public Stream<T> getNext() {
-                    final Stream<T> result = next;
+                public Vector<T> getNext() {
+                    final Vector<T> result = next;
                     next = null;
                     return result;
                 }
@@ -2117,61 +1861,24 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default Iterator<Vector<T>> sliding(int size) {
         return sliding(size, 1);
     }
 
-    @Override
     default Iterator<Vector<T>> sliding(int size, int step) {
         return new GroupedIterator<>(this, size, step);
     }
     
-    @Override
     default Tuple2<Iterator<T>, Iterator<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (!hasNext()) {
             return Tuple.of(empty(), empty());
         } else {
             final Stream<T> that = Stream.ofAll(this);
-            return Tuple.of(that.iterator().takeWhile(predicate), that.iterator().dropWhile(predicate));
+            return Tuple.of(Iterator.ofAll(that).takeWhile(predicate), Iterator.ofAll(that).dropWhile(predicate));
         }
     }
 
-
-    /**
-     * Consumes and discards the first element from this Iterator and returns this
-     * same (now-advanced) instance — no new Iterator is allocated.
-     *
-     * @return this instance, advanced past the first element
-     * @throws UnsupportedOperationException if this iterator is empty
-     */
-    @Override
-    default Iterator<T> tail() {
-        if (!hasNext()) {
-            throw new UnsupportedOperationException();
-        } else {
-            next(); // remove first element
-            return this;
-        }
-    }
-
-    /**
-     * Consumes and discards the first element from this Iterator, if any, and
-     * returns {@code Some} of this same (now-advanced) instance.
-     *
-     * @return {@code Some} of this instance, advanced past the first element, or
-     *         {@code None} if this iterator is empty
-     */
-    @Override
-    default Option<Iterator<T>> tailOption() {
-        if (hasNext()) {
-            next();
-            return Option.some(this);
-        } else {
-            return Option.none();
-        }
-    }
 
     /**
      * Take the first n elements from this iterator.
@@ -2180,7 +1887,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return The empty iterator, if {@code n <= 0} or this is empty, otherwise a new
      *         iterator consisting of at most the first {@code n} elements of this iterator.
      */
-    @Override
     default Iterator<T> take(int n) {
         if (n <= 0 || !hasNext()) {
             return empty();
@@ -2204,7 +1910,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
     default Iterator<T> takeRight(int n) {
         if (n <= 0) {
             return empty();
@@ -2237,13 +1942,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    @Override
-    default Iterator<T> takeUntil(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return takeWhile(predicate.negate());
-    }
-
-    @Override
     default Iterator<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (!hasNext()) {
@@ -2286,43 +1984,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 }
 
 interface IteratorModule {
-
-    /**
-     * Creates two new iterators that both iterate over the same elements as the
-     * given {@code iterator} and in the same order.
-     * <p>
-     * Given that most methods on iterators will make the original iterator
-     * unfit for further use, this method provides a reliable way of calling
-     * multiple such methods on an iterator.
-     *
-     * @return a pair of iterators
-     */
-    static <T extends @Nullable Object> Tuple2<Iterator<T>, Iterator<T>> duplicate(Iterator<T> iterator) {
-        final java.util.Queue<T> gap = new java.util.LinkedList<>();
-        final AtomicReference<Iterator<T>> ahead = new AtomicReference<>();
-        class Partner implements Iterator<T> {
-
-            @Override
-            public boolean hasNext() {
-                return (this != ahead.get() && !gap.isEmpty()) || iterator.hasNext();
-            }
-
-            @Override
-            public T next() {
-                if (gap.isEmpty()) {
-                    ahead.set(this);
-                }
-                if (this == ahead.get()) {
-                    final T element = iterator.next();
-                    gap.add(element);
-                    return element;
-                } else {
-                    return gap.poll();
-                }
-            }
-        }
-        return Tuple.of(new Partner(), new Partner());
-    }
 
     // inspired by Scala's ConcatIterator
     final class ConcatIterator<T extends @Nullable Object> extends AbstractIterator<T> {

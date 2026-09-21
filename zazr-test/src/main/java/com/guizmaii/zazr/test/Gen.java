@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.test;
 
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.Vector;
@@ -52,8 +51,16 @@ public interface Gen<T> {
 
     static <T> Gen<T> of(T seed, Function<? super T, ? extends T> next) {
         Objects.requireNonNull(next, "next is null");
-        final Iterator<T> iterator = Iterator.iterate(seed, next);
-        return ignored -> iterator.next();
+        // the last value handed out; each draw applies `next` to it once
+        final Object[] last = { null };
+        final boolean[] started = { false };
+        return ignored -> {
+            @SuppressWarnings("unchecked")
+            final T current = started[0] ? next.apply((T) last[0]) : seed;
+            started[0] = true;
+            last[0] = current;
+            return current;
+        };
     }
 
     /**
@@ -168,7 +175,7 @@ public interface Gen<T> {
      */
     static Gen<Character> choose(char... characters) {
         Objects.requireNonNull(characters, "characters is null");
-        final Character[] validCharacters = List.ofAll(characters).toJavaArray(Character[]::new);
+        final Character[] validCharacters = List.ofAll(characters).toArray(Character[]::new);
         return choose(validCharacters);
     }
 
@@ -211,12 +218,12 @@ public interface Gen<T> {
      */
     static <T> Gen<T> choose(Iterable<T> values) {
         Objects.requireNonNull(values, "values is null");
-        final Iterator<T> iterator = Iterator.ofAll(values);
-        if (!iterator.hasNext()) {
+        final Vector<T> vector = Vector.ofAll(values);
+        if (vector.isEmpty()) {
             throw new IllegalArgumentException("Empty iterable");
         }
         @SuppressWarnings("unchecked")
-        final T[] array = (T[]) iterator.toJavaArray();
+        final T[] array = (T[]) vector.toArray();
         return choose(array);
     }
 
@@ -278,8 +285,7 @@ public interface Gen<T> {
      */
     static <T> Gen<T> frequency(Iterable<Tuple2<Integer, Gen<T>>> generators) {
         Objects.requireNonNull(generators, "generators is null");
-        final Vector<Tuple2<Integer, Gen<T>>> filtered = Iterator.ofAll(generators)
-                .filter(t -> t._1() > 0).toVector();
+        final Vector<Tuple2<Integer, Gen<T>>> filtered = Vector.ofAll(generators).filter(t -> t._1() > 0);
         if (filtered.isEmpty()) {
             throw new IllegalArgumentException("no generator with positive weight");
         }
@@ -294,8 +300,13 @@ public interface Gen<T> {
      * @return A new T generator
      */
     default Gen<T> intersperse(Gen<T> other) {
-        final Iterator<Gen<T>> iter = Iterator.continually(this).intersperse(other);
-        return random -> iter.next().apply(random);
+        // the two generators take turns, this one first
+        final boolean[] otherIsNext = { false };
+        return random -> {
+            final Gen<T> next = otherIsNext[0] ? other : this;
+            otherIsNext[0] = !otherIsNext[0];
+            return next.apply(random);
+        };
     }
 
     /**
@@ -332,7 +343,7 @@ public interface Gen<T> {
             throw new IllegalArgumentException("generators is empty");
         }
         @SuppressWarnings("unchecked")
-        final Gen<T>[] array = stream.toJavaArray(Gen[]::new);
+        final Gen<T>[] array = stream.toArray(Gen[]::new);
         return oneOf(array);
     }
 

@@ -14,7 +14,6 @@ import com.guizmaii.zazr.Tuple5;
 import com.guizmaii.zazr.Tuple6;
 import com.guizmaii.zazr.Tuple7;
 import com.guizmaii.zazr.Tuple8;
-import com.guizmaii.zazr.collection.Iterator;
 import com.guizmaii.zazr.collection.Vector;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -246,7 +245,16 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<L, Vector<R>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return collectAll(Iterator.ofAll(values).map(mapper));
+        final Vector.Builder<R> rightValues = Vector.newBuilder();
+        for (T value : values) {
+            final Either<? extends L, ? extends R> mapped = Objects.requireNonNull(mapper.apply(value), "Either.forEach: mapper returned null");
+            if (mapped.isRight()) {
+                rightValues.add(mapped.get());
+            } else {
+                return Either.left(mapped.getLeft());
+            }
+        }
+        return Either.right(rightValues.result());
     }
 
     /**

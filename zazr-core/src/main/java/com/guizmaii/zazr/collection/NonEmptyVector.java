@@ -904,7 +904,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * @return a sequential {@link java.util.stream.Stream} over the elements
      */
-    public java.util.stream.Stream<A> stream() { return vector.toJavaStream(); }
+    public java.util.stream.Stream<A> stream() { return vector.stream(); }
 
     /**
      * @return an immutable {@link java.util.List} view of the elements; O(1)

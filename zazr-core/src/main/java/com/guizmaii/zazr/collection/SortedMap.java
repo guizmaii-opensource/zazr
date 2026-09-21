@@ -3,7 +3,6 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.control.Option;
 import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.function.*;
 import org.jspecify.annotations.Nullable;
 
@@ -14,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * @param <V> Value type
  * @author Daniel Dietrich
  */
-public interface SortedMap<K extends @Nullable Object, V extends @Nullable Object> extends Map<K, V>, Ordered<K> {
+public interface SortedMap<K extends @Nullable Object, V extends @Nullable Object> extends Map<K, V> {
 
     /**
      * Narrows a widened {@code SortedMap<? extends K, ? extends V>} to {@code SortedMap<K, V>}
@@ -32,6 +31,13 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     static <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> narrow(SortedMap<? extends K, ? extends V> sortedMap) {
         return (SortedMap<K, V>) sortedMap;
     }
+
+    /**
+     * The comparator that orders the keys; the iteration order of the entries is consistent with it.
+     *
+     * @return the comparator defining the key order
+     */
+    Comparator<K> comparator();
 
     /**
      * Same as {@link #mapBoth(Function, Function)}, using a specific comparator for keys of the codomain of the given
@@ -99,27 +105,6 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     Tuple2<Option<V>, ? extends SortedMap<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
     @Override
-    SortedMap<K, V> distinct();
-
-    @Override
-    SortedMap<K, V> distinctBy(Comparator<? super Tuple2<K, V>> comparator);
-
-    @Override
-    <U extends @Nullable Object> SortedMap<K, V> distinctBy(Function<? super Tuple2<K, V>, ? extends U> keyExtractor);
-
-    @Override
-    SortedMap<K, V> drop(int n);
-
-    @Override
-    SortedMap<K, V> dropRight(int n);
-
-    @Override
-    SortedMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate);
-
-    @Override
-    SortedMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate);
-
-    @Override
     SortedMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate);
 
     @Override
@@ -162,21 +147,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     <C extends @Nullable Object> Map<C, ? extends SortedMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier);
 
     @Override
-    Iterator<? extends SortedMap<K, V>> grouped(int size);
-
-    @Override
-    SortedMap<K, V> init();
-
-    @Override
-    Option<? extends SortedMap<K, V>> initOption();
-
-    @Override
     SortedSet<K> keySet();
-
-    @Override
-    default Tuple2<K, V> last() {
-        return max().getOrElseThrow(() -> new NoSuchElementException("last on empty SortedMap"));
-    }
 
     /**
      * {@inheritDoc}
@@ -252,39 +223,6 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     SortedMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements);
-
-    @Override
-    SortedMap<K, V> scan(Tuple2<K, V> zero, BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> operation);
-
-    @Override
-    Iterator<? extends SortedMap<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier);
-
-    @Override
-    Iterator<? extends SortedMap<K, V>> sliding(int size);
-
-    @Override
-    Iterator<? extends SortedMap<K, V>> sliding(int size, int step);
-
-    @Override
-    Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> span(Predicate<? super Tuple2<K, V>> predicate);
-
-    @Override
-    SortedMap<K, V> tail();
-
-    @Override
-    Option<? extends SortedMap<K, V>> tailOption();
-
-    @Override
-    SortedMap<K, V> take(int n);
-
-    @Override
-    SortedMap<K, V> takeRight(int n);
-
-    @Override
-    SortedMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate);
-
-    @Override
-    SortedMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate);
 
     @Override
     java.util.SortedMap<K, V> toJavaMap();

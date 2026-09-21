@@ -4,8 +4,6 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -651,58 +649,10 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public LinkedHashSet<T> distinct() {
-        return this;
-    }
-
-    @Override
-    public LinkedHashSet<T> distinctBy(Comparator<? super T> comparator) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        return LinkedHashSet.ofAll(iterator().distinctBy(comparator));
-    }
-
-    @Override
-    public <U extends @Nullable Object> LinkedHashSet<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
-        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        return LinkedHashSet.ofAll(iterator().distinctBy(keyExtractor));
-    }
-
-    @Override
-    public LinkedHashSet<T> drop(int n) {
-        if (n <= 0) {
-            return this;
-        } else {
-            return LinkedHashSet.ofAll(iterator().drop(n));
-        }
-    }
-
-    @Override
-    public LinkedHashSet<T> dropRight(int n) {
-        if (n <= 0) {
-            return this;
-        } else {
-            return LinkedHashSet.ofAll(iterator().dropRight(n));
-        }
-    }
-
-    @Override
-    public LinkedHashSet<T> dropUntil(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return dropWhile(predicate.negate());
-    }
-
-    @Override
-    public LinkedHashSet<T> dropWhile(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final LinkedHashSet<T> dropped = LinkedHashSet.ofAll(iterator().dropWhile(predicate));
-        return dropped.length() == length() ? this : dropped;
-    }
-
-    @Override
     public LinkedHashSet<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final LinkedHashSet<T> filtered = LinkedHashSet.ofAll(iterator().filter(predicate));
-        return filtered.length() == length() ? this : filtered;
+        final LinkedHashSet<T> filtered = LinkedHashSet.ofAll(Iterator.ofAll(this).filter(predicate));
+        return filtered.size() == size() ? this : filtered;
     }
 
     @Override
@@ -724,46 +674,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
-        Objects.requireNonNull(f, "f is null");
-        return iterator().foldRight(zero, f);
-    }
-
-    @Override
     public <C extends @Nullable Object> Map<C, LinkedHashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
         return Collections.groupBy(this, classifier, LinkedHashSet::ofAll);
-    }
-
-    @Override
-    public Iterator<LinkedHashSet<T>> grouped(int size) {
-        return sliding(size, size);
-    }
-
-    @Override
-    public T head() {
-        if (map.isEmpty()) {
-            throw new NoSuchElementException("head of empty set");
-        }
-        return map.head()._1();
-    }
-
-    @Override
-    public Option<T> headOption() {
-        return map.headOption().map(Tuple2::_1);
-    }
-
-    @Override
-    public LinkedHashSet<T> init() {
-        if (map.isEmpty()) {
-            throw new UnsupportedOperationException("tail of empty set");
-        } else {
-            return new LinkedHashSet<>(map.init());
-        }
-    }
-
-    @Override
-    public Option<LinkedHashSet<T>> initOption() {
-        return isEmpty() ? Option.none() : Option.some(init());
     }
 
     @Override
@@ -782,18 +694,13 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public Iterator<T> iterator() {
-        return map.iterator().map(t -> t._1());
-    }
-
-    @Override
-    public T last() {
-        return map.last()._1();
-    }
-
-    @Override
-    public int length() {
+    public int size() {
         return map.size();
+    }
+
+    @Override
+    public java.util.Iterator<T> iterator() {
+        return Iterator.ofAll(map).map(t -> t._1());
     }
 
     @Override
@@ -833,11 +740,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
-        return iterator().mkString(prefix, delimiter, suffix);
-    }
-
-    @Override
     public LinkedHashSet<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
@@ -867,7 +769,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public LinkedHashSet<T> removeAll(Iterable<? extends T> elements) {
-        return Collections.removeAll(this, elements);
+        return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     @Override
@@ -889,86 +791,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public LinkedHashSet<T> retainAll(Iterable<? extends T> elements) {
-        return Collections.retainAll(this, elements);
-    }
-
-    @Override
-    public LinkedHashSet<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
-        return scanLeft(zero, operation);
-    }
-
-    @Override
-    public <U extends @Nullable Object> LinkedHashSet<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
-        return Collections.scanLeft(this, zero, operation, LinkedHashSet::ofAll);
-    }
-
-    @Override
-    public <U extends @Nullable Object> LinkedHashSet<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return Collections.scanRight(this, zero, operation, LinkedHashSet::ofAll);
-    }
-
-    @Override
-    public Iterator<LinkedHashSet<T>> slideBy(Function<? super T, ?> classifier) {
-        return iterator().slideBy(classifier).map(LinkedHashSet::ofAll);
-    }
-
-    @Override
-    public Iterator<LinkedHashSet<T>> sliding(int size) {
-        return sliding(size, 1);
-    }
-
-    @Override
-    public Iterator<LinkedHashSet<T>> sliding(int size, int step) {
-        return iterator().sliding(size, step).map(LinkedHashSet::ofAll);
-    }
-
-    @Override
-    public Tuple2<LinkedHashSet<T>, LinkedHashSet<T>> span(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final Tuple2<Iterator<T>, Iterator<T>> t = iterator().span(predicate);
-        return Tuple.of(LinkedHashSet.ofAll(t._1()), LinkedHashSet.ofAll(t._2()));
-    }
-
-    @Override
-    public LinkedHashSet<T> tail() {
-        if (map.isEmpty()) {
-            throw new UnsupportedOperationException("tail of empty set");
-        }
-        return wrap(map.tail());
-    }
-
-    @Override
-    public Option<LinkedHashSet<T>> tailOption() {
-        return isEmpty() ? Option.none() : Option.some(tail());
-    }
-
-    @Override
-    public LinkedHashSet<T> take(int n) {
-        if (map.size() <= n) {
-            return this;
-        }
-        return LinkedHashSet.ofAll(() -> iterator().take(n));
-    }
-
-    @Override
-    public LinkedHashSet<T> takeRight(int n) {
-        if (map.size() <= n) {
-            return this;
-        }
-        return LinkedHashSet.ofAll(() -> iterator().takeRight(n));
-    }
-
-    @Override
-    public LinkedHashSet<T> takeUntil(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return takeWhile(predicate.negate());
-    }
-
-    @Override
-    public LinkedHashSet<T> takeWhile(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        final LinkedHashSet<T> taken = LinkedHashSet.ofAll(iterator().takeWhile(predicate));
-        return taken.length() == length() ? this : taken;
+        return Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     @Override
@@ -1010,63 +833,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
                 return new LinkedHashSet<>(that);
             }
         }
-    }
-
-    @Override
-    public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<LinkedHashSet<T1>, LinkedHashSet<T2>> unzip(
-      Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        final Tuple2<Iterator<T1>, Iterator<T2>> t = iterator().unzip(unzipper);
-        return Tuple.of(LinkedHashSet.ofAll(t._1()), LinkedHashSet.ofAll(t._2()));
-    }
-
-    @Override
-    public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<LinkedHashSet<T1>, LinkedHashSet<T2>, LinkedHashSet<T3>> unzip3(
-      Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
-        Objects.requireNonNull(unzipper, "unzipper is null");
-        final Tuple3<Iterator<T1>, Iterator<T2>, Iterator<T3>> t = iterator().unzip3(unzipper);
-        return Tuple.of(LinkedHashSet.ofAll(t._1()), LinkedHashSet.ofAll(t._2()), LinkedHashSet.ofAll(t._3()));
-    }
-
-    @Override
-    public <U extends @Nullable Object> LinkedHashSet<Tuple2<T, U>> zip(Iterable<? extends U> that) {
-        return zipWith(that, Tuple::of);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Because the result is a {@code Set}, equal results of {@code mapper} are deduplicated, so the resulting
-     * length may be less than the minimum of the lengths of this set and {@code that}.
-     */
-    @Override
-    public <U extends @Nullable Object, R extends @Nullable Object> LinkedHashSet<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
-        Objects.requireNonNull(that, "that is null");
-        Objects.requireNonNull(mapper, "mapper is null");
-        return LinkedHashSet.ofAll(iterator().zipWith(that, mapper));
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Because the result is a {@code Set}, equal pairs (e.g. filler-padded ones) are deduplicated, so the
-     * resulting length may be less than the maximum of the lengths of this set and {@code that}.
-     */
-    @Override
-    public <U extends @Nullable Object> LinkedHashSet<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
-        Objects.requireNonNull(that, "that is null");
-        return LinkedHashSet.ofAll(iterator().zipAll(that, thisElem, thatElem));
-    }
-
-    @Override
-    public LinkedHashSet<Tuple2<T, Integer>> zipWithIndex() {
-        return zipWithIndex(Tuple::of);
-    }
-
-    @Override
-    public <U extends @Nullable Object> LinkedHashSet<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return LinkedHashSet.ofAll(iterator().zipWithIndex(mapper));
     }
 
     // -- Object
