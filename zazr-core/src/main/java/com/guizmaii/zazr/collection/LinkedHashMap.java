@@ -1039,7 +1039,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    public Seq<V> values() {
+    public Stream<V> values() {
         return map(t -> t._2());
     }
 

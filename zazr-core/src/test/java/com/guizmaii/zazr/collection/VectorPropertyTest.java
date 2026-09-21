@@ -2,7 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -17,7 +16,7 @@ public class VectorPropertyTest {
     @Test
     public void shouldCreateAndGet() {
         for (int i = 0; i < 500; i++) {
-            final Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, i);
+            final com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, i);
             final Vector<Integer> actual = Vector.ofAll(expected);
             for (int j = 0; j < actual.size(); j++) {
                 assertThat(expected.get(j)).isEqualTo(actual.get(j));
@@ -26,31 +25,31 @@ public class VectorPropertyTest {
             assert (i == 0) || !actual.trie.type.type().isPrimitive();
 
             /* boolean */
-            final Seq<Boolean> expectedBoolean = expected.map(v -> v > 0);
+            final com.guizmaii.zazr.collection.List<Boolean> expectedBoolean = expected.map(v -> v > 0);
             final Vector<Boolean> actualBoolean = Vector.ofAll(ArrayType.<boolean[]> asPrimitives(boolean.class, expectedBoolean));
             assert (i == 0) || (actualBoolean.trie.type.type() == boolean.class);
             assertAreEqual(expectedBoolean, actualBoolean);
 
             /* byte */
-            final Seq<Byte> expectedByte = expected.map(Integer::byteValue);
+            final com.guizmaii.zazr.collection.List<Byte> expectedByte = expected.map(Integer::byteValue);
             final Vector<Byte> actualByte = Vector.ofAll(ArrayType.<byte[]> asPrimitives(byte.class, expectedByte));
             assert (i == 0) || (actualByte.trie.type.type() == byte.class);
             assertAreEqual(expectedByte, actualByte);
 
             /* char */
-            final Seq<Character> expectedChar = expected.map(v -> (char) v.intValue());
+            final com.guizmaii.zazr.collection.List<Character> expectedChar = expected.map(v -> (char) v.intValue());
             final Vector<Character> actualChar = Vector.ofAll(ArrayType.<char[]> asPrimitives(char.class, expectedChar));
             assert (i == 0) || (actualChar.trie.type.type() == char.class);
             assertAreEqual(expectedChar, actualChar);
 
             /* double */
-            final Seq<Double> expectedDouble = expected.map(Integer::doubleValue);
+            final com.guizmaii.zazr.collection.List<Double> expectedDouble = expected.map(Integer::doubleValue);
             final Vector<Double> actualDouble = Vector.ofAll(ArrayType.<double[]> asPrimitives(double.class, expectedDouble));
             assert (i == 0) || (actualDouble.trie.type.type() == double.class);
             assertAreEqual(expectedDouble, actualDouble);
 
             /* float */
-            final Seq<Float> expectedFloat = expected.map(Integer::floatValue);
+            final com.guizmaii.zazr.collection.List<Float> expectedFloat = expected.map(Integer::floatValue);
             final Vector<Float> actualFloat = Vector.ofAll(ArrayType.<float[]> asPrimitives(float.class, expectedFloat));
             assert (i == 0) || (actualFloat.trie.type.type() == float.class);
             assertAreEqual(expectedFloat, actualFloat);
@@ -61,13 +60,13 @@ public class VectorPropertyTest {
             assertAreEqual(expected, actualInt);
 
             /* long */
-            final Seq<Long> expectedLong = expected.map(Integer::longValue);
+            final com.guizmaii.zazr.collection.List<Long> expectedLong = expected.map(Integer::longValue);
             final Vector<Long> actualLong = Vector.ofAll(ArrayType.<long[]> asPrimitives(long.class, expectedLong));
             assert (i == 0) || (actualLong.trie.type.type() == long.class);
             assertAreEqual(expectedLong, actualLong);
 
             /* short */
-            final Seq<Short> expectedShort = expected.map(Integer::shortValue);
+            final com.guizmaii.zazr.collection.List<Short> expectedShort = expected.map(Integer::shortValue);
             final Vector<Short> actualShort = Vector.ofAll(ArrayType.<short[]> asPrimitives(short.class, expectedShort));
             assert (i == 0) || (actualShort.trie.type.type() == short.class);
             assertAreEqual(expectedShort, actualShort);
@@ -78,13 +77,13 @@ public class VectorPropertyTest {
     public void shouldIterate() {
         for (byte depth = 0; depth <= 2; depth++) {
             for (int i = 0; i < 5000; i++) {
-                final Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, i);
+                final com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, i);
                 final Vector<Integer> actual = Vector.ofAll(expected);
                 assertAreEqual(actual, expected);
             }
         }
 
-        Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 1000);
+        com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 1000);
         Vector<Integer> actual = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
             final Iterator<Integer> expectedIterator = expected.iterator();
@@ -102,7 +101,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldPrepend() {
-        Seq<Integer> expected = com.guizmaii.zazr.collection.List.empty();
+        com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.empty();
         Vector<Integer> actual = Vector.empty();
 
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
@@ -118,7 +117,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldAppend() {
-        Seq<Integer> expected = com.guizmaii.zazr.collection.List.empty();
+        com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.empty();
         Vector<Integer> actual = Vector.empty();
 
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
@@ -140,7 +139,7 @@ public class VectorPropertyTest {
             final int length = 10_000;
 
             for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
-                Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
+                com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
                 Vector<Integer> actual = Vector.ofAll(expected);
 
                 expected = expected.drop(drop); // test the `trailing` drops and the internal tree offset
@@ -158,12 +157,12 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldDrop() {
-        final Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 2_000);
+        final com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 2_000);
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
         for (int i = 0; i <= expected.length(); i++) {
-            final Seq<Integer> expectedDrop = expected.drop(i);
+            final com.guizmaii.zazr.collection.List<Integer> expectedDrop = expected.drop(i);
 
             assertAreEqual(actual, i, Vector::drop, expectedDrop);
             assertAreEqual(actualSingleDrop, null, (a, p) -> a, expectedDrop);
@@ -174,12 +173,12 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldDropRight() {
-        final Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 2_000);
+        final com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 2_000);
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
         for (int i = 0; i <= expected.length(); i++) {
-            final Seq<Integer> expectedDrop = expected.dropRight(i);
+            final com.guizmaii.zazr.collection.List<Integer> expectedDrop = expected.dropRight(i);
 
             assertAreEqual(actual, i, Vector::dropRight, expectedDrop);
             assertAreEqual(actualSingleDrop, null, (a, p) -> a, expectedDrop);
@@ -191,7 +190,7 @@ public class VectorPropertyTest {
     @Test
     public void shouldSlice() {
         for (int length = 1, end = 500; length <= end; length++) {
-            Seq<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
+            com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
             Vector<Integer> actual = Vector.ofAll(expected);
 
             for (int i = 0; i <= expected.length(); i++) {
@@ -206,10 +205,10 @@ public class VectorPropertyTest {
         final Random random = new Random(13579);
 
         for (int i = 1; i < 10; i++) {
-            Seq<Object> expected = com.guizmaii.zazr.collection.List.empty();
+            com.guizmaii.zazr.collection.List<Object> expected = com.guizmaii.zazr.collection.List.empty();
             Vector<Object> actual = Vector.empty();
             for (int j = 0; j < 20_000; j++) {
-                Seq<Tuple2<Seq<Object>, Vector<Object>>> history = com.guizmaii.zazr.collection.List.empty();
+                com.guizmaii.zazr.collection.List<Tuple2<com.guizmaii.zazr.collection.List<Object>, Vector<Object>>> history = com.guizmaii.zazr.collection.List.empty();
 
                 if (percent(random) < 20) {
                     expected = com.guizmaii.zazr.collection.List.ofAll(Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
@@ -351,8 +350,8 @@ public class VectorPropertyTest {
     }
 
     private static void assertAreEqual(Traversable<?> expected, Traversable<?> actual) {
-        final List<?> actualList = actual.toJavaList();
-        final List<?> expectedList = expected.toJavaList();
+        final java.util.List<?> actualList = actual.toJavaList();
+        final java.util.List<?> expectedList = expected.toJavaList();
         assertThat(actualList).isEqualTo(expectedList); // a lot faster than `hasSameElementsAs`
     }
 }

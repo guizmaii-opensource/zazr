@@ -37,7 +37,7 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * @param <T> Component type of the Queue
  * @author Daniel Dietrich
  */
-public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
+public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     private static final Queue<?> EMPTY = new Queue<>(com.guizmaii.zazr.collection.List.empty(), com.guizmaii.zazr.collection.List.empty());
 
@@ -590,6 +590,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Transposes the rows and columns of a {@link Queue} matrix.
+     * <p>
+     * Complexity: O(rows * columns).
      *
      * @param <T> matrix element type
      * @param matrix to be transposed.
@@ -719,6 +721,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Enqueues a new element.
+     * <p>
+     * Complexity: O(1); the element is prepended to the rear list.
      *
      * @param element The new element
      * @return a new {@code Queue} instance, containing the new element
@@ -730,6 +734,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     /**
      * Enqueues the given elements. A queue has FIFO order, i.e. the first of the given elements is
      * the first which will be retrieved.
+     * <p>
+     * Complexity: O(m) for m enqueued elements.
      *
      * @param elements An Iterable of elements, may be empty
      * @return a {@code Queue} containing this queue's elements followed by the given elements
@@ -747,82 +753,630 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    // -- Adjusted return types of Seq methods
+    // -- The sequence API
 
+    /**
+     * Whether {@code that} occurs in this Queue as a contiguous slice.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to look for
+     * @return true if {@code that} occurs contiguously in this Queue (an empty slice always does)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean containsSlice(Iterable<? extends T> that) {
+        Objects.requireNonNull(that, "that is null");
+        return indexOfSlice(that) >= 0;
+    }
+
+    /**
+     * The Cartesian square of this Queue: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * <p>
+     * Complexity: lazy; O(n^2) pairs when consumed.
+     *
+     * @return an iterator over the pairs
+     */
+    public Iterator<Tuple2<T, T>> crossProduct() {
+        return crossProduct(this);
+    }
+
+    /**
+     * The Cartesian product of this Queue and {@code that}: every pair {@code (a, b)} with {@code a} from this Queue
+     * and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked lazily and memoised, so an
+     * infinite {@code that} works with {@code take}.
+     * <p>
+     * Complexity: lazy; O(n * m) pairs when consumed.
+     *
+     * @param that the right-hand elements
+     * @param <U>  their type
+     * @return an iterator over the pairs
+     * @throws NullPointerException if {@code that} is null
+     */
+    public <U extends @Nullable Object> Iterator<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        // a lazy, memoising Stream: the result is lazy, so the argument stays lazy too
+        final Stream<U> other = Stream.ofAll(that);
+        return Iterator.ofAll(this).flatMap(a -> other.map(b -> Tuple.of(a, b)));
+    }
+
+    /**
+     * Whether this Queue ends with {@code that}.
+     * <p>
+     * Complexity: O(n + m) for m elements of {@code that}.
+     *
+     * @param that the suffix to test
+     * @return true if the last {@code m} elements equal {@code that} (an empty {@code that} is always a suffix)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean endsWith(Iterable<? extends T> that) {
+        return toList().endsWith(that);
+    }
+
+    /**
+     * The index of the first occurrence of {@code element}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return the index of its first occurrence, or -1 if absent
+     */
+    public int indexOf(T element) {
+        return indexOf(element, 0);
+    }
+
+    /**
+     * The first index at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int indexOfSlice(Iterable<? extends T> that) {
+        return indexOfSlice(that, 0);
+    }
+
+    /**
+     * The first index at or after {@code from} at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @param from the first position to look at
+     * @return the index of its first occurrence at or after {@code from}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int indexOfSlice(Iterable<? extends T> that, int from) {
+        return toList().indexOfSlice(that, from);
+    }
+
+    /**
+     * The index of the first element satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the first index of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int indexWhere(Predicate<? super T> predicate) {
+        return indexWhere(predicate, 0);
+    }
+
+    /**
+     * The index of the first element at or after {@code from} satisfying {@code predicate}, or -1. A negative
+     * {@code from} counts as 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return the first index {@code >= from} of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int indexWhere(Predicate<? super T> predicate, int from) {
+        return toList().indexWhere(predicate, from);
+    }
+
+    /**
+     * An iterator over the elements from {@code index} on.
+     * <p>
+     * Complexity: O(index) to reach the start, then O(1) per step.
+     *
+     * @param index the first position to iterate from
+     * @return an iterator over the suffix
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     */
+    public Iterator<T> iterator(int index) {
+        return subSequence(index).iterator();
+    }
+
+    /**
+     * The index of the last occurrence of {@code element}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return the index of its last occurrence, or -1 if absent
+     */
+    public int lastIndexOf(T element) {
+        return lastIndexOf(element, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The last index at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @return the index of its last occurrence, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int lastIndexOfSlice(Iterable<? extends T> that) {
+        return lastIndexOfSlice(that, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @param end  the last position to look at
+     * @return the index of its last occurrence at or before {@code end}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int lastIndexOfSlice(Iterable<? extends T> that, int end) {
+        return toList().lastIndexOfSlice(that, end);
+    }
+
+    /**
+     * The index of the last element satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the last index of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int lastIndexWhere(Predicate<? super T> predicate) {
+        return lastIndexWhere(predicate, length() - 1);
+    }
+
+    /**
+     * The index of the last element at or before {@code end} satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @param end       the last position to look at
+     * @return the last index {@code <= end} of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int lastIndexWhere(Predicate<? super T> predicate, int end) {
+        return toList().lastIndexWhere(predicate, end);
+    }
+
+    /**
+     * The length of the longest prefix whose elements all satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(k) for the k elements of that prefix.
+     *
+     * @param predicate the condition
+     * @return the length of the prefix
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int prefixLength(Predicate<? super T> predicate) {
+        return segmentLength(predicate, 0);
+    }
+
+    /**
+     * An iterator over the elements from the last to the first.
+     * <p>
+     * Complexity: O(n) to create (the front is reversed; the rear is already stored in reverse order), then O(1) per step.
+     *
+     * @return the reverse iterator
+     */
+    public Iterator<T> reverseIterator() {
+        return rear.iterator().concat(front.reverseIterator());
+    }
+
+    /**
+     * The position of {@code element} in this Queue, which must already be sorted in ascending natural order; the
+     * result is undefined otherwise. The search is linear, as a Queue has no indexed access.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return the index of the element if it is present; otherwise {@code (-(insertion point) - 1)}, the insertion
+     *         point being the index at which the element would be inserted
+     * @throws ClassCastException if {@code T} is not {@code Comparable}
+     */
+    public int search(T element) {
+        return toList().search(element);
+    }
+
+    /**
+     * The position of {@code element} in this Queue, which must already be sorted in ascending order according to
+     * {@code comparator}; the result is undefined otherwise. The search is linear, as a Queue has no indexed access.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element    the element to find
+     * @param comparator the order this Queue is sorted by
+     * @return the index of the element if it is present; otherwise {@code (-(insertion point) - 1)}, the insertion
+     *         point being the index at which the element would be inserted
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public int search(T element, Comparator<? super T> comparator) {
+        return toList().search(element, comparator);
+    }
+
+    /**
+     * The length of the longest run of elements satisfying {@code predicate} starting at {@code from}.
+     * <p>
+     * Complexity: O(from + k) for the k elements of that run.
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return the length of the run
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int segmentLength(Predicate<? super T> predicate, int from) {
+        return toList().segmentLength(predicate, from);
+    }
+
+    /**
+     * Whether this Queue starts with {@code that}: {@code startsWith(that, 0)}.
+     * <p>
+     * Complexity: O(m) for m elements of {@code that}.
+     *
+     * @param that the prefix to test
+     * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean startsWith(Iterable<? extends T> that) {
+        return startsWith(that, 0);
+    }
+
+    /**
+     * {@link #indexOf(Object)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @return {@code Some(index)} of its first occurrence, or {@code None}
+     */
+    public Option<Integer> indexOfOption(T element) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element));
+    }
+
+    /**
+     * {@link #indexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @param from    the first position to look at
+     * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
+     */
+    public Option<Integer> indexOfOption(T element, int from) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element, from));
+    }
+
+    /**
+     * {@link #indexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @return {@code Some(index)} of its first occurrence, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that));
+    }
+
+    /**
+     * {@link #indexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @param from the first position to look at
+     * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that, from));
+    }
+
+    /**
+     * {@link #indexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @return {@code Some(index)} of the first satisfying element, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> indexWhereOption(Predicate<? super T> predicate) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate));
+    }
+
+    /**
+     * {@link #indexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return {@code Some(index)} of the first satisfying element at or after {@code from}, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> indexWhereOption(Predicate<? super T> predicate, int from) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate, from));
+    }
+
+    /**
+     * {@link #lastIndexOf(Object)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @return {@code Some(index)} of its last occurrence, or {@code None}
+     */
+    public Option<Integer> lastIndexOfOption(T element) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element));
+    }
+
+    /**
+     * {@link #lastIndexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @param end     the last position to look at
+     * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
+     */
+    public Option<Integer> lastIndexOfOption(T element, int end) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element, end));
+    }
+
+    /**
+     * {@link #lastIndexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @return {@code Some(index)} of its last occurrence, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that));
+    }
+
+    /**
+     * {@link #lastIndexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @param end  the last position to look at
+     * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that, int end) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that, end));
+    }
+
+    /**
+     * {@link #lastIndexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @return {@code Some(index)} of the last satisfying element, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate));
+    }
+
+    /**
+     * {@link #lastIndexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @param end       the last position to look at
+     * @return {@code Some(index)} of the last satisfying element at or before {@code end}, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate, int end) {
+        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate, end));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The elements are folded from the end: they are copied into a {@code List} first, then folded from the left, so
+     * the recursion depth does not grow with the length.
+     */
     @Override
+    public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
+        Objects.requireNonNull(f, "f is null");
+        return toList().foldRight(zero, f);
+    }
+
+    /**
+     * Returns a new Queue with the given element appended at the end.
+     * <p>
+     * Complexity: amortised O(1); the element is prepended to the rear list.
+     *
+     * @param element the element to append
+     * @return a new Queue ending with the given element
+     */
     public Queue<T> append(T element) {
         return enqueue(element);
     }
 
-    @Override
+    /**
+     * Returns a new Queue with the given elements appended at the end, in iteration order.
+     * <p>
+     * Complexity: O(m) for m appended elements.
+     *
+     * @param elements the elements to append
+     * @return a new Queue ending with the given elements, or this Queue if there are none
+     * @throws NullPointerException if {@code elements} is null
+     */
     public Queue<T> appendAll(Iterable<? extends T> elements) {
         return enqueueAll(elements);
     }
 
-    @Override
+    /**
+     * Returns an immutable {@link java.util.List} view of this Queue: reads go through to this Queue, mutators throw
+     * {@link UnsupportedOperationException}.
+     * <p>
+     * Complexity: O(1); {@code get(i)} on the view is O(i).
+     *
+     * @return an immutable {@code java.util.List} view
+     */
     public java.util.List<T> asJava() {
         return JavaConverters.asJava(this, IMMUTABLE);
     }
 
-    @Override
+    /**
+     * Passes an immutable {@link java.util.List} view of this Queue to {@code action} and returns this Queue.
+     * <p>
+     * Complexity: O(1) to create the view.
+     *
+     * @param action receives the view
+     * @return this Queue
+     * @throws NullPointerException if {@code action} is null
+     * @see #asJava()
+     */
     public Queue<T> asJava(Consumer<? super java.util.List<T>> action) {
-        return Collections.asJava(this, action, IMMUTABLE);
+        Objects.requireNonNull(action, "action is null");
+        action.accept(asJava());
+        return this;
     }
 
-    @Override
+    /**
+     * Returns a mutable {@link java.util.List} view of this Queue: every mutator replaces the view's underlying Queue
+     * by a new one; this Queue is never modified.
+     * <p>
+     * Complexity: O(1); each mutator costs what the corresponding Queue operation costs.
+     *
+     * @return a mutable {@code java.util.List} view
+     */
     public java.util.List<T> asJavaMutable() {
         return JavaConverters.asJava(this, MUTABLE);
     }
 
-    @Override
+    /**
+     * Passes a mutable {@link java.util.List} view of this Queue to {@code action} and returns the Queue the view holds
+     * afterwards: this Queue if the action only read, a new one reflecting the writes otherwise.
+     * <p>
+     * Complexity: O(1) to create the view.
+     *
+     * @param action receives the view
+     * @return this Queue, or a new Queue reflecting the modifications made through the view
+     * @throws NullPointerException if {@code action} is null
+     * @see #asJavaMutable()
+     */
     public Queue<T> asJavaMutable(Consumer<? super java.util.List<T>> action) {
-        return Collections.asJava(this, action, MUTABLE);
+        Objects.requireNonNull(action, "action is null");
+        final ListView<T, Queue<T>> view = JavaConverters.asJava(this, MUTABLE);
+        action.accept(view);
+        return view.getDelegate();
     }
 
-    @Override
+    /**
+     * All combinations of the elements, for every size from 0 to {@code length()}, by position.
+     * <p>
+     * Complexity: O(2^n) combinations.
+     *
+     * @return the combinations, shortest first
+     */
     public Queue<Queue<T>> combinations() {
         return ofAll(toList().combinations().map(Queue::ofAll));
     }
 
-    @Override
+    /**
+     * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
+     * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
+     * <p>
+     * Complexity: O(n choose k) combinations.
+     *
+     * @param k the size of each combination
+     * @return the combinations
+     */
     public Queue<Queue<T>> combinations(int k) {
         return ofAll(toList().combinations(k).map(Queue::ofAll));
     }
 
-    @Override
+    /**
+     * The Cartesian power of this Queue: every Queue of {@code power} elements drawn from this one, in lexicographic
+     * position order. {@code power == 0} gives one empty Queue; a negative power gives no result.
+     * <p>
+     * Complexity: lazy; O(n^power) Queues of size {@code power} when consumed.
+     *
+     * @param power the size of each result
+     * @return an iterator over the Lists
+     */
     public Iterator<Queue<T>> crossProduct(int power) {
-        return com.guizmaii.zazr.collection.Collections.crossProduct(empty(), this, power);
+        if (power < 0) {
+            return Iterator.empty();
+        }
+        return Iterator.range(0, power).foldLeft(Iterator.of(Queue.<T> empty()), (product, ignored) -> product.flatMap(el -> map(el::append)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> distinct() {
         return ofAll(toList().distinct());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     */
     @Override
     public Queue<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(toList().distinctBy(comparator));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one key per element.
+     */
     @Override
     public <U extends @Nullable Object> Queue<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         return ofAll(toList().distinctBy(keyExtractor));
     }
 
-    @Override
+    /**
+     * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
+     * equal, in the order of those last occurrences.
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator decides which elements are duplicates
+     * @return a new Queue
+     * @throws NullPointerException if {@code comparator} is null
+     */
     public Queue<T> distinctByKeepLast(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(toList().distinctByKeepLast(comparator));
     }
 
-    @Override
+    /**
+     * The elements without duplicates, keeping the last occurrence of each key, in the order of those last
+     * occurrences.
+     * <p>
+     * Complexity: O(n), one key per element.
+     *
+     * @param keyExtractor computes the key an element is deduplicated by
+     * @param <U>          the key type
+     * @return a new Queue
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
     public <U extends @Nullable Object> Queue<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         return ofAll(toList().distinctByKeepLast(keyExtractor));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the front and the rear are both walked.
+     */
     @Override
     public Queue<T> drop(int n) {
         if (n <= 0) {
@@ -834,6 +1388,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return new Queue<>(front.drop(n), rear.dropRight(n - front.length()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -841,6 +1400,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return ofAll(dropped.length() == length() ? this : dropped);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the front and the rear are both walked.
+     */
     @Override
     public Queue<T> dropRight(int n) {
         if (n <= 0) {
@@ -852,18 +1416,40 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return new Queue<>(front.dropRight(n - rear.length()), rear.drop(n));
     }
 
-    @Override
+    /**
+     * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new Queue, or this Queue if its last element satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> dropRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reverse().dropUntil(predicate).reverse();
     }
 
-    @Override
+    /**
+     * The elements up to and including the last one not satisfying {@code predicate}, that is
+     * {@code dropRightUntil(predicate.negate())}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new Queue, or this Queue if its last element does not satisfy the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> dropRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropRightUntil(predicate.negate());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -888,7 +1474,15 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The element at {@code index}.
+     * <p>
+     * Complexity: O(index) while the index is in the front; O(n) once it falls in the rear, which is measured and indexed from its end.
+     *
+     * @param index the position
+     * @return the element at that position
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     */
     public T get(int index) {
         if (isEmpty()) {
             throw new IndexOutOfBoundsException("get(" + index + ") on empty Queue");
@@ -920,11 +1514,21 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Queue::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per group when consumed.
+     */
     @Override
     public Iterator<Queue<T>> grouped(int size) {
         return sliding(size, size);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1); the head of the front list.
+     */
     @Override
     public T head() {
         if (isEmpty()) {
@@ -934,7 +1538,16 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The index of the first occurrence of {@code element} at or after {@code from}, or -1. A negative {@code from}
+     * counts as 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @param from    the first position to look at
+     * @return the first index {@code >= from} of the element, or -1 if absent
+     */
     public int indexOf(T element, int from) {
         final int frontIndex = front.indexOf(element, from);
         if (frontIndex != -1) {
@@ -947,6 +1560,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: amortised O(1); the last element is the head of the rear list, unless the rear is empty and the front is walked.
+     */
     @Override
     public Queue<T> init() {
         if (isEmpty()) {
@@ -958,7 +1576,16 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * A new Queue with {@code element} inserted at {@code index}, the elements from {@code index} on shifted right.
+     * <p>
+     * Complexity: O(n); the front, and the rear when the index falls in it, are walked.
+     *
+     * @param index   the position of the inserted element
+     * @param element the element to insert
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     */
     public Queue<T> insert(int index, T element) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insert(" + index + ", element)");
@@ -978,8 +1605,20 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
+    /**
+     * A new Queue with {@code elements} inserted at {@code index}, in iteration order, the elements from {@code index}
+     * on shifted right.
+     * <p>
+     * Complexity: O(n + m) for m inserted elements.
+     * shared.
+     *
+     * @param index    the position of the first inserted element
+     * @param elements the elements to insert
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     * @throws NullPointerException      if {@code elements} is null
+     */
     @SuppressWarnings("unchecked")
-    @Override
     public Queue<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (index < 0) {
@@ -1006,7 +1645,14 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The elements with {@code element} inserted between every two of them.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the separator
+     * @return a new Queue, or this Queue if it has fewer than two elements
+     */
     public Queue<T> intersperse(T element) {
         if (isEmpty()) {
             return this;
@@ -1022,21 +1668,44 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return front.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) to create, for the m elements of the rear list, which is reversed; then O(1) per step.
+     */
     @Override
     public Iterator<T> iterator() {
         return front.iterator().concat(rear.reverseIterator());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) when the rear is non-empty, O(n) when it is empty and the front is walked.
+     */
     @Override
     public T last() {
         return rear.isEmpty() ? front.last() : rear.head();
     }
 
-    @Override
+    /**
+     * The index of the last occurrence of {@code element} at or before {@code end}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @param end     the last position to look at
+     * @return the last index {@code <= end} of the element, or -1 if absent
+     */
     public int lastIndexOf(T element, int end) {
         return toList().lastIndexOf(element, end);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the front and the rear are counted.
+     */
     @Override
     public int length() {
         return front.length() + rear.length();
@@ -1070,7 +1739,15 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return isEmpty() ? ofAll(supplier.get()) : this;
     }
 
-    @Override
+    /**
+     * This Queue padded on the right with {@code element} until it is {@code length} long.
+     * <p>
+     * Complexity: O(n + k) for k added elements.
+     *
+     * @param length  the target length
+     * @param element the padding element
+     * @return a new Queue, or this Queue if it is already at least {@code length} long
+     */
     public Queue<T> padTo(int length, T element) {
         final int actualLength = length();
         if (length <= actualLength) {
@@ -1080,7 +1757,15 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * This Queue padded on the left with {@code element} until it is {@code length} long.
+     * <p>
+     * Complexity: O(n + k) for k added elements.
+     *
+     * @param length  the target length
+     * @param element the padding element
+     * @return a new Queue, or this Queue if it is already at least {@code length} long
+     */
     public Queue<T> leftPadTo(int length, T element) {
         final int actualLength = length();
         if (length <= actualLength) {
@@ -1090,7 +1775,18 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * This Queue with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
+     * {@code from} or {@code replaced} counts as 0.
+     * <p>
+     * Complexity: O(n + m) for m replacement elements.
+     *
+     * @param from     the first replaced position
+     * @param that     the replacement elements
+     * @param replaced how many elements are replaced
+     * @return a new Queue
+     * @throws NullPointerException if {@code that} is null
+     */
     public Queue<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
@@ -1106,18 +1802,39 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return toList().partition(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
+    /**
+     * All distinct permutations of the elements.
+     * <p>
+     * Complexity: O(n!) permutations.
+     *
+     * @return the permutations
+     */
     public Queue<Queue<T>> permutations() {
         return ofAll(toList().permutations().map(com.guizmaii.zazr.collection.List::toQueue));
     }
 
-    @Override
+    /**
+     * A new Queue with {@code element} in front of this one.
+     * <p>
+     * Complexity: O(1); the element is prepended to the front list.
+     *
+     * @param element the new head
+     * @return a new Queue starting with the given element
+     */
     public Queue<T> prepend(T element) {
         return new Queue<>(front.prepend(element), rear);
     }
 
+    /**
+     * A new Queue with {@code elements} in front of this one, in iteration order.
+     * <p>
+     * Complexity: O(m) for m prepended elements.
+     *
+     * @param elements the elements to prepend
+     * @return a new Queue starting with the given elements, or this Queue if there are none
+     * @throws NullPointerException if {@code elements} is null
+     */
     @SuppressWarnings("unchecked")
-    @Override
     public Queue<T> prependAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (isEmpty() && elements instanceof Queue) {
@@ -1128,34 +1845,77 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * This Queue without the first occurrence of {@code element}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to remove
+     * @return a new Queue, or this Queue if the element is absent
+     */
     public Queue<T> remove(T element) {
         final com.guizmaii.zazr.collection.List<T> removed = toList().remove(element);
         return ofAll(removed.length() == length() ? this : removed);
     }
 
-    @Override
+    /**
+     * This Queue without the first element satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return a new Queue, or this Queue if no element satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> removeFirst(Predicate<T> predicate) {
         final com.guizmaii.zazr.collection.List<T> removed = toList().removeFirst(predicate);
         return ofAll(removed.length() == length() ? this : removed);
     }
 
-    @Override
+    /**
+     * This Queue without the last element satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return a new Queue, or this Queue if no element satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> removeLast(Predicate<T> predicate) {
         final com.guizmaii.zazr.collection.List<T> removed = toList().removeLast(predicate);
         return ofAll(removed.length() == length() ? this : removed);
     }
 
-    @Override
+    /**
+     * This Queue without the element at {@code index}, the elements after it shifted left.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param index the position of the removed element
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     */
     public Queue<T> removeAt(int index) {
         return ofAll(toList().removeAt(index));
     }
 
-    @Override
+    /**
+     * This Queue without any occurrence of {@code element}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to remove
+     * @return a new Queue, or this Queue if the element is absent
+     */
     public Queue<T> removeAll(T element) {
         return com.guizmaii.zazr.collection.Collections.removeAll(this, element);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> replace(T currentElement, T newElement) {
         final com.guizmaii.zazr.collection.List<T> newFront = front.replace(currentElement, newElement);
@@ -1170,6 +1930,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return new Queue<>(front, newRearInOrder.reverse());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> replaceAll(T currentElement, T newElement) {
         final com.guizmaii.zazr.collection.List<T> newFront = front.replaceAll(currentElement, newElement);
@@ -1179,42 +1944,102 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
                                                                                             : new Queue<>(newFront, newRear);
     }
 
-    @Override
+    /**
+     * The elements in reverse order.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return a new Queue, or this Queue if it has fewer than two elements
+     */
     public Queue<T> reverse() {
         return isEmpty() ? this : ofAll(toList().reverse());
     }
 
-    @Override
+    /**
+     * Rotates the elements {@code n} positions to the left: {@code Queue(1, 2, 3, 4, 5).rotateLeft(2)} is
+     * {@code Queue(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param n the distance
+     * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
+     */
     public Queue<T> rotateLeft(int n) {
-        return Collections.rotateLeft(this, n);
+        if (isEmpty()) {
+            return this;
+        }
+        final int k = Math.floorMod(n, length());
+        return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
-    @Override
+    /**
+     * Rotates the elements {@code n} positions to the right: {@code Queue(1, 2, 3, 4, 5).rotateRight(2)} is
+     * {@code Queue(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param n the distance
+     * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
+     */
     public Queue<T> rotateRight(int n) {
-        return Collections.rotateRight(this, n);
+        if (isEmpty()) {
+            return this;
+        }
+        final int k = Math.floorMod(n, length());
+        return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
         return scanLeft(zero, operation);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Queue<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Queue<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toQueue);
     }
 
-    @Override
+    /**
+     * The elements in a random order, drawn from a default source of randomness.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return a new Queue, or this Queue if it has fewer than two elements
+     */
     public Queue<T> shuffle() {
         return com.guizmaii.zazr.collection.Collections.shuffle(this, Queue::ofAll);
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive, both clamped to the bounds of
+     * this Queue.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param beginIndex the first position
+     * @param endIndex   the position after the last one
+     * @return a new Queue, empty if the range is empty
+     */
     public Queue<T> slice(int beginIndex, int endIndex) {
         return ofAll(toList().slice(beginIndex, endIndex));
     }
@@ -1224,64 +2049,157 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return iterator().slideBy(classifier).map(Queue::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per window when consumed.
+     */
     @Override
     public Iterator<Queue<T>> sliding(int size) {
         return sliding(size, 1);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per window when consumed.
+     */
     @Override
     public Iterator<Queue<T>> sliding(int size, int step) {
         return iterator().sliding(size, step).map(Queue::ofAll);
     }
 
-    @Override
+    /**
+     * The elements in ascending natural order (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @return a new sorted Queue, or this Queue if it is empty
+     * @throws ClassCastException if {@code T} is not {@code Comparable}
+     */
     public Queue<T> sorted() {
         return ofAll(toList().sorted());
     }
 
-    @Override
+    /**
+     * The elements in the order of {@code comparator} (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator the order
+     * @return a new sorted Queue, or this Queue if it is empty
+     * @throws NullPointerException if {@code comparator} is null
+     */
     public Queue<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(toList().sorted(comparator));
     }
 
-    @Override
+    /**
+     * The elements sorted by the natural order of the key {@code mapper} computes (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     *
+     * @param mapper computes the sort key
+     * @param <U>    the key type
+     * @return a new sorted Queue, or this Queue if it is empty
+     * @throws NullPointerException if {@code mapper} is null
+     */
     public <U extends Comparable<? super U>> Queue<T> sortBy(Function<? super T, ? extends U> mapper) {
         return sortBy(U::compareTo, mapper);
     }
 
-    @Override
+    /**
+     * The elements sorted by {@code comparator} applied to the key {@code mapper} computes (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     *
+     * @param comparator the order of the keys
+     * @param mapper     computes the sort key
+     * @param <U>        the key type
+     * @return a new sorted Queue, or this Queue if it is empty
+     * @throws NullPointerException if {@code comparator} or {@code mapper} is null
+     */
     public <U extends @Nullable Object> Queue<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
-        return Collections.sortBy(this, comparator, mapper, collector());
+        Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Tuple2<Queue<T>, Queue<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return toList().span(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
+    /**
+     * This Queue split in two at position {@code n}: the first {@code n} elements and the rest.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param n the position of the split
+     * @return the prefix and the suffix
+     */
     public Tuple2<Queue<T>, Queue<T>> splitAt(int n) {
         return toList().splitAt(n).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
+    /**
+     * This Queue split in two before the first element satisfying {@code predicate}. If no element satisfies it, the
+     * whole Queue is the first part.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the prefix and the suffix
+     */
     public Tuple2<Queue<T>, Queue<T>> splitAt(Predicate<? super T> predicate) {
         return toList().splitAt(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
+    /**
+     * This Queue split in two after the first element satisfying {@code predicate}. If no element satisfies it, the
+     * whole Queue is the first part.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the prefix including the matching element, and the suffix
+     */
     public Tuple2<Queue<T>, Queue<T>> splitAtInclusive(Predicate<? super T> predicate) {
         return toList().splitAtInclusive(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
+    /**
+     * Whether the elements from {@code offset} on start with {@code that}. {@code that} is walked once, so a
+     * one-shot iterator is accepted.
+     * <p>
+     * Complexity: O(offset + m) for m elements of {@code that}.
+     *
+     * @param that   the prefix to test
+     * @param offset the position in this Queue at which the prefix should start
+     * @return false if {@code offset} is negative; otherwise true if {@code that} equals the {@code m} elements from
+     *         {@code offset} on (an empty {@code that} is always a prefix, even beyond the end)
+     * @throws NullPointerException if {@code that} is null
+     */
     public boolean startsWith(Iterable<? extends T> that, int offset) {
         return toList().startsWith(that, offset);
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} on.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param beginIndex the first position
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code length()}
+     */
     public Queue<T> subSequence(int beginIndex) {
         if (beginIndex < 0 || beginIndex > length()) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
@@ -1290,7 +2208,17 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param beginIndex the first position
+     * @param endIndex   the position after the last one
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if the range is not within {@code [0, length()]}
+     * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
+     */
     public Queue<T> subSequence(int beginIndex, int endIndex) {
         Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
         if (beginIndex == endIndex) {
@@ -1302,6 +2230,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: amortised O(1); the front loses its head, and the rear is reversed onto it only when the front runs out.
+     */
     @Override
     public Queue<T> tail() {
         if (isEmpty()) {
@@ -1311,6 +2244,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> take(int n) {
         if (n <= 0) {
@@ -1329,6 +2267,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -1336,6 +2279,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return taken.length() == length() ? this : ofAll(taken);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> takeRight(int n) {
         if (n <= 0) {
@@ -1354,14 +2302,30 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         }
     }
 
-    @Override
+    /**
+     * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new Queue
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final com.guizmaii.zazr.collection.List<T> taken = toList().takeRightUntil(predicate);
         return taken.length() == length() ? this : ofAll(taken);
     }
 
-    @Override
+    /**
+     * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new Queue
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeRightUntil(predicate.negate());
@@ -1380,22 +2344,51 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return toList().unzip3(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
-    @Override
+    /**
+     * This Queue with the element at {@code index} replaced by {@code element}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param index   the position to update
+     * @param element the new element
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     */
     public Queue<T> update(int index, T element) {
         return ofAll(toList().update(index, element));
     }
 
-    @Override
+    /**
+     * This Queue with the element at {@code index} replaced by what {@code updater} computes from it.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param index   the position to update
+     * @param updater computes the new element from the current one
+     * @return a new Queue
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws NullPointerException      if {@code updater} is null
+     */
     public Queue<T> update(int index, Function<? super T, ? extends T> updater) {
         Objects.requireNonNull(updater, "updater is null");
         return update(index, updater.apply(get(index)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)) for an argument of m elements.
+     */
     @Override
     public <U extends @Nullable Object> Queue<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)) for an argument of m elements.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public <U extends @Nullable Object, R extends @Nullable Object> Queue<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
@@ -1404,17 +2397,32 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return ofAll(toList().zipWith(that, mapper));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(max(n, m)) for an argument of m elements.
+     */
     @Override
     public <U extends @Nullable Object> Queue<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         return ofAll(toList().zipAll(that, thisElem, thatElem));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public <U extends @Nullable Object> Queue<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1433,6 +2441,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Removes an element from this Queue.
+     * <p>
+     * Complexity: amortised O(1); see {@link #tail()}.
      *
      * @return a tuple containing the first element and the remaining elements of this Queue
      * @throws NoSuchElementException if this Queue is empty
@@ -1447,6 +2457,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Removes an element from this Queue.
+     * <p>
+     * Complexity: amortised O(1); see {@link #dequeue()}.
      *
      * @return {@code None} if this Queue is empty, otherwise {@code Some} {@code Tuple} containing the first element and the remaining elements of this Queue
      */
@@ -1457,6 +2469,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
     /**
      * Enqueues the given elements. A queue has FIFO order, i.e. the first of the given elements is
      * the first which will be retrieved.
+     * <p>
+     * Complexity: O(m) for m enqueued elements.
      *
      * @param elements Elements, may be empty
      * @return a new {@code Queue} instance, containing the new elements
@@ -1470,6 +2484,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Returns the first element without modifying it.
+     * <p>
+     * Complexity: O(1); the head of the front list.
      *
      * @return the first element
      * @throws NoSuchElementException if this Queue is empty
@@ -1486,6 +2502,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
      * Returns the first element without modifying the Queue.
      * <p>
      * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
+     * <p>
+     * Complexity: O(1); the head of the front list.
      *
      * @return {@code None} if this Queue is empty, otherwise a {@code Some} containing the first element
      */
@@ -1493,6 +2511,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return isEmpty() ? Option.none() : Option.some(peek());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -1501,6 +2524,8 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Dual of {@linkplain #tailOption()}, returning all elements except the last as {@code Option}.
+     * <p>
+     * Complexity: amortised O(1); see {@link #init()}.
      *
      * @return {@code Some(Queue)} or {@code None} if this is empty.
      */
@@ -1508,11 +2533,21 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return isEmpty() ? Option.none() : Option.some(init());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: amortised O(1); see {@link #tail()}.
+     */
     @Override
     public Option<Queue<T>> tailOption() {
         return isEmpty() ? Option.none() : Option.some(tail());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     */
     @Override
     public Queue<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements);
@@ -1520,18 +2555,21 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
 
     /**
      * Removes all occurrences of the specified elements from this Queue.
+     * <p>
+     * Complexity: O(n + m) for m removed elements (they are hashed once, then one filter pass).
      *
      * @param elements the elements to be removed
      * @return a new Queue with all occurrences of the specified elements removed
      * @throws NullPointerException if {@code elements} is null
      */
-    @Override
     public Queue<T> removeAll(Iterable<? extends T> elements) {
         return Collections.removeAll(this, elements);
     }
 
     /**
      * Removes all elements from this Queue that satisfy the given predicate.
+     * <p>
+     * Complexity: O(n).
      *
      * @param predicate the predicate used to test elements
      * @return a new Queue with all elements that satisfy the predicate removed
@@ -1549,6 +2587,11 @@ public final class Queue<T extends @Nullable Object> implements LinearSeq<T> {
         return Collections.reject(this, predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Queue<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");

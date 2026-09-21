@@ -48,8 +48,12 @@ vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE
 	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs ':!docs/design.md')"; \
 	if [ -n "$$hits" ]; then echo "$$hits"; echo "category-theory vocabulary found; use the ZIO names (see CLAUDE.md)"; exit 1; fi
 
-# The files whose positional methods must document their cost (design.md 3.7); #67 adds List, Queue and Stream.
-COMPLEXITY_FILES := zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java
+# The files whose positional methods must document their cost (design.md 3.7).
+COMPLEXITY_FILES := \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/List.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/Queue.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/Stream.java
 
 complexity: ## fail when a positional method of a collection lacks a "Complexity:" javadoc line (design.md 3.7)
 	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_FILES)

@@ -25,7 +25,14 @@ val positional: Set[String] = Set(
   "padTo", "patch", "permutations", "combinations", "crossProduct", "intersperse", "rotateLeft", "rotateRight",
   "shuffle", "splitAt", "startsWith", "endsWith", "distinct", "distinctBy", "remove", "removeAll", "removeFirst",
   "removeLast", "replace", "replaceAll", "leftPadTo", "asJava",
-  "span", "retainAll", "transpose", "tailOption", "initOption", "iterator"
+  "span", "retainAll", "transpose", "tailOption", "initOption", "iterator",
+  // the same, under the names the cons list, the queue and the lazy list give them
+  "asJavaMutable", "length", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
+  "segmentLength", "splitAtInclusive", "distinctByKeepLast", "dropRightUntil", "dropRightWhile", "takeRightUntil",
+  "takeRightWhile", "duplicates", "duplicatesBy",
+  "peek", "peekOption", "pop", "popOption", "pop2", "pop2Option", "push", "pushAll",
+  "enqueue", "enqueueAll", "dequeue", "dequeueOption",
+  "cycle", "extend", "appendSelf"
 )
 
 final case class Missing(file: String, line: Int, name: String)

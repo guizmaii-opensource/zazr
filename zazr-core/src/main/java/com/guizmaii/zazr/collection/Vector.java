@@ -990,7 +990,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * The complement of {@link #distinct()}: the elements occurring more than once, each once, in order of first
-     * occurrence. {@code isEmpty()} on the result is the "all distinct" test. O(n).
+     * occurrence. {@code isEmpty()} on the result is the "all distinct" test.
+     * <p>
+     * Complexity: O(n), one hash lookup per element.
      *
      * @return the duplicated elements
      */
@@ -998,7 +1000,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
-     * occurrence. One pass, O(n).
+     * occurrence. One pass.
+     * <p>
+     * Complexity: O(n), one key and one hash lookup per element.
      *
      * @param keyExtractor Computes the key
      * @param <U>          Key type
@@ -1688,6 +1692,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1); the length is a field of the trie.
+     */
     @Override
     public int length() { return trie.length(); }
 

@@ -16,7 +16,7 @@ public class QuickSortTest {
     }
 
     /** Note: this example is only meant to show off, not to be used in reality: it can have quadratic performance and cause stack overflow */
-    private static Seq<Integer> sort(Seq<Integer> values) {
+    private static List<Integer> sort(List<Integer> values) {
         if (values.size() <= 1) return values;
         return values.tail().partition(v -> v <= values.head())
                      .apply((less, more) -> sort(less).append(values.head()).appendAll(sort(more)));

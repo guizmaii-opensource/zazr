@@ -96,7 +96,7 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public <U> Seq<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+    public <U> Stream<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         return original.flatMap(e -> mapper.apply(e._2()));
     }
 
@@ -152,17 +152,17 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public <U> Seq<U> map(Function<? super T, ? extends U> mapper) {
+    public <U> Stream<U> map(Function<? super T, ? extends U> mapper) {
         return original.map(e -> mapper.apply(e._2()));
     }
 
     @Override
-    public <U> Seq<U> as(U value) {
+    public <U> Stream<U> as(U value) {
         return map(ignored -> value);
     }
 
     @Override
-    public <U> Seq<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+    public <U> Stream<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         return original.collect(e -> Objects.requireNonNull(mapper.apply(e._2()), "IntMap.collect: mapper returned null"));
     }
 
@@ -321,42 +321,42 @@ public final class IntMap<T> implements Traversable<T> {
     }
 
     @Override
-    public <T1, T2> Tuple2<Seq<T1>, Seq<T2>> unzip(Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
+    public <T1, T2> Tuple2<Stream<T1>, Stream<T2>> unzip(Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return iterator().unzip(unzipper).map(Stream::ofAll, Stream::ofAll);
     }
 
     @Override
-    public <T1, T2, T3> Tuple3<Seq<T1>, Seq<T2>, Seq<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
+    public <T1, T2, T3> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
         return iterator().unzip3(unzipper).map(Stream::ofAll, Stream::ofAll, Stream::ofAll);
     }
 
     @Override
-    public <U> Seq<Tuple2<T, U>> zip(Iterable<? extends U> that) {
+    public <U> Stream<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
     @Override
-    public <U, R> Seq<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+    public <U, R> Stream<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return Stream.ofAll(iterator().zipWith(that, mapper));
     }
 
     @Override
-    public <U> Seq<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
+    public <U> Stream<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         return Stream.ofAll(iterator().zipAll(that, thisElem, thatElem));
     }
 
     @Override
-    public Seq<Tuple2<T, Integer>> zipWithIndex() {
+    public Stream<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
     @Override
-    public <U> Seq<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+    public <U> Stream<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return Stream.ofAll(iterator().zipWithIndex(mapper));
     }

@@ -100,6 +100,18 @@ public abstract class AbstractTraversableTest {
     // TODO: Eliminate this method. Switching the behavior of unit tests is evil. Tests should not contain additional logic. Also it seems currently to be used in different semantic contexts.
     abstract protected boolean useIsEqualToInsteadOfIsSameAs();
 
+    /** The simple names of every interface above {@code type}, so that a test can state the whole supertype chain. */
+    protected static java.util.Set<String> supertypeNames(Class<?> type) {
+        final java.util.Set<String> names = new java.util.HashSet<>();
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            for (Class<?> each : current.getInterfaces()) {
+                names.add(each.getSimpleName());
+                names.addAll(supertypeNames(each));
+            }
+        }
+        return names;
+    }
+
     /**
      * The type name {@code toString()} prints before the parenthesised elements, e.g. {@code List} for
      * {@code List(1, 2)}, taken from the empty instance; a test class whose empty and non-empty instances print

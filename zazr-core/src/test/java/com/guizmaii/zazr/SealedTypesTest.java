@@ -326,7 +326,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldKeepSeqEqualityAcrossImplementations() {
-            // a List equals any Seq with the same elements, so equals and hashCode are not the record defaults
+            // a List equals any sequence with the same elements, so equals and hashCode are not the record defaults
             assertThat(List.of(1, 2)).isEqualTo(Vector.of(1, 2)).hasSameHashCodeAs(Vector.of(1, 2));
             assertThat(List.empty()).isEqualTo(Vector.empty()).hasSameHashCodeAs(Vector.empty());
             assertThat(List.of(1, 2)).isNotEqualTo(List.of(2, 1));

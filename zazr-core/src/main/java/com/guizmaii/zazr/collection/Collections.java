@@ -2,12 +2,9 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.collection.JavaConverters.ChangePolicy;
-import com.guizmaii.zazr.collection.JavaConverters.ListView;
 import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -27,23 +24,6 @@ final class Collections {
             }
         }
         return iter1.hasNext() == iter2.hasNext();
-    }
-
-    static <T extends @Nullable Object, C extends Seq<T>> C asJava(C source, Consumer<? super java.util.List<T>> action, ChangePolicy changePolicy) {
-        Objects.requireNonNull(action, "action is null");
-        final ListView<T, C> view = JavaConverters.asJava(source, changePolicy);
-        action.accept(view);
-        return view.getDelegate();
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, S extends Seq<T>> Iterator<S> crossProduct(S empty, S seq, int power) {
-        if (power < 0) {
-            return Iterator.empty();
-        } else {
-            return Iterator.range(0, power)
-                    .foldLeft(Iterator.of(empty), (product, ignored) -> product.flatMap(el -> seq.map(t -> (S) el.append(t))));
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -66,16 +46,23 @@ final class Collections {
         }
     }
 
-    static <V extends @Nullable Object> boolean equals(Seq<V> source, @Nullable Object object) {
-        return equalsSequence(source, object);
-    }
-
     static <V extends @Nullable Object> boolean equals(Vector<V> source, @Nullable Object object) {
         return equalsSequence(source, object);
     }
 
-    // Vector and the Seq types are equal to each other when their elements are equal in order; #68 settles whether
-    // that survives the deletion of Seq
+    static <V extends @Nullable Object> boolean equals(List<V> source, @Nullable Object object) {
+        return equalsSequence(source, object);
+    }
+
+    static <V extends @Nullable Object> boolean equals(Queue<V> source, @Nullable Object object) {
+        return equalsSequence(source, object);
+    }
+
+    static <V extends @Nullable Object> boolean equals(Stream<V> source, @Nullable Object object) {
+        return equalsSequence(source, object);
+    }
+
+    // the sequence types are equal to each other when their elements are equal in order
     private static boolean equalsSequence(Traversable<?> source, @Nullable Object object) {
         if (object == source) {
             return true;
@@ -88,7 +75,7 @@ final class Collections {
 
     // the ordered sequence types, equal to each other element by element in order
     static boolean isSequence(@Nullable Object object) {
-        return object instanceof Vector || object instanceof Seq;
+        return object instanceof Vector || object instanceof List || object instanceof Queue || object instanceof Stream;
     }
 
     @SuppressWarnings("unchecked")
@@ -312,8 +299,12 @@ final class Collections {
             return reverseListIterator((java.util.List<T>) iterable);
         } else if (iterable instanceof Vector) {
             return ((Vector<T>) iterable).reverseIterator();
-        } else if (iterable instanceof Seq) {
-            return ((Seq<T>) iterable).reverseIterator();
+        } else if (iterable instanceof List) {
+            return ((List<T>) iterable).reverseIterator();
+        } else if (iterable instanceof Queue) {
+            return ((Queue<T>) iterable).reverseIterator();
+        } else if (iterable instanceof Stream) {
+            return ((Stream<T>) iterable).reverseIterator();
         } else {
             return List.<T>empty().pushAll(iterable).iterator();
         }
@@ -335,40 +326,6 @@ final class Collections {
         };
     }
 
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, C extends Seq<T>> C rotateLeft(C source, int n) {
-        if (source.isEmpty() || n == 0) {
-            return source;
-        } else if (n < 0) {
-            return rotateRight(source, -n);
-        } else {
-            int len = source.length();
-            int m = n % len;
-            if (m == 0) {
-                return source;
-            } else {
-                return (C) source.drop(m).appendAll(source.take(m));
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, C extends Seq<T>> C rotateRight(C source, int n) {
-        if (source.isEmpty() || n == 0) {
-            return source;
-        } else if (n < 0) {
-            return rotateLeft(source, -n);
-        } else {
-            int len = source.length();
-            int m = n % len;
-            if (m == 0) {
-                return source;
-            } else {
-                return (C) source.takeRight(m).appendAll(source.dropRight(m));
-            }
-        }
-    }
-
     static <T extends @Nullable Object, U extends @Nullable Object, R extends Traversable<U>> R scanLeft(Traversable<? extends T> source,
                                                        U zero, BiFunction<? super U, ? super T, ? extends U> operation, Function<Iterator<U>, R> finisher) {
         Objects.requireNonNull(operation, "operation is null");
@@ -381,14 +338,6 @@ final class Collections {
         Objects.requireNonNull(operation, "operation is null");
         final Iterator<? extends T> reversedElements = reverseIterator(source);
         return scanLeft(reversedElements, zero, (u, t) -> operation.apply(t, u), us -> finisher.apply(reverseIterator(us)));
-    }
-
-    static <T extends @Nullable Object, U extends @Nullable Object, R extends Seq<T>> R sortBy(Seq<? extends T> source, Comparator<? super U> comparator, Function<? super T, ? extends U> mapper, Collector<T, ?, R> collector) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        Objects.requireNonNull(mapper, "mapper is null");
-        return source.toJavaStream()
-                .sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)))
-                .collect(collector);
     }
 
     static <T extends @Nullable Object, S extends Traversable<T>> S shuffle(S source, Function<? super Iterable<T>, S> ofAll) {

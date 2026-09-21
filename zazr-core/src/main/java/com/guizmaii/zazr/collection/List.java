@@ -75,7 +75,7 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * }
  * </pre>
  *
- * Note: A {@code List} is primarily a {@code Seq}; the stack-style methods listed above are provided directly on {@code List} for convenience.
+ * Note: the stack-style methods listed above are provided directly on {@code List} for convenience.
  * <p>
  * If operating on a {@code List}, please prefer
  *
@@ -119,7 +119,7 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * @param <T> Component type of the List
  * @author Daniel Dietrich
  */
-public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> permits List.Cons, List.Nil {
+public sealed interface List<T extends @Nullable Object> extends Traversable<T> permits List.Cons, List.Nil {
 
     /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
@@ -733,6 +733,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Transposes the rows and columns of a {@link List} matrix.
+     * <p>
+     * Complexity: O(rows * columns).
      *
      * @param <T> matrix element type
      * @param matrix to be transposed.
@@ -835,57 +837,189 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
           .foldLeft(List.empty(), List::prepend);
     }
 
-    @Override
+    /**
+     * Returns a new List with the given element appended at the end.
+     * <p>
+     * Complexity: O(n); every cell of this List is rebuilt.
+     *
+     * @param element the element to append
+     * @return a new List ending with the given element
+     */
     default List<T> append(T element) {
         return foldRight(of(element), (x, xs) -> xs.prepend(x));
     }
 
-    @Override
+    /**
+     * Returns a new List with the given elements appended at the end, in iteration order.
+     * <p>
+     * Complexity: O(n + m) for m appended elements; the elements are copied once and this List is rebuilt.
+     *
+     * @param elements the elements to append
+     * @return a new List ending with the given elements, or this List if there are none
+     * @throws NullPointerException if {@code elements} is null
+     */
     default List<T> appendAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         return List.<T> ofAll(elements).prependAll(this);
     }
 
-    @Override
+    /**
+     * Returns an immutable {@link java.util.List} view of this List: reads go through to this List, mutators throw
+     * {@link UnsupportedOperationException}.
+     * <p>
+     * Complexity: O(1); {@code get(i)} on the view is O(i).
+     *
+     * @return an immutable {@code java.util.List} view
+     */
     default java.util.List<T> asJava() {
         return JavaConverters.asJava(this, IMMUTABLE);
     }
 
-    @Override
+    /**
+     * Passes an immutable {@link java.util.List} view of this List to {@code action} and returns this List.
+     * <p>
+     * Complexity: O(1) to create the view.
+     *
+     * @param action receives the view
+     * @return this List
+     * @throws NullPointerException if {@code action} is null
+     * @see #asJava()
+     */
     default List<T> asJava(Consumer<? super java.util.List<T>> action) {
-        return Collections.asJava(this, action, IMMUTABLE);
+        Objects.requireNonNull(action, "action is null");
+        action.accept(asJava());
+        return this;
     }
 
-    @Override
+    /**
+     * Returns a mutable {@link java.util.List} view of this List: every mutator replaces the view's underlying List
+     * by a new one; this List is never modified.
+     * <p>
+     * Complexity: O(1); each mutator costs what the corresponding List operation costs.
+     *
+     * @return a mutable {@code java.util.List} view
+     */
     default java.util.List<T> asJavaMutable() {
         return JavaConverters.asJava(this, MUTABLE);
     }
 
-    @Override
+    /**
+     * Passes a mutable {@link java.util.List} view of this List to {@code action} and returns the List the view holds
+     * afterwards: this List if the action only read, a new one reflecting the writes otherwise.
+     * <p>
+     * Complexity: O(1) to create the view.
+     *
+     * @param action receives the view
+     * @return this List, or a new List reflecting the modifications made through the view
+     * @throws NullPointerException if {@code action} is null
+     * @see #asJavaMutable()
+     */
     default List<T> asJavaMutable(Consumer<? super java.util.List<T>> action) {
-        return Collections.asJava(this, action, MUTABLE);
+        Objects.requireNonNull(action, "action is null");
+        final ListView<T, List<T>> view = JavaConverters.asJava(this, MUTABLE);
+        action.accept(view);
+        return view.getDelegate();
     }
 
-    @Override
+    /**
+     * All combinations of the elements, for every size from 0 to {@code length()}, by position.
+     * <p>
+     * Complexity: O(2^n) combinations.
+     *
+     * @return the combinations, shortest first
+     */
     default List<List<T>> combinations() {
         return rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity());
     }
 
-    @Override
+    /**
+     * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
+     * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
+     * <p>
+     * Complexity: O(n choose k) combinations.
+     *
+     * @param k the size of each combination
+     * @return the combinations
+     */
     default List<List<T>> combinations(int k) {
         return Combinations.apply(this, Math.max(k, 0));
     }
 
-    @Override
-    default Iterator<List<T>> crossProduct(int power) {
-        return Collections.crossProduct(empty(), this, power);
+    /**
+     * Whether {@code that} occurs in this List as a contiguous slice.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to look for
+     * @return true if {@code that} occurs contiguously in this List (an empty slice always does)
+     * @throws NullPointerException if {@code that} is null
+     */
+    default boolean containsSlice(Iterable<? extends T> that) {
+        Objects.requireNonNull(that, "that is null");
+        return indexOfSlice(that) >= 0;
     }
 
+    /**
+     * The Cartesian square of this List: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * <p>
+     * Complexity: lazy; O(n^2) pairs when consumed.
+     *
+     * @return an iterator over the pairs
+     */
+    default Iterator<Tuple2<T, T>> crossProduct() {
+        return crossProduct(this);
+    }
+
+    /**
+     * The Cartesian power of this List: every List of {@code power} elements drawn from this one, in lexicographic
+     * position order. {@code power == 0} gives one empty List; a negative power gives no result.
+     * <p>
+     * Complexity: lazy; O(n^power) Lists of size {@code power} when consumed.
+     *
+     * @param power the size of each result
+     * @return an iterator over the Lists
+     */
+    default Iterator<List<T>> crossProduct(int power) {
+        if (power < 0) {
+            return Iterator.empty();
+        }
+        return Iterator.range(0, power).foldLeft(Iterator.of(List.<T> empty()), (product, ignored) -> product.flatMap(el -> map(el::append)));
+    }
+
+    /**
+     * The Cartesian product of this List and {@code that}: every pair {@code (a, b)} with {@code a} from this List
+     * and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked lazily and memoised, so an
+     * infinite {@code that} works with {@code take}.
+     * <p>
+     * Complexity: lazy; O(n * m) pairs when consumed.
+     *
+     * @param that the right-hand elements
+     * @param <U>  their type
+     * @return an iterator over the pairs
+     * @throws NullPointerException if {@code that} is null
+     */
+    default <U extends @Nullable Object> Iterator<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
+        Objects.requireNonNull(that, "that is null");
+        // a lazy, memoising Stream: the result is lazy, so the argument stays lazy too
+        final Stream<U> other = Stream.ofAll(that);
+        return Iterator.ofAll(this).flatMap(a -> other.map(b -> Tuple.of(a, b)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default List<T> distinct() {
         return distinctBy(Function.identity());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     */
     @Override
     default List<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
@@ -893,6 +1027,11 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return filter(seen::add);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one key per element.
+     */
     @Override
     default <U extends @Nullable Object> List<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
@@ -900,18 +1039,42 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return filter(t -> seen.add(keyExtractor.apply(t)));
     }
 
-    @Override
+    /**
+     * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
+     * equal, in the order of those last occurrences.
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator decides which elements are duplicates
+     * @return a new List
+     * @throws NullPointerException if {@code comparator} is null
+     */
     default List<T> distinctByKeepLast(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(iterator().distinctByKeepLast(comparator));
     }
 
-    @Override
+    /**
+     * The elements without duplicates, keeping the last occurrence of each key, in the order of those last
+     * occurrences.
+     * <p>
+     * Complexity: O(n), one key per element.
+     *
+     * @param keyExtractor computes the key an element is deduplicated by
+     * @param <U>          the key type
+     * @return a new List
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
     default <U extends @Nullable Object> List<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         return ofAll(iterator().distinctByKeepLast(keyExtractor));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) for n dropped elements; the rest of this List is shared, not copied.
+     */
     @Override
     default List<T> drop(int n) {
         if (n <= 0) {
@@ -927,12 +1090,22 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return list;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for the k dropped elements; the rest of this List is shared, not copied.
+     */
     @Override
     default List<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropWhile(predicate.negate());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for the k dropped elements; the rest of this List is shared, not copied.
+     */
     @Override
     default List<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -943,6 +1116,11 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return list;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the kept prefix is copied.
+     */
     @Override
     default List<T> dropRight(int n) {
         if (n <= 0) {
@@ -955,18 +1133,112 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return take(length - n);
     }
 
-    @Override
+    /**
+     * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
+     * <p>
+     * Complexity: O(n); the List is reversed twice.
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new List, or this List if its last element satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> dropRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reverse().dropUntil(predicate).reverse();
     }
 
-    @Override
+    /**
+     * The elements up to and including the last one not satisfying {@code predicate}, that is
+     * {@code dropRightUntil(predicate.negate())}.
+     * <p>
+     * Complexity: O(n); the List is reversed twice.
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new List, or this List if its last element does not satisfy the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> dropRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropRightUntil(predicate.negate());
     }
 
+    /**
+     * The elements occurring more than once, each of them once, in order of first occurrence.
+     * {@code List.of(3, 1, 3, 2, 1, 3).duplicates()} is {@code List.of(3, 1)}. An empty result means that all
+     * elements are distinct.
+     * <p>
+     * Complexity: O(n), one hash lookup per element.
+     *
+     * @return a new List of the repeated elements
+     */
+    default List<T> duplicates() {
+        return duplicatesBy(Function.identity());
+    }
+
+    /**
+     * The elements whose key occurs more than once, one per repeated key, in order of first occurrence; the element
+     * returned for a key is its first occurrence.
+     * <p>
+     * Complexity: O(n), one key and one hash lookup per element.
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @param <U>          the key type
+     * @return a new List of the elements with a repeated key
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
+    default <U extends @Nullable Object> List<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key computed once
+        final java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
+        final java.util.HashSet<U> duplicated = new java.util.HashSet<>();
+        for (T element : this) {
+            final U key = keyExtractor.apply(element);
+            if (first.putIfAbsent(key, element) != null) {
+                duplicated.add(key);
+            }
+        }
+        if (duplicated.isEmpty()) {
+            return empty();
+        }
+        final java.util.List<T> result = new ArrayList<>(duplicated.size());
+        for (java.util.Map.Entry<U, T> entry : first.entrySet()) {
+            if (duplicated.contains(entry.getKey())) {
+                result.add(entry.getValue());
+            }
+        }
+        return ofAll(result);
+    }
+
+    /**
+     * Whether this List ends with {@code that}.
+     * <p>
+     * Complexity: O(n + m) for m elements of {@code that}: the suffix is reached by walking this List.
+     *
+     * @param that the suffix to test
+     * @return true if the last {@code m} elements equal {@code that} (an empty {@code that} is always a suffix)
+     * @throws NullPointerException if {@code that} is null
+     */
+    default boolean endsWith(Iterable<? extends T> that) {
+        Objects.requireNonNull(that, "that is null");
+        final List<? extends T> suffix = List.ofAll(that);
+        final int skipped = length() - suffix.length();
+        if (skipped < 0) {
+            return false;
+        }
+        List<T> these = drop(skipped);
+        for (List<? extends T> other = suffix; !other.isEmpty(); other = other.tail(), these = these.tail()) {
+            if (!Objects.equals(these.head(), other.head())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default List<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -1002,7 +1274,27 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return list.reverse();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The elements are folded from the end: this List is reversed first, then folded from the left, so the recursion
+     * depth does not grow with the length.
+     */
     @Override
+    default <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
+        Objects.requireNonNull(f, "f is null");
+        return reverse().foldLeft(zero, (xs, x) -> f.apply(x, xs));
+    }
+
+    /**
+     * The element at {@code index}.
+     * <p>
+     * Complexity: O(index); the cells are walked one by one.
+     *
+     * @param index the position
+     * @return the element at that position
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     */
     default T get(int index) {
         if (isEmpty()) {
             throw new IndexOutOfBoundsException("get(" + index + ") on Nil");
@@ -1025,12 +1317,38 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return Collections.groupBy(this, classifier, List::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per group when consumed.
+     */
     @Override
     default Iterator<List<T>> grouped(int size) {
         return sliding(size, size);
     }
 
-    @Override
+    /**
+     * The index of the first occurrence of {@code element}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return the index of its first occurrence, or -1 if absent
+     */
+    default int indexOf(T element) {
+        return indexOf(element, 0);
+    }
+
+    /**
+     * The index of the first occurrence of {@code element} at or after {@code from}, or -1. A negative {@code from}
+     * counts as 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @param from    the first position to look at
+     * @return the first index {@code >= from} of the element, or -1 if absent
+     */
     default int indexOf(T element, int from) {
         int index = 0;
         for (List<T> list = this; !list.isEmpty(); list = list.tail(), index++) {
@@ -1041,6 +1359,144 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return -1;
     }
 
+    /**
+     * {@link #indexOf(Object)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @return {@code Some(index)} of its first occurrence, or {@code None}
+     */
+    default Option<Integer> indexOfOption(T element) {
+        return Collections.indexOption(indexOf(element));
+    }
+
+    /**
+     * {@link #indexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @param from    the first position to look at
+     * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
+     */
+    default Option<Integer> indexOfOption(T element, int from) {
+        return Collections.indexOption(indexOf(element, from));
+    }
+
+    /**
+     * The first index at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
+     * @throws NullPointerException if {@code that} is null
+     */
+    default int indexOfSlice(Iterable<? extends T> that) {
+        return indexOfSlice(that, 0);
+    }
+
+    /**
+     * The first index at or after {@code from} at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @param from the first position to look at
+     * @return the index of its first occurrence at or after {@code from}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    default int indexOfSlice(Iterable<? extends T> that, int from) {
+        Objects.requireNonNull(that, "that is null");
+        return ListModule.Slice.indexOfSlice(this, that, from);
+    }
+
+    /**
+     * {@link #indexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @return {@code Some(index)} of its first occurrence, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
+        return Collections.indexOption(indexOfSlice(that));
+    }
+
+    /**
+     * {@link #indexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @param from the first position to look at
+     * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
+        return Collections.indexOption(indexOfSlice(that, from));
+    }
+
+    /**
+     * The index of the first element satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the first index of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default int indexWhere(Predicate<? super T> predicate) {
+        return indexWhere(predicate, 0);
+    }
+
+    /**
+     * The index of the first element at or after {@code from} satisfying {@code predicate}, or -1. A negative
+     * {@code from} counts as 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return the first index {@code >= from} of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default int indexWhere(Predicate<? super T> predicate, int from) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        int i = Math.max(from, 0);
+        List<T> these = drop(i);
+        while (!these.isEmpty()) {
+            if (predicate.test(these.head())) {
+                return i;
+            }
+            i++;
+            these = these.tail();
+        }
+        return -1;
+    }
+
+    /**
+     * {@link #indexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @return {@code Some(index)} of the first satisfying element, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default Option<Integer> indexWhereOption(Predicate<? super T> predicate) {
+        return Collections.indexOption(indexWhere(predicate));
+    }
+
+    /**
+     * {@link #indexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return {@code Some(index)} of the first satisfying element at or after {@code from}, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default Option<Integer> indexWhereOption(Predicate<? super T> predicate, int from) {
+        return Collections.indexOption(indexWhere(predicate, from));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the kept prefix is copied.
+     */
     @Override
     default List<T> init() {
         if (isEmpty()) {
@@ -1050,15 +1506,34 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the kept prefix is copied.
+     */
     @Override
     default Option<List<T>> initOption() {
         return isEmpty() ? Option.none() : Option.some(init());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); a cons list has no length field, so the cells are counted.
+     */
     @Override
     int length();
 
-    @Override
+    /**
+     * A new List with {@code element} inserted at {@code index}, the elements from {@code index} on shifted right.
+     * <p>
+     * Complexity: O(index); the cells before the insertion point are copied, the rest is shared.
+     *
+     * @param index   the position of the inserted element
+     * @param element the element to insert
+     * @return a new List
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     */
     default List<T> insert(int index, T element) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insert(" + index + ", e)");
@@ -1078,7 +1553,19 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result;
     }
 
-    @Override
+    /**
+     * A new List with {@code elements} inserted at {@code index}, in iteration order, the elements from {@code index}
+     * on shifted right.
+     * <p>
+     * Complexity: O(index + m) for m inserted elements; the cells before the insertion point are copied, the rest is
+     * shared.
+     *
+     * @param index    the position of the first inserted element
+     * @param elements the elements to insert
+     * @return a new List
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     * @throws NullPointerException      if {@code elements} is null
+     */
     default List<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (index < 0) {
@@ -1099,17 +1586,62 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result;
     }
 
-    @Override
+    /**
+     * The elements with {@code element} inserted between every two of them.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the separator
+     * @return a new List, or this List if it has fewer than two elements
+     */
     default List<T> intersperse(T element) {
         return ofAll(iterator().intersperse(element));
     }
 
+    /**
+     * An iterator over the elements from {@code index} on.
+     * <p>
+     * Complexity: O(index) to reach the start, then O(1) per step.
+     *
+     * @param index the first position to iterate from
+     * @return an iterator over the suffix
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     */
+    default Iterator<T> iterator(int index) {
+        return subSequence(index).iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default T last() {
         return Collections.last(this);
     }
 
-    @Override
+    /**
+     * The index of the last occurrence of {@code element}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return the index of its last occurrence, or -1 if absent
+     */
+    default int lastIndexOf(T element) {
+        return lastIndexOf(element, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The index of the last occurrence of {@code element} at or before {@code end}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @param end     the last position to look at
+     * @return the last index {@code <= end} of the element, or -1 if absent
+     */
     default int lastIndexOf(T element, int end) {
         int result = -1, index = 0;
         for (List<T> list = this; index <= end && !list.isEmpty(); list = list.tail(), index++) {
@@ -1118,6 +1650,139 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
             }
         }
         return result;
+    }
+
+    /**
+     * {@link #lastIndexOf(Object)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @return {@code Some(index)} of its last occurrence, or {@code None}
+     */
+    default Option<Integer> lastIndexOfOption(T element) {
+        return Collections.indexOption(lastIndexOf(element));
+    }
+
+    /**
+     * {@link #lastIndexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param element the element to find
+     * @param end     the last position to look at
+     * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
+     */
+    default Option<Integer> lastIndexOfOption(T element, int end) {
+        return Collections.indexOption(lastIndexOf(element, end));
+    }
+
+    /**
+     * The last index at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @return the index of its last occurrence, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    default int lastIndexOfSlice(Iterable<? extends T> that) {
+        return lastIndexOfSlice(that, Integer.MAX_VALUE);
+    }
+
+    /**
+     * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements.
+     *
+     * @param that the slice to find
+     * @param end  the last position to look at
+     * @return the index of its last occurrence at or before {@code end}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    default int lastIndexOfSlice(Iterable<? extends T> that, int end) {
+        Objects.requireNonNull(that, "that is null");
+        return ListModule.Slice.lastIndexOfSlice(this, that, end);
+    }
+
+    /**
+     * {@link #lastIndexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @return {@code Some(index)} of its last occurrence, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that) {
+        return Collections.indexOption(lastIndexOfSlice(that));
+    }
+
+    /**
+     * {@link #lastIndexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param that the slice to find
+     * @param end  the last position to look at
+     * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that, int end) {
+        return Collections.indexOption(lastIndexOfSlice(that, end));
+    }
+
+    /**
+     * The index of the last element satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @return the last index of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default int lastIndexWhere(Predicate<? super T> predicate) {
+        return lastIndexWhere(predicate, length() - 1);
+    }
+
+    /**
+     * The index of the last element at or before {@code end} satisfying {@code predicate}, or -1.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param predicate the condition
+     * @param end       the last position to look at
+     * @return the last index {@code <= end} of a satisfying element, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default int lastIndexWhere(Predicate<? super T> predicate, int end) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        int i = 0;
+        List<T> these = this;
+        int last = -1;
+        while (!these.isEmpty() && i <= end) {
+            if (predicate.test(these.head())) {
+                last = i;
+            }
+            these = these.tail();
+            i++;
+        }
+        return last;
+    }
+
+    /**
+     * {@link #lastIndexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @return {@code Some(index)} of the last satisfying element, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate) {
+        return Collections.indexOption(lastIndexWhere(predicate));
+    }
+
+    /**
+     * {@link #lastIndexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     *
+     * @param predicate the condition
+     * @param end       the last position to look at
+     * @return {@code Some(index)} of the last satisfying element at or before {@code end}, or {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate, int end) {
+        return Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
     @Override
@@ -1158,7 +1823,15 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return isEmpty() ? ofAll(supplier.get()) : this;
     }
 
-    @Override
+    /**
+     * This List padded on the right with {@code element} until it is {@code length} long.
+     * <p>
+     * Complexity: O(n + k) for k added elements.
+     *
+     * @param length  the target length
+     * @param element the padding element
+     * @return a new List, or this List if it is already at least {@code length} long
+     */
     default List<T> padTo(int length, T element) {
         final int actualLength = length();
         if (length <= actualLength) {
@@ -1168,7 +1841,15 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * This List padded on the left with {@code element} until it is {@code length} long.
+     * <p>
+     * Complexity: O(k) for k added elements; this List is shared, not copied.
+     *
+     * @param length  the target length
+     * @param element the padding element
+     * @return a new List, or this List if it is already at least {@code length} long
+     */
     default List<T> leftPadTo(int length, T element) {
         final int actualLength = length();
         if (length <= actualLength) {
@@ -1178,7 +1859,18 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * This List with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
+     * {@code from} or {@code replaced} counts as 0.
+     * <p>
+     * Complexity: O(n + m) for m replacement elements.
+     *
+     * @param from     the first replaced position
+     * @param that     the replacement elements
+     * @param replaced how many elements are replaced
+     * @return a new List
+     * @throws NullPointerException if {@code that} is null
+     */
     default List<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
@@ -1204,6 +1896,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Returns the head element without modifying the List.
+     * <p>
+     * Complexity: O(1); the head is a field of the cons cell.
      *
      * @return the first element
      * @throws java.util.NoSuchElementException if this List is empty
@@ -1219,6 +1913,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * Returns the head element without modifying the List.
      * <p>
      * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
+     * <p>
+     * Complexity: O(1); the head is a field of the cons cell.
      *
      * @return {@code None} if this List is empty, otherwise a {@code Some} containing the head element
      */
@@ -1239,7 +1935,13 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return this;
     }
 
-    @Override
+    /**
+     * All distinct permutations of the elements.
+     * <p>
+     * Complexity: O(n!) permutations.
+     *
+     * @return the permutations
+     */
     default List<List<T>> permutations() {
         if (isEmpty()) {
             return Nil.instance();
@@ -1259,6 +1961,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Removes the head element from this List.
+     * <p>
+     * Complexity: O(1); the tail is a field of the cons cell.
      *
      * @return the elements of this List without the head element
      * @throws java.util.NoSuchElementException if this List is empty
@@ -1272,6 +1976,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Removes the head element from this List.
+     * <p>
+     * Complexity: O(1); the tail is a field of the cons cell.
      *
      * @return {@code None} if this List is empty, otherwise a {@code Some} containing the elements of this List without the head element
      */
@@ -1281,6 +1987,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Removes the head element from this List.
+     * <p>
+     * Complexity: O(1); the head and the tail are fields of the cons cell.
      *
      * @return a tuple containing the head element and the remaining elements of this List
      * @throws java.util.NoSuchElementException if this List is empty
@@ -1294,6 +2002,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Removes the head element from this List.
+     * <p>
+     * Complexity: O(1); the head and the tail are fields of the cons cell.
      *
      * @return {@code None} if this List is empty, otherwise {@code Some} {@code Tuple} containing the head element and the remaining elements of this List
      */
@@ -1301,12 +2011,40 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return isEmpty() ? Option.none() : Option.some(Tuple.of(head(), pop()));
     }
 
-    @Override
+    /**
+     * The length of the longest prefix whose elements all satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(k) for the k elements of that prefix.
+     *
+     * @param predicate the condition
+     * @return the length of the prefix
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default int prefixLength(Predicate<? super T> predicate) {
+        return segmentLength(predicate, 0);
+    }
+
+    /**
+     * A new List with {@code element} in front of this one.
+     * <p>
+     * Complexity: O(1); this List becomes the tail of one new cell.
+     *
+     * @param element the new head
+     * @return a new List starting with the given element
+     */
     default List<T> prepend(T element) {
         return new Cons<>(element, this);
     }
 
-    @Override
+    /**
+     * A new List with {@code elements} in front of this one, in iteration order.
+     * <p>
+     * Complexity: O(m) for m prepended elements; this List is shared, not copied.
+     *
+     * @param elements the elements to prepend
+     * @return a new List starting with the given elements, or this List if there are none
+     * @throws NullPointerException if {@code elements} is null
+     */
     default List<T> prependAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         return isEmpty() ? ofAll(elements) : ofAll(elements).reverse().foldLeft(this, List::prepend);
@@ -1314,6 +2052,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
 
     /**
      * Pushes a new element on top of this List.
+     * <p>
+     * Complexity: O(1); this List becomes the tail of one new cell.
      *
      * @param element The new element
      * @return a new {@code List} instance, containing the new element on top of this List
@@ -1325,6 +2065,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     /**
      * Pushes the given elements on top of this List. A List has LIFO order, i.e. the last of the given elements is
      * the first which will be retrieved.
+     * <p>
+     * Complexity: O(m) for m pushed elements; this List is shared, not copied.
      *
      * @param elements Elements, may be empty
      * @return a new {@code List} instance, containing the new elements on top of this List
@@ -1343,6 +2085,8 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
     /**
      * Pushes the given elements on top of this List. A List has LIFO order, i.e. the last of the given elements is
      * the first which will be retrieved.
+     * <p>
+     * Complexity: O(m) for m pushed elements; this List is shared, not copied.
      *
      * @param elements An Iterable of elements, may be empty
      * @return a new {@code List} instance, containing the new elements on top of this List
@@ -1357,7 +2101,14 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result;
     }
 
-    @Override
+    /**
+     * This List without the first occurrence of {@code element}.
+     * <p>
+     * Complexity: O(k) for the k elements before the removed one; the rest of this List is shared, not copied.
+     *
+     * @param element the element to remove
+     * @return a new List, or this List if the element is absent
+     */
     default List<T> remove(T element) {
         final Deque<T> preceding = new ArrayDeque<>(size());
         List<T> result = this;
@@ -1380,7 +2131,15 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result;
     }
 
-    @Override
+    /**
+     * This List without the first element satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(k) for the k elements before the removed one; the rest of this List is shared, not copied.
+     *
+     * @param predicate the condition
+     * @return a new List, or this List if no element satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> removeFirst(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         List<T> init = empty();
@@ -1396,14 +2155,30 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * This List without the last element satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(n); the List is reversed twice.
+     *
+     * @param predicate the condition
+     * @return a new List, or this List if no element satisfies the predicate
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> removeLast(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final List<T> removedAndReversed = reverse().removeFirst(predicate);
         return removedAndReversed.length() == length() ? this : removedAndReversed.reverse();
     }
 
-    @Override
+    /**
+     * This List without the element at {@code index}, the elements after it shifted left.
+     * <p>
+     * Complexity: O(index); the cells before the removed one are copied, the rest is shared.
+     *
+     * @param index the position of the removed element
+     * @return a new List
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     */
     default List<T> removeAt(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("removeAt(" + index + ")");
@@ -1424,23 +2199,52 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return init.reverse().appendAll(tail.tail());
     }
 
-    @Override
+    /**
+     * This List without any occurrence of {@code element}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to remove
+     * @return a new List, or this List if the element is absent
+     */
     default List<T> removeAll(T element) {
         return Collections.removeAll(this, element);
     }
 
-    @Override
+    /**
+     * This List without any occurrence of any of {@code elements}.
+     * <p>
+     * Complexity: O(n + m) for m removed elements (they are hashed once, then one filter pass).
+     *
+     * @param elements the elements to remove
+     * @return a new List, or this List if none of them occurs
+     * @throws NullPointerException if {@code elements} is null
+     */
     default List<T> removeAll(Iterable<? extends T> elements) {
         return Collections.removeAll(this, elements);
     }
 
-    @Override
+    /**
+     * This List without the elements satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @deprecated use {@link #reject(Predicate)}
+     * @param predicate the condition
+     * @return a new List
+     * @throws NullPointerException if {@code predicate} is null
+     */
     @Deprecated
     default List<T> removeAll(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reject(predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for the k elements before the replaced one; the rest of this List is shared, not copied.
+     */
     @Override
     default List<T> replace(T currentElement, T newElement) {
         List<T> preceding = Nil.instance();
@@ -1460,6 +2264,11 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default List<T> replaceAll(T currentElement, T newElement) {
         List<T> result = Nil.instance();
@@ -1476,47 +2285,180 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return changed ? result.reverse() : this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     */
     @Override
     default List<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements);
     }
 
-    @Override
+    /**
+     * The elements in reverse order.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return a new List, or this List if it has fewer than two elements
+     */
     default List<T> reverse() {
         return (isEmpty() || tail().isEmpty()) ? this : foldLeft(empty(), List::prepend);
     }
 
-    @Override
+    /**
+     * An iterator over the elements from the last to the first.
+     * <p>
+     * Complexity: O(n) to create (the List is reversed first), then O(1) per step.
+     *
+     * @return the reverse iterator
+     */
+    default Iterator<T> reverseIterator() {
+        return reverse().iterator();
+    }
+
+    /**
+     * Rotates the elements {@code n} positions to the left: {@code List(1, 2, 3, 4, 5).rotateLeft(2)} is
+     * {@code List(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param n the distance
+     * @return the rotated List, or this List if the rotation is a multiple of the length
+     */
     default List<T> rotateLeft(int n) {
-        return Collections.rotateLeft(this, n);
+        if (isEmpty()) {
+            return this;
+        }
+        final int k = Math.floorMod(n, length());
+        return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
-    @Override
+    /**
+     * Rotates the elements {@code n} positions to the right: {@code List(1, 2, 3, 4, 5).rotateRight(2)} is
+     * {@code List(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param n the distance
+     * @return the rotated List, or this List if the rotation is a multiple of the length
+     */
     default List<T> rotateRight(int n) {
-        return Collections.rotateRight(this, n);
+        if (isEmpty()) {
+            return this;
+        }
+        final int k = Math.floorMod(n, length());
+        return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default List<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
         return scanLeft(zero, operation);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default <U extends @Nullable Object> List<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         return Collections.scanLeft(this, zero, operation, Iterator::toList);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the elements are walked from the end.
+     */
     @Override
     default <U extends @Nullable Object> List<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return Collections.scanRight(this, zero, operation, Iterator::toList);
     }
 
-    @Override
+    /**
+     * The position of {@code element} in this List, which must already be sorted in ascending natural order; the
+     * result is undefined otherwise. The search is linear, as a cons list has no indexed access.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element the element to find
+     * @return the index of the element if it is present; otherwise {@code (-(insertion point) - 1)}, the insertion
+     *         point being the index at which the element would be inserted
+     * @throws ClassCastException if {@code T} is not {@code Comparable}
+     */
+    @SuppressWarnings("unchecked")
+    default int search(T element) {
+        final ToIntFunction<T> comparison = ((Comparable<T>) element)::compareTo;
+        return ListModule.Search.linearSearch(this, comparison);
+    }
+
+    /**
+     * The position of {@code element} in this List, which must already be sorted in ascending order according to
+     * {@code comparator}; the result is undefined otherwise. The search is linear, as a cons list has no indexed
+     * access.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param element    the element to find
+     * @param comparator the order this List is sorted by
+     * @return the index of the element if it is present; otherwise {@code (-(insertion point) - 1)}, the insertion
+     *         point being the index at which the element would be inserted
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    default int search(T element, Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        final ToIntFunction<T> comparison = current -> comparator.compare(element, current);
+        return ListModule.Search.linearSearch(this, comparison);
+    }
+
+    /**
+     * The length of the longest run of elements satisfying {@code predicate} starting at {@code from}.
+     * <p>
+     * Complexity: O(from + k) for the k elements of that run.
+     *
+     * @param predicate the condition
+     * @param from      the first position to look at
+     * @return the length of the run
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default int segmentLength(Predicate<? super T> predicate, int from) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        int i = 0;
+        List<T> these = this.drop(from);
+        while (!these.isEmpty() && predicate.test(these.head())) {
+            i++;
+            these = these.tail();
+        }
+        return i;
+    }
+
+    /**
+     * The elements in a random order, drawn from a default source of randomness.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return a new List, or this List if it has fewer than two elements
+     */
     default List<T> shuffle() {
         return Collections.shuffle(this, List::ofAll);
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive, both clamped to the bounds of
+     * this List.
+     * <p>
+     * Complexity: O(endIndex).
+     *
+     * @param beginIndex the first position
+     * @param endIndex   the position after the last one
+     * @return a new List, empty if the range is empty
+     */
     default List<T> slice(int beginIndex, int endIndex) {
         if (beginIndex >= endIndex || beginIndex >= length() || isEmpty()) {
             return empty();
@@ -1540,37 +2482,88 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return iterator().slideBy(classifier).map(List::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per window when consumed.
+     */
     @Override
     default Iterator<List<T>> sliding(int size) {
         return sliding(size, 1);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: lazy; O(size) per window when consumed.
+     */
     @Override
     default Iterator<List<T>> sliding(int size, int step) {
         return iterator().sliding(size, step).map(List::ofAll);
     }
 
-    @Override
+    /**
+     * The elements in ascending natural order (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @return a new sorted List, or this List if it is empty
+     * @throws ClassCastException if {@code T} is not {@code Comparable}
+     */
     default List<T> sorted() {
         return isEmpty() ? this : toJavaStream().sorted().collect(collector());
     }
 
-    @Override
+    /**
+     * The elements in the order of {@code comparator} (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons.
+     *
+     * @param comparator the order
+     * @return a new sorted List, or this List if it is empty
+     * @throws NullPointerException if {@code comparator} is null
+     */
     default List<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return isEmpty() ? this : toJavaStream().sorted(comparator).collect(collector());
     }
 
-    @Override
+    /**
+     * The elements sorted by the natural order of the key {@code mapper} computes (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     *
+     * @param mapper computes the sort key
+     * @param <U>    the key type
+     * @return a new sorted List, or this List if it is empty
+     * @throws NullPointerException if {@code mapper} is null
+     */
     default <U extends Comparable<? super U>> List<T> sortBy(Function<? super T, ? extends U> mapper) {
         return sortBy(U::compareTo, mapper);
     }
 
-    @Override
+    /**
+     * The elements sorted by {@code comparator} applied to the key {@code mapper} computes (a stable sort).
+     * <p>
+     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     *
+     * @param comparator the order of the keys
+     * @param mapper     computes the sort key
+     * @param <U>        the key type
+     * @return a new sorted List, or this List if it is empty
+     * @throws NullPointerException if {@code comparator} or {@code mapper} is null
+     */
     default <U extends @Nullable Object> List<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
-        return Collections.sortBy(this, comparator, mapper, collector());
+        Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default Tuple2<List<T>, List<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -1578,7 +2571,14 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return Tuple.of(ofAll(itt._1()), ofAll(itt._2()));
     }
 
-    @Override
+    /**
+     * This List split in two at position {@code n}: the first {@code n} elements and the rest.
+     * <p>
+     * Complexity: O(n); the prefix is copied, the suffix is shared.
+     *
+     * @param n the position of the split
+     * @return the prefix and the suffix
+     */
     default Tuple2<List<T>, List<T>> splitAt(int n) {
         if (isEmpty()) {
             return Tuple.of(empty(), empty());
@@ -1594,7 +2594,15 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * This List split in two before the first element satisfying {@code predicate}. If no element satisfies it, the
+     * whole List is the first part.
+     * <p>
+     * Complexity: O(k) for the k elements before the split; the suffix is shared.
+     *
+     * @param predicate the condition
+     * @return the prefix and the suffix
+     */
     default Tuple2<List<T>, List<T>> splitAt(Predicate<? super T> predicate) {
         if (isEmpty()) {
             return Tuple.of(empty(), empty());
@@ -1608,7 +2616,15 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * This List split in two after the first element satisfying {@code predicate}. If no element satisfies it, the
+     * whole List is the first part.
+     * <p>
+     * Complexity: O(k) for the k elements up to the split; the suffix is shared.
+     *
+     * @param predicate the condition
+     * @return the prefix including the matching element, and the suffix
+     */
     default Tuple2<List<T>, List<T>> splitAtInclusive(Predicate<? super T> predicate) {
         if (isEmpty()) {
             return Tuple.of(empty(), empty());
@@ -1622,7 +2638,55 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * Whether this List starts with {@code that}: {@code startsWith(that, 0)}.
+     * <p>
+     * Complexity: O(m) for m elements of {@code that}.
+     *
+     * @param that the prefix to test
+     * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
+     * @throws NullPointerException if {@code that} is null
+     */
+    default boolean startsWith(Iterable<? extends T> that) {
+        return startsWith(that, 0);
+    }
+
+    /**
+     * Whether the elements from {@code offset} on start with {@code that}. {@code that} is walked once, so a
+     * one-shot iterator is accepted.
+     * <p>
+     * Complexity: O(offset + m) for m elements of {@code that}.
+     *
+     * @param that   the prefix to test
+     * @param offset the position in this List at which the prefix should start
+     * @return false if {@code offset} is negative; otherwise true if {@code that} equals the {@code m} elements from
+     *         {@code offset} on (an empty {@code that} is always a prefix, even beyond the end)
+     * @throws NullPointerException if {@code that} is null
+     */
+    default boolean startsWith(Iterable<? extends T> that, int offset) {
+        Objects.requireNonNull(that, "that is null");
+        if (offset < 0) {
+            return false;
+        }
+        final Iterator<T> i = this.iterator().drop(offset);
+        final java.util.Iterator<? extends T> j = that.iterator();
+        while (i.hasNext() && j.hasNext()) {
+            if (!Objects.equals(i.next(), j.next())) {
+                return false;
+            }
+        }
+        return !j.hasNext();
+    }
+
+    /**
+     * The elements from {@code beginIndex} on.
+     * <p>
+     * Complexity: O(beginIndex); the result shares the cells of this List.
+     *
+     * @param beginIndex the first position
+     * @return a new List
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code length()}
+     */
     default List<T> subSequence(int beginIndex) {
         if (beginIndex < 0 || beginIndex > length()) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
@@ -1631,7 +2695,17 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
-    @Override
+    /**
+     * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
+     * <p>
+     * Complexity: O(endIndex).
+     *
+     * @param beginIndex the first position
+     * @param endIndex   the position after the last one
+     * @return a new List
+     * @throws IndexOutOfBoundsException if the range is not within {@code [0, length()]}
+     * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
+     */
     default List<T> subSequence(int beginIndex, int endIndex) {
         Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
         if (beginIndex == endIndex) {
@@ -1650,14 +2724,29 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1); the tail is a field of the cons cell.
+     */
     @Override
     List<T> tail();
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1); the tail is a field of the cons cell.
+     */
     @Override
     default Option<List<T>> tailOption() {
         return isEmpty() ? Option.none() : Option.some(tail());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) for n taken elements; the prefix is copied.
+     */
     @Override
     default List<T> take(int n) {
         if (n <= 0) {
@@ -1674,12 +2763,22 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result.reverse();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for the k taken elements.
+     */
     @Override
     default List<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeWhile(predicate.negate());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for the k taken elements.
+     */
     @Override
     default List<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -1690,6 +2789,11 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result.length() == length() ? this : result.reverse();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); the List is reversed twice.
+     */
     @Override
     default List<T> takeRight(int n) {
         if (n <= 0) {
@@ -1701,13 +2805,29 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return reverse().take(n).reverse();
     }
 
-    @Override
+    /**
+     * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(n); the List is reversed twice.
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new List
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeRightWhile(predicate.negate());
     }
 
-    @Override
+    /**
+     * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(n); the List is reversed twice.
+     *
+     * @param predicate the condition, tested from the end
+     * @return a new List
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reverse().takeWhile(predicate).reverse();
@@ -1743,7 +2863,16 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return Tuple.of(xs.reverse(), ys.reverse(), zs.reverse());
     }
 
-    @Override
+    /**
+     * This List with the element at {@code index} replaced by {@code element}.
+     * <p>
+     * Complexity: O(index); the cells before it are copied, the rest is shared.
+     *
+     * @param index   the position to update
+     * @param element the new element
+     * @return a new List
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     */
     default List<T> update(int index, T element) {
         if (isEmpty()) {
             throw new IndexOutOfBoundsException("update(" + index + ", e) on Nil");
@@ -1770,17 +2899,37 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return result;
     }
 
-    @Override
+    /**
+     * This List with the element at {@code index} replaced by what {@code updater} computes from it.
+     * <p>
+     * Complexity: O(index); the element is read, then the cells before it are copied.
+     *
+     * @param index   the position to update
+     * @param updater computes the new element from the current one
+     * @return a new List
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws NullPointerException      if {@code updater} is null
+     */
     default List<T> update(int index, Function<? super T, ? extends T> updater) {
         Objects.requireNonNull(updater, "updater is null");
         return update(index, updater.apply(get(index)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)) for an argument of m elements.
+     */
     @Override
     default <U extends @Nullable Object> List<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)) for an argument of m elements.
+     */
     @Override
     default <U extends @Nullable Object, R extends @Nullable Object> List<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
@@ -1788,17 +2937,32 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
         return ofAll(iterator().zipWith(that, mapper));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(max(n, m)) for an argument of m elements.
+     */
     @Override
     default <U extends @Nullable Object> List<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         return ofAll(iterator().zipAll(that, thisElem, thatElem));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default List<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     default <U extends @Nullable Object> List<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1809,7 +2973,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new Nil<>()}
      * is legal, a record constructor is public, and equal to it.
      * <p>
-     * Equality is that of every {@code List}: a {@code Nil} equals any empty {@code Seq}, not only another {@code Nil},
+     * Equality is that of every {@code List}: a {@code Nil} equals any empty sequence, not only another {@code Nil},
      * so {@code equals} and {@code hashCode} are not the record defaults.
      *
      * @param <T> Component type of the List.
@@ -1870,7 +3034,7 @@ public sealed interface List<T extends @Nullable Object> extends LinearSeq<T> pe
      * {@code null}: every construction and insertion path on {@code List} funnels through this
      * constructor, so it is the single boundary that rejects a null element.
      * <p>
-     * Equality is that of every {@code List}: a {@code Cons} equals any {@code Seq} with the same elements in the same
+     * Equality is that of every {@code List}: a {@code Cons} equals any sequence with the same elements in the same
      * order, so {@code equals}, {@code hashCode} and {@code toString} are not the record defaults.
      *
      * @param head the first element, never {@code null}
@@ -1948,6 +3112,104 @@ interface ListModule {
                 tail = tail.tail();
             }
             return Tuple.of(init, tail);
+        }
+    }
+
+    /** Slice searches over a cons list: the candidate start positions are the successive tails. */
+    interface Slice {
+
+        static <T extends @Nullable Object> int indexOfSlice(List<T> source, Iterable<? extends T> slice, int from) {
+            if (source.isEmpty()) {
+                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
+            }
+            return findFirstSlice(source, toList(slice), Math.max(from, 0));
+        }
+
+        static <T extends @Nullable Object> int lastIndexOfSlice(List<T> source, Iterable<? extends T> slice, int end) {
+            if (end < 0) {
+                return -1;
+            } else if (source.isEmpty()) {
+                return Collections.isEmpty(slice) ? 0 : -1;
+            } else if (Collections.isEmpty(slice)) {
+                final int len = source.length();
+                return len < end ? len : end;
+            }
+            int index = 0;
+            int result = -1;
+            final List<T> _slice = toList(slice);
+            // lengths once, then counted down: List.length() walks the list
+            final int sliceLength = _slice.length();
+            int remaining = source.length();
+            while (remaining >= sliceLength) {
+                final int found = findNextSlice(source, _slice, remaining, sliceLength);
+                if (found < 0) {
+                    return result;
+                }
+                if (index + found > end) {
+                    return result;
+                }
+                result = index + found;
+                index += found + 1;
+                remaining -= found + 1;
+                source = source.drop(found + 1);
+            }
+            return result;
+        }
+
+        private static <T extends @Nullable Object> int findFirstSlice(List<T> source, List<T> slice, int from) {
+            int index = 0;
+            final int sliceLength = slice.length();
+            // length once, then counted down: List.length() walks the list
+            int remaining = source.length();
+            while (remaining >= sliceLength) {
+                if (index >= from && source.startsWith(slice)) {
+                    return index;
+                }
+                if (source.isEmpty()) {
+                    // only reachable for an empty slice with from > length()
+                    return -1;
+                }
+                index++;
+                remaining--;
+                source = source.tail();
+            }
+            return -1;
+        }
+
+        // the offset of the next occurrence of the slice in source, or -1
+        private static <T extends @Nullable Object> int findNextSlice(List<T> source, List<T> slice, int remaining, int sliceLength) {
+            int index = 0;
+            while (remaining >= sliceLength) {
+                if (source.startsWith(slice)) {
+                    return index;
+                }
+                index++;
+                remaining--;
+                source = source.tail();
+            }
+            return -1;
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends @Nullable Object> List<T> toList(Iterable<? extends T> iterable) {
+            return (iterable instanceof List) ? (List<T>) iterable : List.ofAll(iterable);
+        }
+    }
+
+    interface Search {
+
+        static <T extends @Nullable Object> int linearSearch(List<T> list, ToIntFunction<T> comparison) {
+            int idx = 0;
+            for (T current : list) {
+                final int cmp = comparison.applyAsInt(current);
+                if (cmp == 0) {
+                    return idx;
+                } else if (cmp < 0) {
+                    return -(idx + 1);
+                }
+                idx += 1;
+            }
+            return -(idx + 1);
         }
     }
 }

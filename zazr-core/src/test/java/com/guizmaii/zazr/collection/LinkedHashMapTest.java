@@ -288,7 +288,7 @@ public class LinkedHashMapTest extends AbstractMapTest {
                 .put(Tuple.of(2, "b"))
                 .put(Tuple.of(3, "c"))
                 .put(Tuple.of(4, "d"));
-        final Seq<Tuple2<Integer, String>> result = map.scanLeft(Tuple.of(0, "x"), (t1, t2) -> Tuple.of(t1._1() + t2._1(), t1._2() + t2._2()));
+        final List<Tuple2<Integer, String>> result = map.scanLeft(Tuple.of(0, "x"), (t1, t2) -> Tuple.of(t1._1() + t2._1(), t1._2() + t2._2()));
         assertThat(result).isEqualTo(List.of(
                 Tuple.of(0, "x"),
                 Tuple.of(1, "xa"),
@@ -304,7 +304,7 @@ public class LinkedHashMapTest extends AbstractMapTest {
                 .put(Tuple.of(2, "b"))
                 .put(Tuple.of(3, "c"))
                 .put(Tuple.of(4, "d"));
-        final Seq<Tuple2<Integer, String>> result = map.scanRight(Tuple.of(0, "x"), (t1, t2) -> Tuple.of(t1._1() + t2._1(), t1._2() + t2._2()));
+        final List<Tuple2<Integer, String>> result = map.scanRight(Tuple.of(0, "x"), (t1, t2) -> Tuple.of(t1._1() + t2._1(), t1._2() + t2._2()));
         assertThat(result).isEqualTo(List.of(
                 Tuple.of(10, "abcdx"),
                 Tuple.of(9, "bcdx"),
