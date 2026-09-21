@@ -1375,7 +1375,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default Stream<T> appendAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (Collections.isEmpty(elements)) {
+        if (!Collections.isTraversableAgain(elements)) {
+            // a one-shot source is read exactly once, into a memoising Stream that also answers whether it is empty
+            final Stream<T> that = Stream.ofAll(elements);
+            return that.isEmpty() ? this : appendAll(that);
+        } else if (Collections.isEmpty(elements)) {
             return this;
         } else if (isEmpty()) {
             return Stream.ofAll(elements);
@@ -3882,15 +3886,17 @@ interface StreamModule {
         static <T extends @Nullable Object> int lastIndexOfSlice(Stream<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
-            } else if (source.isEmpty()) {
-                return Collections.isEmpty(slice) ? 0 : -1;
-            } else if (Collections.isEmpty(slice)) {
+            }
+            // the slice is read once, whatever its shape; its emptiness is answered by the copy
+            final Stream<T> _slice = toStream(slice);
+            if (source.isEmpty()) {
+                return _slice.isEmpty() ? 0 : -1;
+            } else if (_slice.isEmpty()) {
                 final int len = source.length();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
-            final Stream<T> _slice = toStream(slice);
             // lengths once, then counted down: Stream.length() walks and forces the whole Stream
             final int sliceLength = _slice.length();
             int remaining = source.length();

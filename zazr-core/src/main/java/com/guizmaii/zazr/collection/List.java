@@ -3936,15 +3936,17 @@ interface ListModule {
         static <T extends @Nullable Object> int lastIndexOfSlice(List<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
-            } else if (source.isEmpty()) {
-                return Collections.isEmpty(slice) ? 0 : -1;
-            } else if (Collections.isEmpty(slice)) {
+            }
+            // the slice is read once, whatever its shape; its emptiness is answered by the copy
+            final List<T> _slice = toList(slice);
+            if (source.isEmpty()) {
+                return _slice.isEmpty() ? 0 : -1;
+            } else if (_slice.isEmpty()) {
                 final int len = source.length();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
-            final List<T> _slice = toList(slice);
             // lengths once, then counted down: List.length() walks the list
             final int sliceLength = _slice.length();
             int remaining = source.length();

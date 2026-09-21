@@ -809,12 +809,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)){
-            return this;
-        }
         if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
-            // a one-shot source (an Iterator, typically wrapping a java.util.stream): build it once with the builder, then append by path copy
-            return appendAll(ofAll(iterable));
+            // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with the
+            // builder, which also answers whether there is anything to append, then appended by path copy
+            final Vector<T> elements = ofAll(iterable);
+            return elements.isEmpty() ? this : appendAll(elements);
+        }
+        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
+            return this;
         }
         return new Vector<>(trie.appendAll(iterable));
     }
@@ -1888,7 +1890,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)){
+        if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
+            // a one-shot source is read exactly once: built first, which also answers whether there is anything to prepend
+            final Vector<T> elements = ofAll(iterable);
+            return elements.isEmpty() ? this : prependAll(elements);
+        }
+        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
             return this;
         }
         return new Vector<>(trie.prependAll(iterable));

@@ -751,9 +751,12 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   slim interface); `AbstractTraversableRangeTest`, `AbstractSetTest`, `AbstractSortedSetTest`, `AbstractMapTest` and
   `AbstractSortedMapTest` are folded into the per-type classes, every case of a surviving member kept, the cases of
   the dropped members removed with them.
-- **Every `ofAll(Iterable)` factory reads its argument once** (`Queue.ofAll` and `TreeSet.ofAll` answered the emptiness
-  from a first `iterator()` and copied from a second), so a one-shot `Iterable` such as
-  `java.util.stream.Stream.of(1, 2)::iterator` is accepted everywhere, `crossProduct(Iterable)` included.
+- **Every method taking an `Iterable` reads it once** (`Queue.ofAll`, `TreeSet.ofAll`, `Vector.appendAll`/`prependAll`,
+  `Stream.appendAll`, the `lastIndexOfSlice` of `List`/`Queue`/`Stream` and `Iterator.concat(Iterable<Iterable>)`
+  answered the emptiness from a first `iterator()` and read from a second), so a one-shot `Iterable` such as
+  `java.util.stream.Stream.of(1, 2)::iterator` is accepted everywhere, `crossProduct(Iterable)`, `insertAll`,
+  `patch` and `Stream.concat` included. The pattern: a `Traversable` or a `java.util.Collection` argument keeps
+  the O(1) emptiness fast path; any other `Iterable` is materialised first and the copy answers the emptiness.
 - **`Option.forEach`, `Either.forEach`, `Try.forEach`** loop over the elements straight into the `Vector.Builder`
   (the mapper stops at the first `None`/`Left`/`Failure`, as before, and a null result is rejected by name).
 

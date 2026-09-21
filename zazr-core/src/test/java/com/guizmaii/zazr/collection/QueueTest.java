@@ -5897,4 +5897,60 @@ public class QueueTest extends AbstractTraversableTest {
         }
     }
 
+
+    // -- one-shot arguments (a java.util.stream can be iterated once): every argument is read exactly once
+
+    @Nested
+    class OneShotArgumentTests {
+        private <T> Iterable<T> oneShot(T... elements) {
+            return java.util.stream.Stream.of(elements)::iterator;
+        }
+
+        @Test
+        public void shouldAppendAllFromAOneShotArgument() {
+            assertThat(of(1).appendAll(oneShot(2, 3))).isEqualTo(of(1, 2, 3));
+            assertThat(of(1).appendAll(oneShot())).isEqualTo(of(1));
+            assertThat(empty().appendAll(oneShot(2, 3))).isEqualTo(of(2, 3));
+        }
+
+        @Test
+        public void shouldPrependAllFromAOneShotArgument() {
+            assertThat(of(3).prependAll(oneShot(1, 2))).isEqualTo(of(1, 2, 3));
+            assertThat(of(3).prependAll(oneShot())).isEqualTo(of(3));
+            assertThat(empty().prependAll(oneShot(1, 2))).isEqualTo(of(1, 2));
+        }
+
+        @Test
+        public void shouldInsertAllFromAOneShotArgument() {
+            assertThat(of(1, 4).insertAll(1, oneShot(2, 3))).isEqualTo(of(1, 2, 3, 4));
+            assertThat(of(1, 4).insertAll(0, oneShot(2, 3))).isEqualTo(of(2, 3, 1, 4));
+            assertThat(of(1, 4).insertAll(2, oneShot(2, 3))).isEqualTo(of(1, 4, 2, 3));
+        }
+
+        @Test
+        public void shouldPatchFromAOneShotArgument() {
+            assertThat(of(1, 2, 3, 4).patch(1, oneShot(9, 8), 2)).isEqualTo(of(1, 9, 8, 4));
+            assertThat(of(1, 2, 3, 4).patch(0, oneShot(9), 0)).isEqualTo(of(9, 1, 2, 3, 4));
+        }
+
+        @Test
+        public void shouldFindTheLastIndexOfAOneShotSlice() {
+            assertThat(of(1, 2, 3, 4).lastIndexOfSlice(oneShot(2, 3))).isEqualTo(1);
+            assertThat(of(1, 2, 3, 2, 3).lastIndexOfSlice(oneShot(2, 3))).isEqualTo(3);
+            assertThat(of(1, 2, 3, 4).lastIndexOfSlice(oneShot(2, 3), 0)).isEqualTo(-1);
+            assertThat(of(1, 2, 3, 4).lastIndexOfSlice(oneShot())).isEqualTo(4);
+            assertThat(empty().lastIndexOfSlice(oneShot(2, 3))).isEqualTo(-1);
+            assertThat(of(1, 2, 3, 4).indexOfSlice(oneShot(2, 3))).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldReadAOneShotArgumentOnceOnBothEnds() {
+            // a queue whose rear is populated: insertAll past the front goes through the rear
+            final Queue<Integer> queue = Queue.<Integer>empty().enqueue(1).enqueue(4);
+            assertThat(queue.insertAll(1, oneShot(2, 3))).isEqualTo(of(1, 2, 3, 4));
+            assertThat(queue.enqueueAll(oneShot(5, 6))).isEqualTo(of(1, 4, 5, 6));
+            assertThat(queue.lastIndexOfSlice(oneShot(1, 4))).isEqualTo(0);
+        }
+    }
+
 }

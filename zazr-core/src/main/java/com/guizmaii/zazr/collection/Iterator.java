@@ -70,15 +70,14 @@ interface Iterator<T extends @Nullable Object> extends java.util.Iterator<T>, It
      */
     static <T extends @Nullable Object> Iterator<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
         Objects.requireNonNull(iterables, "iterables is null");
-        if (!iterables.iterator().hasNext()) {
-            return empty();
-        } else {
-            ConcatIterator<T> res = new ConcatIterator<>();
-            for (Iterable<? extends T> iterable : iterables) {
-                res.append(iterable.iterator());
-            }
-            return res;
+        // one pass over the outer iterable, which may be one-shot; nothing appended means the empty iterator
+        final ConcatIterator<T> res = new ConcatIterator<>();
+        boolean appended = false;
+        for (Iterable<? extends T> iterable : iterables) {
+            res.append(iterable.iterator());
+            appended = true;
         }
+        return appended ? res : empty();
     }
 
     /**
