@@ -3127,7 +3127,6 @@ interface StreamModule {
                 index++;
                 source = source.tail();
             }
-            // only reachable for an empty slice with from > length()
             return -1;
         }
 
