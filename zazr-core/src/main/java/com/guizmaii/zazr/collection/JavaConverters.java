@@ -47,7 +47,8 @@ class JavaConverters {
 
     /**
      * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
-     * the delegate's iterator and size, nothing copied, every mutator refused by {@link AbstractCollection}.
+     * the delegate's iterator and size, nothing copied, every mutator throwing {@link UnsupportedOperationException}
+     * whether or not it would change anything, as {@link java.util.Collections#unmodifiableCollection} does.
      *
      * @param <T> the element type
      */
@@ -86,6 +87,41 @@ class JavaConverters {
         @Override
         public java.util.stream.Stream<T> stream() {
             return delegate.stream();
+        }
+
+        @Override
+        public boolean add(T element) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> elements) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(@Nullable Object element) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> elements) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeIf(java.util.function.Predicate<? super T> filter) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> elements) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -284,6 +320,13 @@ class JavaConverters {
             Objects.requireNonNull(collection, "collection is null");
             @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
             return setDelegateAndCheckChanged(() -> delegateRemoveAll(getDelegate(), that));
+        }
+
+        @Override
+        public boolean removeIf(java.util.function.Predicate<? super T> filter) {
+            Objects.requireNonNull(filter, "filter is null");
+            ensureMutable(); // an immutable view refuses the call even when no element matches
+            return java.util.List.super.removeIf(filter);
         }
 
         @Override

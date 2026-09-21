@@ -208,16 +208,81 @@ final class Collections {
         if (traversable instanceof Set || traversable instanceof Map) {
             characteristics |= Spliterator.DISTINCT;
         }
-        if (traversable instanceof SortedSet || traversable instanceof SortedMap) {
+        // a SortedMap orders its keys, not its entries, so it is ORDERED but not SORTED
+        if (traversable instanceof SortedSet) {
             characteristics |= (Spliterator.SORTED | Spliterator.ORDERED);
         }
-        if (isSequence(traversable) || traversable instanceof LinkedHashSet || traversable instanceof LinkedHashMap) {
+        if (isSequence(traversable) || traversable instanceof SortedMap
+                || traversable instanceof LinkedHashSet || traversable instanceof LinkedHashMap) {
             characteristics |= Spliterator.ORDERED;
         }
         if (hasDefiniteSize(traversable)) {
             characteristics |= (Spliterator.SIZED | Spliterator.SUBSIZED);
         }
         return characteristics;
+    }
+
+    // The spliterator of a Traversable: sized when the size is known without a walk, and reporting the comparator of a
+    // SortedSet (null for the natural order, as Spliterator specifies), so that java.util.stream.Stream.sorted() sorts
+    // a set ordered otherwise instead of skipping the sort.
+    static <T extends @Nullable Object> Spliterator<T> spliterator(Traversable<T> traversable) {
+        final int characteristics = spliteratorCharacteristics(traversable);
+        final Spliterator<T> spliterator = (characteristics & Spliterator.SIZED) != 0
+          ? Spliterators.spliterator(traversable.iterator(), traversable.size(), characteristics)
+          : Spliterators.spliteratorUnknownSize(traversable.iterator(), characteristics);
+        if (traversable instanceof SortedSet<?> sortedSet && !(sortedSet.comparator() instanceof NaturalComparator)) {
+            @SuppressWarnings("unchecked")
+            final Comparator<? super T> comparator = (Comparator<? super T>) sortedSet.comparator();
+            return new SortedSpliterator<>(spliterator, comparator);
+        }
+        return spliterator;
+    }
+
+    static final class SortedSpliterator<T extends @Nullable Object> implements Spliterator<T> {
+
+        private final Spliterator<T> delegate;
+        private final Comparator<? super T> comparator;
+
+        SortedSpliterator(Spliterator<T> delegate, Comparator<? super T> comparator) {
+            this.delegate = delegate;
+            this.comparator = comparator;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            return delegate.tryAdvance(action);
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super T> action) {
+            delegate.forEachRemaining(action);
+        }
+
+        @Override
+        public @Nullable Spliterator<T> trySplit() {
+            final Spliterator<T> prefix = delegate.trySplit();
+            return prefix == null ? null : new SortedSpliterator<>(prefix, comparator);
+        }
+
+        @Override
+        public long estimateSize() {
+            return delegate.estimateSize();
+        }
+
+        @Override
+        public long getExactSizeIfKnown() {
+            return delegate.getExactSizeIfKnown();
+        }
+
+        @Override
+        public int characteristics() {
+            return delegate.characteristics();
+        }
+
+        @Override
+        public Comparator<? super T> getComparator() {
+            return comparator;
+        }
     }
 
     static <T extends @Nullable Object> T last(Traversable<T> source){

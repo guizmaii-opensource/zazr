@@ -184,7 +184,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (values instanceof TreeSet && ((TreeSet<?>) values).comparator() == comparator) {
             return (TreeSet<T>) values;
         } else {
-            return values.iterator().hasNext() ? new TreeSet<>(RedBlackTree.ofAll(comparator, values)) : empty(comparator);
+            // one read of the argument, which may be a one-shot Iterable: the emptiness is answered by the tree
+            final RedBlackTree<T> tree = RedBlackTree.ofAll(comparator, values);
+            return tree.isEmpty() ? empty(comparator) : new TreeSet<>(tree);
         }
     }
 

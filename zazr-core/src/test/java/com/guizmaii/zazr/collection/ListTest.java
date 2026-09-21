@@ -694,6 +694,14 @@ public class ListTest extends AbstractTraversableTest {
         public void shouldThrowWhenCalculatingCrossProductAndThatIsNull() {
             assertThrows(NullPointerException.class, () -> empty().crossProduct(null));
         }
+
+        @Test
+        public void shouldCalculateCrossProductWithAOneShotArgument() {
+            // a java.util.stream can be iterated once: the argument is read exactly once
+            final Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
+            assertThat(of(1, 2).crossProduct(oneShot).toList())
+                    .isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b')));
+        }
     }
 
     @Nested

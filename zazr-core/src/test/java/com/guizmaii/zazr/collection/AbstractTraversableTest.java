@@ -927,6 +927,20 @@ public abstract class AbstractTraversableTest {
     }
 
     @TestTemplate
+    public void shouldRefuseEveryMutatorOnTheJavaViewEvenWhenNothingWouldChange() {
+        final java.util.Collection<Integer> view = of(1, 2, 3).asJava();
+        assertThrows(UnsupportedOperationException.class, () -> view.remove(99));
+        assertThrows(UnsupportedOperationException.class, () -> view.removeAll(asList(99)));
+        assertThrows(UnsupportedOperationException.class, () -> view.retainAll(asList(1, 2, 3)));
+        assertThrows(UnsupportedOperationException.class, () -> view.removeIf(i -> false));
+        assertThrows(UnsupportedOperationException.class, () -> view.addAll(asList()));
+        final java.util.Collection<Integer> empty = this.<Integer>empty().asJava();
+        assertThrows(UnsupportedOperationException.class, () -> empty.remove(1));
+        assertThrows(UnsupportedOperationException.class, () -> empty.removeIf(i -> true));
+        assertThat(view.size()).isEqualTo(3);
+    }
+
+    @TestTemplate
     public void shouldViewWithoutCopying() {
         final java.util.Collection<Integer> view = of(1, 2, 3).asJava();
         assertThat(view.getClass().getName()).startsWith("com.guizmaii.zazr.collection.JavaConverters$");

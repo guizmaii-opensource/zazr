@@ -662,8 +662,9 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
 - **`Traversable` declares exactly** (decided): `iterator()` (a `java.util.Iterator`), `size`, `isEmpty`, `nonEmpty`,
   `contains`, `containsAll`, `exists`, `forAll`, `count`, `find`, `foldLeft`, `mkString` ×3, `forEach`, `toVector`,
   `toList`, `toSet`, `stream()`, `toArray()`/`toArray(IntFunction)`, `asJava()`, plus `spliterator()` (an `Iterable`
-  member, overridden so that `stream()` reports the size and the `DISTINCT`/`SORTED`/`ORDERED` characteristics of the
-  type) and the static `narrow`. `Foldable` and `Ordered` are deleted (`SortedSet`/`SortedMap` declare `comparator()`
+  member, overridden so that `stream()` reports the size and the `DISTINCT`/`ORDERED` characteristics of the type,
+  `SORTED` with the set's comparator on a `SortedSet`, and no `SORTED` on a `SortedMap`, whose keys are ordered but
+  whose entries are not sorted in their own order) and the static `narrow`. `Foldable` and `Ordered` are deleted (`SortedSet`/`SortedMap` declare `comparator()`
   themselves); `Set` no longer extends `Predicate` and `Map` has no function supertype. The equality contract
   (sequences equal sequences element by element in order, sets equal sets, maps equal maps, `hashCode` ordered or
   summed accordingly) is stated in the interface javadoc, and `AbstractTraversableTest` asserts the exact member set
@@ -678,8 +679,9 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `toJavaArray(Class)` is deleted with it. `toJavaStream()` is `stream()`, as 3.1 wanted; `toJavaParallelStream()`
   moves to the concrete types until #26.
 - **`Traversable.asJava()`** (decided) returns an O(1) unmodifiable `java.util.Collection<T>` view
-  (`JavaConverters.CollectionView`: the delegate's iterator and size, the `AbstractCollection` mutators throw
-  `UnsupportedOperationException`); the sequences keep their `java.util.List` view as a covariant override.
+  (`JavaConverters.CollectionView`: the delegate's iterator and size, every mutator throws
+  `UnsupportedOperationException` whether or not it would change anything, as `Collections.unmodifiableCollection`
+  does); the sequences keep their `java.util.List` view as a covariant override.
   Consequence for 3.1: a map's `asJava()` is that `Collection<Tuple2<K, V>>` (a `java.util.Map` is not a
   `Collection`, so it cannot be the override), and the `java.util.Map` views of 3.1 take the name `asJavaMap()` in
   #26; the set views stay `asJava()` (a `java.util.Set` is a `Collection`).
@@ -749,6 +751,9 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   slim interface); `AbstractTraversableRangeTest`, `AbstractSetTest`, `AbstractSortedSetTest`, `AbstractMapTest` and
   `AbstractSortedMapTest` are folded into the per-type classes, every case of a surviving member kept, the cases of
   the dropped members removed with them.
+- **Every `ofAll(Iterable)` factory reads its argument once** (`Queue.ofAll` and `TreeSet.ofAll` answered the emptiness
+  from a first `iterator()` and copied from a second), so a one-shot `Iterable` such as
+  `java.util.stream.Stream.of(1, 2)::iterator` is accepted everywhere, `crossProduct(Iterable)` included.
 - **`Option.forEach`, `Either.forEach`, `Try.forEach`** loop over the elements straight into the `Vector.Builder`
   (the mapper stops at the first `None`/`Left`/`Failure`, as before, and a null result is rejected by name).
 

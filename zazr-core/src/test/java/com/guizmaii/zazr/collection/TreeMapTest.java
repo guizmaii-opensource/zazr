@@ -1171,8 +1171,20 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Nested
     class SortedSpliteratorTests {
         @Test
-        public void shouldHaveSortedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED)).isTrue();
+        public void shouldNotClaimSortedEntries() {
+            // the keys are ordered, the entries are not sorted in their own order
+            assertThat(TreeMap.of(1, "a", 2, "b").spliterator().hasCharacteristics(Spliterator.SORTED)).isFalse();
+            assertThat(TreeMap.of(1, "a", 2, "b").spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+        }
+
+        @Test
+        public void shouldSortTheEntriesOfAReversedMapWithAJavaStream() {
+            final TreeMap<Integer, String> reversed = TreeMap.of(Comparator.<Integer>reverseOrder(), 3, "c", 1, "a", 2, "b");
+            assertThat(reversed.toJavaList()).isEqualTo(java.util.List.of(Tuple.of(3, "c"), Tuple.of(2, "b"), Tuple.of(1, "a")));
+            assertThat(reversed.stream().sorted().toList()).isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
+            final TreeMap<Integer, String> natural = TreeMap.of(3, "c", 1, "a", 2, "b");
+            assertThat(natural.stream().sorted().toList()).isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
+            assertThat(natural.stream().sorted(Comparator.reverseOrder()).toList()).isEqualTo(reversed.toJavaList());
         }
 
         @Test

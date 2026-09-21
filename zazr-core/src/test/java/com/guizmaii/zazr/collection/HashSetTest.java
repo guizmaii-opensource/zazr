@@ -2399,6 +2399,13 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @Nested
     class AsJavaTests {
+
+        @Test
+        public void shouldRefuseClearOnAnEmptyJavaView() {
+            // unlike a java.util.List view, whose clear() on an empty list is a no-op as in the JDK's AbstractList,
+            // the Collection view throws on every mutator, as Collections.unmodifiableCollection does
+            assertThrows(UnsupportedOperationException.class, () -> HashSet.<Integer>empty().asJava().clear());
+        }
         @Test
         public void shouldViewTheDistinctElementsAsAJavaCollection() {
             final Set<Integer> set = of(1, 2, 3, 2);

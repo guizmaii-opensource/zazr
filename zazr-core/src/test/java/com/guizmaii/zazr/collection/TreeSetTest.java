@@ -2503,6 +2503,39 @@ public class TreeSetTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void shouldReportTheNaturalOrderAsANullComparator() {
+            assertThat(TreeSet.of(3, 1, 2).spliterator().getComparator()).isNull();
+            assertThat(TreeSet.of(3, 1, 2).stream().sorted().toList()).isEqualTo(java.util.List.of(1, 2, 3));
+        }
+
+        @Test
+        public void shouldReportTheComparatorOfAnotherOrder() {
+            final Comparator<Integer> reversed = reverseOrder();
+            final TreeSet<Integer> set = TreeSet.of(reversed, 3, 1, 2);
+            assertThat(set.spliterator().getComparator()).isSameAs(reversed);
+            assertThat(set.spliterator().hasCharacteristics(Spliterator.SORTED)).isTrue();
+            assertThat(set.toJavaList()).isEqualTo(java.util.List.of(3, 2, 1));
+            // java.util.stream sorts, as the reported comparator is not the natural order
+            assertThat(set.stream().sorted().toList()).isEqualTo(java.util.List.of(1, 2, 3));
+            assertThat(set.stream().sorted(reversed).toList()).isEqualTo(java.util.List.of(3, 2, 1));
+            assertThat(TreeSet.of(reversed, 3, 1, 2).stream().parallel().sorted().toList()).isEqualTo(java.util.List.of(1, 2, 3));
+        }
+
+        @Test
+        public void shouldReadAOneShotIterableOnceWhenBuilding() {
+            final AtomicInteger walks = new AtomicInteger();
+            final Iterable<Integer> that = () -> {
+                walks.incrementAndGet();
+                return java.util.List.of(3, 1, 2).iterator();
+            };
+            assertThat(TreeSet.ofAll(that)).isEqualTo(TreeSet.of(1, 2, 3));
+            assertThat(walks.get()).isEqualTo(1);
+            assertThat(TreeSet.ofAll(java.util.stream.Stream.of(2, 1)::iterator)).isEqualTo(TreeSet.of(1, 2));
+            assertThat(TreeSet.ofAll(reverseOrder(), java.util.stream.Stream.of(1, 2)::iterator).toJavaList()).isEqualTo(java.util.List.of(2, 1));
+            assertThat(TreeSet.ofAll(java.util.stream.Stream.<Integer>empty()::iterator)).isEqualTo(TreeSet.empty());
+        }
+
+        @Test
         public void shouldHaveOrderedSpliterator() {
             assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
         }

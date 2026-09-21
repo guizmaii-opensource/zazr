@@ -50,13 +50,14 @@ public interface Gen<T> {
     }
 
     static <T> Gen<T> of(T seed, Function<? super T, ? extends T> next) {
+        Objects.requireNonNull(seed, "seed is null");
         Objects.requireNonNull(next, "next is null");
         // the last value handed out; each draw applies `next` to it once
         final Object[] last = { null };
         final boolean[] started = { false };
         return ignored -> {
             @SuppressWarnings("unchecked")
-            final T current = started[0] ? next.apply((T) last[0]) : seed;
+            final T current = started[0] ? Objects.requireNonNull(next.apply((T) last[0]), "next returned null") : seed;
             started[0] = true;
             last[0] = current;
             return current;
@@ -300,6 +301,7 @@ public interface Gen<T> {
      * @return A new T generator
      */
     default Gen<T> intersperse(Gen<T> other) {
+        Objects.requireNonNull(other, "other is null");
         // the two generators take turns, this one first
         final boolean[] otherIsNext = { false };
         return random -> {

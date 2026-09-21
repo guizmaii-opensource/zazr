@@ -2186,6 +2186,13 @@ public class HashMapTest extends AbstractTraversableTest {
         }
     }
 
+        @Test
+        public void shouldRefuseClearOnAnEmptyJavaView() {
+            // unlike a java.util.List view, whose clear() on an empty list is a no-op as in the JDK's AbstractList,
+            // the Collection view throws on every mutator, as Collections.unmodifiableCollection does
+            assertThrows(UnsupportedOperationException.class, () -> HashMap.<Integer, Integer>empty().asJava().clear());
+        }
+
     // -- HashMap
 
     protected String className() {

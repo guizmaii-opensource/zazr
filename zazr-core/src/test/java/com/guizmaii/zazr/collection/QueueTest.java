@@ -197,6 +197,19 @@ public class QueueTest extends AbstractTraversableTest {
     @Nested
     class StaticOfallTests {
         @Test
+        public void shouldReadAOneShotIterableOnce() {
+            final AtomicInteger walks = new AtomicInteger();
+            final Iterable<Integer> that = () -> {
+                walks.incrementAndGet();
+                return java.util.List.of(1, 2, 3).iterator();
+            };
+            assertThat(Queue.ofAll(that)).isEqualTo(Queue.of(1, 2, 3));
+            assertThat(walks.get()).isEqualTo(1);
+            assertThat(Queue.ofAll(java.util.stream.Stream.of(1, 2)::iterator)).isEqualTo(Queue.of(1, 2));
+            assertThat(Queue.ofAll(java.util.stream.Stream.<Integer>empty()::iterator)).isSameAs(Queue.empty());
+        }
+
+        @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfQueue() {
             final Queue<Integer> source = ofAll(1, 2, 3);
             final Queue<Integer> target = Queue.ofAll(source);
@@ -768,6 +781,14 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldThrowWhenCalculatingCrossProductAndThatIsNull() {
             assertThrows(NullPointerException.class, () -> empty().crossProduct(null));
+        }
+
+        @Test
+        public void shouldCalculateCrossProductWithAOneShotArgument() {
+            // a java.util.stream can be iterated once: the argument is read exactly once
+            final Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
+            assertThat(of(1, 2).crossProduct(oneShot).toList())
+                    .isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b')));
         }
     }
 
@@ -5838,7 +5859,7 @@ public class QueueTest extends AbstractTraversableTest {
             };
             final Queue<Tuple2<Integer, Character>> product = of(1, 2, 3).crossProduct(that);
             final int walksAtReturn = walks.get();
-            assertThat(walksAtReturn).isGreaterThanOrEqualTo(1); // the argument is copied before the call returns
+            assertThat(walksAtReturn).isEqualTo(1); // the argument is copied, once, before the call returns
             assertThat(product.size()).isEqualTo(6);
             assertThat(product.toList()).isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b'), Tuple.of(3, 'a'), Tuple.of(3, 'b')));
             assertThat(walks.get()).isEqualTo(walksAtReturn); // and not walked again afterwards

@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -352,16 +351,15 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * A {@link Spliterator} over the elements that reports what this collection guarantees: {@code IMMUTABLE},
      * {@code SIZED} and {@code SUBSIZED} unless the size is not known without a walk ({@link Stream}),
      * {@code DISTINCT} on the sets and the maps, {@code ORDERED} where the iteration order is defined, and
-     * {@code SORTED} on the sorted types.
+     * {@code SORTED} on a {@link SortedSet}, whose {@link Spliterator#getComparator() comparator} the spliterator
+     * reports ({@code null} for the natural order). A {@link SortedMap} orders its keys, not its entries, so it
+     * is {@code ORDERED} but not {@code SORTED}.
      *
      * @return a new spliterator
      */
     @Override
     default Spliterator<T> spliterator() {
-        final int characteristics = Collections.spliteratorCharacteristics(this);
-        return (characteristics & Spliterator.SIZED) != 0
-          ? Spliterators.spliterator(iterator(), size(), characteristics)
-          : Spliterators.spliteratorUnknownSize(iterator(), characteristics);
+        return Collections.spliterator(this);
     }
 }
 

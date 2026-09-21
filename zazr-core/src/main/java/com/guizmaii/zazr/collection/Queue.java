@@ -146,12 +146,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         } else if (elements instanceof ListView
                 && ((ListView<T, ?>) elements).getDelegate() instanceof Queue) {
             return (Queue<T>) ((ListView<T, ?>) elements).getDelegate();
-        } else if (!elements.iterator().hasNext()) {
-            return empty();
-        } else if (elements instanceof com.guizmaii.zazr.collection.List) {
-            return new Queue<>((com.guizmaii.zazr.collection.List<T>) elements, com.guizmaii.zazr.collection.List.empty());
         } else {
-            return new Queue<>(com.guizmaii.zazr.collection.List.ofAll(elements), com.guizmaii.zazr.collection.List.empty());
+            // one read of the argument, which may be a one-shot Iterable: the emptiness is answered by the copy
+            final com.guizmaii.zazr.collection.List<T> front = com.guizmaii.zazr.collection.List.ofAll(elements);
+            return front.isEmpty() ? empty() : new Queue<>(front, com.guizmaii.zazr.collection.List.empty());
         }
     }
 

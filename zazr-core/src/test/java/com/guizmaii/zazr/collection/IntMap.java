@@ -1,6 +1,5 @@
 package com.guizmaii.zazr.collection;
 
-import java.util.Comparator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
@@ -88,21 +87,10 @@ public final class IntMap<T> implements Traversable<T> {
             @Override
             public int characteristics() {
                 int characteristics = Spliterator.IMMUTABLE | Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.DISTINCT;
-                if (original instanceof SortedMap) {
-                    characteristics |= Spliterator.SORTED | Spliterator.ORDERED;
-                } else if (original instanceof LinkedHashMap) {
-                    characteristics |= Spliterator.ORDERED;
+                if (original instanceof SortedMap || original instanceof LinkedHashMap) {
+                    characteristics |= Spliterator.ORDERED; // the values follow the key order, they are not sorted themselves
                 }
                 return characteristics;
-            }
-
-            @Override
-            public Comparator<? super T> getComparator() {
-                if (original instanceof SortedMap) {
-                    // the values are iterated in key order; a value comparator is not defined, as Spliterator allows
-                    return null;
-                }
-                throw new IllegalStateException();
             }
         };
     }
