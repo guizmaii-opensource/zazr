@@ -566,7 +566,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `Complexity: O(n).`, `Complexity: O(k) for k taken elements, then one effectively O(1) take.`). "Effectively
   O(1)" means O(log32 n) on the trie. Methods that only override a `Traversable` default keep `{@inheritDoc}` and
   add the paragraph. `make complexity` (run by `make verify` and by the `complexity` CI job) runs
-  `scripts/check-complexity.pl` over the files listed in the Makefile (`Vector.java` for now; #67 adds `List`,
+  `scripts/check-complexity.scala` (Scala, run with scala-cli) over the files listed in the Makefile (`Vector.java` for now; #67 adds `List`,
   `Queue`, `Stream`) and fails when a method whose name is in the script's fixed list of positional names is declared
   without such a line; the javadoc checked is the block immediately preceding the declaration, annotations skipped.
 - **`Iterator`-returning methods stay as they are for now.** `crossProduct()`, `crossProduct(int)`,

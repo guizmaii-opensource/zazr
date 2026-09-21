@@ -52,7 +52,7 @@ vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE
 COMPLEXITY_FILES := zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java
 
 complexity: ## fail when a positional method of a collection lacks a "Complexity:" javadoc line (design.md 3.7)
-	@perl scripts/check-complexity.pl $(COMPLEXITY_FILES)
+	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_FILES)
 
 fmt: ## format the sources (spotless apply)
 	$(MVN) spotless:apply

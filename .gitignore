@@ -30,3 +30,7 @@ hs_err_pid*
 # -- Emacs
 .#*
 .claude
+
+# scala-cli build output of the scripts
+scripts/.bsp/
+scripts/.scala-build/

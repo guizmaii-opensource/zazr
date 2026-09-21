@@ -48,6 +48,13 @@ jobs:
     name: Complexity note on every positional method
     steps:
       - uses: actions/checkout@v7
+      - name: Setup JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+      - name: Setup scala-cli
+        uses: VirtusLab/scala-cli-setup@v1
       - name: Check the javadoc of the positional methods
         run: make complexity
 
