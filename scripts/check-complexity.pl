@@ -23,6 +23,7 @@ my @positional = qw(
     zipWithIndex sliding grouped scan scanLeft scanRight indexOf lastIndexOf indexWhere lastIndexWhere search padTo
     patch permutations combinations crossProduct intersperse rotateLeft rotateRight shuffle splitAt startsWith
     endsWith distinct distinctBy remove removeAll removeFirst removeLast replace replaceAll leftPadTo asJava
+    span retainAll transpose tailOption initOption iterator
 );
 my %positional = map { $_ => 1 } @positional;
 

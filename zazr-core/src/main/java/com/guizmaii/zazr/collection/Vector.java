@@ -667,6 +667,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * ex: {@code
      * Vector.transpose(Vector(Vector(1,2,3), Vector(4,5,6))) → Vector(Vector(1,4), Vector(2,5), Vector(3,6))
      * }
+     * <p>
+     * Complexity: O(rows * columns); the matrix itself is returned when it has no or one element.
      */
     public static <T extends @Nullable Object> Vector<Vector<T>> transpose(Vector<Vector<T>> matrix) {
         return com.guizmaii.zazr.collection.Collections.transpose(matrix, Vector::ofAll, Vector::of);
@@ -921,7 +923,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * The Cartesian power of this Vector: every Vector of {@code power} elements drawn from this one, in
-     * lexicographic position order. {@code power <= 0} gives one empty Vector; a negative power gives no result.
+     * lexicographic position order. {@code power == 0} gives one empty Vector; a negative power gives no result.
      * <p>
      * Complexity: lazy; O(n^power) Vectors of size {@code power} when consumed.
      *
@@ -1420,6 +1422,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one {@code init}).
+     */
     @Override
     public Option<Vector<T>> initOption() { return isEmpty() ? Option.none() : Option.some(init()); }
 
@@ -1483,6 +1490,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Option<NonEmptyVector<T>> toNonEmptyVector() { return NonEmptyVector.fromVector(this); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.
+     */
     @Override
     public Iterator<T> iterator() {
         return isEmpty() ? Iterator.empty()
@@ -2041,6 +2053,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     */
     @Override
     public Vector<T> retainAll(Iterable<? extends T> elements) {
         return com.guizmaii.zazr.collection.Collections.retainAll(this, elements);
@@ -2331,6 +2348,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(k) for k elements before the split, then an effectively O(1) split.
+     */
     @Override
     public Tuple2<Vector<T>, Vector<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -2493,6 +2515,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one {@code tail}).
+     */
     @Override
     public Option<Vector<T>> tailOption() { return isEmpty() ? Option.none() : Option.some(tail()); }
 
