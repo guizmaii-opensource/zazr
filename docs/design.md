@@ -573,6 +573,8 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `crossProduct(Iterable)`, `grouped`, `sliding` and `slideBy` on `Vector` keep returning the lazy
   `Iterator<Vector<T>>` / `Iterator<Tuple2<...>>` they returned as a `Seq`, because `Traversable` still declares
   `grouped`/`sliding`/`slideBy` with an `Iterator` result; #68 decides the final shape when `Traversable` is slimmed.
+  A lazy result keeps its argument lazy: `crossProduct(Iterable)` memoises `that` with `Stream.ofAll` (as the `Seq`
+  default did; `Stream` survives as `LazyList`, #28), so `Vector.of(1).crossProduct(Iterator.from(0)).take(3)` works.
 - **`Seq` methods kept on `Vector` although 3.7 does not list them** (unused or slated for deletion elsewhere, kept
   so that nothing changes behaviour or loses a test in this step): `asJava(Consumer)`, `asJavaMutable()`,
   `asJavaMutable(Consumer)` (3.1 deletes the mutable views and the consumer scopes; that is #26's PR),

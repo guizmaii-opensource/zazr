@@ -939,7 +939,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * The Cartesian product of this Vector and {@code that}: every pair {@code (a, b)} with {@code a} from this
-     * Vector and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is materialised once.
+     * Vector and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is walked lazily and memoised,
+     * so an infinite {@code that} works with {@code take}.
      * <p>
      * Complexity: lazy; O(n * m) pairs when consumed.
      *
@@ -950,8 +951,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> Iterator<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
-        final Vector<U> other = ofAll(that);
-        return Iterator.ofAll(this).flatMap(a -> other.iterator().map(b -> Tuple.of(a, b)));
+        // a lazy, memoising Stream, not Vector.ofAll: the result is lazy, so the argument stays lazy too
+        final Stream<U> other = Stream.ofAll(that);
+        return Iterator.ofAll(this).flatMap(a -> other.map(b -> Tuple.of(a, b)));
     }
 
     /**
@@ -3059,14 +3061,15 @@ interface VectorModule {
         }
     }
 
-    /* contiguous-slice search by index; the slice is materialised once (O(1) when it already is a Vector) */
+    /* contiguous-slice search by index; the slice is materialised once, first thing (O(1) when it already is a
+     * Vector), so that a one-shot argument is iterated only once */
     final class Slice {
 
         static <T extends @Nullable Object> int indexOfSlice(Vector<T> source, Iterable<? extends T> slice, int from) {
-            if (source.isEmpty()) {
-                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
-            }
             final Vector<? extends T> _slice = Vector.ofAll(slice);
+            if (source.isEmpty()) {
+                return from == 0 && _slice.isEmpty() ? 0 : -1;
+            }
             final int maxIndex = source.length() - _slice.length();
             return findSlice(source, _slice, Math.max(from, 0), maxIndex);
         }
@@ -3074,15 +3077,16 @@ interface VectorModule {
         static <T extends @Nullable Object> int lastIndexOfSlice(Vector<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
-            } else if (source.isEmpty()) {
-                return Collections.isEmpty(slice) ? 0 : -1;
-            } else if (Collections.isEmpty(slice)) {
+            }
+            final Vector<? extends T> _slice = Vector.ofAll(slice);
+            if (source.isEmpty()) {
+                return _slice.isEmpty() ? 0 : -1;
+            } else if (_slice.isEmpty()) {
                 final int len = source.length();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
-            final Vector<? extends T> _slice = Vector.ofAll(slice);
             final int maxIndex = source.length() - _slice.length();
             while (index <= maxIndex) {
                 int indexOfSlice = findSlice(source, _slice, index, maxIndex);

@@ -3054,6 +3054,24 @@ public class VectorTest extends AbstractTraversableRangeTest {
         }
 
         @Test
+        public void shouldIterateAOneShotSliceOnlyOnce() {
+            // a java.util.stream can be iterated once: a second iterator() call throws IllegalStateException
+            final Vector<Integer> vector = of(1, 2, 3, 2, 3);
+            assertThat(vector.indexOfSlice(java.util.stream.Stream.of(2, 3)::iterator)).isEqualTo(1);
+            assertThat(vector.indexOfSlice(java.util.stream.Stream.of(2, 3)::iterator, 2)).isEqualTo(3);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.of(2, 3)::iterator)).isEqualTo(3);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.of(2, 3)::iterator, 2)).isEqualTo(1);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator)).isEqualTo(5);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator, 2)).isEqualTo(2);
+            assertThat(vector.containsSlice(java.util.stream.Stream.of(3, 2)::iterator)).isTrue();
+            assertThat(vector.containsSlice(java.util.stream.Stream.of(3, 1)::iterator)).isFalse();
+            assertThat(Vector.<Integer> empty().indexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator)).isEqualTo(0);
+            assertThat(Vector.<Integer> empty().indexOfSlice(java.util.stream.Stream.of(1)::iterator)).isEqualTo(-1);
+            assertThat(Vector.<Integer> empty().lastIndexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator)).isEqualTo(0);
+            assertThat(Vector.<Integer> empty().lastIndexOfSlice(java.util.stream.Stream.of(1)::iterator)).isEqualTo(-1);
+        }
+
+        @Test
         public void shouldRejectNullSlices() {
             final Vector<Integer> vector = of(1, 2, 3);
             assertThatNullPointerException().isThrownBy(() -> vector.indexOfSlice(null)).withMessage("that is null");
@@ -3209,6 +3227,12 @@ public class VectorTest extends AbstractTraversableRangeTest {
             assertThat(Vector.range(0, 33).crossProduct(vector).size()).isEqualTo(99);
             assertThat(vector.crossProduct(Vector.empty())).isEmpty();
             assertThat(Vector.empty().crossProduct(vector)).isEmpty();
+            // the argument stays lazy: an infinite iterator works with take
+            assertThat(vector.crossProduct(Iterator.from(0)).take(3).toList()).isEqualTo(List.of(Tuple.of(1, 0), Tuple.of(1, 1), Tuple.of(1, 2)));
+            assertThat(Vector.of(1).crossProduct(Iterator.from(0)).take(3).toList()).isEqualTo(List.of(Tuple.of(1, 0), Tuple.of(1, 1), Tuple.of(1, 2)));
+            assertThat(vector.crossProduct(Iterator.from(0)).take(5).toList().last()).isEqualTo(Tuple.of(1, 4));
+            // and a one-shot argument is walked once, memoised for the next element of the receiver
+            assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator).toList()).isEqualTo(expected);
             assertThatNullPointerException().isThrownBy(() -> vector.crossProduct((Iterable<Integer>) null)).withMessage("that is null");
         }
 
@@ -3365,6 +3389,7 @@ public class VectorTest extends AbstractTraversableRangeTest {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
                     final Vector<Integer> shuffled = vector.shuffle();
+                    final java.util.List<Integer> before = shuffled.toJavaList();
                     assertThat(shuffled.size()).isEqualTo(n);
                     assertThat(shuffled.sorted()).isEqualTo(vector);
                     assertThat(shuffled.sorted(Comparator.reverseOrder())).isEqualTo(vector.reverse());
@@ -3374,6 +3399,32 @@ public class VectorTest extends AbstractTraversableRangeTest {
                     if (n <= 1) {
                         assertThat(shuffled).isSameAs(vector);
                     }
+                    // the receiver is never touched: the sorts copy to an array, Arrays.sort that copy and regroup it
+                    assertThat(shuffled.toJavaList()).isEqualTo(before);
+                }
+            }
+        }
+
+        @Test
+        public void shouldLeaveTheReceiverUnchangedWhenTheComparatorThrows() {
+            // three elements at least: two elements are sorted with one comparison, before the n / 2 threshold
+            for (int n : new int[] { 3, 32, 33, 1025 }) {
+                for (Vector<Integer> vector : representations(n)) {
+                    final Vector<Integer> shuffled = vector.shuffle();
+                    final java.util.List<Integer> before = shuffled.toJavaList();
+                    final java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+                    final Comparator<Integer> failing = (a, b) -> {
+                        if (calls.incrementAndGet() > n / 2) {
+                            throw new IllegalStateException("mid-sort");
+                        }
+                        return Integer.compare(a, b);
+                    };
+                    assertThatThrownBy(() -> shuffled.sorted(failing)).isInstanceOf(IllegalStateException.class).hasMessage("mid-sort");
+                    assertThat(shuffled.toJavaList()).isEqualTo(before);
+                    calls.set(0);
+                    assertThatThrownBy(() -> shuffled.sortBy(failing, i -> i)).isInstanceOf(IllegalStateException.class).hasMessage("mid-sort");
+                    assertThat(shuffled.toJavaList()).isEqualTo(before);
+                    assertThat(shuffled.sorted()).isEqualTo(vector);
                 }
             }
         }
