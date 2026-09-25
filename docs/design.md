@@ -1320,7 +1320,9 @@ the public API does not change.
   by `ofAll`) prints the same output on both, but for one message: a `map` whose function returns null on a vector built
   by `range` or `ofAll(int[])` said `Vector.map: element is null`, and now says `Vector: element is null`, the message
   `map` already gave on any other vector. `append(null)` and `prepend(null)` keep `List: element is null`, which comes
-  from the old path through `List.of`.
+  from the old path through `List.of`. One behaviour changes on purpose: `Vector.of(array)` of 32 elements or fewer
+  used the caller's array as its leaf, so writing into the array afterwards changed the vector; the array is now
+  copied, as it always was above 32 elements.
 - **Primitive leaves (decided): `Object[]` only**, as Scala does. `ofAll(int[])` and the other primitive `ofAll` add
   each boxed value to the builder; `range` and its variants build from their `Iterator`. A rough probe (one JVM, best
   of 15 batches after warm-up, not a benchmark; µs per operation at 100 000 elements, step 1 → step 2) shows what
@@ -1328,6 +1330,10 @@ the public API does not change.
   - they are cheaper to build and to keep: `ofAll(int[])` 27 → 410, and 4.6 → 20.6 retained bytes per element for
     values outside the `Integer` cache;
   - they box on every read: a `get` loop 1 970 → 290, iteration 670 → 130, `map` 1 300 → 540, `filter` 710 → 200.
+
+  Two more shapes lose in the same probe: `range(0, 100 000)` 330 → 570, since every value is now kept boxed (the
+  primitive path boxed it in the `Iterator` too, then unboxed it into an `int[]`), and `drop(1)` 0.02 → 0.05 to 0.12,
+  since a slice goes through `VectorSliceBuilder` (`tail` has its own path and does not).
 
   A vector is read more often than it is built, and a primitive leaf also made the first write of another class convert
   the whole vector. So no primitive path is kept; #29 (the `ClassCastException` fallbacks of primitive leaves) has
