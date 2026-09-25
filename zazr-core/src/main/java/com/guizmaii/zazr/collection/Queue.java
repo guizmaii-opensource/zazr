@@ -941,7 +941,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The length of the longest prefix whose elements all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(k) for the k elements of that prefix.
+     * Complexity: O(k) for the k elements of that prefix, as long as they are in the front; the elements added at the
+     * back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param predicate the condition
      * @return the length of the prefix
@@ -985,7 +986,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The length of the longest run of elements satisfying {@code predicate} starting at {@code from}.
      * <p>
-     * Complexity: O(from + k) for the k elements of that run.
+     * Complexity: O(from + k) for the k elements of that run, as long as they are in the front; the elements added at
+     * the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -993,13 +995,23 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public int segmentLength(Predicate<? super T> predicate, int from) {
-        return toList().segmentLength(predicate, from);
+        Objects.requireNonNull(predicate, "predicate is null");
+        final InOrder<T> elements = new InOrder<>(front, rear);
+        for (int i = from; i > 0 && elements.hasNext(); i--) {
+            elements.next();
+        }
+        int length = 0;
+        while (elements.hasNext() && predicate.test(elements.next())) {
+            length++;
+        }
+        return length;
     }
 
     /**
      * Whether this Queue starts with {@code that}: {@code startsWith(that, 0)}.
      * <p>
-     * Complexity: O(m) for m elements of {@code that}.
+     * Complexity: O(m) for m elements of {@code that}, as long as they are compared with the front; the elements added
+     * at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param that the prefix to test
      * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
@@ -2184,7 +2196,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Whether the elements from {@code offset} on start with {@code that}. {@code that} is walked once, so a
      * one-shot iterator is accepted.
      * <p>
-     * Complexity: O(offset + m) for m elements of {@code that}.
+     * Complexity: O(offset + m) for m elements of {@code that}, as long as they are compared with the front; the
+     * elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param that   the prefix to test
      * @param offset the position in this Queue at which the prefix should start
@@ -2193,7 +2206,21 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public boolean startsWith(Iterable<? extends T> that, int offset) {
-        return toList().startsWith(that, offset);
+        Objects.requireNonNull(that, "that is null");
+        if (offset < 0) {
+            return false;
+        }
+        final InOrder<T> elements = new InOrder<>(front, rear);
+        for (int i = offset; i > 0 && elements.hasNext(); i--) {
+            elements.next();
+        }
+        final java.util.Iterator<? extends T> prefix = that.iterator();
+        while (elements.hasNext() && prefix.hasNext()) {
+            if (!Objects.equals(elements.next(), prefix.next())) {
+                return false;
+            }
+        }
+        return !prefix.hasNext();
     }
 
     /**
@@ -2401,7 +2428,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
      * {@code that}.
      * <p>
-     * Complexity: O(min(n, m)) for an argument of m elements.
+     * Complexity: O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements
+     * added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param <U>  the type of elements in the second half of each pair
      * @param that an {@code Iterable} providing the second element of each pair
@@ -2419,7 +2447,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
      * {@code that}.
      * <p>
-     * Complexity: O(min(n, m)) for an argument of m elements.
+     * Complexity: O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements
+     * added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param <U>    the type of elements in the second parameter of the mapper
      * @param <R>    the type of elements in the resulting {@code Queue}
@@ -2432,7 +2461,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <U extends @Nullable Object, R extends @Nullable Object> Queue<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(toList().zipWith(that, mapper));
+        final com.guizmaii.zazr.collection.List<R> zipped = com.guizmaii.zazr.collection.List.ofAll(Iterator.ofAll(new InOrder<>(front, rear)).zipWith(that, mapper));
+        return zipped.isEmpty() ? empty() : new Queue<>(zipped, com.guizmaii.zazr.collection.List.empty());
     }
 
     /**
@@ -3302,6 +3332,40 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Stream<T> toStream() {
         return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    }
+
+    /**
+     * The elements of a Queue in order: the front, then the rear, which is reversed only once the front is exhausted,
+     * so that a walk that stops in the front never pays for the rear.
+     */
+    private static final class InOrder<T extends @Nullable Object> implements java.util.Iterator<T> {
+
+        private com.guizmaii.zazr.collection.List<T> current;
+        private com.guizmaii.zazr.collection.List<T> rear;
+
+        InOrder(com.guizmaii.zazr.collection.List<T> front, com.guizmaii.zazr.collection.List<T> rear) {
+            this.current = front;
+            this.rear = rear;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (current.isEmpty() && !rear.isEmpty()) {
+                current = rear.reverse();
+                rear = com.guizmaii.zazr.collection.List.empty();
+            }
+            return !current.isEmpty();
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            final T head = current.head();
+            current = current.tail();
+            return head;
+        }
     }
 
 }

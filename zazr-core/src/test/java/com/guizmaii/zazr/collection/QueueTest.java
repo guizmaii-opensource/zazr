@@ -5990,4 +5990,92 @@ public class QueueTest extends AbstractTraversableTest {
             assertThat(Queue.of(1, 1, 2, 2).duplicates().enqueue(3)).isEqualTo(Queue.of(1, 2, 3));
         }
     }
+
+    // -- walks over the front, then the rear
+
+    @Nested
+    class FrontThenRearTests {
+
+        // every split of 0..n-1 between the front and the rear, the rear holding the elements enqueued last
+        private List<Queue<Integer>> shapes(int n) {
+            List<Queue<Integer>> shapes = List.of(Queue.ofAll(List.range(0, n)));
+            for (int split = 1; split < n; split++) {
+                shapes = shapes.append(Queue.ofAll(List.range(0, split)).enqueueAll(List.range(split, n)));
+            }
+            return shapes;
+        }
+
+        // an Iterable whose iterator can be asked for once
+        private Iterable<Integer> oneShot(List<Integer> elements) {
+            final AtomicInteger calls = new AtomicInteger();
+            return () -> {
+                assertThat(calls.incrementAndGet()).isEqualTo(1);
+                return elements.iterator();
+            };
+        }
+
+        private int[] indices(int n) {
+            return new int[] { Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE };
+        }
+
+        @Test
+        public void shouldAgreeWithListOnEverySplitAndBound() {
+            final List<List<Integer>> prefixes = List.of(List.empty(), List.of(0), List.of(0, 1), List.of(1, 2), List.of(3, 4), List.of(4), List.of(4, 5), List.range(0, 5), List.range(0, 6));
+            for (int n : new int[] { 0, 1, 5 }) {
+                final List<Integer> list = List.range(0, n);
+                for (Queue<Integer> queue : shapes(n)) {
+                    assertThat(queue.toList()).isEqualTo(list);
+                    for (int i : indices(n)) {
+                        assertThat(queue.segmentLength(x -> x < 3, i)).as("segmentLength(< 3, %d) of %s", i, queue).isEqualTo(list.segmentLength(x -> x < 3, i));
+                        assertThat(queue.segmentLength(x -> true, i)).as("segmentLength(true, %d) of %s", i, queue).isEqualTo(list.segmentLength(x -> true, i));
+                        for (List<Integer> prefix : prefixes) {
+                            assertThat(queue.startsWith(prefix, i)).as("startsWith(%s, %d) of %s", prefix, i, queue).isEqualTo(list.startsWith(prefix, i));
+                        }
+                    }
+                    for (int k = 0; k <= 4; k++) {
+                        final int limit = k;
+                        assertThat(queue.prefixLength(x -> x < limit)).isEqualTo(list.prefixLength(x -> x < limit));
+                    }
+                    for (List<Integer> prefix : prefixes) {
+                        assertThat(queue.startsWith(prefix)).as("startsWith(%s) of %s", prefix, queue).isEqualTo(list.startsWith(prefix));
+                        assertThat(queue.zip(prefix).toList()).isEqualTo(list.zip(prefix));
+                        assertThat(queue.zipWith(prefix, Integer::sum).toList()).isEqualTo(list.zipWith(prefix, Integer::sum));
+                        assertThat(queue.zipWith(oneShot(prefix), Integer::sum).toList()).isEqualTo(list.zipWith(prefix, Integer::sum));
+                    }
+                }
+            }
+        }
+
+        @Test
+        public void shouldStopReadingTheArgumentsWhereTheWalkStops() {
+            final Queue<Integer> queue = Queue.ofAll(List.range(0, 3)).enqueueAll(List.range(3, 6));
+            final AtomicInteger tested = new AtomicInteger();
+            assertThat(queue.prefixLength(x -> tested.incrementAndGet() > 0 && x < 4)).isEqualTo(4);
+            assertThat(tested.get()).isEqualTo(5);
+            tested.set(0);
+            assertThat(queue.segmentLength(x -> tested.incrementAndGet() > 0 && x < 2, 1)).isEqualTo(1);
+            assertThat(tested.get()).isEqualTo(2);
+            final AtomicInteger read = new AtomicInteger();
+            final Iterable<Integer> counted = () -> java.util.stream.Stream.of(0, 1, 9, 3).peek(x -> read.incrementAndGet()).iterator();
+            assertThat(queue.startsWith(counted)).isFalse();
+            assertThat(read.get()).isEqualTo(3);
+            read.set(0);
+            assertThat(queue.zip(counted)).isEqualTo(Queue.of(Tuple.of(0, 0), Tuple.of(1, 1), Tuple.of(2, 9), Tuple.of(3, 3)));
+            assertThat(read.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void shouldReturnTheEmptyQueueWhenNothingIsZipped() {
+            assertThat(Queue.of(1, 2).zip(List.empty())).isSameAs(Queue.empty());
+            assertThat(Queue.empty().zip(List.of(1))).isSameAs(Queue.empty());
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> Queue.of(1).startsWith(null, 0)).withMessage("that is null");
+            assertThatNullPointerException().isThrownBy(() -> Queue.of(1).segmentLength(null, 0)).withMessage("predicate is null");
+            assertThatNullPointerException().isThrownBy(() -> Queue.of(1).zipWith(null, Integer::sum)).withMessage("that is null");
+            assertThatNullPointerException().isThrownBy(() -> Queue.of(1).zipWith(List.of(1), null)).withMessage("mapper is null");
+        }
+    }
 }

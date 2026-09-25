@@ -91,4 +91,22 @@ public class LengthComplexityTest {
         });
     }
 
+    @Test
+    public void shouldWalkOnlyTheFrontOfAQueue() {
+        // K calls on a Queue of 2N elements: milliseconds when each call reads the first elements, far past the bound
+        // when each call copies the whole Queue first
+        final Queue<Integer> queue = Queue.ofAll(List.range(0, N)).enqueueAll(List.range(N, 2 * N));
+        final List<Integer> one = List.of(0);
+        assertTimeoutPreemptively(BOUND, () -> {
+            for (int i = 0; i < K; i++) {
+                assertThat(queue.startsWith(one)).isTrue();
+                assertThat(queue.startsWith(one, 0)).isTrue();
+                assertThat(queue.zip(one).length()).isEqualTo(1);
+                assertThat(queue.zipWith(one, Integer::sum).head()).isEqualTo(0);
+                assertThat(queue.prefixLength(x -> false)).isEqualTo(0);
+                assertThat(queue.segmentLength(x -> false, 0)).isEqualTo(0);
+            }
+        });
+    }
+
 }

@@ -1009,6 +1009,9 @@ and unable to drift:
     message of the exception it throws; `leftPadTo` counts up to the target). `lastIndexOfSlice` drops the found
     prefix with the fixed `drop`, and `combinations(k)` walks the tails instead of dropping i + 1 elements per index,
     so both lose their quadratic factor.
+  - `Queue`: `startsWith`, `zip`/`zipWith`, `prefixLength` and `segmentLength` copied the whole Queue into a `List`
+    first. Fixed: they walk the front, then the rear, reversed only when the walk reaches it; their notes say that a
+    walk reaching the elements added at the back since the last rebalancing pays O(n) for that reversal.
 
 Which concrete collections survive (decided):
 

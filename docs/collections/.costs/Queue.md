@@ -24,7 +24,7 @@
 | `length` | <abbr class="cx cx-linear" title="O(n); the front and the rear are counted.">O(n)</abbr> | O(n); the front and the rear are counted. |
 | `contains` | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
-| `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for an argument of m elements.">O(min(n, m))</abbr> | O(min(n, m)) for an argument of m elements. |
+| `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.">O(min(n, m))</abbr> | O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most. |
 | `sliding(int)` | <abbr class="cx cx-polynomial" title="O(n * size); each window is copied into its own Queue.">O(n * size)</abbr> | O(n * size); each window is copied into its own Queue. |
 | `sliding(int, int)` | <abbr class="cx cx-polynomial" title="O(n * size / step); each window is copied into its own Queue.">O(n * size / step)</abbr> | O(n * size / step); each window is copied into its own Queue. |
 | `grouped` | <abbr class="cx cx-linear" title="O(n); each block is copied into its own Queue.">O(n)</abbr> | O(n); each block is copied into its own Queue. |
