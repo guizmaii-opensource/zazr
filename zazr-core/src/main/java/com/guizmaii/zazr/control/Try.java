@@ -1000,8 +1000,9 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * If the finalizer throws a non-fatal exception: on a {@code Success} the result is a {@code Failure} of that
      * exception; on a {@code Failure} the original cause is kept and the exception is added to it as
      * {@linkplain Throwable#addSuppressed(Throwable) suppressed}, the way {@code try}-with-resources attaches an
-     * exception thrown by {@code close()} to the primary one (JLS 14.20.3). A fatal throwable (see the class-level
-     * documentation) is rethrown whatever the state of this {@code Try}.
+     * exception thrown by {@code close()} to the primary one (JLS 14.20.3). When the finalizer rethrows the cause
+     * itself, this {@code Failure} is returned unchanged with nothing added, since a throwable cannot suppress itself.
+     * A fatal throwable (see the class-level documentation) is rethrown whatever the state of this {@code Try}.
      * <p>
      * A {@link Runnable} lambda is a {@code CheckedRunnable} lambda; a {@code Runnable} variable is passed as
      * {@code runnable::run}.
@@ -1011,7 +1012,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      *
      * @param finalizer what to run after this {@code Try}
      * @return this {@code Try} if the finalizer completes normally; a {@code Failure} of what it threw when this was
-     *         a {@code Success}; this same {@code Failure} with the thrown exception suppressed otherwise
+     *         a {@code Success}; this same {@code Failure} otherwise, with the thrown exception suppressed unless it
+     *         is the cause itself
      * @throws NullPointerException if {@code finalizer} is null
      */
     default Try<T> ensuring(CheckedRunnable finalizer) {
@@ -1021,7 +1023,10 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         } catch (Throwable t) {
             if (isFailure() && !isFatal(t)) {
-                getCause().addSuppressed(t);
+                final Throwable cause = getCause();
+                if (t != cause) {
+                    cause.addSuppressed(t);
+                }
                 return this;
             }
             return new Failure<>(t);
