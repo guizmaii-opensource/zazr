@@ -34,7 +34,8 @@ import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
  * {@code null} under {@link #of(Callable)}, {@link #mapTry(CheckedFunction1)} or
  * {@link #fromCompletableFuture(CompletableFuture)} is captured, like any other non-fatal outcome, as a
  * {@code Failure} of a {@link NullPointerException}. A computation that returns nothing is run with
- * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
+ * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal when
+ * their causes are, by the cause's own {@code equals}: for the usual exceptions, only when they hold the same
  * {@code Throwable} instance, see {@link Failure}.
  * <p>
  * A {@code Try} is not a collection and not {@link Iterable}: to iterate its value, convert it
@@ -1116,10 +1117,12 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * failure.getCause();   // RuntimeException: error
      * }</pre>
      *
-     * <strong>Equality.</strong> Two {@code Failure}s are equal when their causes are the same object: the record
-     * default, since {@code Throwable} does not override {@code equals}. Class, message and stack trace are not
-     * compared, because two exceptions are not the same because they print alike. A test that means "failed the
-     * same way" compares {@code getCause().getClass()} or {@code getMessage()} itself.
+     * <strong>Equality.</strong> Two {@code Failure}s are equal when their causes are equal by the cause's own
+     * {@code equals}: the record default. {@code Throwable} does not override {@code equals}, nor do the JDK
+     * exceptions, so for them this means the same object; an exception class that defines its own {@code equals}
+     * is compared with it. Class, message and stack trace are not compared otherwise, because two exceptions are not
+     * the same because they print alike. A test that means "failed the same way" compares
+     * {@code getCause().getClass()} or {@code getMessage()} itself.
      *
      * @param cause the throwable, never {@code null} and never fatal (see the class-level documentation of {@link Try})
      * @param <T>   the type of the value that would have been contained if successful

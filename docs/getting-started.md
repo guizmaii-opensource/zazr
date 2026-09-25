@@ -102,6 +102,6 @@ int third = doubled.get(2);
 
 ## Next
 
-- [Control types](control-types.md): `Option`, `Either`, `Try` and `Lazy` in detail.
-- [Validation](validation.md): checks that report every error at once.
+- [Control types](control/index.md): `Option`, `Either`, `Try`, `Validation` and `Lazy`, and which one to pick.
+- [Validation](control/validation.md): checks that report every error at once.
 - [Collections](collections/index.md): which collection to choose, and what each operation costs.

@@ -111,8 +111,8 @@ bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark mo
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
 # javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
-# where the src-gen clean also empties target/, so the plugin finds no module-info.class in zazr-core and refuses
-# the named module. Output: <module>/target/reports/apidocs.
+# so on a fresh checkout the plugin finds no module-info.class in zazr-core and refuses the named module.
+# Output: <module>/target/reports/apidocs.
 javadoc: ## build the javadoc of zazr-core and zazr-test (doclint: fails on a broken reference or malformed tag)
 	$(MVN) compile javadoc:javadoc-no-fork
 
