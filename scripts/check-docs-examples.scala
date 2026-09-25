@@ -1,12 +1,12 @@
 //> using scala 3.9.0
 //> using jvm system
 //
-// Fails when a fenced `java` block of the site does not appear verbatim in one of the docs example tests, which
-// compile and run every snippet (so the examples cannot rot).
+// Fails when a fenced `java` block of the site or of the Agent Skill does not appear verbatim in one of the docs
+// example tests, which compile and run every snippet (so the examples cannot rot).
 //
-//   scala-cli run scripts/check-docs-examples.scala -- --docs docs --exclude docs/design.md TEST_FILE...
+//   scala-cli run scripts/check-docs-examples.scala -- --docs docs --docs skills --exclude docs/design.md TEST_FILE...
 //
-// Every Markdown file under the `--docs` directory is read, except the `--exclude` ones (docs/design.md is the
+// Every Markdown file under each `--docs` directory is read, except the `--exclude` ones (docs/design.md is the
 // design record, not the user guide) and those under a hidden directory (the generated tables of
 // docs/collections/.costs). A block is a fence opened by ```java (indented or not, as inside an admonition or a
 // content tab) and closed by the next fence. Its normalised text, each line trimmed and the blank
@@ -49,14 +49,14 @@ def blocks(file: Path): List[Block] = {
 }
 
 @main def run(args: String*): Unit = {
-  var docs = Option.empty[Path]
+  var docs = List.empty[Path]
   var excluded = Set.empty[Path]
   var tests = List.empty[Path]
   var rest = args.toList
   while (rest.nonEmpty) {
     rest match {
       case "--docs" :: d :: tail =>
-        docs = Some(Path.of(d))
+        docs = docs :+ Path.of(d)
         rest = tail
       case "--exclude" :: f :: tail =>
         excluded += Path.of(f).normalize
@@ -68,14 +68,16 @@ def blocks(file: Path): List[Block] = {
     }
   }
   if (docs.isEmpty || tests.isEmpty) {
-    System.err.println("usage: scala-cli run scripts/check-docs-examples.scala -- --docs DIR [--exclude FILE]... TEST_FILE...")
+    System.err.println("usage: scala-cli run scripts/check-docs-examples.scala -- --docs DIR... [--exclude FILE]... TEST_FILE...")
     sys.exit(2)
   }
-  val markdown = Files.walk(docs.get).iterator.asScala
-    .filter(p => p.toString.endsWith(".md") && !excluded(p.normalize))
-    .filterNot(p => docs.get.relativize(p).iterator.asScala.exists(_.toString.startsWith(".")))
-    .toList
-    .sortBy(_.toString)
+  val markdown = docs.flatMap { root =>
+    Files.walk(root).iterator.asScala
+      .filter(p => p.toString.endsWith(".md") && !excluded(p.normalize))
+      .filterNot(p => root.relativize(p).iterator.asScala.exists(_.toString.startsWith(".")))
+      .toList
+      .sortBy(_.toString)
+  }
   val all = markdown.flatMap(blocks)
   val haystacks = tests.map(t => "\n" + normalise(Files.readAllLines(t, StandardCharsets.UTF_8).asScala.toSeq) + "\n")
   val missing = all.filterNot(b => b.text.isEmpty || haystacks.exists(_.contains("\n" + b.text + "\n")))
@@ -83,7 +85,7 @@ def blocks(file: Path): List[Block] = {
     println(s"${b.file}:${b.line}: this java block is not in ${tests.mkString(" or ")}: ${b.text.linesIterator.next()}")
   }
   if (all.isEmpty) {
-    println(s"no java block found under ${docs.get}")
+    println(s"no java block found under ${docs.mkString(" or ")}")
     sys.exit(1)
   }
   if (missing.nonEmpty) {

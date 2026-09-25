@@ -54,6 +54,8 @@ API, not an afterthought. Its design comes from modern Scala's collections and f
   constant time, and the way back does not copy either.
 - **Names that say what happens.** `zip`, `collectAll`, `catchAll`, `mapBoth`: the vocabulary of ZIO, with no theory
   to learn first.
+- **[AI ready.](https://zazr.dev/ai-assistant/)** An [Agent Skill](skills/zazr) teaches your coding assistant to
+  write idiomatic Zazr code instead of Vavr from memory.
 
 ## Installation
 

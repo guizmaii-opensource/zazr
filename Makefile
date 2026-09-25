@@ -47,8 +47,8 @@ verify: ## what CI runs: full build with tests, formatting, nullness, javadoc, v
 	$(MAKE) docs-complexity-check
 	$(MAKE) docs-examples
 
-vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE.md: use the ZIO names)
-	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs ':!docs/design.md')"; \
+vocabulary: ## fail on category-theory vocabulary in the code, the site and the skill (not docs/design.md) (CLAUDE.md: use the ZIO names)
+	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs skills ':!docs/design.md')"; \
 	if [ -n "$$hits" ]; then echo "$$hits"; echo "category-theory vocabulary found; use the ZIO names (see CLAUDE.md)"; exit 1; fi
 
 # The files whose positional and size-sensitive methods must document their cost (design.md 3.7), and the
@@ -74,13 +74,16 @@ docs-complexity-check: docs-complexity ## fail when the committed complexity pag
 		git --no-pager diff -- $(COMPLEXITY_PAGE) $(COMPLEXITY_GLANCE); \
 		echo "the complexity page is stale or untracked: run make docs-complexity and commit the result"; exit 1; fi
 
-# The tests that compile and run every fenced java block of the site (zazr-test's own, since zazr-core cannot depend on it).
+# The tests that compile and run every fenced java block of the site and of the Agent Skill under skills/ (zazr-test's
+# own, since zazr-core cannot depend on it).
 DOCS_EXAMPLES_TESTS := \
 	zazr-core/src/test/java/com/guizmaii/zazr/docs/DocsExamplesTest.java \
+	zazr-core/src/test/java/com/guizmaii/zazr/docs/SkillExamplesTest.java \
+	zazr-core/src/test/java/com/guizmaii/zazr/docs/SkillFunctionalJavaExamplesTest.java \
 	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java
 
-docs-examples: ## fail when a java block of the site is not in a docs example test (they compile and run every snippet)
-	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)
+docs-examples: ## fail when a java block of the site or the skill is not in a docs example test (they compile and run every snippet)
+	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --docs skills --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)
 
 # The site (MkDocs + Material), built in a local virtualenv pinned by requirements-docs.txt.
 DOCS_VENV := .venv-docs

@@ -117,6 +117,18 @@ its API, not an afterthought. Its design comes from modern Scala's collections a
 
 <div class="zz-section" markdown>
 
+## Zazr is AI ready { .zz-kicker }
+
+Teach your coding assistant Zazr. The Zazr Agent Skill gives it the rules, the names and the sharp edges, so it
+writes idiomatic Zazr code instead of Vavr from memory.
+
+[Add it to your assistant :octicons-arrow-right-24:](ai-assistant.md){ .md-button .md-button--primary }
+[The skill on GitHub](https://github.com/guizmaii-opensource/zazr/tree/main/skills/zazr){ .md-button }
+
+</div>
+
+<div class="zz-section" markdown>
+
 ## A short tour { .zz-kicker }
 
 ```java
