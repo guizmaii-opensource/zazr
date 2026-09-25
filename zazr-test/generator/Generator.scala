@@ -971,8 +971,11 @@ object Generator {
   import java.nio.file.{Files, Path, Paths}
   import scala.jdk.CollectionConverters._
 
-  // The files written by this run, so that `deleteStaleFiles` knows which ones it no longer produces.
+  // The real paths of the files written by this run, so that `deleteStaleFiles` knows which ones it no longer
+  // produces, and their lower-cased paths, so that two names differing only in case, the same file on a
+  // case-insensitive file system, fail the build.
   private val generated = scala.collection.mutable.Set.empty[Path]
+  private val generatedIgnoringCase = scala.collection.mutable.Set.empty[String]
 
   /**
    * Generates a file by writing string contents to the file system. The file is written only when its content
@@ -987,14 +990,20 @@ object Generator {
    */
   def genFile(baseDir: String, dirName: String, fileName: String)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
     val file = Paths.get(baseDir, dirName, fileName).toAbsolutePath.normalize
-    if (!generated.add(file)) {
-      throw new IllegalStateException(s"$file is generated twice")
+    if (!generatedIgnoringCase.add(file.toString.toLowerCase(java.util.Locale.ROOT))) {
+      throw new IllegalStateException(s"$file is generated twice (file names are compared ignoring case)")
     }
     val bytes = contents.getBytes(charset)
+    // On a case-insensitive file system, a class renamed by case only finds its old file under the old name:
+    // delete it, so the file is written under the new name.
+    if (Files.exists(file) && file.toRealPath().getFileName.toString != fileName) {
+      Files.delete(file)
+    }
     if (!Files.isRegularFile(file) || !java.util.Arrays.equals(Files.readAllBytes(file), bytes)) {
       Files.createDirectories(file.getParent)
       Files.write(file, bytes)
     }
+    generated.add(file.toRealPath())
   }
 
   /**
@@ -1006,7 +1015,7 @@ object Generator {
     if (Files.isDirectory(rootPath)) {
       val stream = Files.walk(rootPath)
       val paths = try stream.iterator.asScala.toList finally stream.close()
-      paths.filter(p => Files.isRegularFile(p) && !generated.contains(p)).foreach(Files.delete)
+      paths.filter(p => Files.isRegularFile(p) && !generated.contains(p.toRealPath())).foreach(Files.delete)
       paths.filter(Files.isDirectory(_)).sortBy(p => -p.getNameCount).foreach { dir =>
         val entries = Files.list(dir)
         val empty = try !entries.iterator.hasNext finally entries.close()
