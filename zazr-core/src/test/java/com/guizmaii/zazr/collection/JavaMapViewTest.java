@@ -3,6 +3,7 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import java.util.Comparator;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,30 @@ class JavaMapViewTest {
                     JavaViewContract.ordered().navigableMap("TreeMap(" + n + ", " + name(comparator) + ").asJavaMap()", map.asJavaMap(), reference,
                             JavaViewContract.keyProbes(n), JavaViewContract.valueProbes(n), JavaViewContract.bounds(n), 0);
                 })));
+    }
+
+    @TestFactory
+    java.util.stream.Stream<DynamicTest> shouldReadTheEntriesOfAMapLikeAnArrayListOfThem() {
+        final java.util.Map<String, Function<java.util.List<Tuple2<Integer, String>>, Map<Integer, String>>> maps = new java.util.LinkedHashMap<>();
+        maps.put("HashMap", HashMap::ofEntries);
+        maps.put("LinkedHashMap", LinkedHashMap::ofEntries);
+        maps.put("TreeMap", TreeMap::ofEntries);
+        return maps.entrySet().stream().flatMap(map -> IntStream.of(JavaViewContract.SIZES).mapToObj(n -> DynamicTest.dynamicTest(map.getKey() + ".asJava() of " + n, () -> {
+            final Map<Integer, String> zazr = map.getValue().apply(entries(shuffled(JavaViewContract.evens(n))));
+            final java.util.List<Tuple2<Integer, String>> reference = new java.util.ArrayList<>();
+            for (Tuple2<Integer, String> entry : zazr) {
+                reference.add(entry);
+            }
+            final java.util.List<Object> probes = new java.util.ArrayList<>();
+            for (Object key : JavaViewContract.keyProbes(n)) {
+                probes.add(Tuple.of(key, "v" + key));
+                probes.add(Tuple.of(key, "other"));
+            }
+            probes.add(null);
+            probes.add(JavaViewContract.FOREIGN);
+            final JavaViewContract contract = map.getKey().equals("HashMap") ? JavaViewContract.unordered() : JavaViewContract.ordered();
+            contract.collection(map.getKey() + "(" + n + ").asJava()", zazr.asJava(), reference, probes);
+        })));
     }
 
     @Test

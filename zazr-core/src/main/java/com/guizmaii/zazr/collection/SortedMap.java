@@ -43,7 +43,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * An unmodifiable {@link java.util.NavigableMap} view of this map, in the order of its keys: nothing is copied,
      * reads go through to this map, which never changes, and every mutator of the view throws
      * {@link UnsupportedOperationException}, {@code pollFirstEntry} and {@code pollLastEntry} included. The
-     * sub-maps, the head and tail maps, the descending map and the key sets are views too.
+     * sub-maps, the head and tail maps, the descending map and the key sets are views too. A mutable copy is
+     * {@code new java.util.TreeMap<>(map.asJavaMap())}.
      * <p>
      * Complexity: O(1); {@code get}, {@code containsKey}, {@code firstKey}, {@code ceilingEntry} and the other
      * navigation methods of the view are O(log n).

@@ -120,7 +120,9 @@ public final class JavaConverters {
 
     /**
      * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
-     * the delegate's iterator and size, nothing copied.
+     * the delegate's iterator and size, nothing copied. {@code contains} compares with {@code equals} along the
+     * iterator, as {@link AbstractCollection} does, so that any argument, {@code null} or of another type, is
+     * answered {@code false} (a map's own {@code contains} takes an entry).
      *
      * @param <T> the element type
      */
@@ -152,11 +154,6 @@ public final class JavaConverters {
             return delegate.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
-        @Override
-        public boolean contains(@Nullable Object element) {
-            return delegate.contains((T) element);
-        }
 
         @Override
         public Object[] toArray() {

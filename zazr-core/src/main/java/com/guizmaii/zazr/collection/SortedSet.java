@@ -52,7 +52,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * An unmodifiable {@link java.util.NavigableSet} view of this set, in the comparator's order: nothing is copied,
      * reads go through to this set, which never changes, and every mutator of the view throws
      * {@link UnsupportedOperationException}, {@code pollFirst} and {@code pollLast} included. The sub-sets, the
-     * head and tail sets and the descending set are views too.
+     * head and tail sets and the descending set are views too. A mutable copy is
+     * {@code new java.util.TreeSet<>(set.asJava())}.
      * <p>
      * Complexity: O(1); {@code contains}, {@code first}, {@code ceiling} and the other navigation methods of the view
      * are O(log n).
