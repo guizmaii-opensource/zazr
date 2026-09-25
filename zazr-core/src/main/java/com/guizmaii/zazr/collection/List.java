@@ -1835,10 +1835,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default List<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
-        List<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        // the end of the replaced range, saturated: from + replaced can overflow an int
+        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        return take(from).appendAll(that).appendAll(drop(end));
     }
 
     default Tuple2<List<T>, List<T>> partition(Predicate<? super T> predicate) {

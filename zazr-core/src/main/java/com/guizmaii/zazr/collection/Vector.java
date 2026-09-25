@@ -1759,10 +1759,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
 
-        Vector<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        // the end of the replaced range, saturated: from + replaced can overflow an int
+
+        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+
+        return take(from).appendAll(that).appendAll(drop(end));
     }
 
     public Tuple2<Vector<T>, Vector<T>> partition(Predicate<? super T> predicate) {

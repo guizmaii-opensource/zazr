@@ -1804,10 +1804,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
-        Queue<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        // the end of the replaced range, saturated: from + replaced can overflow an int
+        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        return take(from).appendAll(that).appendAll(drop(end));
     }
 
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
