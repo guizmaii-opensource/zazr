@@ -70,6 +70,7 @@ Every method: [complexity page](complexity.md#sets).
 - `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, even on a
   `TreeSet`. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, in O(log n).
 - `TreeSet` decides membership with its comparator, not `equals`.
-- `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator. With different comparators,
+- `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator, and `union`, `diff`,
+  `containsAll` and `equals` on two `HashSet`s: they work on whole parts of the trees. With different comparators,
   or another kind of set, they process the elements one by one.
 - `TreeSet` has no `partitionMap`.

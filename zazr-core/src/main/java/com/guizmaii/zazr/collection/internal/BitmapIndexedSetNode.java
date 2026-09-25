@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.collection.internal;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 import static java.lang.Integer.bitCount;
@@ -108,8 +109,9 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         return size;
     }
 
+    /// The sum of the hashes of the elements: the hash of a `java.util.Set` of them.
     @Override
-    int keyHashSum() {
+    public int keyHashSum() {
         return keyHashSum;
     }
 
@@ -300,6 +302,385 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         System.arraycopy(src, idxOld + 1, dst, idxOld + 1, src.length - idxOld - 1);
         return new BitmapIndexedSetNode<>(null, dataMap | bitpos, nodeMap ^ bitpos, dst, insertElement(hashes, idxNew, node.getHash(0)),
                 size - oldNode.size() + 1, keyHashSum - oldNode.keyHashSum() + node.keyHashSum());
+    }
+
+    // -- the operations on whole subtrees
+
+    // the concat of BitmapIndexedMapNode, on elements: a first pass sorts each slot into one of nine cases, a second
+    // builds the node
+    @Override
+    public BitmapIndexedSetNode<T> concat(SetNode<T> that, int shift) {
+        final BitmapIndexedSetNode<T> bm = (BitmapIndexedSetNode<T>) that;
+        if (size == 0) {
+            return bm;
+        } else if (bm.size == 0 || bm == this) {
+            return this;
+        } else if (bm.size == 1) {
+            final BitmapIndexedSetNode<T> result = updated(bm.getPayload(0), bm.hashes[0], shift, true);
+            // this node held only the element of `bm`, which wins: the result is `bm`
+            return result.size == 1 ? bm : result;
+        }
+        // set as soon as the result differs from `bm`, which is returned otherwise
+        boolean anyChangesMadeSoFar = false;
+        final int allMap = dataMap | bm.dataMap | nodeMap | bm.nodeMap;
+        // both inclusive
+        final int minimumBitPos = bitposFrom(Integer.numberOfTrailingZeros(allMap));
+        final int maximumBitPos = bitposFrom(BRANCHING_FACTOR - Integer.numberOfLeadingZeros(allMap) - 1);
+
+        int leftNodeRightNode = 0;
+        int leftDataRightNode = 0;
+        int leftNodeRightData = 0;
+        int leftDataOnly = 0;
+        int rightDataOnly = 0;
+        int leftNodeOnly = 0;
+        int rightNodeOnly = 0;
+        int leftDataRightDataMigrateToNode = 0;
+        int leftDataRightDataRightOverwrites = 0;
+        int dataToNodeMigrationTargets = 0;
+
+        int bitpos = minimumBitPos;
+        int leftIdx = 0;
+        int rightIdx = 0;
+        while (true) {
+            if ((bitpos & dataMap) != 0) {
+                if ((bitpos & bm.dataMap) != 0) {
+                    final int leftHash = hashes[leftIdx];
+                    if (leftHash == bm.hashes[rightIdx] && Objects.equals(getPayload(leftIdx), bm.getPayload(rightIdx))) {
+                        leftDataRightDataRightOverwrites |= bitpos;
+                    } else {
+                        leftDataRightDataMigrateToNode |= bitpos;
+                        dataToNodeMigrationTargets |= bitposFrom(maskFrom(leftHash, shift));
+                    }
+                    rightIdx++;
+                } else if ((bitpos & bm.nodeMap) != 0) {
+                    leftDataRightNode |= bitpos;
+                } else {
+                    leftDataOnly |= bitpos;
+                }
+                leftIdx++;
+            } else if ((bitpos & nodeMap) != 0) {
+                if ((bitpos & bm.dataMap) != 0) {
+                    leftNodeRightData |= bitpos;
+                    rightIdx++;
+                } else if ((bitpos & bm.nodeMap) != 0) {
+                    leftNodeRightNode |= bitpos;
+                } else {
+                    leftNodeOnly |= bitpos;
+                }
+            } else if ((bitpos & bm.dataMap) != 0) {
+                rightDataOnly |= bitpos;
+                rightIdx++;
+            } else if ((bitpos & bm.nodeMap) != 0) {
+                rightNodeOnly |= bitpos;
+            }
+            if (bitpos == maximumBitPos) {
+                break;
+            }
+            bitpos <<= 1;
+        }
+
+        final int newDataMap = leftDataOnly | rightDataOnly | leftDataRightDataRightOverwrites;
+        final int newNodeMap = leftNodeRightNode | leftDataRightNode | leftNodeRightData | leftNodeOnly | rightNodeOnly
+                               | dataToNodeMigrationTargets;
+        if (newDataMap == (rightDataOnly | leftDataRightDataRightOverwrites) && newNodeMap == rightNodeOnly) {
+            // nothing of this node makes it into the result
+            return bm;
+        }
+
+        final int newDataSize = bitCount(newDataMap);
+        final int newContentSize = newDataSize + bitCount(newNodeMap);
+        final Object[] newContent = new Object[newContentSize];
+        final int[] newHashes = new int[newDataSize];
+        int newSize = 0;
+        int newKeyHashSum = 0;
+
+        int leftDataIdx = 0;
+        int rightDataIdx = 0;
+        int leftNodeIdx = 0;
+        int rightNodeIdx = 0;
+        final int nextShift = shift + BIT_PARTITION_SIZE;
+        int compressedDataIdx = 0;
+        int compressedNodeIdx = 0;
+        bitpos = minimumBitPos;
+        while (true) {
+            if ((bitpos & leftNodeRightNode) != 0) {
+                final SetNode<T> rightNode = bm.getNode(rightNodeIdx);
+                final SetNode<T> newNode = getNode(leftNodeIdx).concat(rightNode, nextShift);
+                if (rightNode != newNode) {
+                    anyChangesMadeSoFar = true;
+                }
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                rightNodeIdx++;
+                leftNodeIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataRightNode) != 0) {
+                final SetNode<T> n = bm.getNode(rightNodeIdx);
+                final SetNode<T> newNode = n.updated(getPayload(leftDataIdx), hashes[leftDataIdx], nextShift, false);
+                if (newNode != n) {
+                    anyChangesMadeSoFar = true;
+                }
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                rightNodeIdx++;
+                leftDataIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftNodeRightData) != 0) {
+                anyChangesMadeSoFar = true;
+                final SetNode<T> newNode = getNode(leftNodeIdx).updated(bm.getPayload(rightDataIdx), bm.hashes[rightDataIdx], nextShift, true);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                leftNodeIdx++;
+                rightDataIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataOnly) != 0) {
+                anyChangesMadeSoFar = true;
+                newContent[compressedDataIdx] = content[leftDataIdx];
+                newHashes[compressedDataIdx] = hashes[leftDataIdx];
+                newKeyHashSum += hashes[leftDataIdx];
+                compressedDataIdx++;
+                leftDataIdx++;
+                newSize++;
+            } else if ((bitpos & rightDataOnly) != 0) {
+                newContent[compressedDataIdx] = bm.content[rightDataIdx];
+                newHashes[compressedDataIdx] = bm.hashes[rightDataIdx];
+                newKeyHashSum += bm.hashes[rightDataIdx];
+                compressedDataIdx++;
+                rightDataIdx++;
+                newSize++;
+            } else if ((bitpos & leftNodeOnly) != 0) {
+                anyChangesMadeSoFar = true;
+                final SetNode<T> newNode = getNode(leftNodeIdx);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                leftNodeIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & rightNodeOnly) != 0) {
+                final SetNode<T> newNode = bm.getNode(rightNodeIdx);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                rightNodeIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataRightDataMigrateToNode) != 0) {
+                anyChangesMadeSoFar = true;
+                final SetNode<T> newNode = mergeTwoKeyValPairs(null, getPayload(leftDataIdx), hashes[leftDataIdx],
+                        bm.getPayload(rightDataIdx), bm.hashes[rightDataIdx], nextShift);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                leftDataIdx++;
+                rightDataIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataRightDataRightOverwrites) != 0) {
+                newContent[compressedDataIdx] = bm.content[rightDataIdx];
+                newHashes[compressedDataIdx] = bm.hashes[rightDataIdx];
+                newKeyHashSum += bm.hashes[rightDataIdx];
+                compressedDataIdx++;
+                rightDataIdx++;
+                leftDataIdx++;
+                newSize++;
+            }
+            if (bitpos == maximumBitPos) {
+                break;
+            }
+            bitpos <<= 1;
+        }
+        return anyChangesMadeSoFar
+               ? new BitmapIndexedSetNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum)
+               : bm;
+    }
+
+    @Override
+    public BitmapIndexedSetNode<T> filter(Predicate<? super T> predicate, boolean keep) {
+        // the elements first, then the children, as the iteration goes
+        final int payload = payloadArity();
+        int keptDataMap = 0;
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if (predicate.test(getPayload(i)) == keep) {
+                keptDataMap |= bitpos;
+            }
+        }
+        final int children = nodeArity();
+        SetNode<T>[] newChildren = null;
+        for (int i = 0; i < children; i++) {
+            final SetNode<T> child = getNode(i);
+            final SetNode<T> newChild = child.filter(predicate, keep);
+            newChildren = withChild(newChildren, children, i, child, newChild);
+        }
+        return rebuilt(keptDataMap, newChildren);
+    }
+
+    @Override
+    public BitmapIndexedSetNode<T> diff(SetNode<T> that, int shift) {
+        final BitmapIndexedSetNode<T> bm = (BitmapIndexedSetNode<T>) that;
+        final int payload = payloadArity();
+        int keptDataMap = 0;
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if (!bm.contains(getPayload(i), hashes[i], shift)) {
+                keptDataMap |= bitpos;
+            }
+        }
+        final int children = nodeArity();
+        SetNode<T>[] newChildren = null;
+        bits = nodeMap;
+        for (int i = 0; i < children; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            final SetNode<T> child = getNode(i);
+            final SetNode<T> newChild;
+            if ((bitpos & bm.dataMap) != 0) {
+                final int index = indexFrom(bm.dataMap, bitpos);
+                newChild = child.removed(bm.getPayload(index), bm.hashes[index], shift + BIT_PARTITION_SIZE);
+            } else if ((bitpos & bm.nodeMap) != 0) {
+                newChild = child.diff(bm.getNode(indexFrom(bm.nodeMap, bitpos)), shift + BIT_PARTITION_SIZE);
+            } else {
+                newChild = child;
+            }
+            newChildren = withChild(newChildren, children, i, child, newChild);
+        }
+        return rebuilt(keptDataMap, newChildren);
+    }
+
+    // records the new child at `index` once one child has changed: null while every child is the old one
+    private static <T extends @Nullable Object> SetNode<T> @Nullable [] withChild(SetNode<T> @Nullable [] newChildren, int children,
+            int index, SetNode<T> child, SetNode<T> newChild) {
+        SetNode<T>[] result = newChildren;
+        if (newChild != child && result == null) {
+            @SuppressWarnings("unchecked")
+            final SetNode<T>[] array = (SetNode<T>[]) new SetNode<?>[children];
+            result = array;
+        }
+        if (result != null) {
+            result[index] = newChild;
+        }
+        return result;
+    }
+
+    // the node of the inline elements of `keptDataMap` and of the new children (null entries, or a null array: the
+    // old child), where a child down to one element comes back inline and an empty one goes; this node when nothing
+    // was dropped
+    private BitmapIndexedSetNode<T> rebuilt(int keptDataMap, SetNode<T> @Nullable [] newChildren) {
+        if (keptDataMap == dataMap && newChildren == null) {
+            return this;
+        }
+        int newNodeMap = 0;
+        int migratedDataMap = 0;
+        int newSize = 0;
+        int newKeyHashSum = 0;
+        final int payload = payloadArity();
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if ((bitpos & keptDataMap) != 0) {
+                newSize++;
+                newKeyHashSum += hashes[i];
+            }
+        }
+        bits = nodeMap;
+        final int children = nodeArity();
+        for (int i = 0; i < children; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            final SetNode<T> child = newChild(newChildren, i);
+            final int childSize = child.size();
+            if (childSize >= 2) {
+                newNodeMap |= bitpos;
+            } else if (childSize == 1) {
+                migratedDataMap |= bitpos;
+            }
+            newSize += childSize;
+            newKeyHashSum += child.keyHashSum();
+        }
+        if (newSize == size) {
+            return this;
+        } else if (newSize == 0) {
+            return SetNode.empty();
+        }
+        final int newDataMap = keptDataMap | migratedDataMap;
+        final int newDataSize = bitCount(newDataMap);
+        final Object[] newContent = new Object[newDataSize + bitCount(newNodeMap)];
+        final int[] newHashes = new int[newDataSize];
+        int dataIdx = 0;
+        int nodeIdx = 0;
+        int oldDataIdx = 0;
+        int oldNodeIdx = 0;
+        bits = dataMap | nodeMap;
+        while (bits != 0) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if ((bitpos & dataMap) != 0) {
+                if ((bitpos & keptDataMap) != 0) {
+                    newContent[dataIdx] = content[oldDataIdx];
+                    newHashes[dataIdx++] = hashes[oldDataIdx];
+                }
+                oldDataIdx++;
+            } else {
+                final SetNode<T> child = newChild(newChildren, oldNodeIdx);
+                if ((bitpos & migratedDataMap) != 0) {
+                    newContent[dataIdx] = child.getPayload(0);
+                    newHashes[dataIdx++] = child.getHash(0);
+                } else if ((bitpos & newNodeMap) != 0) {
+                    newContent[newContent.length - 1 - nodeIdx++] = child;
+                }
+                oldNodeIdx++;
+            }
+        }
+        return new BitmapIndexedSetNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum);
+    }
+
+    private SetNode<T> newChild(SetNode<T> @Nullable [] newChildren, int index) {
+        final SetNode<T> child = (newChildren == null) ? null : newChildren[index];
+        return (child == null) ? getNode(index) : child;
+    }
+
+    @Override
+    public boolean subsetOf(SetNode<T> that, int shift) {
+        if (this == that) {
+            return true;
+        }
+        final BitmapIndexedSetNode<T> node = (BitmapIndexedSetNode<T>) that;
+        final int thisBitmap = dataMap | nodeMap;
+        final int nodeBitmap = node.dataMap | node.nodeMap;
+        if ((thisBitmap | nodeBitmap) != nodeBitmap) {
+            return false;
+        }
+        int bits = thisBitmap;
+        while (bits != 0) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            final boolean isSubset;
+            if ((dataMap & bitpos) != 0) {
+                final int index = indexFrom(dataMap, bitpos);
+                if ((node.dataMap & bitpos) != 0) {
+                    // an element against an element
+                    final int thatIndex = indexFrom(node.dataMap, bitpos);
+                    isSubset = hashes[index] == node.hashes[thatIndex] && Objects.equals(getPayload(index), node.getPayload(thatIndex));
+                } else {
+                    // an element against a child
+                    isSubset = node.getNode(indexFrom(node.nodeMap, bitpos)).contains(getPayload(index), hashes[index], shift + BIT_PARTITION_SIZE);
+                }
+            } else {
+                // a child against a child; a child against an element cannot be a subset, the child holding two
+                isSubset = (node.dataMap & bitpos) == 0
+                           && getNode(indexFrom(nodeMap, bitpos)).subsetOf(node.getNode(indexFrom(node.nodeMap, bitpos)), shift + BIT_PARTITION_SIZE);
+            }
+            if (!isSubset) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // -- the updates in place of a builder

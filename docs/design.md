@@ -1602,16 +1602,42 @@ deleted. Attribution in `NOTICE`.
   one successive persistent puts give, node for node. With the default 12-byte header and compressed oops the token
   costs no memory (four ints and three references make 40 bytes, and 36 without it pad to 40); with compact object
   headers it costs a padded 8 bytes per bitmap node (40 against 32).
-- **Scope of the port.** Step 1 ports the nodes, the iteration, the persistent `updated`/`removed` and the builders;
-  every public operation keeps its algorithm (the same loops of persistent puts and removals, the same factories).
-  Scala's `updateWithShallowMutations` is not ported: it would reroute the bulk paths without a measurement.
+- **Scope of the port.** The nodes, the iteration, the persistent `updated`/`removed` and the builders, then the
+  operations on whole subtrees (below). Scala's `updateWithShallowMutations` is not ported: it would reroute the
+  bulk paths that take any iterable, without a measurement. `HashMap.forEach(BiConsumer)` walks the nodes, with no
+  `Tuple2` per entry.
+- **Operations on whole subtrees** (Scala's, rewritten where Zazr keeps another key or another call order). They are
+  ported where their correctness is clear and not measured (decided 2026-09-25: correctness first; their performance
+  is measured and tuned in later tickets):
+  - `HashMap.equals`/`HashSet.equals` with another of their kind compare the tries node by node (bitmaps, hashes,
+    sizes and the cached hash sums first). Any other `Map` or `Set` goes through the element-by-element comparison.
+  - `HashSet.hashCode` is 1 plus the cached sum of the element hashes, the value the element walk gives. `HashMap`
+    hashes each entry's `Tuple2`, which the nodes do not cache, and stays a walk.
+  - `HashSet.union` and `addAll` with a `HashSet`, and `HashMap.merge` with a `HashMap`, concatenate the tries
+    (Scala's `concat`, whose right side wins). The receiver is the right side in both, since a set keeps the elements
+    it has and a merge keeps this map's entries; the receiver is returned when its size does not change.
+  - `HashSet.diff` and `removeAll` with a `HashSet` walk both tries (Scala's `diff`); `containsAll` of a `HashSet` is
+    Scala's `subsetOf`.
+  - `filter` and `reject` on both, and `filterKeys`, `filterValues`, `rejectKeys`, `rejectValues` on `HashMap`, filter
+    node by node, sharing the subtrees they keep whole and returning the receiver when nothing is dropped (Scala's
+    `filterImpl`, rewritten to call the predicate in iteration order: a node's entries, then its children).
+    `retainAll`, and `intersect` with a larger or equal argument, end in `filter` and follow.
+  - `HashMap.mapValues` and `replaceAll(BiFunction)` keep the keys in place and replace the values (Scala's
+    `transform`), calling the function in iteration order, with the null check and message of a put.
+  - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
+    `flatMap`.
+  - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
+    colliding hashes, checking the invariants and the canonical form of every result, the unchanged inputs, the
+    iteration order of the calls, and the node boundaries; `HashBulkTest` checks the public operations, which key
+    each keeps and when each returns the receiver. The cross-version trace keeps the same keys and values; filters and
+    `mapValues` returning the same values now return the receiver where they built an equal new collection.
 - **Tests.** `ChampMapTest`/`ChampSetTest` check the invariants of every trie they build (`ChampValidity`: bitmaps and
   array lengths, each entry in the slot of its hash fragment under its path, children of at least two entries, bitmap
   nodes above the last level and collision nodes below, cached sizes and hash sums), the canonical form after every
   removal of a model-based fuzz (a model of the kept key and value objects), the node boundaries (0/1/2/31/32/33
   entries in the root, 1023/1024/1025 over two levels, the deepest shift, collision nodes), and every scenario of the
   Vavr trie's builder test (shape against persistent puts, ownership, adoption, the pool fuzz of adopted tries that must
-  never change). `HashBuilderTest` passes unchanged.
+  never change). `HashBuilderTest` passes unchanged, apart from its header comment, which named the deleted test.
 
 ### 3.9 Null, equality, serialisation
 
