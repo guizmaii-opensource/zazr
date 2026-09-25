@@ -6554,7 +6554,8 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void subSequenceBoundsAreCheckedAsBefore() {
-            assertThat(Stream.of(1).subSequence(5, 5)).isEmpty();
+            assertThatThrownBy(() -> Stream.of(1).subSequence(5, 5))
+                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
             assertThat(Stream.of(1, 2).subSequence(2, 2)).isEmpty();
             assertThat(Stream.of(1, 2).subSequence(1, 2)).isEqualTo(Stream.of(2));
             assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 3))
@@ -6666,6 +6667,75 @@ public class StreamTest extends AbstractTraversableTest {
                     }
                 }
             }
+        }
+    }
+
+    @Nested
+    class SubSequenceBoundsTests {
+
+        private int[] indices(int n) {
+            return new int[] { Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE };
+        }
+
+        @Test
+        public void subSequenceThrowsExactlyWhenVectorThrows() {
+            for (int n : new int[] { 0, 1, 5 }) {
+                final Vector<Integer> vector = Vector.range(0, n);
+                for (int from : indices(n)) {
+                    final int begin = from;
+                    Object single;
+                    try {
+                        single = vector.subSequence(begin);
+                    } catch (RuntimeException e) {
+                        single = e.getClass();
+                    }
+                    Object singleStream;
+                    try {
+                        singleStream = Stream.range(0, n).subSequence(begin).toVector();
+                    } catch (RuntimeException e) {
+                        singleStream = e.getClass();
+                    }
+                    assertThat(singleStream).as("subSequence(%d) on %d", begin, n).isEqualTo(single);
+                    for (int to : indices(n)) {
+                        final String call = "subSequence(" + from + ", " + to + ") on " + n;
+                        Class<?> expected;
+                        Vector<Integer> expectedResult = null;
+                        try {
+                            expectedResult = vector.subSequence(from, to);
+                            expected = null;
+                        } catch (RuntimeException e) {
+                            expected = e.getClass();
+                        }
+                        final Stream<Integer> stream = Stream.range(0, n);
+                        final Stream<Integer> result;
+                        try {
+                            result = stream.subSequence(from, to);
+                        } catch (RuntimeException e) {
+                            assertThat(e.getClass()).as(call).isEqualTo(expected);
+                            continue;
+                        }
+                        if (expected == IndexOutOfBoundsException.class && from < to) {
+                            // an end past the end of a lazy Stream throws when the traversal reaches it
+                            assertThatThrownBy(result::toVector).as(call).isInstanceOf(IndexOutOfBoundsException.class);
+                        } else {
+                            assertThat(expected).as(call).isNull();
+                            assertThat(result.toVector()).as(call).isEqualTo(expectedResult);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Test
+        public void subSequenceChecksAnEmptyOrReversedRangeWithoutForcingPastIt() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> stream = Stream.continually(forced::incrementAndGet);
+            assertThat(stream.subSequence(10, 10)).isEmpty();
+            assertThat(forced.get()).isEqualTo(10);
+            assertThatThrownBy(() -> stream.subSequence(30, 20)).isInstanceOf(IllegalArgumentException.class);
+            assertThat(forced.get()).isEqualTo(20);
+            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(5, 3))
+                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
         }
     }
 }

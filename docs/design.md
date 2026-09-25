@@ -1038,6 +1038,10 @@ and unable to drift:
     most the first `end + m` elements. `dropRight(k)` forcing its first k + 1 elements at call time is what tells
     whether the result is empty, so its note says so rather than "lazy". `slice` and `subSequence` walk to their
     start in a loop and stay lazy past it (#92).
+  - `Stream.subSequence(from, to)` now throws exactly when `Vector.subSequence` throws. An empty range past the end
+    returned an empty Stream, and a reversed range whose end is past the end threw `IllegalArgumentException`; both now
+    throw at call time as `Vector` does, forcing the first `from` (or `to`) elements to check. The one lazy exception
+    stays: with `from < to` and `to` past the end, the `IndexOutOfBoundsException` comes when the traversal gets there.
 
 Which concrete collections survive (decided):
 

@@ -2684,11 +2684,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
      * Complexity: O(beginIndex); the elements before {@code beginIndex} are forced, the rest when the result
-     * reaches them.
+     * reaches them. An empty range forces its first {@code beginIndex} elements too, to check that it is within this
+     * Stream, and a reversed range its first {@code endIndex}.
      * <p>
-     * Because {@code Stream} is lazy, {@code beginIndex} is validated eagerly, but if
-     * {@code endIndex > length()} the {@code IndexOutOfBoundsException} is only thrown once the
-     * returned Stream is traversed as far as the offending position, not when this method is called.
+     * The bounds are those of {@link Vector#subSequence(int, int)}, but because {@code Stream} is lazy, if
+     * {@code beginIndex < endIndex} and {@code endIndex > length()}, the {@code IndexOutOfBoundsException} is only
+     * thrown once the returned Stream is traversed as far as the offending position, not when this method is called.
+     * Every other out-of-range call throws when it is made.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2701,9 +2703,16 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ", " + endIndex + ")");
         }
         if (beginIndex > endIndex) {
+            // as in Vector, an end past the end of this Stream is reported before the reversed range
+            if (!hasAtLeast(this, endIndex)) {
+                throw new IndexOutOfBoundsException("subSequence of Nil");
+            }
             throw new IllegalArgumentException("subSequence(" + beginIndex + ", " + endIndex + ")");
         }
         if (beginIndex == endIndex) {
+            if (!hasAtLeast(this, beginIndex)) {
+                throw new IndexOutOfBoundsException("subSequence of Nil");
+            }
             return Empty.instance();
         }
         Stream<T> start = this;
@@ -2714,6 +2723,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             throw new IndexOutOfBoundsException("subSequence of Nil");
         }
         return takeExactly(start, endIndex - beginIndex);
+    }
+
+    // Whether stream has at least n elements; forces at most its first n.
+    private static <T extends @Nullable Object> boolean hasAtLeast(Stream<T> stream, int n) {
+        return n <= 0 || !stream.drop(n - 1).isEmpty();
     }
 
     // The first n > 0 elements of a non-empty stream, lazily; throws once the traversal passes the end of the stream.
