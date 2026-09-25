@@ -1639,18 +1639,18 @@ any number of resources decided at run time, and Scala's rule for which throwabl
   Secrets, at the `guizmaii-opensource` organisation level: `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`,
   `PGP_SECRET` (armored private key, base64-encoded or plain), `PGP_PASSPHRASE`. The `vavr-match`
   artifacts stay `io.vavr:*:1.0.0` until PR 3 deletes them.
-- **Changelog (decided 2026-09-25)**: `CHANGELOG.md` at the root, in the Keep a Changelog format, written for users
-  under the website rules (no ticket numbers, no internal names, no history of a decision). The 0.1.0 entry compares
-  Zazr with Vavr: what Zazr is, then Added, Changed and Removed grouped by area. Vavr bugs that Zazr fixes are listed
-  under Changed. A fix for a bug Zazr introduced gets no entry. An HTML comment at the end lists the open pull requests
-  and issues that would change the entry, and the section each one goes into. The README, the "Compared to Vavr" page
-  and the site nav link to the file on GitHub. The nav entry is an external URL, not a page that includes the file.
+- **Release notes, no changelog file (decided 2026-09-26, by the maintainer; a `CHANGELOG.md` was written first and
+  dropped)**: each release's notes are written in its GitHub release
+  (https://github.com/guizmaii-opensource/zazr/releases), for users under the website rules (no ticket numbers, no
+  internal names, no history of a decision). The 0.1.0 notes compare Zazr with Vavr: what Zazr is, then Added, Changed
+  and Removed grouped by area. Vavr bugs that Zazr fixes are listed under Changed; a fix for a bug Zazr introduced
+  gets no entry. The README, the "Compared to Vavr" page and the site nav link to the releases page.
 - **Documentation lives in the repo (decided).** Vavr's user guide is a separate repository
   (`vavr-io/vavr-docs`, AsciiDoc, published at docs.vavr.io) and is not forked: it teaches `Match`,
   `For`, `ap`, `Seq`, `Value` and `Future`, all of which Zazr removes. Zazr keeps a `docs/` folder in the
   mono-repo: the rewritten user guide in Markdown (one page per area: control types, `Validation`,
   collections and builders, `NonEmptyVector`, JDK interop via `asJava`, `zazr-test` and laws), this
-  document moved to `docs/design.md`, and `CHANGELOG.md` at the root. The API reference is the Markdown
+  document moved to `docs/design.md`; release notes live in the GitHub releases. The API reference is the Markdown
   javadoc in the sources (JEP 467), published as the `-javadoc.jar`; no second copy of it in `docs/`.
   Site generation (if any) comes later; plain Markdown rendered by GitHub is enough for v1.
   **Not a rewrite of Vavr's guide** (decided): that guide is long and says little about the data

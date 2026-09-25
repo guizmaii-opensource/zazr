@@ -77,7 +77,7 @@ a small example where it helps, and no internal names or ticket numbers. The met
 - Branch from `main` and open a pull request against it; `main` only changes through pull requests.
 - Keep a pull request to one change. A large change is split into several pull requests, each building on the
   previous one.
-- Write commit messages that explain what changed and why, enough to write the changelog from them.
+- Write commit messages that explain what changed and why, enough to write the release notes from them.
 
 ## Releases and versions
 
@@ -86,6 +86,7 @@ Zazr is pre-1.0: the API changes between snapshots, with no compatibility promis
 
 Snapshots of `main` are published automatically. A release is made by publishing a GitHub release whose tag is the
 version prefixed with `v` (for example `v0.1.0`). The `release` workflow builds and signs it, then uploads it to the
-Maven Central Portal, which validates it. The release is not public yet: the maintainer presses **Publish** on the
+Maven Central Portal, which validates it. The release notes are written in the GitHub release itself; there is
+no changelog file. The release is not public yet: the maintainer presses **Publish** on the
 deployment at [central.sonatype.com](https://central.sonatype.com/publishing/deployments) to release it to Maven
 Central.
