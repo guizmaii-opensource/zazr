@@ -114,4 +114,82 @@ public class LinkedHashMapRemoveTest {
         assertThat(new java.util.ArrayList<>(map.remove(keys.get(keys.size() - 1)).keySet().asJava())).isEqualTo(keys.subList(0, keys.size() - 1));
     }
 
+    @Test
+    public void shouldCutRunsOfMarkersAtBothEndsInOneSlice() {
+        // a live key at each end, and runs of removed keys next to them: removing an end cuts the whole run
+        LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
+        for (int i = 0; i < 100; i++) {
+            map = map.put(i, i);
+        }
+        for (int i = 1; i < 30; i++) {
+            map = map.remove(i).remove(99 - i);
+        }
+        final LinkedHashMap<Integer, Integer> both = map.remove(0).remove(99);
+        assertThat(both.keySet().toList()).isEqualTo(List.range(30, 70));
+        assertThat(both.head()).isEqualTo(Tuple.of(30, 30));
+        assertThat(both.last()).isEqualTo(Tuple.of(69, 69));
+        assertThat(both.take(2).keySet().toList()).isEqualTo(List.of(30, 31));
+        assertThat(both.takeRight(2).keySet().toList()).isEqualTo(List.of(68, 69));
+        assertThat(both.tail().init().keySet().toList()).isEqualTo(List.range(31, 69));
+        assertThat(both.put(0, 0).keySet().toList()).isEqualTo(List.range(30, 70).append(0));
+        assertThat(both.remove(30).remove(69).keySet().toList()).isEqualTo(List.range(31, 69));
+        // the older version is untouched and can be cut again
+        assertThat(map.keySet().toList()).isEqualTo(List.of(0).appendAll(List.range(30, 70)).append(99));
+        assertThat(map.remove(99).keySet().toList()).isEqualTo(List.of(0).appendAll(List.range(30, 70)));
+    }
+
+    @Test
+    public void shouldMatchJavaLinkedHashMapUnderRandomEndRemovalsAndSlices() {
+        for (long seed = 0; seed < 20; seed++) {
+            final Random random = new Random(seed);
+            LinkedHashMap<Integer, Integer> actual = LinkedHashMap.empty();
+            java.util.LinkedHashMap<Integer, Integer> expected = new java.util.LinkedHashMap<>();
+            LinkedHashMap<Integer, Integer> older = actual;
+            java.util.LinkedHashMap<Integer, Integer> olderExpected = new java.util.LinkedHashMap<>();
+            for (int op = 0; op < 400; op++) {
+                final java.util.List<Integer> keys = new java.util.ArrayList<>(expected.keySet());
+                switch (random.nextInt(8)) {
+                    case 0, 1 -> {
+                        final int key = random.nextInt(60);
+                        actual = actual.put(key, op);
+                        expected.put(key, op);
+                    }
+                    case 2 -> {
+                        final int key = random.nextInt(60);
+                        actual = actual.remove(key);
+                        expected.remove(key);
+                    }
+                    case 3 -> {
+                        if (!keys.isEmpty()) {
+                            final int key = random.nextBoolean() ? keys.get(0) : keys.get(keys.size() - 1);
+                            actual = actual.remove(key);
+                            expected.remove(key);
+                        }
+                    }
+                    case 4 -> {
+                        final int k = random.nextInt(keys.size() + 2) - 1;
+                        final boolean fromLeft = random.nextBoolean();
+                        actual = fromLeft ? actual.take(k) : actual.drop(k);
+                        final java.util.List<Integer> kept = fromLeft ? keys.subList(0, Math.max(0, Math.min(k, keys.size()))) : keys.subList(Math.max(0, Math.min(k, keys.size())), keys.size());
+                        final java.util.LinkedHashMap<Integer, Integer> next = new java.util.LinkedHashMap<>();
+                        for (Integer key : kept) {
+                            next.put(key, expected.get(key));
+                        }
+                        expected = next;
+                    }
+                    case 5 -> {
+                        older = actual;
+                        olderExpected = new java.util.LinkedHashMap<>(expected);
+                    }
+                    default -> {
+                        actual = older;
+                        expected = new java.util.LinkedHashMap<>(olderExpected);
+                    }
+                }
+                assertThat(actual.size()).isEqualTo(expected.size());
+                assertThat(actual.toList()).isEqualTo(List.ofAll(expected.entrySet()).map(e -> Tuple.of(e.getKey(), e.getValue())));
+            }
+        }
+    }
+
 }

@@ -34,7 +34,8 @@ import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
  * {@code null} under {@link #of(Callable)}, {@link #mapTry(CheckedFunction1)} or
  * {@link #fromCompletableFuture(CompletableFuture)} is captured, like any other non-fatal outcome, as a
  * {@code Failure} of a {@link NullPointerException}. A computation that returns nothing is run with
- * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
+ * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal when
+ * their causes are, by the cause's own {@code equals}: for the usual exceptions, only when they hold the same
  * {@code Throwable} instance, see {@link Failure}.
  * <p>
  * A {@code Try} is not a collection and not {@link Iterable}: to iterate its value, convert it
@@ -1000,8 +1001,9 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * If the finalizer throws a non-fatal exception: on a {@code Success} the result is a {@code Failure} of that
      * exception; on a {@code Failure} the original cause is kept and the exception is added to it as
      * {@linkplain Throwable#addSuppressed(Throwable) suppressed}, the way {@code try}-with-resources attaches an
-     * exception thrown by {@code close()} to the primary one (JLS 14.20.3). A fatal throwable (see the class-level
-     * documentation) is rethrown whatever the state of this {@code Try}.
+     * exception thrown by {@code close()} to the primary one (JLS 14.20.3). When the finalizer rethrows the cause
+     * itself, this {@code Failure} is returned unchanged with nothing added, since a throwable cannot suppress itself.
+     * A fatal throwable (see the class-level documentation) is rethrown whatever the state of this {@code Try}.
      * <p>
      * A {@link Runnable} lambda is a {@code CheckedRunnable} lambda; a {@code Runnable} variable is passed as
      * {@code runnable::run}.
@@ -1011,7 +1013,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      *
      * @param finalizer what to run after this {@code Try}
      * @return this {@code Try} if the finalizer completes normally; a {@code Failure} of what it threw when this was
-     *         a {@code Success}; this same {@code Failure} with the thrown exception suppressed otherwise
+     *         a {@code Success}; this same {@code Failure} otherwise, with the thrown exception suppressed unless it
+     *         is the cause itself
      * @throws NullPointerException if {@code finalizer} is null
      */
     default Try<T> ensuring(CheckedRunnable finalizer) {
@@ -1021,7 +1024,10 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         } catch (Throwable t) {
             if (isFailure() && !isFatal(t)) {
-                getCause().addSuppressed(t);
+                final Throwable cause = getCause();
+                if (t != cause) {
+                    cause.addSuppressed(t);
+                }
                 return this;
             }
             return new Failure<>(t);
@@ -1116,10 +1122,12 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * failure.getCause();   // RuntimeException: error
      * }</pre>
      *
-     * <strong>Equality.</strong> Two {@code Failure}s are equal when their causes are the same object: the record
-     * default, since {@code Throwable} does not override {@code equals}. Class, message and stack trace are not
-     * compared, because two exceptions are not the same because they print alike. A test that means "failed the
-     * same way" compares {@code getCause().getClass()} or {@code getMessage()} itself.
+     * <strong>Equality.</strong> Two {@code Failure}s are equal when their causes are equal by the cause's own
+     * {@code equals}: the record default. {@code Throwable} does not override {@code equals}, nor do the JDK
+     * exceptions, so for them this means the same object; an exception class that defines its own {@code equals}
+     * is compared with it. Class, message and stack trace are not compared otherwise, because two exceptions are not
+     * the same because they print alike. A test that means "failed the same way" compares
+     * {@code getCause().getClass()} or {@code getMessage()} itself.
      *
      * @param cause the throwable, never {@code null} and never fatal (see the class-level documentation of {@link Try})
      * @param <T>   the type of the value that would have been contained if successful
@@ -1792,38 +1800,5 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         } catch (Throwable x) {
             return new Failure<>(x);
         }
-    }
-
-    // -- try with resources
-
-    /**
-     * Runs {@code f} with a resource and closes the resource afterwards, like {@code try}-with-resources under
-     * {@code Try}: the resource is obtained from {@code resource}, passed to {@code f}, then closed whatever
-     * happened. The result is {@code Success} of what {@code f} returned, or a {@code Failure} of the first
-     * non-fatal exception thrown by the acquisition, by {@code f} or by {@code close()}; an exception thrown by
-     * {@code close()} after {@code f} threw is added to the cause as
-     * {@linkplain Throwable#addSuppressed(Throwable) suppressed}. A {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, see {@link #of(Callable)}. Several resources nest:
-     * <pre>{@code
-     * Try<String> firstLine = Try.withResources(() -> new FileReader(path), reader ->
-     *     Try.withResources(() -> new BufferedReader(reader), BufferedReader::readLine).get());
-     * }</pre>
-     *
-     * @param resource obtains the resource; called once
-     * @param f        the computation over the resource
-     * @param <R>      the resource type
-     * @param <T>      the result type
-     * @return {@code Success} of the result of {@code f}, or a {@code Failure}
-     * @throws NullPointerException if {@code resource} or {@code f} is null
-     */
-    @SuppressWarnings("try") /* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-    static <R extends AutoCloseable, T extends @Nullable Object> Try<T> withResources(Callable<? extends R> resource, CheckedFunction1<? super R, ? extends T> f) {
-        Objects.requireNonNull(resource, "resource is null");
-        Objects.requireNonNull(f, "f is null");
-        return Try.of(() -> {
-            try (R r = resource.call()) {
-                return f.apply(r);
-            }
-        });
     }
 }

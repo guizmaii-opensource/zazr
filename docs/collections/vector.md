@@ -19,21 +19,21 @@ Whenever you need a sequence and have no reason to pick another one. Access by i
 
 Choose another sequence for a specific need:
 
-- [`List`](list.md) to take a sequence apart from the front with a `switch`;
+- [`List`](list.md) to take a sequence apart from the front with pattern matching;
 - [`Queue`](queue.md) for first in, first out;
 - [`Stream`](stream.md) for a lazy or infinite sequence.
 
 ```java
-Vector<String> letters = Vector.of("a", "b", "c", "d");
-Vector<String> changed = letters.update(1, "B").prepend("z").drop(2);
-Tuple2<Vector<String>, Vector<String>> halves = letters.splitAt(2);
+var letters = Vector.of("a", "b", "c", "d");
+var changed = letters.update(1, "B").prepend("z").drop(2); // Vector<String>
+var halves = letters.splitAt(2); // Tuple2<Vector<String>, Vector<String>>
 // changed is Vector(B, c, d), halves is (Vector(a, b), Vector(c, d))
 ```
 
 ```java
-Vector<Integer> numbers = Vector.range(0, 10);
-Vector<Vector<Integer>> windows = numbers.sliding(3, 3);
-Tuple2<Vector<Integer>, Vector<String>> parts = numbers.partitionMap(
+var numbers = Vector.range(0, 10); // Vector<Integer>
+var windows = numbers.sliding(3, 3); // Vector<Vector<Integer>>
+var parts = numbers.partitionMap( // Tuple2<Vector<Integer>, Vector<String>>
     n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
 // windows is Vector(Vector(0, 1, 2), Vector(3, 4, 5), Vector(6, 7, 8), Vector(9))
 ```

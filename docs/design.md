@@ -372,7 +372,7 @@ duplication is cheaper than a god interface).
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
 | `Try.andFinally`, `andFinallyTry` | `ensuring(CheckedRunnable)` only | ZIO name. One overload, not two: `ensuring(Runnable)` next to `ensuring(CheckedRunnable)` is ambiguous for every lambda (javac: both `void` functional interfaces match), and a `Runnable` lambda already is a `CheckedRunnable` lambda; a `Runnable` variable is passed as `r::run` (decided, #20) |
-| `Try.withResources(...)` ×8 + `WithResources1..8` | keep one `Try.withResources(Callable<R>, CheckedFunction1<R,A>)`; N resources nest | arity ladder not worth it |
+| `Try.withResources(...)` ×8 + `WithResources1..8` | `Using.of(Callable<R>, CheckedFunction1<R,A>)` for one resource, `Using.manager` for any number (3.14). A single `Try.withResources` was kept first, then replaced by `Using` (decided 2026-09-25) | arity ladder not worth it; Scala's `Using` covers N resources decided at run time |
 | `Try.filter` ×3, `filterTry` ×3 | one `filter(Predicate, Function<A,Throwable>)` and `filter(Predicate)` | |
 | `Either.left()/right()` projections + `LeftProjection`/`RightProjection` (24 members each) | delete; `Either` is right-biased and has `mapLeft`, `flip`, `fold` | ZIO 2 deleted all arrow combinators for the same reason |
 | `Either.filterOrElse`, `filter -> Option<Either>` | `filterOrElse(Predicate, Function<R,L>)` only | `filter` returning `Option<Either>` is a type pun |
@@ -610,6 +610,54 @@ Implementation cost is low: every method is a one-line delegation to the wrapped
 - Equality is structural over the elements and only against another `NonEmptyVector`: a `Vector` and a
   `NonEmptyVector` with the same elements are not equal (compare through `toVector()`).
   `toString` is `NonEmptyVector(a, b)`.
+
+**The rest of `Vector`'s API (decided 2026-09-25, #90).** The table above was the first subset; `NonEmptyVector`
+now has every operation of `Vector`, each under the same contract, delegating to `Vector` and re-wrapping:
+
+- **Returns `NonEmptyVector`:** `as`, `appendAll(Iterable)`, `prependAll(Iterable)`, `insert`, `insertAll`,
+  `intersperse`, `padTo`, `leftPadTo`, `rotateLeft`, `rotateRight`, `shuffle`, `replace`, `replaceAll`, `scan` and
+  `scanRight` (n+1), `zipAll(Iterable, A, B)` (max(n, m) ≥ 1, so any `Iterable` is accepted), `distinctByKeepLast` ×2,
+  `permutations` as `NonEmptyVector<NonEmptyVector<A>>`, `combinations()` as `NonEmptyVector<Vector<A>>` (it always
+  holds the empty combination and the whole), `crossProduct()`, `crossProduct(NonEmptyVector)` (like `zip`, the
+  non-empty argument keeps the result non-empty), static `transpose(NonEmptyVector<? extends NonEmptyVector<? extends A>>)`
+  as `NonEmptyVector<NonEmptyVector<A>>`; `unzip`/`unzip3` as tuples of `NonEmptyVector`s; `sliding(size)`,
+  `sliding(size, step)` and `slideBy` as `Vector<NonEmptyVector<A>>` like `grouped`; `splitAtInclusive` as
+  `Tuple2<NonEmptyVector<A>, Vector<A>>`, because its first part always ends with the matching element or holds
+  everything.
+- **Returns `Vector` (or a tuple of them):** `splitAt(int)`, `splitAt(Predicate)`, `span`, `partition`, `retainAll`,
+  `removeFirst`, `removeLast` (both take `Predicate<? super A>`, where `Vector` takes `Predicate<T>`), `patch`,
+  `subSequence` ×2, `combinations(int)` and `crossProduct(int)` as `Vector<Vector<A>>` (`k > size()` or a negative
+  power gives none, 0 gives one empty vector), and the `Iterable` forms `zip(Iterable)`, `zipWith(Iterable, ·)`,
+  `crossProduct(Iterable)`, empty when the argument is.
+- **Total:** `max()`, `min()` (natural order; `min` returns a `NaN` whenever one is present, as `Vector.min()` does),
+  `maxBy(Comparator)`, `minBy(Comparator)`, `average()` as a `double` (the value `Vector.average()` holds, from the
+  same compensated sum, without the `Option`), `single()` (throws when there is more than one element), `fold`, `sum`,
+  `product`, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
+  `indexOfSlice` ×2, `lastIndexOfSlice` ×2, `startsWith` ×2, `endsWith`, `containsSlice`, `containsAll`, `search` ×2,
+  `segmentLength`, `prefixLength`, `existsUnique`, `forEachWithIndex`, `collect(Collector)`,
+  `collect(Supplier, BiConsumer, BiConsumer)`.
+- **Returns `Option`:** `arrangeBy` (two elements can share a key), `indexOfOption(a, from)`, `indexWhereOption` ×2,
+  `lastIndexOfOption` ×2, `lastIndexWhereOption` ×2, `indexOfSliceOption` ×2, `lastIndexOfSliceOption` ×2.
+- **Conversions:** `toQueue`, `toStream`, `toLinkedSet`, `toSortedSet` ×2, `toArray` ×2, `toMap` ×2, `toLinkedMap` ×2,
+  `toSortedMap` ×4.
+- **Nulls.** An element argument is checked before delegating, even where `Vector` would not look at it
+  (`intersperse` on one element, `padTo` to a size already reached, `replace` of an absent element), with a message
+  naming the method (`NonEmptyVector.padTo: element is null`). An `Iterable` argument is copied through the same check
+  as the constructors (`NonEmptyVector: element is null`), which also reads it once. A user function whose result is
+  stored is wrapped so that a null result names the method: `scan`, `scanRight`, `zipWith(Iterable, ·)`, `unzip`,
+  `unzip3` (the tuple and its components), `arrangeBy`, `distinctByKeepLast` (whose keys `Vector` rejects too), and the
+  key, value and entry of the `to*Map` conversions. `fold` and `slideBy` let a null through as `Vector` does: `fold`'s
+  result is returned, never stored, and `slideBy` only compares its keys.
+- **Deliberately absent:** `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`, `reduceRightOption`,
+  `singleOption` (the `Option` forms of what is total here, or of `single`); `tailOption`, `initOption` (`tail` and
+  `init` already return a `Vector`, and `tailNonEmpty`/`initNonEmpty` are the narrowing); `isEmpty`, `nonEmpty`,
+  `orElse`, `toNonEmptyVector` (constant on this type: false, true, `this`, `Some(this)`); `length` (`size` is the one
+  spelling, decided with the maintainer on 2026-09-25; the removal of `length` from `Vector`, `List`, `Queue` and
+  `Stream` is a separate change, #90 again, which also takes it off this list). `NonEmptyVectorTest` asserts
+  reflectively that every public instance method name of `Vector` exists on `NonEmptyVector` except exactly this
+  list, and that every overload whose result holds a `NonEmptyVector` (directly, or in a tuple, a `Vector`, a map or
+  an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
+  result.
 
 **Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
 motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
@@ -1002,6 +1050,56 @@ and unable to drift:
 - Facts the page made visible, stated in the notes rather than changed here: `min()`/`max()` on the sets use the
   natural order of the elements and walk them all, including on a `TreeSet` (whose least and greatest elements in its
   own order are `head()` and `last()`, O(log n)).
+- Cost defects found by the review of the page (2026-09-25, #93), one decision each:
+  - `List`: `take`, `drop`, `takeWhile`/`takeUntil`, `slice`, `subSequence`, `remove`, `leftPadTo` and
+    `segmentLength` measured the whole List (`length()` walks it) before walking their prefix, so each was O(n) even
+    for one element. Fixed: they walk only the cells they need (`subSequence` counts the length only to build the
+    message of the exception it throws; `leftPadTo` counts up to the target). `lastIndexOfSlice` drops the found
+    prefix with the fixed `drop`, and `combinations(k)` walks the tails instead of dropping i + 1 elements per index,
+    so both lose their quadratic factor.
+  - `Queue`: `startsWith`, `zip`/`zipWith`, `prefixLength` and `segmentLength` copied the whole Queue into a `List`
+    first. Fixed: they walk the front, then the rear, reversed only when the walk reaches it; their notes say that a
+    walk reaching the elements added at the back since the last rebalancing pays O(n) for that reversal.
+  - `Queue.init()` copied the whole front (`front.init()`) on every call once the rear was empty, and the result
+    still had an empty rear, so a chain of k calls cost O(k * n). Fixed without changing the structure: when the rear
+    is empty, `init()` splits the front in two in O(n), the second half without its last element becoming the rear,
+    so the next calls take from the rear in O(1) (the mirror of `tail()` reversing the rear onto an empty front).
+  - Documented, not fixed: the banker's queue is amortised over a chain of calls, each on the result of the previous
+    one. A Queue is persistent, so an older version can be used again, and `tail()`/`dequeue()` on a Queue whose
+    front holds one element, or `init()` on one whose rear is empty, pays the O(n) rebalancing again on every call on
+    that same version. The class javadoc and the notes of the three methods say so. A structure without that caveat
+    exists: Okasaki's real-time queue (*Purely Functional Data Structures*, 7.2) spreads the reversal over the
+    following operations with a lazy, memoised rotation, so every operation is O(1) in the worst case, older versions
+    included, at the cost of a lazy list and a schedule per Queue. It is a follow-up if a workload needs it; this
+    change keeps the two-list representation.
+  - `LinkedHashMap`/`LinkedHashSet`: cutting the removed keys' markers off the ends of the insertion order took one
+    `tail()`/`init()` of the `Vector` per marker. Fixed: the run is found by reading and cut with one slice. Documented,
+    not fixed (the class javadoc of both types and the notes of `remove`, `replace`, `tail`, `init` and `take`): the
+    rebuild of the insertion order once the markers outnumber the entries is amortised over a chain of removals, so
+    `remove`/`replace` or a slice on an older version that is about to be rebuilt pays O(n) each time; after
+    removals, `tail`, `init`, `take` and `drop` find their cut by walking past the markers in the way, O(n) at worst.
+    Removing both would need a different order structure (an order-statistics tree keyed by insertion stamp, as
+    `TreeMap` gives), which is a follow-up if a workload needs it.
+  - `Stream`: `patch` dropped `from + replaced` elements at call time, and `lastIndexOfSlice(that, end)` measured the
+    whole Stream (it never returned on an infinite one). Fixed: `patch` builds each cell when the result reaches it
+    (only `patch(0, <empty>, r)` forces its r + 1 first elements now, for its head), and `lastIndexOfSlice` forces at
+    most the first `end + m` elements. `dropRight(k)` forcing its first k + 1 elements at call time is what tells
+    whether the result is empty, so its note says so rather than "lazy". `slice` and `subSequence` walk to their
+    start in a loop and stay lazy past it (#92).
+  - `Stream.subSequence(from, to)` now throws exactly when `Vector.subSequence` throws. An empty range past the end
+    returned an empty Stream, and a reversed range whose end is past the end threw `IllegalArgumentException`; both now
+    throw at call time as `Vector` does, forcing the first `from` (or `to`) elements to check. The one lazy exception
+    stays: with `from < to` and `to` past the end, the `IndexOutOfBoundsException` comes when the traversal gets there.
+  - `asJava()` views: the set views already answered `contains` with the set's own lookup (#26). The `Collection`
+    view of a map's entries walked them; its `contains` of a `Tuple2` is now the map's own `contains(Tuple2)`, one
+    lookup of the key (a key the order of a `TreeMap` cannot compare, or a null one, is answered `false`, as the walk
+    answered). The `java.util.List` view of a `List`, `Queue` or `Stream` counts the size of the sequence the first
+    time it is needed and keeps it, so an indexed loop over the view no longer counts it at every step; the Stream
+    view still forces nothing before an operation that needs the size.
+  - `Vector` of primitive values (`range`, the primitive `ofAll`, `filter` of those): the first write of a value of
+    another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
+    the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
+    path would break that invariant. The class javadoc and the notes of the ten write methods say so.
 
 Which concrete collections survive (decided):
 
@@ -1198,6 +1296,37 @@ Order of implementation: `Vector.Builder` (3.8), then `TreeMap`/`TreeSet` (cheap
 the transient HAMT (the only one that touches a data-structure's node types), then the composites.
 Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
 
+**Implemented for `TreeMap`, `TreeSet`, `HashMap` and `HashSet` (decided):**
+- The tree builders share `RedBlackTreeBuilder` (internal): an array buffer, `Arrays.sort` (stable, and O(n)
+  comparisons on sorted input, so `ofAll`/`ofEntries` of sorted input needs no separate fast path), a pass that keeps
+  the last of equal elements, then `Node.fromOrdered`, a port of `fromOrderedKeys`: split around the middle, black
+  nodes, red one-element subtrees on the deepest level only. `size()` compacts the buffer (sort and dedupe) so that it
+  counts distinct keys, like the hash builders. A comparator that throws closes the builder, since the sort may have
+  left the buffer half merged.
+- The transient trie puts the owner token on `IndexedNode` and `ArrayNode` only. Leaves (`LeafSingleton`,
+  `LeafList`) stay immutable and are replaced; a collision list goes through the persistent `modify`, so the builder
+  produces the very trie successive persistent puts produce, node for node (the tests compare them). The cost is one
+  reference field per internal node (about 8 bytes with compressed oops). The mutable node fields lose their `final`
+  guarantee; every holder of a trie (`HashMap`, `HashSet`, the map view) keeps it in a final field, and
+  `result()` issues a release fence as Scala's `HashMapBuilder` does. `putAll(HashMap)`/`addAll(HashSet)` on an
+  empty builder adopts the source root; its nodes are copied on the first put through them.
+- Rerouted after a same-JVM measurement on the branch, the gate being "not slower" (1 fork, a busy machine,
+  microseconds per operation, builder `addAll`/`putAll` against the persistent path at 10 / 1 000 / 100 000 distinct
+  keys, ± the 99.9% error): `TreeSet.ofAll` shuffled 0.16 ± 0.08 / 43 ± 13 / 11 800 ± 2 800 against 0.26 ± 0.07 /
+  73 ± 48 / 85 000 ± 57 000, sorted 0.30 ± 0.29 / 12 ± 10 / 985 ± 167 against 0.38 ± 0.12 / 173 ± 438 /
+  79 000 ± 75 000; `TreeMap.ofEntries` shuffled 0.25 ± 0.09 / 61 ± 135 / 26 800 ± 17 000 against 0.40 ± 0.61 /
+  85 ± 43 / 58 600 ± 27 000; `HashSet.ofAll` 0.14 ± 0.03 / 31 ± 8 / 17 300 ± 11 900 against 0.66 ± 1.37 / 76 ± 65 /
+  29 500 ± 17 000; `HashMap.ofEntries` 0.14 ± 0.05 / 28 ± 2 / 7 500 ± 700 against 0.16 ± 0.05 / 42 ± 7 /
+  14 600 ± 3 200. The error bars overlap at 10 everywhere and for `HashSet` at 100 000; no row is slower. So `ofAll`,
+  `ofEntries`, `TreeMap.ofAll(java.util.Map)`, `HashMap.ofAll(java.util.Map)` and the `collector()`s of the four types
+  use the builders (the collectors were not measured on their own: they run the same `add`/`put` loop; their
+  accumulator type is now the builder). Every operation that ends in those factories follows without its own
+  measurement: `filter`, `reject`, `partition` and `groupBy`'s groups on all four, `map`, `flatMap` and `collect` on
+  `TreeSet` and `TreeMap`, `mapBoth` on both maps, `mapValues` on `TreeMap`. `HashSet` and `HashMap` `map`, `flatMap`
+  and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
+  factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
+  3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+
 ### 3.9 Null, equality, serialisation
 
 - **`Some(null)` is forbidden.** `Option.some(null)` throws; `Option.ofNullable(null)` is `None`. This is
@@ -1290,12 +1419,59 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   never a dependency of `zazr-core`. Their *operator inventory*
   (`partitionMap`, `reduceMap`, `mapAccum`, `groupByNonEmpty`, `intersperse`, `maxByOption`...) is the
   checklist for `Vector`/`NonEmptyVector` methods.
-- `Newtype`/`Subtype`, `Derive`, `ZPure`/`State`/`Reader`/`Writer`, `ZSet`/`MultiSet`, the `experimental`
+- `Newtype`/`Subtype` (re-examined and rejected with the maintainer, 2026-09-25). zio-prelude's newtypes are free
+  because Scala erases them to the underlying type, and `Subtype` makes a refined value usable wherever the
+  underlying type is expected. Java has neither: a class cannot extend `String`, `Long` or a record, so a newtype
+  is always a wrapper, and without `Subtype` every call into code expecting the underlying type means unwrapping,
+  which is what makes newtypes tiresome to use. A public record cannot even enforce its refinement without
+  throwing, since its canonical constructor is public; a final class with a private constructor and a
+  `Validation`-returning `make` can, at the cost of record patterns. The one true `Subtype` in Java is a type
+  qualifier checked at compile time (`@Email String`, the Checker Framework's subtyping checker), which exists
+  without Zazr and only protects users who run the checker. So no newtype module; revisit only if Valhalla's value
+  classes and a subtyping story change the trade-off.
+- `Derive`, `ZPure`/`State`/`Reader`/`Writer`, `ZSet`/`MultiSet`, the `experimental`
   algebra module, `Debug`/`Repr`, `Equal`/`Hash`/`Ord` as typeclasses (Java has `Comparator`; structural
   equality is `equals`). A three-valued `Ordering` enum is cute but `Comparator` returns `int`; skip.
 - `Assertion<A>` (the refinement DSL: `greaterThan`, `matches`, `hasLength`, `&&`/`||`, returning
   `Validation<String,A>`) is the one candidate worth revisiting in v2: it composes naturally with
   `Validation` and has no Java equivalent. Not in v1.
+
+### 3.14 `Using` and `Using.Manager` (decided 2026-09-25)
+
+`Try.withResources` is removed and replaced by `com.guizmaii.zazr.control.Using`, a port of `scala.util.Using` from
+the Scala 3 standard library (which ships the Scala 2.13 library's `Using` unchanged;
+[source](https://github.com/scala/scala/blob/2.13.x/src/library/scala/util/Using.scala)). `withResources` handled one
+resource, nesting for more, and let `try`-with-resources pick which exception surfaced; `Using` adds a manager for
+any number of resources decided at run time, and Scala's rule for which throwable surfaces.
+
+- API: `Using.of(Callable<? extends R>, CheckedFunction1<? super R, ? extends T>)` returns `Try<T>` (Scala's
+  `Using.apply`); `Using.manager(CheckedFunction1<? super Using.Manager, ? extends T>)` returns `Try<T>` (Scala's
+  `Using.Manager.apply`). `Manager.acquire(R extends AutoCloseable)` and `Manager.acquire(A value,
+  CheckedConsumer<? super A> release)` register a resource and return it. `Using` is a final class with a private
+  constructor, `Manager` a final nested class with a private constructor.
+- Release: in reverse order of acquisition, every resource once, when the block returns or throws, including when an
+  acquisition throws after earlier ones succeeded.
+- Which throwable surfaces: Scala's `preferentiallySuppress`. Severity `VirtualMachineError` > `LinkageError` >
+  `InterruptedException` and `ThreadDeath` (the same level, as in Scala) > anything else; a later throwable surfaces
+  only when strictly more severe, with the earlier one suppressed in it; otherwise it is suppressed in the one
+  surfacing. Scala's level for `ControlThrowable` (below everything) has no Java counterpart and is not ported. An
+  `OutOfMemoryError` from `close()` therefore surfaces over the block's exception, unlike `try`-with-resources.
+- The outcome is captured as `Try.of` does: fatal throwables (`Throwables.isFatal`, which includes
+  `InterruptedException`) are rethrown, a `null` result is a `Failure` of a `NullPointerException`. A `null` resource
+  is a `NullPointerException` thrown inside the block (so a `Failure`, after the earlier resources are released); a
+  `null` callable, block or release action throws at once.
+- Two departures from Scala's source, both decided here:
+  - a throwable is never suppressed in itself. Scala calls `addSuppressed` without an identity check, so a `close()`
+    that rethrows the block's exception makes it throw an `IllegalArgumentException` (in `Manager`, out of the
+    release loop, leaving the remaining resources unreleased);
+  - `acquire` after the block (including from a release, since the manager is closed before releasing) releases the
+    resource it was given, then throws `IllegalStateException`; a throwable from that release goes through the same
+    severity rule. Scala throws without releasing it, leaking it.
+- Not ported: `Using.resource`/`Using.resources` (the throwing forms: Java's `try`-with-resources is that), the
+  `Releasable` type class (a lambda is an `AutoCloseable`, and `acquire(value, release)` covers the rest), and the
+  `Manager.apply` alias of `acquire`.
+- Storage: the manager keeps its resources in one growable `Object[]`, value and release action (`null` for
+  `close()`) side by side, so an acquisition allocates no wrapper.
 
 ---
 
@@ -1318,7 +1494,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   | module | artifact | content |
   |---|---|---|
   | `zazr-core` | `com.guizmaii:zazr-core` | everything in this document |
-  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing + law suites (below); depends on `zazr-core`; used by `zazr-core`'s own tests (test scope, no cycle: Maven allows a module's tests to depend on a sibling as long as the sibling's *main* code does not depend back) |
+  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing + law suites (below); depends on `zazr-core`. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
 
   Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
@@ -1338,12 +1514,17 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
     (`Laws.zipAssociativity`, `mapIdentity`, `mapComposition`, `flatMapAssociativity`,
     `zipLeftIdentity`, `validationZipAccumulatesBothSides`, `nonEmptyVectorHeadIsTotal`,
     `builderResultEqualsOfAll`), law sets compose (`Laws.zip = zipAssociativity + zipLeftIdentity + ...`),
-    and a failing law reports its name. One `*LawsTest` per type in `zazr-core` runs the relevant sets.
+    and a failing law reports its name. One `*LawsTest` per type runs the relevant sets; they live in
+    `zazr-test`'s test sources, not `zazr-core`'s, because of the reactor cycle noted in the module table.
     This is the "runnable check" for the whole refactor.
   - shrinking is absent from `vavr-test`; add it only if a falsified case is ever unreadable.
 - **JMH**: the `benchmark` profile exists; add `VectorBuilderBenchmark` (append ×N, `map`, `filter`,
   `flatMap`, `collector`) before and after 3.8 so the builder claim is measured, not asserted.
-- **JaCoCo**: either wire the plugin or delete the README line.
+- **JaCoCo (decided)**: wired in a `coverage` Maven profile, outside the default build so `make verify` and the test
+  loop keep their speed. `make coverage` runs the tests of `zazr-core` and `zazr-test` with the agent and writes one
+  aggregated HTML report (generated `src-gen` sources included, `zazr-benchmark` excluded); a CI job on JDK 25
+  uploads it as an artifact and puts the line and branch coverage per module and package in the job summary. No
+  threshold fails the build yet; one is chosen from the measured numbers.
 - **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `com.guizmaii:zazr-core`
   (parent `com.guizmaii:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`
@@ -1414,6 +1595,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
+| #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
 
 ---
 

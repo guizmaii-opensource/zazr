@@ -10,6 +10,7 @@ repo_url: https://github.com/guizmaii-opensource/zazr
 repo_name: guizmaii-opensource/zazr
 edit_uri: edit/main/docs/
 copyright: >-
+  Made by <a href="https://github.com/guizmaii" target="_blank" rel="noopener">Jules Ivanic</a>.
   Zazr is released under the Apache License 2.0. It is a fork of
   <a href="https://github.com/vavr-io/vavr">Vavr</a>, copyright its authors, under the same license;
   see <a href="https://github.com/guizmaii-opensource/zazr/blob/main/NOTICE">NOTICE</a>.
@@ -70,6 +71,11 @@ extra_css:
 
 plugins:
   - search
+  # the pages that moved keep their old address
+  - redirects:
+      redirect_maps:
+        control-types.md: control/index.md
+        validation.md: control/validation.md
 
 markdown_extensions:
   - abbr
@@ -111,14 +117,20 @@ validation:
 nav:
   - Home: index.md
   - Guide:
+      - "New to functional programming?": new-to-fp.md
       - Getting started: getting-started.md
-      - Control types: control-types.md
-      - Validation: validation.md
       - zip at arity N: zip.md
       - NonEmptyVector: non-empty-vector.md
       - Builders: builders.md
       - Java interop: java-interop.md
-      - Testing with zazr-test: testing.md
+  - Control types:
+      - Overview: control/index.md
+      - Option: control/option.md
+      - Either: control/either.md
+      - Try: control/try.md
+      - Using: control/using.md
+      - Validation: control/validation.md
+      - Lazy: control/lazy.md
   - Collections:
       - Overview: collections/index.md
       - Vector: collections/vector.md
@@ -128,5 +140,6 @@ nav:
       - Sets: collections/sets.md
       - Maps: collections/maps.md
       - Complexity: collections/complexity.md
+  - Testing: testing.md
   - Compared to Vavr: vavr.md
   - Design: principles.md
