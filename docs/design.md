@@ -655,7 +655,9 @@ now has every operation of `Vector`, each under the same contract, delegating to
   spelling, decided with the maintainer on 2026-09-25; the removal of `length` from `Vector`, `List`, `Queue` and
   `Stream` is a separate change, #90 again, which also takes it off this list). `NonEmptyVectorTest` asserts
   reflectively that every public instance method name of `Vector` exists on `NonEmptyVector` except exactly this
-  list, and that every method returning a `NonEmptyVector` is exercised by the non-empty guarantee test.
+  list, and that every overload whose result holds a `NonEmptyVector` (directly, or in a tuple, a `Vector`, a map or
+  an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
+  result.
 
 **Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
 motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.

@@ -23,13 +23,13 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Every method is checked at sizes 1, 2, 32, 33, 1023, 1024 and 1025 (the leaf and second-level boundaries) against the equivalent {@link Vector} call, on both
+ * Every method is checked at sizes 1, 2, 31, 32, 33, 1023, 1024 and 1025 (the leaf and second-level boundaries) against the equivalent {@link Vector} call, on both
  * representations a Vector can have (primitive {@code int[]} leaves from {@code Vector.range}, {@code Object[]} leaves from
  * {@code Vector.ofAll}).
  */
 public class NonEmptyVectorTest {
 
-    static final int[] SIZES = { 1, 2, 32, 33, 1023, 1024, 1025 };
+    static final int[] SIZES = { 1, 2, 31, 32, 33, 1023, 1024, 1025 };
 
     /* (size, vector) for both leaf representations */
     static Stream<Arguments> vectors() {
@@ -561,7 +561,7 @@ public class NonEmptyVectorTest {
         }
 
         @ParameterizedTest
-        @ValueSource(ints = { 1, 2, 3, 6, 32, 33 })
+        @ValueSource(ints = { 1, 2, 3, 6, 31, 32, 33 })
         public void shouldTransposeIntoNonEmptyColumns(int n) {
             // one row of n elements: n columns of one element
             final NonEmptyVector<NonEmptyVector<Integer>> row = NonEmptyVector.single(nev(Vector.range(0, n)));
@@ -1079,6 +1079,55 @@ public class NonEmptyVectorTest {
             assertThatThrownBy(() -> NonEmptyVector.of("a").sum()).isInstanceOf(UnsupportedOperationException.class);
         }
 
+        @Test
+        public void shouldAggregateValuesThatOverflowAsVectorDoes() {
+            final java.util.List<Vector<? extends Number>> inputs = java.util.List.of(
+                    Vector.of(Integer.MAX_VALUE, Integer.MAX_VALUE),
+                    Vector.of(Integer.MIN_VALUE, -1),
+                    Vector.of(Long.MAX_VALUE, Long.MAX_VALUE),
+                    Vector.of(Long.MAX_VALUE, Long.MIN_VALUE, 1L),
+                    Vector.of(Double.MAX_VALUE, Double.MAX_VALUE),
+                    Vector.of(Double.MAX_VALUE, -Double.MAX_VALUE, 1.0),
+                    Vector.of(1e308, 1e308, -1e308),
+                    Vector.of(1e16, 1.0, -1e16),
+                    Vector.of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY),
+                    Vector.of(Float.MAX_VALUE, Float.MAX_VALUE),
+                    Vector.of(new java.math.BigInteger("9223372036854775807"), new java.math.BigInteger("9223372036854775807")));
+            for (Vector<? extends Number> input : inputs) {
+                final NonEmptyVector<? extends Number> nev = nev(input);
+                assertThat(nev.sum()).as("sum of " + input).isEqualTo(input.sum());
+                assertThat(nev.product()).as("product of " + input).isEqualTo(input.product());
+                assertThat(nev.average()).as("average of " + input).isEqualTo(input.average().get());
+            }
+            assertThat(nev(Vector.of(Double.MAX_VALUE, Double.MAX_VALUE)).average()).isEqualTo(Double.POSITIVE_INFINITY);
+            assertThat(nev(Vector.of(1e16, 1.0, -1e16)).average()).isEqualTo(1.0 / 3);
+            assertThat(nev(Vector.of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)).average()).isNaN();
+        }
+
+        @ParameterizedTest
+        @MethodSource("com.guizmaii.zazr.collection.NonEmptyVectorTest#vectors")
+        public void shouldReadAnIterableArgumentOnceInEveryQuery(int n, Vector<Integer> vector) {
+            final Vector<Integer> doubled = vector.appendAll(vector);
+            final NonEmptyVector<Integer> nev = nev(doubled);
+            for (Vector<Integer> that : java.util.List.of(Vector.<Integer> empty(), Vector.of(0), vector, Vector.of(n))) {
+                assertThat(nev.retainAll(once(that))).isEqualTo(doubled.retainAll(that));
+                assertThat(nev.removeAll(once(that))).isEqualTo(doubled.removeAll(that));
+                assertThat(nev.containsAll(once(that))).isEqualTo(doubled.containsAll(that));
+                assertThat(nev.startsWith(once(that))).isEqualTo(doubled.startsWith(that));
+                assertThat(nev.startsWith(once(that), n)).isEqualTo(doubled.startsWith(that, n));
+                assertThat(nev.endsWith(once(that))).isEqualTo(doubled.endsWith(that));
+                assertThat(nev.containsSlice(once(that))).isEqualTo(doubled.containsSlice(that));
+                assertThat(nev.indexOfSlice(once(that))).isEqualTo(doubled.indexOfSlice(that));
+                assertThat(nev.indexOfSlice(once(that), 1)).isEqualTo(doubled.indexOfSlice(that, 1));
+                assertThat(nev.lastIndexOfSlice(once(that))).isEqualTo(doubled.lastIndexOfSlice(that));
+                assertThat(nev.lastIndexOfSlice(once(that), n)).isEqualTo(doubled.lastIndexOfSlice(that, n));
+                assertThat(nev.indexOfSliceOption(once(that))).isEqualTo(doubled.indexOfSliceOption(that));
+                assertThat(nev.indexOfSliceOption(once(that), 1)).isEqualTo(doubled.indexOfSliceOption(that, 1));
+                assertThat(nev.lastIndexOfSliceOption(once(that))).isEqualTo(doubled.lastIndexOfSliceOption(that));
+                assertThat(nev.lastIndexOfSliceOption(once(that), n)).isEqualTo(doubled.lastIndexOfSliceOption(that, n));
+            }
+        }
+
         @ParameterizedTest
         @MethodSource("com.guizmaii.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReturnTheSingleElementOnlyWhenThereIsOne(int n, Vector<Integer> vector) {
@@ -1297,103 +1346,155 @@ public class NonEmptyVectorTest {
     }
 
     /**
-     * Every method returning a {@code NonEmptyVector}, called on the inputs most likely to empty it. The wrapper is built
-     * without a check on the internal paths, so this is what stands between a bug and an empty {@code NonEmptyVector}; the
-     * last test makes sure no such method is left out.
+     * Every method whose result is or holds a {@code NonEmptyVector} (directly, or inside a tuple, a {@code Vector}, a
+     * map or an {@code Option}), called overload by overload on the inputs most likely to empty it. The wrapper is built
+     * without a check on the internal paths, so this is what stands between a bug and an empty {@code NonEmptyVector};
+     * the last test makes sure no such overload is left out.
      */
     @Nested
     class NonEmptyGuarantee {
 
-        /* name -> a call of every overload of that name, with arguments chosen to shrink the result as far as they can */
-        static java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<NonEmptyVector<?>>>> calls() {
-            final java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<NonEmptyVector<?>>>> calls = new java.util.HashMap<>();
-            calls.put("map", v -> java.util.List.of(v.map(i -> i)));
-            calls.put("flatMap", v -> java.util.List.of(v.flatMap(NonEmptyVector::single)));
-            calls.put("as", v -> java.util.List.of(v.as("x")));
-            calls.put("append", v -> java.util.List.of(v.append(0)));
-            calls.put("appendAll", v -> java.util.List.of(v.appendAll(Vector.<Integer> empty()), v.appendAll(java.util.List.<Integer> of()), v.appendAll(v)));
-            calls.put("prepend", v -> java.util.List.of(v.prepend(0)));
-            calls.put("prependAll", v -> java.util.List.of(v.prependAll(Vector.<Integer> empty()), v.prependAll(java.util.List.<Integer> of()), v.prependAll(v)));
-            calls.put("concat", v -> java.util.List.of(v.concat(v)));
-            calls.put("insert", v -> java.util.List.of(v.insert(0, 0), v.insert(v.size(), 0)));
-            calls.put("insertAll", v -> java.util.List.of(v.insertAll(0, Vector.<Integer> empty()), v.insertAll(v.size(), java.util.List.<Integer> of())));
-            calls.put("intersperse", v -> java.util.List.of(v.intersperse(0)));
-            calls.put("padTo", v -> java.util.List.of(v.padTo(Integer.MIN_VALUE, 0), v.padTo(0, 0)));
-            calls.put("leftPadTo", v -> java.util.List.of(v.leftPadTo(Integer.MIN_VALUE, 0), v.leftPadTo(0, 0)));
-            calls.put("reverse", v -> java.util.List.of(v.reverse()));
-            calls.put("rotateLeft", v -> java.util.List.of(v.rotateLeft(Integer.MIN_VALUE), v.rotateLeft(v.size()), v.rotateLeft(1)));
-            calls.put("rotateRight", v -> java.util.List.of(v.rotateRight(Integer.MIN_VALUE), v.rotateRight(v.size()), v.rotateRight(1)));
-            calls.put("shuffle", v -> java.util.List.of(v.shuffle()));
-            calls.put("replace", v -> java.util.List.of(v.replace(v.head(), -1), v.replace(-2, -1)));
-            calls.put("replaceAll", v -> java.util.List.of(v.replaceAll(v.head(), -1), v.replaceAll(-2, -1)));
-            calls.put("distinct", v -> java.util.List.of(v.distinct(), v.as(0).distinct()));
-            calls.put("distinctBy", v -> java.util.List.of(v.distinctBy(i -> 0), v.distinctBy((a, b) -> 0)));
-            calls.put("distinctByKeepLast", v -> java.util.List.of(v.distinctByKeepLast(i -> 0), v.distinctByKeepLast((a, b) -> 0)));
-            calls.put("sorted", v -> java.util.List.of(v.sorted(), v.sorted(Comparator.reverseOrder())));
-            calls.put("sortBy", v -> java.util.List.of(v.sortBy(i -> -i), v.sortBy(Comparator.reverseOrder(), i -> i)));
-            calls.put("zip", v -> java.util.List.of(v.zip(NonEmptyVector.single(0))));
-            calls.put("zipWith", v -> java.util.List.of(v.zipWith(NonEmptyVector.single(0), Integer::sum)));
-            calls.put("zipAll", v -> java.util.List.of(v.zipAll(Vector.<Integer> empty(), 0, 0), v.zipAll(java.util.List.<Integer> of(), 0, 0)));
-            calls.put("zipWithIndex", v -> java.util.List.of(v.zipWithIndex(), v.zipWithIndex(Integer::sum)));
-            calls.put("scan", v -> java.util.List.of(v.scan(0, Integer::sum)));
-            calls.put("scanLeft", v -> java.util.List.of(v.scanLeft(0, Integer::sum)));
-            calls.put("scanRight", v -> java.util.List.of(v.scanRight(0, Integer::sum)));
-            calls.put("update", v -> java.util.List.of(v.update(0, -1), v.update(v.size() - 1, i -> -i)));
-            calls.put("tap", v -> java.util.List.of(v.tap(i -> { })));
-            calls.put("permutations", v -> java.util.List.of(v.take(4).toNonEmptyVector().get().permutations()));
-            calls.put("combinations", v -> java.util.List.of(v.take(4).toNonEmptyVector().get().combinations()));
-            calls.put("crossProduct", v -> java.util.List.of(v.crossProduct(), v.crossProduct(NonEmptyVector.single(0))));
-            calls.put("transpose", v -> java.util.List.of(NonEmptyVector.transpose(NonEmptyVector.single(v)), NonEmptyVector.transpose(v.map(NonEmptyVector::single))));
-            calls.put("flatten", v -> java.util.List.of(NonEmptyVector.flatten(NonEmptyVector.single(v))));
+        /* the signature of a method as the table keys it: name(SimpleParameterType, ...) */
+        static String signature(java.lang.reflect.Method method) {
+            final java.util.StringJoiner joiner = new java.util.StringJoiner(", ", method.getName() + "(", ")");
+            for (Class<?> parameter : method.getParameterTypes()) {
+                joiner.add(parameter.getSimpleName());
+            }
+            return joiner.toString();
+        }
+
+        /* signature -> calls of that overload, with arguments chosen to shrink the result as far as they can */
+        static java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls() {
+            final java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls = new java.util.HashMap<>();
+            // constructors and narrowings
+            calls.put("of(Object, Object[])", v -> java.util.List.of(NonEmptyVector.of(v.head()), NonEmptyVector.of(v.head(), new Integer[0])));
+            calls.put("single(Object)", v -> java.util.List.of(NonEmptyVector.single(v.head())));
+            calls.put("fromIterable(Object, Iterable)", v -> java.util.List.of(NonEmptyVector.fromIterable(v.head(), java.util.List.of())));
+            calls.put("fromIterable(Iterable)", v -> java.util.List.of(NonEmptyVector.fromIterable(v), NonEmptyVector.fromIterable(v.asJava())));
+            calls.put("fromVector(Vector)", v -> java.util.List.of(NonEmptyVector.fromVector(v.toVector()), NonEmptyVector.fromVector(v.take(1))));
+            calls.put("unsafeFromVector(Vector)", v -> java.util.List.of(NonEmptyVector.unsafeFromVector(v.takeRight(1))));
+            calls.put("flatten(NonEmptyVector)", v -> java.util.List.of(NonEmptyVector.flatten(NonEmptyVector.single(v))));
+            calls.put("transpose(NonEmptyVector)", v -> java.util.List.of(NonEmptyVector.transpose(NonEmptyVector.single(v)), NonEmptyVector.transpose(v.map(NonEmptyVector::single))));
+            calls.put("tailNonEmpty()", v -> java.util.List.of(v.tailNonEmpty()));
+            calls.put("initNonEmpty()", v -> java.util.List.of(v.initNonEmpty()));
+            // the size is kept or grows
+            calls.put("map(Function)", v -> java.util.List.of(v.map(i -> i)));
+            calls.put("flatMap(Function)", v -> java.util.List.of(v.flatMap(NonEmptyVector::single)));
+            calls.put("as(Object)", v -> java.util.List.of(v.as("x")));
+            calls.put("append(Object)", v -> java.util.List.of(v.append(0)));
+            calls.put("appendAll(Vector)", v -> java.util.List.of(v.appendAll(Vector.<Integer> empty())));
+            calls.put("appendAll(NonEmptyVector)", v -> java.util.List.of(v.appendAll(v)));
+            calls.put("appendAll(Iterable)", v -> java.util.List.of(v.appendAll(java.util.List.<Integer> of())));
+            calls.put("prepend(Object)", v -> java.util.List.of(v.prepend(0)));
+            calls.put("prependAll(Vector)", v -> java.util.List.of(v.prependAll(Vector.<Integer> empty())));
+            calls.put("prependAll(NonEmptyVector)", v -> java.util.List.of(v.prependAll(v)));
+            calls.put("prependAll(Iterable)", v -> java.util.List.of(v.prependAll(java.util.List.<Integer> of())));
+            calls.put("concat(NonEmptyVector)", v -> java.util.List.of(v.concat(v)));
+            calls.put("insert(int, Object)", v -> java.util.List.of(v.insert(0, 0), v.insert(v.size(), 0)));
+            calls.put("insertAll(int, Iterable)", v -> java.util.List.of(v.insertAll(0, Vector.<Integer> empty()), v.insertAll(v.size(), java.util.List.<Integer> of())));
+            calls.put("intersperse(Object)", v -> java.util.List.of(v.intersperse(0)));
+            calls.put("padTo(int, Object)", v -> java.util.List.of(v.padTo(Integer.MIN_VALUE, 0), v.padTo(0, 0)));
+            calls.put("leftPadTo(int, Object)", v -> java.util.List.of(v.leftPadTo(Integer.MIN_VALUE, 0), v.leftPadTo(0, 0)));
+            calls.put("reverse()", v -> java.util.List.of(v.reverse()));
+            calls.put("rotateLeft(int)", v -> java.util.List.of(v.rotateLeft(Integer.MIN_VALUE), v.rotateLeft(v.size()), v.rotateLeft(1)));
+            calls.put("rotateRight(int)", v -> java.util.List.of(v.rotateRight(Integer.MIN_VALUE), v.rotateRight(v.size()), v.rotateRight(1)));
+            calls.put("shuffle()", v -> java.util.List.of(v.shuffle()));
+            calls.put("replace(Object, Object)", v -> java.util.List.of(v.replace(v.head(), -1), v.replace(-2, -1)));
+            calls.put("replaceAll(Object, Object)", v -> java.util.List.of(v.replaceAll(v.head(), -1), v.replaceAll(-2, -1)));
+            calls.put("distinct()", v -> java.util.List.of(v.distinct(), v.as(0).distinct()));
+            calls.put("distinctBy(Function)", v -> java.util.List.of(v.distinctBy(i -> 0)));
+            calls.put("distinctBy(Comparator)", v -> java.util.List.of(v.distinctBy((a, b) -> 0)));
+            calls.put("distinctByKeepLast(Function)", v -> java.util.List.of(v.distinctByKeepLast(i -> 0)));
+            calls.put("distinctByKeepLast(Comparator)", v -> java.util.List.of(v.distinctByKeepLast((a, b) -> 0)));
+            calls.put("sorted()", v -> java.util.List.of(v.sorted()));
+            calls.put("sorted(Comparator)", v -> java.util.List.of(v.sorted(Comparator.reverseOrder())));
+            calls.put("sortBy(Function)", v -> java.util.List.of(v.sortBy(i -> -i)));
+            calls.put("sortBy(Comparator, Function)", v -> java.util.List.of(v.sortBy(Comparator.reverseOrder(), i -> i)));
+            calls.put("zip(NonEmptyVector)", v -> java.util.List.of(v.zip(NonEmptyVector.single(0))));
+            calls.put("zipWith(NonEmptyVector, BiFunction)", v -> java.util.List.of(v.zipWith(NonEmptyVector.single(0), Integer::sum)));
+            calls.put("zipAll(Iterable, Object, Object)", v -> java.util.List.of(v.zipAll(Vector.<Integer> empty(), 0, 0), v.zipAll(java.util.List.<Integer> of(), 0, 0)));
+            calls.put("zipWithIndex()", v -> java.util.List.of(v.zipWithIndex()));
+            calls.put("zipWithIndex(BiFunction)", v -> java.util.List.of(v.zipWithIndex(Integer::sum)));
+            calls.put("scan(Object, BiFunction)", v -> java.util.List.of(v.scan(0, Integer::sum)));
+            calls.put("scanLeft(Object, BiFunction)", v -> java.util.List.of(v.scanLeft(0, Integer::sum)));
+            calls.put("scanRight(Object, BiFunction)", v -> java.util.List.of(v.scanRight(0, Integer::sum)));
+            calls.put("update(int, Object)", v -> java.util.List.of(v.update(0, -1)));
+            calls.put("update(int, Function)", v -> java.util.List.of(v.update(v.size() - 1, i -> -i)));
+            calls.put("tap(Consumer)", v -> java.util.List.of(v.tap(i -> { })));
+            calls.put("permutations()", v -> java.util.List.of(v.take(4).toNonEmptyVector().get().permutations()));
+            calls.put("combinations()", v -> java.util.List.of(v.take(4).toNonEmptyVector().get().combinations()));
+            calls.put("crossProduct()", v -> java.util.List.of(v.crossProduct()));
+            calls.put("crossProduct(NonEmptyVector)", v -> java.util.List.of(v.crossProduct(NonEmptyVector.single(0))));
+            // non-empty vectors inside another type
+            calls.put("unzip(Function)", v -> java.util.List.of(v.unzip(i -> Tuple.of(i, i))));
+            calls.put("unzip3(Function)", v -> java.util.List.of(v.unzip3(i -> Tuple.of(i, i, i))));
+            calls.put("splitAtInclusive(Predicate)", v -> java.util.List.of(v.splitAtInclusive(i -> true), v.splitAtInclusive(i -> false)));
+            calls.put("grouped(int)", v -> java.util.List.of(v.grouped(1), v.grouped(Integer.MAX_VALUE)));
+            calls.put("sliding(int)", v -> java.util.List.of(v.sliding(1), v.sliding(Integer.MAX_VALUE)));
+            calls.put("sliding(int, int)", v -> java.util.List.of(v.sliding(1, Integer.MAX_VALUE), v.sliding(Integer.MAX_VALUE, 1)));
+            calls.put("slideBy(Function)", v -> java.util.List.of(v.slideBy(i -> 0), v.slideBy(i -> i)));
+            calls.put("groupBy(Function)", v -> java.util.List.of(v.groupBy(i -> 0), v.groupBy(i -> i)));
             return calls;
         }
 
-        @ParameterizedTest
-        @MethodSource("com.guizmaii.zazr.collection.NonEmptyVectorTest#vectors")
-        public void shouldReturnAtLeastOneElementFromEveryNonEmptyVectorMethod(int n, Vector<Integer> vector) {
-            for (var call : calls().entrySet()) {
-                for (NonEmptyVector<?> result : call.getValue().apply(nev(vector))) {
-                    assertThat(result.toVector().isEmpty()).as(call.getKey()).isFalse();
-                    if (result.head() instanceof NonEmptyVector<?> inner) {
-                        assertThat(inner.toVector().isEmpty()).as(call.getKey() + " inner").isFalse();
-                    }
+        /* every NonEmptyVector reachable from a result, through tuples, Options, maps and iterables, is non-empty */
+        static void assertEveryNonEmptyVectorIsNonEmpty(Object result, String call) {
+            switch (result) {
+                case NonEmptyVector<?> nev -> {
+                    assertThat(nev.toVector().isEmpty()).as(call).isFalse();
+                    nev.forEach(element -> assertEveryNonEmptyVectorIsNonEmpty(element, call));
                 }
+                case Tuple2<?, ?> t -> {
+                    assertEveryNonEmptyVectorIsNonEmpty(t._1(), call);
+                    assertEveryNonEmptyVectorIsNonEmpty(t._2(), call);
+                }
+                case com.guizmaii.zazr.Tuple3<?, ?, ?> t -> {
+                    assertEveryNonEmptyVectorIsNonEmpty(t._1(), call);
+                    assertEveryNonEmptyVectorIsNonEmpty(t._2(), call);
+                    assertEveryNonEmptyVectorIsNonEmpty(t._3(), call);
+                }
+                case Option<?> option -> option.forEach(value -> assertEveryNonEmptyVectorIsNonEmpty(value, call));
+                case Iterable<?> iterable -> iterable.forEach(element -> assertEveryNonEmptyVectorIsNonEmpty(element, call));
+                default -> { }
             }
         }
 
         @ParameterizedTest
         @MethodSource("com.guizmaii.zazr.collection.NonEmptyVectorTest#vectors")
-        public void shouldReturnNonEmptyPartsAndGroups(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            nonEmpty(nev.unzip(i -> Tuple.of(i, i))._1());
-            nonEmpty(nev.unzip(i -> Tuple.of(i, i))._2());
-            nonEmpty(nev.unzip3(i -> Tuple.of(i, i, i))._3());
-            nonEmpty(nev.splitAtInclusive(i -> true)._1());
-            nonEmpty(nev.splitAtInclusive(i -> false)._1());
-            for (int size : new int[] { 1, Integer.MAX_VALUE }) {
-                nev.grouped(size).forEach(NonEmptyVectorTest::nonEmpty);
-                nev.sliding(size).forEach(NonEmptyVectorTest::nonEmpty);
-                nev.sliding(size, Integer.MAX_VALUE).forEach(NonEmptyVectorTest::nonEmpty);
-                assertThat(nev.grouped(size).isEmpty()).isFalse();
-                assertThat(nev.sliding(size, Integer.MAX_VALUE).isEmpty()).isFalse();
+        public void shouldReturnOnlyNonEmptyNonEmptyVectors(int n, Vector<Integer> vector) {
+            for (var call : calls().entrySet()) {
+                for (Object result : call.getValue().apply(nev(vector))) {
+                    assertEveryNonEmptyVectorIsNonEmpty(result, call.getKey());
+                }
             }
-            nev.slideBy(i -> 0).forEach(NonEmptyVectorTest::nonEmpty);
-            nev.slideBy(i -> i).forEach(NonEmptyVectorTest::nonEmpty);
-            nev.groupBy(i -> 0).forEach(group -> nonEmpty(group._2()));
-            nev.tailNonEmpty().forEach(NonEmptyVectorTest::nonEmpty);
-            nev.initNonEmpty().forEach(NonEmptyVectorTest::nonEmpty);
         }
 
         @Test
-        public void shouldCoverEveryMethodReturningANonEmptyVector() {
-            final java.util.Set<String> returning = new java.util.TreeSet<>();
+        public void shouldCatchAnEmptyNonEmptyVectorNestedAnywhere() {
+            // the API cannot build an empty one, so the checker is tested on one made through the private constructor
+            final java.lang.reflect.Constructor<?> constructor = NonEmptyVector.class.getDeclaredConstructors()[0];
+            constructor.setAccessible(true);
+            final Object hollow;
+            try {
+                hollow = constructor.newInstance(Vector.empty());
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+            for (Object nested : java.util.List.of(hollow, Tuple.of(1, hollow), Tuple.of(1, 2, Vector.of(hollow)), Option.some(hollow), HashMap.of(1, hollow))) {
+                assertThatThrownBy(() -> assertEveryNonEmptyVectorIsNonEmpty(nested, "hollow")).isInstanceOf(AssertionError.class);
+            }
+        }
+
+        @Test
+        public void shouldCoverEveryOverloadWhoseResultHoldsANonEmptyVector() {
+            final java.util.Set<String> holding = new java.util.TreeSet<>();
             for (java.lang.reflect.Method method : NonEmptyVector.class.getMethods()) {
-                if (method.getReturnType() == NonEmptyVector.class && !method.getName().startsWith("of") && !method.getName().startsWith("single")
-                        && !method.getName().startsWith("unsafe") && !method.getName().equals("fromIterable")) {
-                    returning.add(method.getName());
+                if (method.getGenericReturnType().getTypeName().contains(NonEmptyVector.class.getName())) {
+                    holding.add(signature(method));
                 }
             }
-            assertThat(calls().keySet()).containsAll(returning);
+            assertThat(holding).isNotEmpty();
+            assertThat(calls().keySet()).containsExactlyInAnyOrderElementsOf(holding);
         }
     }
 
@@ -1445,7 +1546,7 @@ public class NonEmptyVectorTest {
     class Flatten {
 
         @ParameterizedTest
-        @ValueSource(ints = { 1, 2, 32, 33, 1023, 1024, 1025 })
+        @ValueSource(ints = { 1, 2, 31, 32, 33, 1023, 1024, 1025 })
         public void shouldFlattenNestedNonEmptyVectors(int n) {
             final NonEmptyVector<NonEmptyVector<Integer>> nested = nev(Vector.range(0, n)).map(i -> nev(Vector.range(i, i + n)));
             final NonEmptyVector<Integer> flat = NonEmptyVector.flatten(nested);

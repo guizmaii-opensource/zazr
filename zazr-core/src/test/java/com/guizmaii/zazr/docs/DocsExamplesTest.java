@@ -444,10 +444,10 @@ public class DocsExamplesTest {
 
         @Test
         void splitsWindowsAndTotalAggregates() {
-            NonEmptyVector<Integer> xs = NonEmptyVector.of(1, 2, 3, 4);
-            Tuple2<Vector<Integer>, Vector<Integer>> halves = xs.splitAt(2);
-            Vector<NonEmptyVector<Integer>> windows = xs.sliding(3);
-            double mean = xs.average();
+            var xs = NonEmptyVector.of(1, 2, 3, 4);
+            var halves = xs.splitAt(2); // Tuple2<Vector<Integer>, Vector<Integer>>
+            var windows = xs.sliding(3); // Vector<NonEmptyVector<Integer>>
+            var mean = xs.average(); // double
             // (Vector(1, 2), Vector(3, 4)), Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4)), 2.5
 
             assertThat(halves).hasToString("(Vector(1, 2), Vector(3, 4))");

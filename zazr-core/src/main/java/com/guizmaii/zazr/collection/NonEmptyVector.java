@@ -1226,8 +1226,9 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> retainAll(Iterable<? extends A> elements) { return vector.retainAll(elements); }
 
     /**
-     * Replaces the {@code replaced} elements from {@code from} on by the elements of {@code that}, read once. A
-     * negative {@code from} or {@code replaced} counts as 0; a {@code from} beyond the end appends.
+     * {@link Vector#patch(int, Iterable, int)} on the elements of this vector: replaces the {@code replaced} elements
+     * from {@code from} on by the elements of {@code that}, read once, with {@code from} and {@code replaced} handled
+     * exactly as that method handles them.
      * <p>
      * Complexity: O(n + m) for m elements of {@code that}, that of {@link Vector#patch(int, Iterable, int)}.
      *
