@@ -509,10 +509,10 @@ public class DocsExamplesTest {
         void construction() {
             var right = Either.<String, Integer>right(42); // Either<String, Integer>
             var left = Either.<String, Integer>left("not a number"); // Either<String, Integer>
-            var checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative"); // Either<String, Integer>
-            // Right(42), Left(not a number), Left(negative)
+            var checked = Either.fromPredicate(-1, n -> n >= 0, n -> "negative: " + n); // Either<String, Integer>
+            // Right(42), Left(not a number), Left(negative: -1)
 
-            assertThat(Vector.of(right, left, checked)).hasToString("Vector(Right(42), Left(not a number), Left(negative))");
+            assertThat(Vector.of(right, left, checked)).hasToString("Vector(Right(42), Left(not a number), Left(negative: -1))");
         }
 
         @Test

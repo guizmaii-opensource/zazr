@@ -200,19 +200,25 @@ public class EitherTest {
 
         @Test
         public void shouldReturnRightWhenPredicateHolds() {
-            Either<String, Integer> either = Either.fromPredicate(21, i -> i > 18, () -> "vavr");
+            Either<String, Integer> either = Either.fromPredicate(21, i -> i > 18, _ -> "vavr");
             assertThat(either).isEqualTo(Either.right(21));
         }
 
         @Test
         public void shouldReturnLeftWhenPredicateFails() {
-            Either<String, Integer> either = Either.fromPredicate(12, i -> i > 18, () -> "vavr");
+            Either<String, Integer> either = Either.fromPredicate(12, i -> i > 18, i -> "vavr");
             assertThat(either).isEqualTo(Either.left("vavr"));
         }
 
         @Test
-        public void shouldNotEvaluateLeftSupplierWhenPredicateHolds() {
-            Either<String, Integer> either = Either.fromPredicate(21, i -> true, () -> {
+        public void shouldPassTheRejectedValueToIfFalse() {
+            Either<String, Integer> either = Either.fromPredicate(12, i -> i > 18, i -> "minor: " + i);
+            assertThat(either).isEqualTo(Either.left("minor: 12"));
+        }
+
+        @Test
+        public void shouldNotCallIfFalseWhenPredicateHolds() {
+            Either<String, Integer> either = Either.fromPredicate(21, i -> true, i -> {
                 fail("Should not be called");
                 return "vavr";
             });
@@ -221,14 +227,14 @@ public class EitherTest {
 
         @Test
         public void shouldThrowOnNullArguments() {
-            assertThrows(NullPointerException.class, () -> Either.fromPredicate(null, i -> true, () -> "vavr"));
-            assertThrows(NullPointerException.class, () -> Either.fromPredicate(1, null, () -> "vavr"));
+            assertThrows(NullPointerException.class, () -> Either.fromPredicate(null, i -> true, _ -> "vavr"));
+            assertThrows(NullPointerException.class, () -> Either.fromPredicate(1, null, _ -> "vavr"));
             assertThrows(NullPointerException.class, () -> Either.fromPredicate(1, i -> true, null));
         }
 
         @Test
-        public void shouldThrowWhenLeftSupplierReturnsNull() {
-            assertThrows(NullPointerException.class, () -> Either.fromPredicate(1, i -> false, () -> null));
+        public void shouldThrowWhenIfFalseReturnsNull() {
+            assertThrows(NullPointerException.class, () -> Either.fromPredicate(1, i -> false, _ -> null));
         }
         private class Animal {
             String name;
@@ -258,13 +264,13 @@ public class EitherTest {
 
         @Test
         public void shouldBeFineWithCovariantLeft() {
-            Either<Animal, Integer> either = Either.fromPredicate(21, i -> false, () -> new Cat("vavr"));
+            Either<Animal, Integer> either = Either.fromPredicate(21, i -> false, _ -> new Cat("vavr"));
             assertThat(either).isEqualTo(Either.left(new Cat("vavr")));
         }
 
         @Test
         public void shouldBeFineWithCovariantRight() {
-            Either<String, Animal> either = Either.fromPredicate(new Dog("vavr"), a -> true, () -> "vavr");
+            Either<String, Animal> either = Either.fromPredicate(new Dog("vavr"), a -> true, _ -> "vavr");
             assertThat(either).isEqualTo(Either.right(new Dog("vavr")));
         }
     }

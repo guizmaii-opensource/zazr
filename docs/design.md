@@ -367,7 +367,7 @@ duplication is cheaper than a god interface).
 | javadoc: "monadic container type", "behave like a monad", "applicative functor, not a Monad", "more like a Functor than a Monad", `// Monad implementation`, "For-comprehension" | rewritten in plain English: "a value that may be absent", "a computation that either fails with `L` or succeeds with `R`", "`Validation` keeps *all* errors: combining two invalid values with `zip` concatenates their errors, whereas `Either` stops at the first". No mention of Monad/Functor/Applicative anywhere in the repo, generator included (`monadicTypesFor` etc.). | Principle 1 applies to prose too; a grep for `monad\|functor\|applicative` in CI keeps it that way |
 | `Option.of(nullable)` / `Option.some` / `Option.when` | `Option.ofNullable`, `Option.some` (**rejects null**), `Option.when(boolean, Supplier)` | see 3.9 |
 | `Validation.valid/invalid`, `Either.right/left`, `Try.success/failure` | keep | already purpose-named |
-| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Supplier<L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. `Validation`'s takes the rejected value (3.5, #22) so the error can name it, the everyday case for a field check; `Either`'s keeps the supplier |
+| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Function<A, L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. Both take the rejected value (3.5) so the error can name it, the everyday case for a field check |
 | `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. | |
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
@@ -535,7 +535,7 @@ Notes:
   accessor `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or
   `toEither()`.
 - **`fromPredicate(A, Predicate<A>, Function<A, E>)`**, as sketched, not the `Supplier<E>` of the 3.3 row: the
-  function receives the rejected value so the error can name it. `Either.fromPredicate` keeps its supplier.
+  function receives the rejected value so the error can name it. `Either.fromPredicate` takes the same `Function` (decided 2026-09-26: a supplier could not name the rejected value, and the two constructors now agree).
 - **`of(Callable, Function<Throwable, E>)` is `Try.of` followed by a conversion**, so it has exactly `Try.of`'s
   policy: a fatal throwable is rethrown, a `null` result is a `NullPointerException` handed to `onError`.
 - **`forEach(NonEmptyVector, f)` and `forEach(Iterable, f)` are overloads.** Unlike 3.6's `flatMap`/`flatMapAll`,
@@ -982,6 +982,43 @@ inserted), `take(n)` the first n, and so on:
   `Complexity:` line too. The notes of `TreeSet`/`TreeMap` live on the interface declarations, which the classes
   inherit.
 
+**A repeated key in `LinkedHashMap`/`LinkedHashSet` keeps its first position (decided 2026-09-25).** Before this,
+`put` on an existing key kept the key where it was, but `ofEntries`, the `of` overloads, `collector()`, `tabulate`,
+`fill` and `mapBoth` moved a repeated key to its last occurrence, so two ways of building the same map iterated
+differently (`ofEntries((1, a), (2, b), (1, c))` gave `(2, b), (1, c)`, successive `put`s gave `(1, c), (2, b)`). The
+iteration-order law of `zazr-test` needed two orders for one type. Every way of building now follows `put`:
+
+- **`LinkedHashMap`**: a repeated key stays at the position of its first occurrence and takes the key object and the
+  value of its last. Every factory, collector and bulk operation (`of` at every arity, `ofEntries` ×3, `ofAll`,
+  `collector()` ×3, `tabulate`, `fill`, `orElse`, `mapBoth`, `mapKeys(keyMapper)`, `map`, `flatMap`, `collect`, and
+  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives.
+  `merge(that, f)` and `mapKeys(keyMapper, valueMerge)` are successive `put`s of the combined value: first position,
+  last key object, combined value. `merge(that)` on a non-empty receiver is deliberately different: a key the receiver
+  already holds keeps the receiver's key object and value, and only absent keys are added. Scala's insertion-ordered maps do the
+  same: `VectorMap.updated` and `ListMap.updated` keep an existing key where it is, and building one from a sequence
+  is repeated `updated` (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its classes).
+- **`put` of an equal but distinct key object** also writes that object into the insertion-order `Vector`, not only
+  into the entry: the positional operations of the key set (`zipWithIndex`, `takeWhile` and its siblings,
+  `slideBy`) read the keys from that `Vector`, and returned the first key object while iteration returned the last.
+  The `Vector` is updated only when the key object differs, so a plain overwrite stays as cheap as before.
+- **`LinkedHashSet`**: a repeated element keeps its first position and its first object, as `add` does (it returns
+  the set unchanged when the element is present). `of`, `ofAll`, `collector()`, `tabulate`, `fill`, `flatten`,
+  `addAll`, `union`, `map`, `flatMap`, `collect` and `partitionMap` used to put every element again, which kept the
+  position but replaced the object with the last one met; `addAll` was not even consistent with itself (it
+  returned the receiver, old objects included, when nothing was new). They now insert only absent elements, through
+  a package-private `LinkedHashMap.putIfAbsent`, and the javadoc of `addAll`/`union` states the rule instead of
+  calling it unspecified.
+- **How the map factories build**: a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
+  slots in the `HashMap`, replacing the slot of a repeated key in place, and makes the insertion-order `Vector` once.
+  It replaces the old path (a `HashMap` of entries, a `Vector` of every key, `reverse().distinct().reverse()`, then a
+  second `HashMap` of slots), so it does less work, not more.
+- **Tests**: `LinkedHashRepeatedKeyTest` compares each of these operations against successive `put`s or `add`s on
+  random inputs with repeated, equal but not identical keys, checking the key and value objects by identity, the
+  positional operations of the key set, and that the result stays a regular map (`remove`, `take`, `drop`, `put`).
+  In `zazr-test`, `IterationOrder.keysByLastOccurrence` is gone: `LinkedHashMap`'s subjects, its collector and
+  successive `put`s all use `keysByFirstOccurrence`, and `LawsTest` checks that the law catches a map that moves a
+  repeated key to its last occurrence.
+
 **Decided while implementing #25 (`partitionMap`, `duplicates`, static `flatten`):**
 
 - **Where they are.** `partitionMap` on `List`, `Queue`, `Stream` (`LazyList` after #28), `HashSet`, `LinkedHashSet`
@@ -990,7 +1027,8 @@ inserted), `take(n)` the first n, and so on:
   no `distinct` (a set is distinct) and get neither. Static `flatten(Iterable<? extends Iterable<? extends A>>)` on
   `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, and on `TreeSet` in two overloads,
   `flatten(Comparator, Iterable)` and the natural-order `flatten(Iterable)` (for `T extends Comparable<? super T>`),
-  mirroring `TreeSet.ofAll`; of equal elements the last one met is kept, as `ofAll` keeps it. The maps get no
+  mirroring `TreeSet.ofAll`; of equal elements the last one met is kept, as `ofAll` keeps it (except on
+  `LinkedHashSet`, which keeps the first, as its `add` does; see the repeated-key decision above). The maps get no
   `flatten`, for the reason they get no `partitionMap` (their elements are entries). On the control types:
   `Option.flatten(Option<? extends Option<? extends A>>)`, `Either.flatten(Either<? extends L, ? extends Either<?
   extends L, ? extends R>>)`, `Try.flatten`, `Validation.flatten(Validation<? extends E, ? extends Validation<?
