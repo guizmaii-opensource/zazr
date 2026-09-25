@@ -56,9 +56,9 @@ final class Shapes {
 
         int draw(Sampling sampling, int size);
 
-        /// Between 0 and the size, as {@link Gen#intValue(int, int)}: half of the draws are 0, 1, the size or the size
+        /// Between 0 and the size, as {@link Gen#integers(int, int)}: half of the draws are 0, 1, the size or the size
         /// minus one.
-        Length UP_TO_SIZE = (sampling, size) -> Gen.intValue(0, size).draw(sampling, size);
+        Length UP_TO_SIZE = (sampling, size) -> Gen.integers(0, size).draw(sampling, size);
 
         /// Between 0 and the size minus one, as {@link #UP_TO_SIZE}: the tail of a non-empty vector.
         Length BELOW_SIZE = (sampling, size) -> UP_TO_SIZE.draw(sampling, Math.max(0, size - 1));

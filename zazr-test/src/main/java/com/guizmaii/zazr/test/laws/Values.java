@@ -12,6 +12,6 @@ final class Values {
 
     /// Integers between minus the size and the size: a small range, so that equal values are frequent.
     static Gen<Integer> integers() {
-        return Gen.sized(n -> Gen.intValue(-n, n));
+        return Gen.sized(n -> Gen.integers(-n, n));
     }
 }

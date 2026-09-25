@@ -22,7 +22,7 @@ class CheckTest {
 
     @Test
     void aSeedReplaysAFailure() {
-        final Gen<Integer> ints = Gen.intValue(0, 1_000);
+        final Gen<Integer> ints = Gen.integers(0, 1_000);
         final CheckResult first = Check.check(config(9), ints, ints, (a, b) -> a + b < 1_500);
         final CheckResult second = Check.check(config(9), ints, ints, (a, b) -> a + b < 1_500);
         assertThat(first.isFalsified()).isTrue();
@@ -32,9 +32,9 @@ class CheckTest {
 
     @Test
     void theSeedOfTheDefaultConfigurationIsReported() {
-        final CheckResult result = Check.check(Gen.intValue(), i -> false);
+        final CheckResult result = Check.check(Gen.integers(), i -> false);
         final long seed = ((CheckResult.Falsified) result).seed();
-        assertThat(Check.check(CheckConfig.defaults().withSeed(seed), Gen.intValue(), i -> false)).isEqualTo(result);
+        assertThat(Check.check(CheckConfig.defaults().withSeed(seed), Gen.integers(), i -> false)).isEqualTo(result);
     }
 
     // -- samples
@@ -42,21 +42,21 @@ class CheckTest {
     @Test
     void checkRunsTheConfiguredNumberOfSamples() {
         final AtomicInteger calls = new AtomicInteger();
-        assertThat(Check.check(config(1).withSamples(37), Gen.intValue(), i -> calls.incrementAndGet() > 0))
+        assertThat(Check.check(config(1).withSamples(37), Gen.integers(), i -> calls.incrementAndGet() > 0))
                 .isEqualTo(new CheckResult.Satisfied(37));
         assertThat(calls).hasValue(37);
     }
 
     @Test
     void checkRunsTheDefaultNumberOfSamples() {
-        assertThat(Check.check(Gen.intValue(), i -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
+        assertThat(Check.check(Gen.integers(), i -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
     }
 
     @Test
     void checkNRunsNSamples() {
-        assertThat(Check.checkN(3, Gen.intValue(), i -> true)).isEqualTo(new CheckResult.Satisfied(3));
-        assertThat(Check.checkN(0, Gen.intValue(), i -> false)).isEqualTo(new CheckResult.Satisfied(0));
-        assertThatThrownBy(() -> Check.checkN(-1, Gen.intValue(), i -> true)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(Check.checkN(3, Gen.integers(), i -> true)).isEqualTo(new CheckResult.Satisfied(3));
+        assertThat(Check.checkN(0, Gen.integers(), i -> false)).isEqualTo(new CheckResult.Satisfied(0));
+        assertThatThrownBy(() -> Check.checkN(-1, Gen.integers(), i -> true)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -101,7 +101,7 @@ class CheckTest {
 
     @Test
     void checkAllOfARandomGeneratorRunsOneSample() {
-        assertThat(Check.checkAll(Gen.intValue(), i -> true)).isEqualTo(new CheckResult.Satisfied(1));
+        assertThat(Check.checkAll(Gen.integers(), i -> true)).isEqualTo(new CheckResult.Satisfied(1));
     }
 
     @Test
@@ -136,7 +136,7 @@ class CheckTest {
 
     @Test
     void smallCounterexamplesComeFirst() {
-        final Gen<Integer> upToSize = Gen.sized(size -> Gen.intValue(0, size));
+        final Gen<Integer> upToSize = Gen.sized(size -> Gen.integers(0, size));
         for (long seed = 0; seed < 20; seed++) {
             final CheckResult.Falsified falsified = (CheckResult.Falsified) Check.check(config(seed), upToSize, n -> n < 30);
             final int counterexample = (Integer) ((com.guizmaii.zazr.Tuple1<?>) falsified.counterexample())._1();
@@ -265,7 +265,7 @@ class CheckTest {
 
     @Test
     void aFilterBeyondItsBudgetMakesTheCheckErroneous() {
-        final CheckResult result = Check.check(config(4), Gen.intValue(), Gen.intValue().filter(i -> false), (a, b) -> true);
+        final CheckResult result = Check.check(config(4), Gen.integers(), Gen.integers().filter(i -> false), (a, b) -> true);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected 1001 values in a row");
         assertThat(result.sample()).isEqualTo(Option.none());
