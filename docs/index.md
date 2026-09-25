@@ -1,7 +1,7 @@
 ---
 template: home.html
 title: zazr
-description: Immutable collections and control types for Java 25+, with an API inspired by ZIO, zio-prelude and modern Scala.
+description: Modern Functional Programming for Java 25+. Inspired by modern Scala, ZIO, and zio-prelude.
 hide:
   - navigation
   - toc

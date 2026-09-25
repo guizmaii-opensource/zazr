@@ -5,9 +5,9 @@
 <h1 align="center">zazr</h1>
 
 <p align="center">
-  Immutable collections and control types for Java 25+,<br>
-  with an API inspired by <a href="https://zio.dev">ZIO</a>, <a href="https://zio.dev/zio-prelude/">zio-prelude</a>
-  and modern <a href="https://www.scala-lang.org">Scala</a>.
+  <b>Modern Functional Programming for Java 25+</b><br>
+  Inspired by modern <a href="https://www.scala-lang.org">Scala</a>, <a href="https://zio.dev">ZIO</a>,
+  and <a href="https://zio.dev/zio-prelude/">zio-prelude</a>
 </p>
 
 <p align="center">
