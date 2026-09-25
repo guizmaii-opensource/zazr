@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>A {@code Lazy} is a value, not a container: it is never empty, is not iterable, and {@link #get()} is its
  * only conversion. It may hold {@code null}, unlike {@code Option}, {@code Either}, {@code Try} and
- * {@code Validation} (design 3.9), so wrapping its value in one of those is done explicitly, e.g.
+ * {@code Validation}, so wrapping its value in one of those is done explicitly, e.g.
  * {@code Option.ofNullable(lazy.get())}.</p>
  *
  * <p>Example usage:</p>
@@ -184,7 +184,7 @@ public final class Lazy<T extends @Nullable Object> {
         return Lazy.of(() -> Objects.requireNonNull(mapper.apply(get()), "Lazy.flatMap: mapper returned null").get());
     }
 
-    // -- zip (design 3.4)
+    // -- zip
 
     /**
      * Pairs this value with {@code that}'s: an unevaluated {@code Lazy} that, when first evaluated, evaluates this

@@ -42,7 +42,7 @@ import org.jspecify.annotations.Nullable;
  * {@code Some} never holds {@code null}: {@link #some(Object)} throws and {@link #ofNullable(Object)} is the escape
  * hatch, as {@link java.util.Optional#of(Object)} and {@link java.util.Optional#ofNullable(Object)} are.
  * <p>
- * An {@code Option} is not a collection and not {@link Iterable} (design 3.2): to iterate or collect its value, convert
+ * An {@code Option} is not a collection and not {@link Iterable}: to iterate or collect its value, convert
  * it explicitly with {@link #toVector()}, {@link #toList()} or {@link #stream()}.
  * <p>
  * The design is similar to {@link java.util.Optional} and to
@@ -436,7 +436,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Transforms the value of this {@code Some} using the given mapper and wraps it in a new {@code Some}.
      * Returns {@code None} if this is {@code None}.
      * <p>
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: {@code Some} cannot hold {@code null} (design 3.9). Map to absence with {@link #flatMap(Function)} and {@link #ofNullable(Object)} instead.
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: {@code Some} cannot hold {@code null}. Map to absence with {@link #flatMap(Function)} and {@link #ofNullable(Object)} instead.
      *
      * @param mapper a function to transform the contained value
      * @param <U>    the type of the resulting {@code Some}'s value
@@ -500,7 +500,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         return this;
     }
 
-    // -- zip (design 3.4)
+    // -- zip
 
     /**
      * Pairs this value with {@code that}'s, failing fast: {@code Some} of the pair when both are {@code Some},
@@ -522,7 +522,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     /**
      * Combines this value with {@code that}'s through {@code f}, failing fast: {@code Some} of the result when both
      * are {@code Some}, otherwise {@code None}. {@code f} is called only when both are {@code Some}; it must not
-     * return {@code null}, since {@code Some} cannot hold {@code null} (design 3.9).
+     * return {@code null}, since {@code Some} cannot hold {@code null}.
      *
      * @param that the other option
      * @param f    combines the two values; it must not return {@code null}
@@ -588,7 +588,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of two {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -631,7 +631,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of three {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -679,7 +679,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of four {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -732,7 +732,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of five {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -790,7 +790,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of six {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -853,7 +853,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of seven {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -921,7 +921,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * Combines the values of eight {@code Option}s through {@code f}, failing fast: {@code Some} of the result when
      * every argument is a {@code Some}, otherwise {@code None}. {@code f} is called only when every argument is a
      * {@code Some}, with the values in argument order; it must not return {@code null}, since {@code Some} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param o1  the first {@code Option}
      * @param o2  the second {@code Option}
@@ -960,12 +960,12 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get(), o8.get()), "Option.zipWith: f returned null"));
     }
 
-    // -- conversions (design 3.2)
+    // -- conversions
 
     /**
      * Converts this {@code Option} to an {@link Either}: {@code Right(value)} for {@code Some}, {@code Left(leftSupplier.get())} for {@code None}.
      * <p>
-     * The supplier is invoked only for {@code None}; it must not supply {@code null}, since {@code Left} cannot hold {@code null} (design 3.9).
+     * The supplier is invoked only for {@code None}; it must not supply {@code null}, since {@code Left} cannot hold {@code null}.
      *
      * @param leftSupplier a supplier of the left value, invoked if this is {@code None}
      * @param <L>          the left type of the {@link Either}
@@ -994,7 +994,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     /**
      * Converts this {@code Option} to a {@link Validation}: {@code Valid(value)} for {@code Some}, {@code Invalid(invalidSupplier.get())} for {@code None}.
      * <p>
-     * The supplier is invoked only for {@code None}; it must not supply {@code null}, since {@code Invalid} cannot hold {@code null} (design 3.9).
+     * The supplier is invoked only for {@code None}; it must not supply {@code null}, since {@code Invalid} cannot hold {@code null}.
      *
      * @param invalidSupplier a supplier of the error, invoked if this is {@code None}
      * @param <E>             the error type of the {@link Validation}

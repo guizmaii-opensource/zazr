@@ -23,8 +23,7 @@ public final class Maps {
      * the default) instead of {@link Map#get(Object)}, so no {@code Option} is boxed just to test
      * {@code isDefined()}. It is never stored in a map and never returned to a caller: a value equal
      * to it is impossible, because every value a caller can put is non-null and this instance is not
-     * reachable outside this package (design 3.9 forbids a stored {@code null}, which is the only
-     * thing this sentinel used to have to be told apart from).
+     * reachable outside this package.
      */
     public static final Object ABSENT = new Object();
 

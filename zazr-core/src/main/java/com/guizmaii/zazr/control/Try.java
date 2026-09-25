@@ -37,7 +37,7 @@ import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
  * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal only when they hold the same
  * {@code Throwable} instance, see {@link Failure}.
  * <p>
- * A {@code Try} is not a collection and not {@link Iterable} (design 3.2): to iterate its value, convert it
+ * A {@code Try} is not a collection and not {@link Iterable}: to iterate its value, convert it
  * explicitly with {@link #toVector()} or {@link #toOption()}.
  * <p>
  * The following exceptions are considered fatal or non-recoverable:
@@ -1169,7 +1169,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         }
     }
 
-    // -- zip (design 3.4)
+    // -- zip
 
     /**
      * Pairs this value with {@code that}'s, failing fast: {@code Success} of the pair when both are {@code Success},
@@ -1195,7 +1195,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * {@code f} is called only when both are {@code Success} and runs under {@code Try} like a {@link #map(Function)}
      * mapper: a non-fatal exception it throws is captured as a {@code Failure}, a fatal one is rethrown, and a
      * {@code null} result is a {@code Failure} of a {@link NullPointerException}, since {@code Success} cannot hold
-     * {@code null} (design 3.9).
+     * {@code null}.
      *
      * @param that the other {@code Try}
      * @param f    combines the two values
@@ -1277,7 +1277,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1332,7 +1332,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1395,7 +1395,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1466,7 +1466,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1545,7 +1545,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1632,7 +1632,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}
@@ -1727,7 +1727,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * called only when every argument is a {@code Success}, with the values in argument order, and runs under
      * {@code Try} like a {@link #map(Function)} mapper: a non-fatal exception it throws is captured as a
      * {@code Failure}, a fatal one is rethrown, and a {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, since {@code Success} cannot hold {@code null} (design 3.9).
+     * {@link NullPointerException}, since {@code Success} cannot hold {@code null}.
      *
      * @param t1  the first {@code Try}
      * @param t2  the second {@code Try}

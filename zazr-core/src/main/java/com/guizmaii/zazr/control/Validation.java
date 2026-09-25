@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A validation that either succeeds with a value of type {@code A} or fails with <em>one or more</em> errors of type
- * {@code E}. Modelled on zio-prelude's {@code Validation}, minus its log channel (design 3.5).
+ * {@code E}. Modelled on zio-prelude's {@code Validation}, minus its log channel.
  * <p>
  * Unlike {@link Either}, which stops at the first error, {@code Validation} keeps <em>all</em> errors: combining two
  * invalid values with {@link #zip(Validation)} concatenates their errors, which is what a form or a configuration
@@ -66,7 +66,7 @@ import org.jspecify.annotations.Nullable;
  * The sides are not symmetric (one is non-empty), so there is no {@code flip}. Equality is the record equality, order
  * sensitive on the errors: {@code Invalid(a, b)} is not {@code Invalid(b, a)}.
  * <p>
- * A {@code Validation} is not a collection and not {@link Iterable} (design 3.2): to iterate its value, convert it
+ * A {@code Validation} is not a collection and not {@link Iterable}: to iterate its value, convert it
  * explicitly with {@link #toVector()} or {@link #toOption()}.
  *
  * @param <E> the error type

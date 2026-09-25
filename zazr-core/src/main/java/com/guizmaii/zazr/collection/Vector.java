@@ -25,7 +25,7 @@ import static com.guizmaii.zazr.collection.internal.Collections.withSize;
  * {@code slice}) are effectively constant too.
  * <p>
  * The implementation is based on a `bit-mapped trie`, a very wide and shallow tree (i.e. depth ≤ 6). Vector declares
- * its whole API itself and implements only {@link Traversable} (design 3.7): every positional method carries a
+ * its whole API itself and implements only {@link Traversable}: every positional method carries a
  * {@code Complexity:} line in its javadoc, where "effectively O(1)" means O(log32 n), a trie access or a path copy
  * of at most six nodes.
  *
@@ -784,7 +784,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return builder.result();
     }
 
-    // -- the sequence API (design 3.7). Vector implements only Traversable and declares every sequence method itself,
+    // -- the sequence API. Vector implements only Traversable and declares every sequence method itself,
     // with Vector return types; every positional method states its cost.
     // "Effectively O(1)" means O(log32 n): a trie access or a path copy of at most six nodes.
 
