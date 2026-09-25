@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * The contracts every collection keeps: {@code size}, {@code toList}, and an {@code equals} decided by the elements
- * alone (in order for the sequences, as a set for the sets and maps), across the types of one family.
+ * The contracts every collection keeps: {@code size}, {@code toList}, the iteration order, and an {@code equals}
+ * decided by the elements alone (in order for the sequences, as a set for the sets and maps), across the types of one family.
  */
 public final class CollectionLaws {
 
@@ -77,6 +77,30 @@ public final class CollectionLaws {
                     }
                     return Results.both(agrees(subject, a, b), Results.both(agrees(subject, a, subject.ofAll().apply(reversed)),
                             agrees(subject, a, subject.ofAll().apply(dropped))));
+                }));
+    }
+
+    /**
+     * A collection built by {@code ofAll} iterates in the subject's {@link IterationOrder}: input order for a
+     * sequence, first occurrence for an insertion-ordered set, sorted for a sorted set, and so on. The input is the
+     * elements of one collection followed by those of another, reversed, so that it repeats elements. A subject
+     * without an order satisfies the law.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> iterationOrder() {
+        return Law.of("iterationOrder", subject -> Property.named("iterationOrder")
+                .forAll(subject.values(), subject.values())
+                .suchThatResult((a, b) -> {
+                    final ArrayList<T> input = elements(a);
+                    final ArrayList<T> second = elements(b);
+                    Collections.reverse(second);
+                    input.addAll(second);
+                    return subject.order()
+                            .map(order -> Results.equal(elements(subject.ofAll().apply(input)), order.of(input)))
+                            .getOrElse(PredicateResult.success());
                 }));
     }
 
@@ -140,14 +164,15 @@ public final class CollectionLaws {
     }
 
     /**
-     * {@link #sizeEqualsIterationCount()}, {@link #toListRoundTrip()} and {@link #equalsAgreesWithElements()}.
+     * {@link #sizeEqualsIterationCount()}, {@link #toListRoundTrip()}, {@link #equalsAgreesWithElements()} and
+     * {@link #iterationOrder()}.
      *
      * @param <T> the element type
      * @param <F> the collection type
      * @return the law set
      */
     public static <T, F extends Iterable<T>> Laws<CollectionSubject<T, F>> all() {
-        return Laws.of(sizeEqualsIterationCount(), toListRoundTrip(), equalsAgreesWithElements());
+        return Laws.of(sizeEqualsIterationCount(), toListRoundTrip(), equalsAgreesWithElements(), iterationOrder());
     }
 
     /**

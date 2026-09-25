@@ -2,6 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.TreeMap;
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 
 
@@ -32,12 +33,12 @@ class TreeMapLawsTest extends MapLawsSuite<TreeMap<?, ?>, TreeMap<Integer, Integ
     @Override
     CollectionSubject<Tuple2<Integer, Integer>, TreeMap<Integer, Integer>> collection() {
         return new CollectionSubject<>(Arbitrary.treeMap(Arbitrary.integer(), Arbitrary.integer()), TreeMap::ofEntries, TreeMap::size,
-                TreeMap::toList, false);
+                TreeMap::toList, false, Option.some(IterationOrder.keysSorted(java.util.Comparator.<Integer>naturalOrder())));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Tuple2<Integer, Integer>, TreeMap<Integer, Integer>> collector() {
         return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.tuple2(Arbitrary.integer(), Arbitrary.integer())),
-                TreeMap.collector(), TreeMap::ofEntries);
+                TreeMap.collector(), TreeMap::ofEntries, Option.some(IterationOrder.keysSorted(java.util.Comparator.<Integer>naturalOrder())));
     }
 }

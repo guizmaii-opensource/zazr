@@ -53,6 +53,6 @@ class HashSetLawsTest extends SetLawsSuite<HashSet<?>, HashSet<Integer>> {
                 Arbitrary.hashSet(Arbitrary.integer().map(Collider::new)), HashSet::ofAll, HashSet::size, HashSet::toList, false);
         CollectionLaws.<Collider, HashSet<Collider>>set().assertSatisfied(colliders, new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
         EqualityLaws.<HashSet<Collider>>all().assertSatisfied(
-                new EqualitySubject<>(colliders.values(), s -> HashSet.ofAll(s.toList())), new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
+                new EqualitySubject<>(colliders.values(), s -> HashSet.ofAll(s.toList()), c -> new java.util.HashSet<>(CollectionLaws.elements(c))), new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
     }
 }

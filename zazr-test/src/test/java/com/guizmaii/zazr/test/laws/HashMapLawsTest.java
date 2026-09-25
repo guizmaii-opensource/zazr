@@ -48,7 +48,7 @@ class HashMapLawsTest extends MapLawsSuite<HashMap<?, ?>, HashMap<Integer, Integ
         CollectionLaws.<Tuple2<Collider, Integer>, HashMap<Collider, Integer>>map()
                 .assertSatisfied(colliders, new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
         EqualityLaws.<HashMap<Collider, Integer>>all().assertSatisfied(
-                new EqualitySubject<>(colliders.values(), m -> HashMap.ofEntries(m.toList())), new Random(LawChecks.SEED), LawChecks.SIZE,
+                new EqualitySubject<>(colliders.values(), m -> HashMap.ofEntries(m.toList()), c -> new java.util.HashSet<>(CollectionLaws.elements(c))), new Random(LawChecks.SEED), LawChecks.SIZE,
                 LawChecks.TRIES);
     }
 }

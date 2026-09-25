@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 
 
@@ -46,11 +47,11 @@ class QueueLawsTest extends SequenceLawsSuite<Queue<?>, Queue<Integer>, QueueLaw
 
     @Override
     CollectionSubject<Integer, Queue<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.queue(Arbitrary.integer()), Queue::ofAll, Queue::size, Queue::toList, true);
+        return new CollectionSubject<>(Arbitrary.queue(Arbitrary.integer()), Queue::ofAll, Queue::size, Queue::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Queue<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Queue.collector(), Queue::ofAll);
+        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Queue.collector(), Queue::ofAll, Option.some(IterationOrder.input()));
     }
 }

@@ -55,6 +55,6 @@ class OptionLawsTest extends ControlLawsSuite<Option<?>, OptionLawsTest.Subject>
 
     @Override
     EqualitySubject<Option<?>> equality() {
-        return new EqualitySubject<>(subject().values(), o -> o.isEmpty() ? Option.none() : Option.some(o.get()));
+        return new EqualitySubject<>(subject().values(), o -> o.isEmpty() ? Option.none() : Option.some(o.get()), o -> o.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(o.get()));
     }
 }

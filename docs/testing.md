@@ -156,8 +156,8 @@ A law set groups laws. `MapLaws.all()` is `mapIdentity` and `mapComposition`; `a
 | `MapLaws` | `mapIdentity`, `mapComposition` |
 | `FlatMapLaws` | `flatMapAssociativity`, `flatMapLeftIdentity`, `flatMapRightIdentity`, `mapIsFlatMapSucceed` |
 | `ZipLaws` | `zipAssociativity`, `zipLeftIdentity`, `zipRightIdentity`, and `zipLeft`/`zipRight` agreeing with `zip` |
-| `EqualityLaws` | `equalsHashCodeConsistency` |
-| `CollectionLaws` | `size`, `toList` and `equals` agreeing with the elements, and equality across collection types |
+| `EqualityLaws` | `equalsHashCodeConsistency`, and `equalsAgreesWithModel`: `equals` agrees with a simple model of the value, such as its elements as a JDK list |
+| `CollectionLaws` | `size`, `toList` and `equals` agreeing with the elements, the iteration order (input, insertion or sorted), and equality across collection types |
 | `BuilderLaws` | a builder or a collector gives the same collection as `ofAll` |
 
 ## Checking your own type

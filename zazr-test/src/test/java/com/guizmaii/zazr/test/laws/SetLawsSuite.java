@@ -68,10 +68,25 @@ abstract class SetLawsSuite<F, C extends Iterable<Integer>> {
     }
 
     @Test
+    void iterationOrder() {
+        LawChecks.check(CollectionLaws.<Integer, C>iterationOrder(), collection());
+    }
+
+    @Test
     void equalsHashCodeConsistency() {
+        LawChecks.check(EqualityLaws.<C>equalsHashCodeConsistency(), equality());
+    }
+
+    @Test
+    void equalsAgreesWithModel() {
+        LawChecks.check(EqualityLaws.<C>equalsAgreesWithModel(), equality());
+    }
+
+    /// Equality modelled by the elements: a JDK list for a sequence, a JDK set otherwise.
+    private EqualitySubject<C> equality() {
         final CollectionSubject<Integer, C> collection = collection();
-        LawChecks.check(EqualityLaws.<C>equalsHashCodeConsistency(),
-                new EqualitySubject<>(collection.values(), c -> collection.ofAll().apply(collection.toList().apply(c))));
+        return new EqualitySubject<>(collection.values(), c -> collection.ofAll().apply(collection.toList().apply(c)),
+                c -> collection.ordered() ? CollectionLaws.elements(c) : new java.util.HashSet<>(CollectionLaws.elements(c)));
     }
 
     @Test

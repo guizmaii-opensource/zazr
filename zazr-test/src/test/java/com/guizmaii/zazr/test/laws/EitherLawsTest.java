@@ -58,6 +58,9 @@ class EitherLawsTest extends ControlLawsSuite<Either<?, ?>, EitherLawsTest.Subje
         return new EqualitySubject<>(subject().values(), e -> switch (e) {
             case Either.Left<?, ?>(var l) -> Either.left(l);
             case Either.Right<?, ?>(var r) -> Either.right(r);
+        }, e -> switch (e) {
+            case Either.Left<?, ?>(var l) -> java.util.List.of("left", l);
+            case Either.Right<?, ?>(var r) -> java.util.List.of("right", r);
         });
     }
 }

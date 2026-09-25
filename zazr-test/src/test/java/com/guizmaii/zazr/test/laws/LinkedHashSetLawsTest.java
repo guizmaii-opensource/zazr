@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.LinkedHashSet;
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 import java.util.Random;
 import java.util.function.Function;
@@ -39,20 +40,20 @@ class LinkedHashSetLawsTest extends SetLawsSuite<LinkedHashSet<?>, LinkedHashSet
 
     @Override
     CollectionSubject<Integer, LinkedHashSet<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.linkedHashSet(Arbitrary.integer()), LinkedHashSet::ofAll, LinkedHashSet::size, LinkedHashSet::toList, false);
+        return new CollectionSubject<>(Arbitrary.linkedHashSet(Arbitrary.integer()), LinkedHashSet::ofAll, LinkedHashSet::size, LinkedHashSet::toList, false, Option.some(IterationOrder.firstOccurrence()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, LinkedHashSet<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), LinkedHashSet.collector(), LinkedHashSet::ofAll);
+        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), LinkedHashSet.collector(), LinkedHashSet::ofAll, Option.some(IterationOrder.firstOccurrence()));
     }
 
     @Test
     void setLawsWithCollidingHashCodes() {
         final CollectionSubject<Collider, LinkedHashSet<Collider>> colliders = new CollectionSubject<>(
-                Arbitrary.linkedHashSet(Arbitrary.integer().map(Collider::new)), LinkedHashSet::ofAll, LinkedHashSet::size, LinkedHashSet::toList, false);
+                Arbitrary.linkedHashSet(Arbitrary.integer().map(Collider::new)), LinkedHashSet::ofAll, LinkedHashSet::size, LinkedHashSet::toList, false, Option.some(IterationOrder.firstOccurrence()));
         CollectionLaws.<Collider, LinkedHashSet<Collider>>set().assertSatisfied(colliders, new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
         EqualityLaws.<LinkedHashSet<Collider>>all().assertSatisfied(
-                new EqualitySubject<>(colliders.values(), s -> LinkedHashSet.ofAll(s.toList())), new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
+                new EqualitySubject<>(colliders.values(), s -> LinkedHashSet.ofAll(s.toList()), c -> new java.util.HashSet<>(CollectionLaws.elements(c))), new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
     }
 }

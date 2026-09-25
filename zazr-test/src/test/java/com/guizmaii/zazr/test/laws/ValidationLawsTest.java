@@ -58,6 +58,9 @@ class ValidationLawsTest extends ControlLawsSuite<Validation<?, ?>, ValidationLa
         return new EqualitySubject<>(subject().values(), v -> switch (v) {
             case Validation.Valid<?, ?>(var a) -> Validation.valid(a);
             case Validation.Invalid<?, ?>(var errors) -> Validation.invalidAll(errors);
+        }, v -> switch (v) {
+            case Validation.Valid<?, ?>(var a) -> java.util.List.of("valid", a);
+            case Validation.Invalid<?, ?>(var errors) -> java.util.List.of("invalid", CollectionLaws.elements(errors));
         });
     }
 

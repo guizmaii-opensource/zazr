@@ -74,4 +74,9 @@ abstract class ControlLawsSuite<F, S extends FlatMapSubject<F> & ZipSidesSubject
     void equalsHashCodeConsistency() {
         LawChecks.check(EqualityLaws.<F>equalsHashCodeConsistency(), equality());
     }
+
+    @Test
+    void equalsAgreesWithModel() {
+        LawChecks.check(EqualityLaws.<F>equalsAgreesWithModel(), equality());
+    }
 }

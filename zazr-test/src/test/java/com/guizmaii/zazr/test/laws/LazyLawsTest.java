@@ -55,6 +55,6 @@ class LazyLawsTest extends ControlLawsSuite<Lazy<?>, LazyLawsTest.Subject> {
 
     @Override
     EqualitySubject<Lazy<?>> equality() {
-        return new EqualitySubject<>(subject().values(), l -> Lazy.of(l::get));
+        return new EqualitySubject<>(subject().values(), l -> Lazy.of(l::get), l -> java.util.List.of(l.get()));
     }
 }

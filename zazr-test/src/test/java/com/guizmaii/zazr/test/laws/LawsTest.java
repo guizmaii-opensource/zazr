@@ -3,14 +3,18 @@ package com.guizmaii.zazr.test.laws;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.NonEmptyVector;
+import com.guizmaii.zazr.collection.TreeSet;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 import com.guizmaii.zazr.test.CheckResult;
+import com.guizmaii.zazr.test.Gen;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -211,9 +215,9 @@ class LawsTest {
     @Test
     void equalityLawCatchesInconsistentHashCodesAndUnequalCopies() {
         assertFalsified(EqualityLaws.<IdentityHashed>equalsHashCodeConsistency(),
-                new EqualitySubject<>(Arbitrary.integer().map(IdentityHashed::new), h -> new IdentityHashed(h.value())));
+                new EqualitySubject<>(Arbitrary.integer().map(IdentityHashed::new), h -> new IdentityHashed(h.value()), IdentityHashed::value));
         assertFalsified(EqualityLaws.<Integer>equalsHashCodeConsistency(),
-                new EqualitySubject<>(Arbitrary.integer(), i -> i + 1));
+                new EqualitySubject<>(Arbitrary.integer(), i -> i + 1, i -> i));
     }
 
     @Test
@@ -248,5 +252,96 @@ class LawsTest {
                 }, list -> Vector.ofAll(list).reverse());
         assertFalsified(BuilderLaws.<Integer, Vector<Integer>>collectorResultEqualsOfAll(),
                 new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), reversing, Vector::ofAll));
+    }
+
+    /// Equal when the first components are: too coarse.
+    private record FirstOnly(int a, int b) {
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof FirstOnly that && that.a == a;
+        }
+
+        @Override
+        public int hashCode() {
+            return a;
+        }
+    }
+
+    /// Every value equal to every other, hashed to 0.
+    private record AllEqual(int a, int b) {
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof AllEqual;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+    }
+
+    @Test
+    void modelLawCatchesATooCoarseEquals() {
+        final Arbitrary<FirstOnly> firstOnly = Arbitrary.tuple2(Arbitrary.integer(), Arbitrary.integer()).map(t -> new FirstOnly(t._1(), t._2()));
+        final EqualitySubject<FirstOnly> firstOnlySubject = new EqualitySubject<>(firstOnly, x -> new FirstOnly(x.a(), x.b()),
+                x -> java.util.List.of(x.a(), x.b()));
+        final Arbitrary<AllEqual> allEqual = Arbitrary.tuple2(Arbitrary.integer(), Arbitrary.integer()).map(t -> new AllEqual(t._1(), t._2()));
+        final EqualitySubject<AllEqual> allEqualSubject = new EqualitySubject<>(allEqual, x -> new AllEqual(x.a(), x.b()),
+                x -> java.util.List.of(x.a(), x.b()));
+        // both pass the hash-code law: nothing there requires different values to be unequal
+        assertThat(EqualityLaws.<FirstOnly>equalsHashCodeConsistency().check(firstOnlySubject, new Random(3), 100, 1000).isSatisfied()).isTrue();
+        assertThat(EqualityLaws.<AllEqual>equalsHashCodeConsistency().check(allEqualSubject, new Random(3), 100, 1000).isSatisfied()).isTrue();
+        assertFalsified(EqualityLaws.<FirstOnly>equalsAgreesWithModel(), firstOnlySubject);
+        assertFalsified(EqualityLaws.<AllEqual>equalsAgreesWithModel(), allEqualSubject);
+    }
+
+    @Test
+    void iterationOrderLawCatchesALostOrder() {
+        final Arbitrary<LinkedHashSet<Integer>> linked = Arbitrary.linkedHashSet(Arbitrary.integer());
+        final CollectionSubject<Integer, LinkedHashSet<Integer>> reversedLinked = new CollectionSubject<>(linked,
+                xs -> LinkedHashSet.ofAll(Vector.ofAll(xs).reverse()), LinkedHashSet::size, LinkedHashSet::toList, false,
+                Option.some(IterationOrder.firstOccurrence()));
+        final Arbitrary<TreeSet<Integer>> sorted = Arbitrary.treeSet(Arbitrary.integer());
+        final CollectionSubject<Integer, TreeSet<Integer>> unsortedTree = new CollectionSubject<>(sorted,
+                xs -> TreeSet.ofAll(Comparator.<Integer>reverseOrder(), xs), TreeSet::size, TreeSet::toList, false,
+                Option.some(IterationOrder.sorted(Comparator.<Integer>naturalOrder())));
+        // every other collection law is satisfied by both: they compare sets as sets
+        assertThat(CollectionLaws.<Integer, LinkedHashSet<Integer>>set().check(reversedLinked, new Random(3), 100, 200)
+                .map(CheckResult::isSatisfied)).containsExactly(true, true, true, false, true);
+        assertThat(CollectionLaws.<Integer, TreeSet<Integer>>set().check(unsortedTree, new Random(3), 100, 200)
+                .map(CheckResult::isSatisfied)).containsExactly(true, true, true, false, true);
+        assertFalsified(CollectionLaws.<Integer, LinkedHashSet<Integer>>iterationOrder(), reversedLinked);
+        assertFalsified(CollectionLaws.<Integer, TreeSet<Integer>>iterationOrder(), unsortedTree);
+
+        final Collector<Integer, ?, LinkedHashSet<Integer>> reversing = Collectors.collectingAndThen(Collectors.toList(),
+                list -> LinkedHashSet.ofAll(Vector.ofAll(list).reverse()));
+        assertFalsified(BuilderLaws.<Integer, LinkedHashSet<Integer>>collectorResultEqualsOfAll(), new BuilderLaws.CollectorSubject<>(
+                Arbitrary.list(Arbitrary.integer()), reversing, LinkedHashSet::ofAll, Option.some(IterationOrder.firstOccurrence())));
+    }
+
+    @Test
+    void generatedFunctionsDependOnTheirArgument() {
+        final Gen<Function<Object, Option<?>>> functions = Functions.to(Arbitrary.option(Arbitrary.integer()).map(o -> (Option<?>) o), 8);
+        final Random random = new Random(11);
+        int varying = 0;
+        for (int i = 0; i < 1000; i++) {
+            final Function<Object, Option<?>> f = functions.apply(random);
+            boolean some = false;
+            boolean none = false;
+            for (int x = -8; x <= 8; x++) {
+                if (f.apply(x).isDefined()) {
+                    some = true;
+                } else {
+                    none = true;
+                }
+            }
+            if (some && none) {
+                varying++;
+            }
+        }
+        // a function is constant when all 17 draws are Some (3 in 4 each): 0.75^17, under 1%
+        assertThat(varying).isGreaterThan(970);
     }
 }

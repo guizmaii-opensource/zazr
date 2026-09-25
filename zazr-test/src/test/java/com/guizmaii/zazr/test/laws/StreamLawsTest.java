@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 
 
@@ -46,11 +47,11 @@ class StreamLawsTest extends SequenceLawsSuite<Stream<?>, Stream<Integer>, Strea
 
     @Override
     CollectionSubject<Integer, Stream<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.stream(Arbitrary.integer()), Stream::ofAll, Stream::size, Stream::toList, true);
+        return new CollectionSubject<>(Arbitrary.stream(Arbitrary.integer()), Stream::ofAll, Stream::size, Stream::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Stream<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Stream.collector(), Stream::ofAll);
+        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Stream.collector(), Stream::ofAll, Option.some(IterationOrder.input()));
     }
 }

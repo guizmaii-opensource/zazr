@@ -58,6 +58,23 @@ class TryLawsTest extends ControlLawsSuite<Try<?>, TryLawsTest.Subject> {
         return new EqualitySubject<>(subject().values(), t -> switch (t) {
             case Try.Success<?>(var v) -> Try.success(v);
             case Try.Failure<?>(var e) -> Try.failure(e);
+        }, t -> switch (t) {
+            case Try.Success<?>(var v) -> java.util.List.of("success", v);
+            case Try.Failure<?>(var e) -> java.util.List.of("failure", new Identity(e));
         });
+    }
+
+    /// A failure's cause compared by reference, as `Failure` compares it.
+    private record Identity(Object value) {
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Identity that && that.value == value;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(value);
+        }
     }
 }

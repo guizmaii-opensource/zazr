@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 import java.util.Random;
 import java.util.function.Function;
@@ -46,12 +47,12 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
 
     @Override
     CollectionSubject<Integer, Vector<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.vector(Arbitrary.integer()), Vector::ofAll, Vector::size, Vector::toList, true);
+        return new CollectionSubject<>(Arbitrary.vector(Arbitrary.integer()), Vector::ofAll, Vector::size, Vector::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Vector<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Vector.collector(), Vector::ofAll);
+        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Vector.collector(), Vector::ofAll, Option.some(IterationOrder.input()));
     }
 
     @Test

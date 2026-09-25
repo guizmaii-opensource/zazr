@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.test.Arbitrary;
 
 
@@ -46,11 +47,11 @@ class ListLawsTest extends SequenceLawsSuite<List<?>, List<Integer>, ListLawsTes
 
     @Override
     CollectionSubject<Integer, List<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.list(Arbitrary.integer()), List::ofAll, List::size, List::toList, true);
+        return new CollectionSubject<>(Arbitrary.list(Arbitrary.integer()), List::ofAll, List::size, List::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, List<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), List.collector(), List::ofAll);
+        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), List.collector(), List::ofAll, Option.some(IterationOrder.input()));
     }
 }
