@@ -1,5 +1,5 @@
 ---
-description: Option, Either, Try, Validation and Lazy - which one to pick, the members they share, conversions and the null policy.
+description: Option, Either, Try, Using, Validation and Lazy - which one to pick, the members they share, conversions and the null policy.
 ---
 
 # Control types
@@ -10,6 +10,7 @@ later. Each one has its own page:
 - [`Option`](option.md): a value that may be absent.
 - [`Either`](either.md): a result or an error, stopping at the first error.
 - [`Try`](try.md): a computation that may have thrown.
+- [`Using`](using.md): resources released after use, with the outcome in a `Try`.
 - [`Validation`](validation.md): checks that keep every error.
 - [`Lazy`](lazy.md): a value computed on first access, then cached.
 

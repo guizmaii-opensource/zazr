@@ -127,6 +127,7 @@ nav:
       - Option: control/option.md
       - Either: control/either.md
       - Try: control/try.md
+      - Using: control/using.md
       - Validation: control/validation.md
       - Lazy: control/lazy.md
   - Collections:
