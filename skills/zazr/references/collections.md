@@ -29,7 +29,8 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | `head`, `prepend` | effectively O(1) | O(1) | O(1) | O(1) |
 | `tail` | effectively O(1) | O(1) | amortised O(1) | O(1) |
 | `append` | effectively O(1) | O(n) | amortised O(1) | O(1), lazy |
-| `get(i)`, `update(i, v)` | effectively O(1) | O(i) | O(i) to O(n) | O(i) |
+| `get(i)` | effectively O(1) | O(i) | O(i) to O(n) | O(i) |
+| `update(i, v)` | effectively O(1) | O(i) | O(n) | O(i) |
 | `last`, `init` | effectively O(1) | O(n) | O(n) / amortised O(1) | O(n) / lazy |
 | `take`, `drop` | effectively O(1) | O(k) | O(n) | lazy / O(k) |
 | `length()` | O(1) | O(n) | O(n) | O(n), forces all |
@@ -97,8 +98,11 @@ A sequence with at least one element, backed by a `Vector`. Parse into it instea
   empty, `vector.toNonEmptyVector()`, `NonEmptyVector.fromVector(v)` or `fromIterable(it)`, all returning an
   `Option`. `unsafeFromVector` throws on an empty `Vector`.
 - Total: `head`, `last`, `max(comparator)`, `min`, `reduce`, `average` return the value, not an `Option`.
-- The return type says whether the result can be empty: `map`, `append`, `sorted`, `distinct`, `zip` return a
+- The return type says whether the result can be empty: `map`, `append`, `sorted`, `distinct` return a
   `NonEmptyVector`; `filter`, `tail`, `take`, `drop` return a `Vector`; `tailNonEmpty()` returns an `Option`.
+- `zip` and `crossProduct` return a `NonEmptyVector` when given a `NonEmptyVector`, and a `Vector` when given any
+  other `Iterable`. `crossProduct()` returns a `NonEmptyVector`; `crossProduct(int)` and `zipWith(Iterable, f)` a
+  `Vector`.
 - `flatMap` takes a function returning a `NonEmptyVector`; `flatMapAll` takes any `Iterable` and returns a
   `Vector`.
 - It has `size()` but no `length()`, no `isEmpty()` and no `headOption()`.
@@ -110,7 +114,7 @@ var input = Vector.of("ada@shop.com", "grace@shop.com");
 var recipients = input.toNonEmptyVector().toEither(() -> "at least one recipient is required"); // Either<String, NonEmptyVector<String>>
 var first = recipients.map(NonEmptyVector::head).getOrElse("nobody"); // String
 var scores = NonEmptyVector.of(7, 3, 9);
-var best = scores.max(Integer::compare); // int, nothing can go wrong
+var best = scores.max(Integer::compare); // Integer, nothing can go wrong
 var passed = scores.filter(s -> s > 5); // Vector<Integer>, may be empty
 // first is "ada@shop.com", best is 9, passed is Vector(7, 9)
 ```
@@ -151,7 +155,9 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2)); // Vector<Integer>
 - `Queue`'s amortised cost holds only when each `dequeue` works on the queue the previous one returned.
   `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
 - `List.length()` and `List.size()` are O(n).
-- `sliding`, `grouped` and `crossProduct` return a collection of the receiver's type, not an iterator.
+- `grouped`, `sliding` and `crossProduct` return a collection, not an iterator. On `Vector`, `List`, `Queue` and
+  `Stream` it is of the receiver's type (`List<List<T>>`). On `LinkedHashSet`, `TreeSet`, `LinkedHashMap`, `TreeMap`
+  and `NonEmptyVector`, `grouped` and `sliding` return a `Vector` of the receiver's type (`Vector<TreeSet<T>>`).
 - `tap` on a collection runs on every element.
 - Equality: a `Vector`, `List`, `Queue` or `Stream` equals another of these four with the same elements in the same
   order; sets equal sets and maps equal maps; a `NonEmptyVector` equals only a `NonEmptyVector`.

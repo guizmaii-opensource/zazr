@@ -336,8 +336,9 @@ var best = scores.map(s -> highestScore(s));        // Option<Integer>
 ```
 
 Return `Option` where the JDK returns `null` or throws. Zazr already does: `HashMap.get`, `find`, `headOption`,
-`lastOption`, `reduceOption`, `maxBy` on a `Vector`. No Zazr value or collection holds `null`; turn a nullable value
-from a JDK or library call into an `Option` with `Option.ofNullable`, e.g.
+`lastOption`, `reduceOption`, `maxBy` on a `Vector`. No collection holds `null`, and neither do `Some`, `Left`,
+`Right`, `Success` and `Valid` (`Lazy` and the tuples can). Turn a nullable value from a JDK or library call into an
+`Option` with `Option.ofNullable`, e.g.
 `Option.ofNullable(System.getenv("HOME"))`.
 
 See https://zazr.dev/non-empty-vector/ for which `NonEmptyVector` operations keep it non-empty.

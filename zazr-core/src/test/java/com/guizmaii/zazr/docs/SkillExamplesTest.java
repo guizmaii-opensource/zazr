@@ -205,7 +205,7 @@ public class SkillExamplesTest {
             var recipients = input.toNonEmptyVector().toEither(() -> "at least one recipient is required"); // Either<String, NonEmptyVector<String>>
             var first = recipients.map(NonEmptyVector::head).getOrElse("nobody"); // String
             var scores = NonEmptyVector.of(7, 3, 9);
-            var best = scores.max(Integer::compare); // int, nothing can go wrong
+            var best = scores.max(Integer::compare); // Integer, nothing can go wrong
             var passed = scores.filter(s -> s > 5); // Vector<Integer>, may be empty
             // first is "ada@shop.com", best is 9, passed is Vector(7, 9)
 
