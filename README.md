@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml/badge.svg)](https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml)
 
-Immutable collections and control types for Java 25+, with the API design of [ZIO](https://zio.dev) and
-[zio-prelude](https://zio.dev/zio-prelude/).
+Immutable collections and control types for Java 25+, with an API inspired by [ZIO](https://zio.dev),
+[zio-prelude](https://zio.dev/zio-prelude/) and modern [Scala](https://www.scala-lang.org).
 
 zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
 `Option`, `Either`, `Try`, `Validation` and `Lazy`, and reshapes them:
