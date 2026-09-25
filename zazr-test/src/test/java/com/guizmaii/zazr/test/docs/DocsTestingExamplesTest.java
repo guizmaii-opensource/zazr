@@ -20,13 +20,13 @@ public class DocsTestingExamplesTest {
 
     @Test
     void aProperty() {
-        CheckResult result = Property.def("reversing twice gives the list back")
+        CheckResult result = Property.named("reversing twice gives the list back")
             .forAll(Arbitrary.list(Arbitrary.integer()))
             .suchThat(list -> list.reverse().reverse().equals(list))
             .check();
         result.assertIsSatisfied();
 
-        CheckResult broken = Property.def("every list is short")
+        CheckResult broken = Property.named("every list is short")
             .forAll(Arbitrary.list(Arbitrary.integer()))
             .suchThat(list -> list.length() < 5)
             .check(100, 1_000);
@@ -42,7 +42,7 @@ public class DocsTestingExamplesTest {
     void generators() {
         Gen<Integer> dice = Gen.choose(1, 6);
         Arbitrary<Tuple2<Integer, Integer>> pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b))).arbitrary();
-        CheckResult sums = Property.def("two dice sum to 2..12")
+        CheckResult sums = Property.named("two dice sum to 2..12")
             .forAll(pairs)
             .suchThat(p -> p._1() + p._2() >= 2 && p._1() + p._2() <= 12)
             .check();
@@ -53,7 +53,7 @@ public class DocsTestingExamplesTest {
 
     @Test
     void preconditions() {
-        Checkable halving = Property.def("an even number is twice its half")
+        Checkable halving = Property.named("an even number is twice its half")
             .forAll(Arbitrary.integer())
             .suchThat(n -> n % 2 == 0)
             .implies(n -> (n / 2) * 2 == n);

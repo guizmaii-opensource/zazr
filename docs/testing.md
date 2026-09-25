@@ -34,13 +34,13 @@ The types are in `com.guizmaii.zazr.test`:
 |---|---|
 | `Gen<T>` | a generator: a function from a `java.util.Random` to a `T`, with `map`, `flatMap`, `filter`, `choose`, `oneOf`, `frequency` |
 | `Arbitrary<T>` | a generator whose values grow with a size: `Arbitrary.integer()`, `string(Gen<Character>)`, `list(Arbitrary)`, `of(values...)` |
-| `Property` | the builder: `Property.def(name).forAll(arbitraries...).suchThat(predicate)`, from 1 to 8 arbitraries |
+| `Property` | the builder: `Property.named(name).forAll(arbitraries...).suchThat(predicate)`, from 1 to 8 arbitraries |
 | `CheckResult` | the outcome: satisfied, falsified (with the sample) or erroneous; `assertIsSatisfied()` throws an `AssertionError` otherwise |
 
 ## A property
 
 ```java
-CheckResult result = Property.def("reversing twice gives the list back")
+CheckResult result = Property.named("reversing twice gives the list back")
     .forAll(Arbitrary.list(Arbitrary.integer()))
     .suchThat(list -> list.reverse().reverse().equals(list))
     .check();
@@ -51,7 +51,7 @@ result.assertIsSatisfied();
 `check(size, tries)` chooses both. When the property fails, `sample()` returns the value that broke it.
 
 ```java
-CheckResult broken = Property.def("every list is short")
+CheckResult broken = Property.named("every list is short")
     .forAll(Arbitrary.list(Arbitrary.integer()))
     .suchThat(list -> list.length() < 5)
     .check(100, 1_000);
@@ -67,7 +67,7 @@ Build a `Gen` with `choose`, `map`, `flatMap` and the others, then turn it into 
 ```java
 Gen<Integer> dice = Gen.choose(1, 6);
 Arbitrary<Tuple2<Integer, Integer>> pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b))).arbitrary();
-CheckResult sums = Property.def("two dice sum to 2..12")
+CheckResult sums = Property.named("two dice sum to 2..12")
     .forAll(pairs)
     .suchThat(p -> p._1() + p._2() >= 2 && p._1() + p._2() <= 12)
     .check();
@@ -80,7 +80,7 @@ With `implies`, the `suchThat` condition becomes a precondition. Samples that fa
 satisfy the `implies` condition.
 
 ```java
-Checkable halving = Property.def("an even number is twice its half")
+Checkable halving = Property.named("an even number is twice its half")
     .forAll(Arbitrary.integer())
     .suchThat(n -> n % 2 == 0)
     .implies(n -> (n / 2) * 2 == n);
