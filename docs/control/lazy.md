@@ -27,7 +27,7 @@ var after = answer.isEvaluated();
 // before is false, value is 43, after is true
 ```
 
-`Lazy` is a class with no cases, so there is nothing to `switch` over: `get()` is how you read it.
+`Lazy` is a class with no cases, so there is nothing to pattern match on: `get()` is how you read it.
 
 ## Operations
 

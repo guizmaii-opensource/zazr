@@ -68,7 +68,7 @@ var both = name("").zipWith(age(-1), (n, a) -> n + a); // Validation<String, Str
 
 ## Reading the result
 
-`switch` over the records, or `fold` with the errors first:
+Pattern match on the records, or `fold` with the errors first:
 
 ```java
 var checked = age(-5); // Validation<String, Integer>

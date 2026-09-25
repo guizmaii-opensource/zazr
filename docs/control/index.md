@@ -15,8 +15,8 @@ later. Each one has its own page:
 
 ## Values, not collections
 
-`Option`, `Either`, `Try` and `Validation` are sealed interfaces whose cases are records. A `switch` over them needs
-no `default`, and the compiler checks that every case is handled.
+`Option`, `Either`, `Try` and `Validation` are sealed interfaces whose cases are records. Pattern matching on them with
+a `switch` needs no `default`, and the compiler checks that every case is handled.
 
 None of them is `Iterable`. Each has a short list of explicit conversions instead.
 
@@ -117,7 +117,7 @@ var npe = nullResult.getCause() instanceof NullPointerException;
     var moved = {
       "lazy": "lazy/",
       "construction": "option/#construction",
-      "switch-over-the-cases": "option/#switch-over-the-cases"
+      "switch-over-the-cases": "option/#pattern-matching-over-the-cases"
     };
     var target = moved[window.location.hash.slice(1)];
     if (target) {

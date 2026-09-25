@@ -7,20 +7,25 @@
 | `last` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#last().">effectively O(1)</abbr> | effectively O(1), that of Vector#last(). |
 | `init` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#init().">effectively O(1)</abbr> | effectively O(1), that of Vector#init(). |
 | `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#get(int).">effectively O(1)</abbr> | effectively O(1), that of Vector#get(int). |
-| `update` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#update(int,.">effectively O(1)</abbr> | effectively O(1), that of Vector#update(int,. |
+| `update` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#update(int, Object).">effectively O(1)</abbr> | effectively O(1), that of Vector#update(int, Object). |
 | `prepend` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#prepend(Object).">effectively O(1)</abbr> | effectively O(1), that of Vector#prepend(Object). |
 | `append` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#append(Object).">effectively O(1)</abbr> | effectively O(1), that of Vector#append(Object). |
 | `prependAll` | <abbr class="cx cx-linear" title="O(m) for m prepended elements, that of Vector#prependAll(Iterable).">O(m)</abbr> | O(m) for m prepended elements, that of Vector#prependAll(Iterable). |
 | `appendAll` | <abbr class="cx cx-linear" title="O(m) for m appended elements, that of Vector#appendAll(Iterable).">O(m)</abbr> | O(m) for m appended elements, that of Vector#appendAll(Iterable). |
+| `insert` | <abbr class="cx cx-linear" title="O(min(i, n - i)), that of Vector#insert(int, Object).">O(min(i, n - i))</abbr> | O(min(i, n - i)), that of Vector#insert(int, Object). |
 | `removeAt` | <abbr class="cx cx-linear" title="O(min(i, n - i)), that of Vector#removeAt(int).">O(min(i, n - i))</abbr> | O(min(i, n - i)), that of Vector#removeAt(int). |
 | `take` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#take(int).">effectively O(1)</abbr> | effectively O(1), that of Vector#take(int). |
 | `drop` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#drop(int).">effectively O(1)</abbr> | effectively O(1), that of Vector#drop(int). |
-| `slice` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#slice(int,.">effectively O(1)</abbr> | effectively O(1), that of Vector#slice(int,. |
+| `slice` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#slice(int, int).">effectively O(1)</abbr> | effectively O(1), that of Vector#slice(int, int). |
+| `splitAt(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for k elements before the split, then an effectively O(1) split, that of Vector#splitAt(Predicate).">O(k)</abbr> | O(k) for k elements before the split, then an effectively O(1) split, that of Vector#splitAt(Predicate). |
+| `splitAt(int)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#splitAt(int).">effectively O(1)</abbr> | effectively O(1), that of Vector#splitAt(int). |
 | `reverse` | <abbr class="cx cx-linear" title="O(n), that of Vector#reverse().">O(n)</abbr> | O(n), that of Vector#reverse(). |
 | `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons, that of Vector#sorted().">O(n log n)</abbr> | O(n log n) comparisons, that of Vector#sorted(). |
 | `contains` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for m elements of that, that of Vector#zip(Iterable).">O(min(n, m))</abbr> | O(min(n, m)) for m elements of that, that of Vector#zip(Iterable). |
+| `sliding(int)` | <abbr class="cx cx-linear" title="O(n) windows, each an effectively O(1) slice, that of Vector#sliding(int).">O(n)</abbr> | O(n) windows, each an effectively O(1) slice, that of Vector#sliding(int). |
+| `sliding(int, int)` | <abbr class="cx cx-linear" title="O(n / step) windows, each an effectively O(1) slice, that of Vector#sliding(int, int).">O(n / step)</abbr> | O(n / step) windows, each an effectively O(1) slice, that of Vector#sliding(int, int). |
 | `grouped` | <abbr class="cx cx-linear" title="O(n / size) blocks, each an effectively O(1) slice, that of Vector#grouped(int).">O(n / size)</abbr> | O(n / size) blocks, each an effectively O(1) slice, that of Vector#grouped(int). |
 | `distinct` | <abbr class="cx cx-linear" title="O(n), that of Vector#distinct().">O(n)</abbr> | O(n), that of Vector#distinct(). |
 | `concat` | <abbr class="cx cx-linear" title="O(m) for m appended elements, that of appendAll(NonEmptyVector).">O(m)</abbr> | O(m) for m appended elements, that of appendAll(NonEmptyVector). |

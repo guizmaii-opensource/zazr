@@ -1,5 +1,5 @@
 ---
-description: Option - a value that may be absent. Construction, switch over Some and None, operations, conversions and sharp edges.
+description: Option - a value that may be absent. Construction, pattern matching on Some and None, operations, conversions and sharp edges.
 ---
 
 # Option
@@ -26,10 +26,10 @@ var when = Option.when(3 > 2, () -> 3); // Option<Integer>
 `Option.some(null)` throws: use `Option.ofNullable` for a value that may be `null`. `Option.when` calls its supplier
 only when the condition holds.
 
-## `switch` over the cases
+## Pattern matching over the cases
 
-`Some` and `None` are records, so a `switch` can take the value out and add conditions with `when`. It needs no
-`default`.
+`Some` and `None` are records, so a record pattern can take the value out and a `when` guard can add a condition.
+Pattern matching with a `switch` expression needs no `default`.
 
 ```java
 var age = Option.some(17); // Option<Integer>
@@ -105,7 +105,7 @@ var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)))
 
 ### `get()` on `None` throws
 
-`get()` throws a `NoSuchElementException` on a `None`. Prefer a `switch`, `fold` or `getOrElse`.
+`get()` throws a `NoSuchElementException` on a `None`. Prefer pattern matching, `fold` or `getOrElse`.
 
 ### Not a collection
 

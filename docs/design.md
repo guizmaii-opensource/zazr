@@ -611,6 +611,54 @@ Implementation cost is low: every method is a one-line delegation to the wrapped
   `NonEmptyVector` with the same elements are not equal (compare through `toVector()`).
   `toString` is `NonEmptyVector(a, b)`.
 
+**The rest of `Vector`'s API (decided 2026-09-25, #90).** The table above was the first subset; `NonEmptyVector`
+now has every operation of `Vector`, each under the same contract, delegating to `Vector` and re-wrapping:
+
+- **Returns `NonEmptyVector`:** `as`, `appendAll(Iterable)`, `prependAll(Iterable)`, `insert`, `insertAll`,
+  `intersperse`, `padTo`, `leftPadTo`, `rotateLeft`, `rotateRight`, `shuffle`, `replace`, `replaceAll`, `scan` and
+  `scanRight` (n+1), `zipAll(Iterable, A, B)` (max(n, m) ≥ 1, so any `Iterable` is accepted), `distinctByKeepLast` ×2,
+  `permutations` as `NonEmptyVector<NonEmptyVector<A>>`, `combinations()` as `NonEmptyVector<Vector<A>>` (it always
+  holds the empty combination and the whole), `crossProduct()`, `crossProduct(NonEmptyVector)` (like `zip`, the
+  non-empty argument keeps the result non-empty), static `transpose(NonEmptyVector<? extends NonEmptyVector<? extends A>>)`
+  as `NonEmptyVector<NonEmptyVector<A>>`; `unzip`/`unzip3` as tuples of `NonEmptyVector`s; `sliding(size)`,
+  `sliding(size, step)` and `slideBy` as `Vector<NonEmptyVector<A>>` like `grouped`; `splitAtInclusive` as
+  `Tuple2<NonEmptyVector<A>, Vector<A>>`, because its first part always ends with the matching element or holds
+  everything.
+- **Returns `Vector` (or a tuple of them):** `splitAt(int)`, `splitAt(Predicate)`, `span`, `partition`, `retainAll`,
+  `removeFirst`, `removeLast` (both take `Predicate<? super A>`, where `Vector` takes `Predicate<T>`), `patch`,
+  `subSequence` ×2, `combinations(int)` and `crossProduct(int)` as `Vector<Vector<A>>` (`k > size()` or a negative
+  power gives none, 0 gives one empty vector), and the `Iterable` forms `zip(Iterable)`, `zipWith(Iterable, ·)`,
+  `crossProduct(Iterable)`, empty when the argument is.
+- **Total:** `max()`, `min()` (natural order; `min` returns a `NaN` whenever one is present, as `Vector.min()` does),
+  `maxBy(Comparator)`, `minBy(Comparator)`, `average()` as a `double` (the value `Vector.average()` holds, from the
+  same compensated sum, without the `Option`), `single()` (throws when there is more than one element), `fold`, `sum`,
+  `product`, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
+  `indexOfSlice` ×2, `lastIndexOfSlice` ×2, `startsWith` ×2, `endsWith`, `containsSlice`, `containsAll`, `search` ×2,
+  `segmentLength`, `prefixLength`, `existsUnique`, `forEachWithIndex`, `collect(Collector)`,
+  `collect(Supplier, BiConsumer, BiConsumer)`.
+- **Returns `Option`:** `arrangeBy` (two elements can share a key), `indexOfOption(a, from)`, `indexWhereOption` ×2,
+  `lastIndexOfOption` ×2, `lastIndexWhereOption` ×2, `indexOfSliceOption` ×2, `lastIndexOfSliceOption` ×2.
+- **Conversions:** `toQueue`, `toStream`, `toLinkedSet`, `toSortedSet` ×2, `toArray` ×2, `toMap` ×2, `toLinkedMap` ×2,
+  `toSortedMap` ×4.
+- **Nulls.** An element argument is checked before delegating, even where `Vector` would not look at it
+  (`intersperse` on one element, `padTo` to a size already reached, `replace` of an absent element), with a message
+  naming the method (`NonEmptyVector.padTo: element is null`). An `Iterable` argument is copied through the same check
+  as the constructors (`NonEmptyVector: element is null`), which also reads it once. A user function whose result is
+  stored is wrapped so that a null result names the method: `scan`, `scanRight`, `zipWith(Iterable, ·)`, `unzip`,
+  `unzip3` (the tuple and its components), `arrangeBy`, `distinctByKeepLast` (whose keys `Vector` rejects too), and the
+  key, value and entry of the `to*Map` conversions. `fold` and `slideBy` let a null through as `Vector` does: `fold`'s
+  result is returned, never stored, and `slideBy` only compares its keys.
+- **Deliberately absent:** `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`, `reduceRightOption`,
+  `singleOption` (the `Option` forms of what is total here, or of `single`); `tailOption`, `initOption` (`tail` and
+  `init` already return a `Vector`, and `tailNonEmpty`/`initNonEmpty` are the narrowing); `isEmpty`, `nonEmpty`,
+  `orElse`, `toNonEmptyVector` (constant on this type: false, true, `this`, `Some(this)`); `length` (`size` is the one
+  spelling, decided with the maintainer on 2026-09-25; the removal of `length` from `Vector`, `List`, `Queue` and
+  `Stream` is a separate change, #90 again, which also takes it off this list). `NonEmptyVectorTest` asserts
+  reflectively that every public instance method name of `Vector` exists on `NonEmptyVector` except exactly this
+  list, and that every overload whose result holds a `NonEmptyVector` (directly, or in a tuple, a `Vector`, a map or
+  an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
+  result.
+
 **Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
 motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
 
@@ -1262,7 +1310,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   | module | artifact | content |
   |---|---|---|
   | `zazr-core` | `com.guizmaii:zazr-core` | everything in this document |
-  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing + law suites (below); depends on `zazr-core`; used by `zazr-core`'s own tests (test scope, no cycle: Maven allows a module's tests to depend on a sibling as long as the sibling's *main* code does not depend back) |
+  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing + law suites (below); depends on `zazr-core`. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
 
   Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
@@ -1282,12 +1330,17 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
     (`Laws.zipAssociativity`, `mapIdentity`, `mapComposition`, `flatMapAssociativity`,
     `zipLeftIdentity`, `validationZipAccumulatesBothSides`, `nonEmptyVectorHeadIsTotal`,
     `builderResultEqualsOfAll`), law sets compose (`Laws.zip = zipAssociativity + zipLeftIdentity + ...`),
-    and a failing law reports its name. One `*LawsTest` per type in `zazr-core` runs the relevant sets.
+    and a failing law reports its name. One `*LawsTest` per type runs the relevant sets; they live in
+    `zazr-test`'s test sources, not `zazr-core`'s, because of the reactor cycle noted in the module table.
     This is the "runnable check" for the whole refactor.
   - shrinking is absent from `vavr-test`; add it only if a falsified case is ever unreadable.
 - **JMH**: the `benchmark` profile exists; add `VectorBuilderBenchmark` (append ×N, `map`, `filter`,
   `flatMap`, `collector`) before and after 3.8 so the builder claim is measured, not asserted.
-- **JaCoCo**: either wire the plugin or delete the README line.
+- **JaCoCo (decided)**: wired in a `coverage` Maven profile, outside the default build so `make verify` and the test
+  loop keep their speed. `make coverage` runs the tests of `zazr-core` and `zazr-test` with the agent and writes one
+  aggregated HTML report (generated `src-gen` sources included, `zazr-benchmark` excluded); a CI job on JDK 25
+  uploads it as an artifact and puts the line and branch coverage per module and package in the job summary. No
+  threshold fails the build yet; one is chosen from the measured numbers.
 - **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `com.guizmaii:zazr-core`
   (parent `com.guizmaii:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`

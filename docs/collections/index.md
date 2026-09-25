@@ -16,7 +16,7 @@ Each type declares its own methods, with its own return types, and every positio
 |---|---|---|
 | a sequence, by default | [`Vector`](vector.md) | effectively O(1) `get`, `update`, `append`, `prepend`, `take`, `drop` |
 | a sequence that has at least one element | [`NonEmptyVector`](../non-empty-vector.md) | `head`, `max`, `reduce` cannot fail |
-| to take a sequence apart head first, or a stack | [`List`](list.md) | O(1) `prepend`, `head`, `tail`; `switch` on `Cons` and `Nil` |
+| to take a sequence apart head first, or a stack | [`List`](list.md) | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
 | first in, first out | [`Queue`](queue.md) | amortised O(1) `enqueue` and `dequeue` |
 | a sequence computed on demand, possibly infinite | [`Stream`](stream.md) | lazy and memoised |
 | a set, by default | [`HashSet`](sets.md) | effectively O(1) `contains`, `add`, `remove` |
