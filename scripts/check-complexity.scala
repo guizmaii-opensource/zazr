@@ -77,79 +77,40 @@ val vocabulary: Map[String, Cost] = Map(
   "O(k)" -> Cost.Linear,
   "O(m)" -> Cost.Linear,
   "O(n + m)" -> Cost.Linear,
-  "O(m + n)" -> Cost.Linear,
   "O(n + k)" -> Cost.Linear,
-  "O(index)" -> Cost.Linear,
-  "O(index + m)" -> Cost.Linear,
-  "O(offset + m)" -> Cost.Linear,
-  "O(from + k)" -> Cost.Linear,
-  "O(beginIndex)" -> Cost.Linear,
-  "O(endIndex)" -> Cost.Linear,
-  "O(length - k)" -> Cost.Linear,
   "O(min(n, m))" -> Cost.Linear,
   "O(max(n, m))" -> Cost.Linear,
   "O(min(i, n - i))" -> Cost.Linear,
   "O(m + min(i, n - i))" -> Cost.Linear,
-  "effectively O(min(n, size - n))" -> Cost.Linear,
   "O(n / step)" -> Cost.Linear,
   "O(n / size)" -> Cost.Linear,
   "O(k + log n)" -> Cost.Linear,
-  "O(n log n)" -> Cost.Linearithmic,
-  "O(m log(n + m))" -> Cost.Linearithmic,
-  "O((n + m) log n)" -> Cost.Linearithmic,
-  "O(m log n)" -> Cost.Linearithmic,
-  "O(m + n log n)" -> Cost.Linearithmic,
-  "O(n + r log n)" -> Cost.Linearithmic,
-  "O((n / step) log n)" -> Cost.Linearithmic,
-  "O((n / size) log n)" -> Cost.Linearithmic,
-  "O(n * m)" -> Cost.Polynomial,
-  "O(n * size)" -> Cost.Polynomial,
-  "O(n * size / step)" -> Cost.Polynomial,
-  "O(rows * columns)" -> Cost.Polynomial,
-  "O(n^2)" -> Cost.Polynomial,
-  "O(n^power)" -> Cost.Polynomial,
-  "O(n + (n / step) * min(size, n - size))" -> Cost.Polynomial,
-  "O(2^n)" -> Cost.Combinatorial,
-  "O(n!)" -> Cost.Combinatorial,
-  "O(n! * n)" -> Cost.Combinatorial,
-  "O(C(n, k))" -> Cost.Combinatorial,
-  // the plain-words vocabulary: i and j are index arguments, k a count the note defines
   "O(i)" -> Cost.Linear,
   "O(j)" -> Cost.Linear,
   "O(i + m)" -> Cost.Linear,
   "O(i + k)" -> Cost.Linear,
-  "O(k + m)" -> Cost.Linear,
   "O(n - k)" -> Cost.Linear,
-  "O(min(k, n - k))" -> Cost.Linear,
-  "O(k log n)" -> Cost.Linearithmic,
+  "O(n log n)" -> Cost.Linearithmic,
+  "O(m log(n + m))" -> Cost.Linearithmic,
+  "O(m log n)" -> Cost.Linearithmic,
+  "O((n / step) log n)" -> Cost.Linearithmic,
+  "O((n / size) log n)" -> Cost.Linearithmic,
   "O(n + k log n)" -> Cost.Linearithmic,
-  "O(m log(n / m + 1))" -> Cost.Linearithmic,
+  "O(m log m)" -> Cost.Linearithmic,
+  "O(n + k log k)" -> Cost.Linearithmic,
+  "O(n * m)" -> Cost.Polynomial,
+  "O(n * size)" -> Cost.Polynomial,
+  "O(rows * columns)" -> Cost.Polynomial,
+  "O(n^2)" -> Cost.Polynomial,
+  "O(n^power)" -> Cost.Polynomial,
+  "O(n + (n / step) * min(size, n - size))" -> Cost.Polynomial,
   "O(n + (n / step) * size)" -> Cost.Polynomial,
   "O(power * n^power)" -> Cost.Polynomial,
+  "O(n + n * min(size, n - size))" -> Cost.Polynomial,
   "O(n! * n^2)" -> Cost.Combinatorial,
   "O(k * C(n, k))" -> Cost.Combinatorial,
   "O(n * 2^n)" -> Cost.Combinatorial,
-  // Vector and NonEmptyVector
-  "O(k * C(n, k) + C(n, 0) + ... + C(n, k))" -> Cost.Combinatorial,
-
-  // List
-
-  // Queue
-  "O(n * size)" -> Cost.Polynomial,
-  "O(n^power)" -> Cost.Polynomial,
-
-  // Stream
-
-  // HashSet, HashMap, LinkedHashSet, LinkedHashMap
-  "O(n + n * min(size, n - size))" -> Cost.Polynomial,
-  "O(n + (n / step) * min(size, n - size))" -> Cost.Polynomial,
-
-  // TreeSet, TreeMap
-  "O(m log m)" -> Cost.Linearithmic,
-  "O(n + k log k)" -> Cost.Linearithmic,
-
-  // the end of the vocabulary
-  "O(1)" -> Cost.Constant
+  "O(k * C(n, k) + C(n, 0) + ... + C(n, k))" -> Cost.Combinatorial
 )
 
 final case class Decl(
@@ -328,7 +289,12 @@ def check(types: List[TypeInfo]): (Int, List[Problem]) = {
         "describes that implementation, not this one: give it its own note")
     }
   }
-  val problems = contextStolen ++ decls.flatMap { d =>
+  // every expression of the vocabulary is used by a note, so that the legend lists only what the page shows
+  val used = types.flatMap(_.decls).flatMap(_.note).flatMap(classify).map(_._1).toSet
+  val unused = vocabulary.keySet.diff(used).toList.sorted.map { e =>
+    Problem("scripts/check-complexity.scala", 0, s"the vocabulary expression '$e' is used by no note: remove it")
+  }
+  val problems = unused ++ contextStolen ++ decls.flatMap { d =>
     val stolen = stolenNote(byName, d)
     if (stolen.isDefined) {
       val src = stolen.get

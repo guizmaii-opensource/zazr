@@ -1110,7 +1110,8 @@ and unable to drift:
   - **Variables.** n is the size of the receiver, m of the argument, k a count the note names, i and j index
     arguments (a slice runs from i to j), size and step those of `sliding`/`grouped`. A parameter name is never a
     variable: `O(index)`, `O(beginIndex)`, `O(offset + m)` and `O(min(n, size - n))` became `O(i)`, `O(i)`,
-    `O(i + m)` and `O(min(k, n - k))`, and the vocabulary lost the old forms.
+    `O(i + m)` and `O(min(k, n - k))`, and the vocabulary lost the old forms. `make complexity` fails on an
+    expression of the vocabulary that no note uses, so the legend lists only what the page shows.
   - **The generator matches overrides by type argument.** A parameter erased to `Object` in the supertype matches any
     type in the override, so `Map.contains(Tuple2)` overrides `Traversable.contains(T)`; before, the maps showed
     `Traversable`'s O(n) walk for their one lookup. `HashMap`, `LinkedHashMap` and `TreeMap` declare `contains` with
