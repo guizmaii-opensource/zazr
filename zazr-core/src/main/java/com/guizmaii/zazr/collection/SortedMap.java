@@ -369,7 +369,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n) (the kept entries inserted into a new tree).
+     * Complexity: O(n) (the kept entries, already in key order, sorted in one pass and built bottom-up into a new tree).
      */
     @Override
     @Deprecated
