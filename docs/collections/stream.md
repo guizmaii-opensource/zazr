@@ -1,5 +1,5 @@
 ---
-description: Stream, the lazy memoising list - head-strict, possibly infinite, and which operations force it.
+description: Stream, the lazy list that keeps what it computed - possibly infinite, and which calls compute its elements.
 ---
 
 # `Stream`
@@ -31,8 +31,9 @@ Vector<Long> firstTen = fibonacci.take(10).toVector();
 
 ## Costs
 
-`lazy` means the call does no work beyond the first element; each element is computed when it is read. The notes
-say which elements a call computes ("forces") right away.
+`lazy` means the call returns without walking the `Stream`: each element is computed when the result reaches
+it. Some calls compute a prefix now, and their note says how much: `filter` and the calls like it up to the first
+element they keep, `drop`, `slice` and `dropRight` the elements they skip or hold back.
 
 --8<-- "Stream.md"
 
@@ -40,12 +41,20 @@ Every method: [complexity page](complexity.md#stream).
 
 ## Sharp edges
 
-- Operations that need the whole sequence force it and never return on an infinite `Stream`: `length`, `size`,
-  `last`, `reverse`, `sorted`, `max` and `min` (their notes say so), and anything that reads every element, such as
-  `foldLeft`, `mkString` or `toVector`.
-- The first element is never lazy: building a `Stream` computes it, and `map`, `filter` and the others compute the
-  first element of their result.
-- `partitionMap` looks for the first element of each side right away. On an infinite `Stream` whose elements all go
-  to one side, it never returns.
+- Operations that need the whole sequence compute it and never return on an infinite `Stream`: `length`, `size`,
+  `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `lastIndexOfSlice(that)`, `equals` and
+  `hashCode`, and anything else that reads every element, such as `foldLeft`, `mkString` or `toVector`.
+- `filter` and the calls like it (`reject`, `retainAll`, `removeAll`, `collect`, `flatMap`, `distinct`) compute
+  elements until they find one to keep, when they are called and each time the result moves on. On an infinite
+  `Stream` with nothing more to keep, that search never ends.
+- `partition` and `partitionMap` look for the first element of each side right away. On an infinite `Stream` whose
+  elements all go to one side, they never return.
+- The first element is never lazy: building a `Stream` computes it, and `map`, `tap` and the others compute the first
+  element of their result.
+- Each `appendAll` or `prependAll` adds a step to reading every element of its result, so calling them in a loop is
+  quadratic. `append` in a loop stays cheap; or build a `Vector`.
+- On a `Stream` that `append` returned, `appendAll` and `extend` (with a value or a supplier) read their whole
+  argument right away, so an infinite one never returns. Likewise, `s.prependAll(t)` with such a `t` reads all of `s`
+  right away.
 - A `Stream` keeps every element it computed. Holding on to the start of a long `Stream` while walking it keeps all
   of it in memory.
