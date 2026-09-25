@@ -756,8 +756,12 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param accumulator adds an element to a container
      * @param combiner    merges two containers
      * @return the collected result
+     * @throws NullPointerException if {@code supplier}, {@code accumulator} or {@code combiner} is null
      */
     default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Objects.requireNonNull(accumulator, "accumulator is null");
+        Objects.requireNonNull(combiner, "combiner is null");
         return stream().collect(supplier, accumulator, combiner);
     }
 

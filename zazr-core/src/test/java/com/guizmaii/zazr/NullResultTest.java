@@ -82,6 +82,7 @@ public class NullResultTest {
         cases.add(throwing("Option.flatMap(Function)", "Option.flatMap: mapper returned null", () -> Option.some(1).flatMap(x -> null)));
         cases.add(throwing("Option.forEach(Iterable, Function)", "Option.forEach: mapper returned null", () -> Option.forEach(List.of(1), x -> null)));
         cases.add(throwing("Option.map", "Option.map: mapper returned null", () -> Option.some(1).map(x -> null)));
+        cases.add(failure("Option.mapTry", "Option.mapTry: mapper returned null", () -> Option.some(1).mapTry(x -> null)));
         cases.add(throwing("Option.orElse(Supplier)", "Option.orElse: supplier returned null", () -> Option.none().orElse(() -> null)));
         cases.add(throwing("Option.toEither", "Option.toEither: leftSupplier returned null", () -> Option.none().toEither(() -> null)));
         cases.add(throwing("Option.toTry", "Option.toTry: ifEmpty returned null", () -> Option.none().toTry(() -> null)));

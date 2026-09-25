@@ -462,7 +462,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <U extends @Nullable Object> Try<U> mapTry(CheckedFunction1<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? Try.failure(new NoSuchElementException("No value present")) : Try.success(get()).mapTry(mapper);
+        return isEmpty() ? Try.failure(new NoSuchElementException("No value present")) : Try.success(get()).mapTry(value -> Objects.requireNonNull(mapper.apply(value), "Option.mapTry: mapper returned null"));
     }
 
     /**
