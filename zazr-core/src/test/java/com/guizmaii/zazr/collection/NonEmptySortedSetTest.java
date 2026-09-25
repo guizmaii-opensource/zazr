@@ -73,6 +73,10 @@ public class NonEmptySortedSetTest {
                 assertThat(NonEmptySortedSet.fromIterable(Comparator.reverseOrder(), 0, once(shuffled)).head()).isEqualTo(n - 1);
                 assertThat(NonEmptySortedSet.fromIterable(once(shuffled)).get().toSortedSet()).isEqualTo(expected);
                 assertThat(NonEmptySortedSet.fromIterable(Comparator.<Integer> reverseOrder(), once(shuffled)).get().last()).isEqualTo(0);
+                // a TreeSet argument in another order is re-sorted, not adopted
+                assertThat(NonEmptySortedSet.fromIterable(Comparator.<Integer> reverseOrder(), TreeSet.range(0, n)).get().head()).isEqualTo(n - 1);
+                assertThat(NonEmptySortedSet.fromIterable(Comparator.reverseOrder(), 0, TreeSet.range(0, n)).head()).isEqualTo(n - 1);
+                assertThat(NonEmptySortedSet.fromIterable(0, TreeSet.ofAll(Comparator.reverseOrder(), shuffled)).head()).isEqualTo(0);
             }
             assertThat(NonEmptySortedSet.fromIterable(0, List.<Integer> empty()).toSortedSet()).isEqualTo(TreeSet.of(0));
         }
@@ -158,6 +162,9 @@ public class NonEmptySortedSetTest {
             assertThat(ness.flatMap(Comparator.reverseOrder(), i -> NonEmptySortedSet.of(i, -i - 1)).toSortedSet())
               .isEqualTo(set.flatMap(Comparator.reverseOrder(), i -> List.of(i, -i - 1)));
             assertThat(ness.flatMap(i -> NonEmptySortedSet.of(0)).size()).isEqualTo(1);
+            assertThat(ness.flatMap(Comparator.reverseOrder(), i -> NonEmptySortedSet.of(i, -i - 1)).head()).isEqualTo(n - 1);
+            assertThat(ness.flatMap(Comparator.reverseOrder(), i -> NonEmptySortedSet.of(i, -i - 1)).comparator().compare(0, 1)).isPositive();
+            assertThat(ness.flatMap(i -> NonEmptySortedSet.of(Comparator.<Integer> reverseOrder(), i, -i - 1)).head()).isEqualTo(-n);
             assertThat(ness.as("x").toSortedSet()).isEqualTo(TreeSet.of("x"));
         }
 

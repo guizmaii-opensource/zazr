@@ -30,7 +30,7 @@ value itself. The same holds for `min`, `maxBy`, `minBy`, `average` on the sets,
 variants.
 
 ```java
-var tags = NonEmptySet.of("java", "scala", "java"); // NonEmptySet<String>
+var tags = NonEmptySet.of("java", "scala", "java");
 var longest = tags.maxBy(String::length); // String
 var total = NonEmptySet.of(1, 2, 3).reduce(Integer::sum); // Integer
 // scala, 6
@@ -57,7 +57,7 @@ On a map, `keySet()` returns a `NonEmptySet` (a `NonEmptySortedSet` on a `NonEmp
 `sliding` and `slideBy` return a `Vector` of them.
 
 ```java
-var prices = NonEmptySortedMap.of(Tuple.of("pear", 3), Tuple.of("apple", 2)); // NonEmptySortedMap<String, Integer>
+var prices = NonEmptySortedMap.of(Tuple.of("pear", 3), Tuple.of("apple", 2));
 var first = prices.head(); // Tuple2<String, Integer>
 var names = prices.keySet(); // NonEmptySortedSet<String>
 var cheap = prices.filterValues(price -> price < 3); // TreeMap<String, Integer>

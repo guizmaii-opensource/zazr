@@ -78,6 +78,10 @@ public class NonEmptySortedMapTest {
                 assertThat(NonEmptySortedMap.fromIterable(reverse, Tuple.of(0, "v0"), once(tail)).head()._1()).isEqualTo(n - 1);
                 assertThat(NonEmptySortedMap.fromIterable(once(tail.prepend(Tuple.of(0, "v0")))).get().toSortedMap()).isEqualTo(expected);
                 assertThat(NonEmptySortedMap.fromIterable(reverse, once(tail.prepend(Tuple.of(0, "v0")))).get().last()).isEqualTo(Tuple.of(0, "v0"));
+                // a TreeMap argument in another order is re-sorted, not adopted
+                assertThat(NonEmptySortedMap.fromIterable(reverse, expected).get().head()._1()).isEqualTo(n - 1);
+                assertThat(NonEmptySortedMap.fromIterable(reverse, Tuple.of(0, "v0"), TreeMap.ofEntries(tail)).head()._1()).isEqualTo(n - 1);
+                assertThat(NonEmptySortedMap.fromIterable(Tuple.of(0, "v0"), TreeMap.ofEntries(reverse, tail)).head()._1()).isEqualTo(0);
             }
         }
 
@@ -162,6 +166,9 @@ public class NonEmptySortedMapTest {
             assertThat(nesm.flatMap((k, v) -> NonEmptySortedMap.of(Tuple.of(k, v), Tuple.of(-k - 1, v))).toSortedMap())
               .isEqualTo(map.flatMap((k, v) -> List.of(Tuple.of(k, v), Tuple.of(-k - 1, v))));
             assertThat(nesm.flatMap(reverse, (k, v) -> NonEmptySortedMap.single(k, v)).head()._1()).isEqualTo(n - 1);
+            assertThat(nesm.flatMap((k, v) -> NonEmptySortedMap.single(reverse, k, v)).head()._1()).isEqualTo(0);
+            assertThat(nesm.map(reverse, (k, v) -> Tuple.of(k, v)).head()._1()).isEqualTo(n - 1);
+            assertThat(nesm.mapBoth(reverse, k -> k, v -> v).head()._1()).isEqualTo(n - 1);
         }
 
         @ParameterizedTest
