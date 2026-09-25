@@ -21,7 +21,7 @@
   <a href="https://guizmaii-opensource.github.io/zazr/"><b>Website</b></a> ·
   <a href="https://guizmaii-opensource.github.io/zazr/getting-started/">Getting started</a> ·
   <a href="https://guizmaii-opensource.github.io/zazr/collections/complexity/">Complexity</a> ·
-  <a href="https://guizmaii-opensource.github.io/zazr/design/">Design</a>
+  <a href="https://guizmaii-opensource.github.io/zazr/principles/">Design</a>
 </p>
 
 > [!WARNING]
@@ -116,7 +116,7 @@ Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise`
 longer `Iterable`; each has its own conversions. Sets and maps have no positional methods, except the ordered
 ones (`TreeSet`, `TreeMap`, `LinkedHashSet`, `LinkedHashMap`).
 
-Every decision and its reason is in the [design record](https://guizmaii-opensource.github.io/zazr/design/) ([source](docs/design.md)); the [comparison page](https://guizmaii-opensource.github.io/zazr/vavr/) has the details.
+[Design](https://guizmaii-opensource.github.io/zazr/principles/) explains the ideas behind them, and the [decision log](docs/design.md) records every decision with its reasons; the [comparison page](https://guizmaii-opensource.github.io/zazr/vavr/) has the details.
 
 ## Building
 

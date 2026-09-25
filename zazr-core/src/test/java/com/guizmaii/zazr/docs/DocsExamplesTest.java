@@ -107,6 +107,51 @@ public class DocsExamplesTest {
     }
 
     @Nested
+    class Design {
+
+        @Test
+        void zipInsteadOfAp() {
+            Option<Integer> total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+                (a, b, c) -> a + b + c);
+            // Some(6), and None as soon as one of them is None
+
+            assertThat(total).isEqualTo(Option.some(6));
+            assertThat(Option.zipWith(Option.some(1), Option.<Integer> none(), Option.some(3), (a, b, c) -> a + b + c)).isEqualTo(Option.none());
+        }
+
+        @Test
+        void validationKeepsEveryError() {
+            Validation<String, Integer> age = Validation.invalid("age is negative");
+            Validation<String, String> email = Validation.invalid("email has no @");
+            Validation<String, String> both = age.zipWith(email, (a, e) -> a + e);
+            // Invalid(age is negative, email has no @)
+
+            assertThat(both.isInvalid()).isTrue();
+            assertThat(((Invalid<String, String>) both).errors()).isEqualTo(NonEmptyVector.of("age is negative", "email has no @"));
+        }
+
+        @Test
+        void nonEmptyTypes() {
+            NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
+            int best = scores.max(Integer::compare);             // 9, nothing can go wrong
+            Vector<Integer> passed = scores.filter(s -> s > 5);  // may be empty, so a Vector
+
+            assertThat(best).isEqualTo(9);
+            assertThat(passed).isEqualTo(Vector.of(7, 9));
+        }
+
+        @Test
+        void noNullInside() {
+            Option<String> name = Option.ofNullable(System.getenv("NO_SUCH_VARIABLE"));
+            // None: Option.some(null) and Vector.of(1, null) throw instead
+
+            assertThat(name).isEqualTo(Option.none());
+            assertThatThrownBy(() -> Option.some(null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Vector.of(1, null)).isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
     class GettingStarted {
 
         @Test

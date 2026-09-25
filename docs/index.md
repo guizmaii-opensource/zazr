@@ -24,7 +24,7 @@ int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
 !!! warning "Pre-1.0 and changing fast"
 
     Nothing is released yet. Snapshots of `main` are published to Maven Central's snapshot repository, and the API
-    changes between them. Pin a snapshot you have tested, and read the [design record](design.md) before relying on a
+    changes between them. Pin a snapshot you have tested, and read the [decision log](https://github.com/guizmaii-opensource/zazr/blob/main/docs/design.md) before relying on a
     shape that is still marked open.
 
 </div>
