@@ -508,7 +508,7 @@ def page(types: List[TypeInfo]): String = {
       }
       .filter(d => resolve(byName, d).isDefined || stolenNote(byName, d).isDefined)
     out ++= s"\n### `$t`\n\n"
-    info.note.foreach(n => out ++= s"${html(plain(n))}\n\n")
+    info.note.foreach(n => out ++= s"${html(plain(n).capitalize)}\n\n")
     out ++= "| Method | Cost | Note |\n|---|---|---|\n"
     (own ++ inherited).distinctBy(d => (d.name, d.params)).foreach { d =>
       val src = resolved(d)

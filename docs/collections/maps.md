@@ -57,8 +57,11 @@ Every method: [complexity page](complexity.md#maps).
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashMap`: it depends on the hashes and may change between versions.
-- `LinkedHashMap.remove` is amortised: most calls are effectively O(1), and now and then one pays O(n) to
-  clean up the insertion order.
+- `LinkedHashMap.remove` is amortised: most calls are effectively O(1), and now and then one pays O(n) to close
+  the gaps that earlier removals left in the insertion order. The average holds over a chain of removals, each on
+  the result of the previous one; removing again from an older map can pay O(n) every time.
+- After removals, `tail`, `init`, `take`, `drop` and a single step of the iterator can cost O(n): they skip past
+  the gaps first.
 - `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries; the `java.util.Map` view is `asJavaMap()`
   ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`.

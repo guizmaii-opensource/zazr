@@ -69,4 +69,9 @@ Every method: [complexity page](complexity.md#sets).
   `intersect` and `diff`, unless the argument is a `TreeSet` with the same comparator.
 - `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator. With different comparators,
   or another kind of set, they process the elements one by one.
+- `LinkedHashSet.remove` is amortised, as on `LinkedHashMap`: now and then a call pays O(n) to close the gaps
+  earlier removals left, and removing again from an older set can pay it every time. After removals, `tail`,
+  `init`, `take`, `drop` and a single step of the iterator can cost O(n).
+- `HashSet.removeAll` and `diff` walk the whole set, even to remove one element: use `remove` for a few elements.
+  `intersect` is cheap when the argument is a `HashSet`: the smaller set is checked against the larger.
 - `TreeSet` has no `partitionMap`.
