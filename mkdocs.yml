@@ -1,12 +1,12 @@
-site_name: zazr
+site_name: Zazr
 site_url: https://guizmaii-opensource.github.io/zazr/
 site_description: >-
-  Immutable collections and control types for Java 25+, with an API inspired by ZIO, zio-prelude and modern Scala.
+  Modern Functional Programming for Java 25+. Inspired by modern Scala, ZIO, and zio-prelude.
 repo_url: https://github.com/guizmaii-opensource/zazr
 repo_name: guizmaii-opensource/zazr
 edit_uri: edit/main/docs/
 copyright: >-
-  zazr is released under the Apache License 2.0. It is a fork of
+  Zazr is released under the Apache License 2.0. It is a fork of
   <a href="https://github.com/vavr-io/vavr">Vavr</a>, copyright its authors, under the same license;
   see <a href="https://github.com/guizmaii-opensource/zazr/blob/main/NOTICE">NOTICE</a>.
 

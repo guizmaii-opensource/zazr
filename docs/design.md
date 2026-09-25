@@ -1,6 +1,6 @@
-# zazr design: what changes from Vavr, and why
+# Zazr design: what changes from Vavr, and why
 
-zazr is a fork of Vavr `2.0.0-SNAPSHOT` (Maven, single `vavr` module at fork time; now JDK 25+, becoming a mono-repo). Its goal is to bring the
+Zazr is a fork of Vavr `2.0.0-SNAPSHOT` (Maven, single `vavr` module at fork time; now JDK 25+, becoming a mono-repo). Its goal is to bring the
 API-design lessons of ZIO and zio-prelude to a Java FP library: plain-English names, one way to do each
 thing, non-empty types that make partial operations total, error accumulation that is the default rather
 than a bolt-on, and collections whose interfaces don't promise more than their implementations can deliver.
@@ -66,7 +66,7 @@ These are the rules every change below follows.
    `switch`, `SequencedCollection`, virtual threads, `Callable`, `java.util.function.*`, stream
    `Gatherers`, Markdown javadoc; each of those replaces something Vavr hand-rolled in 2014 for Java 8
    (`Match`/`Case`/`$`/`@Unapply`, `Function0..2`, the `toJava*` copies, `CheckedFunction0` as a `Callable`
-   stand-in). The fork has no compatibility debt, so the rule is: **if the JDK has it, zazr uses it.**
+   stand-in). The fork has no compatibility debt, so the rule is: **if the JDK has it, Zazr uses it.**
 8. **Lazy means less code, not less correctness.** Delete before adding. Every deleted method is one the
    fork no longer has to keep binary-compatible.
 
@@ -76,7 +76,7 @@ These are the rules every change below follows.
 
 ### 3.1 Modern Java everywhere
 
-**Decision.** zazr uses the newest Java features that fit, not just a Java 21 toolchain. The concrete list:
+**Decision.** Zazr uses the newest Java features that fit, not just a Java 21 toolchain. The concrete list:
 
 **Baseline JDK: 25+ (decided).** Java 25 is the current LTS (September 2025); the fork has no users to
 keep on 21, and `<java.version>` in `pom.xml`, the CI matrix (baseline 25 and the released versions above it; `25, 26, 27` as of September 2026; Amazon Corretto, which ships GA releases only, so no early-access slot) and the release workflow
@@ -124,7 +124,7 @@ Why `switch` beats Vavr's `Match`, so that deleting it is not a regression:
 | Shadowed/unreachable case | silent | compile error (dominance) |
 | `null` | `$(isNull())` | `case null` |
 | Equality in nested position | `Some($(42))` | not expressible; `case Some(var x) when x == 42` |
-| Non-record classes | `@Unapply` on anything | records only (class deconstruction JEP still a draft at JDK 25); all zazr sum types are records |
+| Non-record classes | `@Unapply` on anything | records only (class deconstruction JEP still a draft at JDK 25); all Zazr sum types are records |
 | Case as a value / `Match.option` | `Case` is a `PartialFunction` | `switch` in a lambda, `default -> Option.none()` |
 
 Neither can destructure a `Vector` the way Scala's `case Seq(a, b, rest*)` does; the cons `List` with
@@ -144,14 +144,14 @@ Consequences:
 **JDK functional interfaces first.** Signatures use `Function`, `BiFunction`, `Supplier`, `Predicate`,
 `BiPredicate`, `UnaryOperator`, `BinaryOperator`, `Consumer`, `Runnable`, `Callable`, `Comparator`.
 Vavr's `Function0..2` exist only as adapters (`Function1 extends java.util.function.Function` already);
-zazr keeps `Function3..8` and `CheckedFunction1..8` because the JDK has nothing at those arities or
+Zazr keeps `Function3..8` and `CheckedFunction1..8` because the JDK has nothing at those arities or
 with checked exceptions, and drops `Function0`, `Function1`, `Function2`, `CheckedFunction0` (that is
 `Callable<A>`: `Try.of(Callable<A>)`). What is kept loses `Serializable`, `memoized()` (belongs on
 `Lazy`), `arity()`, `reversed()`; keeps `andThen`, `compose`, `curried`, `tupled`, partial `apply`,
 `lift`/`liftTry`, `unchecked`. `CheckedRunnable`, `CheckedConsumer`, `CheckedPredicate` stay
 (`Try.run(CheckedRunnable)`), since the JDK has no checked variants.
 
-**JDK collection interop via O(1) views, Scala's `asJava` (decided).** zazr collections do **not**
+**JDK collection interop via O(1) views, Scala's `asJava` (decided).** Zazr collections do **not**
 implement `java.util.List`/`Set`/`Map` themselves; the type never advertises `add()` or `put()`. Instead
 each collection has `asJava()`, returning a wrapper that implements the JDK interface over the persistent
 value with no copy: `Vector.asJava() : java.util.List<A>` (hence `SequencedCollection`),
@@ -164,20 +164,20 @@ sequences override it with their `java.util.List` view. A map is a `Traversable<
 is a `Collection` of entries and cannot be overridden with a `java.util.Map`: the map views above are named
 `asJavaMap()` (decided in step 3 of #24, implemented by #26), the set views keep `asJava()`. This is what Vavr
 already has for sequences (`Seq.asJava()` → `JavaConverters.ListView`, `Seq.java:130`,
-`JavaConverters.java:104`, 469 lines) and what `scala.jdk.CollectionConverters` does; zazr keeps
+`JavaConverters.java:104`, 469 lines) and what `scala.jdk.CollectionConverters` does; Zazr keeps
 `ListView`, adds `SetView`/`MapView` (plus the `Sequenced*`/`Navigable*` variants), and deletes the rest of
 the zoo: `toJavaList`/`toJavaSet`/`toJavaMap`/`toJavaCollection`/`toJavaArray`×3 (a copy is
 `new ArrayList<>(v.asJava())`), `asJavaMutable` and the `asJava(Consumer)`/`asJavaMutable(Consumer)`
 mutation scopes (clever, unused), `toJavaStream`/`toJavaParallelStream` (replaced by `stream()` directly
-on the zazr type). The other direction stays `Vector.ofAll(Iterable)` with a fast path for
+on the Zazr type). The other direction stays `Vector.ofAll(Iterable)` with a fast path for
 `java.util.Collection` (`toArray`) and for an `asJava()` view (unwrap the delegate, as `ListView` already
-does). Trade-off accepted: a call to `asJava()` is needed at every JDK boundary, in exchange for zazr
+does). Trade-off accepted: a call to `asJava()` is needed at every JDK boundary, in exchange for Zazr
 types that only expose the operations they support.
 
 **`Optional` interop only.** `java.util.Optional` is not sealed, cannot be pattern-matched, and is
 documented as a return type only. `Option` stays, with `toOptional()`/`fromOptional()`.
 
-**Streams.** `Vector.collector()` stays (it is the `Collectors.toList()` of zazr). `grouped(n)`,
+**Streams.** `Vector.collector()` stays (it is the `Collectors.toList()` of Zazr). `grouped(n)`,
 `sliding(n)`, `scanLeft` are kept as methods but implemented over the builder, not over `Gatherers`
 (a `Stream` round-trip allocates more than a leaf loop). Users who want gatherers call `stream()`.
 
@@ -256,7 +256,7 @@ duplication is cheaper than a god interface).
 
 ### 3.3 Naming table (ZIO/prelude vocabulary applied to Vavr)
 
-| Vavr today | zazr | Rationale |
+| Vavr today | Zazr | Rationale |
 |---|---|---|
 | `ap`, `combine(...).ap(f)` | `zip`, `zipWith`, static `zip(a,b,c)`, `zipWith(a,b,c,f)` | Principle 4 |
 | `sequence(Iterable<F<A>>)` | `collectAll(Iterable<F<A>>)` | ZIO name; "sequence" means nothing to a Java dev |
@@ -516,7 +516,7 @@ Implementation cost is low: every method is a one-line delegation to the wrapped
   `Vector`), not `vector.maxBy(f).get()`, so nothing is wrapped to be unwrapped on the next line.
 - `reduce`, `reduceLeft`, `reduceRight`, `reduceMap` take `BiFunction<? super A, ? super A, ? extends A>`
   like `Vector` does; a `BinaryOperator<A>` lambda or method reference fits. `iterator()` returns
-  `java.util.Iterator<A>`: the zazr `Iterator` is deleted in 3.7, and the type declares only what survives.
+  `java.util.Iterator<A>`: the Zazr `Iterator` is deleted in 3.7, and the type declares only what survives.
 - Equality is structural over the elements and only against another `NonEmptyVector`: a `Vector` and a
   `NonEmptyVector` with the same elements are not equal (compare through `toVector()`).
   `toString` is `NonEmptyVector(a, b)`.
@@ -712,7 +712,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   conversions move with the rest and are deleted by #26, as 3.1 says.
 - **`toArray`, not `toJavaArray`** (decided): the JDK's own name (`Collection.toArray`, `java.util.stream.Stream.toArray`),
   with the same two overloads as the JDK stream (`toArray()` to `Object[]`, `toArray(IntFunction<T[]>)` to a typed
-  array); unlike `toList`/`toJavaList` there is no zazr array type the `Java` prefix would tell apart. The deprecated
+  array); unlike `toList`/`toJavaList` there is no Zazr array type the `Java` prefix would tell apart. The deprecated
   `toJavaArray(Class)` is deleted with it. `toJavaStream()` is `stream()`, as 3.1 wanted; `toJavaParallelStream()`
   moves to the concrete types until #26.
 - **`Traversable.asJava()`** (decided) returns an O(1) unmodifiable `java.util.Collection<T>` view
@@ -722,7 +722,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   Consequence for 3.1: a map's `asJava()` is that `Collection<Tuple2<K, V>>` (a `java.util.Map` is not a
   `Collection`, so it cannot be the override), and the `java.util.Map` views of 3.1 take the name `asJavaMap()` in
   #26; the set views stay `asJava()` (a `java.util.Set` is a `Collection`).
-- **The zazr `Iterator` leaves the public API** (decided): `interface Iterator<T> extends java.util.Iterator<T>,
+- **The Zazr `Iterator` leaves the public API** (decided): `interface Iterator<T> extends java.util.Iterator<T>,
   Iterable<T>` is package-private in `com.guizmaii.zazr.collection` (an unexported `collection.internal` type since
   #73, 3.1), no longer a `Traversable`, and keeps only what
   the internals compose: the `range*`/`from`/`continually`/`iterate`/`unfold*`/`tabulate`/`fill`/`concat`/`of`/`ofAll`
@@ -887,7 +887,7 @@ inserted), `take(n)` the first n, and so on:
   were in it, so the new `Queue` and `Stream` ones are checked.
 
 **Complexity page and vocabulary (#80, decided).** The `Complexity:` notes are the source of a generated documentation
-page, `docs/collections/complexity.md`, the zazr counterpart of Scala's performance-characteristics table, exhaustive
+page, `docs/collections/complexity.md`, the Zazr counterpart of Scala's performance-characteristics table, exhaustive
 and unable to drift:
 
 - **Every note starts with an expression of a fixed vocabulary** (`O(1)`, `effectively O(1)`, `amortised O(1)`,
@@ -1029,7 +1029,7 @@ thread-safe), and every `ofAll`/`ofEntries`/`collector()`/`map`/`filter`/`flatMa
 
 What each one replaces, and how (Scala 2.13 is the reference for all of them):
 
-| Collection | Today (Vavr) | zazr builder |
+| Collection | Today (Vavr) | Zazr builder |
 |---|---|---|
 | `HashMap`, `HashSet` | `ofEntries`/`ofAll` do one persistent `put` per entry (`HashMap.java:511-514`, `HashSet.java:170`): each put path-copies 1..7 `IndexedNode`/`ArrayNode` arrays via `arraycopy`. | **Transient HAMT**, the Clojure/Scala-CHAMP pattern (`HashMapBuilder`, `HashMap.scala:2218`): nodes created by the builder carry an owner token and are mutated in place; foreign nodes are copied on first touch; after `result()` the root is handed to the immutable map and the builder is marked `aliased`, so any further `add` copies first. Needs an owner field on `IndexedNode`/`ArrayNode`/`LeafList` in `HashArrayMappedTrie` (internal, so contained). Biggest win after `Vector`: `groupBy`, `distinct`, `HashMap.collector()`, `map`/`filter` on maps all go from O(n log32 n) allocations to O(n / 32). |
 | `TreeMap`, `TreeSet` | `createTreeMap` does one persistent `insert` per entry (`TreeMap.java:1512-1515`), each allocating O(log n) nodes plus rebalancing. | **Sort-then-build**: buffer entries into an array, on `result()` stable-sort with the comparator, drop adjacent duplicate keys keeping the last, then build the balanced tree bottom-up in O(n) (port of `RedBlackTree.fromOrderedEntries`, `RedBlackTree.scala:956`, ~20 lines: recursive split, black nodes, red leaves only at the deepest level). Total O(n log n) compares, one array plus exactly n nodes. Scala's alternative, in-place `mutableUpd` on builder-owned nodes, is more code for the same result; not needed. Also gives the `ofEntries(alreadySorted)` O(n) fast path. |
@@ -1100,7 +1100,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 
 - **Specialised `OptionInt`/`OptionLong`/`OptionDouble`** (sealed, `record SomeInt(int value)`), the
   JDK's `OptionalInt` design. Pattern-matchable (`case SomeInt(int i)`), but a parallel API with no
-  boxing-free `flatMap` across the primitive/reference boundary, and nothing in zazr produces them: the
+  boxing-free `flatMap` across the primitive/reference boundary, and nothing in Zazr produces them: the
   collections store primitives unboxed (`BitMappedTrie` leaves via `ArrayType`) but box on `get(i)`, and
   there is no `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
   hot path shows the boxing, and then added together with the producing methods (`indexOfOption`,
@@ -1112,7 +1112,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   but not the `Integer`, and gives up sealed/records/`switch`. Rejected.
 - **Valhalla**: JEP 401 (value classes) is not final as of JDK 25 and the "no preview in main code" rule
   applies. When it lands, `value record Some<A>(A value)` removes the wrapper's identity, but unboxed
-  `Option<int>` needs the later parametric-JVM phase, which has no date. What zazr does now is keep every
+  `Option<int>` needs the later parametric-JVM phase, which has no date. What Zazr does now is keep every
   record `value`-ready: no `==` on instances, no `synchronized`, no `IdentityHashMap`, so adding the
   modifier later is a one-word, source-compatible change.
 
@@ -1129,7 +1129,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   Rejected (decided): every abstract signature returns `Kind<F, B>` and every call site ends in
   `narrow(...)`, instances are explicit parameters everywhere, error messages name `Kind<W, ...>`, and
   Arrow-kt dropped the same encoding in 1.0 for exactly those reasons on a language with better
-  inference than Java. Inside zazr the type set is small and fixed, so per-type generated
+  inference than Java. Inside Zazr the type set is small and fixed, so per-type generated
   `forEach`/`collectAll`/`zip` cover the need. If wanted later, it is a `zazr-hkt` module experiment,
   never a dependency of `zazr-core`. Their *operator inventory*
   (`partitionMap`, `reduceMap`, `mapAccum`, `groupByNonEmpty`, `intersperse`, `maxByOption`...) is the
@@ -1156,7 +1156,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - **Jargon guard**: a CI step that fails on `monad|functor|applicative|semigroup|monoid` anywhere under `src/`, `src-gen/`, `generator/`.
 - **Mono-repo (decided)**, Kyo-style: one Maven reactor, one version, one release, several artifacts.
   Vavr had this layout (`vavr`, `vavr-test`, `vavr-benchmark`, `vavr-match`, `vavr-match-processor` as
-  modules of the parent pom) until commit `da4baffb8` split them into separate repositories; zazr
+  modules of the parent pom) until commit `da4baffb8` split them into separate repositories; Zazr
   reverses that split. Modules:
 
   | module | artifact | content |
@@ -1175,7 +1175,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   - rename to `com.guizmaii.zazr.test`; `CheckResult` becomes a sealed interface with records
     `Satisfied`, `Falsified`, `Erroneous`; `Property.def(name)` → `Property.named(name)`;
     `suchThat` keeps its name (it reads well); `Gen.peek` → `tap`, `Gen.transform` deleted, per 3.3.
-  - `Arbitrary`/`Gen` instances for every zazr type: `option`, `either`, `try`, `validation`, `lazy`,
+  - `Arbitrary`/`Gen` instances for every Zazr type: `option`, `either`, `try`, `validation`, `lazy`,
     `tuple2..8`, `vector`, `nonEmptyVector`, `list`, `lazyList`, `hashMap`, `hashSet`, `treeMap`,
     `treeSet`, `linkedHashMap`, `linkedHashSet`, each parameterised by element arbitraries.
   - a `laws` package, modelled on zio-prelude's `laws` module: each law is a named value
@@ -1199,14 +1199,14 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - **Changelog**: start `CHANGELOG.md` with this document's section numbers as the first entry.
 - **Documentation lives in the repo (decided).** Vavr's user guide is a separate repository
   (`vavr-io/vavr-docs`, AsciiDoc, published at docs.vavr.io) and is not forked: it teaches `Match`,
-  `For`, `ap`, `Seq`, `Value` and `Future`, all of which zazr removes. zazr keeps a `docs/` folder in the
+  `For`, `ap`, `Seq`, `Value` and `Future`, all of which Zazr removes. Zazr keeps a `docs/` folder in the
   mono-repo: the rewritten user guide in Markdown (one page per area: control types, `Validation`,
   collections and builders, `NonEmptyVector`, JDK interop via `asJava`, `zazr-test` and laws), this
   document moved to `docs/design.md`, and `CHANGELOG.md` at the root. The API reference is the Markdown
   javadoc in the sources (JEP 467), published as the `-javadoc.jar`; no second copy of it in `docs/`.
   Site generation (if any) comes later; plain Markdown rendered by GitHub is enough for v1.
   **Not a rewrite of Vavr's guide** (decided): that guide is long and says little about the data
-  structures themselves. The zazr guide is short and factual; each collection page answers, in this
+  structures themselves. The Zazr guide is short and factual; each collection page answers, in this
   order: what it is and how it is represented (trie of 32-wide leaves, cons cells, HAMT, red-black tree,
   two lists); a complexity table covering every operation on the type (`get`, `update`, `append`,
   `prepend`, `head`/`tail`, `take`/`drop`, `contains`, `size`, iteration), with amortised vs worst case
@@ -1218,7 +1218,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   use, not a tour of the method list; the method list is the javadoc. Per-method complexity lives in
   the javadoc too, so the guide tables and the javadoc are written from the same source of truth.
 - **README rewrite** (decided): the current one is Vavr's (1.0.1 coordinates, Vavr badges, stargazer chart,
-  "led and maintained by" line). The zazr README states the fork's purpose in the terms of section 2,
+  "led and maintained by" line). The Zazr README states the fork's purpose in the terms of section 2,
   the JDK 25+ requirement, the `com.guizmaii:zazr` coordinates, a ten-line tour (`switch` over
   `Validation`, `zip` at arity N, `NonEmptyVector`, `Vector.newBuilder()`), the list of things it does
   *not* have compared to Vavr with a pointer to this document, and the Apache-2.0 attribution to Vavr.

@@ -1,34 +1,51 @@
-# zazr
+<p align="center">
+  <img src="docs/assets/zaz-256.png" alt="Zaz, the Zazr capybara, with a yuzu on its head" width="180">
+</p>
 
-[![CI](https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml/badge.svg)](https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml)
+<h1 align="center">Zazr</h1>
 
-Immutable collections and control types for Java 25+, with an API inspired by [ZIO](https://zio.dev),
-[zio-prelude](https://zio.dev/zio-prelude/) and modern [Scala](https://www.scala-lang.org).
+<p align="center">
+  <b>Modern Functional Programming for Java 25+</b><br>
+  Inspired by modern <a href="https://www.scala-lang.org">Scala</a>, <a href="https://zio.dev">ZIO</a>,
+  and <a href="https://zio.dev/zio-prelude/">zio-prelude</a>
+</p>
 
-zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
-`Option`, `Either`, `Try`, `Validation` and `Lazy`, and reshapes them:
+<p align="center">
+  <a href="https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml"><img src="https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Java-25%2B-f5a524" alt="Java 25+">
+  <img src="https://img.shields.io/badge/runtime%20dependencies-none-8b5a2b" alt="No runtime dependencies">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-8b5a2b" alt="Apache 2.0"></a>
+</p>
 
-- **Names say what an operation does**, not which algebra it comes from: `zip`, `zipWith`, `collectAll`,
-  `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`.
-- **`zip` at arity 2 to 8** replaces `ap` and builders, and never nests tuples.
-- **`Validation` accumulates every error** in a `NonEmptyVector`, so an invalid value always carries at least one.
-- **Non-empty types make partial operations total**: `NonEmptyVector.head()`, `max`, `reduce` cannot fail.
-- **Each collection declares its own API and states its cost.** There is no `Seq` promising `get(i)` on a
-  cons list; every positional method documents its complexity.
-- **Modern Java**: sealed interfaces and records you can `switch` over, JDK functional interfaces,
-  O(1) `java.util` views through `asJava()`.
-- **No `null` inside**: `Some`, `Right`, `Valid` and every collection reject it.
+<p align="center">
+  <a href="https://guizmaii-opensource.github.io/zazr/"><b>Website</b></a> ·
+  <a href="https://guizmaii-opensource.github.io/zazr/getting-started/">Getting started</a> ·
+  <a href="https://guizmaii-opensource.github.io/zazr/collections/complexity/">Complexity</a> ·
+  <a href="https://guizmaii-opensource.github.io/zazr/design/">Design</a>
+</p>
 
-## Status
+> [!WARNING]
+> **Pre-1.0 and changing fast.** Nothing is released yet. Snapshots of `main` are published to Maven Central's
+> snapshot repository, and the API changes between them.
 
-Pre-1.0 and changing fast. Nothing is released yet. Snapshots of `main` are published to Maven Central's
-snapshot repository; expect breaking changes between them.
+## What it is
 
-## Requirements
+Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
+`Option`, `Either`, `Try`, `Validation` and `Lazy`, and reshapes them around a few rules.
 
-JDK 25 or later. No runtime dependencies.
+| | |
+|---|---|
+| **Names say what an operation does** | `zip`, `zipWith`, `collectAll`, `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`: the name tells you the result, not which algebra it comes from. |
+| **[`zip` at arity 2 to 8](https://guizmaii-opensource.github.io/zazr/zip/)** | One static call per arity replaces `ap` and the builder ladders, and never nests a tuple inside a tuple. |
+| **[`Validation` keeps every error](https://guizmaii-opensource.github.io/zazr/validation/)** | The errors accumulate in a `NonEmptyVector`, so an invalid value always carries at least one. |
+| **[Non-empty types make partial operations total](https://guizmaii-opensource.github.io/zazr/non-empty-vector/)** | `head()`, `max`, `reduce` on a `NonEmptyVector` cannot fail, and the return types say what can become empty. |
+| **[Each collection states its cost](https://guizmaii-opensource.github.io/zazr/collections/complexity/)** | There is no `Seq` promising `get(i)` on a cons list. Every positional method documents its complexity. |
+| **[Modern Java](https://guizmaii-opensource.github.io/zazr/java-interop/)** | Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, O(1) `java.util` views through `asJava()`. |
+| **[No `null` inside](https://guizmaii-opensource.github.io/zazr/control-types/)** | `Some`, `Right`, `Success`, `Valid` and every collection reject it. Absence is an `Option`. |
 
 ## Installation
+
+JDK 25 or later. No runtime dependencies.
 
 Maven:
 
@@ -89,6 +106,8 @@ for (int i = 0; i < 1_000; i++) {
 Vector<Integer> numbers = builder.result();
 ```
 
+More in the [guide](https://guizmaii-opensource.github.io/zazr/getting-started/).
+
 ## Compared to Vavr
 
 Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise` and `Task`, `Array`, `CharSeq`,
@@ -97,7 +116,7 @@ Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise`
 longer `Iterable`; each has its own conversions. Sets and maps have no positional methods, except the ordered
 ones (`TreeSet`, `TreeMap`, `LinkedHashSet`, `LinkedHashMap`).
 
-Every decision and its reason is in [docs/design.md](docs/design.md).
+Every decision and its reason is in the [design record](https://guizmaii-opensource.github.io/zazr/design/) ([source](docs/design.md)); the [comparison page](https://guizmaii-opensource.github.io/zazr/vavr/) has the details.
 
 ## Building
 
@@ -109,4 +128,4 @@ make test-one TEST=VectorTest MODULE=zazr-core
 
 ## License
 
-Apache License 2.0. zazr is derived from Vavr, copyright its authors; see [NOTICE](NOTICE).
+Apache License 2.0. Zazr is derived from Vavr, copyright its authors; see [NOTICE](NOTICE).

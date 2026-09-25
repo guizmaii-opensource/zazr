@@ -1,12 +1,12 @@
 ---
-description: Add zazr to a build, then meet the control types and the collections in five minutes.
+description: Add Zazr to a build, then meet the control types and the collections in five minutes.
 ---
 
 # Getting started
 
 ## Requirements
 
-JDK 25 or later. zazr has no runtime dependency. `zazr-core` is the Java module `com.guizmaii.zazr`.
+JDK 25 or later. Zazr has no runtime dependency. `zazr-core` is the Java module `com.guizmaii.zazr`.
 
 ## Add the dependency
 
@@ -54,10 +54,10 @@ On the module path, add `requires com.guizmaii.zazr;` to your `module-info.java`
 | `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `HashMap`, `LinkedHashMap`, `TreeMap` |
 | `com.guizmaii.zazr` | `Lazy`, `Tuple` and `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
-`List` and `Stream` share their names with `java.util.List` and `java.util.stream.Stream`: import the zazr ones and
+`List` and `Stream` share their names with `java.util.List` and `java.util.stream.Stream`: import the Zazr ones and
 spell the JDK ones out, as the examples on this site do.
 
-## Five minutes of zazr
+## Five minutes of Zazr
 
 A value that may be absent is an `Option`. It never holds `null`: `ofNullable` is the door from nullable code.
 
