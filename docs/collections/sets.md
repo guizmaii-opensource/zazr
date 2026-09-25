@@ -64,7 +64,9 @@ Every method: [complexity page](complexity.md#sets).
   `fold` and `reduce` see the elements in that order, so give them an operation where the order does not matter.
 - `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, even on a
   `TreeSet`. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, in O(log n).
-- `TreeSet` decides membership with its comparator, not `equals`.
+- `TreeSet` decides membership with its comparator, not `equals`, in `contains`, `add`, `remove` and `union`.
+  `removeAll` and `retainAll` put their argument in a hash set, so `equals` and `hashCode` decide there. So do
+  `intersect` and `diff`, unless the argument is a `TreeSet` with the same comparator.
 - `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator. With different comparators,
   or another kind of set, they process the elements one by one.
 - `TreeSet` has no `partitionMap`.
