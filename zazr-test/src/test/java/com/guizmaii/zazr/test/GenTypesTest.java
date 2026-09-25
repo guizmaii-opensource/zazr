@@ -500,6 +500,21 @@ class GenTypesTest {
         }
     }
 
+    @Test
+    void theExtraKeysOfAMapKeepTheValuesOfTheKeysItHolds() {
+        // extra keys drawn among the kept ones: putting them would replace the kept values
+        final Gen<Integer> overlapping = Gen.intValue(0, 2);
+        final java.util.List<Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>>> kinds = java.util.List.of(
+                Shapes.hashMapOps(), Shapes.linkedHashMapOps(), Shapes.treeMapOps());
+        final ArrayList<Tuple2<Integer, Integer>> entries = new ArrayList<>(java.util.List.of(Tuple.of(0, 0), Tuple.of(1, 1), Tuple.of(2, 2)));
+        for (Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>> ops : kinds) {
+            for (long seed = 0; seed < 50; seed++) {
+                final Traversable<Tuple2<Integer, Integer>> map = map(2, new ArrayList<>(entries), overlapping, ops, new Sampling(seed, 1000));
+                assertThat(toJava(map)).isEqualTo(java.util.Map.of(0, 0, 1, 1, 2, 2));
+            }
+        }
+    }
+
     private static <M extends Traversable<Tuple2<Integer, Integer>>> M map(int layout, ArrayList<Tuple2<Integer, Integer>> xs, Gen<Integer> keys,
                                                                            Shapes.MapOps<Integer, Integer, M> ops, Sampling sampling) {
         return Shapes.map(layout, xs, keys, DROPPED, ops, sampling, 100);

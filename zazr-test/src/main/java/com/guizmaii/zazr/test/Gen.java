@@ -1289,7 +1289,7 @@ public final class Gen<A> {
      * A random option: {@code None} for one pass in four, otherwise {@code Some} of each value of a pass of
      * {@code gen}.
      *
-     * @param gen the generator of the values, possibly null ones
+     * @param gen the generator of the values; a null value makes the {@code Some} throw
      * @param <A> the type of the values
      * @return a generator of options
      * @throws NullPointerException if {@code gen} is null
@@ -1304,7 +1304,7 @@ public final class Gen<A> {
     /**
      * {@code Some} of each value of {@code gen}.
      *
-     * @param gen the generator of the values, possibly null ones
+     * @param gen the generator of the values; a null value makes the {@code Some} throw
      * @param <A> the type of the values
      * @return a generator of {@code Some}s, finite when {@code gen} is
      * @throws NullPointerException if {@code gen} is null
@@ -1328,8 +1328,8 @@ public final class Gen<A> {
      * A random either, {@code Left} and {@code Right} as likely: for each pass, a {@code Left} of each value of a
      * pass of {@code left}, or a {@code Right} of each value of a pass of {@code right}.
      *
-     * @param left  the generator of the left values
-     * @param right the generator of the right values
+     * @param left  the generator of the left values; a null value makes the either throw
+     * @param right the generator of the right values; a null value makes the either throw
      * @param <L>   the type of the left values
      * @param <R>   the type of the right values
      * @return a generator of eithers
@@ -1348,7 +1348,7 @@ public final class Gen<A> {
      * two failures drawn with the same exception are equal ({@code Failure} compares its cause by reference);
      * otherwise a {@code Success} of each value of a pass of {@code gen}.
      *
-     * @param gen the generator of the values, possibly null ones
+     * @param gen the generator of the values; a null value makes the {@code Success} throw
      * @param <A> the type of the values
      * @return a generator of tries
      * @throws NullPointerException if {@code gen} is null
@@ -1361,7 +1361,7 @@ public final class Gen<A> {
      * A random try: for one pass in four, a {@code Failure} of each exception of a pass of {@code failures};
      * otherwise a {@code Success} of each value of a pass of {@code gen}.
      *
-     * @param gen      the generator of the values, possibly null ones
+     * @param gen      the generator of the values; a null value makes the {@code Success} throw
      * @param failures the generator of the exceptions; a fatal one is rethrown by {@code Try.failure}
      * @param <A>      the type of the values
      * @return a generator of tries
@@ -1380,8 +1380,8 @@ public final class Gen<A> {
      * of a pass of {@code values}, or an {@code Invalid} of one to three errors, each the first value of one pass
      * of {@code errors}. A single error is built by {@code invalid} or {@code invalidAll}, as likely.
      *
-     * @param errors the generator of the errors
-     * @param values the generator of the values
+     * @param errors the generator of the errors; a null error makes the validation throw
+     * @param values the generator of the values; a null value makes the validation throw
      * @param <E>    the type of the errors
      * @param <A>    the type of the values
      * @return a generator of validations
@@ -1577,7 +1577,7 @@ public final class Gen<A> {
      * {@code ofAll}, a builder, appends, prepends, as what is left after dropping a prefix (the trie keeps an
      * offset), or as a slice of a longer vector, each as likely.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of vectors
      * @throws NullPointerException if {@code gen} is null
@@ -1592,7 +1592,7 @@ public final class Gen<A> {
      * to be dropped again are drawn only when the current size is not 0.
      *
      * @param n   the number of elements
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of vectors of {@code n} elements
      * @throws NullPointerException     if {@code gen} is null
@@ -1610,7 +1610,7 @@ public final class Gen<A> {
      * {@code gen}. The head and the tail are joined by {@code appendAll}, {@code fromVector} or {@code prepend},
      * each as likely.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of non-empty vectors
      * @throws NullPointerException if {@code gen} is null
@@ -1625,7 +1625,7 @@ public final class Gen<A> {
      * size minus one. Each element is the first value of one pass of {@code gen}. The list is built by
      * {@code ofAll}, by prepends, or as the rest of a longer list after {@code drop}, each as likely.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of lists
      * @throws NullPointerException if {@code gen} is null
@@ -1642,7 +1642,7 @@ public final class Gen<A> {
      * ({@code ofAll} then {@code enqueueAll}), or in a rear list reversed into the front by {@code drop}, each as
      * likely.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of queues
      * @throws NullPointerException if {@code gen} is null
@@ -1659,7 +1659,7 @@ public final class Gen<A> {
      * already evaluated, as an eager prefix with a lazy suffix appended, or as the rest of a longer chain after
      * {@code drop}, each as likely.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of streams
      * @throws NullPointerException if {@code gen} is null
@@ -1675,7 +1675,7 @@ public final class Gen<A> {
      * {@code gen}. The set is built by {@code ofAll}, by one {@code add} at a time, after extra elements were added
      * and removed again, or after elements were removed and added back, each as likely.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of hash sets
      * @throws NullPointerException if {@code gen} is null
@@ -1688,7 +1688,7 @@ public final class Gen<A> {
     /**
      * A random linked hash set, built as {@link #hashSet(Gen)}.
      *
-     * @param gen the generator of the elements, possibly null ones
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of linked hash sets
      * @throws NullPointerException if {@code gen} is null
@@ -1701,7 +1701,7 @@ public final class Gen<A> {
     /**
      * A random tree set in the natural order of the elements, built as {@link #hashSet(Gen)}.
      *
-     * @param gen the generator of the elements; a null one makes the tree set throw
+     * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
      * @return a random generator of tree sets
      * @throws NullPointerException if {@code gen} is null
@@ -1718,8 +1718,8 @@ public final class Gen<A> {
      * extra keys were put and removed again, or with every key first put with another value and then overwritten,
      * each as likely.
      *
-     * @param keys   the generator of the keys, possibly null ones
-     * @param values the generator of the values, possibly null ones
+     * @param keys   the generator of the keys; a null key makes the map throw
+     * @param values the generator of the values; a null value makes the map throw
      * @param <K>    the type of the keys
      * @param <V>    the type of the values
      * @return a random generator of hash maps
@@ -1734,8 +1734,8 @@ public final class Gen<A> {
     /**
      * A random linked hash map, built as {@link #hashMap(Gen, Gen)}.
      *
-     * @param keys   the generator of the keys, possibly null ones
-     * @param values the generator of the values, possibly null ones
+     * @param keys   the generator of the keys; a null key makes the map throw
+     * @param values the generator of the values; a null value makes the map throw
      * @param <K>    the type of the keys
      * @param <V>    the type of the values
      * @return a random generator of linked hash maps
@@ -1750,8 +1750,8 @@ public final class Gen<A> {
     /**
      * A random tree map in the natural order of the keys, built as {@link #hashMap(Gen, Gen)}.
      *
-     * @param keys   the generator of the keys; a null one makes the tree map throw
-     * @param values the generator of the values, possibly null ones
+     * @param keys   the generator of the keys; a null key makes the map throw
+     * @param values the generator of the values; a null value makes the map throw
      * @param <K>    the type of the keys
      * @param <V>    the type of the values
      * @return a random generator of tree maps

@@ -352,8 +352,8 @@ final class Shapes {
         return entries;
     }
 
-    /// `ofAll` of a JDK map, one `put` at a time, extra keys put then removed again, and every key first put with
-    /// another value then overwritten.
+    /// `ofAll` of a JDK map, one `put` at a time, extra keys the map does not hold put then removed again, and every key
+    /// first put with another value then overwritten.
     static <K, V, M> M map(int layout, ArrayList<Tuple2<K, V>> xs, Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops,
                            Sampling sampling, int size) {
         return switch (layout) {
@@ -365,14 +365,19 @@ final class Shapes {
             case 1 -> putAll(ops.empty().get(), xs, ops);
             case 2 -> {
                 final M base = putAll(ops.empty().get(), xs, ops);
-                final ArrayList<Tuple2<K, V>> extra = size <= 0
+                final ArrayList<Tuple2<K, V>> drawn = size <= 0
                         ? new ArrayList<>()
                         : entries(keys, values, 1 + sampling.draw().nextInt(MAX_EXTRA), sampling, size);
+                // only the keys the map does not hold: putting a held key would replace its value
+                final ArrayList<Tuple2<K, V>> extra = new ArrayList<>(drawn.size());
+                for (Tuple2<K, V> entry : drawn) {
+                    if (!ops.containsKey().test(base, entry._1())) {
+                        extra.add(entry);
+                    }
+                }
                 M map = putAll(base, extra, ops);
                 for (Tuple2<K, V> entry : extra) {
-                    if (!ops.containsKey().test(base, entry._1())) {
-                        map = ops.remove().apply(map, entry._1());
-                    }
+                    map = ops.remove().apply(map, entry._1());
                 }
                 yield map;
             }
