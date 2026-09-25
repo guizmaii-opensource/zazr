@@ -953,6 +953,16 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: O(log n): one lookup of the key, then its value is compared.
+     */
+    @Override
+    public boolean contains(Tuple2<K, V> element) {
+        return SortedMap.super.contains(element);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: O(log n) comparisons.
      */
     @Override

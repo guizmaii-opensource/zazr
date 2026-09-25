@@ -526,6 +526,16 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: effectively O(1): one lookup of the key, then its value is compared.
+     */
+    @Override
+    public boolean contains(Tuple2<K, V> element) {
+        return Map.super.contains(element);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: effectively O(1) (one hash lookup).
      */
     @Override

@@ -75,6 +75,15 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
+    /**
+     * Whether this map holds the key of {@code element}, associated with a value equal to that of {@code element}.
+     * <p>
+     * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, then its
+     * value is compared. Each of them states its own cost.
+     *
+     * @param element the entry to look for
+     * @return {@code true} if the key is present with an equal value, {@code false} otherwise
+     */
     @Override
     default boolean contains(Tuple2<K, V> element) {
         // getOrElse via the ABSENT sentinel, not get: avoids allocating a Some just to test isDefined()

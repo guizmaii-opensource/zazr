@@ -124,10 +124,12 @@ final case class Decl(
     note: Option[String],
     file: String,
     line: Int,
-    isStatic: Boolean
+    isStatic: Boolean,
+    hasBody: Boolean
 )
 
-final case class TypeInfo(name: String, supers: List[String], decls: List[Decl], checked: Boolean)
+/** A parsed top-level type; `note` is the "Complexity:" paragraph of its own javadoc, which covers its other methods. */
+final case class TypeInfo(name: String, supers: List[String], decls: List[Decl], checked: Boolean, note: Option[String])
 
 /** The erased shape of a parameter type: no type arguments, no annotations, a type variable as Object. */
 def erase(tpe: String): String = {
@@ -141,20 +143,20 @@ def erase(tpe: String): String = {
   if (s.matches("[A-Z][0-9]?(\\[\\])*")) s.replaceAll("^[A-Z][0-9]?", "Object") else s
 }
 
+/** A paragraph that starts with "Complexity:", at the start of a line, optionally after `<p>`. */
+val notePattern = "(?m)^\\s*(?:<p>\\s*)?Complexity:".r
+
 /** The "Complexity:" paragraph of a doc comment, on one line. */
-def noteOf(doc: String): Option[String] = {
-  val start = doc.indexOf("Complexity:")
-  if (start < 0) None
-  else {
-    val rest = doc.substring(start + "Complexity:".length)
+def noteOf(doc: String): Option[String] =
+  notePattern.findFirstMatchIn(doc).map { m =>
+    val rest = doc.substring(m.end)
     val lines = rest.linesIterator.toList
     val kept = lines.head :: lines.tail.takeWhile { l =>
       val t = l.trim
       t.nonEmpty && !t.startsWith("<p>") && !t.startsWith("@") && !t.startsWith("<")
     }
-    Some(kept.map(_.trim).mkString(" ").replaceAll("\\s+", " ").trim)
+    kept.map(_.trim).mkString(" ").replaceAll("\\s+", " ").trim
   }
-}
 
 /** The leading expression of a note and its class, if the note starts with one of the vocabulary. */
 def classify(note: String): Option[(String, Cost)] =
@@ -200,15 +202,18 @@ def parse(files: Seq[String], checked: Set[String]): List[TypeInfo] = {
       def docOf(m: MethodTree): Option[String] =
         Option(docs.getDocComment(new TreePath(new TreePath(new TreePath(unit), cls), m)))
       val decls = cls.getMembers.asScala.toList.collect {
-        case m: MethodTree if isApi(m) && (documented(m.getName.toString) || docOf(m).exists(_.contains("Complexity:"))) =>
+        case m: MethodTree if isApi(m) && (documented(m.getName.toString) || docOf(m).exists(d => noteOf(d).isDefined)) =>
         val doc = docOf(m)
         val params = m.getParameters.asScala.toList.map(p => erase(p.getType.toString))
         val line = unit.getLineMap.getLineNumber(docs.getSourcePositions.getStartPosition(unit, m)).toInt
         val signature = s"${m.getName}(${m.getParameters.asScala.map(p => simpleType(p.getType.toString)).mkString(", ")})"
         val isStatic = m.getModifiers.getFlags.contains(Modifier.STATIC)
-        Decl(cls.getSimpleName.toString, m.getName.toString, params, signature, doc, doc.flatMap(noteOf), file, line, isStatic)
+        val hasBody = m.getBody != null
+        Decl(cls.getSimpleName.toString, m.getName.toString, params, signature, doc, doc.flatMap(noteOf), file, line,
+          isStatic, hasBody)
       }
-      TypeInfo(cls.getSimpleName.toString, supers, decls, checked(file))
+      val classDoc = Option(docs.getDocComment(new TreePath(new TreePath(unit), cls)))
+      TypeInfo(cls.getSimpleName.toString, supers, decls, checked(file), classDoc.flatMap(noteOf))
     }
   } finally {
     fileManager.close()
@@ -219,21 +224,48 @@ def parse(files: Seq[String], checked: Set[String]): List[TypeInfo] = {
 def simpleType(tpe: String): String =
   tpe.replaceAll("@[A-Za-z.]+\\s*", "").replaceAll("\\b(?:[a-z]+\\.)+([A-Z])", "$1").trim
 
-/** The note of `decl`, its own or the one of the method it overrides in the nearest supertype that documents it. */
+/**
+ * Whether a method with the erased parameters `sub` overrides one with the erased parameters `sup`. A parameter
+ * erased to `Object` in the supertype is a type variable there, which a subtype may fix: `Map.contains(Tuple2)`
+ * overrides `Traversable.contains(T)`.
+ */
+def overrides(sub: List[String], sup: List[String]): Boolean =
+  sub.size == sup.size && sub.lazyZip(sup).forall((a, b) => a == b || b == "Object")
+
+/** The declaration of `decl` in the nearest supertype of its owner, if one declares it. */
+def overridden(types: Map[String, TypeInfo], decl: Decl): Option[Decl] =
+  types.get(decl.owner).toList.flatMap(_.supers).iterator
+    .flatMap(s => lookup(types, s, decl.name, decl.params))
+    .nextOption()
+
+/**
+ * The note of `decl`: its own, or the one of the method it overrides in the nearest supertype that documents it. A
+ * method with a body does not take the note of a supertype method that has a body too: that note describes another
+ * implementation (see `stolenNote`).
+ */
 def resolve(types: Map[String, TypeInfo], decl: Decl): Option[Decl] =
   if (decl.note.isDefined) Some(decl)
-  else {
-    val owner = types(decl.owner)
-    owner.supers.iterator
-      .flatMap(types.get)
-      .flatMap(t => t.decls.find(d => d.name == decl.name && d.params == decl.params).flatMap(resolve(types, _)))
-      .nextOption()
+  else overridden(types, decl).flatMap(resolve(types, _)).filterNot(src => decl.hasBody && src.hasBody)
+
+/** The note a method with a body but no note would wrongly show: that of a supertype method with a body. */
+def stolenNote(types: Map[String, TypeInfo], decl: Decl): Option[Decl] =
+  if (decl.note.isDefined || !decl.hasBody) None
+  else overridden(types, decl).flatMap(resolve(types, _)).filter(_.hasBody)
+
+/** The declaration whose note the page shows for `decl`; fails when there is none, or only a stolen one. */
+def noteSource(types: Map[String, TypeInfo], d: Decl): Decl = {
+  stolenNote(types, d).foreach { src =>
+    sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) overrides ${src.owner}.${src.signature} without a " +
+      "'Complexity:' note of its own")
   }
+  resolve(types, d).getOrElse(sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) has no 'Complexity:' note"))
+}
 
 /** The declaration a type uses for `name(params)`: its own, or the nearest supertype's. */
 def lookup(types: Map[String, TypeInfo], typeName: String, name: String, params: List[String]): Option[Decl] =
   types.get(typeName).flatMap { t =>
     t.decls.find(d => d.name == name && d.params == params)
+      .orElse(t.decls.find(d => d.name == name && overrides(params, d.params)))
       .orElse(t.supers.iterator.flatMap(s => lookup(types, s, name, params)).nextOption())
   }
 
@@ -241,7 +273,8 @@ def lookup(types: Map[String, TypeInfo], typeName: String, name: String, params:
 def overloads(types: Map[String, TypeInfo], typeName: String, name: String): List[Decl] =
   types.get(typeName).toList.flatMap { t =>
     val own = t.decls.filter(d => d.name == name && !d.isStatic)
-    val inherited = t.supers.flatMap(s => overloads(types, s, name)).filterNot(d => own.exists(_.params == d.params))
+    val inherited = t.supers.flatMap(s => overloads(types, s, name))
+      .filterNot(d => own.exists(o => overrides(o.params, d.params)))
     (own ++ inherited).distinctBy(_.params)
   }
 
@@ -250,8 +283,21 @@ final case class Problem(file: String, line: Int, message: String)
 def check(types: List[TypeInfo]): (Int, List[Problem]) = {
   val byName = types.map(t => t.name -> t).toMap
   val decls = types.filter(_.checked).flatMap(_.decls)
-  val problems = decls.flatMap { d =>
-    if (d.note.isEmpty && documented(d.name) && resolve(byName, d).isEmpty) {
+  // a context type is not checked, but an override of its own that hides the note of the method it overrides would
+  // put that note on the page of every type inheriting it
+  val contextStolen = types.filterNot(_.checked).flatMap(_.decls).flatMap { d =>
+    stolenNote(byName, d).map { src =>
+      Problem(d.file, d.line, s"${d.name}() overrides ${src.owner}.${src.signature}, whose 'Complexity:' note " +
+        "describes that implementation, not this one: give it its own note")
+    }
+  }
+  val problems = contextStolen ++ decls.flatMap { d =>
+    val stolen = stolenNote(byName, d)
+    if (stolen.isDefined) {
+      val src = stolen.get
+      List(Problem(d.file, d.line, s"${d.name}() overrides ${src.owner}.${src.signature}, whose 'Complexity:' note " +
+        "describes that implementation, not this one: give it its own note"))
+    } else if (d.note.isEmpty && documented(d.name) && resolve(byName, d).isEmpty) {
       List(Problem(d.file, d.line, s"${d.name}() has no 'Complexity:' line in its javadoc"))
     } else if (d.note.exists(n => classify(n).isEmpty)) {
       List(Problem(d.file, d.line,
@@ -292,12 +338,23 @@ val families: List[Family] = List(
   )
 )
 
-/** Javadoc inline tags to Markdown-free text: `{@code x}`, `{@link #m(int)}` and `{@link T#m(int, Object)}` become `x`, `m(int)` and `T#m(int, Object)`. */
-def plain(note: String): String =
-  note
-    .replaceAll("\\{@(?:code|literal) ([^{}]*)\\}", "$1")
-    .replaceAll("\\{@link(?:plain)? #?([^{}\\s(]*(?:\\([^)]*\\))?)(?:\\s+([^{}]*))?\\}", "$1")
-    .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+/**
+ * Javadoc inline tags to plain text: `{@code x}` becomes `x`; a link shows its label when it has one, else the method
+ * without its parameter types, so `{@link #put(Object, Object)}` and `{@link Vector#tail()}` become `put` and
+ * `Vector.tail`.
+ */
+def plain(note: String): String = {
+  val link = "\\{@link(?:plain)?\\s+([^{}\\s(]*)(\\([^)]*\\))?(?:\\s+([^{}]*))?\\}".r
+  val linked = link.replaceAllIn(
+    note.replaceAll("\\{@(?:code|literal) ([^{}]*)\\}", "$1"),
+    m => {
+      val label = Option(m.group(3)).map(_.trim).filter(_.nonEmpty)
+      val target = m.group(1).stripPrefix("#").replace('#', '.')
+      scala.util.matching.Regex.quoteReplacement(label.getOrElse(target))
+    }
+  )
+  linked.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+}
 
 def html(s: String): String =
   s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
@@ -310,8 +367,7 @@ def cell(d: Decl): String = {
 
 /** The rows of a family's matrix: one per operation, split by overload only where some type's overloads differ. */
 def familyRows(byName: Map[String, TypeInfo], f: Family): List[(String, List[Option[Decl]])] = {
-  def resolved(d: Decl): Decl =
-    resolve(byName, d).getOrElse(sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) has no 'Complexity:' note"))
+  def resolved(d: Decl): Decl = noteSource(byName, d)
   f.rows.flatMap { op =>
     val perType = f.columns.map(t => t -> overloads(byName, t, op).map(resolved)).toMap
     val splits = f.columns.exists(t => perType(t).map(d => classify(d.note.get).get._1).distinct.size > 1)
@@ -348,8 +404,7 @@ def glances(types: List[TypeInfo]): List[(String, String)] = {
 
 def page(types: List[TypeInfo]): String = {
   val byName = types.map(t => t.name -> t).toMap
-  def resolved(d: Decl): Decl =
-    resolve(byName, d).getOrElse(sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) has no 'Complexity:' note"))
+  def resolved(d: Decl): Decl = noteSource(byName, d)
   val out = new StringBuilder
   out ++= "<!-- Generated by scripts/check-complexity.scala (make docs-complexity) from the 'Complexity:' javadoc notes. Do not edit. -->\n\n"
   out ++= "# Complexity\n\n"
@@ -388,10 +443,15 @@ def page(types: List[TypeInfo]): String = {
     val own = info.decls
     def ancestors(name: String): List[TypeInfo] =
       byName.get(name).toList.flatMap(a => a :: a.supers.flatMap(ancestors))
-    val inherited = info.supers.flatMap(ancestors).distinctBy(_.name).flatMap(_.decls)
-      .filter(_.note.isDefined)
-      .filterNot(d => own.exists(o => o.name == d.name && o.params == d.params))
-    out ++= s"\n### `$t`\n\n| Method | Cost | Note |\n|---|---|---|\n"
+    // the nearest declaration of each inherited method: one a nearer type overrides is not listed
+    val inherited = info.supers.flatMap(ancestors).distinctBy(_.name).flatMap(_.decls).filterNot(_.isStatic)
+      .foldLeft(List.empty[Decl]) { (kept, d) =>
+        if ((own ++ kept).exists(o => o.name == d.name && overrides(o.params, d.params))) kept else kept :+ d
+      }
+      .filter(d => resolve(byName, d).isDefined || stolenNote(byName, d).isDefined)
+    out ++= s"\n### `$t`\n\n"
+    info.note.foreach(n => out ++= s"${html(plain(n))}\n\n")
+    out ++= "| Method | Cost | Note |\n|---|---|---|\n"
     (own ++ inherited).distinctBy(d => (d.name, d.params)).foreach { d =>
       val src = resolved(d)
       val from = if (src.owner != t) s" (from `${src.owner}`)" else ""
