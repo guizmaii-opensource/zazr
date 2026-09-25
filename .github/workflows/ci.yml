@@ -105,11 +105,14 @@ jobs:
           distribution: 'corretto'
           java-version: '25'
           cache: 'maven'
-      - name: Run the tests with the JaCoCo agent
+      - name: Run the tests with the JaCoCo agent and check the threshold
         run: make coverage
+      # also when the threshold check fails, to show which figure is below it
       - name: Coverage summary
+        if: success() || failure()
         run: make -s coverage-summary >> "$GITHUB_STEP_SUMMARY"
       - name: Upload the HTML report
+        if: success() || failure()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report

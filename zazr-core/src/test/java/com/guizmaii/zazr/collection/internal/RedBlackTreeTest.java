@@ -2,6 +2,7 @@ package com.guizmaii.zazr.collection.internal;
 
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.TreeSet;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 
@@ -785,6 +786,22 @@ public class RedBlackTreeTest {
         assertThat(javaList(difference.intersect(treeSet(0, 6, 56)))).containsExactly(6, 56);
         assertThat(javaList(difference.add(0).add(30).add(100)))
                 .containsExactly(0, 6, 10, 11, 20, 23, 28, 30, 31, 42, 56, 100);
+    }
+
+    // ofAll
+
+    @Test
+    public void shouldReturnTheSameTreeFromOfAllWithItsComparator() {
+        final RedBlackTree<Integer> tree = of(3, 1, 2);
+        assertThat(RedBlackTree.ofAll(tree.comparator(), tree)).isSameAs(tree);
+    }
+
+    @Test
+    public void shouldRebuildTheTreeFromOfAllWithAnotherComparator() {
+        final RedBlackTree<Integer> tree = of(3, 1, 2);
+        final RedBlackTree<Integer> reversed = RedBlackTree.ofAll(Comparator.<Integer> reverseOrder(), tree);
+        assertThat(reversed).isNotSameAs(tree);
+        assertThat(List.ofAll(reversed)).containsExactly(3, 2, 1);
     }
 
 }

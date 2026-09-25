@@ -29,5 +29,14 @@ public class ComparatorsTest {
         public void shouldThrowNPEWhenComparingIntegerAndNullUsingNaturalOrder() {
             assertThrows(NullPointerException.class, () -> naturalComparator().compare(1, null));
         }
+
+        @Test
+        public void shouldBeEqualToEveryNaturalComparatorWithTheSameHashCode() {
+            final Comparator<Integer> integers = naturalComparator();
+            final Comparator<String> strings = naturalComparator();
+            assertThat(integers).isEqualTo(strings);
+            assertThat(integers.hashCode()).isEqualTo(strings.hashCode());
+            assertThat(integers).isNotEqualTo(Comparator.<Integer> reverseOrder());
+        }
     }
 }

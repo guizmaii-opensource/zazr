@@ -29,6 +29,11 @@ make coverage                                 # test coverage report, in zazr-te
 
 `make verify` must pass before you open a pull request.
 
+`zazr-core` must keep at least 95 % of its lines and 95 % of its branches covered, counting the tests of `zazr-core`
+and `zazr-test` together. `make coverage` fails below either figure, and so does the CI `coverage` job. The threshold
+is on the module as a whole, not per file: JaCoCo never marks a line covered when the method it calls throws, such
+as `return sneakyThrow(t);`, so a small class with such a line can stay below 95 % however well it is tested.
+
 Sources under `src-gen` are generated from `generator/Generator.scala` on every build. Change the generator, never
 the generated files.
 
