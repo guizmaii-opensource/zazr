@@ -122,11 +122,11 @@ public record Tuple2<T1 extends @Nullable Object, T2 extends @Nullable Object>(T
      * @param <U1> new type of the 1st component
      * @param <U2> new type of the 2nd component
      * @return the result of applying {@code mapper} to the components of this tuple
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <U1 extends @Nullable Object, U2 extends @Nullable Object> Tuple2<U1, U2> map(BiFunction<? super T1, ? super T2, Tuple2<U1, U2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return mapper.apply(_1, _2);
+        return Objects.requireNonNull(mapper.apply(_1, _2), "Tuple2.map: mapper returned null");
     }
 
     /**

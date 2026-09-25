@@ -3,6 +3,8 @@ package com.guizmaii.zazr.collection.internal;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /// The entries of a `HashMap` trie whose keys have one same hash: a leaf below the last level of hash bits, holding at
@@ -151,5 +153,68 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     @Override
     MapNode<K, V> putInPlace(Object owner, K key, V value, int hash, int shift) {
         return updated(key, value, hash, shift, true);
+    }
+
+    // `that` is a collision node too: two nodes at the same place below the last level hold keys of the same hash
+    @Override
+    MapNode<K, V> concat(MapNode<K, V> that, int shift) {
+        final HashCollisionMapNode<K, V> right = (HashCollisionMapNode<K, V>) that;
+        if (right == this) {
+            return this;
+        }
+        Object[] result = null;
+        int length = right.content.length;
+        for (int i = 0; i < content.length; i += 2) {
+            if (right.indexOf(content[i]) < 0) {
+                if (result == null) {
+                    result = java.util.Arrays.copyOf(right.content, right.content.length + content.length);
+                }
+                result[length] = content[i];
+                result[length + 1] = content[i + 1];
+                length += 2;
+            }
+        }
+        return (result == null) ? right : new HashCollisionMapNode<>(hash, java.util.Arrays.copyOf(result, length));
+    }
+
+    @Override
+    MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
+        final Object[] kept = new Object[content.length];
+        int length = 0;
+        for (int i = 0; i < content.length; i += 2) {
+            if (predicate.test(getKey(i >> 1), getValue(i >> 1)) == keep) {
+                kept[length] = content[i];
+                kept[length + 1] = content[i + 1];
+                length += 2;
+            }
+        }
+        if (length == content.length) {
+            return this;
+        } else if (length == 0) {
+            return MapNode.empty();
+        } else if (length == 2) {
+            // one entry left: a node of the root level, to be inlined by the parent
+            return new BitmapIndexedMapNode<>(null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] { kept[0], kept[1] },
+                    new int[] { hash }, 1, hash);
+        } else {
+            return new HashCollisionMapNode<>(hash, java.util.Arrays.copyOf(kept, length));
+        }
+    }
+
+    @Override
+    <W extends @Nullable Object> MapNode<K, W> transform(BiFunction<? super K, ? super V, ? extends W> f) {
+        Object[] result = null;
+        for (int i = 0; i < content.length; i += 2) {
+            final W value = Objects.requireNonNull(f.apply(getKey(i >> 1), getValue(i >> 1)), "HashMap: value is null");
+            if (result == null && value != content[i + 1]) {
+                result = content.clone();
+            }
+            if (result != null) {
+                result[i + 1] = value;
+            }
+        }
+        @SuppressWarnings("unchecked")
+        final MapNode<K, W> unchanged = (MapNode<K, W>) this;
+        return (result == null) ? unchanged : new HashCollisionMapNode<>(hash, result);
     }
 }

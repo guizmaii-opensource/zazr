@@ -143,21 +143,21 @@ public final class Collections {
         }
     }
 
-    public static <T extends @Nullable Object, C extends @Nullable Object, R extends Iterable<T>> Map<C, R> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier, Function<? super Iterable<T>, R> mapper) {
+    public static <T extends @Nullable Object, C extends @Nullable Object, R extends Iterable<T>> Map<C, R> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier, Function<? super Iterable<T>, R> mapper, String nullResult) {
         Objects.requireNonNull(classifier, "classifier is null");
         Objects.requireNonNull(mapper, "mapper is null");
         Map<C, R> results = LinkedHashMap.empty();
-        for (java.util.Map.Entry<? extends C, Collection<T>> entry : groupBy(source, classifier)) {
+        for (java.util.Map.Entry<? extends C, Collection<T>> entry : groupBy(source, classifier, nullResult)) {
             results = results.put(entry.getKey(), mapper.apply(entry.getValue()));
         }
         return results;
 
     }
 
-    private static <T extends @Nullable Object, C extends @Nullable Object> java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier) {
+    private static <T extends @Nullable Object, C extends @Nullable Object> java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier, String nullResult) {
         final java.util.Map<C, Collection<T>> results = new java.util.LinkedHashMap<>(isTraversableAgain(source) ? source.size() : 16);
         for (T value : source) {
-            final C key = Objects.requireNonNull(classifier.apply(value), "groupBy: key is null");
+            final C key = Objects.requireNonNull(classifier.apply(value), nullResult);
             results.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
         return results.entrySet();

@@ -407,7 +407,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      */
     public <K extends @Nullable Object> NonEmptyMap<K, NonEmptySortedSet<A>> groupBy(Function<? super A, ? extends K> classifier) {
         final HashMap.Builder<K, NonEmptySortedSet<A>> groups = HashMap.newBuilder();
-        for (Tuple2<K, TreeSet<A>> group : set.<K> groupBy(classifier)) {
+        Objects.requireNonNull(classifier, "classifier is null");
+        for (Tuple2<K, TreeSet<A>> group : set.<K> groupBy(element -> Objects.requireNonNull(classifier.apply(element), "NonEmptySortedSet.groupBy: classifier returned null"))) {
             groups.put(group._1(), new NonEmptySortedSet<>(group._2()));
         }
         return NonEmptyMap.unsafeFromMap(groups.result());
@@ -497,7 +498,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <B extends @Nullable Object> TreeSet<B> collect(Function<? super A, ? extends Option<? extends B>> mapper) {
-        return set.collect(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return set.collect(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySortedSet.collect: mapper returned null"));
     }
 
     /**
@@ -508,7 +510,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
     public <B extends @Nullable Object> TreeSet<B> collect(Comparator<? super B> comparator, Function<? super A, ? extends Option<? extends B>> mapper) {
-        return set.collect(comparator, mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return set.collect(comparator, element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySortedSet.collect: mapper returned null"));
     }
 
     /**
@@ -520,7 +523,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <B extends @Nullable Object> TreeSet<B> flatMapAll(Function<? super A, ? extends Iterable<? extends B>> mapper) {
-        return set.flatMap(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return set.flatMap(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySortedSet.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -533,7 +537,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
     public <B extends @Nullable Object> TreeSet<B> flatMapAll(Comparator<? super B> comparator, Function<? super A, ? extends Iterable<? extends B>> mapper) {
-        return set.flatMap(comparator, mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return set.flatMap(comparator, element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySortedSet.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -1016,7 +1021,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return set.toLinkedMap(f);
+        Objects.requireNonNull(f, "f is null");
+        return set.toLinkedMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySortedSet.toLinkedMap: f returned null"));
     }
 
     /**
@@ -1085,7 +1091,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * @throws NullPointerException if {@code getKey} is null
      */
     public <K extends @Nullable Object> Option<Map<K, A>> arrangeBy(Function<? super A, ? extends K> getKey) {
-        return set.arrangeBy(getKey);
+        Objects.requireNonNull(getKey, "getKey is null");
+        return set.arrangeBy(element -> Objects.requireNonNull(getKey.apply(element), "NonEmptySortedSet.arrangeBy: getKey returned null"));
     }
 
     /**

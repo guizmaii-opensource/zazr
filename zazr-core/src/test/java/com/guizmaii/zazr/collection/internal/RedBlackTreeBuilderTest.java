@@ -223,4 +223,52 @@ public class RedBlackTreeBuilderTest {
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
     }
+
+    // equal under the comparator (same value modulo 1000), told apart by reference
+    private static final Comparator<Integer> MODULO = Comparator.comparingInt(i -> Math.floorMod(i, 1000));
+
+    @Test
+    public void shouldGrowAPresizedBufferOfEveryCapacity() {
+        for (int capacity : new int[] { 0, 1, 2, 3, 16, 17 }) {
+            final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "Some.Builder", capacity, false);
+            for (int i = 99; i >= 0; i--) {
+                builder.add(i);
+            }
+            final RedBlackTree<Integer> tree = builder.result();
+            assertValid(tree);
+            assertThat(elements(tree)).isEqualTo(java.util.stream.IntStream.range(0, 100).boxed().toList());
+        }
+    }
+
+    @Test
+    public void shouldKeepTheFirstOrTheLastOfEqualElements() {
+        final Random random = new Random(SEED);
+        for (boolean keepFirst : new boolean[] { false, true }) {
+            for (int size : new int[] { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 }) {
+                final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(MODULO, "Some.Builder", 0, keepFirst);
+                // the expected kept object per class, and a size() call now and then, which compacts the buffer
+                final java.util.Map<Integer, Integer> kept = new java.util.TreeMap<>();
+                for (int i = 0; i < 3 * size; i++) {
+                    final Integer element = Integer.valueOf(random.nextInt(Math.max(1, size)) + 1000 * (1 + random.nextInt(5)));
+                    builder.add(element);
+                    if (keepFirst) {
+                        kept.putIfAbsent(Math.floorMod(element, 1000), element);
+                    } else {
+                        kept.put(Math.floorMod(element, 1000), element);
+                    }
+                    if (random.nextInt(8) == 0) {
+                        assertThat(builder.size()).isEqualTo(kept.size());
+                    }
+                }
+                final RedBlackTree<Integer> tree = builder.result();
+                assertValid(tree);
+                final java.util.List<Integer> actual = elements(tree);
+                final java.util.List<Integer> expected = new ArrayList<>(kept.values());
+                assertThat(actual).hasSameSizeAs(expected);
+                for (int i = 0; i < expected.size(); i++) {
+                    assertThat(actual.get(i)).isSameAs(expected.get(i));
+                }
+            }
+        }
+    }
 }

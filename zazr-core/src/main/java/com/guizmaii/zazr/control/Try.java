@@ -33,7 +33,12 @@ import static com.guizmaii.zazr.internal.Throwables.sneakyThrow;
  * A {@code Success} never holds {@code null}: {@link #success(Object)} throws, and a computation that returns
  * {@code null} under {@link #of(Callable)}, {@link #mapTry(CheckedFunction1)} or
  * {@link #fromCompletableFuture(CompletableFuture)} is captured, like any other non-fatal outcome, as a
- * {@code Failure} of a {@link NullPointerException}. A computation that returns nothing is run with
+ * {@code Failure} of a {@link NullPointerException}. A function that returns {@code null} where a value or a
+ * {@code Try} is required is rejected with a {@code NullPointerException} naming the method and the parameter
+ * ({@code "Try.flatMap: mapper returned null"}): the methods that run the function under {@code Try} ({@code map},
+ * {@code flatMap}, {@code flatMapTry}, {@code collect}, {@code filter}, {@code mapError}, {@code catchAll},
+ * {@code catchSome}, {@code catchAllWith}, {@code catchSomeWith}) return it as a {@code Failure}, the others
+ * ({@code orElse(Supplier)}, {@code forEach}) throw it. A computation that returns nothing is run with
  * {@link #run(CheckedRunnable)}, whose success value is the empty tuple {@link Tuple0}. Two {@code Failure}s are equal when
  * their causes are, by the cause's own {@code equals}: for the usual exceptions, only when they hold the same
  * {@code Throwable} instance, see {@link Failure}.
@@ -383,7 +388,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         }
         try {
             final T value = get();
-            return predicate.test(value) ? this : new Failure<>(ifFalse.apply(value));
+            return predicate.test(value) ? this : new Failure<>(Objects.requireNonNull(ifFalse.apply(value), "Try.filter: ifFalse returned null"));
         } catch (Throwable t) {
             return new Failure<>(t);
         }
@@ -418,7 +423,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     default <U extends @Nullable Object> Try<U> flatMap(Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return flatMapTry((CheckedFunction1<T, Try<? extends U>>) mapper::apply);
+        return flatMapTry((CheckedFunction1<T, Try<? extends U>>) value -> Objects.requireNonNull(mapper.apply(value), "Try.flatMap: mapper returned null"));
     }
 
     /**
@@ -440,7 +445,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Failure<U>) this;
         } else {
             try {
-                return (Try<U>) mapper.apply(get());
+                return (Try<U>) Objects.requireNonNull(mapper.apply(get()), "Try.flatMapTry: mapper returned null");
             } catch (Throwable t) {
                 return new Failure<>(t);
             }
@@ -536,7 +541,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     default <U extends @Nullable Object> Try<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return mapTry(mapper::apply);
+        return mapTry(value -> Objects.requireNonNull(mapper.apply(value), "Try.map: mapper returned null"));
     }
 
     /**
@@ -641,12 +646,12 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      *
      * @param supplier a supplier of an alternative {@code Try}
      * @return this {@code Try} if success, otherwise the {@code Try} returned by {@code supplier}
-     * @throws NullPointerException if {@code supplier} is null
+     * @throws NullPointerException if {@code supplier} is null or returns null
      */
     @SuppressWarnings("unchecked")
     default Try<T> orElse(Supplier<? extends Try<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isSuccess() ? this : (Try<T>) supplier.get();
+        return isSuccess() ? this : (Try<T>) Objects.requireNonNull(supplier.get(), "Try.orElse: supplier returned null");
     }
 
     /**
@@ -835,7 +840,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     default Try<T> catchAll(Function<? super Throwable, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return isFailure() ? Try.of(() -> f.apply(getCause())) : this;
+        return isFailure() ? Try.of(() -> Objects.requireNonNull(f.apply(getCause()), "Try.catchAll: f returned null")) : this;
     }
 
     /**
@@ -860,7 +865,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(f, "f is null");
         return isFailure() && exceptionType.isInstance(getCause())
-          ? Try.of(() -> f.apply((X) getCause()))
+          ? Try.of(() -> Objects.requireNonNull(f.apply((X) getCause()), "Try.catchSome: f returned null"))
           : this;
     }
 
@@ -939,7 +944,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         }
         try {
-            return new Failure<>(f.apply(getCause()));
+            return new Failure<>(Objects.requireNonNull(f.apply(getCause()), "Try.mapError: f returned null"));
         } catch (Throwable t) {
             return new Failure<>(t);
         }

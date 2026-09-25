@@ -660,6 +660,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             @SuppressWarnings("unchecked")
             final HashSet<T> set = (HashSet<T>) elements;
             return set;
+        } else if (elements instanceof HashSet<?> set) {
+            @SuppressWarnings("unchecked")
+            final HashSet<T> that = (HashSet<T>) set;
+            return concat(that);
         }
         final BitmapIndexedSetNode<T> that = addAll(tree, elements);
         if (that.size() == tree.size()) {
@@ -694,24 +698,61 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per element; the subtrees the filter keeps whole are shared, not
+     * copied.
+     */
     @Override
     public HashSet<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final HashSet<T> filtered = HashSet.ofAll(Iterator.ofAll(this).filter(predicate));
-
-        if (filtered.isEmpty()) {
-            return empty();
-        } else if (filtered.size() == size()) {
-            return this;
-        } else {
-            return filtered;
-        }
+        return filtered(predicate, true);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per element; the subtrees the filter keeps whole are shared, not
+     * copied.
+     */
     @Override
     public HashSet<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return filter(predicate.negate());
+        return filtered(predicate, false);
+    }
+
+    // the elements for which the predicate answers `keep`, filtered node by node; this set when that is all of them
+    private HashSet<T> filtered(Predicate<? super T> predicate, boolean keep) {
+        final BitmapIndexedSetNode<T> result = tree.filter(predicate, keep);
+        return (result == tree && result.size() != 0) ? this : wrap(result);
+    }
+
+    // the union with a HashSet, node by node: of equal elements, the one of this set is kept, as additions keep it
+    // (this set is the right side of the concatenation, whose elements win); this set when no element is new
+    private HashSet<T> concat(HashSet<T> that) {
+        if (that.isEmpty()) {
+            return this;
+        }
+        final BitmapIndexedSetNode<T> result = that.tree.concat(tree, 0);
+        return result.size() == tree.size() ? this : new HashSet<>(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for m elements, each an effectively O(1) lookup; when {@code elements} is a HashSet, the two
+     * tries are compared node by node.
+     */
+    @Override
+    public boolean containsAll(Iterable<? extends T> elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        if (elements instanceof HashSet<?> set) {
+            @SuppressWarnings("unchecked")
+            final HashSet<T> that = (HashSet<T>) set;
+            return that.isEmpty() || (that.size() <= size() && that.tree.subsetOf(tree, 0));
+        }
+        return Set.super.containsAll(elements);
     }
 
     @Override
@@ -721,14 +762,14 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             return empty();
         } else {
             final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(),
-                    (tree, t) -> addAll(tree, mapper.apply(t)));
+                    (tree, t) -> addAll(tree, Objects.requireNonNull(mapper.apply(t), "HashSet.flatMap: mapper returned null")));
             return new HashSet<>(that);
         }
     }
 
     @Override
     public <C extends @Nullable Object> Map<C, HashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, HashSet::ofAll);
+        return Collections.groupBy(this, classifier, HashSet::ofAll, "HashSet.groupBy: classifier returned null");
     }
 
     /**
@@ -840,7 +881,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public HashSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "HashSet.orElse: supplier returned null")) : this;
     }
 
     @Override
@@ -899,6 +941,13 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
+        if (elements instanceof HashSet<?> set && !isEmpty()) {
+            @SuppressWarnings("unchecked")
+            final HashSet<T> that = (HashSet<T>) set;
+            // node by node: each subtree of this set against the one at the same place in `that`
+            final BitmapIndexedSetNode<T> result = that.isEmpty() ? tree : tree.diff(that.tree, 0);
+            return result == tree ? this : wrap(result);
+        }
         return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
@@ -954,6 +1003,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             }
         } else if (elements.isEmpty()) {
             return this;
+        } else if (elements instanceof HashSet<?> set) {
+            return concat((HashSet<T>) set);
         } else {
             final BitmapIndexedSetNode<T> that = addAll(tree, elements);
             if (that.size() == tree.size()) {
@@ -976,14 +1027,33 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     // -- Object
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); with another HashSet, the two tries are compared node by node, which answers a different size,
+     * bitmap or hash without looking at an element.
+     */
     @Override
     public boolean equals(@Nullable Object o) {
+        if (o instanceof HashSet<?> other) {
+            try {
+                return this == other || SetNode.sameElements(tree, other.tree);
+            } catch (ClassCastException e) {
+                return false;
+            }
+        }
         return Collections.equals(this, o);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the sum of the hashes of the elements is kept in the trie.
+     */
     @Override
     public int hashCode() {
-        return Collections.hashUnordered(this);
+        // the hash of every set: 1 plus the sum of the hashes of the elements
+        return 1 + tree.keyHashSum();
     }
 
     @Override
