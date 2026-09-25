@@ -1656,6 +1656,15 @@ public class VectorTest extends AbstractTraversableTest {
     }
 
     @Test
+    public void shouldPrependAllAQueueWithFrontAndRear() {
+        // appended elements land in the rear list, so both halves of the queue are read in reverse
+        final Queue<Integer> queue = Queue.of(0, 1, 2).appendAll(Queue.range(3, 40));
+        final Vector<Integer> expected = range(0, 50);
+        assertThat(range(40, 50).prependAll(queue)).isEqualTo(expected);
+        assertThat(this.<Integer> empty().prependAll(queue)).isEqualTo(range(0, 40));
+    }
+
+    @Test
     public void shouldReturnSameVectorWhenEmptyPrependAllEmpty() {
         final Vector<Integer> empty = empty();
         assertThat(empty.prependAll(empty())).isSameAs(empty);

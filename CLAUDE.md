@@ -28,9 +28,9 @@ section 5 order. When a new rule or decision is given, record it in `docs/design
 - Internal types live in `.internal` packages (decided 2026-09-25, `docs/design.md` 3.1): collection internals in
   `com.guizmaii.zazr.collection.internal`, the rest in `com.guizmaii.zazr.internal`. They are `public` in name only
   (where the API packages call them), never exported by `module-info.java`, and never named by a public or protected
-  signature of an exported type. A package-private member of a public class that internal code needs stays
-  package-private: a method is reached through `collection.internal.Access`, and a subclass that needs package-private
-  constructors or fields of a public class is a private nested class of it (`Stream.Cons`).
+  signature of an exported type. Internal code that needs a package-private member of a public class gets the same
+  result through the public API first; the member stays package-private and is never widened. A subclass that needs
+  package-private constructors or fields of a public class is a private nested class of it (`Stream.Cons`).
 - No per-file copyright or license headers. Attribution to Vavr lives in `NOTICE`.
 - Comments and javadoc describe the code as it is, never the migration: no ticket numbers, no "was declared by",
   no "until #N", no mention of a deleted type. The history lives in `docs/design.md` and in git (decided 2026-09-21).

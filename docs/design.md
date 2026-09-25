@@ -205,12 +205,13 @@ or protected signature of an exported type names an internal type: checked on th
 -protected` over the three exported packages, public types only, has no `.internal.`), since a source grep would
 miss simple-name imports. The tests of internal types (`IteratorTest`, `RedBlackTreeTest`, `HashArrayMappedTrieTest`,
 `ComparatorsTest`, `CollectionsTest`, `JavaConvertersTest`) live in `collection.internal` with them.
-The other direction, internal code calling a package-private member of a public class, happens twice, and neither
-member is widened, since a public member of an exported class is API:
-- `Collections.reverseIterator` uses the package-private `reverseIterator()` of `Vector` and `Queue` (O(1) to create,
-  where `reverse()` would copy). The internal `Access` holder carries it: `Vector` and `Queue` hand it a method
-  reference from their static initializer (set once; a read before the class is initialized initializes it first).
-  The setters are public, but they are in the unexported package and a second call throws.
+The other direction, internal code needing a package-private member of a public class, is met through the public
+API first, and the member is never widened, since a public member of an exported class is API:
+- `Collections.reverseIterator` used the package-private `reverseIterator()` of `Vector` and `Queue`. It gets the same
+  results at the same cost from the public API: on a `Vector` an index walk from `length() - 1` down to 0 over
+  `get(i)` (O(1) to create, effectively O(1) per step), on a `Queue` `reverse().iterator()` (O(n) to create, as the
+  old `reverseIterator` was, which reversed the front). `Queue.reverseIterator` is deleted; `Vector.reverseIterator`
+  is private, used by `Vector.reverse`.
 - `Stream.Cons` is a public class whose constructors and `head`/`tail` fields are package-private; its two
   implementations (`ConsImpl`, `AppendElements`) extend it and read `tail` on each other, which a subclass in another
   package cannot do without `protected` members, and `protected` on a public non-final class is API. They are
@@ -742,9 +743,9 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   with `take`. The window rule is unchanged (`[1, 2, 3, 4, 5].sliding(2, 4)` is `[[1, 2], [5]]`; a window whose
   elements all belong to the previous one is not produced). The sets and maps lose them. `reverseIterator()` and
   `iterator(int)` are deleted everywhere (`reverse().iterator()`, `drop(n).iterator()`); `Vector` and `Queue` keep
-  a package-private `reverseIterator()` for `Collections.reverseIterator` (reached through
-  `collection.internal.Access` since #73, 3.1), which `prependAll` and `scanRight` use, because it is O(1) to create
-  on both.
+  a package-private `reverseIterator()` for `Collections.reverseIterator`, which `prependAll` and `scanRight` use,
+  because it is O(1) to create on both (since #73, 3.1, `Collections.reverseIterator` uses the public API instead:
+  `Queue.reverseIterator` is deleted and `Vector.reverseIterator` is private).
 - **Cross-type sequence equality stays** (decided, final): `Vector`, `List`, `Queue` and `Stream` equal each other
   element by element in order with the ordered `hashCode` (`Collections.isSequence`); sets equal sets, maps equal
   maps, and no kind equals another.

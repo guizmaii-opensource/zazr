@@ -2,7 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.AbstractIterator;
-import com.guizmaii.zazr.collection.internal.Access;
 import com.guizmaii.zazr.collection.internal.ArrayType;
 import com.guizmaii.zazr.collection.internal.BitMappedTrie;
 import com.guizmaii.zazr.collection.internal.Collections;
@@ -38,10 +37,6 @@ import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.
  * @author Ruslan Sennov, Pap Lőrinc
  */
 public final class Vector<T extends @Nullable Object> implements Traversable<T> {
-
-    static {
-        Access.setVectorAccess(Vector::reverseIterator);
-    }
 
     private static final Vector<?> EMPTY = new Vector<>(BitMappedTrie.empty());
 
@@ -2099,7 +2094,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      *
      * @return the reverse iterator
      */
-    Iterator<T> reverseIterator() {
+    private Iterator<T> reverseIterator() {
         return new AbstractIterator<T>() {
             private int i = Vector.this.length();
 

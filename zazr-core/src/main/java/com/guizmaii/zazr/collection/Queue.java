@@ -1,7 +1,6 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
-import com.guizmaii.zazr.collection.internal.Access;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
@@ -44,10 +43,6 @@ import static com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
  * @author Daniel Dietrich
  */
 public final class Queue<T extends @Nullable Object> implements Traversable<T> {
-
-    static {
-        Access.setQueueAccess(Queue::reverseIterator);
-    }
 
     private static final Queue<?> EMPTY = new Queue<>(com.guizmaii.zazr.collection.List.empty(), com.guizmaii.zazr.collection.List.empty());
 
@@ -934,17 +929,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public int prefixLength(Predicate<? super T> predicate) {
         return segmentLength(predicate, 0);
-    }
-
-    /**
-     * An iterator over the elements from the last to the first.
-     * <p>
-     * Complexity: O(n) to create (the front is reversed; the rear is already stored in reverse order), then O(1) per step.
-     *
-     * @return the reverse iterator
-     */
-    Iterator<T> reverseIterator() {
-        return Iterator.ofAll(rear).concat(front.reverse().iterator());
     }
 
     /**

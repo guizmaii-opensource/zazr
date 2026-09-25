@@ -382,9 +382,22 @@ public final class Collections {
         if (iterable instanceof java.util.List) {
             return reverseListIterator((java.util.List<T>) iterable);
         } else if (iterable instanceof Vector) {
-            return Access.vector().reverseIterator((Vector<T>) iterable);
+            final Vector<T> vector = (Vector<T>) iterable;
+            return new AbstractIterator<T>() {
+                private int i = vector.length();
+
+                @Override
+                public boolean hasNext() {
+                    return i > 0;
+                }
+
+                @Override
+                public T getNext() {
+                    return vector.get(--i);
+                }
+            };
         } else if (iterable instanceof Queue) {
-            return Access.queue().reverseIterator((Queue<T>) iterable);
+            return Iterator.ofAll(((Queue<T>) iterable).reverse().iterator());
         } else if (iterable instanceof List) {
             return Iterator.ofAll(((List<T>) iterable).reverse());
         } else if (iterable instanceof Stream) {
