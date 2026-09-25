@@ -17,14 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Differential test of {@link RadixVector} against {@link TrieVector}, the contract of {@code Vector} computed on
- * {@link BitMappedTrie}: the same operations are applied to both, from fixed
+ * Differential test of {@link RadixVector} against {@link VectorModel}, the contract of {@code Vector} computed on a
+ * flat array: the same operations are applied to both, from fixed
  * seeds, and after every step the contents are compared (iterator, {@code forEach}, {@code get}, {@code head},
  * {@code last}, reverse iteration, bulk copy) and the shape invariants of the finger tree are checked. Every value
  * reached, and every argument used, is kept and compared again at the end: no operation may write into an array that
  * an earlier value can still reach.
  */
-public class RadixVectorDifferentialTest {
+public class RadixVectorTest {
 
     /* the sizes around the width of one leaf and of one Vector2 */
     private static final int[] SMALL_SIZES = { 0, 1, 2, 31, 32, 33, 63, 64, 65, 992, 993, 1023, 1024, 1025, 1056 };
@@ -211,7 +211,7 @@ public class RadixVectorDifferentialTest {
         run.log("rebuild " + a + " " + b + " +" + extra);
         final VectorBuilder<Integer> builder = RadixVector.newBuilder();
         builder.addAll(p.r.slice(0, a));
-        final TrieVector<Integer> middle = p.v.slice(a, b);
+        final VectorModel<Integer> middle = p.v.slice(a, b);
         if (rnd.nextBoolean()) {
             for (Integer x : middle) {
                 builder.add(x);
@@ -432,7 +432,7 @@ public class RadixVectorDifferentialTest {
         final Run run = new Run(500_000);
         for (boolean append : new boolean[] { true, false }) {
             RadixVector<Integer> r = RadixVector.empty();
-            TrieVector<Integer> v = TrieVector.empty();
+            VectorModel<Integer> v = VectorModel.empty();
             int depth = 0;
             final List<Integer> transitions = new ArrayList<>();
             for (int i = 0; i < 33_000; i++) {
@@ -612,7 +612,7 @@ public class RadixVectorDifferentialTest {
     @Test
     public void emptyVectorFailsLikeVector() {
         final RadixVector<Integer> r = RadixVector.empty();
-        final TrieVector<Integer> v = TrieVector.empty();
+        final VectorModel<Integer> v = VectorModel.empty();
         sameOutcome(() -> r.get(0), () -> v.get(0));
         sameOutcome(() -> r.updated(0, 1), () -> v.update(0, 1));
         sameOutcome(r::head, v::head);
@@ -746,7 +746,7 @@ public class RadixVectorDifferentialTest {
                 }
                 final RadixVector<Integer> result = builder.result();
                 checkShape(result);
-                checkContents(new Pair(result, TrieVector.ofAll(expected), "builder"));
+                checkContents(new Pair(result, VectorModel.ofAll(expected), "builder"));
             }
         }
         final VectorBuilder<Integer> closed = RadixVector.newBuilder();
@@ -1171,7 +1171,7 @@ public class RadixVectorDifferentialTest {
             for (int i = 0; i < size; i++) {
                 list.add(run.fresh());
             }
-            final TrieVector<Integer> expected = TrieVector.ofAll(list);
+            final VectorModel<Integer> expected = VectorModel.ofAll(list);
             run.checked(() -> run.record(RadixVector.ofAll(list), expected));
             run.checked(() -> run.record(RadixVector.ofAll(oneShot(list)), expected));
             final RadixVector<Integer> r = RadixVector.ofAll(list);
@@ -1195,7 +1195,7 @@ public class RadixVectorDifferentialTest {
                 for (Integer x : list) {
                     builder.add(x);
                 }
-                return run.record(builder.result(), TrieVector.ofAll(list), label);
+                return run.record(builder.result(), VectorModel.ofAll(list), label);
             }
             case BUILDER_CHUNKS -> {
                 final List<Integer> list = run.freshList(size);
@@ -1212,15 +1212,15 @@ public class RadixVectorDifferentialTest {
                     }
                     i += chunk;
                 }
-                return run.record(builder.result(), TrieVector.ofAll(list), label);
+                return run.record(builder.result(), VectorModel.ofAll(list), label);
             }
             case OF_ALL -> {
                 final List<Integer> list = run.freshList(size);
-                return run.record(RadixVector.ofAll(list.toArray()), TrieVector.ofAll(list), label);
+                return run.record(RadixVector.ofAll(list.toArray()), VectorModel.ofAll(list), label);
             }
             case APPENDS -> {
                 RadixVector<Integer> r = RadixVector.empty();
-                TrieVector<Integer> v = TrieVector.empty();
+                VectorModel<Integer> v = VectorModel.empty();
                 for (int i = 0; i < size; i++) {
                     final Integer x = run.fresh();
                     r = r.appended(x);
@@ -1230,7 +1230,7 @@ public class RadixVectorDifferentialTest {
             }
             case PREPENDS -> {
                 RadixVector<Integer> r = RadixVector.empty();
-                TrieVector<Integer> v = TrieVector.empty();
+                VectorModel<Integer> v = VectorModel.empty();
                 for (int i = 0; i < size; i++) {
                     final Integer x = run.fresh();
                     r = r.prepended(x);
@@ -1240,7 +1240,7 @@ public class RadixVectorDifferentialTest {
             }
             case ALTERNATING -> {
                 RadixVector<Integer> r = RadixVector.empty();
-                TrieVector<Integer> v = TrieVector.empty();
+                VectorModel<Integer> v = VectorModel.empty();
                 for (int i = 0; i < size; i++) {
                     final Integer x = run.fresh();
                     if (rnd.nextBoolean()) {
@@ -1339,7 +1339,7 @@ public class RadixVectorDifferentialTest {
     // ---------------------------------------------------------------------------------------------------------------
     // the run: seed, trail of operations, and every value reached
 
-    private record Pair(RadixVector<Integer> r, TrieVector<Integer> v, String label) {
+    private record Pair(RadixVector<Integer> r, VectorModel<Integer> v, String label) {
     }
 
     private static final class Run {
@@ -1375,11 +1375,11 @@ public class RadixVectorDifferentialTest {
             }
         }
 
-        Pair record(RadixVector<Integer> r, TrieVector<Integer> v) {
+        Pair record(RadixVector<Integer> r, VectorModel<Integer> v) {
             return record(r, v, shapeOf(r) + "(" + r.length() + ")");
         }
 
-        Pair record(RadixVector<Integer> r, TrieVector<Integer> v, String label) {
+        Pair record(RadixVector<Integer> r, VectorModel<Integer> v, String label) {
             final Pair p = new Pair(r, v, label);
             check(p);
             history.add(p);
@@ -1387,9 +1387,9 @@ public class RadixVectorDifferentialTest {
         }
 
         /* both operations succeed and give the same contents, or both fail with the same exception class */
-        Pair same(Pair old, Supplier<RadixVector<Integer>> radix, Supplier<TrieVector<Integer>> vector) {
+        Pair same(Pair old, Supplier<RadixVector<Integer>> radix, Supplier<VectorModel<Integer>> vector) {
             RadixVector<Integer> r = null;
-            TrieVector<Integer> v = null;
+            VectorModel<Integer> v = null;
             RuntimeException re = null;
             RuntimeException ve = null;
             try {
@@ -1703,7 +1703,7 @@ public class RadixVectorDifferentialTest {
 
     // ---------------------------------------------------------------------------------------------------------------
 
-    private static List<Integer> javaList(TrieVector<Integer> v) {
+    private static List<Integer> javaList(VectorModel<Integer> v) {
         final List<Integer> list = new ArrayList<>(v.length());
         for (Integer x : v) {
             list.add(x);
