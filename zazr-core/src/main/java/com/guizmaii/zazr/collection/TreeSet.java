@@ -706,14 +706,36 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public TreeSet<T> addAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        // the given elements sorted into a tree, the first of equal ones kept, then united with this tree, whose
-        // elements win over equal given ones: what adding them one by one, skipping those already present, gives
-        final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);
-        for (T element : elements) {
-            builder.add(Objects.requireNonNull(element, "TreeSet: element is null"));
+        if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
+            // many elements: sorted into a tree, the first of equal ones kept, then united with this tree, whose
+            // elements win over equal given ones; the same set as adding them one by one below
+            final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);
+            for (T element : elements) {
+                builder.add(Objects.requireNonNull(element, "TreeSet: element is null"));
+            }
+            final RedBlackTree<T> added = builder.result().union(tree);
+            return (added.size() == tree.size()) ? this : new TreeSet<>(added);
         }
-        final RedBlackTree<T> added = builder.result().union(tree);
-        return (added.size() == tree.size()) ? this : new TreeSet<>(added);
+        // a few elements: each one not present yet is inserted, so of equal elements the one already here, or else
+        // the first given, is kept
+        RedBlackTree<T> that = tree;
+        for (T element : elements) {
+            if (!that.contains(element)) {
+                that = that.insert(element);
+            }
+        }
+        return (that == tree) ? this : new TreeSet<>(that);
+    }
+
+    // the number of elements of `elements` when a collection answers it in O(1) without walking them, otherwise -1
+    private static int knownSize(Iterable<?> elements) {
+        if (elements instanceof java.util.Collection<?> collection) {
+            return collection.size();
+        } else if (elements instanceof Set<?> || elements instanceof Vector<?> || elements instanceof NonEmptyVector<?>) {
+            return ((Traversable<?>) elements).size();
+        } else {
+            return -1;
+        }
     }
 
     /**

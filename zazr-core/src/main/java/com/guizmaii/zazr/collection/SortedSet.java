@@ -321,7 +321,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log(n + m)) for m elements (one lookup, and one insertion for a new element, each).
+     * Complexity: O(m log(n + m)) for m elements: when this set is empty, or when {@code elements} is a collection
+     * that knows its size and holds at least n elements, one sort of them and one union with this tree; otherwise one
+     * lookup, and one insertion for a new element, each.
      */
     @Override
     SortedSet<T> addAll(Iterable<? extends T> elements);
@@ -330,8 +332,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: O((n + m) log n) for a set of m elements: a split and a join per node of {@code elements} when it is
-     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and the kept elements built into a
-     * new tree.
+     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and one walk of this tree that keeps
+     * every subtree left whole.
      */
     @Override
     SortedSet<T> diff(Set<? extends T> elements);
@@ -352,8 +354,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: O((n + m) log n) for a set of m elements: a split and a join per node of {@code elements} when it is
-     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and the kept elements built into a
-     * new tree.
+     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and one walk of this tree that keeps
+     * every subtree left whole.
      */
     @Override
     SortedSet<T> intersect(Set<? extends T> elements);
@@ -392,8 +394,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for m given elements (a hash set of them, then the kept elements inserted into a new
-     * tree).
+     * Complexity: O(m + n) for m given elements (a hash set of them, then one walk of this tree that keeps every
+     * subtree left whole, with no comparator call).
      */
     @Override
     SortedSet<T> removeAll(Iterable<? extends T> elements);
@@ -417,8 +419,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for m given elements (a hash set of them, then the kept elements inserted into a new
-     * tree).
+     * Complexity: O(m + n) for m given elements (a hash set of them, then one walk of this tree that keeps every
+     * subtree left whole, with no comparator call).
      */
     @Override
     SortedSet<T> retainAll(Iterable<? extends T> elements);

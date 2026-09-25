@@ -4,7 +4,6 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Comparators;
-import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.collection.internal.RedBlackTree;
@@ -1672,14 +1671,13 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @SuppressWarnings("unchecked")
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromPairs(EntryComparator<K, V> entryComparator, Object ... pairs) {
-        // of equal keys, the last pair is kept, as successive insertions would
-        final RedBlackTreeBuilder<Tuple2<K, V>> tree = new RedBlackTreeBuilder<>(entryComparator, "TreeMap.Builder", pairs.length / 2, false);
+        RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (int i = 0; i < pairs.length; i += 2) {
             final K key = requireKey((K) pairs[i]);
             final V value = requireValue((V) pairs[i + 1]);
-            tree.add(Tuple.of(key, value));
+            tree = tree.insert(Tuple.of(key, value));
         }
-        return new TreeMap<>(tree.result());
+        return new TreeMap<>(tree);
     }
 
     private TreeMap<K, V> createFromEntries(Iterable<Tuple2<K, V>> tuples) {
