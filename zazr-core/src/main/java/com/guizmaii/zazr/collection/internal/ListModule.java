@@ -14,13 +14,24 @@ public interface ListModule {
     interface Combinations {
 
         static <T extends @Nullable Object> List<List<T>> apply(List<T> elements, int k) {
+            return combine(elements, elements.length(), k);
+        }
+
+        // Walks the tails of elements (of the given length): each element, followed by every combination of k - 1
+        // elements after it. A tail shorter than k gives none, so the walk stops there.
+        private static <T extends @Nullable Object> List<List<T>> combine(List<T> elements, int length, int k) {
             if (k == 0) {
                 return List.of(List.empty());
-            } else {
-                return elements.zipWithIndex().flatMap(
-                        t -> apply(elements.drop(t._2() + 1), (k - 1)).map(c -> c.prepend(t._1()))
-                );
             }
+            List<List<T>> reversed = List.empty();
+            int remaining = length;
+            for (List<T> rest = elements; remaining >= k; rest = rest.tail(), remaining--) {
+                final T head = rest.head();
+                for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1); !tails.isEmpty(); tails = tails.tail()) {
+                    reversed = reversed.prepend(tails.head().prepend(head));
+                }
+            }
+            return reversed.reverse();
         }
     }
 

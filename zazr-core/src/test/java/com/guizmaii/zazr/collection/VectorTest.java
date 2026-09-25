@@ -251,6 +251,25 @@ public class VectorTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void shouldConvertEveryLeafWhenAnotherClassIsWrittenAcrossLeaves() {
+            for (int n : new int[] { 31, 32, 33, 1023, 1024, 1025 }) {
+                final Vector<Number> primitives = Vector.narrow(Vector.range(0, n));
+                final java.util.List<Number> expected = new java.util.ArrayList<>(primitives.asJava());
+                final Vector<Number> appended = primitives.append(-1L);
+                expected.add(-1L);
+                assertThat(appended.asJava()).isEqualTo(expected);
+                // later writes, of either class, go on from the converted Vector
+                assertThat(appended.append(7).update(0, 5L).prepend(-2L).asJava())
+                        .isEqualTo(Vector.<Number> of(-2L, 5L).appendAll(Vector.range(1, n)).appendAll(List.of(-1L, 7)).asJava());
+                assertThat(primitives.update(n - 1, -1L).last()).isEqualTo(-1L);
+                assertThat(primitives.insert(n / 2, -1L).get(n / 2)).isEqualTo(-1L);
+                assertThat(primitives.padTo(n + 2, -1L).takeRight(2)).isEqualTo(Vector.of(-1L, -1L));
+                // the primitive Vector is untouched
+                assertThat(primitives).isEqualTo(Vector.range(0, n));
+            }
+        }
+
+        @Test
         public void shouldThrowForVoidType() {
             assertThrows(IllegalArgumentException.class, () -> ArrayType.of(void.class));
         }
