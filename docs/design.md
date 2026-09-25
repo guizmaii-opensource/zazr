@@ -1100,6 +1100,29 @@ and unable to drift:
     another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
     the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
     path would break that invariant. The class javadoc and the notes of the ten write methods say so.
+- The notes and the page in plain words (#94, decided 2026-09-25), after the review of the page found wrong,
+  truncated and missing rows and about 110 notes in internal terms:
+  - **A note is the worst case of the call, in words a Java developer knows.** A cheaper common case follows it
+    ("O(n); O(1) when ..."), never the other way round. No trie, leaf, cell, marker, front/rear list, path copy or
+    rank split: the notes say what is copied, shared, walked or computed. On `Stream`, "forced" becomes "computed".
+    `amortised O(1)` always carries its caveat: it holds over a chain of calls, each on the result of the previous
+    one, and a call on an older version can pay the O(n) step each time.
+  - **Variables.** n is the size of the receiver, m of the argument, k a count the note names, i and j index
+    arguments (a slice runs from i to j), size and step those of `sliding`/`grouped`. A parameter name is never a
+    variable: `O(index)`, `O(beginIndex)`, `O(offset + m)` and `O(min(n, size - n))` became `O(i)`, `O(i)`,
+    `O(i + m)` and `O(min(k, n - k))`, and the vocabulary lost the old forms.
+  - **The generator matches overrides by type argument.** A parameter erased to `Object` in the supertype matches any
+    type in the override, so `Map.contains(Tuple2)` overrides `Traversable.contains(T)`; before, the maps showed
+    `Traversable`'s O(n) walk for their one lookup. `HashMap`, `LinkedHashMap` and `TreeMap` declare `contains` with
+    their own note.
+  - **No borrowed notes.** A method with a body never takes the note of a supertype method with a body, which
+    describes another implementation: `make complexity` fails on it, in the context files too. A method without a
+    body in the supertype (the `SortedSet`/`SortedMap` declarations) still lends its note.
+  - **Links render as method names**: `{@link #put(Object, Object)}` shows as `put`, `{@link Vector#tail()}` as
+    `Vector.tail` (the old rendering cut the note at the comma of a two-parameter link).
+  - **A type's own javadoc may carry a `Complexity:` paragraph** for the methods that have no note (the one-pass
+    traversals, the conversions, the inherited defaults): the page shows it under the type's heading, so that every
+    size-dependent method is covered by a row or by that paragraph.
 
 Which concrete collections survive (decided):
 
