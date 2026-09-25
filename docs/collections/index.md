@@ -7,8 +7,8 @@ description: Which Zazr collection to choose, and what the collections have in c
 Every Zazr collection is immutable. An operation returns a new collection and shares what it can with the old
 one, which is never modified.
 
-Each type declares its own methods, with its own return types, and every positional method documents its cost. The
-[complexity page](complexity.md) lists them all.
+Each type declares its own methods, with its own return types, and every method whose cost depends on the size
+documents it. The [complexity page](complexity.md) lists them all.
 
 ## Which one to choose
 
@@ -17,8 +17,8 @@ Each type declares its own methods, with its own return types, and every positio
 | a sequence, by default | [`Vector`](vector.md) | effectively O(1) `get`, `update`, `append`, `prepend`, `take`, `drop` |
 | a sequence that has at least one element | [`NonEmptyVector`](../non-empty-vector.md) | `head`, `max`, `reduce` cannot fail |
 | to take a sequence apart head first, or a stack | [`List`](list.md) | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
-| first in, first out | [`Queue`](queue.md) | amortised O(1) `enqueue` and `dequeue` |
-| a sequence computed on demand, possibly infinite | [`Stream`](stream.md) | lazy and memoised |
+| first in, first out | [`Queue`](queue.md) | O(1) `enqueue`, amortised O(1) `dequeue` |
+| a sequence computed on demand, possibly infinite | [`Stream`](stream.md) | each element computed once, when first read |
 | a set, by default | [`HashSet`](sets.md) | effectively O(1) `contains`, `add`, `remove` |
 | a set in insertion order | [`LinkedHashSet`](sets.md) | a `HashSet` plus the insertion order, with positional methods |
 | a sorted set | [`TreeSet`](sets.md) | O(log n) lookups and updates, positional methods in comparator order |
@@ -41,17 +41,17 @@ Two more operations exist on most types:
 - The static `flatten` removes one level of nesting.
 
 ```java
-Tuple2<List<Integer>, List<String>> split = List.of(1, 2, 3, 4)
+var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
     .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
-Vector<Integer> flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3)));
+var flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3))); // Vector<Integer>
 // split is (List(2, 4), List(odd 1, odd 3)), flat is Vector(1, 2, 3)
 ```
 
 ```java
-Vector<Integer> vector = Vector.of(3, 1, 2);
-List<Integer> sortedList = vector.toList().sorted();
-HashSet<Integer> set = HashSet.ofAll(vector);
-boolean same = Vector.of(1, 2, 3).equals(sortedList);
+var vector = Vector.of(3, 1, 2);
+var sortedList = vector.toList().sorted(); // List<Integer>
+var set = HashSet.ofAll(vector); // HashSet<Integer>
+var same = Vector.of(1, 2, 3).equals(sortedList);
 // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 ```
 
@@ -64,8 +64,8 @@ No collection holds `null`: adding a `null` element, key or value throws a `Null
 `Option`, which is what `find`, `headOption` and `Map.get` return.
 
 ```java
-Option<Integer> missing = HashMap.of("a", 1).get("b");
-Option<Integer> firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);
+var missing = HashMap.of("a", 1).get("b"); // Option<Integer>
+var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0); // Option<Integer>
 // None, Some(4)
 ```
 

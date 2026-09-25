@@ -1100,6 +1100,29 @@ and unable to drift:
     another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
     the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
     path would break that invariant. The class javadoc and the notes of the ten write methods say so.
+- The notes and the page in plain words (#94, decided 2026-09-25), after the review of the page found wrong,
+  truncated and missing rows and about 110 notes in internal terms:
+  - **A note is the worst case of the call, in words a Java developer knows.** A cheaper common case follows it
+    ("O(n); O(1) when ..."), never the other way round. No trie, leaf, cell, marker, front/rear list, path copy or
+    rank split: the notes say what is copied, shared, walked or computed. On `Stream`, "forced" becomes "computed".
+    `amortised O(1)` always carries its caveat: it holds over a chain of calls, each on the result of the previous
+    one, and a call on an older version can pay the O(n) step each time.
+  - **Variables.** n is the size of the receiver, m of the argument, k a count the note names, i and j index
+    arguments (a slice runs from i to j), size and step those of `sliding`/`grouped`. A parameter name is never a
+    variable: `O(index)`, `O(beginIndex)`, `O(offset + m)` and `O(min(n, size - n))` became `O(i)`, `O(i)`,
+    `O(i + m)` and `O(min(k, n - k))`, and the vocabulary lost the old forms.
+  - **The generator matches overrides by type argument.** A parameter erased to `Object` in the supertype matches any
+    type in the override, so `Map.contains(Tuple2)` overrides `Traversable.contains(T)`; before, the maps showed
+    `Traversable`'s O(n) walk for their one lookup. `HashMap`, `LinkedHashMap` and `TreeMap` declare `contains` with
+    their own note.
+  - **No borrowed notes.** A method with a body never takes the note of a supertype method with a body, which
+    describes another implementation: `make complexity` fails on it, in the context files too. A method without a
+    body in the supertype (the `SortedSet`/`SortedMap` declarations) still lends its note.
+  - **Links render as method names**: `{@link #put(Object, Object)}` shows as `put`, `{@link Vector#tail()}` as
+    `Vector.tail` (the old rendering cut the note at the comma of a two-parameter link).
+  - **A type's own javadoc may carry a `Complexity:` paragraph** for the methods that have no note (the one-pass
+    traversals, the conversions, the inherited defaults): the page shows it under the type's heading, so that every
+    size-dependent method is covered by a row or by that paragraph.
 
 Which concrete collections survive (decided):
 
@@ -1229,6 +1252,37 @@ What each one replaces, and how (Scala 2.13 is the reference for all of them):
 Order of implementation: `Vector.Builder` (3.8), then `TreeMap`/`TreeSet` (cheap, self-contained), then
 the transient HAMT (the only one that touches a data-structure's node types), then the composites.
 Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
+
+**Implemented for `TreeMap`, `TreeSet`, `HashMap` and `HashSet` (decided):**
+- The tree builders share `RedBlackTreeBuilder` (internal): an array buffer, `Arrays.sort` (stable, and O(n)
+  comparisons on sorted input, so `ofAll`/`ofEntries` of sorted input needs no separate fast path), a pass that keeps
+  the last of equal elements, then `Node.fromOrdered`, a port of `fromOrderedKeys`: split around the middle, black
+  nodes, red one-element subtrees on the deepest level only. `size()` compacts the buffer (sort and dedupe) so that it
+  counts distinct keys, like the hash builders. A comparator that throws closes the builder, since the sort may have
+  left the buffer half merged.
+- The transient trie puts the owner token on `IndexedNode` and `ArrayNode` only. Leaves (`LeafSingleton`,
+  `LeafList`) stay immutable and are replaced; a collision list goes through the persistent `modify`, so the builder
+  produces the very trie successive persistent puts produce, node for node (the tests compare them). The cost is one
+  reference field per internal node (about 8 bytes with compressed oops). The mutable node fields lose their `final`
+  guarantee; every holder of a trie (`HashMap`, `HashSet`, the map view) keeps it in a final field, and
+  `result()` issues a release fence as Scala's `HashMapBuilder` does. `putAll(HashMap)`/`addAll(HashSet)` on an
+  empty builder adopts the source root; its nodes are copied on the first put through them.
+- Rerouted after a same-JVM measurement on the branch, the gate being "not slower" (1 fork, a busy machine,
+  microseconds per operation, builder `addAll`/`putAll` against the persistent path at 10 / 1 000 / 100 000 distinct
+  keys, ± the 99.9% error): `TreeSet.ofAll` shuffled 0.16 ± 0.08 / 43 ± 13 / 11 800 ± 2 800 against 0.26 ± 0.07 /
+  73 ± 48 / 85 000 ± 57 000, sorted 0.30 ± 0.29 / 12 ± 10 / 985 ± 167 against 0.38 ± 0.12 / 173 ± 438 /
+  79 000 ± 75 000; `TreeMap.ofEntries` shuffled 0.25 ± 0.09 / 61 ± 135 / 26 800 ± 17 000 against 0.40 ± 0.61 /
+  85 ± 43 / 58 600 ± 27 000; `HashSet.ofAll` 0.14 ± 0.03 / 31 ± 8 / 17 300 ± 11 900 against 0.66 ± 1.37 / 76 ± 65 /
+  29 500 ± 17 000; `HashMap.ofEntries` 0.14 ± 0.05 / 28 ± 2 / 7 500 ± 700 against 0.16 ± 0.05 / 42 ± 7 /
+  14 600 ± 3 200. The error bars overlap at 10 everywhere and for `HashSet` at 100 000; no row is slower. So `ofAll`,
+  `ofEntries`, `TreeMap.ofAll(java.util.Map)`, `HashMap.ofAll(java.util.Map)` and the `collector()`s of the four types
+  use the builders (the collectors were not measured on their own: they run the same `add`/`put` loop; their
+  accumulator type is now the builder). Every operation that ends in those factories follows without its own
+  measurement: `filter`, `reject`, `partition` and `groupBy`'s groups on all four, `map`, `flatMap` and `collect` on
+  `TreeSet` and `TreeMap`, `mapBoth` on both maps, `mapValues` on `TreeMap`. `HashSet` and `HashMap` `map`, `flatMap`
+  and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
+  factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
+  3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
 
 ### 3.9 Null, equality, serialisation
 

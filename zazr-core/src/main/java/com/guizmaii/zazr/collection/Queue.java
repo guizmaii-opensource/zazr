@@ -39,6 +39,12 @@ import org.jspecify.annotations.Nullable;
  * on the result of the previous one. A Queue is persistent, so an older version can be used again: calling one of them
  * repeatedly on a Queue that is about to be rebalanced pays the O(n) rebalancing each time.
  * <p>
+ * Complexity: a Queue keeps its last elements in reverse order (those added at its back since it last put them in
+ * order, or those {@link #init()} moved there), and puts them in order in one O(n) step when a call needs them; the
+ * notes call them "the elements held at the back". The methods without a note of their own (map, flatMap, partition,
+ * the folds, the conversions, the static factories) walk the elements once: O(n); toSortedSet and toSortedMap sort
+ * them, O(n log n); toQueue, and ofAll given a Queue, are O(1).
+ * <p>
  * See Okasaki, Chris: <em>Purely Functional Data Structures</em> (p. 42 ff.). Cambridge, 2003.
  *
  * @param <T> Component type of the Queue
@@ -175,7 +181,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
      * one are iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: O(n) for n inner elements in total: they are collected into the front list of the result.
+     * Complexity: O(n) for n inner elements in total.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -750,7 +756,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Enqueues a new element.
      * <p>
-     * Complexity: O(1); the element is prepended to the rear list.
+     * Complexity: O(1).
      *
      * @param element The new element
      * @return a new {@code Queue} instance, containing the new element
@@ -946,8 +952,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The length of the longest prefix whose elements all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(k) for the k elements of that prefix, as long as they are in the front; the elements added at the
-     * back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
+     * Complexity: O(n); O(k) for a prefix of k elements when the walk stops before the elements held at the back,
+     * which it must first put in order. On a Queue built by enqueue, most elements are held at the back.
      *
      * @param predicate the condition
      * @return the length of the prefix
@@ -991,8 +997,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The length of the longest run of elements satisfying {@code predicate} starting at {@code from}.
      * <p>
-     * Complexity: O(from + k) for the k elements of that run, as long as they are in the front; the elements added at
-     * the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
+     * Complexity: O(n); O(i + k) for a run of k elements from index i when the walk stops before the elements held at
+     * the back, which it must first put in order.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -1015,8 +1021,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Whether this Queue starts with {@code that}: {@code startsWith(that, 0)}.
      * <p>
-     * Complexity: O(m) for m elements of {@code that}, as long as they are compared with the front; the elements added
-     * at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
+     * Complexity: O(n); O(m) for m elements of {@code that} when all of them are compared before the elements held
+     * at the back, which the comparison must otherwise put in order. On a Queue built by enqueue, most elements are
+     * held at the back, and even a one-element prefix costs O(n).
      *
      * @param that the prefix to test
      * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
@@ -1028,6 +1035,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #indexOf(Object)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexOf(Object)}.
      *
      * @param element the element to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
@@ -1038,6 +1047,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #indexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexOf(Object, int)}.
      *
      * @param element the element to find
      * @param from    the first position to look at
@@ -1049,6 +1060,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #indexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #indexOfSlice(Iterable)}.
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
@@ -1060,6 +1073,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #indexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #indexOfSlice(Iterable, int)}.
      *
      * @param that the slice to find
      * @param from the first position to look at
@@ -1072,6 +1087,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #indexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexWhere(Predicate)}.
      *
      * @param predicate the condition
      * @return {@code Some(index)} of the first satisfying element, or {@code None}
@@ -1083,6 +1100,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #indexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexWhere(Predicate, int)}.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -1095,6 +1114,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #lastIndexOf(Object)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexOf(Object)}.
      *
      * @param element the element to find
      * @return {@code Some(index)} of its last occurrence, or {@code None}
@@ -1105,6 +1126,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #lastIndexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexOf(Object, int)}.
      *
      * @param element the element to find
      * @param end     the last position to look at
@@ -1116,6 +1139,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #lastIndexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #lastIndexOfSlice(Iterable)}.
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its last occurrence, or {@code None}
@@ -1127,6 +1152,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #lastIndexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #lastIndexOfSlice(Iterable, int)}.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1139,6 +1166,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #lastIndexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexWhere(Predicate)}.
      *
      * @param predicate the condition
      * @return {@code Some(index)} of the last satisfying element, or {@code None}
@@ -1150,6 +1179,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #lastIndexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexWhere(Predicate, int)}.
      *
      * @param predicate the condition
      * @param end       the last position to look at
@@ -1170,6 +1201,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * The elements are folded from the end: they are copied into a {@code List} first, then folded from the left, so
      * the recursion depth does not grow with the length.
+     * <p>
+     * Complexity: O(n); the elements are copied into a List first.
      *
      * @param <U>  the type of the accumulator
      * @param zero the initial accumulator
@@ -1185,7 +1218,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns a new Queue with the given element appended at the end.
      * <p>
-     * Complexity: amortised O(1); the element is prepended to the rear list.
+     * Complexity: O(1), as {@link #enqueue(Object)}.
      *
      * @param element the element to append
      * @return a new Queue ending with the given element
@@ -1214,8 +1247,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * A mutable copy is {@code new java.util.ArrayList<>(queue.asJava())}; {@code Queue.ofAll} given the view
      * returns this Queue without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is that of {@link #get(int)}, {@code size()} is O(n) the first
-     * time, then O(1): the view keeps it.
+     * Complexity: O(1) to create. {@code get(i)} on the view costs what {@link #get(int)} costs, up to O(n), so an
+     * indexed loop over the view is O(n^2): iterate it instead. {@code size()} is O(n) the first time, then O(1).
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -1226,7 +1259,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * All combinations of the elements, for every size from 0 to {@code length()}, by position.
      * <p>
-     * Complexity: O(2^n) combinations.
+     * Complexity: O(n * 2^n): 2^n combinations of up to n elements each.
      *
      * @return the combinations, shortest first
      */
@@ -1238,7 +1271,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
      * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
      * <p>
-     * Complexity: O(C(n, k)) combinations.
+     * Complexity: O(k * C(n, k)): C(n, k) combinations of k elements each, after an O(n) copy of this Queue.
      *
      * @param k the size of each combination
      * @return the combinations
@@ -1357,7 +1390,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Returns a new {@code Queue} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(n); the front and the rear are both walked.
+     * Complexity: O(n).
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1395,7 +1428,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Returns a new {@code Queue} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(n); the front and the rear are both walked.
+     * Complexity: O(n).
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1473,7 +1506,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: O(index) while the index is in the front; O(n) once it falls in the rear, which is measured and indexed from its end.
+     * Complexity: O(n); O(i) for an index i that falls before the elements held at the back. Every index does on a
+     * Queue built by ofAll; on a Queue built by enqueue, only index 0 does.
      *
      * @param index the position
      * @return the element at that position
@@ -1512,7 +1546,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns the first element of this non-empty {@code Queue}.
      * <p>
-     * Complexity: O(1); the head of the front list.
+     * Complexity: O(1).
      *
      * @return the first element
      * @throws NoSuchElementException if this {@code Queue} is empty
@@ -1552,10 +1586,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one: the last element is
-     * the head of the rear list. When the rear is empty, the front is split in two in O(n), its second half becoming
-     * the rear, so that the next calls take from it. Calling {@code init()} again on the same older Queue pays that
-     * O(n) again each time.
+     * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one. When no element is
+     * held at the back, the call moves the second half of the Queue there in one O(n) step, which the next calls use
+     * up. Calling {@code init()} again on the same older Queue pays that O(n) step each time.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this Queue is empty
@@ -1593,7 +1626,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * A new Queue with {@code element} inserted at {@code index}, the elements from {@code index} on shifted right.
      * <p>
-     * Complexity: O(n); the front, and the rear when the index falls in it, are walked.
+     * Complexity: O(n).
      *
      * @param index   the position of the inserted element
      * @param element the element to insert
@@ -1624,7 +1657,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * on shifted right.
      * <p>
      * Complexity: O(n + m) for m inserted elements.
-     * shared.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1677,6 +1709,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1), whereas {@link #size()} counts the elements.
+     */
     @Override
     public boolean isEmpty() {
         return front.isEmpty();
@@ -1685,7 +1722,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) to create, for the m elements of the rear list, which is reversed; then O(1) per step.
+     * Complexity: O(n) to create, then O(1) per step: the elements held at the back are put in order first. O(1) to
+     * create when no element is held at the back, as on a Queue built by ofAll.
      */
     @Override
     public java.util.Iterator<T> iterator() {
@@ -1695,7 +1733,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns the last element of this Queue.
      * <p>
-     * Complexity: O(n) when the rear is empty and the front is walked; O(1) when the rear is non-empty.
+     * Complexity: O(n); O(1) when some elements are held at the back, as after an enqueue.
      *
      * @return the last element
      * @throws NoSuchElementException if this Queue is empty
@@ -1722,7 +1760,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Equivalent to {@link #size()}.
      * <p>
-     * Complexity: O(n); the front and the rear are counted.
+     * Complexity: O(n): the elements are counted. {@link #isEmpty()} is O(1).
      *
      * @return the number of elements
      */
@@ -1819,7 +1857,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * generalisation of {@link #partition(Predicate)}. One pass in queue order, {@code f} called once per element, no
      * intermediate list of {@code Either}s.
      * <p>
-     * Complexity: O(n); each side is built reversed and becomes the front list of its Queue.
+     * Complexity: O(n).
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -1843,7 +1881,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: O(n!) permutations.
+     * Complexity: O(n! * n^2) when the elements are distinct: n! permutations of n elements each, and each level of
+     * the recursion copies the permutations found so far.
      *
      * @return the permutations
      */
@@ -1854,7 +1893,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * A new Queue with {@code element} in front of this one.
      * <p>
-     * Complexity: O(1); the element is prepended to the front list.
+     * Complexity: O(1).
      *
      * @param element the new head
      * @return a new Queue starting with the given element
@@ -2003,7 +2042,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Rotates the elements {@code n} positions to the left: {@code Queue(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code Queue(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
+     * Complexity: O(n); O(1) for a rotation by 0.
      *
      * @param n the distance
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
@@ -2021,7 +2060,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Rotates the elements {@code n} positions to the right: {@code Queue(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Queue(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
+     * Complexity: O(n); O(1) for a rotation by 0.
      *
      * @param n the distance
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
@@ -2224,8 +2263,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Whether the elements from {@code offset} on start with {@code that}. {@code that} is walked once, so a
      * one-shot iterator is accepted.
      * <p>
-     * Complexity: O(offset + m) for m elements of {@code that}, as long as they are compared with the front; the
-     * elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
+     * Complexity: O(n); O(i + m) for m elements of {@code that} from index i when all of them are compared before the
+     * elements held at the back, which the comparison must otherwise put in order.
      *
      * @param that   the prefix to test
      * @param offset the position in this Queue at which the prefix should start
@@ -2293,9 +2332,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns a new {@code Queue} without its first element.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one: the front loses its
-     * head, and the rear is reversed onto it in O(n) only when the front runs out. Calling {@code tail()} again on the
-     * same older Queue whose front holds one element pays that O(n) again each time.
+     * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one. When the removed
+     * element is the last one before the elements held at the back, the call puts those in order in one O(n) step.
+     * Calling {@code tail()} again on the same older Queue pays that O(n) step each time.
      *
      * @return a new {@code Queue} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Queue} is empty
@@ -2458,8 +2497,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
      * {@code that}.
      * <p>
-     * Complexity: O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements
-     * added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
+     * Complexity: O(n); O(min(n, m)) for an argument of m elements when the pairing stops before the elements held at
+     * the back, which it must otherwise put in order. On a Queue built by enqueue, even a one-element argument costs
+     * O(n).
      *
      * @param <U>  the type of elements in the second half of each pair
      * @param that an {@code Iterable} providing the second element of each pair
@@ -2477,8 +2517,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
      * {@code that}.
      * <p>
-     * Complexity: O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements
-     * added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
+     * Complexity: O(n); O(min(n, m)) for an argument of m elements when the pairing stops before the elements held at
+     * the back, which it must otherwise put in order. On a Queue built by enqueue, even a one-element argument costs
+     * O(n).
      *
      * @param <U>    the type of elements in the second parameter of the mapper
      * @param <R>    the type of elements in the resulting {@code Queue}
@@ -2545,11 +2586,22 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return ofAll(toList().zipWithIndex(mapper));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for a sequence of m elements: both sizes are counted, then the elements are compared until
+     * two differ.
+     */
     @Override
     public boolean equals(@Nullable Object o) {
         return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public int hashCode() {
         return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
@@ -2558,8 +2610,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Removes an element from this Queue.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls; O(n) when the rear is reversed, again on each call on the same
-     * older Queue, see {@link #tail()}.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}; calling it again on the same older Queue
+     * can pay an O(n) step each time.
      *
      * @return a tuple containing the first element and the remaining elements of this Queue
      * @throws NoSuchElementException if this Queue is empty
@@ -2575,7 +2627,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Removes an element from this Queue.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls; O(n) when the rear is reversed, see {@link #tail()}.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}; calling it again on the same older Queue
+     * can pay an O(n) step each time.
      *
      * @return {@code None} if this Queue is empty, otherwise {@code Some} {@code Tuple} containing the first element and the remaining elements of this Queue
      */
@@ -2602,7 +2655,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns the first element without modifying it.
      * <p>
-     * Complexity: O(1); the head of the front list.
+     * Complexity: O(1).
      *
      * @return the first element
      * @throws NoSuchElementException if this Queue is empty
@@ -2620,7 +2673,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
      * <p>
-     * Complexity: O(1); the head of the front list.
+     * Complexity: O(1).
      *
      * @return {@code None} if this Queue is empty, otherwise a {@code Some} containing the first element
      */
@@ -2646,7 +2699,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Dual of {@linkplain #tailOption()}, returning all elements except the last as {@code Option}.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls; O(n) when the front is split, see {@link #init()}.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #init()}; calling it again on the same older Queue
+     * can pay an O(n) step each time.
      *
      * @return {@code Some(Queue)} or {@code None} if this is empty.
      */
@@ -2657,7 +2711,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns a new {@code Queue} without its first element as an {@code Option}.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls; O(n) when the rear is reversed, see {@link #tail()}.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}; calling it again on the same older Queue
+     * can pay an O(n) step each time.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -2777,7 +2832,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * {@code Queue.of(1, 2, 3, 4).sliding(3)} has two windows. A Queue shorter than {@code size} is one window; an
      * empty Queue has none.
      * <p>
-     * Complexity: O(n * size / step); each window is copied into its own Queue.
+     * Complexity: O(n + (n / step) * size): every element is walked, and each window is copied into its own Queue.
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -2821,7 +2876,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The Cartesian power of this Queue: every Queue of {@code power} elements drawn from this one, in
      * lexicographic position order. {@code power == 0} gives one empty Queue; a negative power gives no result.
      * <p>
-     * Complexity: O(n^power) Queues of size {@code power}, built now.
+     * Complexity: O(n^power): n^power Queues of power elements, built now; each adds one element to a
+     * shorter result and shares the rest with it.
      *
      * @param power the size of each result
      * @return the Queues
@@ -2858,7 +2914,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Combines the elements from the right: the last with the one before it, the result with the one before that,
      * and so on.
      * <p>
-     * Complexity: O(n); the elements are walked once as a List, in reverse.
+     * Complexity: O(n).
      *
      * @param op combines the next element and the result so far
      * @return the combined result
@@ -3095,7 +3151,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: O(1), that of {@link #head()}.
+     * Complexity: O(1), as {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this Queue is empty
      */
@@ -3106,7 +3162,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: O(n), that of {@link #last()}.
+     * Complexity: O(n); O(1) when some elements are held at the back, as {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this Queue is empty
      */
@@ -3141,6 +3197,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty Queue.
+     * <p>
+     * Complexity: O(n), as {@link #reduceRight(BiFunction)}.
      *
      * @param op combines the next element and the result so far
      * @return {@code Some(result)}, or {@code None} if this Queue is empty
@@ -3154,7 +3212,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The number of elements; the same as {@link #length()}.
      * <p>
-     * Complexity: O(n), that of {@link #length()}.
+     * Complexity: O(n), as {@link #length()}. {@link #isEmpty()} is O(1).
      *
      * @return the number of elements
      */

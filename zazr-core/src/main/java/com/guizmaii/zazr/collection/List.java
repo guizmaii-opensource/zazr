@@ -118,6 +118,14 @@ import org.jspecify.annotations.Nullable;
  * }
  * </pre>
  *
+ * <p>
+ * Complexity: the methods without a note of their own (map, flatMap, the folds, groupBy, the conversions,
+ * {@code equals}, {@code hashCode}, {@code toString}) walk the elements once: O(n); an {@code Option} variant costs
+ * what the method it wraps costs, and {@code toStream()} is O(1), its elements being read as the Stream reaches them.
+ * A List does not store its size, so {@code equals}, {@code toArray()}, {@code stream()} and {@code spliterator()}
+ * count the elements before they start, and {@code containsAll} is O(n * m) for m elements: each one is looked for by
+ * a walk.
+ * <p>
  * See Okasaki, Chris: <em>Purely Functional Data Structures</em> (p. 7 ff.). Cambridge, 2003.
  *
  * @param <T> Component type of the List
@@ -156,6 +164,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         return Nil.instance();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1).
+     */
     @Override
     boolean isEmpty();
 
@@ -273,7 +286,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
      * one are iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: O(n) for n inner elements in total: one cell per element, built reversed and reversed once.
+     * Complexity: O(m) for m inner elements in total: each is copied once, and the result is reversed once.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -760,7 +773,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Transposes the rows and columns of a {@link List} matrix.
      * <p>
-     * Complexity: O(rows * columns).
+     * Complexity: O(rows * columns): every element is copied once.
      *
      * @param <T> matrix element type
      * @param matrix to be transposed.
@@ -866,7 +879,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new List with the given element appended at the end.
      * <p>
-     * Complexity: O(n); every cell of this List is rebuilt.
+     * Complexity: O(n); every element of this List is copied.
      *
      * @param element the element to append
      * @return a new List ending with the given element
@@ -878,7 +891,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new List with the given elements appended at the end, in iteration order.
      * <p>
-     * Complexity: O(n + m) for m appended elements; the elements are copied once and this List is rebuilt.
+     * Complexity: O(n + m) for m appended elements; this List and the appended elements are copied.
      *
      * @param elements the elements to append
      * @return a new List ending with the given elements, or this List if there are none
@@ -896,8 +909,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * A mutable copy is {@code new java.util.ArrayList<>(list.asJava())}; {@code List.ofAll} given the view
      * returns this List without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(n) the first time, then O(1): the
-     * view keeps it.
+     * Complexity: O(1): nothing is copied. On the view, {@code get(i)} is O(i), so a loop by index is O(n^2): iterate
+     * the view instead. {@code size()} is O(n) the first time, then O(1): the view keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -908,7 +921,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * All combinations of the elements, for every size from 0 to {@code length()}, by position.
      * <p>
-     * Complexity: O(2^n) combinations.
+     * Complexity: O(n * 2^n): 2^n combinations of up to n elements each.
      *
      * @return the combinations, shortest first
      */
@@ -920,7 +933,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
      * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
      * <p>
-     * Complexity: O(C(n, k)) combinations.
+     * Complexity: O(k * C(n, k)): C(n, k) combinations of k elements each. The length is counted first, O(n).
      *
      * @param k the size of each combination
      * @return the combinations
@@ -932,7 +945,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Whether {@code that} occurs in this List as a contiguous slice.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements.
+     * Complexity: O(n * m) for a slice of m elements: the slice is compared at each position.
      *
      * @param that the slice to look for
      * @return true if {@code that} occurs contiguously in this List (an empty slice always does)
@@ -947,7 +960,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Returns a new {@code List} containing the elements of this instance
      * with all duplicates removed. Element equality is determined using {@code equals}.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n): one hash lookup per element.
      *
      * @return a new {@code List} without duplicate elements
      */
@@ -959,7 +972,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Returns a new {@code List} containing the elements of this instance
      * without duplicates, as determined by the given {@code comparator}; the first of two equal elements is kept.
      * <p>
-     * Complexity: O(n log n) comparisons.
+     * Complexity: O(n log n) comparisons: the elements seen are kept in a sorted set.
      *
      * @param comparator a comparator used to determine equality of elements
      * @return a new {@code List} with duplicates removed
@@ -977,7 +990,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * The first occurrence of each key is retained in the resulting sequence.
      * <p>
-     * Complexity: O(n), one key per element.
+     * Complexity: O(n): one key and one hash lookup per element.
      *
      * @param keyExtractor a function to extract keys for determining uniqueness
      * @param <U>          the type of key
@@ -994,7 +1007,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
      * equal, in the order of those last occurrences.
      * <p>
-     * Complexity: O(n log n) comparisons.
+     * Complexity: O(n log n) comparisons: the elements seen are kept in a sorted set.
      *
      * @param comparator decides which elements are duplicates
      * @return a new List
@@ -1009,7 +1022,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements without duplicates, keeping the last occurrence of each key, in the order of those last
      * occurrences.
      * <p>
-     * Complexity: O(n), one key per element.
+     * Complexity: O(n): one key and one hash lookup per element.
      *
      * @param keyExtractor computes the key an element is deduplicated by
      * @param <U>          the key type
@@ -1025,7 +1038,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Returns a new {@code List} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(n) for n dropped elements; the rest of this List is shared, not copied.
+     * Complexity: O(k) for k dropped elements; the rest of this List is shared, not copied.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1079,7 +1092,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Returns a new {@code List} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(n); the kept prefix is copied.
+     * Complexity: O(n); the length is counted, then the kept elements are copied.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1098,7 +1111,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
      * <p>
-     * Complexity: O(n); the List is reversed twice.
+     * Complexity: O(n); the List is copied twice (reversed, then reversed back).
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -1113,7 +1126,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements up to and including the last one not satisfying {@code predicate}, that is
      * {@code dropRightUntil(predicate.negate())}.
      * <p>
-     * Complexity: O(n); the List is reversed twice.
+     * Complexity: O(n); the List is copied twice (reversed, then reversed back).
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -1174,7 +1187,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Whether this List ends with {@code that}.
      * <p>
-     * Complexity: O(n + m) for m elements of {@code that}: the suffix is reached by walking this List.
+     * Complexity: O(n + m) for m elements of {@code that}: both lengths are counted, then the end of this List is
+     * compared.
      *
      * @param that the suffix to test
      * @return true if the last {@code m} elements equal {@code that} (an empty {@code that} is always a suffix)
@@ -1199,7 +1213,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new traversable containing only the elements that satisfy the given predicate.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); this List itself is returned when every element is kept.
      *
      * @param predicate the condition to test elements
      * @return a traversable with elements matching the predicate
@@ -1247,6 +1261,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * The elements are folded from the end: this List is reversed first, then folded from the left, so the recursion
      * depth does not grow with the length.
+     * <p>
+     * Complexity: O(n); this List is reversed first, a copy.
      *
      * @param <U>  the type of the accumulator
      * @param zero the initial accumulator
@@ -1262,7 +1278,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: O(index); the cells are walked one by one.
+     * Complexity: O(i); the elements before i are walked one by one.
      *
      * @param index the position
      * @return the element at that position
@@ -1305,7 +1321,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The index of the first occurrence of {@code element} at or after {@code from}, or -1. A negative {@code from}
      * counts as 0.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); the walk starts at the first element, whatever i is.
      *
      * @param element the element to find
      * @param from    the first position to look at
@@ -1345,7 +1361,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The first index at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements.
+     * Complexity: O(n * m) for a slice of m elements: the slice is compared at each position.
      *
      * @param that the slice to find
      * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
@@ -1358,7 +1374,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The first index at or after {@code from} at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements.
+     * Complexity: O(n * m) for a slice of m elements: the slice is compared at each position.
      *
      * @param that the slice to find
      * @param from the first position to look at
@@ -1459,7 +1475,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: O(n); the kept prefix is copied.
+     * Complexity: O(n); every element but the last is copied.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this List is empty
@@ -1477,7 +1493,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * This is the dual of {@link #tailOption()}.
      * <p>
-     * Complexity: O(n); the kept prefix is copied.
+     * Complexity: O(n), as {@link #init()}.
      *
      * @return {@code Some(traversable)} if non-empty, or {@code None} if this List is empty
      */
@@ -1490,7 +1506,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Equivalent to {@link #size()}.
      * <p>
-     * Complexity: O(n); a cons list has no length field, so the cells are counted.
+     * Complexity: O(n): a List does not store its size, so every call counts the elements.
      *
      * @return the number of elements
      */
@@ -1499,7 +1515,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * A new List with {@code element} inserted at {@code index}, the elements from {@code index} on shifted right.
      * <p>
-     * Complexity: O(index); the cells before the insertion point are copied, the rest is shared.
+     * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
      *
      * @param index   the position of the inserted element
      * @param element the element to insert
@@ -1529,8 +1545,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * A new List with {@code elements} inserted at {@code index}, in iteration order, the elements from {@code index}
      * on shifted right.
      * <p>
-     * Complexity: O(index + m) for m inserted elements; the cells before the insertion point are copied, the rest is
-     * shared.
+     * Complexity: O(i + m) for m inserted elements; the elements before i are copied, the rest of this List is shared.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1573,7 +1588,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns the last element of this List.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); the whole List is walked.
      *
      * @return the last element
      * @throws NoSuchElementException if this List is empty
@@ -1597,7 +1612,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The index of the last occurrence of {@code element} at or before {@code end}, or -1.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); the walk stops after index j.
      *
      * @param element the element to find
      * @param end     the last position to look at
@@ -1637,7 +1652,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The last index at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements.
+     * Complexity: O(n * m) for a slice of m elements: the slice is compared at each position.
      *
      * @param that the slice to find
      * @return the index of its last occurrence, or -1
@@ -1650,7 +1665,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements.
+     * Complexity: O(n * m) for a slice of m elements: the slice is compared at each position.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1688,7 +1703,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The index of the last element satisfying {@code predicate}, or -1.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); the length is counted, then the elements are tested.
      *
      * @param predicate the condition
      * @return the last index of a satisfying element, or -1
@@ -1701,7 +1716,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The index of the last element at or before {@code end} satisfying {@code predicate}, or -1.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); the walk stops after index j.
      *
      * @param predicate the condition
      * @param end       the last position to look at
@@ -1782,7 +1797,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List padded on the right with {@code element} until it is {@code length} long.
      * <p>
-     * Complexity: O(n + k) for k added elements.
+     * Complexity: O(n + k) for k added elements; this List is copied.
      *
      * @param length  the target length
      * @param element the padding element
@@ -1800,8 +1815,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List padded on the left with {@code element} until it is {@code length} long.
      * <p>
-     * Complexity: O(n + k) for k added elements; this List is counted up to {@code length} only, so a longer one is
-     * returned after {@code length} steps, and it is shared, not copied.
+     * Complexity: O(n + k) for k added elements; this List is shared, not copied. A List already long enough is
+     * returned as is: its elements are counted only up to the target length.
      *
      * @param length  the target length
      * @param element the padding element
@@ -1824,7 +1839,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * This List with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0.
      * <p>
-     * Complexity: O(n + m) for m replacement elements.
+     * Complexity: O(n + m) for m replacement elements: the elements before and after the replaced ones are copied.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -1882,7 +1897,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns the head element without modifying the List.
      * <p>
-     * Complexity: O(1); the head is a field of the cons cell.
+     * Complexity: O(1): the first element is stored directly.
      *
      * @return the first element
      * @throws java.util.NoSuchElementException if this List is empty
@@ -1899,7 +1914,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * A {@code null} head throws {@link NullPointerException}, see {@link #headOption()}.
      * <p>
-     * Complexity: O(1); the head is a field of the cons cell.
+     * Complexity: O(1): the first element is stored directly.
      *
      * @return {@code None} if this List is empty, otherwise a {@code Some} containing the head element
      */
@@ -1922,7 +1937,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: O(n!) permutations.
+     * Complexity: O(n! * n^2) for n distinct elements: n! permutations, and the result is copied again each time the
+     * permutations starting with the next element are added to it.
      *
      * @return the permutations
      */
@@ -1946,7 +1962,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Removes the head element from this List.
      * <p>
-     * Complexity: O(1); the tail is a field of the cons cell.
+     * Complexity: O(1): the rest of the List is stored directly, nothing is copied.
      *
      * @return the elements of this List without the head element
      * @throws java.util.NoSuchElementException if this List is empty
@@ -1961,7 +1977,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Removes the head element from this List.
      * <p>
-     * Complexity: O(1); the tail is a field of the cons cell.
+     * Complexity: O(1): the rest of the List is stored directly, nothing is copied.
      *
      * @return {@code None} if this List is empty, otherwise a {@code Some} containing the elements of this List without the head element
      */
@@ -1972,7 +1988,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Removes the head element from this List.
      * <p>
-     * Complexity: O(1); the head and the tail are fields of the cons cell.
+     * Complexity: O(1): the first element and the rest of the List are stored directly, nothing is copied.
      *
      * @return a tuple containing the head element and the remaining elements of this List
      * @throws java.util.NoSuchElementException if this List is empty
@@ -1987,7 +2003,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Removes the head element from this List.
      * <p>
-     * Complexity: O(1); the head and the tail are fields of the cons cell.
+     * Complexity: O(1): the first element and the rest of the List are stored directly, nothing is copied.
      *
      * @return {@code None} if this List is empty, otherwise {@code Some} {@code Tuple} containing the head element and the remaining elements of this List
      */
@@ -1998,7 +2014,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The length of the longest prefix whose elements all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(k) for the k elements of that prefix.
+     * Complexity: O(k) for the k elements of the prefix.
      *
      * @param predicate the condition
      * @return the length of the prefix
@@ -2011,7 +2027,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * A new List with {@code element} in front of this one.
      * <p>
-     * Complexity: O(1); this List becomes the tail of one new cell.
+     * Complexity: O(1): one new element is put in front; this List is shared, not copied.
      *
      * @param element the new head
      * @return a new List starting with the given element
@@ -2037,7 +2053,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Pushes a new element on top of this List.
      * <p>
-     * Complexity: O(1); this List becomes the tail of one new cell.
+     * Complexity: O(1): one new element is put in front; this List is shared, not copied.
      *
      * @param element The new element
      * @return a new {@code List} instance, containing the new element on top of this List
@@ -2138,7 +2154,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List without the last element satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); the List is reversed twice.
+     * Complexity: O(n); the List is copied twice (reversed, then reversed back).
      *
      * @param predicate the condition
      * @return a new List, or this List if no element satisfies the predicate
@@ -2153,7 +2169,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List without the element at {@code index}, the elements after it shifted left.
      * <p>
-     * Complexity: O(index); the cells before the removed one are copied, the rest is shared.
+     * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
      *
      * @param index the position of the removed element
      * @return a new List
@@ -2194,7 +2210,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List without any occurrence of any of {@code elements}.
      * <p>
-     * Complexity: O(n + m) for m removed elements (they are hashed once, then one filter pass).
+     * Complexity: O(n + m) for m given elements: they are put in a hash set, then this List is filtered once.
      *
      * @param elements the elements to remove
      * @return a new List, or this List if none of them occurs
@@ -2274,7 +2290,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Retains only the elements from this List that are contained in the given {@code elements}.
      * <p>
-     * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     * Complexity: O(n + m) for m given elements: they are put in a hash set, then this List is filtered once.
      *
      * @param elements the elements to keep
      * @return a new List containing only the elements present in {@code elements}, in their original order
@@ -2299,7 +2315,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Rotates the elements {@code n} positions to the left: {@code List(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code List(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
+     * Complexity: O(n); O(1) when the distance is 0: this List is returned without being walked.
      *
      * @param n the distance
      * @return the rotated List, or this List if the rotation is a multiple of the length
@@ -2317,7 +2333,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Rotates the elements {@code n} positions to the right: {@code List(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code List(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); O(1) for {@code n == 0}, which is answered without walking the elements.
+     * Complexity: O(n); O(1) when the distance is 0: this List is returned without being walked.
      *
      * @param n the distance
      * @return the rotated List, or this List if the rotation is a multiple of the length
@@ -2367,7 +2383,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * The head of the result is the last cumulative result.
      * <p>
-     * Complexity: O(n); the elements are walked from the end.
+     * Complexity: O(n); this List is reversed first, a copy.
      *
      * @param <U>       the type of the resulting elements
      * @param zero      the initial value
@@ -2383,7 +2399,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The position of {@code element} in this List, which must already be sorted in ascending natural order; the
      * result is undefined otherwise. The search is linear, as a cons list has no indexed access.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); a List has no access by index, so the search is linear even on a sorted List.
      *
      * @param element the element to find
      * @return the index of the element if it is present; otherwise {@code (-(insertion point) - 1)}, the insertion
@@ -2401,7 +2417,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code comparator}; the result is undefined otherwise. The search is linear, as a cons list has no indexed
      * access.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); a List has no access by index, so the search is linear even on a sorted List.
      *
      * @param element    the element to find
      * @param comparator the order this List is sorted by
@@ -2418,7 +2434,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The length of the longest run of elements satisfying {@code predicate} starting at {@code from}.
      * <p>
-     * Complexity: O(from + k) for the k elements of that run.
+     * Complexity: O(i + k) for a run of k elements starting at index i.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -2451,7 +2467,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive, both clamped to the bounds of
      * this List.
      * <p>
-     * Complexity: O(endIndex).
+     * Complexity: O(j); the elements before i are skipped, the ones from i to j are copied.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2470,7 +2486,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The elements in ascending natural order (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons.
+     * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @return a new sorted List, or this List if it is empty
      * @throws ClassCastException if {@code T} is not {@code Comparable}
@@ -2482,7 +2498,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The elements in the order of {@code comparator} (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons.
+     * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @param comparator the order
      * @return a new sorted List, or this List if it is empty
@@ -2530,7 +2546,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The first element of the returned {@code Tuple} is the longest prefix of elements satisfying {@code predicate},
      * and the second element is the remaining elements.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); both parts are copied.
      *
      * @param predicate a predicate used to determine the prefix
      * @return a {@code Tuple} containing the prefix and remainder
@@ -2545,7 +2561,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List split in two at position {@code n}: the first {@code n} elements and the rest.
      * <p>
-     * Complexity: O(n); the prefix is copied, the suffix is shared.
+     * Complexity: O(k) for the first k elements; they are copied, the rest of this List is shared.
      *
      * @param n the position of the split
      * @return the prefix and the suffix
@@ -2626,7 +2642,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Whether the elements from {@code offset} on start with {@code that}. {@code that} is walked once, so a
      * one-shot iterator is accepted.
      * <p>
-     * Complexity: O(offset + m) for m elements of {@code that}.
+     * Complexity: O(i + m) for m elements of {@code that}, compared from index i.
      *
      * @param that   the prefix to test
      * @param offset the position in this List at which the prefix should start
@@ -2652,7 +2668,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The elements from {@code beginIndex} on.
      * <p>
-     * Complexity: O(beginIndex); the result shares the cells of this List.
+     * Complexity: O(i); the result shares its elements with this List.
      *
      * @param beginIndex the first position
      * @return a new List
@@ -2674,7 +2690,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
-     * Complexity: O(endIndex).
+     * Complexity: O(j); the elements before i are skipped, the ones from i to j are copied.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2708,7 +2724,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new {@code List} without its first element.
      * <p>
-     * Complexity: O(1); the tail is a field of the cons cell.
+     * Complexity: O(1): the rest of the List is stored directly, nothing is copied.
      *
      * @return a new {@code List} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code List} is empty
@@ -2718,7 +2734,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new {@code List} without its first element as an {@code Option}.
      * <p>
-     * Complexity: O(1); the tail is a field of the cons cell.
+     * Complexity: O(1): the rest of the List is stored directly, nothing is copied.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -2731,7 +2747,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
-     * Complexity: O(n) for n taken elements; the prefix is copied.
+     * Complexity: O(k) for k taken elements; they are copied. A List of at most k elements is returned as is.
      *
      * @param n the number of elements to take
      * @return a new {@code List} containing the first {@code n} elements
@@ -2764,7 +2780,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Equivalent to {@code takeWhile(predicate.negate())}, but useful when using method references
      * that cannot be negated directly.
      * <p>
-     * Complexity: O(k) for the k taken elements.
+     * Complexity: O(k) for the k taken elements; they are copied, and this List itself is returned when every element
+     * is taken.
      *
      * @param predicate a condition tested sequentially on the elements
      * @return a new {@code List} containing all elements before the first one that satisfies the predicate
@@ -2778,7 +2795,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Takes elements from this {@code List} while the given predicate holds.
      * <p>
-     * Complexity: O(k) for the k taken elements.
+     * Complexity: O(k) for the k taken elements; they are copied, and this List itself is returned when every element
+     * is taken.
      *
      * @param predicate a condition tested sequentially on the elements
      * @return a new {@code List} containing all elements up to (but not including) the first one
@@ -2801,7 +2819,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
-     * Complexity: O(n); the List is reversed twice.
+     * Complexity: O(n); the length is counted, and the List is copied twice (reversed, then reversed back).
      *
      * @param n the number of elements to take from the end
      * @return a new {@code List} containing the last {@code n} elements
@@ -2819,7 +2837,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); the List is reversed twice.
+     * Complexity: O(n); the List is copied twice (reversed, then reversed back).
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -2833,7 +2851,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); the List is reversed twice.
+     * Complexity: O(n); the List is copied twice (reversed, then reversed back).
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -2875,7 +2893,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List with the element at {@code index} replaced by {@code element}.
      * <p>
-     * Complexity: O(index); the cells before it are copied, the rest is shared.
+     * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
      *
      * @param index   the position to update
      * @param element the new element
@@ -2911,7 +2929,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List with the element at {@code index} replaced by what {@code updater} computes from it.
      * <p>
-     * Complexity: O(index); the element is read, then the cells before it are copied.
+     * Complexity: O(i); the element is read, then the elements before i are copied.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one
@@ -3134,7 +3152,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The first element.
      * <p>
-     * Complexity: O(1).
+     * Complexity: O(1): the first element is stored directly.
      *
      * @return the head of this List
      * @throws NoSuchElementException if this List is empty
@@ -3175,7 +3193,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code List(List(1, 2), List(3, 4), List(5))}; the last block is smaller when {@code size} does not divide
      * the length. The same as {@code sliding(size, size)}.
      * <p>
-     * Complexity: O(n); each block is copied into its own List.
+     * Complexity: O(n); each group is copied into its own List.
      *
      * @param size the block size, positive
      * @return the blocks, in order; empty if this List is empty
@@ -3208,7 +3226,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code List.of(1, 2, 3, 4).sliding(3)} has two windows. A List shorter than {@code size} is one window; an
      * empty List has none.
      * <p>
-     * Complexity: O(n * size / step); each window is copied into its own List.
+     * Complexity: O(n + (n / step) * size); each window is copied into its own List, and the elements between two
+     * windows are still walked.
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -3251,7 +3270,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The Cartesian power of this List: every List of {@code power} elements drawn from this one, in lexicographic
      * position order. {@code power == 0} gives one empty List; a negative power gives no result.
      * <p>
-     * Complexity: O(n^power) Lists of size {@code power}, built now.
+     * Complexity: O(power * n^power): n^power Lists of power elements each, built now; each List is copied every
+     * time an element is added to it.
      *
      * @param power the size of each result
      * @return the Lists
@@ -3288,7 +3308,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Combines the elements from the right: the last with the one before it, the result with the one before that,
      * and so on.
      * <p>
-     * Complexity: O(n); the List is reversed first.
+     * Complexity: O(n); this List is reversed first, a copy.
      *
      * @param op combines the next element and the result so far
      * @return the combined result
@@ -3430,6 +3450,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
     /**
      * The only element.
+     * <p>
+     * Complexity: O(1): at most two elements are read.
      *
      * @return the element
      * @throws NoSuchElementException if this List is empty or has more than one element
@@ -3440,6 +3462,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
     /**
      * The only element as an {@code Option}.
+     * <p>
+     * Complexity: O(1): at most two elements are read.
      *
      * @return {@code Some(element)} if there is exactly one element, {@code None} otherwise
      */
@@ -3525,7 +3549,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: O(1), that of {@link #head()}.
+     * Complexity: O(1), as {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this List is empty
      */
@@ -3536,7 +3560,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: O(n), that of {@link #last()}.
+     * Complexity: O(n), as {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this List is empty
      */
@@ -3571,6 +3595,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
     /**
      * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty List.
+     * <p>
+     * Complexity: O(n), as {@link #reduceRight(BiFunction)}.
      *
      * @param op combines the next element and the result so far
      * @return {@code Some(result)}, or {@code None} if this List is empty
@@ -3584,7 +3610,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The number of elements; the same as {@link #length()}.
      * <p>
-     * Complexity: O(n), that of {@link #length()}.
+     * Complexity: O(n), as {@link #length()}: a List does not store its size.
      *
      * @return the number of elements
      */
@@ -3595,6 +3621,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
     /**
      * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.
+     * <p>
+     * Complexity: O(n), plus the collector's own work; the elements are counted first, to size the stream.
      *
      * @param <A>       the collector's accumulation type
      * @param <R>       the result type
@@ -3608,6 +3636,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Collects the elements with a supplier, an accumulator and a combiner, as
      * {@code stream().collect(supplier, accumulator, combiner)} does.
+     * <p>
+     * Complexity: O(n), plus the work of the functions; the elements are counted first, to size the stream.
      *
      * @param <R>         the result type
      * @param supplier    makes a new result container

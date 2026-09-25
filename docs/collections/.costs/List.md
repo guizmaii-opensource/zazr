@@ -2,30 +2,30 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `head` | <abbr class="cx cx-constant" title="O(1).">O(1)</abbr> | O(1). |
-| `tail` | <abbr class="cx cx-constant" title="O(1); the tail is a field of the cons cell.">O(1)</abbr> | O(1); the tail is a field of the cons cell. |
-| `last` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
-| `init` | <abbr class="cx cx-linear" title="O(n); the kept prefix is copied.">O(n)</abbr> | O(n); the kept prefix is copied. |
-| `get` | <abbr class="cx cx-linear" title="O(index); the cells are walked one by one.">O(index)</abbr> | O(index); the cells are walked one by one. |
-| `update` | <abbr class="cx cx-linear" title="O(index); the cells before it are copied, the rest is shared.">O(index)</abbr> | O(index); the cells before it are copied, the rest is shared. |
-| `prepend` | <abbr class="cx cx-constant" title="O(1); this List becomes the tail of one new cell.">O(1)</abbr> | O(1); this List becomes the tail of one new cell. |
-| `append` | <abbr class="cx cx-linear" title="O(n); every cell of this List is rebuilt.">O(n)</abbr> | O(n); every cell of this List is rebuilt. |
+| `head` | <abbr class="cx cx-constant" title="O(1): the first element is stored directly.">O(1)</abbr> | O(1): the first element is stored directly. |
+| `tail` | <abbr class="cx cx-constant" title="O(1): the rest of the List is stored directly, nothing is copied.">O(1)</abbr> | O(1): the rest of the List is stored directly, nothing is copied. |
+| `last` | <abbr class="cx cx-linear" title="O(n); the whole List is walked.">O(n)</abbr> | O(n); the whole List is walked. |
+| `init` | <abbr class="cx cx-linear" title="O(n); every element but the last is copied.">O(n)</abbr> | O(n); every element but the last is copied. |
+| `get` | <abbr class="cx cx-linear" title="O(i); the elements before i are walked one by one.">O(i)</abbr> | O(i); the elements before i are walked one by one. |
+| `update` | <abbr class="cx cx-linear" title="O(i); the elements before i are copied, the rest of this List is shared.">O(i)</abbr> | O(i); the elements before i are copied, the rest of this List is shared. |
+| `prepend` | <abbr class="cx cx-constant" title="O(1): one new element is put in front; this List is shared, not copied.">O(1)</abbr> | O(1): one new element is put in front; this List is shared, not copied. |
+| `append` | <abbr class="cx cx-linear" title="O(n); every element of this List is copied.">O(n)</abbr> | O(n); every element of this List is copied. |
 | `prependAll` | <abbr class="cx cx-linear" title="O(m) for m prepended elements; this List is shared, not copied.">O(m)</abbr> | O(m) for m prepended elements; this List is shared, not copied. |
-| `appendAll` | <abbr class="cx cx-linear" title="O(n + m) for m appended elements; the elements are copied once and this List is rebuilt.">O(n + m)</abbr> | O(n + m) for m appended elements; the elements are copied once and this List is rebuilt. |
-| `insert` | <abbr class="cx cx-linear" title="O(index); the cells before the insertion point are copied, the rest is shared.">O(index)</abbr> | O(index); the cells before the insertion point are copied, the rest is shared. |
-| `removeAt` | <abbr class="cx cx-linear" title="O(index); the cells before the removed one are copied, the rest is shared.">O(index)</abbr> | O(index); the cells before the removed one are copied, the rest is shared. |
-| `take` | <abbr class="cx cx-linear" title="O(n) for n taken elements; the prefix is copied.">O(n)</abbr> | O(n) for n taken elements; the prefix is copied. |
-| `drop` | <abbr class="cx cx-linear" title="O(n) for n dropped elements; the rest of this List is shared, not copied.">O(n)</abbr> | O(n) for n dropped elements; the rest of this List is shared, not copied. |
-| `slice` | <abbr class="cx cx-linear" title="O(endIndex).">O(endIndex)</abbr> | O(endIndex). |
+| `appendAll` | <abbr class="cx cx-linear" title="O(n + m) for m appended elements; this List and the appended elements are copied.">O(n + m)</abbr> | O(n + m) for m appended elements; this List and the appended elements are copied. |
+| `insert` | <abbr class="cx cx-linear" title="O(i); the elements before i are copied, the rest of this List is shared.">O(i)</abbr> | O(i); the elements before i are copied, the rest of this List is shared. |
+| `removeAt` | <abbr class="cx cx-linear" title="O(i); the elements before i are copied, the rest of this List is shared.">O(i)</abbr> | O(i); the elements before i are copied, the rest of this List is shared. |
+| `take` | <abbr class="cx cx-linear" title="O(k) for k taken elements; they are copied. A List of at most k elements is returned as is.">O(k)</abbr> | O(k) for k taken elements; they are copied. A List of at most k elements is returned as is. |
+| `drop` | <abbr class="cx cx-linear" title="O(k) for k dropped elements; the rest of this List is shared, not copied.">O(k)</abbr> | O(k) for k dropped elements; the rest of this List is shared, not copied. |
+| `slice` | <abbr class="cx cx-linear" title="O(j); the elements before i are skipped, the ones from i to j are copied.">O(j)</abbr> | O(j); the elements before i are skipped, the ones from i to j are copied. |
 | `splitAt(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for the k elements before the split; the suffix is shared.">O(k)</abbr> | O(k) for the k elements before the split; the suffix is shared. |
-| `splitAt(int)` | <abbr class="cx cx-linear" title="O(n); the prefix is copied, the suffix is shared.">O(n)</abbr> | O(n); the prefix is copied, the suffix is shared. |
+| `splitAt(int)` | <abbr class="cx cx-linear" title="O(k) for the first k elements; they are copied, the rest of this List is shared.">O(k)</abbr> | O(k) for the first k elements; they are copied, the rest of this List is shared. |
 | `reverse` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
-| `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons.">O(n log n)</abbr> | O(n log n) comparisons. |
-| `length` | <abbr class="cx cx-linear" title="O(n); a cons list has no length field, so the cells are counted.">O(n)</abbr> | O(n); a cons list has no length field, so the cells are counted. |
+| `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons; the elements are copied to an array and sorted there.">O(n log n)</abbr> | O(n log n) comparisons; the elements are copied to an array and sorted there. |
+| `length` | <abbr class="cx cx-linear" title="O(n): a List does not store its size, so every call counts the elements.">O(n)</abbr> | O(n): a List does not store its size, so every call counts the elements. |
 | `contains` | <abbr class="cx cx-linear" title="O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup.">O(n)</abbr> | O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup. |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for an argument of m elements.">O(min(n, m))</abbr> | O(min(n, m)) for an argument of m elements. |
 | `sliding(int)` | <abbr class="cx cx-polynomial" title="O(n * size); each window is copied into its own List.">O(n * size)</abbr> | O(n * size); each window is copied into its own List. |
-| `sliding(int, int)` | <abbr class="cx cx-polynomial" title="O(n * size / step); each window is copied into its own List.">O(n * size / step)</abbr> | O(n * size / step); each window is copied into its own List. |
-| `grouped` | <abbr class="cx cx-linear" title="O(n); each block is copied into its own List.">O(n)</abbr> | O(n); each block is copied into its own List. |
-| `distinct` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sliding(int, int)` | <abbr class="cx cx-polynomial" title="O(n + (n / step) * size); each window is copied into its own List, and the elements between two windows are still walked.">O(n + (n / step) * size)</abbr> | O(n + (n / step) * size); each window is copied into its own List, and the elements between two windows are still walked. |
+| `grouped` | <abbr class="cx cx-linear" title="O(n); each group is copied into its own List.">O(n)</abbr> | O(n); each group is copied into its own List. |
+| `distinct` | <abbr class="cx cx-linear" title="O(n): one hash lookup per element.">O(n)</abbr> | O(n): one hash lookup per element. |

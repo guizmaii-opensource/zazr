@@ -18,20 +18,20 @@ Three sets with the same operations: `add`, `remove`, `contains`, `union`, `inte
 - `HashSet` by default.
 - `LinkedHashSet` when the order the elements arrived in matters, for example to remove duplicates from a sequence
   and keep its order.
-- `TreeSet` when you need the elements sorted, a range of them, or the least and the greatest.
+- `TreeSet` when you need the elements sorted, or the least and the greatest.
 
 ```java
-HashSet<String> tags = HashSet.of("java", "scala");
-HashSet<String> more = tags.add("zio").remove("scala");
-HashSet<String> common = tags.intersect(HashSet.of("scala", "kotlin"));
+var tags = HashSet.of("java", "scala");
+var more = tags.add("zio").remove("scala"); // HashSet<String>
+var common = tags.intersect(HashSet.of("scala", "kotlin")); // HashSet<String>
 // more contains java and zio, common is HashSet(scala)
 ```
 
 ```java
-LinkedHashSet<String> seen = LinkedHashSet.of("b", "a").add("c").add("a");
-TreeSet<Integer> sorted = TreeSet.of(5, 1, 4, 2);
-Integer smallest = sorted.head();
-TreeSet<Integer> firstTwo = sorted.take(2);
+var seen = LinkedHashSet.of("b", "a").add("c").add("a"); // LinkedHashSet<String>
+var sorted = TreeSet.of(5, 1, 4, 2);
+var smallest = sorted.head(); // Integer
+var firstTwo = sorted.take(2); // TreeSet<Integer>
 // seen is LinkedHashSet(b, a, c), smallest is 1, firstTwo is TreeSet(1, 2)
 ```
 
@@ -64,7 +64,9 @@ Every method: [complexity page](complexity.md#sets).
   `fold` and `reduce` see the elements in that order, so give them an operation where the order does not matter.
 - `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, even on a
   `TreeSet`. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, in O(log n).
-- `TreeSet` decides membership with its comparator, not `equals`.
+- `TreeSet` decides membership with its comparator, not `equals`, in `contains`, `add`, `remove` and `union`.
+  `removeAll` and `retainAll` put their argument in a hash set, so `equals` and `hashCode` decide there. So do
+  `intersect` and `diff`, unless the argument is a `TreeSet` with the same comparator.
 - `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator. With different comparators,
   or another kind of set, they process the elements one by one.
 - `TreeSet` has no `partitionMap`.

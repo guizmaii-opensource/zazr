@@ -4,12 +4,12 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
+import com.guizmaii.zazr.collection.internal.HashArrayMappedTrieBuilder;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.MapViews;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.control.Option;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -46,14 +46,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A {@link HashMap} Collector.
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> Collector<Tuple2<K, V>, ArrayList<Tuple2<K, V>>, HashMap<K, V>> collector() {
-        final Supplier<ArrayList<Tuple2<K, V>>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<Tuple2<K, V>>, Tuple2<K, V>> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<Tuple2<K, V>>> combiner = (left, right) -> {
-            left.addAll(right);
-            return left;
-        };
-        final Function<ArrayList<Tuple2<K, V>>, HashMap<K, V>> finisher = HashMap::ofEntries;
+    public static <K extends @Nullable Object, V extends @Nullable Object> Collector<Tuple2<K, V>, Builder<K, V>, HashMap<K, V>> collector() {
+        final Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
+        final BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
+        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        final Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -67,7 +64,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <T> Initial {@link java.util.stream.Stream} elements type
      * @return A {@link HashMap} Collector.
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object, T extends V> Collector<T, ArrayList<T>, HashMap<K, V>> collector(Function<? super T, ? extends K> keyMapper) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, T extends V> Collector<T, Builder<K, V>, HashMap<K, V>> collector(Function<? super T, ? extends K> keyMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         return HashMap.collector(keyMapper, v -> v);
     }
@@ -83,19 +80,27 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <T> Initial {@link java.util.stream.Stream} elements type
      * @return A {@link HashMap} Collector.
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object> Collector<T, ArrayList<T>, HashMap<K, V>> collector(
+    public static <K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object> Collector<T, Builder<K, V>, HashMap<K, V>> collector(
             Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
-            left.addAll(right);
-            return left;
-        };
-        final Function<ArrayList<T>, HashMap<K, V>> finisher = arr -> HashMap.ofEntries(Iterator.ofAll(arr)
-                .map(t -> Tuple.of(keyMapper.apply(t), valueMapper.apply(t))));
+        final Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
+        final BiConsumer<Builder<K, V>, T> accumulator = (builder, t) -> builder.put(keyMapper.apply(t), valueMapper.apply(t));
+        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        final Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
+    }
+
+    /**
+     * Returns a new {@link Builder}: the cheapest way to build a HashMap from many entries. The builder updates the
+     * nodes of the trie it creates in place, where successive puts copy the path from the root to the new entry.
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     * @return an empty builder
+     */
+    public static <K extends @Nullable Object, V extends @Nullable Object> Builder<K, V> newBuilder() {
+        return new Builder<>();
     }
 
     /**
@@ -152,11 +157,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         if (JavaConverters.underlying(map) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
         }
-        HashArrayMappedTrie<K, V> tree = HashArrayMappedTrie.empty();
+        final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-            tree = tree.put(entry.getKey(), entry.getValue());
+            putChecked(builder, entry.getKey(), entry.getValue());
         }
-        return wrap(tree);
+        return wrap(builder.result());
     }
 
     /**
@@ -457,12 +462,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @SafeVarargs
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(java.util.Map.Entry<? extends K, ? extends V> ... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
+        final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
-            trie = trie.put(entry.getKey(), entry.getValue());
+            putChecked(builder, entry.getKey(), entry.getValue());
         }
-        return wrap(trie);
+        return wrap(builder.result());
     }
 
     /**
@@ -476,12 +481,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @SafeVarargs
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(Tuple2<? extends K, ? extends V> ... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
+        final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
-            trie = trie.put(entry._1(), entry._2());
+            putChecked(builder, entry._1(), entry._2());
         }
-        return wrap(trie);
+        return wrap(builder.result());
     }
 
     /**
@@ -501,12 +506,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         } else if (JavaConverters.underlying(entries) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
         } else {
-            HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
+            final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
             for (Tuple2<? extends K, ? extends V> entry : entries) {
                 Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
-                trie = trie.put(entry._1(), entry._2());
+                putChecked(builder, entry._1(), entry._2());
             }
-            return trie.isEmpty() ? empty() : wrap(trie);
+            return wrap(builder.result());
         }
     }
 
@@ -974,6 +979,112 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public String toString() {
         return mkString("HashMap(", ", ", ")");
+    }
+
+    /**
+     * A mutable, single-use accumulator that builds a {@link HashMap}. It is a transient trie: the internal nodes it
+     * creates are updated in place while it is open, so a put allocates the new leaf and little else, where a
+     * persistent put copies every node on the path from the root. The nodes of a map passed to
+     * {@link #putAll(Iterable)} are shared, not copied, and copied only when a later put goes through them: that map
+     * never changes. The HashMap returned by {@link #result()} is the one successive puts of the same entries would
+     * give, and never changes either.
+     * <p>
+     * Of entries with equal keys, the one put last is kept, key and value, as with successive puts. Not thread-safe.
+     * After {@link #result()} has been called, every method throws {@link IllegalStateException}; create a new builder
+     * instead.
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     */
+    public static final class Builder<K extends @Nullable Object, V extends @Nullable Object> {
+
+        private final HashArrayMappedTrieBuilder<K, V> trie = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
+
+        private Builder() {
+        }
+
+        /**
+         * Puts one entry, replacing the entry of an equal key.
+         *
+         * @param key   the key, never null
+         * @param value the value, never null
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code key} or {@code value} is null
+         */
+        public Builder<K, V> put(K key, V value) {
+            trie.checkOpen();
+            Objects.requireNonNull(key, "HashMap.Builder.put: key is null");
+            Objects.requireNonNull(value, "HashMap.Builder.put: value is null");
+            trie.put(key, value);
+            return this;
+        }
+
+        /**
+         * Puts one entry, replacing the entry of an equal key.
+         *
+         * @param entry the entry, whose key and value are never null
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code entry}, its key or its value is null
+         */
+        public Builder<K, V> put(Tuple2<? extends K, ? extends V> entry) {
+            trie.checkOpen();
+            Objects.requireNonNull(entry, "HashMap.Builder.put: entry is null");
+            return put(entry._1(), entry._2());
+        }
+
+        /**
+         * Puts all entries of the given iterable, in iteration order. A {@link HashMap} (or the {@link HashMap#asJava()} view
+         * of one) given to an empty builder is adopted without copying anything; its nodes are copied only when a later
+         * put goes through them, so that map never changes. Otherwise the entries are put one by one, and a null entry,
+         * key or value part-way through is rejected only when reached: the builder keeps the entries put before it.
+         *
+         * @param entries the entries to put
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code entries} is null, or if it yields a null entry, key or value
+         */
+        @SuppressWarnings("unchecked")
+        public Builder<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+            trie.checkOpen();
+            Objects.requireNonNull(entries, "entries is null");
+            if (entries instanceof HashMap<?, ?> map) {
+                trie.putAll(((HashMap<K, V>) map).trie);
+            } else if (JavaConverters.underlying(entries) instanceof HashMap<?, ?> map) {
+                trie.putAll(((HashMap<K, V>) map).trie);
+            } else {
+                for (Tuple2<? extends K, ? extends V> entry : entries) {
+                    put(entry);
+                }
+            }
+            return this;
+        }
+
+        /**
+         * @return the number of distinct keys put so far
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public int size() {
+            return trie.size();
+        }
+
+        /**
+         * Builds the HashMap. The builder cannot be used afterwards.
+         *
+         * @return a HashMap of the entries put
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public HashMap<K, V> result() {
+            return wrap(trie.result());
+        }
+    }
+
+    // the bulk factories: a transient trie, with the null checks and messages of a persistent put
+    private static <K extends @Nullable Object, V extends @Nullable Object> void putChecked(HashArrayMappedTrieBuilder<K, V> builder, K key, V value) {
+        Objects.requireNonNull(key, "HashMap: key is null");
+        Objects.requireNonNull(value, "HashMap: value is null");
+        builder.put(key, value);
     }
 
     private static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> wrap(HashArrayMappedTrie<K, V> trie) {

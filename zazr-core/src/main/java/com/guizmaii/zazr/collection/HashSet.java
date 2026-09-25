@@ -3,13 +3,13 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
+import com.guizmaii.zazr.collection.internal.HashArrayMappedTrieBuilder;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.SetViews;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -48,20 +48,28 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     /**
+     * Returns a new {@link Builder}: the cheapest way to build a HashSet from many elements. The builder updates the
+     * nodes of the trie it creates in place, where successive additions copy the path from the root to the new element.
+     *
+     * @param <T> Component type of the HashSet.
+     * @return an empty builder
+     */
+    public static <T extends @Nullable Object> Builder<T> newBuilder() {
+        return new Builder<>();
+    }
+
+    /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
      * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link HashSet}.
      *
      * @param <T> Component type of the HashSet.
      * @return A com.guizmaii.zazr.collection.HashSet Collector.
      */
-    public static <T extends @Nullable Object> Collector<T, ArrayList<T>, HashSet<T>> collector() {
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
-            left.addAll(right);
-            return left;
-        };
-        final Function<ArrayList<T>, HashSet<T>> finisher = HashSet::ofAll;
+    public static <T extends @Nullable Object> Collector<T, Builder<T>, HashSet<T>> collector() {
+        final Supplier<Builder<T>> supplier = HashSet::newBuilder;
+        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        final Function<Builder<T>, HashSet<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -158,7 +166,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         } else if (JavaConverters.underlying(elements) instanceof HashSet<?> underlying) {
             return (HashSet<T>) underlying;
         } else {
-            final HashArrayMappedTrie<T, T> tree = addAll(HashArrayMappedTrie.empty(), elements);
+            final HashArrayMappedTrieBuilder<T, T> builder = new HashArrayMappedTrieBuilder<>("HashSet.Builder");
+            for (T element : elements) {
+                Objects.requireNonNull(element, "HashSet: element is null");
+                builder.put(element, element);
+            }
+            final HashArrayMappedTrie<T, T> tree = builder.result();
             return tree.isEmpty() ? empty() : new HashSet<>(tree);
         }
     }
@@ -983,6 +996,89 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public String toString() {
         return mkString("HashSet(", ", ", ")");
+    }
+
+    /**
+     * A mutable, single-use accumulator that builds a {@link HashSet}. It is a transient trie: the internal nodes it
+     * creates are updated in place while it is open, so an addition allocates the new leaf and little else, where a
+     * persistent addition copies every node on the path from the root. The nodes of a set passed to
+     * {@link #addAll(Iterable)} are shared, not copied, and copied only when a later addition goes through them: that
+     * set never changes. The HashSet returned by {@link #result()} is the one {@link HashSet#ofAll(Iterable)} of the
+     * same elements gives, and never changes either.
+     * <p>
+     * Of equal elements, the one added last is kept, as with {@link HashSet#ofAll(Iterable)}. Not thread-safe. After
+     * {@link #result()} has been called, every method throws {@link IllegalStateException}; create a new builder
+     * instead.
+     *
+     * @param <T> Component type of the HashSet.
+     */
+    public static final class Builder<T extends @Nullable Object> {
+
+        private final HashArrayMappedTrieBuilder<T, T> trie = new HashArrayMappedTrieBuilder<>("HashSet.Builder");
+
+        private Builder() {
+        }
+
+        /**
+         * Adds one element, replacing an equal one.
+         *
+         * @param element the element, never null
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code element} is null
+         */
+        public Builder<T> add(T element) {
+            trie.checkOpen();
+            Objects.requireNonNull(element, "HashSet.Builder.add: element is null");
+            trie.put(element, element);
+            return this;
+        }
+
+        /**
+         * Adds all elements of the given iterable, in iteration order. A {@link HashSet} (or the {@link HashSet#asJava()} view
+         * of one) given to an empty builder is adopted without copying anything; its nodes are copied only when a later
+         * addition goes through them, so that set never changes. Otherwise the elements are added one by one, and a
+         * null element part-way through is rejected only when reached: the builder keeps the elements added before it.
+         *
+         * @param elements the elements to add
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code elements} is null, or if it yields a null element
+         */
+        @SuppressWarnings("unchecked")
+        public Builder<T> addAll(Iterable<? extends T> elements) {
+            trie.checkOpen();
+            Objects.requireNonNull(elements, "elements is null");
+            if (elements instanceof HashSet<?> set) {
+                trie.putAll(((HashSet<T>) set).tree);
+            } else if (JavaConverters.underlying(elements) instanceof HashSet<?> set) {
+                trie.putAll(((HashSet<T>) set).tree);
+            } else {
+                for (T element : elements) {
+                    add(element);
+                }
+            }
+            return this;
+        }
+
+        /**
+         * @return the number of distinct elements added so far
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public int size() {
+            return trie.size();
+        }
+
+        /**
+         * Builds the HashSet. The builder cannot be used afterwards.
+         *
+         * @return a HashSet of the elements added
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public HashSet<T> result() {
+            final HashArrayMappedTrie<T, T> tree = trie.result();
+            return tree.isEmpty() ? empty() : new HashSet<>(tree);
+        }
     }
 
     private static <T extends @Nullable Object> HashArrayMappedTrie<T, T> addAll(HashArrayMappedTrie<T, T> initial,
