@@ -1008,7 +1008,7 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   returned the receiver, old objects included, when nothing was new). They now insert only absent elements, through
   a package-private `LinkedHashMap.putIfAbsent`, and the javadoc of `addAll`/`union` states the rule instead of
   calling it unspecified.
-- **How the map factories build**: a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
+- **How the map factories build** (now `LinkedHashMap.Builder`, 3.8.1): a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
   slots in the `HashMap`, replacing the slot of a repeated key in place, and makes the insertion-order `Vector` once.
   It replaces the old path (a `HashMap` of entries, a `Vector` of every key, `reverse().distinct().reverse()`, then a
   second `HashMap` of slots), so it does less work, not more.

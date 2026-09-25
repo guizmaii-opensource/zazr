@@ -353,4 +353,36 @@ public class LinkedHashBuilderTest {
         assertThat(javaList(input.parallelStream().collect(LinkedHashMap.<Integer, Integer, Tuple2<Integer, Integer>> collector(Tuple2::_1, Tuple2::_2))))
                 .isEqualTo(expected);
     }
+
+    @Test
+    public void shouldKeepTheFactoryNullMessagesOnTheBuilderPaths() {
+        final java.util.List<Integer> withNull = java.util.Arrays.asList(1, null);
+        assertThatThrownBy(() -> LinkedHashSet.of(1, null)).isInstanceOf(NullPointerException.class)
+                .hasMessage("LinkedHashSet.of: element is null");
+        assertThatThrownBy(() -> LinkedHashSet.ofAll(withNull)).isInstanceOf(NullPointerException.class)
+                .hasMessage("LinkedHashSet: element is null");
+        assertThatThrownBy(() -> LinkedHashSet.flatten(java.util.List.of(withNull))).isInstanceOf(NullPointerException.class)
+                .hasMessage("LinkedHashSet: element is null");
+        final java.util.Map<Integer, String> nullValue = new java.util.HashMap<>();
+        nullValue.put(1, null);
+        assertThatThrownBy(() -> LinkedHashMap.ofAll(nullValue)).isInstanceOf(NullPointerException.class)
+                .hasMessage("LinkedHashMap: value is null");
+        final java.util.Map<Integer, String> nullKey = new java.util.HashMap<>();
+        nullKey.put(null, "a");
+        assertThatThrownBy(() -> LinkedHashMap.ofAll(nullKey)).isInstanceOf(NullPointerException.class)
+                .hasMessage("LinkedHashMap: key is null");
+        assertThatThrownBy(() -> LinkedHashMap.ofEntries(java.util.Arrays.asList(Tuple.of(1, "a"), Tuple.of(2, null))))
+                .isInstanceOf(NullPointerException.class).hasMessage("LinkedHashMap: value is null");
+    }
+
+    @Test
+    public void shouldCopyAReversedViewInsteadOfAdoptingIt() {
+        final LinkedHashSet<Integer> set = LinkedHashSet.of(1, 2, 3);
+        assertThat(javaList(LinkedHashSet.<Integer> newBuilder().addAll(set.asJava().reversed()).result())).containsExactly(3, 2, 1);
+        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
+        final java.util.List<Tuple2<Integer, String>> reversed = new ArrayList<>();
+        map.asJavaMap().reversed().forEach((key, value) -> reversed.add(Tuple.of(key, value)));
+        assertThat(javaList(LinkedHashMap.<Integer, String> newBuilder().putAll(reversed).result()))
+                .containsExactly(Tuple.of(2, "b"), Tuple.of(1, "a"));
+    }
 }

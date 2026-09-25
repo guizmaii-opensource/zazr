@@ -177,4 +177,22 @@ public class ListBuilderTest {
         assertThat(javaList(input.parallelStream().collect(List.collector()))).isEqualTo(input);
         assertThat(java.util.stream.Stream.<Integer> empty().collect(List.collector())).isSameAs(List.empty());
     }
+
+    @Test
+    public void shouldKeepTheFactoryNullMessagesOnTheBuilderPaths() {
+        final java.util.ArrayDeque<Integer> deque = new java.util.ArrayDeque<>(java.util.List.of(1, 2));
+        final java.util.List<Integer> withNull = java.util.Arrays.asList(1, null);
+        assertThatThrownBy(() -> List.ofAll(new java.util.LinkedHashSet<>(withNull))).isInstanceOf(NullPointerException.class)
+                .hasMessage("List: element is null");
+        assertThatThrownBy(() -> List.ofAll(withNull.stream())).isInstanceOf(NullPointerException.class)
+                .hasMessage("List: element is null");
+        assertThat(List.ofAll(deque)).isEqualTo(List.of(1, 2));
+    }
+
+    @Test
+    public void shouldCopyAReversedViewInsteadOfKeepingIt() {
+        final List<Integer> source = List.of(1, 2, 3);
+        assertThat(List.<Integer> newBuilder().addAll(source.asJava().reversed()).result())
+                .isEqualTo(List.of(3, 2, 1));
+    }
 }
