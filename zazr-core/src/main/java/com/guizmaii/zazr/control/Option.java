@@ -167,6 +167,24 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
+     * Removes one level of nesting: {@code Some(Some(a))} is {@code Some(a)}, {@code Some(None)} and {@code None} are
+     * {@code None}. Static, like every {@code flatten} in zazr, because Java cannot demand of an instance method that
+     * the value be an {@code Option} itself.
+     *
+     * @param nested an {@code Option} of an {@code Option}
+     * @param <T>    the type of the inner value
+     * @return the inner {@code Option}, or {@code None} if the outer one is empty
+     * @throws NullPointerException if {@code nested} is null
+     */
+    static <T extends @Nullable Object> Option<T> flatten(Option<? extends Option<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        return switch (nested) {
+            case Some(var inner) -> narrow(inner);
+            case None<?> ignored -> none();
+        };
+    }
+
+    /**
      * Returns {@code Some} of the value supplied by {@code supplier} if {@code condition} is true,
      * or {@code None} if {@code condition} is false.
      *

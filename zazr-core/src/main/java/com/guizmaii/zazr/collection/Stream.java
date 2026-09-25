@@ -10,6 +10,7 @@ import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.StreamModule;
 import com.guizmaii.zazr.collection.internal.StreamModule.*;
 import com.guizmaii.zazr.collection.internal.TraversableModule;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.*;
@@ -150,6 +151,28 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> Stream<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
         return Iterator.concat(iterables).toStream();
+    }
+
+    /**
+     * Concatenates nested iterables into one lazy Stream. Static, like every {@code flatten} in zazr, because Java
+     * cannot demand of an instance method that the receiver's element type be a collection. Unlike
+     * {@link #concat(Iterable)}, the outer iterable is read lazily too: an inner iterable is opened only when the
+     * result reaches it, so an infinite outer iterable, or an infinite inner one, is accepted. The outer iterable and
+     * each inner one are iterated once, so one-shot iterables are accepted.
+     * <p>
+     * Complexity: lazy; the first element is found when this method is called (skipping the empty inner iterables
+     * before it), each further one when the result reaches it. An outer iterable with infinitely many empty inner
+     * ones and no element after them never yields, so the call does not return.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the inner elements, in order
+     * @throws NullPointerException if {@code nested} is null, or when the result reaches a null inner iterable or a
+     *                              null element
+     */
+    static <T extends @Nullable Object> Stream<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        return StreamFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity()));
     }
 
     /**
@@ -1621,6 +1644,39 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
+     * The complement of {@link #distinct()}: the elements occurring more than once, each once, in order of first
+     * occurrence. {@code Stream.of(3, 1, 3, 2, 1, 3).duplicates()} is {@code Stream.of(3, 1)}. {@code isEmpty()} on
+     * the result is the "all distinct" test.
+     * <p>
+     * Complexity: O(n), one hash lookup per element; the whole Stream is forced, so it does not terminate on an
+     * infinite Stream (whether an element repeats, and so whether it comes before the next one, is known only at the
+     * end).
+     *
+     * @return a new Stream of the repeated elements
+     */
+    default Stream<T> duplicates() {
+        return duplicatesBy(Function.identity());
+    }
+
+    /**
+     * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
+     * occurrence. One pass, the key computed once per element.
+     * <p>
+     * Complexity: O(n), one key and one hash lookup per element; the whole Stream is forced, so it does not terminate
+     * on an infinite Stream.
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @param <U>          the key type
+     * @return a new Stream of the first element of each repeated key
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
+    default <U extends @Nullable Object> Stream<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        final java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
+        return duplicated.isEmpty() ? empty() : ofAll(duplicated);
+    }
+
+    /**
      * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
      * equal, in the order of those last occurrences.
      * <p>
@@ -2073,6 +2129,56 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default Tuple2<Stream<T>, Stream<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Tuple.of(filter(predicate), filter(predicate.negate()));
+    }
+
+    /**
+     * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
+     * generalisation of {@link #partition(Predicate)}. Lazy like {@code partition}: both sides are Streams read from
+     * one memoised Stream of the results of {@code f}, so {@code f} is called once per element, in order, when
+     * either side first reaches that element, and never again.
+     * <p>
+     * Complexity: lazy; as every Stream is head-strict, each side is forced to its first element when this method is
+     * called, and each further element of a side is found when that side reaches it. The results of {@code f} that
+     * one side has passed stay memoised until the other side has passed them too. On an infinite Stream, a side
+     * that never receives an element is searched forever, so the call does not return (as with {@code partition}).
+     *
+     * @param f   Classifies an element
+     * @param <L> Component type of the left side
+     * @param <R> Component type of the right side
+     * @return the left values and the right values, each in the order of the elements they come from
+     * @throws NullPointerException if {@code f} is null, or when it returns null for an element a side reaches
+     */
+    default <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Stream<L>, Stream<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+        Objects.requireNonNull(f, "f is null");
+        final Stream<Either<? extends L, ? extends R>> results =
+                this.<Either<? extends L, ? extends R>> map(element -> Objects.requireNonNull(f.apply(element), "Stream.partitionMap: f returned null"));
+        return Tuple.of(lefts(results), rights(results));
+    }
+
+    // the left values of a Stream of results, found lazily: skips the Rights to the next Left, now, the rest on demand
+    private static <L extends @Nullable Object> Stream<L> lefts(Stream<? extends Either<? extends L, ?>> results) {
+        Stream<? extends Either<? extends L, ?>> stream = results;
+        while (!stream.isEmpty()) {
+            if (stream.head() instanceof Either.Left<? extends L, ?>(var left)) {
+                final Stream<? extends Either<? extends L, ?>> rest = stream;
+                return cons(left, () -> lefts(rest.tail()));
+            }
+            stream = stream.tail();
+        }
+        return empty();
+    }
+
+    // the right values of a Stream of results, found lazily: skips the Lefts to the next Right, now, the rest on demand
+    private static <R extends @Nullable Object> Stream<R> rights(Stream<? extends Either<?, ? extends R>> results) {
+        Stream<? extends Either<?, ? extends R>> stream = results;
+        while (!stream.isEmpty()) {
+            if (stream.head() instanceof Either.Right<?, ? extends R>(var right)) {
+                final Stream<? extends Either<?, ? extends R>> rest = stream;
+                return cons(right, () -> rights(rest.tail()));
+            }
+            stream = stream.tail();
+        }
+        return empty();
     }
 
     /**

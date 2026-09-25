@@ -550,11 +550,11 @@ Everything positional or complexity-sensitive moves to the concrete types: `get`
 `Map`/`Set` lose `head`, `tail`, `zipWithIndex`, `sliding`, `scan`, `take`, `drop` etc. (they are
 currently declared on `Map.java:842-857` and `Set.java:265-280` over an undefined iteration order).
 
-New on every sequence and on the hash sets (decided): `partitionMap`, the generalisation of
-`partition(Predicate)` (Scala 2.13, zio-prelude `ForEach`):
+New on every sequence and on the hash sets (decided; implemented, `Vector`/`NonEmptyVector` with #21, the others with
+#25): `partitionMap`, the generalisation of `partition(Predicate)` (Scala 2.13, zio-prelude `ForEach`):
 
 ```java
-<L, R> Tuple2<Vector<L>, Vector<R>> partitionMap(Function<? super A, Either<L, R>> f);   // Vector, NonEmptyVector (result sides may be empty)
+<L, R> Tuple2<Vector<L>, Vector<R>> partitionMap(Function<? super A, ? extends Either<? extends L, ? extends R>> f); // Vector, NonEmptyVector (result sides may be empty)
 <L, R> Tuple2<List<L>, List<R>>     partitionMap(...);                                    // List, Queue, LazyList likewise
 <L, R> Tuple2<HashSet<L>, HashSet<R>> partitionMap(...);                                  // HashSet, LinkedHashSet
 ```
@@ -564,7 +564,8 @@ tuples; use `entries().partitionMap(...)`). Implemented with two builders (3.8.1
 intermediate `Either` list. `Validation.partition` (3.5) is the same idea for validations.
 
 Also new on `Vector` (and `List`, `NonEmptyVector`, since it costs one line each) (decided; on `Vector` and
-`NonEmptyVector` since #21, `List` with #24/#25): `duplicates`, the complement of `distinct`:
+`NonEmptyVector` since #21, `List` with #24/#25, `Queue` and `Stream` with #25): `duplicates`, the complement of
+`distinct`:
 
 ```java
 Vector<A> duplicates();                                        // elements occurring more than once, each once, in order of first occurrence
@@ -578,7 +579,8 @@ again, the key computed once per element, then one pass over the distinct keys i
 the result); O(n) time; `isEmpty()` on the result is the "all distinct" test, so no separate `isDistinct`
 is needed (it is deleted with `Value`).
 
-`flatten` (decided), as a **static** method on every collection and control type, because Java cannot
+`flatten` (decided; implemented, `Vector`/`NonEmptyVector` with #21, every other collection but the maps and every
+control type with #25), as a **static** method on every collection and control type, because Java cannot
 type an instance `flatten()`: Scala's needs evidence that the element type is itself a collection
 (`implicit ev: A => IterableOnce[B]`), which a Java method cannot demand of its receiver's type
 parameter. Vavr had an unchecked `<U> Value<U> flatten()` (runtime `ClassCastException` on misuse) and
@@ -588,7 +590,7 @@ removed it in 2015 for that reason.
 static <A> Vector<A>         flatten(Iterable<? extends Iterable<? extends A>> nested);        // Vector.flatten(vectorOfVectors)
 static <A> NonEmptyVector<A> flatten(NonEmptyVector<? extends NonEmptyVector<? extends A>> nested);
 static <A> HashSet<A>        flatten(Iterable<? extends Iterable<? extends A>> nested);        // HashSet, LinkedHashSet likewise
-static <A> Option<A>         flatten(Option<? extends Option<? extends A>> nested);            // Either, Try, Validation likewise
+static <A> Option<A>         flatten(Option<? extends Option<? extends A>> nested);            // Either, Try, Validation, Lazy likewise
 ```
 
 `List`, `Queue`, `LazyList` likewise. Implemented as `flatMap(identity)` over the builder (3.8.1). Misuse
@@ -841,6 +843,48 @@ inserted), `take(n)` the first n, and so on:
   with the list (`get`, `remove`, `removeAll`, `replace`, `replaceAll`, `retainAll`, `iterator`) now carry their
   `Complexity:` line too. The notes of `TreeSet`/`TreeMap` live on the interface declarations, which the classes
   inherit.
+
+**Decided while implementing #25 (`partitionMap`, `duplicates`, static `flatten`):**
+
+- **Where they are.** `partitionMap` on `List`, `Queue`, `Stream` (`LazyList` after #28), `HashSet`, `LinkedHashSet`
+  (beside `Vector` and `NonEmptyVector`), each side of the receiver's own type; not on `TreeSet` nor on the maps, as above.
+  `duplicates`/`duplicatesBy` on `Queue` and `Stream` too, because both have `distinct`/`distinctBy`; the sets have
+  no `distinct` (a set is distinct) and get neither. Static `flatten(Iterable<? extends Iterable<? extends A>>)` on
+  `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, and on `TreeSet` in two overloads,
+  `flatten(Comparator, Iterable)` and the natural-order `flatten(Iterable)` (for `T extends Comparable<? super T>`),
+  mirroring `TreeSet.ofAll`; of equal elements the last one met is kept, as `ofAll` keeps it. The maps get no
+  `flatten`, for the reason they get no `partitionMap` (their elements are entries). On the control types:
+  `Option.flatten(Option<? extends Option<? extends A>>)`, `Either.flatten(Either<? extends L, ? extends Either<?
+  extends L, ? extends R>>)`, `Try.flatten`, `Validation.flatten(Validation<? extends E, ? extends Validation<?
+  extends E, ? extends A>>)` and `Lazy.flatten`.
+- **Implementation.** "`flatMap(identity)` over the builder" is how the result reads, not literally the code: only
+  `Vector` has a builder yet (3.8.1, #27), so each type accumulates as its own `partition` and `ofAll` do (a reversed
+  cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for `HashSet`/`LinkedHashSet`, `ofAll` over
+  the concatenation for `TreeSet`). Each reads its argument once, outer and inner iterables alike, so one-shot
+  iterables work. `partitionMap` switches on the `Either` records, one pass, no list of `Either`s, and rejects a null
+  result naming the type (`List.partitionMap: f returned null`). `duplicatesBy` on `Queue` and `Stream` runs the
+  `Vector` algorithm over the receiver itself (`Collections.duplicatesBy` in `collection.internal`, no `toList()`
+  copy first). The control types switch on the outer record and return the inner instance or the outer failure
+  unchanged; `Validation.flatten` accumulates nothing, since the outer is either `Invalid` with its own errors or
+  `Valid` with the inner validation as its value, never both. `Lazy.flatten` evaluates nothing when called: the
+  result evaluates the outer, then the inner, on its first `get()` (the one outer type that may hold null, rejected
+  there as `Lazy.flatten: the outer Lazy holds null`).
+- **`Stream` stays lazy** (decided). `Stream.partition` is two lazy `filter`s, so `partitionMap` is lazy too, with
+  the mapper called once per element: both sides read one memoised `Stream` of the mapper's results (`map`, whose
+  tail is a `Lazy`), each skipping the other side's values when it reaches them. That memoised `Stream` of `Either`s
+  is the one intermediate structure, and it is what laziness requires: a lazy list has no builder (3.8.1), and the
+  second side must see the results the first side has already computed. Every `Stream` is head-strict, so each side
+  is forced to its first element by the call; on an infinite `Stream` where one side never receives an element the
+  call does not return, exactly as `partition`'s second `filter` does. `Stream.flatten` is lazy in both dimensions
+  (the internal `FlatMapIterator` behind `Stream.flatMap`, not `Stream.concat(Iterable)`, which opens every inner
+  iterable up front): an infinite outer or inner iterable works with `take`, and only an outer with infinitely many
+  empty inner iterables and nothing after them never yields. `Stream.duplicates` is eager and does not terminate on
+  an infinite `Stream`: in first-occurrence order, whether an element is emitted, and so what comes after it, is
+  known only at the end.
+- **Complexity notes.** Every new method carries a `Complexity:` line (and `Vector.partitionMap`/`Vector.flatten`
+  gained theirs). `partitionMap` and `flatten` are not added to the guard's list in `scripts/check-complexity.scala`:
+  they are whole-collection operations, O(n) on every type, not positional ones; `duplicates`/`duplicatesBy` already
+  were in it, so the new `Queue` and `Stream` ones are checked.
 
 Which concrete collections survive (decided):
 

@@ -2,6 +2,7 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -30,6 +31,7 @@ import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HashSetTest extends AbstractTraversableTest {
@@ -2443,6 +2445,118 @@ public class HashSetTest extends AbstractTraversableTest {
                 names.retainAll(ORDERED_POSITIONAL_MEMBERS);
                 org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of(), names, type.getSimpleName());
             }
+        }
+    }
+
+    // -- partitionMap and flatten, at the empty/1/32/33 boundaries
+
+    @SafeVarargs
+    private static <T> Iterable<T> oneShotOf(T... elements) {
+        // a java.util.stream can be iterated once: a second iterator() throws IllegalStateException
+        return java.util.stream.Stream.of(elements)::iterator;
+    }
+
+    @Nested
+    class PartitionMapTests {
+
+        @Test
+        public void shouldPartitionMapLikePartitionAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final HashSet<Integer> source = HashSet.range(0, n);
+                final Tuple2<HashSet<String>, HashSet<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<HashSet<Integer>, HashSet<Integer>> expected = source.partition(i -> i % 3 == 0);
+                assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
+                assertThat(actual._2()).isEqualTo(expected._2());
+                assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
+                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, HashSet.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(HashSet.empty(), source));
+            }
+        }
+
+        @Test
+        public void shouldKeepEqualValuesOnceOnEachSide() {
+            final Tuple2<HashSet<Integer>, HashSet<Integer>> actual = HashSet.range(0, 33).partitionMap(i -> i % 2 == 0 ? Either.left(i % 5) : Either.right(i % 3));
+            assertThat(actual).isEqualTo(Tuple.of(HashSet.of(0, 1, 2, 3, 4), HashSet.of(0, 1, 2)));
+            assertThat(actual._1().size()).isEqualTo(5);
+            assertThat(actual._2().size()).isEqualTo(3);
+        }
+
+        @Test
+        public void shouldCallTheFunctionOncePerElementInIterationOrder() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final HashSet<Integer> source = HashSet.range(0, n);
+                final java.util.List<Integer> seen = new ArrayList<>();
+                source.partitionMap(i -> {
+                    seen.add(i);
+                    return i % 2 == 0 ? Either.left(i) : Either.right(i);
+                });
+                assertThat(Vector.ofAll(seen)).isEqualTo(source.toVector());
+            }
+        }
+
+        @Test
+        public void shouldReturnTheEmptyHashSetForAnEmptySide() {
+            final Tuple2<HashSet<Integer>, HashSet<Integer>> none = HashSet.<Integer> empty().partitionMap(Either::left);
+            assertSame(HashSet.empty(), none._1());
+            assertSame(HashSet.empty(), none._2());
+            assertSame(HashSet.empty(), HashSet.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2());
+            assertSame(HashSet.empty(), HashSet.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1());
+        }
+
+        @Test
+        public void shouldRejectNullFunctionAndNullEither() {
+            assertThatNullPointerException().isThrownBy(() -> HashSet.of(1).partitionMap(null)).withMessage("f is null");
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                assertThatNullPointerException()
+                        .isThrownBy(() -> HashSet.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .withMessage("HashSet.partitionMap: f returned null");
+            }
+        }
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final HashSet<Integer> inner = HashSet.range(0, n);
+                assertThat(HashSet.flatten(List.of(inner))).isEqualTo(inner);
+                assertThat(HashSet.flatten(List.of(inner, inner))).isEqualTo(inner);
+                assertThat(HashSet.flatten(List.of(HashSet.range(0, n / 2), HashSet.range(n / 2, n)))).isEqualTo(inner);
+                assertThat(HashSet.flatten(List.of(HashSet.<Integer> empty(), inner, HashSet.<Integer> empty()))).isEqualTo(inner);
+                assertThat(HashSet.flatten(java.util.List.of(Vector.range(0, n), List.range(0, n)))).isEqualTo(inner);
+                // n inner iterables of one element each
+                assertThat(HashSet.flatten(inner.toVector().map(HashSet::of))).isEqualTo(inner);
+            }
+        }
+
+        @Test
+        public void shouldFlattenEmptiesToTheEmptyHashSet() {
+            assertSame(HashSet.empty(), HashSet.flatten(List.<HashSet<Integer>> empty()));
+            assertSame(HashSet.empty(), HashSet.flatten(List.of(HashSet.<Integer> empty())));
+            assertSame(HashSet.empty(), HashSet.flatten(List.of(HashSet.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of())));
+            assertSame(HashSet.empty(), HashSet.flatten(java.util.List.<java.util.List<Integer>> of()));
+        }
+
+        @Test
+        public void shouldWidenTheElementType() {
+            final HashSet<Number> numbers = HashSet.flatten(List.of(HashSet.of(1), HashSet.of(2.0)));
+            assertThat(numbers).isEqualTo(HashSet.<Number> of(1, 2.0));
+        }
+
+        @Test
+        public void shouldReadOneShotIterablesOnce() {
+            assertThat(HashSet.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3, 1)))).isEqualTo(HashSet.of(1, 2, 3));
+            assertSame(HashSet.empty(), HashSet.<Integer> flatten(oneShotOf()));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(java.util.Arrays.asList(HashSet.of(1), null)));
+            assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("HashSet: element is null");
         }
     }
 }

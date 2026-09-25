@@ -4,6 +4,7 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -5955,4 +5956,188 @@ public class QueueTest extends AbstractTraversableTest {
         }
     }
 
+    // -- partitionMap and flatten, at the empty/1/32/33 boundaries
+
+    @SafeVarargs
+    private static <T> Iterable<T> oneShotOf(T... elements) {
+        // a java.util.stream can be iterated once: a second iterator() throws IllegalStateException
+        return java.util.stream.Stream.of(elements)::iterator;
+    }
+
+    @Nested
+    class PartitionMapTests {
+
+        @Test
+        public void shouldPartitionMapLikePartitionAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final Queue<Integer> source = Queue.range(0, n);
+                final Tuple2<Queue<String>, Queue<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<Queue<Integer>, Queue<Integer>> expected = source.partition(i -> i % 3 == 0);
+                assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
+                assertThat(actual._2()).isEqualTo(expected._2());
+                assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
+                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, Queue.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(Queue.empty(), source));
+            }
+        }
+
+        @Test
+        public void shouldKeepTheSourceOrderOnEachSide() {
+            final Tuple2<Queue<Integer>, Queue<String>> actual = Queue.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
+            assertThat(actual).isEqualTo(Tuple.of(Queue.of(2, 8, 4), Queue.of("o5", "o1", "o9")));
+        }
+
+        @Test
+        public void shouldCallTheFunctionOncePerElementInOrder() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final java.util.List<Integer> seen = new ArrayList<>();
+                Queue.range(0, n).partitionMap(i -> {
+                    seen.add(i);
+                    return i % 2 == 0 ? Either.left(i) : Either.right(i);
+                });
+                assertThat(Queue.ofAll(seen)).isEqualTo(Queue.range(0, n));
+            }
+        }
+
+        @Test
+        public void shouldReturnTheEmptyQueueForAnEmptySide() {
+            final Tuple2<Queue<Integer>, Queue<Integer>> none = Queue.<Integer> empty().partitionMap(Either::left);
+            assertThat(none._1()).isSameAs(Queue.empty());
+            assertThat(none._2()).isSameAs(Queue.empty());
+            assertThat(Queue.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2()).isSameAs(Queue.empty());
+            assertThat(Queue.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1()).isSameAs(Queue.empty());
+        }
+
+        @Test
+        public void shouldRejectNullFunctionAndNullEither() {
+            assertThatNullPointerException().isThrownBy(() -> Queue.of(1).partitionMap(null)).withMessage("f is null");
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                assertThatNullPointerException()
+                        .isThrownBy(() -> Queue.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .withMessage("Queue.partitionMap: f returned null");
+            }
+        }
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final Queue<Integer> inner = Queue.range(0, n);
+                assertThat(Queue.flatten(Queue.of(inner))).isEqualTo(inner);
+                assertThat(Queue.flatten(Queue.of(inner, inner))).isEqualTo(inner.appendAll(inner));
+                assertThat(Queue.flatten(Queue.of(Queue.<Integer> empty(), inner, Queue.<Integer> empty()))).isEqualTo(inner);
+                assertThat(Queue.flatten(java.util.List.of(Vector.range(0, n), inner.toJavaList()))).isEqualTo(inner.appendAll(inner));
+                // n inner iterables of one element each
+                assertThat(Queue.flatten(inner.map(Queue::of))).isEqualTo(inner);
+            }
+        }
+
+        @Test
+        public void shouldFlattenEmptiesToTheEmptyQueue() {
+            assertThat(Queue.flatten(Queue.<Queue<Integer>> empty())).isSameAs(Queue.empty());
+            assertThat(Queue.flatten(Queue.of(Queue.<Integer> empty()))).isSameAs(Queue.empty());
+            assertThat(Queue.flatten(Queue.of(Queue.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of()))).isSameAs(Queue.empty());
+            assertThat(Queue.flatten(java.util.List.<java.util.List<Integer>> of())).isSameAs(Queue.empty());
+        }
+
+        @Test
+        public void shouldWidenTheElementType() {
+            final Queue<Number> numbers = Queue.flatten(Queue.of(Queue.of(1), Queue.of(2.0)));
+            assertThat(numbers).isEqualTo(Queue.<Number> of(1, 2.0));
+        }
+
+        @Test
+        public void shouldReadOneShotIterablesOnce() {
+            assertThat(Queue.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3)))).isEqualTo(Queue.of(1, 2, 3));
+            assertThat(Queue.flatten(Queue.<Iterable<Integer>> empty())).isSameAs(Queue.empty());
+            assertThat(Queue.<Integer> flatten(oneShotOf())).isSameAs(Queue.empty());
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> Queue.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> Queue.flatten(java.util.Arrays.asList(Queue.of(1), null)));
+            assertThatNullPointerException().isThrownBy(() -> Queue.flatten(Queue.of(java.util.Arrays.asList(1, null)))).withMessage("Queue.flatten: element is null");
+        }
+    }
+
+    @Nested
+    class DuplicatesTests {
+
+        @Test
+        public void shouldReturnDuplicatesInOrderOfFirstOccurrence() {
+            assertThat(Queue.of(3, 1, 3, 2, 1, 3).duplicates()).isEqualTo(Queue.of(3, 1));
+            assertThat(Queue.of(1, 2, 2, 1).duplicates()).isEqualTo(Queue.of(1, 2));
+            assertThat(Queue.of("a", "b", "c").duplicates()).isSameAs(Queue.empty());
+            assertThat(Queue.<Integer> empty().duplicates()).isSameAs(Queue.empty());
+            assertThat(Queue.of(1).duplicates()).isSameAs(Queue.empty());
+        }
+
+        @Test
+        public void shouldReturnTheFirstElementOfEachDuplicatedKey() {
+            assertThat(Queue.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length)).isEqualTo(Queue.of("aa", "b"));
+            assertThat(Queue.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length)).isEqualTo(Queue.of("aa"));
+            assertThat(Queue.of("b", "aa", "e", "cc").duplicatesBy(String::length)).isEqualTo(Queue.of("b", "aa"));
+            assertThat(Queue.of("a", "bb").duplicatesBy(String::length)).isSameAs(Queue.empty());
+            assertThatNullPointerException().isThrownBy(() -> Queue.of(1).duplicatesBy(null)).withMessage("keyExtractor is null");
+        }
+
+        @Test
+        public void shouldFindDuplicatesOfANullKey() {
+            // an Queue never holds a null element, but a key extractor may return null for several of them
+            assertThat(Queue.of("a", "b").duplicatesBy(s -> null)).isEqualTo(Queue.of("a"));
+            assertThat(Queue.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s)).isEqualTo(Queue.of("a"));
+            assertThat(Queue.of("a").duplicatesBy(s -> null)).isSameAs(Queue.empty());
+        }
+
+        @Test
+        public void shouldComputeTheKeyOncePerElementInOrder() {
+            final java.util.List<Integer> seen = new ArrayList<>();
+            assertThat(Queue.range(0, 33).duplicatesBy(i -> {
+                seen.add(i);
+                return i % 5;
+            })).isEqualTo(Queue.of(0, 1, 2, 3, 4));
+            assertThat(Queue.ofAll(seen)).isEqualTo(Queue.range(0, 33));
+        }
+
+        @Test
+        public void shouldFindDuplicatesAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final Queue<Integer> source = Queue.range(0, n);
+                assertThat(source.duplicates()).isSameAs(Queue.empty());
+                assertThat(source.appendAll(source).duplicates()).isEqualTo(source);
+                assertThat(source.appendAll(source.reverse()).duplicates()).isEqualTo(source);
+                assertThat(source.duplicatesBy(i -> i % 5)).isEqualTo(source.take(Math.max(n - 5, 0)).take(5));
+            }
+        }
+    }
+
+    @Nested
+    class QueueOrderTests {
+
+        // a Queue whose rear list is not empty: its order is the front, then the rear reversed
+        private Queue<Integer> withRear() {
+            return Queue.of(5, 2).enqueue(8).enqueue(1).enqueue(9).enqueue(4);
+        }
+
+        @Test
+        public void shouldPartitionMapAndFindDuplicatesInQueueOrder() {
+            assertThat(withRear().partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right(i)))
+                    .isEqualTo(Tuple.of(Queue.of(2, 8, 4), Queue.of(5, 1, 9)));
+            assertThat(withRear().appendAll(withRear().reverse()).duplicates()).isEqualTo(Queue.of(5, 2, 8, 1, 9, 4));
+            assertThat(withRear().enqueue(1).enqueue(5).duplicates()).isEqualTo(Queue.of(5, 1));
+        }
+
+        @Test
+        public void shouldEnqueueAfterTheResult() {
+            assertThat(Queue.flatten(List.of(List.of(1, 2), List.of(3))).enqueue(4)).isEqualTo(Queue.of(1, 2, 3, 4));
+            assertThat(Queue.of(1, 2, 3).partitionMap(i -> Either.<Integer, Integer> left(i))._1().enqueue(4).dequeue()._2())
+                    .isEqualTo(Queue.of(2, 3, 4));
+            assertThat(Queue.of(1, 1, 2, 2).duplicates().enqueue(3)).isEqualTo(Queue.of(1, 2, 3));
+        }
+    }
 }

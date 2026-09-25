@@ -61,6 +61,23 @@ public final class Lazy<T extends @Nullable Object> {
     }
 
     /**
+     * Removes one level of nesting, lazily: the returned {@code Lazy} evaluates {@code nested}, then the {@code Lazy}
+     * it holds, the first time its {@link #get()} is called, and memoises the inner value. Nothing is evaluated by
+     * this call. Static, like every {@code flatten} in zazr, because Java cannot demand of an instance method that the
+     * value be a {@code Lazy} itself.
+     *
+     * @param nested a {@code Lazy} of a {@code Lazy}
+     * @param <T>    the type of the inner value
+     * @return a new, unevaluated {@code Lazy} of the inner value
+     * @throws NullPointerException if {@code nested} is null; if the outer value is null, {@link #get()} on the result
+     *                              throws it, and the result stays unevaluated
+     */
+    public static <T extends @Nullable Object> Lazy<T> flatten(Lazy<? extends Lazy<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        return Lazy.of(() -> Objects.requireNonNull(nested.get(), "Lazy.flatten: the outer Lazy holds null").get());
+    }
+
+    /**
      * Creates a {@code Lazy} instance that obtains its value from the given {@code Supplier}.
      * The supplier is invoked at most once on successful evaluation, and its result is cached for subsequent
      * calls. If the supplier throws, the exception propagates to the caller of {@link #get()}, the value is

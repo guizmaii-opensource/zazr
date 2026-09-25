@@ -1905,4 +1905,38 @@ public class TryTest {
             assertThatThrownBy(() -> success.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
+
+    // -- flatten
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenEveryCombination() {
+            final Try<Integer> success = Try.success(1);
+            final Try<Integer> innerFailure = Try.failure(new IllegalStateException("inner"));
+            final Try<Try<Integer>> outerFailure = Try.failure(new IllegalArgumentException("outer"));
+            assertThat(Try.flatten(Try.success(success))).isSameAs(success);
+            assertThat(Try.flatten(Try.success(innerFailure))).isSameAs(innerFailure);
+            assertThat(Try.flatten(outerFailure)).isSameAs(outerFailure);
+            assertThat(Try.flatten(outerFailure).getCause()).isInstanceOf(IllegalArgumentException.class).hasMessage("outer");
+        }
+
+        @Test
+        public void shouldRemoveOneLevelOnly() {
+            final Try<Try<Integer>> twice = Try.success(Try.success(1));
+            assertThat(Try.flatten(Try.success(twice))).isSameAs(twice);
+        }
+
+        @Test
+        public void shouldWidenTheValueType() {
+            final Try<Number> number = Try.flatten(Try.success(Try.success(1)));
+            assertThat(number).isEqualTo(Try.success(1));
+        }
+
+        @Test
+        public void shouldRejectANullTry() {
+            assertThatThrownBy(() -> Try.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
+        }
+    }
 }

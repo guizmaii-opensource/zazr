@@ -211,6 +211,26 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
+     * Removes one level of nesting: {@code Success(Success(a))} is {@code Success(a)}, {@code Success(Failure(e))} is
+     * {@code Failure(e)}, and an outer {@code Failure} is returned as it is. Nothing is run, so nothing is caught.
+     * Static, like every {@code flatten} in zazr, because Java cannot demand of an instance method that the value be a
+     * {@code Try} itself.
+     *
+     * @param nested a {@code Try} of a {@code Try}
+     * @param <T>    the type of the inner value
+     * @return the inner {@code Try}, or the outer {@code Failure}
+     * @throws NullPointerException if {@code nested} is null
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends @Nullable Object> Try<T> flatten(Try<? extends Try<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        return switch (nested) {
+            case Success(var inner) -> narrow(inner);
+            case Failure<?> failure -> (Try<T>) failure;
+        };
+    }
+
+    /**
      * Creates a {@link Try} from a {@link CompletableFuture}, joining it on the calling thread.
      * <p>
      * If the future completes normally, a {@link Success} containing its result is returned. If the future

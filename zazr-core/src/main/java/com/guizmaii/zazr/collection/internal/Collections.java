@@ -335,6 +335,35 @@ public final class Collections {
         return Tuple.of(creator.apply(left), creator.apply(right));
     }
 
+    /**
+     * The first element of every key occurring more than once among {@code elements}, in order of first occurrence
+     * (the {@code duplicatesBy} contract): one pass with a {@code LinkedHashMap} of first occurrences and a
+     * {@code HashSet} of the keys seen again, the key computed once per element, then one pass over the distinct keys.
+     * An element is never null, so {@code putIfAbsent} tells a first occurrence from a repeat even for a null key.
+     *
+     * @return the duplicated elements; empty (and immutable) when every key is distinct
+     */
+    public static <T extends @Nullable Object, K extends @Nullable Object> java.util.List<T> duplicatesBy(Iterable<? extends T> elements, Function<? super T, ? extends K> keyExtractor) {
+        final java.util.LinkedHashMap<K, T> first = new java.util.LinkedHashMap<>();
+        final java.util.HashSet<K> duplicated = new java.util.HashSet<>();
+        for (T element : elements) {
+            final K key = keyExtractor.apply(element);
+            if (first.putIfAbsent(key, element) != null) {
+                duplicated.add(key);
+            }
+        }
+        if (duplicated.isEmpty()) {
+            return java.util.List.of();
+        }
+        final java.util.List<T> result = new java.util.ArrayList<>(duplicated.size());
+        for (java.util.Map.Entry<K, T> entry : first.entrySet()) {
+            if (duplicated.contains(entry.getKey())) {
+                result.add(entry.getValue());
+            }
+        }
+        return result;
+    }
+
     /** A collection's own {@code filter}, handed to the helpers below: {@code Traversable} does not declare one. */
     @FunctionalInterface
     public interface Filter<T extends @Nullable Object, C> {

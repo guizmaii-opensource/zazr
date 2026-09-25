@@ -923,4 +923,35 @@ public class OptionTest {
             assertThatThrownBy(() -> some.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
+
+    // -- flatten
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenEveryCombination() {
+            final Option<Integer> inner = Option.some(1);
+            assertThat(Option.flatten(Option.some(inner))).isSameAs(inner);
+            assertThat(Option.flatten(Option.some(Option.<Integer> none()))).isSameAs(Option.none());
+            assertThat(Option.flatten(Option.<Option<Integer>> none())).isSameAs(Option.none());
+        }
+
+        @Test
+        public void shouldRemoveOneLevelOnly() {
+            final Option<Option<Integer>> twice = Option.some(Option.some(1));
+            assertThat(Option.flatten(Option.some(twice))).isSameAs(twice);
+        }
+
+        @Test
+        public void shouldWidenTheValueType() {
+            final Option<Number> number = Option.flatten(Option.some(Option.some(1)));
+            assertThat(number).isEqualTo(Option.some(1));
+        }
+
+        @Test
+        public void shouldRejectANullOption() {
+            assertThatThrownBy(() -> Option.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
+        }
+    }
 }
