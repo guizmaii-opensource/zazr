@@ -1243,6 +1243,28 @@ public class DocsExamplesTest {
         }
 
         @Test
+        void mapAndSetBuilders() {
+            var counts = HashMap.<String, Integer>newBuilder(); // HashMap.Builder<String, Integer>
+            for (var word : "to be or not to be".split(" ")) {
+                counts.put(word, word.length());
+            }
+            var lengths = counts.result(); // HashMap<String, Integer>
+            // HashMap((to, 2), (be, 2), (or, 2), (not, 3)), in some order
+
+            assertThat(lengths).isEqualTo(HashMap.of("to", 2, "be", 2, "or", 2, "not", 3));
+        }
+
+        @Test
+        void treeSetBuilder() {
+            var sorted = TreeSet.newBuilder(java.util.Comparator.<String>reverseOrder())
+                .addAll(List.of("pear", "apple", "fig"))
+                .result(); // TreeSet<String>
+            // TreeSet(pear, fig, apple)
+
+            assertThat(sorted).hasToString("TreeSet(pear, fig, apple)");
+        }
+
+        @Test
         void collectors() {
             Vector<Integer> lengths = java.util.stream.Stream.of("a", "bb", "ccc").map(String::length).collect(Vector.collector());
             TreeSet<String> sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector());
