@@ -1132,6 +1132,20 @@ def generateTestClasses(): Unit = {
         val narrowGenericResult = im.getType("java.lang.CharSequence")
         val narrowArgs = (1 to i).gen(j => j.toString)(using ", ")
 
+        // Integer arguments for the lift tests: the first one selects the outcome, the others are 1.
+        val OptionType = im.getType("com.guizmaii.zazr.control.Option")
+        val TryType = im.getType("com.guizmaii.zazr.control.Try")
+        val nonFatalType = if (checked) "Exception" else "IllegalStateException"
+        val intArgTypes = (1 to i).gen(j => "Integer")(using ", ")
+        val intParams = (1 to i).gen(j => s"i$j")(using ", ")
+        val intSum = (1 to i).gen(j => s"i$j")(using " + ")
+        def intArgs(first: Int): String = (1 to i).gen(j => if (j == 1) first.toString else "1")(using ", ")
+
+        // The arguments 1..i and the concatenation the Object-typed test functions return for them.
+        val digitArgs = (1 to i).gen(j => j.toString)(using ", ")
+        val digitString = (1 to i).gen(j => j.toString)
+        val concatBody = "\"\" + " + (1 to i).gen(j => s"o$j")(using " + ")
+
         xs"""
           public class $className {
 
@@ -1148,7 +1162,38 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldLiftPartialFunction() {
-                  assertThat($name$i.lift(($functionArgs) -> { while(true); })).isNotNull();
+                  final $uncheckedSelfType<$intArgTypes, $OptionType<Integer>> lifted = $name$i.lift(($intParams) -> {
+                      if (i1 == 0) {
+                          return null;
+                      }
+                      if (i1 == 1) {
+                          throw new $nonFatalType("non-fatal");
+                      }
+                      if (i1 == 2) {
+                          throw new OutOfMemoryError("fatal");
+                      }
+                      return $intSum;
+                  });
+                  assertThat(lifted.apply(${intArgs(3)})).isEqualTo($OptionType.some(${3 + i - 1}));
+                  assertThat(lifted.apply(${intArgs(0)})).isEqualTo($OptionType.none());
+                  assertThat(lifted.apply(${intArgs(1)})).isEqualTo($OptionType.none());
+                  $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(2)}));
+              }
+
+              @$test
+              public void shouldRethrowFatalThrowableFromLiftTry() {
+                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                      $name$i.liftTry(($intParams) -> { throw new OutOfMemoryError("fatal"); });
+                  $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(1)}));
+              }
+
+              @$test
+              public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
+                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                      $name$i.liftTry(($intParams) -> { throw new $nonFatalType("non-fatal"); });
+                  final $TryType<Integer> result = lifted.apply(${intArgs(1)});
+                  assertThat(result.isFailure()).isTrue();
+                  assertThat(result.getCause()).isInstanceOf($nonFatalType.class).hasMessage("non-fatal");
               }
 
               ${(i == 1).gen(xs"""
@@ -1163,10 +1208,11 @@ def generateTestClasses(): Unit = {
               ${(i > 1).gen(xs"""
                 @$test
                 public void shouldPartiallyApply()${checked.gen(" throws Exception")} {
-                    final $name$i<$generics> f = ($functionArgs) -> null;
+                    final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                     ${(1 until i).gen(j => {
-                      val partialArgs = (1 to j).gen(k => "null")(using ", ")
-                      s"$assertThat(f.apply($partialArgs)).isNotNull();"
+                      val partialArgs = (1 to j).gen(k => k.toString)(using ", ")
+                      val remainingArgs = (j + 1 to i).gen(k => k.toString)(using ", ")
+                      s"$assertThat(f.apply($partialArgs).apply($remainingArgs)).isEqualTo(\"$digitString\");"
                     })(using "\n")}
                 }
               """)}
@@ -1178,17 +1224,17 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldCurry() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
+              public void shouldCurry()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                   final ${curriedType(i, name)} curried = f.curried();
-                  $assertThat(curried).isNotNull();
+                  $assertThat(curried${(1 to i).gen(j => s".apply($j)")}).isEqualTo("$digitString");
               }
 
               @$test
-              public void shouldTuple() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
+              public void shouldTuple()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                   final ${if (checked) s"${name}1" else jdkFunction1}<Tuple$i<${(1 to i).gen(j => "Object")(using ", ")}>, Object> tupled = f.tupled();
-                  $assertThat(tupled).isNotNull();
+                  $assertThat(tupled.apply(Tuple.of($digitArgs))).isEqualTo("$digitString");
               }
 
               ${(!checked).gen(xs"""
@@ -1242,23 +1288,21 @@ def generateTestClasses(): Unit = {
                           assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
                       }
 
-                      ${(i == 1 || i == N).gen(xs"""
-                        @$test
-                        public void shouldNotHandFatalThrowableToRecover() {
-                            final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
-                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
-                                fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
-                            $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
-                        }
+                      @$test
+                      public void shouldNotHandFatalThrowableToRecover() {
+                          final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                              fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+                          $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
+                      }
 
-                        @$test
-                        public void shouldHandNonFatalThrowableToRecover() {
-                            final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
-                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
-                                nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
-                            assertThat(recover.apply(${toArgList("MD5")})).isNull();
-                        }
-                      """)}
+                      @$test
+                      public void shouldHandNonFatalThrowableToRecover() {
+                          final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                              nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
+                          assertThat(recover.apply(${toArgList("MD5")})).isNull();
+                      }
 
                       @$test
                       public void shouldUncheckedWork() {
@@ -1303,12 +1347,21 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldComposeWithAndThen() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
-                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> null;
+              public void shouldComposeWithAndThen()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> o + "!";
                   final $name$i<$generics> composed = f.andThen(after);
-                  $assertThat(composed).isNotNull();
+                  $assertThat(composed.apply($digitArgs)).isEqualTo("$digitString!");
               }
+
+              ${(checked && i == 1).gen(xs"""
+                @$test
+                public void shouldComposeWithBefore() throws Exception {
+                    final $name$i<String, Integer> length = String::length;
+                    final $name$i<Integer, String> repeat = n -> "x".repeat(n);
+                    assertThat(length.compose(repeat).apply(3)).isEqualTo(3);
+                }
+              """)}
 
               @Nested
               class ComposeTests {
