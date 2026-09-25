@@ -140,9 +140,17 @@
                                 <goal>clean</goal>
                             </goals>
                             <configuration>
+                                <!-- src-gen and the javadoc output only; the rest of target/ is left to `make clean`.
+                                     The javadoc plugin never deletes its output directory, so a page of a class the
+                                     generator no longer produces would otherwise stay in the javadoc jar. The compiler
+                                     plugin removes the class files of a dropped source itself. -->
+                                <excludeDefaultDirectories>true</excludeDefaultDirectories>
                                 <filesets>
                                     <fileset>
                                         <directory>${project.basedir}/src-gen</directory>
+                                    </fileset>
+                                    <fileset>
+                                        <directory>${project.build.directory}/reports/apidocs</directory>
                                     </fileset>
                                 </filesets>
                             </configuration>
