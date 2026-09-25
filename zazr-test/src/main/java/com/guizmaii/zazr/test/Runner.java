@@ -25,8 +25,10 @@ final class Runner {
     }
 
     /**
-     * Runs pass after pass of {@code gen}, each at the size of {@link #size(CheckConfig, int)}, until {@code sink}
-     * received {@code config.samples()} values or asked to stop.
+     * Runs pass after pass of {@code gen} until {@code sink} received {@code config.samples()} values or asked to
+     * stop. A pass runs at the size of {@link #size(CheckConfig, int)}, plus one for each pass in a row before it that
+     * gave no value, up to the configured size: a generator with no value at a small size, such as a filter that
+     * rejects the empty list, moves on to larger sizes instead of failing.
      *
      * @throws IllegalStateException if more passes in a row than the discard budget produce no value
      */
@@ -34,21 +36,34 @@ final class Runner {
         final int samples = config.samples();
         final Sampling sampling = new Sampling(config.seed(), config.maxDiscards());
         final int[] delivered = { 0 };
-        int emptyInARow = 0;
+        long emptyInARow = 0;
         while (delivered[0] < samples) {
             final int before = delivered[0];
-            final boolean more = gen.run(sampling, size(config, before), value -> {
+            final int size = (int) Math.min(config.size(), size(config, before) + emptyInARow);
+            final boolean more = gen.run(sampling, size, value -> {
                 delivered[0]++;
+                sampling.filtersGaveUp = 0;
                 return sink.accept(value) && delivered[0] < samples;
             });
             if (!more) {
                 return;
             } else if (delivered[0] > before) {
                 emptyInARow = 0;
-            } else if (++emptyInARow > config.maxDiscards()) {
-                throw new IllegalStateException("the generator produced no value in " + emptyInARow
-                        + " passes in a row, more than the discard budget of " + config.maxDiscards());
+            } else if (Sampling.exceeds(++emptyInARow, config.maxDiscards())) {
+                throw sampling.noValue(emptyInARow);
             }
+        }
+    }
+
+    /**
+     * Runs one pass of {@code gen} at the configured size.
+     *
+     * @throws IllegalStateException if a filter gave a pass up, so a value may be missing
+     */
+    static <A> void onePass(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
+        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards());
+        if (gen.run(sampling, config.size(), sink) && sampling.filtersGaveUp > 0) {
+            throw sampling.noValue(1);
         }
     }
 
@@ -66,7 +81,7 @@ final class Runner {
         };
         try {
             if (all) {
-                gen.run(new Sampling(seed, config.maxDiscards()), config.size(), sink);
+                onePass(config, gen, sink);
             } else {
                 passes(config, gen, sink);
             }
