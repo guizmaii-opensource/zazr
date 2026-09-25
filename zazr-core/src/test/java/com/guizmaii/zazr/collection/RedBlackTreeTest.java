@@ -711,7 +711,7 @@ public class RedBlackTreeTest {
             expected.remove(taken.value);
             counter.check("merge of the children", expected,
                     () -> RedBlackTreeModule.Node.merge(taken.left, taken.right));
-            // a red subtree next to a black tree of the same stored black height
+            // a split half next to a child subtree, which can have a red root
             final RedBlackTree<Integer> lower = RedBlackTreeModule.Node.split(tree, taken.value)._1();
             final java.util.TreeSet<Integer> lowerAndRight = model(model.headSet(taken.value));
             lowerAndRight.add(taken.value);
@@ -750,7 +750,9 @@ public class RedBlackTreeTest {
             remaining.remove(element);
             assertThat(javaList(removed)).isEqualTo(remaining);
         }
-        // union, diff and intersect with a set sharing the comparator threw ClassCastException
+        // drop, and union, diff and intersect with a set sharing the comparator, threw ClassCastException
+        assertThat(javaList(difference.drop(1))).containsExactly(10, 11, 20, 23, 28, 31, 42, 56);
+        assertThat(javaList(difference.take(8))).containsExactly(6, 10, 11, 20, 23, 28, 31, 42);
         assertThat(javaList(difference.union(treeSet(0, 25, 99))))
                 .containsExactly(0, 6, 10, 11, 20, 23, 25, 28, 31, 42, 56, 99);
         assertThat(javaList(difference.diff(treeSet(0, 23)))).containsExactly(6, 10, 11, 20, 28, 31, 42, 56);
