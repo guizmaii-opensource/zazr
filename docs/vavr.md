@@ -1,10 +1,10 @@
 ---
-description: What zazr changes from Vavr - removed types, renamed operations, and the behaviour that differs.
+description: What Zazr changes from Vavr - removed types, renamed operations, and the behaviour that differs.
 ---
 
 # Compared to Vavr
 
-zazr is a fork of [Vavr](https://github.com/vavr-io/vavr) `2.0.0-SNAPSHOT`, reshaped for Java 25 and for the API
+Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr) `2.0.0-SNAPSHOT`, reshaped for Java 25 and for the API
 design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: the package is
 `com.guizmaii.zazr`, and the changes below are deliberate. Each one, with its reason, is in [the design](design.md).
 
@@ -24,7 +24,7 @@ design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: th
 
 ## Renamed
 
-| Vavr | zazr |
+| Vavr | Zazr |
 |---|---|
 | `ap`, `combine(...).ap(f)` | `zip`, `zipWith`, static `zip(a, b, c)`, `zipWith(a, b, c, f)` |
 | `sequence` | `collectAll` |
@@ -61,7 +61,7 @@ design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: th
 
 ```java
 // Vavr: Match(option).of(Case($Some($()), v -> ...), Case($None(), () -> ...))
-Option<String> maybe = Option.some("zazr");
+Option<String> maybe = Option.some("Zazr");
 int length = switch (maybe) {
     case Some(var value) -> value.length();
     case None() -> 0;

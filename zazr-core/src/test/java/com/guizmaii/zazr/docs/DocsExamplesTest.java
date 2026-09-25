@@ -660,7 +660,7 @@ public class DocsExamplesTest {
         @Test
         void movingCodeOver() {
             // Vavr: Match(option).of(Case($Some($()), v -> ...), Case($None(), () -> ...))
-            Option<String> maybe = Option.some("zazr");
+            Option<String> maybe = Option.some("Zazr");
             int length = switch (maybe) {
                 case Some(var value) -> value.length();
                 case None() -> 0;

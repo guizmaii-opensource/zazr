@@ -1,6 +1,6 @@
 ---
 template: home.html
-title: zazr
+title: Zazr
 description: Modern Functional Programming for Java 25+. Inspired by modern Scala, ZIO, and zio-prelude.
 hide:
   - navigation
@@ -33,7 +33,7 @@ int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
 
 ## What it is { .zz-kicker }
 
-zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its `Option`,
+Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its `Option`,
 `Either`, `Try`, `Validation` and `Lazy`, and reshapes them around a few rules.
 
 <div class="grid cards zz-cards zz-cards--features" markdown>

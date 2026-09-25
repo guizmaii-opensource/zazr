@@ -1,10 +1,10 @@
 ---
-description: asJava views of the zazr collections, the copies into java.util types, and the way back.
+description: asJava views of the Zazr collections, the copies into java.util types, and the way back.
 ---
 
 # Java interop
 
-zazr collections do not implement `java.util.List`, `Set` or `Map`: a zazr type never advertises `add()` or `put()`
+Zazr collections do not implement `java.util.List`, `Set` or `Map`: a Zazr type never advertises `add()` or `put()`
 it cannot honour. At a JDK boundary, `asJava()` gives a view with no copy.
 
 ## `asJava()` views
@@ -14,7 +14,7 @@ it cannot honour. At a JDK boundary, `asJava()` gives a view with no copy.
 | `Vector`, `List`, `Queue`, `Stream`, `NonEmptyVector` | an unmodifiable `java.util.List` | O(1) to create; `get(i)` costs what the type's `get(i)` costs |
 | sets and maps (any `Traversable`) | an unmodifiable `java.util.Collection` of the elements, of `Tuple2` entries for a map | O(1) to create |
 
-Reads go through to the zazr value. Every mutator throws `UnsupportedOperationException`, whether or not it would
+Reads go through to the Zazr value. Every mutator throws `UnsupportedOperationException`, whether or not it would
 change anything, as `Collections.unmodifiableList` does.
 
 ```java
@@ -42,7 +42,7 @@ java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJa
 
 `ofAll` takes any `Iterable` or a `java.util.stream.Stream`; `collector()` collects a stream
 ([Builders](builders.md)). `Vector.ofAll` copies a `java.util.Collection` in one bulk copy, and returns the `Vector`
-itself, with no copy, when given the `asJava()` view of a `Vector`. `stream()` on any zazr collection is a
+itself, with no copy, when given the `asJava()` view of a `Vector`. `stream()` on any Zazr collection is a
 `java.util.stream.Stream` that reports the size and the ordering of the type.
 
 ```java

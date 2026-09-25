@@ -1,10 +1,10 @@
 ---
-description: Which zazr collection to choose, and what the collections have in common.
+description: Which Zazr collection to choose, and what the collections have in common.
 ---
 
 # Collections
 
-Every zazr collection is persistent: an operation returns a new collection and shares what it can with the old one,
+Every Zazr collection is persistent: an operation returns a new collection and shares what it can with the old one,
 which is never modified. There is no `Seq` promising positional access to every sequence: each type declares its own
 API, with its own return types, and every positional method states its cost in a `Complexity:` line of its javadoc.
 The [complexity page](complexity.md) gathers them all, generated from the javadoc.

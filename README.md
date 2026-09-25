@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/zaz-256.png" alt="Zaz, the zazr capybara, with a yuzu on its head" width="180">
+  <img src="docs/assets/zaz-256.png" alt="Zaz, the Zazr capybara, with a yuzu on its head" width="180">
 </p>
 
-<h1 align="center">zazr</h1>
+<h1 align="center">Zazr</h1>
 
 <p align="center">
   <b>Modern Functional Programming for Java 25+</b><br>
@@ -30,7 +30,7 @@
 
 ## What it is
 
-zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
+Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
 `Option`, `Either`, `Try`, `Validation` and `Lazy`, and reshapes them around a few rules.
 
 | | |
@@ -128,4 +128,4 @@ make test-one TEST=VectorTest MODULE=zazr-core
 
 ## License
 
-Apache License 2.0. zazr is derived from Vavr, copyright its authors; see [NOTICE](NOTICE).
+Apache License 2.0. Zazr is derived from Vavr, copyright its authors; see [NOTICE](NOTICE).
