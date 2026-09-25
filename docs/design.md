@@ -1079,7 +1079,7 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   returned the receiver, old objects included, when nothing was new). They now insert only absent elements, through
   a package-private `LinkedHashMap.putIfAbsent`, and the javadoc of `addAll`/`union` states the rule instead of
   calling it unspecified.
-- **How the map factories build**: a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
+- **How the map factories build** (now `LinkedHashMap.Builder`, 3.8.1): a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
   slots in the `HashMap`, replacing the slot of a repeated key in place, and makes the insertion-order `Vector` once.
   It replaces the old path (a `HashMap` of entries, a `Vector` of every key, `reverse().distinct().reverse()`, then a
   second `HashMap` of slots), so it does less work, not more.
@@ -1105,9 +1105,10 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   extends L, ? extends R>>)`, `Try.flatten`, `Validation.flatten(Validation<? extends E, ? extends Validation<?
   extends E, ? extends A>>)` and `Lazy.flatten`.
 - **Implementation.** "`flatMap(identity)` over the builder" is how the result reads, not literally the code: only
-  `Vector` has a builder yet (3.8.1, #27), so each type accumulates as its own `partition` and `ofAll` do (a reversed
-  cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for `HashSet`/`LinkedHashSet`, `ofAll` over
-  the concatenation for `TreeSet`). Each reads its argument once, outer and inner iterables alike, so one-shot
+  `Vector` had a builder when this was written (3.8.1, #27), so each type accumulates as its own `partition` and
+  `ofAll` do (a reversed cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for
+  `HashSet`/`LinkedHashSet`, `ofAll` over the concatenation for `TreeSet`). `List.flatten` and `LinkedHashSet.flatten`
+  now use their builders (3.8.1). Each reads its argument once, outer and inner iterables alike, so one-shot
   iterables work. `partitionMap` switches on the `Either` records, one pass, no list of `Either`s, and rejects a null
   result naming the type (`List.partitionMap: f returned null`). `duplicatesBy` on `Queue` and `Stream` runs the
   `Vector` algorithm over the receiver itself (`Collections.duplicatesBy` in `collection.internal`, no `toList()`
@@ -1495,6 +1496,50 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+
+**Implemented for `LinkedHashMap`, `LinkedHashSet` and `List` (decided):**
+- `LinkedHashMap.Builder` is not the table's `HashMap.Builder` + `Vector.Builder` composite. A repeated key keeps the
+  position of its first occurrence and takes the key object and value of its last (the repeated-key decision, 3.7), so
+  a put must find the position already given to its key and overwrite the key object there: `HashMap.Builder` has no
+  lookup and `Vector.Builder` no update. A lookup on the transient trie would tie the linked builders to the trie's
+  node types, which the CHAMP port (3.8.2) replaced while this was written. The builder is therefore
+  `LinkedHashMap.Puts`, the helper of the repeated-key decision, made public: an `ArrayList` of the keys in insertion
+  order and a persistent `HashMap` from each key to its entry and position, made into the order `Vector` once, in
+  `result()`. The fixed-arity `of`,
+  `ofEntries`, `tabulate` and `fill` already built this way and now call the builder, a refactoring rather than a
+  reroute. Against successive `put`s it saves the intermediate maps and the order `Vector` appended to or updated at
+  each step; a builder-side lookup on the CHAMP nodes (3.8.2) is a follow-up.
+- `LinkedHashSet.Builder` is a `LinkedHashMap.Builder` of `element -> element` that keeps the first of equal elements
+  (`putIfAbsent`, package-private): a repeated element allocates nothing.
+- `putAll(LinkedHashMap)` / `addAll(LinkedHashSet)` on an empty builder keeps the source: `result()` returns it when
+  nothing else was put (for the set, when no new element was added). The first put that follows copies its insertion
+  order, markers, offset and marker count included, into the array list and starts from its hash map, so the builder
+  goes on exactly as successive puts on that map would.
+- `List.Builder` appends to an `Object[]` grown by half and makes the cells in `result()` from the last element to the
+  first: n cells and one array, against 2n cells for prepending then reversing. A `List` given to `addAll` becomes the
+  pending tail: `result()` prepends the buffered elements onto it and shares its cells (so an empty builder given a
+  `List` returns that `List`), and an addition after it copies it into the array first.
+- Every builder method checks that the builder is open before checking its argument for null; the null messages name
+  the builder (`List.Builder.add: element is null`), and the factories built on a builder keep their own messages
+  (`List: element is null`, `LinkedHashSet.of: element is null`, `LinkedHashMap: key is null`).
+- Rerouted after a rough same-JVM probe on the branch, the gate being "not slower" (1 fork, 3 iterations, a machine
+  running other benchmarks, microseconds per operation at 10 / 1 000 / 100 000 distinct elements, the old algorithm
+  written out with the public API against the new factory): `List.ofAll` of a collection that is not a
+  `java.util.List` 0.034 / 4.2 / 506 against 0.059 / 6.5 / 533 (prepend, then reverse); `List.ofAll(Stream)` 0.038 /
+  3.9 / 390 against 0.061 / 4.6 / 474; `LinkedHashSet.ofAll` 0.21 / 52 / 24 200 against 0.46 / 92 / 34 200 (successive
+  adds); `LinkedHashMap.ofAll(java.util.Map)` 0.28 / 52 / 19 200 against 0.41 / 153 / 70 800 (successive puts). The
+  error bars were wide (up to the size of the score at 100 000) and overlap at 10 everywhere. The collectors, which
+  now accumulate into the builder instead of an `ArrayList` handed to `ofAll`/`ofEntries`, do strictly less work but
+  were within the noise: `List` 0.094 / 9.7 / 874 against 0.42 / 35 / 830 (2 forks, 5 iterations), `LinkedHashMap`
+  0.30 / 103 / 48 000 against 0.33 / 78 / 27 600 in one run and 58 000 ± 48 000 against 64 500 ± 30 000 at 100 000 in
+  the next, while the same builder loop measured between 22 000 and 60 000 across runs. So `List.ofAll` (the branch
+  for anything but a `java.util.List` or a `NavigableSet`, which already build n cells back to front),
+  `List.ofAll(Stream)`, `List.flatten`, `LinkedHashSet.ofAll`, `of`, `flatten` (and `tabulate`/`fill` through `of`),
+  `LinkedHashMap.ofAll(java.util.Map)` and the three types' `collector()`s use the builders; the coordinator's 3-fork
+  run of `MapSetBuilderBenchmark` (new rows for the three types) is the reference. The collectors' accumulator type is
+  now the builder, as for the other four types. Unchanged: `LinkedHashMap.ofAll(Stream, ...)` (as on `HashMap` and
+  `TreeMap`), `map`, `flatMap` and `collect` on the linked maps, the instance `addAll`/`union`, and the operations of
+  `List` that prepend and reverse (`filter`, `map`, `take`, ...).
 
 #### 3.8.2 `HashMap` and `HashSet` on CHAMP (decided 2026-09-25)
 

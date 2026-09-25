@@ -8,7 +8,6 @@ import com.guizmaii.zazr.collection.internal.SetViews;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -23,10 +22,10 @@ import org.jspecify.annotations.Nullable;
  * position by rank ({@code tail}, {@code init}, {@code take}, {@code drop}) walks past the markers in the way.
  * <p>
  * An element given more than once keeps the position and the object of its first occurrence, whichever way the set
- * is built: {@link #add(Object)} of an element already present returns the set unchanged, and every factory,
- * collector and bulk operation ({@code of}, {@code ofAll}, {@code collector()}, {@code tabulate}, {@code fill},
- * {@code flatten}, {@code addAll}, {@code union}, {@code map}, {@code flatMap}) gives the set that adding the elements
- * one by one gives.
+ * is built: {@link #add(Object)} of an element already present returns the set unchanged, and the {@link Builder} and
+ * every factory, collector and bulk operation ({@code of}, {@code ofAll}, {@code collector()}, {@code tabulate},
+ * {@code fill}, {@code flatten}, {@code addAll}, {@code union}, {@code map}, {@code flatMap}) gives the set that adding
+ * the elements one by one gives.
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -63,15 +62,24 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @param <T> Component type of the LinkedHashSet.
      * @return A com.guizmaii.zazr.collection.LinkedHashSet Collector.
      */
-    public static <T extends @Nullable Object> Collector<T, ArrayList<T>, LinkedHashSet<T>> collector() {
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
-            left.addAll(right);
-            return left;
-        };
-        final Function<ArrayList<T>, LinkedHashSet<T>> finisher = LinkedHashSet::ofAll;
+    public static <T extends @Nullable Object> Collector<T, Builder<T>, LinkedHashSet<T>> collector() {
+        final Supplier<Builder<T>> supplier = LinkedHashSet::newBuilder;
+        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        final Function<Builder<T>, LinkedHashSet<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
+    }
+
+    /**
+     * Returns a new {@link Builder}: the cheapest way to build a LinkedHashSet from many elements. The builder keeps one
+     * list of elements and one hash map, where successive additions make a new set, and a new insertion order, at each
+     * step.
+     *
+     * @param <T> Component type of the LinkedHashSet.
+     * @return an empty builder
+     */
+    public static <T extends @Nullable Object> Builder<T> newBuilder() {
+        return new Builder<>();
     }
 
     /**
@@ -112,12 +120,11 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @SafeVarargs
     public static <T extends @Nullable Object> LinkedHashSet<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        LinkedHashMap<T, Object> map = LinkedHashMap.empty();
+        final Builder<T> builder = new Builder<>();
         for (T element : elements) {
-            Objects.requireNonNull(element, "LinkedHashSet.of: element is null");
-            map = map.putIfAbsent(element, element);
+            builder.addChecked(element, "LinkedHashSet.of: element is null");
         }
-        return map.isEmpty() ? LinkedHashSet.empty() : new LinkedHashSet<>(map);
+        return builder.result();
     }
 
     /**
@@ -168,8 +175,11 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         } else if (JavaConverters.underlying(elements) instanceof LinkedHashSet<?> underlying) {
             return (LinkedHashSet<T>) underlying;
         } else {
-            final LinkedHashMap<T, Object> mao = addAll(LinkedHashMap.empty(), elements);
-            return mao.isEmpty() ? empty() : new LinkedHashSet<>(mao);
+            final Builder<T> builder = new Builder<>();
+            for (T element : elements) {
+                builder.addChecked(element, "LinkedHashSet: element is null");
+            }
+            return builder.result();
         }
     }
 
@@ -199,11 +209,13 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      */
     public static <T extends @Nullable Object> LinkedHashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        LinkedHashMap<T, Object> all = LinkedHashMap.empty();
+        final Builder<T> builder = new Builder<>();
         for (Iterable<? extends T> inner : nested) {
-            all = addAll(all, inner);
+            for (T element : inner) {
+                builder.addChecked(element, "LinkedHashSet: element is null");
+            }
         }
-        return all.isEmpty() ? empty() : new LinkedHashSet<>(all);
+        return builder.result();
     }
 
     /**
@@ -1273,6 +1285,109 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public String toString() {
         return mkString("LinkedHashSet(", ", ", ")");
+    }
+
+    /**
+     * A mutable, single-use accumulator that builds a {@link LinkedHashSet}. It is a {@link LinkedHashMap.Builder} of
+     * the elements: the intermediate sets are not built, and the insertion order becomes a {@link Vector} once, in
+     * {@link #result()}. A {@link LinkedHashSet} passed to {@link #addAll(Iterable)} on an empty builder is adopted
+     * without copying anything, and copied only when a later addition brings a new element: that set never changes.
+     * <p>
+     * The set returned by {@link #result()} is the one successive {@link LinkedHashSet#add(Object)} calls of the same
+     * elements would give: an element added more than once keeps the position and the object of its first occurrence.
+     * Not thread-safe. After {@link #result()} has been called, every method throws {@link IllegalStateException};
+     * create a new builder instead.
+     *
+     * @param <T> Component type of the LinkedHashSet.
+     */
+    public static final class Builder<T extends @Nullable Object> {
+
+        private final LinkedHashMap.Builder<T, Object> map = new LinkedHashMap.Builder<>("LinkedHashSet.Builder", 16);
+        /* a set given to addAll on an empty builder: result() returns it when the map builder still holds its map */
+        private @Nullable LinkedHashSet<T> adopted;
+
+        private Builder() {
+        }
+
+        /**
+         * Adds one element. An element equal to one already added changes nothing: the first one is kept.
+         *
+         * @param element the element, never null
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code element} is null
+         */
+        public Builder<T> add(T element) {
+            map.checkOpen();
+            Objects.requireNonNull(element, "LinkedHashSet.Builder.add: element is null");
+            map.putIfAbsent(element, element);
+            return this;
+        }
+
+        /**
+         * Adds all elements of the given iterable, in iteration order. A {@link LinkedHashSet} (or the
+         * {@link LinkedHashSet#asJava()} view of one) given to an empty builder is adopted without copying anything:
+         * {@link #result()} returns it as it is if no new element is added, and it is copied only when one is, so that
+         * set never changes. Otherwise the elements are added one by one, and a null element part-way through is
+         * rejected only when reached: the builder keeps the elements added before it.
+         *
+         * @param elements the elements to add
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code elements} is null, or if it yields a null element
+         */
+        @SuppressWarnings("unchecked")
+        public Builder<T> addAll(Iterable<? extends T> elements) {
+            map.checkOpen();
+            Objects.requireNonNull(elements, "elements is null");
+            if (elements instanceof LinkedHashSet<?> set && adopt((LinkedHashSet<T>) set)) {
+                return this;
+            } else if (JavaConverters.underlying(elements) instanceof LinkedHashSet<?> set && adopt((LinkedHashSet<T>) set)) {
+                return this;
+            }
+            for (T element : elements) {
+                add(element);
+            }
+            return this;
+        }
+
+        /**
+         * @return the number of distinct elements added so far
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public int size() {
+            return map.size();
+        }
+
+        /**
+         * Builds the LinkedHashSet. The builder cannot be used afterwards.
+         *
+         * @return a LinkedHashSet of the elements added, in the order they were first added
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public LinkedHashSet<T> result() {
+            final LinkedHashMap<T, Object> result = map.result();
+            final LinkedHashSet<T> set = adopted;
+            adopted = null;
+            if (set != null && set.map == result) {
+                return set;
+            }
+            return result.isEmpty() ? empty() : new LinkedHashSet<>(result);
+        }
+
+        // the factories: the null check and message of LinkedHashSet.add, on an open builder
+        private void addChecked(T element, String message) {
+            Objects.requireNonNull(element, message);
+            map.putIfAbsent(element, element);
+        }
+
+        private boolean adopt(LinkedHashSet<T> set) {
+            if (map.adopt(set.map)) {
+                adopted = set;
+                return true;
+            }
+            return false;
+        }
     }
 
     private static <T extends @Nullable Object> LinkedHashMap<T, Object> addAll(LinkedHashMap<T, Object> initial,

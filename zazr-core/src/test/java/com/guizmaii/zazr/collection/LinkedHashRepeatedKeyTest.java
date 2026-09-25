@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/// Every factory, collector and bulk operation of `LinkedHashMap` and `LinkedHashSet` gives the map or the set that
-/// successive `put`s or `add`s give: a repeated key keeps the position of its first occurrence and takes the key
+/// Every factory, builder, collector and bulk operation of `LinkedHashMap` and `LinkedHashSet` gives the map or the set
+/// that successive `put`s or `add`s give: a repeated key keeps the position of its first occurrence and takes the key
 /// object and the value of its last; a repeated element keeps its first position and its first object. The keys are
 /// equal but not identical, so the comparison checks which object is kept.
 public class LinkedHashRepeatedKeyTest {
@@ -85,6 +85,12 @@ public class LinkedHashRepeatedKeyTest {
             map = map.put(entry._1(), entry._2());
         }
         return map;
+    }
+
+    private static <T> java.util.List<T> javaList(Iterable<T> elements) {
+        final java.util.List<T> result = new ArrayList<>();
+        elements.forEach(result::add);
+        return result;
     }
 
     private static LinkedHashSet<Key> adds(Iterable<Key> elements) {
@@ -309,6 +315,66 @@ public class LinkedHashRepeatedKeyTest {
         assertThat(map.remove(other).head()._1()).isSameAs(second);
     }
 
+    /// The builder, fed one entry at a time, in bulk, or after adopting a map (with or without removals), gives the
+    /// map that successive puts give.
+    @Test
+    public void mapBuilderAgreesWithSuccessivePuts() {
+        for (java.util.List<Tuple2<Key, String>> entries : allInputs()) {
+            final LinkedHashMap<Key, String> expected = puts(entries);
+            final String input = entries.toString();
+            final LinkedHashMap.Builder<Key, String> byKeyValue = LinkedHashMap.newBuilder();
+            final LinkedHashMap.Builder<Key, String> byEntry = LinkedHashMap.newBuilder();
+            final LinkedHashMap.Builder<Key, String> byPutAll = LinkedHashMap.newBuilder();
+            for (Tuple2<Key, String> entry : entries) {
+                byKeyValue.put(entry._1(), entry._2());
+                byEntry.put(entry);
+                byPutAll.putAll(java.util.List.of(entry));
+            }
+            assertSameMap("builder put(key, value) " + input, byKeyValue.result(), expected);
+            assertSameMap("builder put(entry) " + input, byEntry.result(), expected);
+            assertSameMap("builder putAll(singletons) " + input, byPutAll.result(), expected);
+            assertSameMap("builder putAll(one-shot) " + input, LinkedHashMap.<Key, String>newBuilder().putAll(oneShot(entries)).result(), expected);
+
+            for (int split = 0; split <= entries.size(); split += Math.max(1, entries.size() / 4)) {
+                final java.util.List<Tuple2<Key, String>> prefix = entries.subList(0, split);
+                final java.util.List<Tuple2<Key, String>> suffix = entries.subList(split, entries.size());
+                final LinkedHashMap<Key, String> prefixMap = puts(prefix);
+                final java.util.List<Tuple2<Key, String>> prefixBefore = javaList(prefixMap);
+                // adopted, then extended
+                assertSameMap("builder adopting at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder().putAll(prefixMap).putAll(suffix).result(), expected);
+                assertSameMap("builder adopting the view at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder().putAll(prefixMap.asJava()).putAll(suffix).result(), expected);
+                // a map put into a builder that is not empty is put entry by entry
+                final LinkedHashMap<Key, String> suffixMap = puts(suffix);
+                LinkedHashMap<Key, String> both = prefixMap;
+                for (Tuple2<Key, String> entry : suffixMap) {
+                    both = both.put(entry._1(), entry._2());
+                }
+                assertSameMap("builder putAll(map) after entries at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder().putAll(prefix).putAll(suffixMap).result(), both);
+                assertSameMap("builder putAll(map) twice at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder().putAll(prefixMap).putAll(suffixMap).result(), both);
+                assertThat(javaList(prefixMap)).as("adopted map unchanged").isEqualTo(prefixBefore);
+            }
+
+            // an adopted map with removals: the builder extends it as successive puts would, markers and all
+            if (!expected.isEmpty()) {
+                final java.util.List<Tuple2<Key, String>> kept = javaList(expected);
+                LinkedHashMap<Key, String> removed = expected.remove(kept.get(0)._1());
+                if (kept.size() > 2) {
+                    removed = removed.remove(kept.get(kept.size() / 2)._1());
+                }
+                LinkedHashMap<Key, String> extended = removed;
+                for (Tuple2<Key, String> entry : entries) {
+                    extended = extended.put(entry._1(), entry._2());
+                }
+                assertSameMap("builder adopting a map with removals " + input,
+                        LinkedHashMap.<Key, String>newBuilder().putAll(removed).putAll(entries).result(), extended);
+            }
+        }
+    }
+
     // -- LinkedHashSet
 
     @Test
@@ -372,6 +438,59 @@ public class LinkedHashRepeatedKeyTest {
             expected.forEach(element -> (element.id % 2 == 0 ? lefts : rights).add(mappedKeys.get(element)));
             assertSameSet("partitionMap left " + input, partitioned._1(), adds(lefts));
             assertSameSet("partitionMap right " + input, partitioned._2(), adds(rights));
+        }
+    }
+
+    /// The builder, fed one element at a time, in bulk, or after adopting a set (with or without removals), gives the
+    /// set that successive adds give.
+    @Test
+    public void setBuilderAgreesWithSuccessiveAdds() {
+        for (java.util.List<Tuple2<Key, String>> entries : inputs(false)) {
+            final java.util.List<Key> elements = keys(entries);
+            final LinkedHashSet<Key> expected = adds(elements);
+            final String input = elements.toString();
+            final LinkedHashSet.Builder<Key> byElement = LinkedHashSet.newBuilder();
+            final LinkedHashSet.Builder<Key> byAddAll = LinkedHashSet.newBuilder();
+            for (Key element : elements) {
+                byElement.add(element);
+                byAddAll.addAll(java.util.List.of(element));
+            }
+            assertSameSet("builder add " + input, byElement.result(), expected);
+            assertSameSet("builder addAll(singletons) " + input, byAddAll.result(), expected);
+            assertSameSet("builder addAll(one-shot) " + input, LinkedHashSet.<Key>newBuilder().addAll(oneShot(elements)).result(), expected);
+
+            for (int split = 0; split <= elements.size(); split += Math.max(1, elements.size() / 4)) {
+                final java.util.List<Key> prefix = elements.subList(0, split);
+                final java.util.List<Key> suffix = elements.subList(split, elements.size());
+                final LinkedHashSet<Key> prefixSet = adds(prefix);
+                final java.util.List<Key> prefixBefore = javaList(prefixSet);
+                assertSameSet("builder adopting at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder().addAll(prefixSet).addAll(suffix).result(), expected);
+                assertSameSet("builder adopting the view at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder().addAll(prefixSet.asJava()).addAll(suffix).result(), expected);
+                final LinkedHashSet<Key> suffixSet = adds(suffix);
+                assertSameSet("builder addAll(set) after elements at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder().addAll(prefix).addAll(suffixSet).result(), addEach(prefixSet, suffixSet));
+                assertSameSet("builder addAll(set) twice at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder().addAll(prefixSet).addAll(suffixSet).result(), addEach(prefixSet, suffixSet));
+                assertThat(javaList(prefixSet)).as("adopted set unchanged").isEqualTo(prefixBefore);
+            }
+
+            // every element again, as other objects: the first objects stay, and an adopted set comes back as it is
+            final java.util.List<Key> copies = new ArrayList<>();
+            elements.forEach(element -> copies.add(new Key(element.id, element.tag + "'")));
+            assertSameSet("builder add of copies " + input, LinkedHashSet.<Key>newBuilder().addAll(elements).addAll(copies).result(), expected);
+            assertThat(LinkedHashSet.<Key>newBuilder().addAll(expected).addAll(copies).result()).isSameAs(expected);
+
+            if (!expected.isEmpty()) {
+                final java.util.List<Key> kept = javaList(expected);
+                LinkedHashSet<Key> removed = expected.remove(kept.get(0));
+                if (kept.size() > 2) {
+                    removed = removed.remove(kept.get(kept.size() / 2));
+                }
+                assertSameSet("builder adopting a set with removals " + input,
+                        LinkedHashSet.<Key>newBuilder().addAll(removed).addAll(copies).result(), addEach(removed, copies));
+            }
         }
     }
 
