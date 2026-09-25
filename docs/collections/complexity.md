@@ -2,27 +2,32 @@
 
 # Complexity
 
-Every positional or size-sensitive method of a collection states its cost in its javadoc, in a paragraph that starts with `Complexity:`. `make complexity` fails the build when one is missing or does not start with one of the expressions below, and this page is generated from those notes, so it cannot drift from the code. Hover a cell to read the whole note.
+Every method of a collection whose cost depends on the size documents that cost in its javadoc. This page is generated from the javadoc, so it matches the code. Hover a cell to read the whole note.
 
 ## Legend
 
-n is the size of the receiver, m the size of the argument, k the number of elements taken, dropped or skipped, i an index. The Scala column gives the abbreviation of the Scala collections' performance table for the same class, where there is one.
+n is the size of the receiver, m the size of the argument, k the number of elements taken, dropped or skipped, i an index. The Scala column gives the abbreviation Scala's collections documentation uses for the same class, where there is one.
 
 | Class | Scala | Meaning | Expressions |
 |---|---|---|---|
 | <span class="cx cx-constant">constant</span> | `C` | a fixed number of steps, whatever the size | `O(1)` |
-| <span class="cx cx-effectivelyconstant">effectively constant</span> | `eC` | O(log32 n): a walk or path copy of at most six trie levels (Vector) or a hash lookup in a 32-way trie (HashSet, HashMap) | `effectively O(1)` |
-| <span class="cx cx-amortisedconstant">amortised constant</span> | `aC` | constant on average over a sequence of operations; a single call may take O(n) (Queue reverses its rear list) | `amortised O(1)` |
+| <span class="cx cx-effectivelyconstant">effectively constant</span> | `eC` | a walk down a tree of 32-wide nodes, a handful of levels deep at any size (Vector, HashSet, HashMap) | `effectively O(1)` |
+| <span class="cx cx-amortisedconstant">amortised constant</span> | `aC` | constant on average over a series of calls; now and then one call takes O(n) (Queue) | `amortised O(1)` |
 | <span class="cx cx-logarithmic">logarithmic</span> | `Log` | O(log n): one walk from the root of a balanced tree | `O(log n)` |
-| <span class="cx cx-lazy">lazy</span> |  | nothing is computed now; each element is computed when the result reaches it (the note says what is forced) | `lazy` |
+| <span class="cx cx-lazy">lazy</span> |  | nothing is computed now; each element is computed when it is read (the note says what is computed at once) | `lazy` |
 | <span class="cx cx-linear">linear</span> | `L` | proportional to the number of elements named in the expression | `O(k)`, `O(m)`, `O(n)`, `O(index)`, `O(m + n)`, `O(n + k)`, `O(n + m)`, `O(endIndex)`, `O(from + k)`, `O(n / size)`, `O(n / step)`, `O(index + m)`, `O(k + log n)`, `O(max(n, m))`, `O(min(n, m))`, `O(beginIndex)`, `O(length - k)`, `O(offset + m)`, `O(min(i, n - i))`, `O(m + min(i, n - i))`, `effectively O(min(n, size - n))` |
 | <span class="cx cx-linearithmic">n log n</span> |  | a sort, or one tree operation per element | `O(m log n)`, `O(n log n)`, `O(m + n log n)`, `O(n + r log n)`, `O(m log(n + m))`, `O((n + m) log n)`, `O((n / size) log n)`, `O((n / step) log n)` |
 | <span class="cx cx-polynomial">polynomial</span> |  | a product of sizes: a slice search, a matrix, a cartesian product | `O(n^2)`, `O(n * m)`, `O(n^power)`, `O(n * size)`, `O(rows * columns)`, `O(n * size / step)`, `O(n + (n / step) * min(size, n - size))` |
 | <span class="cx cx-combinatorial">combinatorial</span> |  | one result per permutation or combination | `O(n!)`, `O(2^n)`, `O(n! * n)`, `O(C(n, k))` |
 
-"Effectively" and "amortised" are not the same promise. Effectively constant is a worst case that grows with log32 n, which stays at six steps or fewer for any size a JVM can hold. Amortised constant is an average: most calls are constant, the occasional call pays for the others. A lazy note describes what the call itself does; reading the result costs what the note says is forced.
+"Effectively" and "amortised" are not the same promise:
 
-`n/a` means the type does not declare the operation: the hash-ordered sets and maps have no positional members because their order is not defined.
+- Effectively constant is a worst case: it grows with the size, but so slowly that it stays a handful of steps.
+- Amortised constant is an average: most calls are constant, and an occasional call pays for the others.
+
+A lazy note describes what the call itself does; reading the result costs more.
+
+`n/a` means the type does not have the operation: `HashSet` and `HashMap` have no positional methods, because their order is not defined.
 
 ## Sequences
 
@@ -61,7 +66,7 @@ n is the size of the receiver, m the size of the argument, k the number of eleme
 
 ## Sets
 
-`TreeSet` inherits its notes from `SortedSet`. `head`, `take` and `drop` exist only where the order is defined: insertion order on `LinkedHashSet`, the comparator's order on `TreeSet`.
+`head`, `take` and `drop` exist only where the order is defined: insertion order on `LinkedHashSet`, the comparator's order on `TreeSet`.
 
 | Operation | `HashSet` | `LinkedHashSet` | `TreeSet` |
 |---|---|---|---|
@@ -79,7 +84,7 @@ n is the size of the receiver, m the size of the argument, k the number of eleme
 
 ## Maps
 
-`TreeMap` inherits its notes from `SortedMap`. As for the sets, only the ordered maps have positional members.
+As for the sets, only the ordered maps have positional methods.
 
 | Operation | `HashMap` | `LinkedHashMap` | `TreeMap` |
 |---|---|---|---|

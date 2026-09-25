@@ -4,19 +4,20 @@ description: HashMap, LinkedHashMap and TreeMap - Option-returning lookups, upda
 
 # Maps
 
-A map is a `Traversable` of its entries, `Tuple2<K, V>`. `get` returns an `Option`; `put`, `remove` and their
-variants return a new map.
+A map is a collection of its entries, each a `Tuple2<K, V>`. `get` returns an `Option`; `put` and `remove` return a
+new map.
 
 | Type | Representation | Iteration order | Positional methods |
 |---|---|---|---|
-| `HashMap` | a hash array mapped trie (HAMT), 32-way | not promised | none |
-| `LinkedHashMap` | a `HashMap` of slots plus a `Vector` of keys in insertion order | insertion order | yes |
-| `TreeMap` | a red-black tree of entries ordered by a key `Comparator` | the comparator's | yes |
+| `HashMap` | a hash-based tree | not defined | none |
+| `LinkedHashMap` | a hash-based map that also records the insertion order | insertion order | yes |
+| `TreeMap` | a sorted, balanced tree of entries | the key comparator's | yes |
 
 ## When to choose which
 
-`HashMap` by default. `LinkedHashMap` when the order the keys were inserted in matters; overwriting a key keeps its
-position. `TreeMap` for keys in sorted order, ranges, or the least and the greatest key.
+- `HashMap` by default.
+- `LinkedHashMap` when the order the keys were inserted in matters. Overwriting a key keeps its position.
+- `TreeMap` for keys in sorted order, ranges, or the least and the greatest key.
 
 ```java
 HashMap<String, Integer> stock = HashMap.of("apple", 3, "pear", 0);
@@ -33,9 +34,9 @@ Tuple2<String, Integer> first = byName.head();
 // values is Vector(1, 2, 3), first is (a, 1)
 ```
 
-The map-shaped operations take a `BiFunction` or `BiPredicate` over key and value (`map`, `flatMap`, `filter`,
-`reject`, `forEach`), or work on one side (`mapKeys`, `mapValues`, `filterKeys`, `filterValues`, `rejectKeys`,
-`rejectValues`). `keySet()` is a set of the keys and `values()` a `Vector` of the values, in iteration order.
+`map`, `filter` and `forEach` take a function of the key and the value. `mapValues`, `filterKeys` and similar
+methods work on one side. `keySet()` returns the keys as a set, and `values()` the values as a `Vector`, in iteration
+order.
 
 ## Costs
 
@@ -51,13 +52,13 @@ The map-shaped operations take a `BiFunction` or `BiPredicate` over key and valu
 
     --8<-- "TreeMap.md"
 
-Every method: [complexity page](complexity.md#maps). Most `TreeMap` notes live on its interface, `SortedMap`.
+Every method: [complexity page](complexity.md#maps).
 
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashMap`: it depends on the hashes and may change between versions.
-- `LinkedHashMap.remove` leaves a marker in the insertion order; the order is rebuilt, in O(n), when the markers
-  outnumber the entries, so the cost is amortised.
+- `LinkedHashMap.remove` is amortised: most calls are effectively O(1), and now and then one pays O(n) to
+  clean up the insertion order.
 - `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries, not a `java.util.Map`
   ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`.

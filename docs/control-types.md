@@ -41,14 +41,13 @@ Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
 // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
 ```
 
-`Try` captures every non-fatal throwable. `InterruptedException`, `LinkageError`, `ThreadDeath` and
-`VirtualMachineError` (so `OutOfMemoryError` and `StackOverflowError`) are fatal: they are rethrown, never wrapped.
+`Try` captures every exception or error except the fatal ones, which are rethrown: `InterruptedException`, `LinkageError`,
+`ThreadDeath` and `VirtualMachineError` (so `OutOfMemoryError` and `StackOverflowError`).
 
 ## `switch` over the cases
 
-The cases are records of a sealed interface, so a `switch` is exhaustive without a `default`, can deconstruct nested
-records and can guard with `when`. It is the primary way to take a value apart; `fold` is there for expression
-position.
+The cases are records of a sealed interface, so a `switch` needs no `default`, can take nested records apart and
+can add conditions with `when`. It is the usual way to read a value; `fold` does the same with two functions.
 
 ```java
 Option<Integer> age = Option.some(17);
@@ -71,7 +70,7 @@ String report = switch (result) {
 
 ## Members they share
 
-Each type declares these itself, with the same names and argument order, the failure side first:
+The types share most of their members, with the same names and the same argument order, failure side first:
 
 | Member | `Option` | `Either` | `Try` |
 |---|---|---|---|
@@ -85,9 +84,8 @@ Each type declares these itself, with the same names and argument order, the fai
 | `zip`, `zipWith`, `zipLeft`, `zipRight` | yes | yes | yes |
 | static `collectAll`, `forEach`, `flatten` | yes | yes | yes |
 
-And the members only one of them has: `Option.filter`, `Option.collect`; `Either.mapLeft`, `Either.mapBoth`,
-`Either.flip`, `Either.filterOrElse`; `Try.catchAll`, `Try.catchSome`, `Try.catchAllWith`, `Try.catchSomeWith`,
-`Try.mapError`, `Try.ensuring`, `Try.mapTry`, `Try.withResources`.
+Each type also has members of its own: `Try` recovers from an exception with `catchAll` and `catchSome`, and
+`Either` transforms its left side with `mapLeft`.
 
 ```java
 Try<Integer> port = Try.of(() -> Integer.parseInt("80a"))
@@ -103,8 +101,8 @@ Either<String, Integer> total = Either.<String, Integer>right(2)
 // Right(20)
 ```
 
-`static collectAll` turns many values into one, stopping at the first `None`, `Left` or `Failure`; `static forEach`
-maps first. Both return a `Vector`.
+The static `collectAll` turns a collection of values into one value holding a `Vector`. It stops at the first
+`None`, `Left` or `Failure`. The static `forEach` does the same after applying a function to each element.
 
 ```java
 Option<Vector<Integer>> all = Option.collectAll(Vector.of(Option.some(1), Option.some(2)));
@@ -113,8 +111,7 @@ Either<String, Vector<Integer>> parsed = Either.forEach(Vector.of("1", "x", "3")
 // Some(Vector(1, 2)), Left(bad: x)
 ```
 
-`static flatten` removes one level of nesting; it is static because Java cannot require an instance's value to be
-itself an `Option`. `Validation` and `Lazy` have it too.
+The static `flatten` removes one level of nesting, on every type including `Validation` and `Lazy`.
 
 ```java
 Option<Integer> flat = Option.flatten(Option.some(Option.some(1)));
@@ -142,10 +139,11 @@ Option<Integer> fromTry = Try.of(() -> Integer.parseInt("7")).toOption();
 
 ## Null policy
 
-`Some`, `Right`, `Success` and `Valid` never hold `null`: their factories and record constructors throw
-`NullPointerException`. `Option.ofNullable` is the door from nullable code. `Try.of`, `mapTry` and
-`fromCompletableFuture` capture a `null` result as a `Failure` of a `NullPointerException`, like any other non-fatal
-outcome. `getOrNull()` is the door back.
+`Some`, `Right`, `Success` and `Valid` never hold `null`:
+
+- Creating one with `null` throws a `NullPointerException`.
+- `Option.ofNullable` turns a value that may be `null` into an `Option`, and `getOrNull()` goes back.
+- A `Try` whose computation returns `null` is a `Failure` holding a `NullPointerException`.
 
 ```java
 Option<String> absent = Option.ofNullable(null);
@@ -156,9 +154,8 @@ boolean npe = nullResult.getCause() instanceof NullPointerException;
 
 ## `Lazy`
 
-`Lazy<A>` is a value computed on first access and cached. It is not a control type in the sense above: it has no
-failure case, is never empty, and `get()` is its only conversion. If the computation throws, nothing is cached and the
-next `get()` runs it again. Unlike the four types above, a `Lazy` may hold `null`.
+`Lazy<A>` is a value computed on first access, then cached. Unlike the types above, it has no failure case, is
+never empty, and may hold `null`. If the computation throws, nothing is cached and the next `get()` runs it again.
 
 ```java
 Lazy<Integer> answer = Lazy.of(() -> 6 * 7);
@@ -168,5 +165,5 @@ boolean after = answer.isEvaluated();
 // before is false, value is 43, after is true
 ```
 
-`map`, `flatMap`, `zip`, `zipWith` and `tap` return a new unevaluated `Lazy`; `collectAll` turns many into one.
-`toSupplier()` hands it to an API that takes a `Supplier`.
+`map`, `flatMap`, `zip` and the other operations return a new `Lazy` that is not computed yet. `toSupplier()`
+passes it to an API that takes a `Supplier`.

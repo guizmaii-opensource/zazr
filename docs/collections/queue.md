@@ -1,17 +1,16 @@
 ---
-description: Queue, a banker's queue over two lists - amortised O(1) enqueue and dequeue.
+description: Queue, a first-in, first-out sequence - amortised O(1) enqueue and dequeue.
 ---
 
 # `Queue`
 
-A first-in, first-out sequence built from two `List`s: the front, in order, and the rear, reversed. `enqueue` prepends
-to the rear; `dequeue` takes the head of the front and, when the front runs out, reverses the rear into a new front.
-Each element is reversed once, so `enqueue` and `dequeue` are amortised O(1).
+A first-in, first-out sequence. `enqueue` adds at the end and `dequeue` takes from the front, both in amortised O(1):
+most calls are O(1), and now and then a `dequeue` pays O(n) to reorder the queue.
 
 ## When to choose it
 
-For first in, first out: a work list, a breadth-first walk. It also has the full sequence API, but positional access
-walks the lists; choose [`Vector`](vector.md) for that.
+For first in, first out: a work list, a breadth-first walk. It also has the other sequence methods, but access by
+index walks the queue; choose [`Vector`](vector.md) for that.
 
 ```java
 Queue<String> queue = Queue.of("a", "b").enqueue("c");
@@ -39,6 +38,6 @@ Every method: [complexity page](complexity.md#queue).
 ## Sharp edges
 
 - `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
-- An amortised bound holds over a sequence of operations on one queue. Dequeuing repeatedly from the same old version
-  of a queue repeats the reversal each time.
-- `iterator()` reverses the rear list when it is created (O(m) for m rear elements).
+- The amortised cost holds when each `dequeue` works on the queue the previous one returned. Calling `dequeue`
+  again and again on the same old queue can pay the O(n) step every time.
+- Creating an `iterator()` can cost O(n).

@@ -60,7 +60,8 @@ spell the JDK ones out, as the examples on this site do.
 
 ## Five minutes of Zazr
 
-A value that may be absent is an `Option`. It never holds `null`: `ofNullable` is the door from nullable code.
+A value that may be absent is an `Option`. It never holds `null`; use `ofNullable` to wrap a value that may be
+`null`.
 
 ```java
 Option<String> name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET"));
@@ -68,7 +69,8 @@ String greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
 // "hello stranger"
 ```
 
-Every sum type is a sealed interface of records, so `switch` is exhaustive and deconstructs them.
+`Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so a `switch` over them is exhaustive
+and can take the records apart.
 
 ```java
 Either<String, Integer> parsed = Either.right(42);
@@ -86,7 +88,8 @@ int value = port.catchAll(error -> 8080).get();
 // 8080
 ```
 
-`Vector` is the default sequence: every operation returns a new `Vector`, and positional access is effectively O(1).
+`Vector` is the default sequence. Every operation returns a new `Vector`, and access by index takes a few steps
+at any size.
 
 ```java
 Vector<Integer> numbers = Vector.of(1, 2, 3, 4);
