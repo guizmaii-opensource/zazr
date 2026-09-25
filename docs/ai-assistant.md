@@ -27,7 +27,7 @@ Every Java example of the skill is compiled and run by Zazr's build, like the ex
 
 ## Install it
 
-Copy the [`skills/zazr` folder](https://github.com/guizmaii-opensource/zazr/tree/main/skills/zazr) into your
+Copy the [`skills/zazr` folder](https://github.com/guizmaii-opensource/zazr/tree/main/skills/zazr){ target="_blank" rel="noopener" } into your
 assistant's skills directory. In Claude Code, that is `.claude/skills/zazr/` in a project, or `~/.claude/skills/zazr/`
 for every project of a user.
 
