@@ -794,7 +794,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             @SuppressWarnings("NullAway")
             protected Tuple2<K, V> getNext() {
                 nextKeyDefined = false;
-                return map.get(nextKey).get().entry();
+                return entryAt(nextKey);
             }
         };
     }
@@ -1174,7 +1174,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public Vector<V> values() {
-        return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        final Vector.Builder<V> builder = Vector.newBuilder(size());
+        for (K key : list) {
+            if (key != TOMBSTONE) {
+                builder.add(entryAt(key)._2());
+            }
+        }
+        return builder.result();
     }
 
     // -- Positional operations, in insertion order

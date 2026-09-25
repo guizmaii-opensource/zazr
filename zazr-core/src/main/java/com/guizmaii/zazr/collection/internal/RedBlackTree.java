@@ -1,10 +1,10 @@
 package com.guizmaii.zazr.collection.internal;
 
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.internal.RedBlackTreeModule.Empty;
 import com.guizmaii.zazr.collection.internal.RedBlackTreeModule.Node;
 import com.guizmaii.zazr.control.Option;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -274,30 +274,43 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
             final Node<T> that = (Node<T>) this;
             return new AbstractIterator<T>() {
 
-                List<Node<T>> stack = pushLeftChildren(List.empty(), that);
+                // The path of nodes whose value is still to be returned, the next one on top. A red-black tree is at
+                // most twice as high as its black height, so the first array is almost always big enough; it grows
+                // otherwise.
+                private @Nullable Node<?>[] stack = new Node<?>[Math.max(4, 2 * that.blackHeight + 2)];
+                private int depth = 0;
+
+                {
+                    pushLeftChildren(that);
+                }
 
                 @Override
                 public boolean hasNext() {
-                    return !stack.isEmpty();
+                    return depth > 0;
                 }
 
+                // AbstractIterator only calls getNext() after hasNext() returned true: the top of the stack is a node
+                @SuppressWarnings({"unchecked", "NullAway"})
                 @Override
                 public T getNext() {
-                    final Tuple2<Node<T>, ? extends List<Node<T>>> result = stack.pop2();
-                    final Node<T> node = result._1();
-                    stack = node.right.isEmpty() ? result._2() : pushLeftChildren(result._2(), (Node<T>) node.right);
-                    return result._1().value;
+                    final Node<T> node = (Node<T>) stack[--depth];
+                    stack[depth] = null;
+                    if (!node.right.isEmpty()) {
+                        pushLeftChildren((Node<T>) node.right);
+                    }
+                    return node.value;
                 }
 
-                private List<Node<T>> pushLeftChildren(List<Node<T>> initialStack, Node<T> that) {
-                    List<Node<T>> stack = initialStack;
+                private void pushLeftChildren(Node<T> that) {
                     RedBlackTree<T> tree = that;
                     while (!tree.isEmpty()) {
                         final Node<T> node = (Node<T>) tree;
-                        stack = stack.push(node);
+                        if (depth == stack.length) {
+                            stack = Arrays.copyOf(stack, depth * 2);
+                        }
+                        stack[depth++] = node;
                         tree = node.left;
                     }
-                    return stack;
                 }
             };
         }
