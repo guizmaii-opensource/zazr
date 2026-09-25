@@ -16,7 +16,7 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The unmodifiable JDK collection views of the zazr collections: {@link java.util.Collection} for every
+ * The unmodifiable JDK collection views of the Zazr collections: {@link java.util.Collection} for every
  * {@link Traversable} ({@link CollectionView}) and {@link java.util.List} for the sequences ({@link ListView});
  * the set views are in {@link SetViews}, the map views in {@link MapViews} and the sorted ones in
  * {@link TreeViews}.

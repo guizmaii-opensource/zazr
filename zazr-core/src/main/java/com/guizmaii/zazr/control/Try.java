@@ -213,7 +213,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     /**
      * Removes one level of nesting: {@code Success(Success(a))} is {@code Success(a)}, {@code Success(Failure(e))} is
      * {@code Failure(e)}, and an outer {@code Failure} is returned as it is. Nothing is run, so nothing is caught.
-     * Static, like every {@code flatten} in zazr, because Java cannot demand of an instance method that the value be a
+     * Static, like every {@code flatten} in Zazr, because Java cannot demand of an instance method that the value be a
      * {@code Try} itself.
      *
      * @param nested a {@code Try} of a {@code Try}

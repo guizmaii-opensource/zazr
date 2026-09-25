@@ -63,7 +63,7 @@ public final class Lazy<T extends @Nullable Object> {
     /**
      * Removes one level of nesting, lazily: the returned {@code Lazy} evaluates {@code nested}, then the {@code Lazy}
      * it holds, the first time its {@link #get()} is called, and memoises the inner value. Nothing is evaluated by
-     * this call. Static, like every {@code flatten} in zazr, because Java cannot demand of an instance method that the
+     * this call. Static, like every {@code flatten} in Zazr, because Java cannot demand of an instance method that the
      * value be a {@code Lazy} itself.
      *
      * @param nested a {@code Lazy} of a {@code Lazy}

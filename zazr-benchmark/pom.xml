@@ -9,7 +9,7 @@
     </parent>
     <artifactId>zazr-benchmark</artifactId>
     <packaging>jar</packaging>
-    <name>zazr benchmark</name>
+    <name>Zazr benchmark</name>
     <description>JMH micro-benchmarks for zazr-core. Not published.</description>
     <url>https://github.com/guizmaii-opensource/zazr</url>
 

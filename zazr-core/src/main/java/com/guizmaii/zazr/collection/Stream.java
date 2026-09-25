@@ -150,7 +150,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Concatenates nested iterables into one lazy Stream. Static, like every {@code flatten} in zazr, because Java
+     * Concatenates nested iterables into one lazy Stream. Static, like every {@code flatten} in Zazr, because Java
      * cannot demand of an instance method that the receiver's element type be a collection. Unlike
      * {@link #concat(Iterable)}, the outer iterable is read lazily too: an inner iterable is opened only when the
      * result reaches it, so an infinite outer iterable, or an infinite inner one, is accepted. The outer iterable and

@@ -110,7 +110,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
 
     /**
      * Removes one level of nesting on the right: {@code Right(Right(r))} is {@code Right(r)}, {@code Right(Left(l))}
-     * is {@code Left(l)}, and an outer {@code Left} is returned as it is. Static, like every {@code flatten} in zazr,
+     * is {@code Left(l)}, and an outer {@code Left} is returned as it is. Static, like every {@code flatten} in Zazr,
      * because Java cannot demand of an instance method that the right value be an {@code Either} itself.
      *
      * @param nested an {@code Either} whose right value is an {@code Either} with the same left type

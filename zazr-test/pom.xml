@@ -8,7 +8,7 @@
     </parent>
     <artifactId>zazr-test</artifactId>
     <packaging>jar</packaging>
-    <name>zazr test</name>
+    <name>Zazr test</name>
     <description>A property check framework for zazr.</description>
     <url>https://github.com/guizmaii-opensource/zazr</url>
     <licenses>

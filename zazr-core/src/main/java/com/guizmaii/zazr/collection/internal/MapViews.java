@@ -54,11 +54,11 @@ public final class MapViews {
         return new AbstractMap.SimpleImmutableEntry<>(key, value);
     }
 
-    /** What a {@link TupleIterator} yields for each entry of a zazr map. */
+    /** What a {@link TupleIterator} yields for each entry of a Zazr map. */
     enum Part { KEY, VALUE, ENTRY }
 
     /**
-     * The keys, the values or the {@link java.util.Map.Entry entries} of an iterator of zazr map entries, one
+     * The keys, the values or the {@link java.util.Map.Entry entries} of an iterator of Zazr map entries, one
      * iterator for the three so that no function is allocated per view.
      */
     static final class TupleIterator<K extends @Nullable Object, V extends @Nullable Object, X extends @Nullable Object> implements java.util.Iterator<X> {

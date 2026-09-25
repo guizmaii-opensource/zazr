@@ -150,7 +150,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Concatenates a non-empty vector of non-empty vectors. Static, like every {@code flatten} in zazr, because Java
+     * Concatenates a non-empty vector of non-empty vectors. Static, like every {@code flatten} in Zazr, because Java
      * cannot demand of an instance method that the receiver's element type be a collection.
      *
      * @param nested Non-empty vectors

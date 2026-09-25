@@ -168,7 +168,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
 
     /**
      * Removes one level of nesting: {@code Some(Some(a))} is {@code Some(a)}, {@code Some(None)} and {@code None} are
-     * {@code None}. Static, like every {@code flatten} in zazr, because Java cannot demand of an instance method that
+     * {@code None}. Static, like every {@code flatten} in Zazr, because Java cannot demand of an instance method that
      * the value be an {@code Option} itself.
      *
      * @param nested an {@code Option} of an {@code Option}

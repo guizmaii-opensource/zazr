@@ -171,7 +171,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     /**
-     * The union of nested iterables. Static, like every {@code flatten} in zazr, because Java cannot demand of an
+     * The union of nested iterables. Static, like every {@code flatten} in Zazr, because Java cannot demand of an
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>

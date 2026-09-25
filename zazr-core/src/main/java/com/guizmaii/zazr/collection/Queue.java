@@ -166,7 +166,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * Concatenates nested iterables into one Queue. Static, like every {@code flatten} in zazr, because Java cannot
+     * Concatenates nested iterables into one Queue. Static, like every {@code flatten} in Zazr, because Java cannot
      * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
      * one are iterated once, so one-shot iterables are accepted.
      * <p>

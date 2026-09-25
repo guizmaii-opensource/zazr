@@ -766,7 +766,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten} in
-     * zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
+     * Zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
      * <p>
      * Complexity: O(n) for n inner elements in total, one builder append each.
      *

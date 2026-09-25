@@ -237,7 +237,7 @@ Decided while implementing:
   package-private `LinkedHashMap.reverseIterator()` (an index walk down the insertion-order `Vector`, skipping the
   removed keys' markers: O(1) to create, effectively O(1) per step), handed to the view as an `Iterable` by the
   owning class; `LinkedHashSet` reaches it because both are in `collection`.
-- **Map views**: `keySet()`, `values()` and `entrySet()` are views of the same map (not the zazr `keySet()`/
+- **Map views**: `keySet()`, `values()` and `entrySet()` are views of the same map (not the Zazr `keySet()`/
   `values()`, which copy); on the `LinkedHashMap` and `TreeMap` views they are `SequencedSet`/`SequencedCollection`
   (a `TreeMap` view's key set is its `NavigableSet`), and `sequencedKeySet()`/`sequencedValues()`/
   `sequencedEntrySet()` are the same views. The `HashMap` view reads the trie directly (its key and value
@@ -262,7 +262,7 @@ Decided while implementing:
   descending and reversed views; `JavaViewMutatorTest` asserts that every mutator of every view and derived view
   throws, and `JavaViewOfAllTest` checks the fast path by identity and its absence on the views that show something
   else. `JavaConvertersTest` loses its mutable rows; its cases that expected a no-op or an argument check from a
-  mutator of a zazr view now expect `UnsupportedOperationException`.
+  mutator of a Zazr view now expect `UnsupportedOperationException`.
 
 **`Optional` interop only.** `java.util.Optional` is not sealed, cannot be pattern-matched, and is
 documented as a return type only. `Option` stays, with `toOptional()`/`fromOptional()`.
