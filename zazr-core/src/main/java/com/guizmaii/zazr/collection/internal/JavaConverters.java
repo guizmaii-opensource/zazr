@@ -1,6 +1,8 @@
 package com.guizmaii.zazr.collection.internal;
 
+import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Map;
 import com.guizmaii.zazr.collection.Queue;
 import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.Traversable;
@@ -120,9 +122,14 @@ public final class JavaConverters {
 
     /**
      * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
-     * the delegate's iterator and size, nothing copied. {@code contains} compares with {@code equals} along the
-     * iterator, as {@link AbstractCollection} does, so that any argument, {@code null} or of another type, is
-     * answered {@code false} (a map's own {@code contains} takes an entry).
+     * the delegate's iterator and size, nothing copied. On the view of a {@link Map}, {@code contains} of a
+     * {@link Tuple2} is the map's own {@link Map#contains(Tuple2)}: a lookup of its key (effectively O(1), or
+     * O(log n) on a sorted map), then {@code equals} on the values. The key is matched as the map matches keys: on a
+     * {@code TreeMap} by its comparator, so with a comparator that disagrees with {@code equals} the view contains an
+     * entry whose key only compares equal to a stored one, as {@code java.util.TreeMap.entrySet().contains} does.
+     * Anything else, {@code null} or of another type, a key the order of a sorted map cannot compare included, is
+     * answered {@code false}; an exception thrown by a value's {@code equals} is not caught. On the view of any other {@link Traversable}, {@code contains} compares with {@code equals} along
+     * the iterator, as {@link AbstractCollection} does.
      *
      * @param <T> the element type
      */
@@ -154,6 +161,25 @@ public final class JavaConverters {
             return delegate.isEmpty();
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean contains(@Nullable Object element) {
+            if (delegate instanceof Map<?, ?> map) {
+                if (!(element instanceof Tuple2<?, ?> entry)) {
+                    return false;
+                }
+                final Object value;
+                try {
+                    value = Maps.getOrAbsent((Map<Object, Object>) map, entry._1());
+                } catch (ClassCastException | NullPointerException e) {
+                    // the order of a sorted map rejects a key of another type, or a null key: no entry holds it
+                    return false;
+                }
+                // outside the catch: an exception thrown by a value's equals reaches the caller
+                return value != Maps.ABSENT && java.util.Objects.equals(value, entry._2());
+            }
+            return super.contains(element);
+        }
 
         @Override
         public Object[] toArray() {
@@ -175,7 +201,8 @@ public final class JavaConverters {
      * Nothing is computed ahead of the operation that needs it, which matters for a {@link Stream}: the iterator,
      * the spliterator, {@code isEmpty}, {@code contains}, {@code indexOf}, {@code equals} and {@code get(i)} force no
      * more cells than they read; {@code size}, {@code lastIndexOf}, {@code hashCode}, {@code getLast} and
-     * everything on the reversed view force the whole Stream.
+     * everything on the reversed view force the whole Stream. The size is counted the first time it is needed and
+     * kept, since the sequence never changes: an indexed loop over the view does not count it again at every step.
      *
      * @param <T> the element type
      * @param <C> the sequence type
@@ -185,9 +212,22 @@ public final class JavaConverters {
         final C delegate;
         final boolean reversed;
 
+        // the size of the delegate, counted the first time it is asked for: the delegate never changes, and the size
+        // of a List, a Queue or a Stream is a walk; -1 until then (a race only counts it twice)
+        private int size = -1;
+
         ListView(C delegate, boolean reversed) {
             this.delegate = delegate;
             this.reversed = reversed;
+        }
+
+        final int delegateSize() {
+            int n = size;
+            if (n < 0) {
+                n = delegate.size();
+                size = n;
+            }
+            return n;
         }
 
         // -- the reads a java.util.List needs and Traversable does not declare
@@ -211,7 +251,7 @@ public final class JavaConverters {
 
         /** Whether the sequence has at least {@code n} elements; forces at most {@code n} cells of a Stream. */
         boolean delegateHasAtLeast(C delegate, int n) {
-            return delegate.size() >= n;
+            return delegateSize() >= n;
         }
 
         // -- java.util.List
@@ -223,7 +263,7 @@ public final class JavaConverters {
 
         @Override
         public int size() {
-            return delegate.size();
+            return delegateSize();
         }
 
         @Override
@@ -240,7 +280,7 @@ public final class JavaConverters {
         @Override
         public T get(int index) {
             if (reversed) {
-                final int size = delegate.size();
+                final int size = delegateSize();
                 if (index < 0 || index >= size) {
                     throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + size);
                 }
@@ -270,7 +310,7 @@ public final class JavaConverters {
         public int indexOf(@Nullable Object element) {
             if (reversed) {
                 final int index = delegateLastIndexOf(delegate, (T) element);
-                return index < 0 ? -1 : delegate.size() - 1 - index;
+                return index < 0 ? -1 : delegateSize() - 1 - index;
             }
             return delegateIndexOf(delegate, (T) element);
         }
@@ -280,7 +320,7 @@ public final class JavaConverters {
         public int lastIndexOf(@Nullable Object element) {
             if (reversed) {
                 final int index = delegateIndexOf(delegate, (T) element);
-                return index < 0 ? -1 : delegate.size() - 1 - index;
+                return index < 0 ? -1 : delegateSize() - 1 - index;
             }
             return delegateLastIndexOf(delegate, (T) element);
         }
@@ -333,7 +373,7 @@ public final class JavaConverters {
                 throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
             }
             if (reversed) {
-                final int size = delegate.size();
+                final int size = delegateSize();
                 return view(delegateSubSequence(delegate, size - toIndex, size - fromIndex), true);
             }
             return view(delegateSubSequence(delegate, fromIndex, toIndex), false);
@@ -424,7 +464,7 @@ public final class JavaConverters {
         // -- private helpers
 
         private boolean hasAtLeast(int n) {
-            return reversed ? delegate.size() >= n : delegateHasAtLeast(delegate, n);
+            return reversed ? delegateSize() >= n : delegateHasAtLeast(delegate, n);
         }
 
         /**

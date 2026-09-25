@@ -5684,4 +5684,117 @@ public class ListTest extends AbstractTraversableTest {
             assertThatNullPointerException().isThrownBy(() -> List.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("List: element is null");
         }
     }
+
+    // -- prefix operations walk only the cells they need
+
+    @Nested
+    class PrefixWalkTests {
+
+        private static final int[] SIZES = { 0, 1, 5 };
+
+        private static int[] indices(int n) {
+            return new int[] { Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE };
+        }
+
+        // the result as a Vector, or the class of the exception thrown
+        private static Object outcome(Supplier<? extends Iterable<Integer>> call) {
+            try {
+                return Vector.ofAll(call.get());
+            } catch (RuntimeException e) {
+                return e.getClass();
+            }
+        }
+
+        @Test
+        public void shouldAgreeWithVectorOnEveryBound() {
+            for (int n : SIZES) {
+                final List<Integer> list = List.range(0, n);
+                final Vector<Integer> vector = Vector.range(0, n);
+                for (int i : indices(n)) {
+                    assertThat(outcome(() -> list.take(i))).as("take(%d) on %d", i, n).isEqualTo(outcome(() -> vector.take(i)));
+                    assertThat(outcome(() -> list.drop(i))).as("drop(%d) on %d", i, n).isEqualTo(outcome(() -> vector.drop(i)));
+                    assertThat(outcome(() -> list.subSequence(i))).as("subSequence(%d) on %d", i, n).isEqualTo(outcome(() -> vector.subSequence(i)));
+                    if (i <= n + 1) {
+                        // a target of Integer.MAX_VALUE would build that many elements
+                        assertThat(outcome(() -> list.leftPadTo(i, -1))).as("leftPadTo(%d) on %d", i, n).isEqualTo(outcome(() -> vector.leftPadTo(i, -1)));
+                    }
+                    assertThat(list.segmentLength(x -> x < 3, i)).as("segmentLength(p, %d) on %d", i, n).isEqualTo(vector.segmentLength(x -> x < 3, i));
+                    assertThat(outcome(() -> list.remove(i))).as("remove(%d) on %d", i, n).isEqualTo(outcome(() -> vector.remove(i)));
+                    assertThat(outcome(() -> list.takeWhile(x -> x < i))).as("takeWhile(< %d) on %d", i, n).isEqualTo(outcome(() -> vector.takeWhile(x -> x < i)));
+                    assertThat(outcome(() -> list.takeUntil(x -> x >= i))).as("takeUntil(>= %d) on %d", i, n).isEqualTo(outcome(() -> vector.takeUntil(x -> x >= i)));
+                    for (int j : indices(n)) {
+                        assertThat(outcome(() -> list.slice(i, j))).as("slice(%d, %d) on %d", i, j, n).isEqualTo(outcome(() -> vector.slice(i, j)));
+                        assertThat(outcome(() -> list.subSequence(i, j))).as("subSequence(%d, %d) on %d", i, j, n).isEqualTo(outcome(() -> vector.subSequence(i, j)));
+                    }
+                }
+            }
+        }
+
+        @Test
+        public void shouldShareTheCellsItDoesNotCopy() {
+            final List<Integer> list = List.range(0, 5);
+            assertThat(list.drop(2)).isSameAs(list.tail().tail());
+            assertThat(list.drop(5)).isSameAs(List.empty());
+            assertThat(list.subSequence(3)).isSameAs(list.tail().tail().tail());
+            assertThat(list.subSequence(3, 5)).isSameAs(list.tail().tail().tail());
+            assertThat(list.slice(3, Integer.MAX_VALUE)).isSameAs(list.tail().tail().tail());
+            for (int n : new int[] { 5, 6, Integer.MAX_VALUE }) {
+                assertThat(list.take(n)).isSameAs(list);
+                assertThat(list.slice(0, n)).isSameAs(list);
+            }
+            assertThat(list.subSequence(0, 5)).isSameAs(list);
+            assertThat(list.takeWhile(x -> true)).isSameAs(list);
+            assertThat(list.takeUntil(x -> false)).isSameAs(list);
+            assertThat(list.leftPadTo(5, -1)).isSameAs(list);
+            assertThat(list.leftPadTo(7, -1).drop(2)).isSameAs(list);
+            assertThat(list.remove(0)).isSameAs(list.tail());
+            assertThat(list.remove(2).drop(2)).isSameAs(list.drop(3));
+            assertThat(list.remove(9)).isSameAs(list);
+        }
+
+        @Test
+        public void shouldStayCorrectAfterOperationsOnEitherSideOfASharedResult() {
+            // the results of slice, drop, take and subSequence may be the receiver or share its cells: a persistent List
+            // never changes, so writes on either side leave the other as it was
+            final List<Integer> list = List.range(0, 5);
+            final List<List<Integer>> results = List.of(list.slice(0, 5), list.slice(0, 9), list.slice(2, 9), list.drop(2), list.take(9),
+                    list.subSequence(2), list.subSequence(2, 5), list.subSequence(0, 5), list.takeWhile(x -> true));
+            final List<List<Integer>> expected = List.of(List.range(0, 5), List.range(0, 5), List.range(2, 5), List.range(2, 5), List.range(0, 5),
+                    List.range(2, 5), List.range(2, 5), List.range(0, 5), List.range(0, 5));
+            for (int i = 0; i < results.length(); i++) {
+                final List<Integer> result = results.get(i);
+                final List<Integer> want = expected.get(i);
+                assertThat(result.prepend(-1).append(9).update(1, 7).remove(4).reverse().toVector())
+                        .isEqualTo(want.prepend(-1).append(9).update(1, 7).remove(4).reverse().toVector());
+                assertThat(result.tail().prepend(8)).isEqualTo(want.tail().prepend(8));
+                assertThat(result).isEqualTo(want);
+                assertThat(list.prepend(-1).append(9).update(3, 7).slice(1, 4)).isEqualTo(List.of(0, 1, 7));
+                assertThat(list).isEqualTo(List.range(0, 5));
+            }
+        }
+
+        @Test
+        public void shouldCombineAsVectorDoes() {
+            for (int n = 0; n <= 6; n++) {
+                final List<Integer> list = List.range(0, n);
+                final Vector<Integer> vector = Vector.range(0, n);
+                for (int k = -1; k <= n + 1; k++) {
+                    assertThat(list.combinations(k).map(Vector::ofAll).toVector()).as("combinations(%d) of %d", k, n).isEqualTo(vector.combinations(k));
+                }
+                assertThat(list.combinations().map(Vector::ofAll).toVector()).as("combinations() of %d", n).isEqualTo(vector.combinations());
+            }
+        }
+
+        @Test
+        public void shouldFindTheLastSliceAsVectorDoes() {
+            final List<Integer> list = List.of(1, 2, 1, 2, 1);
+            final Vector<Integer> vector = Vector.ofAll(list);
+            for (List<Integer> slice : List.of(List.<Integer> empty(), List.of(1), List.of(1, 2), List.of(2, 1, 2), List.of(3), List.of(1, 2, 1, 2, 1, 2))) {
+                assertThat(list.lastIndexOfSlice(slice)).as("lastIndexOfSlice(%s)", slice).isEqualTo(vector.lastIndexOfSlice(slice));
+                for (int end : indices(5)) {
+                    assertThat(list.lastIndexOfSlice(slice, end)).as("lastIndexOfSlice(%s, %d)", slice, end).isEqualTo(vector.lastIndexOfSlice(slice, end));
+                }
+            }
+        }
+    }
 }

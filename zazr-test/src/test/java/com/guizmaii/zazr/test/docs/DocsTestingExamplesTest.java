@@ -53,7 +53,8 @@ public class DocsTestingExamplesTest {
     @Test
     void generators() {
         var dice = Gen.choose(1, 6); // Gen<Integer>
-        var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b))).arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
+        var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b)))
+            .arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
         var sums = Property.named("two dice sum to 2..12")
             .forAll(pairs)
             .suchThat(p -> p._1() + p._2() >= 2 && p._1() + p._2() <= 12)
@@ -119,7 +120,7 @@ public class DocsTestingExamplesTest {
         record Box(Vector<Object> items) {
             Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
         }
-        MapSubject<Box> boxes = new MapSubject<>() {
+        var boxes = new MapSubject<Box>() {
             public Arbitrary<Box> values() { return Arbitrary.vector(Arbitrary.integer()).map(v -> new Box(v.map(x -> (Object) x))); }
             public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
         };

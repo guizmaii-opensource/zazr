@@ -372,7 +372,7 @@ duplication is cheaper than a god interface).
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
 | `Try.andFinally`, `andFinallyTry` | `ensuring(CheckedRunnable)` only | ZIO name. One overload, not two: `ensuring(Runnable)` next to `ensuring(CheckedRunnable)` is ambiguous for every lambda (javac: both `void` functional interfaces match), and a `Runnable` lambda already is a `CheckedRunnable` lambda; a `Runnable` variable is passed as `r::run` (decided, #20) |
-| `Try.withResources(...)` ×8 + `WithResources1..8` | keep one `Try.withResources(Callable<R>, CheckedFunction1<R,A>)`; N resources nest | arity ladder not worth it |
+| `Try.withResources(...)` ×8 + `WithResources1..8` | `Using.of(Callable<R>, CheckedFunction1<R,A>)` for one resource, `Using.manager` for any number (3.14). A single `Try.withResources` was kept first, then replaced by `Using` (decided 2026-09-25) | arity ladder not worth it; Scala's `Using` covers N resources decided at run time |
 | `Try.filter` ×3, `filterTry` ×3 | one `filter(Predicate, Function<A,Throwable>)` and `filter(Predicate)` | |
 | `Either.left()/right()` projections + `LeftProjection`/`RightProjection` (24 members each) | delete; `Either` is right-biased and has `mapLeft`, `flip`, `fold` | ZIO 2 deleted all arrow combinators for the same reason |
 | `Either.filterOrElse`, `filter -> Option<Either>` | `filterOrElse(Predicate, Function<R,L>)` only | `filter` returning `Option<Either>` is a type pun |
@@ -1050,6 +1050,56 @@ and unable to drift:
 - Facts the page made visible, stated in the notes rather than changed here: `min()`/`max()` on the sets use the
   natural order of the elements and walk them all, including on a `TreeSet` (whose least and greatest elements in its
   own order are `head()` and `last()`, O(log n)).
+- Cost defects found by the review of the page (2026-09-25, #93), one decision each:
+  - `List`: `take`, `drop`, `takeWhile`/`takeUntil`, `slice`, `subSequence`, `remove`, `leftPadTo` and
+    `segmentLength` measured the whole List (`length()` walks it) before walking their prefix, so each was O(n) even
+    for one element. Fixed: they walk only the cells they need (`subSequence` counts the length only to build the
+    message of the exception it throws; `leftPadTo` counts up to the target). `lastIndexOfSlice` drops the found
+    prefix with the fixed `drop`, and `combinations(k)` walks the tails instead of dropping i + 1 elements per index,
+    so both lose their quadratic factor.
+  - `Queue`: `startsWith`, `zip`/`zipWith`, `prefixLength` and `segmentLength` copied the whole Queue into a `List`
+    first. Fixed: they walk the front, then the rear, reversed only when the walk reaches it; their notes say that a
+    walk reaching the elements added at the back since the last rebalancing pays O(n) for that reversal.
+  - `Queue.init()` copied the whole front (`front.init()`) on every call once the rear was empty, and the result
+    still had an empty rear, so a chain of k calls cost O(k * n). Fixed without changing the structure: when the rear
+    is empty, `init()` splits the front in two in O(n), the second half without its last element becoming the rear,
+    so the next calls take from the rear in O(1) (the mirror of `tail()` reversing the rear onto an empty front).
+  - Documented, not fixed: the banker's queue is amortised over a chain of calls, each on the result of the previous
+    one. A Queue is persistent, so an older version can be used again, and `tail()`/`dequeue()` on a Queue whose
+    front holds one element, or `init()` on one whose rear is empty, pays the O(n) rebalancing again on every call on
+    that same version. The class javadoc and the notes of the three methods say so. A structure without that caveat
+    exists: Okasaki's real-time queue (*Purely Functional Data Structures*, 7.2) spreads the reversal over the
+    following operations with a lazy, memoised rotation, so every operation is O(1) in the worst case, older versions
+    included, at the cost of a lazy list and a schedule per Queue. It is a follow-up if a workload needs it; this
+    change keeps the two-list representation.
+  - `LinkedHashMap`/`LinkedHashSet`: cutting the removed keys' markers off the ends of the insertion order took one
+    `tail()`/`init()` of the `Vector` per marker. Fixed: the run is found by reading and cut with one slice. Documented,
+    not fixed (the class javadoc of both types and the notes of `remove`, `replace`, `tail`, `init` and `take`): the
+    rebuild of the insertion order once the markers outnumber the entries is amortised over a chain of removals, so
+    `remove`/`replace` or a slice on an older version that is about to be rebuilt pays O(n) each time; after
+    removals, `tail`, `init`, `take` and `drop` find their cut by walking past the markers in the way, O(n) at worst.
+    Removing both would need a different order structure (an order-statistics tree keyed by insertion stamp, as
+    `TreeMap` gives), which is a follow-up if a workload needs it.
+  - `Stream`: `patch` dropped `from + replaced` elements at call time, and `lastIndexOfSlice(that, end)` measured the
+    whole Stream (it never returned on an infinite one). Fixed: `patch` builds each cell when the result reaches it
+    (only `patch(0, <empty>, r)` forces its r + 1 first elements now, for its head), and `lastIndexOfSlice` forces at
+    most the first `end + m` elements. `dropRight(k)` forcing its first k + 1 elements at call time is what tells
+    whether the result is empty, so its note says so rather than "lazy". `slice` and `subSequence` walk to their
+    start in a loop and stay lazy past it (#92).
+  - `Stream.subSequence(from, to)` now throws exactly when `Vector.subSequence` throws. An empty range past the end
+    returned an empty Stream, and a reversed range whose end is past the end threw `IllegalArgumentException`; both now
+    throw at call time as `Vector` does, forcing the first `from` (or `to`) elements to check. The one lazy exception
+    stays: with `from < to` and `to` past the end, the `IndexOutOfBoundsException` comes when the traversal gets there.
+  - `asJava()` views: the set views already answered `contains` with the set's own lookup (#26). The `Collection`
+    view of a map's entries walked them; its `contains` of a `Tuple2` is now the map's own `contains(Tuple2)`, one
+    lookup of the key (a key the order of a `TreeMap` cannot compare, or a null one, is answered `false`, as the walk
+    answered). The `java.util.List` view of a `List`, `Queue` or `Stream` counts the size of the sequence the first
+    time it is needed and keeps it, so an indexed loop over the view no longer counts it at every step; the Stream
+    view still forces nothing before an operation that needs the size.
+  - `Vector` of primitive values (`range`, the primitive `ofAll`, `filter` of those): the first write of a value of
+    another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
+    the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
+    path would break that invariant. The class javadoc and the notes of the ten write methods say so.
 
 Which concrete collections survive (decided):
 
@@ -1180,6 +1230,37 @@ Order of implementation: `Vector.Builder` (3.8), then `TreeMap`/`TreeSet` (cheap
 the transient HAMT (the only one that touches a data-structure's node types), then the composites.
 Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
 
+**Implemented for `TreeMap`, `TreeSet`, `HashMap` and `HashSet` (decided):**
+- The tree builders share `RedBlackTreeBuilder` (internal): an array buffer, `Arrays.sort` (stable, and O(n)
+  comparisons on sorted input, so `ofAll`/`ofEntries` of sorted input needs no separate fast path), a pass that keeps
+  the last of equal elements, then `Node.fromOrdered`, a port of `fromOrderedKeys`: split around the middle, black
+  nodes, red one-element subtrees on the deepest level only. `size()` compacts the buffer (sort and dedupe) so that it
+  counts distinct keys, like the hash builders. A comparator that throws closes the builder, since the sort may have
+  left the buffer half merged.
+- The transient trie puts the owner token on `IndexedNode` and `ArrayNode` only. Leaves (`LeafSingleton`,
+  `LeafList`) stay immutable and are replaced; a collision list goes through the persistent `modify`, so the builder
+  produces the very trie successive persistent puts produce, node for node (the tests compare them). The cost is one
+  reference field per internal node (about 8 bytes with compressed oops). The mutable node fields lose their `final`
+  guarantee; every holder of a trie (`HashMap`, `HashSet`, the map view) keeps it in a final field, and
+  `result()` issues a release fence as Scala's `HashMapBuilder` does. `putAll(HashMap)`/`addAll(HashSet)` on an
+  empty builder adopts the source root; its nodes are copied on the first put through them.
+- Rerouted after a same-JVM measurement on the branch, the gate being "not slower" (1 fork, a busy machine,
+  microseconds per operation, builder `addAll`/`putAll` against the persistent path at 10 / 1 000 / 100 000 distinct
+  keys, ± the 99.9% error): `TreeSet.ofAll` shuffled 0.16 ± 0.08 / 43 ± 13 / 11 800 ± 2 800 against 0.26 ± 0.07 /
+  73 ± 48 / 85 000 ± 57 000, sorted 0.30 ± 0.29 / 12 ± 10 / 985 ± 167 against 0.38 ± 0.12 / 173 ± 438 /
+  79 000 ± 75 000; `TreeMap.ofEntries` shuffled 0.25 ± 0.09 / 61 ± 135 / 26 800 ± 17 000 against 0.40 ± 0.61 /
+  85 ± 43 / 58 600 ± 27 000; `HashSet.ofAll` 0.14 ± 0.03 / 31 ± 8 / 17 300 ± 11 900 against 0.66 ± 1.37 / 76 ± 65 /
+  29 500 ± 17 000; `HashMap.ofEntries` 0.14 ± 0.05 / 28 ± 2 / 7 500 ± 700 against 0.16 ± 0.05 / 42 ± 7 /
+  14 600 ± 3 200. The error bars overlap at 10 everywhere and for `HashSet` at 100 000; no row is slower. So `ofAll`,
+  `ofEntries`, `TreeMap.ofAll(java.util.Map)`, `HashMap.ofAll(java.util.Map)` and the `collector()`s of the four types
+  use the builders (the collectors were not measured on their own: they run the same `add`/`put` loop; their
+  accumulator type is now the builder). Every operation that ends in those factories follows without its own
+  measurement: `filter`, `reject`, `partition` and `groupBy`'s groups on all four, `map`, `flatMap` and `collect` on
+  `TreeSet` and `TreeMap`, `mapBoth` on both maps, `mapValues` on `TreeMap`. `HashSet` and `HashMap` `map`, `flatMap`
+  and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
+  factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
+  3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+
 ### 3.9 Null, equality, serialisation
 
 - **`Some(null)` is forbidden.** `Option.some(null)` throws; `Option.ofNullable(null)` is `None`. This is
@@ -1288,6 +1369,43 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - `Assertion<A>` (the refinement DSL: `greaterThan`, `matches`, `hasLength`, `&&`/`||`, returning
   `Validation<String,A>`) is the one candidate worth revisiting in v2: it composes naturally with
   `Validation` and has no Java equivalent. Not in v1.
+
+### 3.14 `Using` and `Using.Manager` (decided 2026-09-25)
+
+`Try.withResources` is removed and replaced by `com.guizmaii.zazr.control.Using`, a port of `scala.util.Using` from
+the Scala 3 standard library (which ships the Scala 2.13 library's `Using` unchanged;
+[source](https://github.com/scala/scala/blob/2.13.x/src/library/scala/util/Using.scala)). `withResources` handled one
+resource, nesting for more, and let `try`-with-resources pick which exception surfaced; `Using` adds a manager for
+any number of resources decided at run time, and Scala's rule for which throwable surfaces.
+
+- API: `Using.of(Callable<? extends R>, CheckedFunction1<? super R, ? extends T>)` returns `Try<T>` (Scala's
+  `Using.apply`); `Using.manager(CheckedFunction1<? super Using.Manager, ? extends T>)` returns `Try<T>` (Scala's
+  `Using.Manager.apply`). `Manager.acquire(R extends AutoCloseable)` and `Manager.acquire(A value,
+  CheckedConsumer<? super A> release)` register a resource and return it. `Using` is a final class with a private
+  constructor, `Manager` a final nested class with a private constructor.
+- Release: in reverse order of acquisition, every resource once, when the block returns or throws, including when an
+  acquisition throws after earlier ones succeeded.
+- Which throwable surfaces: Scala's `preferentiallySuppress`. Severity `VirtualMachineError` > `LinkageError` >
+  `InterruptedException` and `ThreadDeath` (the same level, as in Scala) > anything else; a later throwable surfaces
+  only when strictly more severe, with the earlier one suppressed in it; otherwise it is suppressed in the one
+  surfacing. Scala's level for `ControlThrowable` (below everything) has no Java counterpart and is not ported. An
+  `OutOfMemoryError` from `close()` therefore surfaces over the block's exception, unlike `try`-with-resources.
+- The outcome is captured as `Try.of` does: fatal throwables (`Throwables.isFatal`, which includes
+  `InterruptedException`) are rethrown, a `null` result is a `Failure` of a `NullPointerException`. A `null` resource
+  is a `NullPointerException` thrown inside the block (so a `Failure`, after the earlier resources are released); a
+  `null` callable, block or release action throws at once.
+- Two departures from Scala's source, both decided here:
+  - a throwable is never suppressed in itself. Scala calls `addSuppressed` without an identity check, so a `close()`
+    that rethrows the block's exception makes it throw an `IllegalArgumentException` (in `Manager`, out of the
+    release loop, leaving the remaining resources unreleased);
+  - `acquire` after the block (including from a release, since the manager is closed before releasing) releases the
+    resource it was given, then throws `IllegalStateException`; a throwable from that release goes through the same
+    severity rule. Scala throws without releasing it, leaking it.
+- Not ported: `Using.resource`/`Using.resources` (the throwing forms: Java's `try`-with-resources is that), the
+  `Releasable` type class (a lambda is an `AutoCloseable`, and `acquire(value, release)` covers the rest), and the
+  `Manager.apply` alias of `acquire`.
+- Storage: the manager keeps its resources in one growable `Object[]`, value and release action (`null` for
+  `close()`) side by side, so an acquisition allocates no wrapper.
 
 ---
 
@@ -1411,6 +1529,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
+| #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
 
 ---
 
