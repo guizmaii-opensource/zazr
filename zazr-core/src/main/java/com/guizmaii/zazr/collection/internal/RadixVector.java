@@ -281,9 +281,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     }
 
     /*
-     * Near the limit, the free slots of an argument vector count too: appending to it (or prepending to it) is safe while
-     * the result stays within Integer.MAX_VALUE - WIDTH5 elements, since a vector has fewer than WIDTH5 free slots in
-     * front; beyond that, the builder adds the argument without keeping them.
+     * Adding elements one by one, to the receiver (the tiny branches) or to the argument, depends on the free slots of
+     * that vector's tree: prepending stops once its prefix and data6 are full, appending may use its last position. Both
+     * are safe, and agree with the builder, while the result stays within Integer.MAX_VALUE - WIDTH5 elements, since a
+     * vector has fewer than WIDTH5 free slots in front. Beyond that the builder builds the result, whatever the kind of
+     * the argument, so that a RadixVector, a list and a one-shot Iterable of the same elements give the same outcome.
      */
     private static final long FAR_FROM_THE_LIMIT = Integer.MAX_VALUE - WIDTH5;
 
@@ -292,7 +294,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
         final long total = (long) length() + k;
         final int tinyAppendLimit = 4 + vectorSliceCount();
-        if (k < tinyAppendLimit) {
+        if (k < tinyAppendLimit && total <= FAR_FROM_THE_LIMIT) {
             final Object[] elements = new Object[k];
             VectorStatics.copyToArray(prefix, k, elements, 0);
             RadixVector<T> v = this;
@@ -320,7 +322,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     @SuppressWarnings("unchecked")
     RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
         final int tinyAppendLimit = 4 + vectorSliceCount();
-        if (k < tinyAppendLimit) {
+        if (k < tinyAppendLimit && (long) length() + k <= FAR_FROM_THE_LIMIT) {
             RadixVector<T> v = this;
             for (T element : suffix) {
                 v = v.appended(element);
@@ -1569,7 +1571,9 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            // near the limit, suffix1's room may reach the tree's last position, which the builder does not use: the
+            // builder decides, for every kind of argument (see FAR_FROM_THE_LIMIT)
+            final Object[] suffix1b = ((long) length0 + k <= FAR_FROM_THE_LIMIT) ? append1IfSpace(suffix1, suffix, k) : null;
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
