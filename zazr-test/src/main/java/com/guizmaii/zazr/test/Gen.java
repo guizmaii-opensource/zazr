@@ -104,16 +104,18 @@ public final class Gen<A> {
     }
 
     /**
-     * The first value of a pass. A pass that produced nothing runs again at the next size, up to the discard budget,
-     * so an element generator that has no value at a small size (a non-empty string at size 0) still gives one.
+     * The first value of a pass. A pass that produced nothing spends one discard of the run's budget and runs again
+     * at a larger size (doubling, up to the largest size of the run), so an element generator that has no value at a
+     * small size (a non-empty string at size 0) still gives one.
      *
-     * @throws IllegalStateException when no pass produces a value
+     * @throws IllegalStateException when the discard budget of the run is exceeded
      */
     A draw(Sampling sampling, int size) {
         final Holder<A> holder = new Holder<>();
         final int gaveUp = sampling.filtersGaveUp;
         for (long attempts = 0; ; attempts++) {
-            pass.run(sampling, (int) Math.min(Integer.MAX_VALUE, size + attempts), value -> {
+            final int before = sampling.filtersGaveUp;
+            pass.run(sampling, sampling.grow(size, attempts), value -> {
                 holder.value = value;
                 holder.found = true;
                 return false;
@@ -122,9 +124,8 @@ public final class Gen<A> {
                 // a filter that gave up a pass before this value was retried here, so its pass is not lost
                 sampling.filtersGaveUp = gaveUp;
                 return holder.value;
-            } else if (Sampling.exceeds(attempts + 1, sampling.maxDiscards)) {
-                throw sampling.noValue(attempts + 1);
             }
+            sampling.discard(1, sampling.filtersGaveUp > before);
         }
     }
 
@@ -524,12 +525,13 @@ public final class Gen<A> {
      * <p>
      * When a pass of a random generator produced only rejected values, the pass runs again, so a filtered random
      * generator still gives one value per pass; a finite generator is not run again, it only loses the rejected
-     * values. After more rejected values in a row than the discard budget of the run
-     * ({@link CheckConfig#maxDiscards()}), the filter gives the pass up with no value: {@link Check#check} then runs
-     * the next pass at a larger size, so a predicate that no small value satisfies (a non-empty list) still works,
-     * and it reports an error naming the filter after more such passes in a row than the budget. {@link Check#checkAll}
-     * reports that error as soon as a filter gives a pass up. A predicate that rejects most values is better written
-     * as a {@link #map} or a {@link #flatMap} that builds the wanted values directly.
+     * values. Every value rejected in a pass that runs again spends the discard budget of the run
+     * ({@link CheckConfig#maxDiscards()}), which every filter shares and which starts again at each sample. After a
+     * sixteenth of the budget in a row, the filter gives its pass up with no value: {@link Check#check} then runs the
+     * next pass at a larger size, so a predicate that no small value satisfies (a non-empty list) still works.
+     * Beyond the budget, the check ends with an error that names the filter; {@link Check#checkAll} reports a filter
+     * that gave its pass up at once. A predicate that rejects most values is better written as a {@link #map} or a
+     * {@link #flatMap} that builds the wanted values directly.
      *
      * @param predicate the condition a value must satisfy
      * @return a new generator
@@ -539,15 +541,17 @@ public final class Gen<A> {
         Objects.requireNonNull(predicate, "predicate is null");
         return new Gen<>((sampling, size, sink) -> {
             final FilterState state = new FilterState();
+            final long giveUp = sampling.filterGiveUp();
+            long rejectedInARow = 0;
             while (true) {
                 state.produced = false;
                 state.accepted = false;
+                state.rejected = 0;
                 final int draws = sampling.draws;
                 final boolean more = pass.run(sampling, size, a -> {
                     state.produced = true;
                     if (predicate.test(a)) {
                         state.accepted = true;
-                        state.rejected = 0;
                         return sink.accept(a);
                     }
                     state.rejected++;
@@ -557,9 +561,12 @@ public final class Gen<A> {
                     return false;
                 } else if (state.accepted || !state.produced || sampling.draws == draws) {
                     return true;
-                } else if (Sampling.exceeds(state.rejected, sampling.maxDiscards)) {
+                }
+                sampling.discard(state.rejected, true);
+                rejectedInARow += state.rejected;
+                if (rejectedInARow >= giveUp) {
                     sampling.filtersGaveUp++;
-                    sampling.lastRejected = state.rejected;
+                    sampling.lastRejected = rejectedInARow;
                     return true;
                 }
             }
@@ -1298,7 +1305,7 @@ public final class Gen<A> {
 
     /**
      * The first {@code n} values of this generator, as {@link Check#check} would check them with {@code config}
-     * set to {@code n} samples: pass after pass, the size growing from 0 to the configured size, and by one more for
+     * set to {@code n} samples: pass after pass, the size growing from 0 to the configured size, and doubling after
      * each pass in a row that gave no value.
      *
      * @param n      the number of values
@@ -1306,8 +1313,7 @@ public final class Gen<A> {
      * @return the values, in order
      * @throws NullPointerException     if {@code config} is null, or a value is null: a {@link List} holds no null
      * @throws IllegalArgumentException if {@code n} is negative
-     * @throws IllegalStateException    if the generator produces no value in more passes in a row than the discard
-     *                                  budget
+     * @throws IllegalStateException    if the discard budget is exceeded before a value
      */
     public List<A> runCollectN(int n, CheckConfig config) {
         Objects.requireNonNull(config, "config is null");
@@ -1328,8 +1334,7 @@ public final class Gen<A> {
      * @return the values, in order
      * @throws NullPointerException     if a value is null: a {@link List} holds no null
      * @throws IllegalArgumentException if {@code n} is negative
-     * @throws IllegalStateException    if the generator produces no value in more passes in a row than the discard
-     *                                  budget
+     * @throws IllegalStateException    if the discard budget is exceeded before a value
      */
     public List<A> runCollectN(int n) {
         return runCollectN(n, CheckConfig.defaults());

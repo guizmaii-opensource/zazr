@@ -26,44 +26,51 @@ final class Runner {
 
     /**
      * Runs pass after pass of {@code gen} until {@code sink} received {@code config.samples()} values or asked to
-     * stop. A pass runs at the size of {@link #size(CheckConfig, int)}, plus one for each pass in a row before it that
-     * gave no value, up to the configured size: a generator with no value at a small size, such as a filter that
-     * rejects the empty list, moves on to larger sizes instead of failing.
+     * stop. A pass runs at the size of {@link #size(CheckConfig, int)}; after passes without a value, the next one
+     * runs at a larger size, doubling up to the configured size, so a generator with no value at a small size (a
+     * filter that rejects the empty list) moves on to larger sizes. Each pass without a value spends one discard of
+     * the run's budget, which starts again at each delivered sample.
      *
-     * @throws IllegalStateException if more passes in a row than the discard budget produce no value
+     * @throws IllegalStateException if the discard budget is exceeded before a sample
      */
     static <A> void passes(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
         final int samples = config.samples();
-        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards());
+        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
         final int[] delivered = { 0 };
         long emptyInARow = 0;
         while (delivered[0] < samples) {
             final int before = delivered[0];
-            final int size = (int) Math.min(config.size(), size(config, before) + emptyInARow);
-            final boolean more = gen.run(sampling, size, value -> {
+            final int gaveUp = sampling.filtersGaveUp;
+            final boolean more = gen.run(sampling, sampling.grow(size(config, before), emptyInARow), value -> {
                 delivered[0]++;
-                sampling.filtersGaveUp = 0;
+                sampling.delivered();
                 return sink.accept(value) && delivered[0] < samples;
             });
             if (!more) {
                 return;
             } else if (delivered[0] > before) {
                 emptyInARow = 0;
-            } else if (Sampling.exceeds(++emptyInARow, config.maxDiscards())) {
-                throw sampling.noValue(emptyInARow);
+            } else {
+                emptyInARow++;
+                sampling.discard(1, sampling.filtersGaveUp > gaveUp);
             }
         }
     }
 
     /**
-     * Runs one pass of {@code gen} at the configured size.
+     * Runs one pass of {@code gen} at the configured size; the discard budget starts again at each value.
      *
-     * @throws IllegalStateException if a filter gave a pass up, so a value may be missing
+     * @throws IllegalStateException if the discard budget is exceeded before a value, or a filter gave its pass up,
+     *                               so a value is missing
      */
     static <A> void onePass(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
-        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards());
-        if (gen.run(sampling, config.size(), sink) && sampling.filtersGaveUp > 0) {
-            throw sampling.noValue(1);
+        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
+        final boolean ended = gen.run(sampling, config.size(), value -> {
+            sampling.discards = 0;
+            return sink.accept(value);
+        });
+        if (ended && sampling.filtersGaveUp > 0) {
+            throw sampling.filterGaveUp();
         }
     }
 

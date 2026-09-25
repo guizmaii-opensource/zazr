@@ -259,7 +259,7 @@ class CheckTest {
         final CheckResult result = Check.check(config(4), Gen.<Integer>empty(), i -> true);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 1001 passes in a row at growing sizes, more than the discard budget of 1000");
+                .hasMessage("the generator produced no value: 1001 discards since the last sample, more than the discard budget of 1000");
         assertThat(((CheckResult.Erroneous) result).sampleNumber()).isEqualTo(1);
     }
 
@@ -267,7 +267,7 @@ class CheckTest {
     void aFilterBeyondItsBudgetMakesTheCheckErroneous() {
         final CheckResult result = Check.check(config(4), Gen.integers(), Gen.integers().filter(i -> false), (a, b) -> true);
         assertThat(result.isErroneous()).isTrue();
-        assertThat(result.error().get()).isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected every value it tried: 1001 values in a row");
+        assertThat(result.error().get()).isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected too many values: 1001 discards");
         assertThat(result.sample()).isEqualTo(Option.none());
     }
 
@@ -278,7 +278,7 @@ class CheckTest {
         assertThat(Check.check(config(1), sometimes, i -> true)).isEqualTo(new CheckResult.Satisfied(200));
         final CheckResult result = Check.check(config(1).withMaxDiscards(0), sometimes, i -> true);
         assertThat(result.error().get()).isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 1 passes in a row at growing sizes, more than the discard budget of 0");
+                .hasMessage("the generator produced no value: 1 discards since the last sample, more than the discard budget of 0");
     }
 
     @Test
@@ -293,7 +293,7 @@ class CheckTest {
     void checkAllReportsAFilterThatGaveAPassUp() {
         final CheckResult result = Check.checkAll(config(1), Gen.fromIterable(java.util.List.of(1, 2)), Gen.integers().filter(i -> false), (a, b) -> true);
         assertThat(result.isErroneous()).isTrue();
-        assertThat(result.error().get()).hasMessageStartingWith("Gen.filter rejected every value it tried: 1001 values in a row");
+        assertThat(result.error().get()).hasMessageStartingWith("Gen.filter gave a pass up after rejecting 62 values in a row");
         // a failure found before the end of the pass wins
         assertThat(Check.checkAll(config(1), Gen.fromIterable(java.util.List.of(1, 2)), Gen.integers().filter(i -> i != 0), (a, b) -> false).isFalsified()).isTrue();
     }
@@ -302,6 +302,35 @@ class CheckTest {
     void aDiscardBudgetOfTheLargestIntStillEnds() {
         final CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
         assertThat(Check.check(largest, Gen.integers().filter(i -> i % 2 == 0), i -> i % 2 == 0)).isEqualTo(new CheckResult.Satisfied(200));
+    }
+
+    @Test
+    @org.junit.jupiter.api.Timeout(value = 300, unit = java.util.concurrent.TimeUnit.SECONDS)
+    void aFilterThatNeverPassesEndsUnderTheLargestBudget() {
+        final CheckResult result = Check.check(new CheckConfig(1, 0, 1, Integer.MAX_VALUE), Gen.booleans().filter(b -> false), x -> true);
+        assertThat(result.isErroneous()).isTrue();
+        assertThat(result.error().get()).hasMessageStartingWith("Gen.filter rejected too many values: 2147483648 discards");
+    }
+
+    @Test
+    void nestedFiltersThatNeverPassEndWithinTheBudget() {
+        final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
+        final Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
+                .flatMap(i -> i == 1 ? Gen.integers().filter(x -> calls.incrementAndGet() < 0) : Gen.integers())
+                .filter(x -> calls.incrementAndGet() < 0);
+        final CheckResult result = Check.check(config(1), nested, x -> true);
+        assertThat(result.isErroneous()).isTrue();
+        assertThat(calls.get()).isLessThanOrEqualTo(1001L);
+    }
+
+    @Test
+    void filtersThatOnlyLargeValuesPassWorkWithTheDefaultConfiguration() {
+        for (long seed = 0; seed < 5; seed++) {
+            final CheckConfig config = CheckConfig.defaults().withSeed(seed);
+            Check.check(config, Gen.sized(n -> Gen.integers(0, n)).filter(x -> x > 90), x -> x > 90).assertIsSatisfied();
+            Check.check(config, Gen.sized(n -> Gen.integers(0, n)).filter(x -> x >= 100), x -> x == 100).assertIsSatisfied();
+            Check.check(config, Gen.alphaNumericStrings().filter(s -> s.length() > 3), s -> s.length() > 3).assertIsSatisfied();
+        }
     }
 
     @Test
