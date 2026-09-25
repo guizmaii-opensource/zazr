@@ -4,9 +4,9 @@ description: What Zazr changes from Vavr - removed types, renamed operations, an
 
 # Compared to Vavr
 
-Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr) (its `main` branch, after the 1.0.1 release), reshaped for Java 25 and for the API
-design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: the package is
-`com.guizmaii.zazr`, and the changes below are deliberate. [Design](principles.md) explains the ideas behind them.
+Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr), reshaped for Java 25 and for the API design of ZIO,
+zio-prelude and modern Scala. It is not a drop-in replacement: the package is `com.guizmaii.zazr`, and the changes
+below are deliberate. [Design](principles.md) explains the ideas behind them.
 
 ## Removed
 
@@ -15,11 +15,11 @@ design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: th
 | `Match`, `Case`, `$`, `API.For` | `switch` with record patterns and `when` guards; `zip`/`zipWith` for comprehensions |
 | `Future`, `Promise`, `Task` | `CompletableFuture`, virtual threads; `Try.fromCompletableFuture` and `toCompletableFuture` bridge |
 | `Array`, `CharSeq` | `Vector`; `String` and `Vector<Character>` |
-| `Tree`, `BitSet`, `PriorityQueue`, the `Multimap` family | `Map<K, Vector<V>>` with `groupBy`; the others may come back as separate modules |
-| `Seq`, `IndexedSeq`, `LinearSeq`, `Foldable`, `Value` | the concrete type; `Traversable` keeps only what costs the same everywhere |
+| `Tree`, `BitSet`, `PriorityQueue`, the `Multimap` family | `Map<K, Vector<V>>` with `groupBy` |
+| `Seq`, `IndexedSeq`, `LinearSeq`, `Foldable`, `Value` | the concrete type, or `Traversable` for what every collection does at the same cost |
 | `Function0`, `Function1`, `Function2`, `CheckedFunction0` | `Supplier`, `Function`, `BiFunction`, `Callable` |
 | `PartialFunction`, `collect(PartialFunction)` | `collect(Function<A, Option<B>>)` with a `switch` inside the lambda |
-| `Serializable` on every type | nothing yet; it comes back per type on request |
+| `Serializable` on every type | none; no Zazr type is `Serializable` |
 | `Either` projections, `Validation.Builder`, `combine`, `ap` | `mapLeft`, `flip`, `fold`; `zip` and `zipWith` at arity N |
 
 ## Renamed

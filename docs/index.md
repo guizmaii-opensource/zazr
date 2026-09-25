@@ -24,8 +24,7 @@ int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
 !!! warning "Pre-1.0 and changing fast"
 
     Nothing is released yet. Snapshots of `main` are published to Maven Central's snapshot repository, and the API
-    changes between them. Pin a snapshot you have tested, and read the [decision log](https://github.com/guizmaii-opensource/zazr/blob/main/docs/design.md) before relying on a
-    shape that is still marked open.
+    changes between them. Pin a snapshot you have tested.
 
 </div>
 
@@ -42,14 +41,14 @@ Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persi
 
     ---
 
-    `zip`, `zipWith`, `collectAll`, `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`: the name tells you the result,
-    not which algebra it comes from.
+    `zip`, `zipWith`, `collectAll`, `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`: the name tells you what you get
+    back.
 
 -   :material-numeric-8-box-multiple-outline:{ .lg } __`zip` at arity 2 to 8__
 
     ---
 
-    One static call per arity replaces `ap` and the builder ladders, and never nests a tuple inside a tuple.
+    Combine up to eight values in one call, with a function that receives them all. No nested tuples.
 
     [:octicons-arrow-right-24: zip at arity N](zip.md)
 
@@ -73,8 +72,8 @@ Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persi
 
     ---
 
-    There is no `Seq` promising `get(i)` on a cons list. Every positional method documents its complexity, and a
-    generated table lists them all.
+    No shared interface hides a slow `get(i)`. Every positional method documents its cost, and one page lists them
+    all.
 
     [:octicons-arrow-right-24: Complexity](collections/complexity.md)
 
@@ -82,8 +81,8 @@ Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persi
 
     ---
 
-    Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, O(1) `java.util` views
-    through `asJava()`.
+    Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, and `java.util` views
+    without copying.
 
     [:octicons-arrow-right-24: Java interop](java-interop.md)
 
@@ -141,25 +140,23 @@ Vector<Integer> numbers = builder.result();
 
     ---
 
-    Names that describe the purpose (`zipWith`, `collectAll`, `forEach`, `tap`, `catchAll`, `mapBoth`), one spelling
-    per operation, a suffix vocabulary (`With`, `All`, `OrElse`, `from*`, `to*`), and one concrete collection type
-    with one documented cost model, as `Chunk` is.
+    The operation names (`zipWith`, `collectAll`, `forEach`, `tap`, `catchAll`, `mapBoth`), one name per
+    operation, and one default sequence with documented costs, as `Chunk` is in ZIO.
 
 -   __zio-prelude__
 
     ---
 
-    `Validation` with its errors in a non-empty collection, `zip` as the way to combine independent values, and
-    non-empty types whose return types say which operations keep them non-empty.
+    `Validation` with its errors in a non-empty collection, `zip` to combine independent values, and a non-empty
+    collection whose return types say when it may become empty.
 
 -   __Modern Scala__
 
     ---
 
-    The collections library Scala 3 ships: the `Vector` builder, the red-black tree set operations, own-type results
-    for `grouped` and `sliding`, and the performance-characteristics table. Scala 3's idioms map to modern Java:
-    sealed hierarchies and records play enums and case classes, and `switch` with record patterns plays pattern
-    matching.
+    The Scala 3 collections: the `Vector` builder, fast set operations on sorted sets, `grouped` and `sliding` that
+    return collections, and a table of what each operation costs. Sealed interfaces, records and `switch` bring
+    Scala's pattern matching to Java.
 
 </div>
 
@@ -169,10 +166,13 @@ Vector<Integer> numbers = builder.result();
 
 ## Compared to Vavr { .zz-kicker }
 
-Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise` and `Task`, `Array`, `CharSeq`,
-`Tree`, `BitSet`, `PriorityQueue`, the `Multimap` family, `Seq`, `IndexedSeq`, `LinearSeq`, `Foldable`, `Value`,
-`Function0..2` (use `java.util.function`), `Serializable`, and the category-theory names. Control types are no longer
-`Iterable`; each has its own conversions. Sets and maps have no positional methods, except the ordered ones.
+Zazr is not a drop-in replacement for Vavr. The main differences:
+
+- The `Match` API is gone: use `switch` with record patterns.
+- `Future` and `Promise` are gone, as are the less used collections (`Array`, `CharSeq`, `Tree`, `Multimap`...).
+- `Function0` to `Function2` are gone: use `java.util.function`.
+- `Option`, `Either`, `Try` and `Validation` are no longer `Iterable`; each has explicit conversions.
+- Sets and maps without a defined order have no positional methods such as `head` or `take`.
 
 [:octicons-arrow-right-24: The full comparison](vavr.md){ .md-button }
 

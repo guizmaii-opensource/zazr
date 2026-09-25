@@ -4,10 +4,11 @@ description: Which Zazr collection to choose, and what the collections have in c
 
 # Collections
 
-Every Zazr collection is persistent: an operation returns a new collection and shares what it can with the old one,
-which is never modified. There is no `Seq` promising positional access to every sequence: each type declares its own
-API, with its own return types, and every positional method states its cost in a `Complexity:` line of its javadoc.
-The [complexity page](complexity.md) gathers them all, generated from the javadoc.
+Every Zazr collection is immutable. An operation returns a new collection and shares what it can with the old
+one, which is never modified.
+
+Each type declares its own methods, with its own return types, and every positional method documents its cost. The
+[complexity page](complexity.md) lists them all.
 
 ## Which one to choose
 
@@ -27,14 +28,17 @@ The [complexity page](complexity.md) gathers them all, generated from the javado
 
 ## What they share
 
-The one interface above them is `Traversable<T>`, and it declares only what costs the same on every type: iterating,
-`size`, `isEmpty`, `contains`, `exists`, `forAll`, `count`, `find`, `foldLeft`, `mkString`, `forEach`, the conversions
-`toVector`, `toList`, `toSet`, `toArray`, `stream()`, and the `asJava()` view ([Java interop](../java-interop.md)).
-Everything else, `map` and `filter` included, is declared by each type with its own return type.
+Every collection except `NonEmptyVector` implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`,
+`contains`, `find`, `foldLeft`, `mkString`, the conversions such as `toVector` and `stream()`, and the
+[`asJava()` view](../java-interop.md).
 
-Two operations exist on almost every type under the same name: `partitionMap` splits in one pass by a function
-returning an `Either` (on the sequences and the hash sets, each side of the receiver's type), and the static
-`flatten` removes one level of nesting (every collection; `TreeSet.flatten` also takes a comparator).
+`map`, `filter` and the rest are declared by each type, so they return that type.
+
+Two more operations exist on most types:
+
+- `partitionMap` splits a collection in one pass, using a function that returns an `Either`. The sequences and the
+  hash sets have it.
+- The static `flatten` removes one level of nesting.
 
 ```java
 Tuple2<List<Integer>, List<String>> split = List.of(1, 2, 3, 4)
@@ -51,13 +55,13 @@ boolean same = Vector.of(1, 2, 3).equals(sortedList);
 // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 ```
 
-The four sequences (`Vector`, `List`, `Queue`, `Stream`) are equal to each other when they hold equal elements in the
-same order; sets equal sets and maps equal maps. `NonEmptyVector` equals only another `NonEmptyVector`.
+A `Vector`, `List`, `Queue` or `Stream` equals another of these four when they hold equal elements in the same
+order. Sets equal sets and maps equal maps. A `NonEmptyVector` equals only another `NonEmptyVector`.
 
 ## Nulls
 
-No collection holds `null`: every factory, builder, insertion and update throws `NullPointerException` on a `null`
-element, key or value. Absence is an `Option`, which is why `find`, `headOption` and `Map.get` can return one.
+No collection holds `null`: adding a `null` element, key or value throws a `NullPointerException`. Absence is an
+`Option`, which is what `find`, `headOption` and `Map.get` return.
 
 ```java
 Option<Integer> missing = HashMap.of("a", 1).get("b");
@@ -67,5 +71,5 @@ Option<Integer> firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);
 
 ## Complexity
 
-The per-type pages include their table of the common operations; [Complexity](complexity.md) has the matrices of all
-of them side by side, the legend of the classes, and every documented method.
+Each collection's page has a table of its common operations. [Complexity](complexity.md) puts all the collections
+side by side and lists every documented method.

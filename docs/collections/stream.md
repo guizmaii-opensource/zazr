@@ -4,9 +4,11 @@ description: Stream, the lazy memoising list - head-strict, possibly infinite, a
 
 # `Stream`
 
-A lazy, memoising cons list: the head is computed when the `Stream` is built, the tail when it is first reached, and
-each tail is cached. It can be infinite. The name is Vavr's; import `com.guizmaii.zazr.collection.Stream` and spell
-`java.util.stream.Stream` out when you need both.
+A lazy list that remembers what it computed. The first element is computed when the `Stream` is built, each of the
+others when it is first reached, and then kept. It can be infinite.
+
+Its name clashes with `java.util.stream.Stream`: import `com.guizmaii.zazr.collection.Stream`, and write the JDK one
+in full when you need both.
 
 ## When to choose it
 
@@ -25,13 +27,12 @@ Vector<Long> firstTen = fibonacci.take(10).toVector();
 // Vector(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
 ```
 
-Other sources: `Stream.iterate(seed, f)`, `Stream.continually(supplier)`, `Stream.cons(head, () -> tail)`, `cycle()`,
-`extend(f)`, and `Stream.ofAll` of any `Iterable` or `java.util.stream.Stream`.
+`Stream.iterate(seed, f)`, `Stream.continually(supplier)` and `Stream.ofAll` are other ways to create one.
 
 ## Costs
 
-The notes of a lazy operation say what it forces. `lazy` means the call does no work beyond the head; each element is
-computed when the result reaches it.
+`lazy` means the call does no work beyond the first element; each element is computed when it is read. The notes
+say which elements a call computes ("forces") right away.
 
 --8<-- "Stream.md"
 
@@ -42,10 +43,9 @@ Every method: [complexity page](complexity.md#stream).
 - Operations that need the whole sequence force it and never return on an infinite `Stream`: `length`, `size`,
   `last`, `reverse`, `sorted`, `max` and `min` (their notes say so), and anything that reads every element, such as
   `foldLeft`, `mkString` or `toVector`.
-- A `Stream` is head-strict: building one computes its first element, and `map`, `filter` and the others compute the
+- The first element is never lazy: building a `Stream` computes it, and `map`, `filter` and the others compute the
   first element of their result.
-- `partitionMap` is lazy too, but each side is forced to its first element when it is built, which walks the source
-  until an element of that side is found: on an infinite `Stream` whose elements all go to one side, it does not
-  return.
-- Memoisation keeps every computed element reachable as long as the head is: holding the head of a long `Stream`
-  while walking it keeps all of it in memory.
+- `partitionMap` looks for the first element of each side right away. On an infinite `Stream` whose elements all go
+  to one side, it never returns.
+- A `Stream` keeps every element it computed. Holding on to the start of a long `Stream` while walking it keeps all
+  of it in memory.

@@ -4,8 +4,8 @@ description: asJava and asJavaMap views of the Zazr collections, the copies into
 
 # Java interop
 
-Zazr collections do not implement `java.util.List`, `Set` or `Map`: a Zazr type never advertises `add()` or `put()`
-it cannot honour. At a JDK boundary, `asJava()` (`asJavaMap()` for a map) gives a view with no copy.
+Zazr collections do not implement `java.util.List`, `Set` or `Map`, because they cannot support `add()` or `put()`.
+To pass one to Java code, `asJava()` (`asJavaMap()` for a map) gives a read-only view, without copying.
 
 ## Views
 
@@ -21,8 +21,9 @@ it cannot honour. At a JDK boundary, `asJava()` (`asJavaMap()` for a map) gives 
 
 Every view is O(1) to create. Reads go through to the Zazr value, which never changes, so a view never goes stale.
 
-Every mutator throws `UnsupportedOperationException`, even one that would change nothing, such as `clear()` on an
-empty view. That includes `pollFirst()` on a `NavigableSet` view and `setValue` on a map entry.
+Every method that would modify the view throws `UnsupportedOperationException`, even one that would change nothing,
+such as `clear()` on an empty view. That includes `pollFirst()` on a `NavigableSet` view and `setValue` on a map
+entry.
 
 ```java
 Vector<String> names = Vector.of("Ada", "Grace");
@@ -32,7 +33,7 @@ boolean rejected = Try.run(() -> view.add("Linus")).getCause() instanceof Unsupp
 // second is "Grace", rejected is true
 ```
 
-A view compares equal to any JDK collection with the same content: a list view to a `java.util.List` with the same
+A view is equal to any JDK collection with the same content: a list view to a `java.util.List` with the same
 elements in the same order, a set view to any `java.util.Set`, a map view to any `java.util.Map`.
 
 ### Sorted views
@@ -68,12 +69,14 @@ java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJa
 
 ## The way back, and streams
 
-`ofAll` takes any `Iterable` or a `java.util.stream.Stream`; `collector()` collects a stream
-([Builders](builders.md)). `Vector.ofAll` copies a `java.util.Collection` in one bulk copy.
+To come back from Java:
 
-Given the view of a value of its own type, `ofAll` returns that value, with no copy: `Vector.ofAll(vector.asJava())`
-is `vector`, `TreeMap.ofAll(map.asJavaMap())` is `map` (when the comparator is the same). `stream()` on any Zazr collection is a
-`java.util.stream.Stream` that reports the size and the ordering of the type.
+- `ofAll` takes any `Iterable` or `java.util.stream.Stream`.
+- `collector()` collects a `java.util.stream.Stream` ([Builders](builders.md)).
+- `ofAll` of the view of a value of its own type returns that value, without copying: `Vector.ofAll(vector.asJava())`
+  is `vector`, and `TreeMap.ofAll(map.asJavaMap())` is `map` when the comparator is the same.
+
+In the other direction, `stream()` on any Zazr collection returns a `java.util.stream.Stream`.
 
 ```java
 Vector<Integer> fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));

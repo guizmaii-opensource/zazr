@@ -4,8 +4,8 @@ description: zip and zipWith from 2 to 8 arguments on Option, Either, Try, Valid
 
 # `zip` at arity N
 
-Combining independent values is `zip`: it returns a tuple of the values, and `zipWith` applies a function to them.
-Every control type has the same family, with the same names and the same argument order.
+`zip` combines independent values into a tuple; `zipWith` passes them to a function instead. `Option`, `Either`,
+`Try`, `Validation` and `Lazy` all have the same methods, with the same names and argument order.
 
 | Form | Arity | Returns |
 |---|---|---|
@@ -15,8 +15,8 @@ Every control type has the same family, with the same names and the same argumen
 | `F.zip(a1, ..., aN)` | 2 to 8 | `F<TupleN<...>>` |
 | `F.zipWith(a1, ..., aN, f)` | 2 to 8 | `F<R>`, `f` a `BiFunction` or `Function3` to `Function8` |
 
-The arity is fixed at the call site by the static overload, so a result is never a `Tuple2<Tuple2<A, B>, C>`, and
-`zipWith` passes the values straight to `f` without building a tuple.
+There is one static method per number of arguments, so combining three values gives a `Tuple3`, never a
+`Tuple2<Tuple2<A, B>, C>`. `zipWith` passes the values straight to `f`, without building a tuple.
 
 ```java
 Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
@@ -40,7 +40,7 @@ Validation<String, Integer> all = Validation.zipWith(Validation.<String, Integer
 // Left(no a), Invalid(no a, no c)
 ```
 
-`zipLeft` and `zipRight` are not `orElse`: they fail when either side fails.
+`zipLeft` and `zipRight` keep one value, but still fail when either side fails. They are not `orElse`.
 
 ```java
 Option<Integer> left = Option.some(1).zipLeft(Option.none());
@@ -50,6 +50,8 @@ Option<String> right = Option.some(1).zipRight(Option.some("kept"));
 
 ## Null
 
-A `null` argument is a `NullPointerException`. On `Option`, `Either` and `Validation`, `f` returning `null` is
-rejected at the call site; on `Try`, `f` runs like a `map` mapper, so what it throws, and a `null` result, end up in a
-`Failure`. On `Lazy`, `f` may return `null`.
+A `null` argument throws a `NullPointerException`. When `f` returns `null`:
+
+- on `Option`, `Either` and `Validation`, the call throws a `NullPointerException`;
+- on `Try`, the result is a `Failure`, as it is when `f` throws;
+- on `Lazy`, the result holds `null`.
