@@ -6,7 +6,7 @@
 | `containsKey` | <abbr class="cx cx-logarithmic" title="O(log n) comparisons.">O(log n)</abbr> | O(log n) comparisons. |
 | `put` | <abbr class="cx cx-logarithmic" title="O(log n) (one lookup and one insertion in the tree).">O(log n)</abbr> | O(log n) (one lookup and one insertion in the tree). |
 | `remove` | <abbr class="cx cx-logarithmic" title="O(log n) (one lookup and one deletion in the tree).">O(log n)</abbr> | O(log n) (one lookup and one deletion in the tree). |
-| `keySet` | <abbr class="cx cx-linearithmic" title="O(n log n) (the keys are built into a new TreeSet).">O(n log n)</abbr> | O(n log n) (the keys are built into a new TreeSet). |
+| `keySet` | <abbr class="cx cx-linear" title="O(n), with no key comparison (the key tree is a copy of the entry tree, with the same shape).">O(n)</abbr> | O(n), with no key comparison (the key tree is a copy of the entry tree, with the same shape). |
 | `values` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `head` | <abbr class="cx cx-logarithmic" title="O(log n) (the leftmost path of the tree).">O(log n)</abbr> | O(log n) (the leftmost path of the tree). |
 | `take` | <abbr class="cx cx-logarithmic" title="O(log n) (one rank split of the tree).">O(log n)</abbr> | O(log n) (one rank split of the tree). |
