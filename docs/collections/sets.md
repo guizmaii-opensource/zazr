@@ -4,21 +4,21 @@ description: HashSet, LinkedHashSet and TreeSet - the set algebra, iteration ord
 
 # Sets
 
-Three sets, one algebra: `add`, `addAll`, `remove`, `removeAll`, `contains`, `union`, `intersect`, `diff`,
-`retainAll`, plus `filter`, `reject`, `map`, `flatMap`, `partition`, `groupBy`, `fold`, `reduce`, `max`, `min` and
-the static `flatten`. `HashSet` and `LinkedHashSet` also have `partitionMap`; `TreeSet` does not, since each side
-would need a comparator of its own.
+Three sets with the same operations: `add`, `remove`, `contains`, `union`, `intersect`, `diff`, and the usual
+`filter`, `map` and `fold`. They differ in how they order their elements.
 
 | Type | Representation | Iteration order | Positional methods |
 |---|---|---|---|
-| `HashSet` | a hash array mapped trie (HAMT), 32-way | not promised | none |
-| `LinkedHashSet` | a `LinkedHashMap` of the elements: a hash map plus a `Vector` of the insertion order | insertion order | yes |
-| `TreeSet` | a red-black tree ordered by a `Comparator` | the comparator's | yes |
+| `HashSet` | a hash-based tree | not defined | none |
+| `LinkedHashSet` | a hash-based set that also records the insertion order | insertion order | yes |
+| `TreeSet` | a sorted, balanced tree | the comparator's | yes |
 
 ## When to choose which
 
-`HashSet` by default. `LinkedHashSet` when the order the elements arrived in matters (deduplicating a sequence while
-keeping its order). `TreeSet` when you need the elements sorted, a range of them, or the least and the greatest.
+- `HashSet` by default.
+- `LinkedHashSet` when the order the elements arrived in matters, for example to remove duplicates from a sequence
+  and keep its order.
+- `TreeSet` when you need the elements sorted, a range of them, or the least and the greatest.
 
 ```java
 HashSet<String> tags = HashSet.of("java", "scala");
@@ -49,21 +49,22 @@ TreeSet<Integer> firstTwo = sorted.take(2);
 
     --8<-- "TreeSet.md"
 
-Every method: [complexity page](complexity.md#sets). The `TreeSet` notes live on its interface, `SortedSet`.
+Every method: [complexity page](complexity.md#sets).
 
-## The positional subset of the ordered sets
+## Positional methods
 
-`LinkedHashSet` and `TreeSet` promise an order, so they have `head`, `last`, `init`, `tail` and their `Option`
-forms, `take`, `drop` and their right-hand and `While`/`Until` forms, `zipWithIndex`, `sliding`, `grouped` and
-`slideBy`. `HashSet` has none of them: its order is the hash order, which the type does not promise.
+`LinkedHashSet` and `TreeSet` have a defined order, so they have the methods that depend on it: `head`, `last`,
+`tail`, `take`, `drop`, `zipWithIndex`, `sliding`, `grouped` and their variants.
+
+`HashSet` has none of them, because its order is not defined.
 
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashSet`: it depends on the hashes and may change between versions.
-  `fold`, `reduce` and `mkString` see the elements in that order, so give `fold` and `reduce` an operation that
-  does not depend on it.
-- `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, on a
-  `TreeSet` too. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, O(log n).
+  `fold` and `reduce` see the elements in that order, so give them an operation where the order does not matter.
+- `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, even on a
+  `TreeSet`. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, in O(log n).
 - `TreeSet` decides membership with its comparator, not `equals`.
-- `union`, `intersect` and `diff` of two `TreeSet`s with the same comparator split and join the trees; with
-  different comparators, or another kind of set, they fall back to element-by-element work.
+- `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator. With different comparators,
+  or another kind of set, they process the elements one by one.
+- `TreeSet` has no `partitionMap`.
