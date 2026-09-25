@@ -24,6 +24,13 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable {@code LinkedHashMap} implementation that has predictable (insertion-order) iteration.
+ * <p>
+ * The insertion order is a {@link Vector} of keys beside a {@link HashMap} from each key to its entry and position.
+ * Removing a key leaves a marker in its place in the order; the markers at either end are cut off, and the order is
+ * rebuilt in O(n) once the markers outnumber the entries. That O(n) is amortised over a chain of removals, each on
+ * the result of the previous one. A map is persistent, so an older version can be used again: removing from, or
+ * slicing, the same map that is about to be rebuilt pays the rebuild each time, and after removals, finding a
+ * position by rank ({@code tail}, {@code init}, {@code take}, {@code drop}) walks past the markers in the way.
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -896,8 +903,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the
-     * markers outnumber the entries, the insertion order is rebuilt in O(n).
+     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised over a chain
+     * of removals, each on the result of the previous one: when the markers outnumber the entries, the insertion
+     * order is rebuilt in O(n). Removing again from the same older map that is about to be rebuilt pays that O(n)
+     * each time. Removing the first or the last entry also walks past the markers of earlier removals next to it.
      */
     @Override
     public LinkedHashMap<K, V> remove(K key) {
@@ -957,7 +966,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) amortised, as {@link #remove(Object)}; the new entry takes the position of the
+     * Complexity: effectively O(1) amortised, with the O(n) cases of {@link #remove(Object)}; the new entry takes the position of the
      * replaced one.
      */
     @Override
@@ -1116,8 +1125,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * All entries but the last in insertion order.
      * <p>
-     * Complexity: effectively O(1) (one key removed from the hash map, the insertion order sliced), plus a walk past
-     * the removed keys' markers next to the last entry, if any.
+     * Complexity: effectively O(1) (one key removed from the hash map, the insertion order sliced) on a map with no
+     * removals. After removals, up to O(n): the markers of the removed entries next to the last entry are walked
+     * past, and the insertion order is rebuilt when the result holds more markers than entries.
      *
      * @return this map without its last entry
      * @throws UnsupportedOperationException if this map is empty
@@ -1143,8 +1153,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * All entries but the first in insertion order.
      * <p>
-     * Complexity: effectively O(1) (one key removed from the hash map, the insertion order sliced), plus a walk past
-     * the removed keys' markers next to the first entry, if any.
+     * Complexity: effectively O(1) (one key removed from the hash map, the insertion order sliced) on a map with no
+     * removals. After removals, up to O(n): the markers of the removed entries next to the first entry are walked
+     * past, and the insertion order is rebuilt when the result holds more markers than entries.
      *
      * @return this map without its first entry
      * @throws UnsupportedOperationException if this map is empty
@@ -1171,8 +1182,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * The first {@code n} entries in insertion order: empty if {@code n <= 0}, this map if {@code n >= size()}.
      * <p>
      * Complexity: effectively O(min(n, size - n)) (the smaller of the kept and the removed keys is inserted into or
-     * removed from the hash map; the insertion order is sliced). After removals, finding the cut also walks the
-     * insertion order from the nearer end past the removed keys' markers.
+     * removed from the hash map; the insertion order is sliced). After removals, up to
+     * O(n): finding the cut walks the insertion order from the nearer end past every marker of a removed one in the
+     * way, and the insertion order is rebuilt when the result holds more markers than entries.
      *
      * @param n the number of entries to keep
      * @return the {@code n} entries inserted first
@@ -1592,14 +1604,20 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> normalized(Vector<K> list, HashMap<K, Slot<K, V>> map, int offset, int tombstones) {
-        while (list.head() == TOMBSTONE) {
-            list = list.tail();
-            offset++;
-            tombstones--;
+        // the markers at both ends are found by reading, then cut off with one slice: no Vector per marker
+        final int size = list.size();
+        int lo = 0;
+        while (list.get(lo) == TOMBSTONE) {
+            lo++;
         }
-        while (list.last() == TOMBSTONE) {
-            list = list.init();
-            tombstones--;
+        int hi = size;
+        while (list.get(hi - 1) == TOMBSTONE) {
+            hi--;
+        }
+        if (lo > 0 || hi < size) {
+            list = list.slice(lo, hi);
+            offset += lo;
+            tombstones -= lo + (size - hi);
         }
         if (tombstones > map.size()) {
             return reindex(list, map);

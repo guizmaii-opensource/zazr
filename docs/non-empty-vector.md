@@ -22,10 +22,10 @@ On a `Vector`, `head`, `max` or `reduce` can fail or return an `Option`, because
 other `reduce` methods.
 
 ```java
-NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-int best = scores.max(Integer::compare);
-int total = scores.reduce(Integer::sum);
-int first = scores.head();
+var scores = NonEmptyVector.of(7, 3, 9);
+var best = scores.max(Integer::compare); // Integer
+var total = scores.reduce(Integer::sum); // Integer
+var first = scores.head(); // Integer
 // 9, 19, 7
 ```
 
@@ -47,9 +47,9 @@ The return type tells you whether the result can be empty:
 other `Iterable`.
 
 ```java
-NonEmptyVector<Integer> grown = NonEmptyVector.of(1).appendAll(Vector.empty());
-Vector<Integer> evens = NonEmptyVector.of(1, 2, 3).filter(n -> n % 2 == 0);
-Option<NonEmptyVector<Integer>> rest = NonEmptyVector.of(1).tailNonEmpty();
+var grown = NonEmptyVector.of(1).appendAll(Vector.empty()); // NonEmptyVector<Integer>
+var evens = NonEmptyVector.of(1, 2, 3).filter(n -> n % 2 == 0); // Vector<Integer>
+var rest = NonEmptyVector.of(1).tailNonEmpty(); // Option<NonEmptyVector<Integer>>
 // NonEmptyVector(1), Vector(2), None
 ```
 
@@ -76,8 +76,8 @@ function that returns any `Iterable`, and returns a `Vector`.
 | static `flatten(NonEmptyVector<NonEmptyVector<A>>)` | `NonEmptyVector<A>` |
 
 ```java
-Option<NonEmptyVector<String>> fromInput = Vector.of("a", "b").toNonEmptyVector();
-Option<NonEmptyVector<String>> fromNothing = Vector.<String>empty().toNonEmptyVector();
+var fromInput = Vector.of("a", "b").toNonEmptyVector(); // Option<NonEmptyVector<String>>
+var fromNothing = Vector.<String>empty().toNonEmptyVector(); // Option<NonEmptyVector<String>>
 // Some(NonEmptyVector(a, b)), None
 ```
 

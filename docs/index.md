@@ -9,11 +9,11 @@ hide:
 
 ```java
 // one call per arity, never a Tuple2<Tuple2<A, B>, C>
-Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-    (a, b, c) -> a + b + c);
+var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+    (a, b, c) -> a + b + c); // Option<Integer>
 
 // total on a collection that cannot be empty
-int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
+var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
 // sum is Some(6), best is 9
 ```
 
@@ -133,26 +133,27 @@ writes idiomatic Zazr code instead of Vavr from memory.
 
 ```java
 // Validation keeps every error, not the first one
-Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
-String message = switch (user) {
+var user = Validation.zipWith(name(""), age(-1), email("jules"), User::new); // Validation<String, User>
+var message = switch (user) {
     case Valid(var u) -> "hello " + u.name();
     case Invalid(var errors) -> errors.mkString(", ");
 };
 // "name is blank, age is negative, email has no @"
 
 // zip at any arity up to 8, no Tuple2<Tuple2<A, B>, C>
-Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
+var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+    (a, b, c) -> a + b + c); // Option<Integer>
 
 // total operations on a collection that cannot be empty
-NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-int best = scores.max(Integer::compare);
+var scores = NonEmptyVector.of(7, 3, 9);
+var best = scores.max(Integer::compare); // Integer
 
 // a builder instead of repeated append
-Vector.Builder<Integer> builder = Vector.newBuilder();
+var builder = Vector.<Integer>newBuilder();
 for (int i = 0; i < 1_000; i++) {
     builder.add(i);
 }
-Vector<Integer> numbers = builder.result();
+var numbers = builder.result();
 ```
 
 `name`, `age` and `email` each return a `Validation<String, ...>`; [Validation](control/validation.md) shows them.

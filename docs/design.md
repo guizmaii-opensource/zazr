@@ -1050,6 +1050,56 @@ and unable to drift:
 - Facts the page made visible, stated in the notes rather than changed here: `min()`/`max()` on the sets use the
   natural order of the elements and walk them all, including on a `TreeSet` (whose least and greatest elements in its
   own order are `head()` and `last()`, O(log n)).
+- Cost defects found by the review of the page (2026-09-25, #93), one decision each:
+  - `List`: `take`, `drop`, `takeWhile`/`takeUntil`, `slice`, `subSequence`, `remove`, `leftPadTo` and
+    `segmentLength` measured the whole List (`length()` walks it) before walking their prefix, so each was O(n) even
+    for one element. Fixed: they walk only the cells they need (`subSequence` counts the length only to build the
+    message of the exception it throws; `leftPadTo` counts up to the target). `lastIndexOfSlice` drops the found
+    prefix with the fixed `drop`, and `combinations(k)` walks the tails instead of dropping i + 1 elements per index,
+    so both lose their quadratic factor.
+  - `Queue`: `startsWith`, `zip`/`zipWith`, `prefixLength` and `segmentLength` copied the whole Queue into a `List`
+    first. Fixed: they walk the front, then the rear, reversed only when the walk reaches it; their notes say that a
+    walk reaching the elements added at the back since the last rebalancing pays O(n) for that reversal.
+  - `Queue.init()` copied the whole front (`front.init()`) on every call once the rear was empty, and the result
+    still had an empty rear, so a chain of k calls cost O(k * n). Fixed without changing the structure: when the rear
+    is empty, `init()` splits the front in two in O(n), the second half without its last element becoming the rear,
+    so the next calls take from the rear in O(1) (the mirror of `tail()` reversing the rear onto an empty front).
+  - Documented, not fixed: the banker's queue is amortised over a chain of calls, each on the result of the previous
+    one. A Queue is persistent, so an older version can be used again, and `tail()`/`dequeue()` on a Queue whose
+    front holds one element, or `init()` on one whose rear is empty, pays the O(n) rebalancing again on every call on
+    that same version. The class javadoc and the notes of the three methods say so. A structure without that caveat
+    exists: Okasaki's real-time queue (*Purely Functional Data Structures*, 7.2) spreads the reversal over the
+    following operations with a lazy, memoised rotation, so every operation is O(1) in the worst case, older versions
+    included, at the cost of a lazy list and a schedule per Queue. It is a follow-up if a workload needs it; this
+    change keeps the two-list representation.
+  - `LinkedHashMap`/`LinkedHashSet`: cutting the removed keys' markers off the ends of the insertion order took one
+    `tail()`/`init()` of the `Vector` per marker. Fixed: the run is found by reading and cut with one slice. Documented,
+    not fixed (the class javadoc of both types and the notes of `remove`, `replace`, `tail`, `init` and `take`): the
+    rebuild of the insertion order once the markers outnumber the entries is amortised over a chain of removals, so
+    `remove`/`replace` or a slice on an older version that is about to be rebuilt pays O(n) each time; after
+    removals, `tail`, `init`, `take` and `drop` find their cut by walking past the markers in the way, O(n) at worst.
+    Removing both would need a different order structure (an order-statistics tree keyed by insertion stamp, as
+    `TreeMap` gives), which is a follow-up if a workload needs it.
+  - `Stream`: `patch` dropped `from + replaced` elements at call time, and `lastIndexOfSlice(that, end)` measured the
+    whole Stream (it never returned on an infinite one). Fixed: `patch` builds each cell when the result reaches it
+    (only `patch(0, <empty>, r)` forces its r + 1 first elements now, for its head), and `lastIndexOfSlice` forces at
+    most the first `end + m` elements. `dropRight(k)` forcing its first k + 1 elements at call time is what tells
+    whether the result is empty, so its note says so rather than "lazy". `slice` and `subSequence` walk to their
+    start in a loop and stay lazy past it (#92).
+  - `Stream.subSequence(from, to)` now throws exactly when `Vector.subSequence` throws. An empty range past the end
+    returned an empty Stream, and a reversed range whose end is past the end threw `IllegalArgumentException`; both now
+    throw at call time as `Vector` does, forcing the first `from` (or `to`) elements to check. The one lazy exception
+    stays: with `from < to` and `to` past the end, the `IndexOutOfBoundsException` comes when the traversal gets there.
+  - `asJava()` views: the set views already answered `contains` with the set's own lookup (#26). The `Collection`
+    view of a map's entries walked them; its `contains` of a `Tuple2` is now the map's own `contains(Tuple2)`, one
+    lookup of the key (a key the order of a `TreeMap` cannot compare, or a null one, is answered `false`, as the walk
+    answered). The `java.util.List` view of a `List`, `Queue` or `Stream` counts the size of the sequence the first
+    time it is needed and keeps it, so an indexed loop over the view no longer counts it at every step; the Stream
+    view still forces nothing before an operation that needs the size.
+  - `Vector` of primitive values (`range`, the primitive `ofAll`, `filter` of those): the first write of a value of
+    another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
+    the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
+    path would break that invariant. The class javadoc and the notes of the ten write methods say so.
 
 Which concrete collections survive (decided):
 
