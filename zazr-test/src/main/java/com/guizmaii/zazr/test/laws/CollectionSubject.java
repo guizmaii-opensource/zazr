@@ -2,7 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -11,7 +11,7 @@ import java.util.function.ToIntFunction;
 /**
  * A collection type checked by {@link CollectionLaws}.
  *
- * @param values  arbitrary collections
+ * @param values  the generator of the collections
  * @param ofAll   builds a collection of the type under test from elements, in iteration order (a map takes its
  *                entries)
  * @param size    the collection's {@code size()}
@@ -22,14 +22,14 @@ import java.util.function.ToIntFunction;
  * @param <T>     the element type (the entry type of a map)
  * @param <F>     the collection type
  */
-public record CollectionSubject<T, F extends Iterable<T>>(Arbitrary<F> values, Function<Iterable<T>, F> ofAll,
+public record CollectionSubject<T, F extends Iterable<T>>(Gen<F> values, Function<Iterable<T>, F> ofAll,
                                                           ToIntFunction<F> size, Function<F, List<T>> toList,
                                                           boolean ordered, Option<IterationOrder<T>> order) {
 
     /**
      * Creates a subject.
      *
-     * @param values  arbitrary collections
+     * @param values  the generator of the collections
      * @param ofAll   builds a collection of the type under test from elements
      * @param size    the collection's {@code size()}
      * @param toList  the collection's {@code toList()}
@@ -48,14 +48,14 @@ public record CollectionSubject<T, F extends Iterable<T>>(Arbitrary<F> values, F
     /**
      * Creates a subject whose iteration order is unspecified.
      *
-     * @param values  arbitrary collections
+     * @param values  the generator of the collections
      * @param ofAll   builds a collection of the type under test from elements
      * @param size    the collection's {@code size()}
      * @param toList  the collection's {@code toList()}
      * @param ordered whether equality depends on the iteration order
      * @throws NullPointerException if an argument is null
      */
-    public CollectionSubject(Arbitrary<F> values, Function<Iterable<T>, F> ofAll, ToIntFunction<F> size,
+    public CollectionSubject(Gen<F> values, Function<Iterable<T>, F> ofAll, ToIntFunction<F> size,
                              Function<F, List<T>> toList, boolean ordered) {
         this(values, ofAll, size, toList, ordered, Option.none());
     }

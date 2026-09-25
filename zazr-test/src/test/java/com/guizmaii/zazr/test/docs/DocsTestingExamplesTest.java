@@ -2,21 +2,16 @@ package com.guizmaii.zazr.test.docs;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Validation;
-import com.guizmaii.zazr.test.laws.MapLaws;
-import com.guizmaii.zazr.test.laws.MapSubject;
 import com.guizmaii.zazr.test.legacy.Arbitrary;
 import com.guizmaii.zazr.test.legacy.CheckResult;
 import com.guizmaii.zazr.test.legacy.Checkable;
 import com.guizmaii.zazr.test.legacy.Gen;
 import com.guizmaii.zazr.test.legacy.Property;
 import java.util.Random;
-import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * The fenced {@code java} blocks of docs/testing.md, pasted verbatim, compiled and run (zazr-core's
@@ -112,27 +107,5 @@ public class DocsTestingExamplesTest {
         assertThat(checks.apply(10).apply(new Random(1))).isNotNull();
         Arbitrary<Validation<String, Integer>> typedChecks = checks;
         assertThat(typedChecks).isNotNull();
-    }
-
-    @Test
-    void checkingYourOwnType() {
-        record Box(Vector<Object> items) {
-            Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
-        }
-        MapSubject<Box> boxes = new MapSubject<>() {
-            public Arbitrary<Box> values() { return Arbitrary.vector(Arbitrary.integer()).map(v -> new Box(v.map(x -> (Object) x))); }
-            public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
-        };
-        MapLaws.<Box>all().assertSatisfied(boxes, new Random(42));
-
-        MapSubject<Box> broken = new MapSubject<>() {
-            public Arbitrary<Box> values() { return boxes.values(); }
-            public Box map(Box box, Function<Object, Object> f) { return new Box(box.map(f).items().dropRight(1)); }
-        };
-        assertThatThrownBy(() -> MapLaws.<Box>all().assertSatisfied(broken, new Random(42), 5, 100))
-            .isInstanceOf(AssertionError.class)
-            .hasMessageStartingWith("2 law(s) failed:\nmapIdentity: falsified at check ")
-            .hasMessageContaining("\nmapComposition: falsified at check ")
-            .hasMessageContaining("mapIdentity: falsified at check 3 by (Box[items=Vector(0, 1)]) (left = Box[items=Vector(0)], right = Box[items=Vector(0, 1)])");
     }
 }

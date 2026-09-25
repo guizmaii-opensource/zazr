@@ -1,19 +1,18 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.test.legacy.CheckResult;
-import com.guizmaii.zazr.test.legacy.Checkable;
+import com.guizmaii.zazr.test.CheckConfig;
 
 import java.util.Objects;
-import java.util.Random;
 
 /**
  * An ordered set of laws checked against one subject. Law sets compose with {@link #and(Laws)}: a set of laws over a
  * narrow subject (say {@link MapSubject}) and a set over another ({@link ZipSubject}) combine into a set over any
  * subject that provides both.
  * <p>
- * {@link #check(Object, Random, int, int)} runs every law, not only up to the first failure, and
- * {@link #assertSatisfied(Object, Random, int, int)} reports each failing law by name with its counterexample.
+ * {@link #check(Object, CheckConfig)} runs every law, not only up to the first failure, and
+ * {@link #assertSatisfied(Object, CheckConfig)} reports each failing law by name with its counterexample and the seed
+ * that replays it.
  *
  * @param <S> the subject the laws are checked against
  */
@@ -87,69 +86,61 @@ public final class Laws<S> {
     }
 
     /**
-     * Checks every law of this set against a subject.
+     * Checks every law of this set against a subject, each with the same configuration, so the seed of any failure
+     * replays it.
      *
      * @param subject what the laws are checked against
-     * @param random  the source of randomness, shared by the laws in order
-     * @param size    the size hint given to the arbitraries
-     * @param tries   the number of samples per law
-     * @return one result per law, in order, each named after its law
-     * @throws NullPointerException if {@code subject} or {@code random} is null
+     * @param config  the number of samples, the size and the seed of each law's check
+     * @return one result per law, in order
+     * @throws NullPointerException if an argument is null
      */
-    public Vector<CheckResult> check(S subject, Random random, int size, int tries) {
+    public Vector<LawResult> check(S subject, CheckConfig config) {
         Objects.requireNonNull(subject, "subject is null");
-        Objects.requireNonNull(random, "random is null");
-        return laws.map(law -> checkOne(law, subject, random, size, tries));
+        Objects.requireNonNull(config, "config is null");
+        return laws.map(law -> checkOne(law, subject, config));
+    }
+
+    /**
+     * Checks every law of this set against a subject with {@link CheckConfig#defaults()}.
+     *
+     * @param subject what the laws are checked against
+     * @return one result per law, in order
+     * @throws NullPointerException if {@code subject} is null
+     */
+    public Vector<LawResult> check(S subject) {
+        return check(subject, CheckConfig.defaults());
     }
 
     /**
      * Checks every law of this set and throws when one of them is not satisfied.
      *
      * @param subject what the laws are checked against
-     * @param random  the source of randomness, shared by the laws in order
-     * @param size    the size hint given to the arbitraries
-     * @param tries   the number of samples per law
-     * @throws AssertionError       naming every law that was falsified or erroneous, with its counterexample
-     * @throws NullPointerException if {@code subject} or {@code random} is null
+     * @param config  the number of samples, the size and the seed of each law's check
+     * @throws AssertionError       naming every law that was falsified or erroneous, with its sample number, its
+     *                              counterexample, the explanation and the seed that replays it
+     * @throws NullPointerException if an argument is null
      */
-    public void assertSatisfied(S subject, Random random, int size, int tries) {
-        final Vector<CheckResult> failures = check(subject, random, size, tries).filter(result -> !result.isSatisfied());
+    public void assertSatisfied(S subject, CheckConfig config) {
+        final Vector<LawResult> failures = check(subject, config).filter(result -> !result.isSatisfied());
         if (!failures.isEmpty()) {
-            throw new AssertionError(failures.map(Laws::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
+            throw new AssertionError(failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
         }
     }
 
     /**
-     * Checks every law of this set with {@link Checkable#DEFAULT_SIZE} and {@link Checkable#DEFAULT_TRIES} and throws
-     * when one of them is not satisfied.
+     * Checks every law of this set with {@link CheckConfig#defaults()} and throws when one of them is not satisfied.
      *
      * @param subject what the laws are checked against
-     * @param random  the source of randomness, shared by the laws in order
-     * @throws AssertionError       naming every law that was falsified or erroneous, with its counterexample
-     * @throws NullPointerException if an argument is null
+     * @throws AssertionError       naming every law that was falsified or erroneous, as
+     *                              {@link #assertSatisfied(Object, CheckConfig)}
+     * @throws NullPointerException if {@code subject} is null
      */
-    public void assertSatisfied(S subject, Random random) {
-        assertSatisfied(subject, random, Checkable.DEFAULT_SIZE, Checkable.DEFAULT_TRIES);
+    public void assertSatisfied(S subject) {
+        assertSatisfied(subject, CheckConfig.defaults());
     }
 
-    /**
-     * Describes a failed law in one line: its name, the kind of failure and the counterexample.
-     *
-     * @param result the result of a law check
-     * @return a description of the failure
-     */
-    static String describe(CheckResult result) {
-        return switch (result) {
-            case CheckResult.Satisfied satisfied -> satisfied.propertyName() + ": satisfied";
-            case CheckResult.Falsified falsified -> falsified.propertyName() + ": falsified at check " + falsified.count()
-                    + " by " + falsified.counterexample() + falsified.message().map(m -> " (" + m + ")").getOrElse("");
-            case CheckResult.Erroneous erroneous -> erroneous.propertyName() + ": erroneous at check " + erroneous.count()
-                    + erroneous.sample().map(sample -> " with " + sample).getOrElse("") + ": " + erroneous.cause();
-        };
-    }
-
-    private static <S> CheckResult checkOne(Law<? super S> law, S subject, Random random, int size, int tries) {
-        return law.check(subject, random, size, tries);
+    private static <S> LawResult checkOne(Law<? super S> law, S subject, CheckConfig config) {
+        return new LawResult(law.name(), law.check(subject, config));
     }
 
     @Override

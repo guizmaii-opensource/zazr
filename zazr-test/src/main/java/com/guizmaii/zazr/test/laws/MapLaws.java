@@ -1,6 +1,6 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.legacy.Property;
+import com.guizmaii.zazr.test.Check;
 
 import java.util.function.Function;
 
@@ -19,9 +19,8 @@ public final class MapLaws {
      * @return the law
      */
     public static <F> Law<MapSubject<F>> mapIdentity() {
-        return Law.of("mapIdentity", subject -> Property.named("mapIdentity")
-                .forAll(subject.values())
-                .suchThatResult(fa -> Results.equal(subject.map(fa, Function.identity()), fa)));
+        return Law.of("mapIdentity", (subject, config) -> Check.check(config, subject.values(),
+                fa -> Results.equal(subject.map(fa, Function.identity()), fa)));
     }
 
     /**
@@ -32,9 +31,9 @@ public final class MapLaws {
      * @return the law
      */
     public static <F> Law<MapSubject<F>> mapComposition() {
-        return Law.of("mapComposition", subject -> Property.named("mapComposition")
-                .forAll(subject.values(), Functions.integers().arbitrary(), Functions.integers().arbitrary())
-                .suchThatResult((fa, f, g) -> Results.equal(subject.map(subject.map(fa, f), g), subject.map(fa, f.andThen(g)))));
+        return Law.of("mapComposition", (subject, config) -> Check.check(config, subject.values(),
+                Functions.integers(), Functions.integers(),
+                (fa, f, g) -> Results.equal(subject.map(subject.map(fa, f), g), subject.map(fa, f.andThen(g)))));
     }
 
     /**

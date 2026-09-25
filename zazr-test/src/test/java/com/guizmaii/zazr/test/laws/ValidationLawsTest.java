@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.control.Validation;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
@@ -13,8 +13,8 @@ class ValidationLawsTest extends ControlLawsSuite<Validation<?, ?>, ValidationLa
     static final class Subject implements FlatMapSubject<Validation<?, ?>>, ZipSidesSubject<Validation<?, ?>> {
 
         @Override
-        public Arbitrary<Validation<?, ?>> values() {
-            return Arbitrary.validation(Arbitrary.integer(), Arbitrary.integer()).map(value -> value);
+        public Gen<Validation<?, ?>> values() {
+            return Gen.validation(Values.integers(), Values.integers()).map(value -> value);
         }
 
         @Override

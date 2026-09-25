@@ -2,8 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.HashMap;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
-import java.util.Random;
+import com.guizmaii.zazr.test.Gen;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
@@ -17,8 +16,8 @@ class HashMapLawsTest extends MapLawsSuite<HashMap<?, ?>, HashMap<Integer, Integ
         return new MapSubject<>() {
 
             @Override
-            public Arbitrary<HashMap<?, ?>> values() {
-                return Arbitrary.hashMap(Arbitrary.integer(), Arbitrary.integer()).map(value -> value);
+            public Gen<HashMap<?, ?>> values() {
+                return Gen.hashMap(Values.integers(), Values.integers()).map(value -> value);
             }
 
             @Override
@@ -30,25 +29,22 @@ class HashMapLawsTest extends MapLawsSuite<HashMap<?, ?>, HashMap<Integer, Integ
 
     @Override
     CollectionSubject<Tuple2<Integer, Integer>, HashMap<Integer, Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.hashMap(Arbitrary.integer(), Arbitrary.integer()), HashMap::ofEntries, HashMap::size,
+        return new CollectionSubject<>(Gen.hashMap(Values.integers(), Values.integers()), HashMap::ofEntries, HashMap::size,
                 HashMap::toList, false);
     }
 
     @Override
     BuilderLaws.CollectorSubject<Tuple2<Integer, Integer>, HashMap<Integer, Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.tuple2(Arbitrary.integer(), Arbitrary.integer())),
+        return new BuilderLaws.CollectorSubject<>(Gen.list(Gen.tuple2(Values.integers(), Values.integers())),
                 HashMap.collector(), HashMap::ofEntries);
     }
 
     @Test
     void mapLawsWithCollidingHashCodes() {
         final CollectionSubject<Tuple2<Collider, Integer>, HashMap<Collider, Integer>> colliders = new CollectionSubject<>(
-                Arbitrary.hashMap(Arbitrary.integer().map(Collider::new), Arbitrary.integer()), HashMap::ofEntries, HashMap::size,
+                Gen.hashMap(Values.integers().map(Collider::new), Values.integers()), HashMap::ofEntries, HashMap::size,
                 HashMap::toList, false);
-        CollectionLaws.<Tuple2<Collider, Integer>, HashMap<Collider, Integer>>map()
-                .assertSatisfied(colliders, new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
-        EqualityLaws.<HashMap<Collider, Integer>>all().assertSatisfied(
-                new EqualitySubject<>(colliders.values(), m -> HashMap.ofEntries(m.toList()), c -> new java.util.HashSet<>(CollectionLaws.elements(c))), new Random(LawChecks.SEED), LawChecks.SIZE,
-                LawChecks.TRIES);
+        LawChecks.check(CollectionLaws.<Tuple2<Collider, Integer>, HashMap<Collider, Integer>>map(), colliders);
+        LawChecks.check(EqualityLaws.<HashMap<Collider, Integer>>all(), new EqualitySubject<>(colliders.values(), m -> HashMap.ofEntries(m.toList()), c -> new java.util.HashSet<>(CollectionLaws.elements(c))));
     }
 }

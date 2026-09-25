@@ -2,8 +2,8 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.control.Validation;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
-import com.guizmaii.zazr.test.legacy.Property;
+import com.guizmaii.zazr.test.Check;
+import com.guizmaii.zazr.test.Gen;
 
 /**
  * The laws specific to {@code Validation}.
@@ -17,12 +17,11 @@ public final class ValidationLaws {
      * {@code a.zip(b)} is {@code Valid} of both values when both are valid, and otherwise {@code Invalid} of the
      * errors of {@code a} followed by those of {@code b}.
      *
-     * @return the law, checked against arbitrary validations
+     * @return the law, checked against a generator of validations
      */
-    public static Law<Arbitrary<Validation<?, ?>>> validationZipAccumulatesBothSides() {
-        return Law.of("validationZipAccumulatesBothSides", values -> Property.named("validationZipAccumulatesBothSides")
-                .forAll(values, values)
-                .suchThatResult((a, b) -> Results.equal(zip(a, b), expected(a, b))));
+    public static Law<Gen<Validation<?, ?>>> validationZipAccumulatesBothSides() {
+        return Law.of("validationZipAccumulatesBothSides", (values, config) -> Check.check(config, values, values,
+                (a, b) -> Results.equal(zip(a, b), expected(a, b))));
     }
 
     /**
@@ -30,7 +29,7 @@ public final class ValidationLaws {
      *
      * @return the law set
      */
-    public static Laws<Arbitrary<Validation<?, ?>>> all() {
+    public static Laws<Gen<Validation<?, ?>>> all() {
         return Laws.of(validationZipAccumulatesBothSides());
     }
 

@@ -1,10 +1,9 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.legacy.Arbitrary;
-import com.guizmaii.zazr.test.legacy.Gen;
+import com.guizmaii.zazr.test.CheckConfig;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.Objects;
-import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -19,14 +18,14 @@ final class Functions {
     /// Integer functions `x -> (a * x + b) mod m`: affine, and folding onto a small range when `m` is small, so that
     /// a set's `map` merges elements. Elements that are not integers go through their hash code.
     static Gen<Function<Object, Object>> integers() {
-        return random -> new IntegerFunction(random.nextInt(21) - 10, random.nextInt(201) - 100,
-                random.nextInt(3) == 0 ? 1 + random.nextInt(7) : 0);
+        return Gen.fromRandom(random -> new IntegerFunction(random.nextInt(21) - 10, random.nextInt(201) - 100,
+                random.nextInt(3) == 0 ? 1 + random.nextInt(7) : 0));
     }
 
-    /// Functions to values of `values`: the argument's hash code, mixed with a random seed, seeds the draw.
-    static <F> Gen<Function<Object, F>> to(Arbitrary<F> values, int size) {
-        final Gen<F> gen = values.apply(size);
-        return random -> new SeededFunction<>(gen, random.nextLong());
+    /// Functions to values of `values` at `size`: the argument's hash code, mixed with a random seed, seeds the
+    /// draw.
+    static <F> Gen<Function<Object, F>> to(Gen<F> values, int size) {
+        return Gen.fromRandom(random -> new SeededFunction<>(values, size, random.nextLong()));
     }
 
     /// The increment of SplitMix64.
@@ -55,11 +54,13 @@ final class Functions {
         }
     }
 
-    record SeededFunction<F>(Gen<F> gen, long seed) implements Function<Object, F> {
+    /// The first value `gen` gives at `size` with a seed drawn from `seed` and the argument.
+    record SeededFunction<F>(Gen<F> gen, int size, long seed) implements Function<Object, F> {
 
         @Override
         public F apply(Object x) {
-            return gen.apply(new Random(mix(seed + GOLDEN_GAMMA * Objects.hashCode(x))));
+            final long drawSeed = mix(seed + GOLDEN_GAMMA * Objects.hashCode(x));
+            return gen.runCollectN(1, new CheckConfig(1, size, drawSeed, CheckConfig.DEFAULT_MAX_DISCARDS)).head();
         }
 
         @Override

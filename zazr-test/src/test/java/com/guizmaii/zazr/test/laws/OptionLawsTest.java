@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.function.Function;
 
@@ -13,8 +13,8 @@ class OptionLawsTest extends ControlLawsSuite<Option<?>, OptionLawsTest.Subject>
     static final class Subject implements FlatMapSubject<Option<?>>, ZipSidesSubject<Option<?>> {
 
         @Override
-        public Arbitrary<Option<?>> values() {
-            return Arbitrary.option(Arbitrary.integer()).map(value -> value);
+        public Gen<Option<?>> values() {
+            return Gen.option(Values.integers()).map(value -> value);
         }
 
         @Override

@@ -77,7 +77,8 @@ docs-complexity-check: docs-complexity ## fail when the committed complexity pag
 # The tests that compile and run every fenced java block of the site (zazr-test's own, since zazr-core cannot depend on it).
 DOCS_EXAMPLES_TESTS := \
 	zazr-core/src/test/java/com/guizmaii/zazr/docs/DocsExamplesTest.java \
-	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java
+	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java \
+	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsLawsExamplesTest.java
 
 docs-examples: ## fail when a java block of the site is not in a docs example test (they compile and run every snippet)
 	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)

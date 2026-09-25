@@ -2,8 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
-import java.util.Random;
+import com.guizmaii.zazr.test.Gen;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +14,8 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
     static final class Subject implements FlatMapSubject<Vector<?>>, ZipSubject<Vector<?>> {
 
         @Override
-        public Arbitrary<Vector<?>> values() {
-            return Arbitrary.vector(Arbitrary.integer()).map(value -> value);
+        public Gen<Vector<?>> values() {
+            return Gen.vector(Values.integers()).map(value -> value);
         }
 
         @Override
@@ -47,34 +46,48 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
 
     @Override
     CollectionSubject<Integer, Vector<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.vector(Arbitrary.integer()), Vector::ofAll, Vector::size, Vector::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(Gen.vector(Values.integers()), Vector::ofAll, Vector::size, Vector::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Vector<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Vector.collector(), Vector::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), Vector.collector(), Vector::ofAll, Option.some(IterationOrder.input()));
     }
 
     @Test
     void builderResultEqualsOfAll() {
-        LawChecks.check(BuilderLaws.builderResultEqualsOfAll(), Arbitrary.list(Arbitrary.integer()));
+        LawChecks.check(BuilderLaws.builderResultEqualsOfAll(), Gen.list(Values.integers()));
     }
 
-    /// Sizes at the boundaries of a 32-wide trie: the arbitraries favour the size and the size minus one.
+    /// Sizes at the boundaries of a 32-wide trie.
     private static final int[] TRIE_BOUNDARIES = { 32, 33, 1024, 1025, 32_769 };
+
+    /// The samples of each check at a trie boundary.
+    private static final int BOUNDARY_SAMPLES = 40;
+
+    /// Collections at a fixed size: half of exactly `size` elements, half as `Gen.vector`, which favours the size and
+    /// the size minus one.
+    private static <T> Gen<T> atBoundary(int size, Gen<? extends T> exactly, Gen<? extends T> upTo) {
+        return Gen.<T>oneOf(exactly, upTo).withSize(size);
+    }
 
     @Test
     void builderResultEqualsOfAllAtTrieBoundaries() {
         for (int size : TRIE_BOUNDARIES) {
+            final Gen<Iterable<Integer>> elements = atBoundary(size, Gen.vectorN(size, Values.integers()), Gen.list(Values.integers()));
             Laws.of(BuilderLaws.builderResultEqualsOfAll())
-                    .assertSatisfied(Arbitrary.list(Arbitrary.integer()), new Random(LawChecks.SEED + size), size, 40);
+                    .assertSatisfied(elements, LawChecks.config("builderResultEqualsOfAll" + size).withSamples(BOUNDARY_SAMPLES));
         }
     }
 
     @Test
     void sequenceLawsAtTrieBoundaries() {
         for (int size : TRIE_BOUNDARIES) {
-            CollectionLaws.<Integer, Vector<Integer>>sequence().assertSatisfied(collection(), new Random(LawChecks.SEED + size), size, 40);
+            final CollectionSubject<Integer, Vector<Integer>> collection = collection();
+            final Gen<Vector<Integer>> vectors = atBoundary(size, Gen.vectorN(size, Values.integers()), collection.values());
+            CollectionLaws.<Integer, Vector<Integer>>sequence().assertSatisfied(
+                    new CollectionSubject<>(vectors, collection.ofAll(), collection.size(), collection.toList(), collection.ordered(), collection.order()),
+                    LawChecks.config("sequenceLaws" + size).withSamples(BOUNDARY_SAMPLES));
         }
     }
 }
