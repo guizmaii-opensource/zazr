@@ -120,12 +120,14 @@ coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in z
 	@$(MAKE) --no-print-directory coverage-check
 
 # The check reads the execution data and the classes of the last make coverage. JaCoCo skips a merge whose data is
-# missing or empty, and a check without data or classes, and then passes; so both are required here, and the merged
-# file of an earlier run is deleted first, so that a skipped merge cannot leave it to be checked again.
+# missing or empty and a check without data, and it passes a bundle of 0 classes (after a failed compile); so data
+# and at least one class file are required here, and the merged file of an earlier run is deleted first, so that a
+# skipped merge cannot leave it to be checked again.
 coverage-check: ## fail when zazr-core is below 95 % of lines or 95 % of branches in the last make coverage
 	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec; do \
 		test -s $$f || { echo "$$f is missing or empty: run make coverage first"; exit 1; }; done
-	@test -d zazr-core/target/classes || { echo "zazr-core/target/classes not found: run make coverage first"; exit 1; }
+	@find zazr-core/target/classes -name '*.class' -print -quit 2>/dev/null | grep -q . \
+		|| { echo "no class file in zazr-core/target/classes: run make coverage first"; exit 1; }
 	@rm -f zazr-core/target/jacoco-merged.exec
 	$(MVN) -Pcoverage -pl zazr-core jacoco:merge@coverage-merge jacoco:check@coverage-check
 
