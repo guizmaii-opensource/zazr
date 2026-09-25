@@ -3413,7 +3413,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Vector.arrangeBy: getKey returned null")));
     }
 
     /**

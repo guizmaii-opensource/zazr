@@ -1318,21 +1318,33 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   removed. Tuples are not collections and keep allowing null components.
   Same for `Right(null)`, `Success(null)`, `Valid(null)`: records with `requireNonNull` in the compact
   constructor. Collections keep allowing null elements (Java's do), but document it.
-- **A function that returns null is rejected at the call, by name (decided 2026-09-25, #120).** Every public
-  method taking a function, supplier or callable whose result is a Zazr value (`Option`, `Either`, `Try`,
-  `Validation`, `Lazy`, a tuple, a collection or an iterable of elements) or is stored as an element checks that
-  result where it calls the function: `NullPointerException("<Type>.<method>: <parameter> returned null")`
-  (`Option.flatMap: mapper returned null`), never a `null` handed back to the caller or a bare NPE further down.
-  A default method shared by several types names the interface that declares it (`Set.toMap`, `Map.toMap`). A
-  method that runs the function under `Try` (`map`, `flatMap`, `flatMapTry`, `collect`, `filter`, `mapError`,
+- **A function whose result is a Zazr value that returns null is rejected at the call, by name (decided
+  2026-09-25, #120, narrowed in #163).** The rule covers a function, supplier or callable whose result is a Zazr
+  value (`Option`, `Either`, `Try`, `Validation`, `Lazy`, a tuple, a collection or an iterable of elements: the
+  functions of `flatMap`, `collect`, `partitionMap`, `unzip`, `unfold*`, `toMap(f)`, `orElse(Supplier)`, the map
+  `map`/`fill`/`tabulate`/`ofAll(stream, entryMapper)`, `Stream.cons`/`iterate`/`appendSelf`), the key a `groupBy` or
+  `arrangeBy` classifier produces, and the value a control type stores in a case (`Option.map`, `Either.map`,
+  `mapLeft`, `mapBoth`, `filterOrElse`, `toEither`/`toTry`/`toValidation`). The result is checked where the function
+  is called: `NullPointerException("<Type>.<method>: <parameter> returned null")` (`Option.flatMap: mapper returned
+  null`). A default method shared by several types names the interface that declares it (`Set.toMap`, `Map.toMap`).
+  A method that runs the function under `Try` (`map`, `flatMap`, `flatMapTry`, `collect`, `filter`, `mapError`,
   `catchAll`, `catchSome`, `catchAllWith`, `catchSomeWith`, and `Try.of` as before) returns that exception as a
-  `Failure`; `Try.orElse(Supplier)` and `Try.forEach` throw it. A lazy `Stream` rejects the null when the element
-  is reached, and forcing it again fails the same way rather than skipping the element. `fold`, `reduce` and
-  `getOrElse`-style methods return the caller's own value and are not checked. The check is a constant message on
-  the failure path only. `NullResultTest` holds one row per method and a reflective guard over the exported
-  types that fails when a public method taking a function whose result is a Zazr type has no row. A null
-  function *argument* is `<parameter> is null` at once, even where the function would not be called (an empty
+  `Failure`; `Try.orElse(Supplier)` and `Try.forEach` throw it. On a lazy `Stream` these checks run when the element
+  is reached, and forcing the stream again fails the same way rather than skipping the element.
+  A function that produces a plain element, key or value of a collection (`map`, `scan*`, `zipWith`, sequence
+  `fill`/`tabulate`, `mapValues`, `mapKeys`, `computeIfAbsent`, `merge`, `replaceAll`, the `keyMapper`/`valueMapper`
+  of `toMap`) is not checked by name: the collection's own null check rejects it (`Vector: element is null`,
+  `HashMap: value is null`), and on a lazy `Stream` a re-force after such a failure may go on past the element.
+  `fold`, `reduce` and `getOrElse`-style methods return the caller's own value and are not checked. The check is a
+  constant message on the failure path only. `NullResultTest` holds one row per overload and a reflective guard over
+  the exported types that fails when a public method taking a function whose result is a Zazr type has no row. A
+  null function *argument* is `<parameter> is null` at once, even where the function would not be called (an empty
   map's `replaceAll`, a non-empty collection's `orElse(Supplier)`, a missing key's `computeIfPresent`).
+- **Slice searches read the slice as the type documents (decided in #163).** `Vector`, `NonEmptyVector` and a
+  non-empty `List`/`Queue` copy the slice first, so a null element in it throws. A `Stream` compares the slice
+  lazily and reads it only as far as the comparisons go: a null they reach throws, a null past them is not seen, and
+  an infinite slice is answered. An empty `List`, `Queue` or `Stream` answers `indexOfSlice` without reading the
+  slice.
 - **`Try.Failure` equality** stops comparing stack traces (`Try.java:1482`). Two failures are equal when
   their causes are the same object, or same class + message. Or simply make `Failure` a record and
   accept reference equality on the `Throwable`. Recommendation: record default (reference equality on the

@@ -936,7 +936,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param that the slice to look for
      * @return true if {@code that} occurs contiguously in this List (an empty slice always does)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this List is not empty and {@code that} holds a null
+     *                              element; an empty List answers without reading {@code that}
      */
     default boolean containsSlice(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
@@ -1349,7 +1350,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param that the slice to find
      * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this List is not empty and {@code that} holds a null
+     *                              element; an empty List answers without reading {@code that}
      */
     default int indexOfSlice(Iterable<? extends T> that) {
         return indexOfSlice(that, 0);
@@ -1363,7 +1365,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param that the slice to find
      * @param from the first position to look at
      * @return the index of its first occurrence at or after {@code from}, or -1
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this List is not empty and {@code that} holds a null
+     *                              element; an empty List answers without reading {@code that}
      */
     default int indexOfSlice(Iterable<? extends T> that, int from) {
         Objects.requireNonNull(that, "that is null");
@@ -1375,7 +1378,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this List is not empty and {@code that} holds a null
+     *                              element; an empty List answers without reading {@code that}
      */
     default Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
         return Collections.indexOption(indexOfSlice(that));
@@ -1387,7 +1391,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param that the slice to find
      * @param from the first position to look at
      * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this List is not empty and {@code that} holds a null
+     *                              element; an empty List answers without reading {@code that}
      */
     default Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
         return Collections.indexOption(indexOfSlice(that, from));
@@ -3460,7 +3465,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "List.arrangeBy: getKey returned null")));
     }
 
     /**

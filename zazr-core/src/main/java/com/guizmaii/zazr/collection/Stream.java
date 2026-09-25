@@ -172,7 +172,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> Stream<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        return StreamFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity(), "Stream.flatten: an inner iterable is null"));
+        return StreamFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity()));
     }
 
     /**
@@ -929,7 +929,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param that the slice to look for
      * @return true if {@code that} occurs contiguously in this Stream (an empty slice always does)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if the search reaches a null element of {@code that};
+     *                              the slice is read only as far as the comparisons go, so a null past them is not seen
      */
     default boolean containsSlice(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
@@ -981,7 +982,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param that the slice to find
      * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if the search reaches a null element of {@code that};
+     *                              the slice is read only as far as the comparisons go, so a null past them is not seen
      */
     default int indexOfSlice(Iterable<? extends T> that) {
         return indexOfSlice(that, 0);
@@ -995,7 +997,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param that the slice to find
      * @param from the first position to look at
      * @return the index of its first occurrence at or after {@code from}, or -1
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if the search reaches a null element of {@code that};
+     *                              the slice is read only as far as the comparisons go, so a null past them is not seen
      */
     default int indexOfSlice(Iterable<? extends T> that, int from) {
         Objects.requireNonNull(that, "that is null");
@@ -1254,7 +1257,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if the search reaches a null element of {@code that};
+     *                              the slice is read only as far as the comparisons go, so a null past them is not seen
      */
     default Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
         return Collections.indexOption(indexOfSlice(that));
@@ -1266,7 +1270,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param that the slice to find
      * @param from the first position to look at
      * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if the search reaches a null element of {@code that};
+     *                              the slice is read only as far as the comparisons go, so a null past them is not seen
      */
     default Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
         return Collections.indexOption(indexOfSlice(that, from));
@@ -3609,7 +3614,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Stream.arrangeBy: getKey returned null")));
     }
 
     /**

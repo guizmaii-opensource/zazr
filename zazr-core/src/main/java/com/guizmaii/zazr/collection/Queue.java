@@ -790,7 +790,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param that the slice to look for
      * @return true if {@code that} occurs contiguously in this Queue (an empty slice always does)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public boolean containsSlice(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
@@ -829,7 +830,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param that the slice to find
      * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public int indexOfSlice(Iterable<? extends T> that) {
         return indexOfSlice(that, 0);
@@ -843,7 +845,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param that the slice to find
      * @param from the first position to look at
      * @return the index of its first occurrence at or after {@code from}, or -1
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public int indexOfSlice(Iterable<? extends T> that, int from) {
         return toList().indexOfSlice(that, from);
@@ -1052,7 +1055,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
         return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that));
@@ -1064,7 +1068,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param that the slice to find
      * @param from the first position to look at
      * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
         return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that, from));
@@ -3030,7 +3035,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Queue.arrangeBy: getKey returned null")));
     }
 
     /**

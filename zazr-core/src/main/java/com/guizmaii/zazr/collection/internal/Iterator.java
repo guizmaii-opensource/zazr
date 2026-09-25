@@ -1085,11 +1085,21 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         Objects.requireNonNull(supplier, "supplier is null");
         return new AbstractIterator<T>() {
             @Nullable Option<? extends T> nextOption;
+            // set once supplier returned null: every later call fails the same way instead of asking for the next value
+            boolean failed;
 
             @Override
             public boolean hasNext() {
+                if (failed) {
+                    throw new NullPointerException(nullResult);
+                }
                 if (nextOption == null) {
-                    nextOption = Objects.requireNonNull(supplier.get(), nullResult);
+                    final Option<? extends T> supplied = supplier.get();
+                    if (supplied == null) {
+                        failed = true;
+                        throw new NullPointerException(nullResult);
+                    }
+                    nextOption = supplied;
                 }
                 return nextOption.isDefined();
             }

@@ -432,7 +432,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Set.arrangeBy: getKey returned null")));
     }
 
     /**

@@ -14,13 +14,10 @@ public interface StreamModule {
     interface Slice {
 
         static <T extends @Nullable Object> int indexOfSlice(Stream<T> source, Iterable<? extends T> slice, int from) {
-            // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
-            final Stream<T> _slice = toStream(slice);
-            _slice.length();
             if (source.isEmpty()) {
-                return from == 0 && _slice.isEmpty() ? 0 : -1;
+                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
             }
-            return findFirstSlice(source, _slice, Math.max(from, 0));
+            return findFirstSlice(source, toStream(slice), Math.max(from, 0));
         }
 
         static <T extends @Nullable Object> int lastIndexOfSlice(Stream<T> source, Iterable<? extends T> slice, int end) {
@@ -214,6 +211,11 @@ public interface StreamModule {
         // going on with the next input
         boolean failed;
         java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
+
+        // for a mapper that never returns null, such as the identity over inputs that reject null
+        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
+            this(inputs, mapper, "FlatMapIterator: mapper returned null");
+        }
 
         public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper, String nullResult) {
             this.inputs = inputs;

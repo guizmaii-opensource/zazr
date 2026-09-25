@@ -732,7 +732,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(Function<? super Tuple2<K, V>, ? extends K2> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Map.arrangeBy: getKey returned null")));
     }
 
     /**
