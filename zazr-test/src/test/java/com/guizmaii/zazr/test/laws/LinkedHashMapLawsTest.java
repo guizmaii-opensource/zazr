@@ -32,20 +32,20 @@ class LinkedHashMapLawsTest extends MapLawsSuite<LinkedHashMap<?, ?>, LinkedHash
     @Override
     CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> collection() {
         return new CollectionSubject<>(Arbitrary.linkedHashMap(Arbitrary.integer(), Arbitrary.integer()), LinkedHashMap::ofEntries, LinkedHashMap::size,
-                LinkedHashMap::toList, false, Option.some(IterationOrder.keysByLastOccurrence()));
+                LinkedHashMap::toList, false, Option.some(IterationOrder.keysByFirstOccurrence()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> collector() {
         return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.tuple2(Arbitrary.integer(), Arbitrary.integer())),
-                LinkedHashMap.collector(), LinkedHashMap::ofEntries, Option.some(IterationOrder.keysByLastOccurrence()));
+                LinkedHashMap.collector(), LinkedHashMap::ofEntries, Option.some(IterationOrder.keysByFirstOccurrence()));
     }
 
     @Test
     void mapLawsWithCollidingHashCodes() {
         final CollectionSubject<Tuple2<Collider, Integer>, LinkedHashMap<Collider, Integer>> colliders = new CollectionSubject<>(
                 Arbitrary.linkedHashMap(Arbitrary.integer().map(Collider::new), Arbitrary.integer()), LinkedHashMap::ofEntries, LinkedHashMap::size,
-                LinkedHashMap::toList, false, Option.some(IterationOrder.keysByLastOccurrence()));
+                LinkedHashMap::toList, false, Option.some(IterationOrder.keysByFirstOccurrence()));
         CollectionLaws.<Tuple2<Collider, Integer>, LinkedHashMap<Collider, Integer>>map()
                 .assertSatisfied(colliders, new Random(LawChecks.SEED), LawChecks.SIZE, LawChecks.TRIES);
         EqualityLaws.<LinkedHashMap<Collider, Integer>>all().assertSatisfied(
@@ -53,7 +53,7 @@ class LinkedHashMapLawsTest extends MapLawsSuite<LinkedHashMap<?, ?>, LinkedHash
                 LawChecks.TRIES);
     }
 
-    /// `ofEntries` places a repeated key at its last occurrence; `put` keeps an existing key where it is.
+    /// Successive `put`s follow the order of `ofEntries`: a repeated key stays at its first occurrence.
     @Test
     void putKeepsTheFirstPositionOfARepeatedKey() {
         final CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> putOneByOne = new CollectionSubject<>(
