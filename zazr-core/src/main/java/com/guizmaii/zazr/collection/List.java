@@ -919,7 +919,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
      * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
      * <p>
-     * Complexity: O(n choose k) combinations.
+     * Complexity: O(C(n, k)) combinations.
      *
      * @param k the size of each combination
      * @return the combinations
@@ -3311,6 +3311,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     * <p>
+     * Complexity: O(n), every element compared once.
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -3348,6 +3350,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
+     * <p>
+     * Complexity: O(n), every element compared once.
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -3515,7 +3519,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: that of {@link #head()}.
+     * Complexity: O(1), that of {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this List is empty
      */
@@ -3526,7 +3530,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: that of {@link #last()}.
+     * Complexity: O(n), that of {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this List is empty
      */
@@ -3574,7 +3578,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * The number of elements; the same as {@link #length()}.
      * <p>
-     * Complexity: that of {@link #length()}.
+     * Complexity: O(n), that of {@link #length()}.
      *
      * @return the number of elements
      */

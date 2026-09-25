@@ -1,0 +1,132 @@
+# the decision log is for contributors: it stays in the repository and is not published
+exclude_docs: |
+  design.md
+
+site_name: Zazr
+site_url: https://guizmaii-opensource.github.io/zazr/
+site_description: >-
+  Modern Functional Programming for Java 25+. Inspired by modern Scala, ZIO, and zio-prelude.
+repo_url: https://github.com/guizmaii-opensource/zazr
+repo_name: guizmaii-opensource/zazr
+edit_uri: edit/main/docs/
+copyright: >-
+  Zazr is released under the Apache License 2.0. It is a fork of
+  <a href="https://github.com/vavr-io/vavr">Vavr</a>, copyright its authors, under the same license;
+  see <a href="https://github.com/guizmaii-opensource/zazr/blob/main/NOTICE">NOTICE</a>.
+
+docs_dir: docs
+strict: true
+
+theme:
+  name: material
+  custom_dir: overrides
+  language: en
+  logo: assets/zaz-256.png
+  favicon: assets/favicon.ico
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to the dark palette
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to the light palette
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - content.tooltips
+    - toc.follow
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/guizmaii-opensource/zazr
+
+extra_css:
+  - assets/zazr.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: [docs/collections/.costs]
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: relative_to_docs
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Guide:
+      - Getting started: getting-started.md
+      - Control types: control-types.md
+      - Validation: validation.md
+      - zip at arity N: zip.md
+      - NonEmptyVector: non-empty-vector.md
+      - Builders: builders.md
+      - Java interop: java-interop.md
+      - Testing with zazr-test: testing.md
+  - Collections:
+      - Overview: collections/index.md
+      - Vector: collections/vector.md
+      - List: collections/list.md
+      - Queue: collections/queue.md
+      - Stream: collections/stream.md
+      - Sets: collections/sets.md
+      - Maps: collections/maps.md
+      - Complexity: collections/complexity.md
+  - Compared to Vavr: vavr.md
+  - Design: principles.md

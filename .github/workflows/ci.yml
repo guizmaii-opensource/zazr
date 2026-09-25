@@ -59,6 +59,24 @@ jobs:
       - name: Check the javadoc of the positional methods
         run: make complexity
 
+  docs:
+    runs-on: ubuntu-latest
+    name: Complexity page up to date, every site example tested
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup scala-cli
+        uses: VirtusLab/scala-cli-setup@v1
+      # after scala-cli-setup, so that JAVA_HOME is this JDK: the scripts parse Java 25 sources with the system javac
+      - name: Setup JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+      - name: Regenerate the complexity page and compare
+        run: make docs-complexity-check
+      - name: Check that every java block of the site is in a docs example test
+        run: make docs-examples
+
   nullness:
     runs-on: ubuntu-latest
     name: Verify JSpecify nullness contract
@@ -76,7 +94,7 @@ jobs:
 
   deploy-snapshot:
     runs-on: ubuntu-latest
-    needs: [build, nullness, vocabulary, complexity]
+    needs: [build, nullness, vocabulary, complexity, docs]
     if: github.ref == 'refs/heads/main'
 
     steps:

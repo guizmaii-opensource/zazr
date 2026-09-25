@@ -1,0 +1,458 @@
+/*
+ * Zazr site theme on top of Material for MkDocs, in the colours of Zaz, the capybara with a yuzu on its head:
+ * espresso and caramel browns for the chrome, the yuzu yellow-orange as the accent, warm greys for the rest.
+ * Fonts: Inter for text, JetBrains Mono for code (mkdocs.yml, theme.font).
+ */
+
+:root {
+  --zz-espresso: #2e2017;
+  --zz-espresso-2: #4a3222;
+  --zz-caramel: #c07d45;
+  --zz-yuzu: #f5a524;
+  --zz-yuzu-light: #ffc94d;
+  --zz-yuzu-ink: #2b1a08;
+  --zz-leaf: #7aa23f;
+  --zz-radius: 14px;
+}
+
+/* ---- light palette ---- */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--zz-espresso);
+  --md-primary-fg-color--light: var(--zz-espresso-2);
+  --md-primary-fg-color--dark: #1f150f;
+  --md-primary-bg-color: #fff8ee;
+  --md-primary-bg-color--light: #fff8eeb3;
+  --md-accent-fg-color: #c46a00;
+  --md-accent-fg-color--transparent: #c46a001a;
+  --md-typeset-a-color: #9b5516;
+  --md-default-bg-color: #fdfaf6;
+  --md-default-fg-color: #2a221c;
+  --md-default-fg-color--light: #5e534a;
+  --md-default-fg-color--lighter: #8d8178;
+  --md-default-fg-color--lightest: #e6ddd3;
+  --md-code-bg-color: #f5eee4;
+  --md-code-fg-color: #3a2e25;
+  --zz-card-bg: #ffffff;
+  --zz-card-border: #ebe1d4;
+  --zz-muted: #6b6057;
+}
+
+/* ---- dark palette ---- */
+[data-md-color-scheme="slate"] {
+  --md-hue: 28;
+  --md-primary-fg-color: var(--zz-espresso);
+  --md-primary-fg-color--light: var(--zz-espresso-2);
+  --md-primary-fg-color--dark: #1a120c;
+  --md-primary-bg-color: #fff8ee;
+  --md-primary-bg-color--light: #fff8eeb3;
+  --md-accent-fg-color: var(--zz-yuzu-light);
+  --md-accent-fg-color--transparent: #ffc94d1a;
+  --md-typeset-a-color: #f3b24e;
+  --md-default-bg-color: #1b1613;
+  --md-default-fg-color: #efe6dc;
+  --md-default-fg-color--light: #c9bcae;
+  --md-default-fg-color--lighter: #968a7e;
+  --md-default-fg-color--lightest: #3a322c;
+  --md-code-bg-color: #251f1a;
+  --md-code-fg-color: #e9dfd3;
+  --zz-card-bg: #221c18;
+  --zz-card-border: #3a3029;
+  --zz-muted: #b7aa9c;
+}
+
+/* ---- typography ---- */
+.md-typeset {
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.md-typeset h1,
+.md-typeset h2 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--md-default-fg-color);
+}
+.md-typeset code {
+  border-radius: 6px;
+  font-feature-settings: "calt" 1, "liga" 1;
+}
+.md-typeset pre > code,
+.md-typeset .highlight {
+  border-radius: 10px;
+}
+.md-header__title {
+  font-family: var(--md-code-font-family), monospace;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.md-header,
+.md-tabs {
+  background: linear-gradient(90deg, var(--zz-espresso) 0%, var(--zz-espresso-2) 100%);
+}
+.md-tabs__link {
+  font-weight: 500;
+}
+.md-header__button.md-logo img {
+  height: 1.9rem;
+}
+
+/* ---- buttons: yuzu, readable on both palettes ---- */
+.md-typeset .md-button {
+  border-radius: 999px;
+  color: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+.md-typeset .md-button--primary {
+  background-color: var(--zz-yuzu);
+  border-color: var(--zz-yuzu);
+  color: var(--zz-yuzu-ink);
+}
+.md-typeset .md-button:focus,
+.md-typeset .md-button:hover {
+  background-color: var(--zz-yuzu-light);
+  border-color: var(--zz-yuzu-light);
+  color: var(--zz-yuzu-ink);
+}
+
+/* ---- the complexity classes (docs/collections/complexity.md, generated) ---- */
+.md-typeset .cx {
+  display: inline-block;
+  padding: 0 0.45em;
+  border-radius: 999px;
+  font-family: var(--md-code-font-family), monospace;
+  font-size: 0.85em;
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.md-typeset abbr.cx {
+  cursor: help;
+}
+.md-typeset .cx-constant { background: #16a34a26; border-color: #16a34a55; }
+.md-typeset .cx-effectivelyconstant { background: #22c55e1f; border-color: #22c55e4d; }
+.md-typeset .cx-amortisedconstant { background: #84cc161f; border-color: #84cc1650; }
+.md-typeset .cx-logarithmic { background: #0ea5e91f; border-color: #0ea5e950; }
+.md-typeset .cx-lazy { background: #8b5cf61f; border-color: #8b5cf655; }
+.md-typeset .cx-linear { background: #f59e0b1f; border-color: #f59e0b55; }
+.md-typeset .cx-linearithmic { background: #f973161f; border-color: #f9731655; }
+.md-typeset .cx-polynomial { background: #ef44441f; border-color: #ef444455; }
+.md-typeset .cx-combinatorial { background: #be185d26; border-color: #be185d66; }
+.md-typeset table:not([class]) td {
+  vertical-align: top;
+}
+
+/* ---- landing page: hero ---- */
+.zz-hero {
+  position: relative;
+  overflow: hidden;
+  color: #f6ecdf;
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, #f5a52433 0%, transparent 60%),
+    radial-gradient(40rem 24rem at 5% 110%, #c07d4540 0%, transparent 60%),
+    linear-gradient(180deg, var(--zz-espresso-2) 0%, var(--zz-espresso) 100%);
+  border-bottom: 1px solid #ffffff14;
+}
+.zz-hero__glow {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#ffffff07 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff07 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at 70% 30%, black 20%, transparent 70%);
+  pointer-events: none;
+}
+.zz-hero__inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.55fr);
+  gap: 2.5rem;
+  align-items: center;
+  padding: 4rem 0.8rem 4.5rem;
+}
+.zz-hero__brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.zz-hero__zaz {
+  width: 10.5rem;
+  margin: -1.2rem -0.6rem -1.2rem -1rem;
+  height: auto;
+  flex: none;
+  filter: drop-shadow(0 14px 22px #00000066);
+}
+.zz-hero__eyebrow {
+  margin: 0 0 0.5rem;
+  font-family: var(--md-code-font-family), monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--zz-yuzu-light);
+}
+.zz-hero__title {
+  margin: 0;
+  font-family: var(--md-code-font-family), monospace;
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  background: linear-gradient(100deg, #fff6e6 10%, var(--zz-yuzu-light) 55%, var(--zz-yuzu) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.zz-hero__tagline {
+  margin: 1.2rem 0 1.8rem;
+  max-width: 26rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: #eaddcc;
+}
+.zz-hero__headline {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.zz-nowrap {
+  white-space: nowrap;
+}
+.zz-hl {
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.zz-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.zz-hero .md-button {
+  margin: 0;
+  border-radius: 999px;
+  padding: 0.6em 1.6em;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.zz-hero .md-button--primary {
+  background: var(--zz-yuzu);
+  border-color: var(--zz-yuzu);
+  color: var(--zz-yuzu-ink);
+  box-shadow: 0 8px 24px -8px #f5a524aa;
+}
+.zz-hero .md-button--primary:hover {
+  background: var(--zz-yuzu-light);
+  border-color: var(--zz-yuzu-light);
+  color: var(--zz-yuzu-ink);
+}
+.zz-hero .zz-button--ghost {
+  color: #fff8ee;
+  border-color: #ffffff4d;
+  background: #ffffff0d;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+}
+.zz-hero .zz-button--ghost:hover {
+  border-color: #fff8ee;
+  background: #ffffff1f;
+  color: #fff8ee;
+}
+.zz-hero .zz-button--ghost svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+}
+.zz-window {
+  border-radius: var(--zz-radius);
+  background: #17110d;
+  border: 1px solid #ffffff1f;
+  box-shadow: 0 30px 80px -30px #000000cc, 0 0 0 1px #f5a52422;
+  overflow: hidden;
+}
+.zz-window__bar {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #ffffff12;
+  background: #ffffff06;
+}
+.zz-window__bar span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #ffffff26;
+}
+.zz-window__bar span:first-child {
+  background: var(--zz-yuzu);
+}
+.zz-window__bar span:nth-child(2) {
+  background: var(--zz-leaf);
+}
+.zz-window .highlight,
+.zz-window pre,
+.zz-window pre > code {
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.zz-window pre > code {
+  padding: 1.1rem 1.1rem 1.3rem;
+  font-size: 0.62rem;
+  line-height: 1.75;
+}
+.zz-window .md-clipboard {
+  color: #ffffff66;
+}
+
+/* ---- landing page: sections ---- */
+.md-content:has(.zz-home) .md-content__inner {
+  margin-top: 0;
+  padding-top: 0;
+}
+.md-content:has(.zz-home) .md-source-file {
+  display: none;
+}
+.zz-home {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+.zz-section {
+  padding: 2.6rem 0 0.6rem;
+}
+.zz-status {
+  padding-top: 0.4rem;
+}
+.md-typeset .zz-kicker {
+  margin-top: 0;
+  font-size: 1.45rem;
+}
+.md-typeset .zz-kicker::before {
+  content: "";
+  display: block;
+  width: 2.2rem;
+  height: 4px;
+  margin-bottom: 0.7rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--zz-yuzu), var(--zz-caramel));
+}
+.md-typeset .grid.cards.zz-cards > ul > li {
+  border: 1px solid var(--zz-card-border);
+  border-radius: var(--zz-radius);
+  background: var(--zz-card-bg);
+  padding: 1rem 1.1rem;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.md-typeset .grid.cards.zz-cards > ul > li:hover {
+  transform: translateY(-2px);
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 12px 32px -18px var(--md-accent-fg-color);
+}
+/* the seven principles: 4 + 3 on wide screens, 2 + 2 + 2 + 1 full-width, then one column; never an orphan */
+.md-typeset .grid.cards.zz-cards--features {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+.md-typeset .zz-cards--features > ul > li {
+  grid-column: span 3;
+}
+.md-typeset .zz-cards--features > ul > li:nth-child(n + 5) {
+  grid-column: span 4;
+}
+@media screen and (max-width: 70em) {
+  .md-typeset .grid.cards.zz-cards--features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .md-typeset .zz-cards--features > ul > li,
+  .md-typeset .zz-cards--features > ul > li:nth-child(n + 5) {
+    grid-column: span 1;
+  }
+  .md-typeset .zz-cards--features > ul > li:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media screen and (max-width: 40em) {
+  .md-typeset .grid.cards.zz-cards--features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.md-typeset .grid.cards.zz-cards--plain > ul > li:hover {
+  transform: none;
+}
+.md-typeset .zz-cards .lg {
+  color: var(--md-accent-fg-color);
+  font-size: 1.4em;
+  vertical-align: -0.2em;
+}
+.md-typeset .grid.cards.zz-cards > ul > li > hr {
+  margin: 0.6rem 0;
+  border-color: var(--zz-card-border);
+}
+.md-typeset .grid.cards.zz-cards p {
+  color: var(--zz-muted);
+}
+.md-typeset .grid.cards.zz-cards p strong {
+  color: var(--md-default-fg-color);
+}
+
+/* ---- footer ---- */
+.md-footer-meta {
+  background: var(--zz-espresso);
+}
+.md-copyright__highlight a {
+  color: #fff8eecc;
+  text-decoration: underline;
+}
+
+/* ---- small screens ---- */
+@media screen and (max-width: 60em) {
+  .zz-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    padding: 3rem 0.8rem 3.5rem;
+  }
+  .zz-hero__title {
+    font-size: 3.2rem;
+  }
+  .zz-hero__zaz {
+    width: 8rem;
+    margin: -0.8rem -0.4rem -0.8rem -0.8rem;
+  }
+}
+
+/* Documentation pages (every page but the landing page, which has the hero): a wider page and narrower navigation
+   columns, so the content gets more room while keeping a margin on each side. Material's defaults are a 61rem page
+   with 12.1rem side columns. */
+@media screen and (min-width: 76.25em) {
+  body:not(:has(.zz-hero)) .md-grid {
+    max-width: 68rem;
+  }
+  body:not(:has(.zz-hero)) .md-sidebar--primary,
+  body:not(:has(.zz-hero)) .md-sidebar--secondary {
+    width: 10.5rem;
+  }
+  body:not(:has(.zz-hero)) .md-sidebar .md-nav {
+    font-size: 0.66rem;
+  }
+}
+
+/* Below desktop width the hero stacks: brand and tagline first, the code panel under them, and the text wraps to
+   the screen instead of keeping its desktop measure. */
+@media screen and (max-width: 76.24em) {
+  .zz-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.8rem;
+  }
+  .zz-hero__tagline {
+    max-width: 100%;
+  }
+}
+.zz-hero__inner > * {
+  min-width: 0;
+}
+.zz-hero__eyebrow {
+  overflow-wrap: anywhere;
+}

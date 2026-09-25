@@ -1,0 +1,46 @@
+{#-
+  The landing page. docs/index.md provides the content: everything before the "/hero" comment is the code sample of
+  the hero, the rest is rendered below it. The Markdown keeps the code highlighted and checked like every other page.
+-#}
+{% extends "main.html" %}
+
+{% block tabs %}
+  {{ super() }}
+  <section class="zz-hero" data-md-color-scheme="slate">
+    <div class="zz-hero__glow" aria-hidden="true"></div>
+    <div class="md-grid zz-hero__inner">
+      <div class="zz-hero__text">
+        <div class="zz-hero__brand">
+          <img class="zz-hero__zaz" src="{{ 'assets/zaz-512.png' | url }}" width="512" height="512"
+               alt="Zaz, the Zazr capybara, with a yuzu on its head">
+          <div>
+            <p class="zz-hero__eyebrow">Java 25+ &middot; no runtime dependencies &middot; Apache 2.0</p>
+            <h1 class="zz-hero__title">Zazr</h1>
+          </div>
+        </div>
+        <p class="zz-hero__tagline">
+          <span class="zz-hero__headline">Modern Functional Programming for Java&nbsp;25+</span>
+          Inspired by modern Scala, ZIO, and <span class="zz-nowrap">zio-prelude</span>
+        </p>
+        <div class="zz-hero__actions">
+          <a href="{{ 'getting-started/' | url }}" class="md-button md-button--primary">Get started</a>
+          <a href="{{ config.repo_url }}" class="md-button zz-button--ghost">
+            {% include ".icons/fontawesome/brands/github.svg" %} GitHub
+          </a>
+        </div>
+      </div>
+      <div class="zz-hero__code md-typeset">
+        <div class="zz-window">
+          <div class="zz-window__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+          {{ page.content.split("<!-- /hero -->")[0] }}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="zz-home">
+    {{ page.content.split("<!-- /hero -->")[1] }}
+  </div>
+{% endblock %}

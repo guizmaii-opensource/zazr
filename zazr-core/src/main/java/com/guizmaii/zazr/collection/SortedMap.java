@@ -389,6 +389,11 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     <C extends @Nullable Object> Map<C, ? extends SortedMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n) (the keys are built into a new TreeSet).
+     */
     @Override
     SortedSet<K> keySet();
 
@@ -431,15 +436,35 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     SortedMap<K, V> tap(Consumer<? super Tuple2<K, V>> action);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) (one insertion in the tree).
+     */
     @Override
     SortedMap<K, V> put(K key, V value);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) (one insertion in the tree).
+     */
     @Override
     SortedMap<K, V> put(Tuple2<? extends K, ? extends V> entry);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) (one lookup and one insertion in the tree).
+     */
     @Override
     <U extends V> SortedMap<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) (one lookup and one insertion in the tree).
+     */
     @Override
     <U extends V> SortedMap<K, V> put(Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge);
 
@@ -489,7 +514,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
+     * Complexity: O(log n), that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
      */
     @Override
     SortedMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);
