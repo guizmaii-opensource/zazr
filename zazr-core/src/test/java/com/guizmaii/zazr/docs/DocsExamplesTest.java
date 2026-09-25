@@ -28,6 +28,8 @@ import com.guizmaii.zazr.control.Try.Success;
 import com.guizmaii.zazr.control.Validation;
 import com.guizmaii.zazr.control.Validation.Invalid;
 import com.guizmaii.zazr.control.Validation.Valid;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -103,6 +105,182 @@ public class DocsExamplesTest {
             assertThat(sum).isEqualTo(Option.some(6));
             assertThat(best).isEqualTo(9);
             assertThat(numbers).isEqualTo(Vector.range(0, 1_000));
+        }
+    }
+
+    @Nested
+    class NewToFpPage {
+
+        record Customer(String id, String name, String email) {}
+
+        // throws two kinds of exception, and only this comment says so
+        static int parseQuantityOrThrow(String input) {
+            int quantity = Integer.parseInt(input.trim());
+            if (quantity <= 0) {
+                throw new IllegalArgumentException("quantity must be positive");
+            }
+            return quantity;
+        }
+
+        static Either<String, Integer> parseQuantity(String input) {
+            return Try.of(() -> Integer.parseInt(input.trim()))
+                .toEither()
+                .mapLeft(e -> "not a number: " + input)
+                .flatMap(q -> q > 0 ? Either.right(q) : Either.left("quantity must be positive"));
+        }
+
+        record Person(String name, String email, int age, String password) {}
+
+        static Validation<String, String> checkName(String name) {
+            return Validation.fromPredicate(name.trim(), n -> !n.isEmpty(), n -> "name is required");
+        }
+
+        static Validation<String, String> checkEmail(String email) {
+            return Validation.fromPredicate(email.trim(), e -> e.contains("@"), e -> "email has no @");
+        }
+
+        static Validation<String, Integer> checkAge(int age) {
+            return Validation.fromPredicate(age, a -> a >= 18, a -> "you must be 18 or older");
+        }
+
+        static Validation<String, String> checkPassword(String password) {
+            return Validation.fromPredicate(password, p -> p.length() >= 12, p -> "password is too short");
+        }
+
+        static boolean isValidEmail(String input) {
+            return input.contains("@");
+        }
+
+        static Either<String, NonEmptyVector<String>> recipients(Vector<String> input) {
+            return input.toNonEmptyVector().toEither(() -> "at least one recipient is required");
+        }
+
+        class ConnectionState {
+            boolean connected;
+            String sessionId;   // set when connected, hopefully
+            String error;       // set when it failed, hopefully
+        }
+
+        sealed interface Connection {}
+        record Connecting() implements Connection {}
+        record Connected(String sessionId) implements Connection {}
+        record Failed(String error) implements Connection {}
+
+        static String describe(Connection connection) {
+            return switch (connection) {
+                case Connecting() -> "connecting...";
+                case Connected(var sessionId) -> "connected, session " + sessionId;
+                case Failed(var error) -> "failed: " + error;
+            };
+        }
+
+        @Test
+        void nullCrashesFarFromItsCause() {
+            assertThatThrownBy(() -> {
+                java.util.Map<String, Customer> customers =
+                    java.util.Map.of("c-1", new Customer("c-1", "Ada", "ada@example.com"));
+                Customer customer = customers.get("c-2");       // null: nothing in the type says it can be
+                String greeting = "Hello " + customer.name();   // NullPointerException
+            }).isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void optionInsteadOfNull() {
+            HashMap<String, Customer> customers =
+                HashMap.of("c-1", new Customer("c-1", "Ada", "ada@example.com"));
+            Option<Customer> customer = customers.get("c-2");
+            String greeting = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest");
+            // "Hello, guest"
+
+            Option<String> domain = customers.get("c-1")
+                .map(Customer::email)
+                .flatMap(email -> Option.when(email.contains("@"), () -> email.split("@")[1]));
+            // Some(example.com)
+
+            String message = switch (customers.get("c-1")) {
+                case Some(var c) -> "Welcome back, " + c.name();
+                case None() -> "Please sign up";
+            };
+            // "Welcome back, Ada"
+
+            assertThat(greeting).isEqualTo("Hello, guest");
+            assertThat(domain).isEqualTo(Option.some("example.com"));
+            assertThat(message).isEqualTo("Welcome back, Ada");
+        }
+
+        @Test
+        void eitherInsteadOfThrowing() {
+            assertThat(parseQuantityOrThrow(" 3 ")).isEqualTo(3);
+            assertThatThrownBy(() -> parseQuantityOrThrow("0")).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> parseQuantityOrThrow("three")).isInstanceOf(NumberFormatException.class);
+
+            String reply = switch (parseQuantity("0")) {
+                case Right(var quantity) -> "added " + quantity + " to the cart";
+                case Left(var error) -> error;
+            };
+            // "quantity must be positive"
+
+            Either<String, Integer> totalInCents = parseQuantity("3").map(q -> q * 1_250);
+            Either<String, Integer> rejected = parseQuantity("three").map(q -> q * 1_250);
+            // Right(3750), Left(not a number: three)
+
+            Try<LocalDate> deliveryDate = Try.of(() -> LocalDate.parse("2026-02-30"));
+            // Failure(java.time.format.DateTimeParseException: ...)
+
+            assertThat(reply).isEqualTo("quantity must be positive");
+            assertThat(totalInCents).isEqualTo(Either.right(3750));
+            assertThat(rejected).isEqualTo(Either.left("not a number: three"));
+            assertThat(deliveryDate.getCause()).isInstanceOf(DateTimeParseException.class);
+        }
+
+        @Test
+        void validationReportsEveryError() {
+            Validation<String, Person> person = Validation.zipWith(
+                checkName(""), checkEmail("ada.example.com"), checkAge(16), checkPassword("hunter2"),
+                Person::new);
+
+            String response = switch (person) {
+                case Valid(var p) -> "Welcome, " + p.name();
+                case Invalid(var errors) -> "Fix: " + errors.mkString("; ");
+            };
+            // "Fix: name is required; email has no @; you must be 18 or older; password is too short"
+
+            assertThat(response).isEqualTo(
+                "Fix: name is required; email has no @; you must be 18 or older; password is too short");
+            assertThat(Validation.zipWith(
+                checkName(" Ada "), checkEmail("ada@example.com"), checkAge(36), checkPassword("correct horse battery"),
+                Person::new)).isEqualTo(Validation.valid(new Person("Ada", "ada@example.com", 36, "correct horse battery")));
+        }
+
+        @Test
+        void parseDontValidate() {
+            assertThat(isValidEmail("ada@example.com")).isTrue();
+            assertThat(isValidEmail("ada.example.com")).isFalse();
+            assertThat(Email.parse(" ada@example.com ").map(Email::value)).isEqualTo(Validation.valid("ada@example.com"));
+            assertThat(Email.parse("ada.example.com").map(Email::value)).isEqualTo(Validation.invalid("email has no @"));
+
+            Either<String, NonEmptyVector<String>> none = recipients(Vector.empty());
+            Either<String, NonEmptyVector<String>> some = recipients(Vector.of("ada@shop.com", "bob@shop.com"));
+            String first = some.map(NonEmptyVector::head).getOrElse("nobody");
+            // none is Left(at least one recipient is required)
+            // some is Right(NonEmptyVector(ada@shop.com, bob@shop.com))
+            // first is "ada@shop.com"
+
+            assertThat(none).isEqualTo(Either.left("at least one recipient is required"));
+            assertThat(some).isEqualTo(Either.right(NonEmptyVector.of("ada@shop.com", "bob@shop.com")));
+            assertThat(first).isEqualTo("ada@shop.com");
+        }
+
+        @Test
+        void invalidStatesCannotBeRepresented() {
+            ConnectionState state = new ConnectionState();
+            state.connected = true;
+            state.error = "timeout";
+            assertThat(state.connected && state.error != null).isTrue();
+
+            assertThat(describe(new Connecting())).isEqualTo("connecting...");
+            assertThat(describe(new Connected("s-1"))).isEqualTo("connected, session s-1");
+            assertThat(describe(new Failed("timeout"))).isEqualTo("failed: timeout");
         }
     }
 
@@ -740,5 +918,26 @@ public class DocsExamplesTest {
 
             assertThat(length).isEqualTo(4);
         }
+    }
+}
+
+// the parser of docs/new-to-fp.md: a top-level class, since a static method of an inner class cannot call the
+// constructor of an inner class
+final class Email {
+    private final String value;
+
+    private Email(String value) {
+        this.value = value;
+    }
+
+    static Validation<String, Email> parse(String input) {
+        String trimmed = input.trim();
+        return trimmed.contains("@")
+            ? Validation.valid(new Email(trimmed))
+            : Validation.invalid("email has no @");
+    }
+
+    String value() {
+        return value;
     }
 }

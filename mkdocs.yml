@@ -111,6 +111,7 @@ validation:
 nav:
   - Home: index.md
   - Guide:
+      - "New to functional programming?": new-to-fp.md
       - Getting started: getting-started.md
       - Control types: control-types.md
       - Validation: validation.md
