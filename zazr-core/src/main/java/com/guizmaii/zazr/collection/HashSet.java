@@ -171,7 +171,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: effectively O(n) for n inner elements in total, one insertion each.
+     * Complexity: O(n) for n inner elements in total, one effectively O(1) insertion each.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -611,12 +611,23 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return HashSet.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup, then a path copy of the trie when the element is new).
+     */
     @Override
     public HashSet<T> add(T element) {
         Objects.requireNonNull(element, "HashSet.add: element is null");
         return contains(element) ? this : new HashSet<>(tree.put(element, element));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for m elements, each an effectively O(1) insertion; O(1) when this set is empty and {@code
+     * elements} is a HashSet, which is returned as is.
+     */
     @Override
     public HashSet<T> addAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -633,11 +644,21 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup).
+     */
     @Override
     public boolean contains(T element) {
         return tree.containsKey(element);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for a set of m elements (a hash set of them, then one filter pass).
+     */
     @Override
     public HashSet<T> diff(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -685,6 +706,11 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return Collections.groupBy(this, classifier, HashSet::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for a set of m elements (the smaller set is filtered against a hash set of the larger one).
+     */
     @Override
     public HashSet<T> intersect(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -711,6 +737,11 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return tree.size();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) to create; a whole walk is O(n).
+     */
     @Override
     public java.util.Iterator<T> iterator() {
         return tree.keysIterator();
@@ -772,7 +803,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * generalisation of {@link #partition(Predicate)}. One pass, {@code f} called once per element, no intermediate
      * collection of {@code Either}s. Values equal on one side are kept once.
      * <p>
-     * Complexity: effectively O(n), one insertion per element.
+     * Complexity: O(n), one effectively O(1) insertion per element.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -800,17 +831,32 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup and a path copy of the trie).
+     */
     @Override
     public HashSet<T> remove(T element) {
         final HashArrayMappedTrie<T, T> newTree = tree.remove(element);
         return (newTree == tree) ? this : new HashSet<>(newTree);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for m given elements (a hash set of them, then one filter pass).
+     */
     @Override
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
         return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup, one removal and one insertion).
+     */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
         if (tree.containsKey(currentElement)) {
@@ -820,11 +866,21 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1), that of {@link #replace(Object, Object)}: a set holds an element once.
+     */
     @Override
     public HashSet<T> replaceAll(T currentElement, T newElement) {
         return replace(currentElement, newElement);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for m given elements (a hash set of them, then one filter pass).
+     */
     @Override
     public HashSet<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements, kept -> filter(kept));
@@ -835,6 +891,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return toJavaSet(java.util.HashSet::new);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion; this set or a HashSet argument is
+     * returned as is when the other side is empty.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public HashSet<T> union(Set<? extends T> elements) {

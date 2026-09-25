@@ -295,12 +295,29 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
 
     // -- Adjusted return types of Set methods
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) (one lookup, then one insertion in the tree when the element is new).
+     */
     @Override
     SortedSet<T> add(T element);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m log(n + m)) for m elements (one lookup, and one insertion for a new element, each).
+     */
     @Override
     SortedSet<T> addAll(Iterable<? extends T> elements);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O((n + m) log n) for a set of m elements: a split and a join per node of {@code elements} when it is
+     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and the kept elements built into a
+     * new tree.
+     */
     @Override
     SortedSet<T> diff(Set<? extends T> elements);
 
@@ -316,6 +333,13 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     @Override
     <C extends @Nullable Object> Map<C, ? extends SortedSet<T>> groupBy(Function<? super T, ? extends C> classifier);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O((n + m) log n) for a set of m elements: a split and a join per node of {@code elements} when it is
+     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and the kept elements built into a
+     * new tree.
+     */
     @Override
     SortedSet<T> intersect(Set<? extends T> elements);
 
@@ -370,7 +394,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: O(log n), that of {@link #replace(Object, Object)}: a set holds an element once.
      */
     @Override
     SortedSet<T> replaceAll(T currentElement, T newElement);
@@ -387,6 +411,12 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     @Override
     java.util.SortedSet<T> toJavaSet();
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m log(n + m)) for a set of m elements: a split and a join per node of {@code elements} when it is a
+     * TreeSet with the same comparator, otherwise one lookup and one insertion per element.
+     */
     @Override
     SortedSet<T> union(Set<? extends T> elements);
 }

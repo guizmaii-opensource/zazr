@@ -561,6 +561,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return Maps.computeIfPresent(this, key, remappingFunction);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup).
+     */
     @Override
     public boolean containsKey(K key) {
         return map.containsKey(key);
@@ -689,6 +694,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         };
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) (a LinkedHashSet view sharing this map).
+     */
     @SuppressWarnings("unchecked")
     @Override
     public Set<K> keySet() {
@@ -758,6 +768,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return Maps.tap(this, action);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup and one {@link #put(Object, Object)}).
+     */
     @Override
     public <U extends V> LinkedHashMap<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
         return Maps.put(this, key, value, merge);
@@ -772,6 +787,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * Overwriting an existing key and inserting a new key both run in effectively
      * constant time (O(log32 n)): the insertion-order structure is left untouched
      * when a key is overwritten and appended to when a new key is inserted.
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup and one hash insertion; a new key is appended to the insertion
+     * order).
      *
      * @param key   key with which the specified value is to be associated
      * @param value value to be associated with the specified key
@@ -789,11 +807,21 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1), that of {@link #put(Object, Object)}.
+     */
     @Override
     public LinkedHashMap<K, V> put(Tuple2<? extends K, ? extends V> entry) {
         return Maps.put(this, entry);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup and one {@link #put(Object, Object)}).
+     */
     @Override
     public <U extends V> LinkedHashMap<K, V> put(Tuple2<? extends K, U> entry,
                                                  BiFunction<? super V, ? super U, ? extends V> merge) {
@@ -908,7 +936,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
+     * Complexity: effectively O(1) amortised, that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
      */
     @Override
     public LinkedHashMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
@@ -960,6 +988,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return toJavaMap(java.util.LinkedHashMap::new, t -> t);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Vector<V> values() {
         return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
@@ -1086,7 +1119,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The last {@code n} entries in insertion order: empty if {@code n <= 0}, this map if {@code n >= size()}.
      * <p>
-     * Complexity: that of {@link #take(int)}, counted from the other end.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}, counted from the other end.
      *
      * @param n the number of entries to keep
      * @return the {@code n} entries inserted last
@@ -1127,7 +1160,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * All entries but the first {@code n} in insertion order: this map if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: that of {@link #take(int)}.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}.
      *
      * @param n the number of entries to drop
      * @return the entries after the {@code n} inserted first
@@ -1140,7 +1173,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * All entries but the last {@code n} in insertion order: this map if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: that of {@link #take(int)}.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}.
      *
      * @param n the number of entries to drop
      * @return the entries before the {@code n} inserted last
@@ -1199,7 +1232,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * The blocks of {@code size} consecutive entries in insertion order; the last block is smaller when
      * {@code size} does not divide {@code size()}. The same as {@code sliding(size, size)}.
      * <p>
-     * Complexity: that of {@link #sliding(int, int)}.
+     * Complexity: O(n), that of {@link #sliding(int, int)} with a step of {@code size}.
      *
      * @param size the block size, positive
      * @return the blocks, in order; empty if this map is empty
@@ -1213,7 +1246,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * The windows of {@code size} consecutive entries in insertion order, each starting one entry after the
      * previous. The same as {@code sliding(size, 1)}.
      * <p>
-     * Complexity: that of {@link #sliding(int, int)}.
+     * Complexity: O(n * size), that of {@link #sliding(int, int)} with a step of 1.
      *
      * @param size the window size, positive
      * @return the windows, in order; empty if this map is empty
@@ -1229,8 +1262,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * the end, a window whose entries all belong to the previous one is not produced, a map smaller than
      * {@code size} is one window and an empty map has none.
      * <p>
-     * Complexity: O(n) to drop the removed keys' markers from the insertion order if there are any, then per window
-     * that of {@link #take(int)} on a window of {@code size} entries: effectively O((n / step) min(size, n - size)).
+     * Complexity: O(n + (n / step) * min(size, n - size)): O(n) to drop the removed keys' markers from the insertion
+     * order if there are any, then per window that of {@link #take(int)} on a window of {@code size} entries,
+     * effectively O(min(size, n - size)).
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -1396,7 +1430,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * their absolute index (the offset moves with the cut), so the hash map changes by the smaller of the kept and
      * the removed keys: rebuilt from the kept ones, or the removed ones taken out of it.
      * <p>
-     * Complexity: that of {@link #take(int)}.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}.
      */
     LinkedHashMap<K, V> slice(int from, int until) {
         final int size = size();

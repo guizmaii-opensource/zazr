@@ -174,7 +174,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: effectively O(n) for n inner elements in total, one insertion each.
+     * Complexity: O(n) for n inner elements in total, one effectively O(1) insertion each.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -618,7 +618,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * Adds the given element to this set. If an equal element is already contained, this instance is
      * returned unchanged and the existing element is retained (the given {@code element} is discarded).
      * <p>
-     * Note that this method runs in (amortized) constant time.
+     * Complexity: effectively O(1) (one hash lookup, then a hash insertion and an append to the insertion order when
+     * the element is new).
      *
      * @param element The element to be added.
      * @return A set containing all elements of this set and also {@code element}.
@@ -636,7 +637,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * already-contained element is retained or replaced by its equal counterpart from {@code elements}
      * is unspecified.
      * <p>
-     * Note that this method has a worst-case linear complexity.
+     * Complexity: O(m) for m elements, each an effectively O(1) {@link #add(Object)}; O(1) when this set is empty and
+     * {@code elements} is a LinkedHashSet, which is returned as is.
      *
      * @param elements The elements to be added.
      * @return A set containing all elements of this set and the given {@code elements}.
@@ -657,11 +659,21 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup).
+     */
     @Override
     public boolean contains(T element) {
         return map.containsKey(element);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for a set of m elements (a hash set of them, then the kept elements copied into a new set).
+     */
     @Override
     public LinkedHashSet<T> diff(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -702,6 +714,11 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         return Collections.groupBy(this, classifier, LinkedHashSet::ofAll);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + m) for a set of m elements (a hash set of them, then the kept elements copied into a new set).
+     */
     @Override
     public LinkedHashSet<T> intersect(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -788,7 +805,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * generalisation of {@link #partition(Predicate)}. One pass in iteration order, {@code f} called once per element, no intermediate
      * collection of {@code Either}s. Values equal on one side are kept once, at the position of the first.
      * <p>
-     * Complexity: effectively O(n), one insertion per element.
+     * Complexity: O(n), one effectively O(1) insertion per element.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -859,7 +876,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: effectively O(1) amortised, that of {@link #replace(Object, Object)}: a set holds an element once.
      */
     @Override
     public LinkedHashSet<T> replaceAll(T currentElement, T newElement) {
@@ -888,9 +905,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * already-contained element is retained or replaced by its equal counterpart from {@code elements}
      * is unspecified.
      * <p>
-     * Note that this method has a worst-case linear complexity.
-     * <p>
      * See also {@link #addAll(Iterable)}.
+     * <p>
+     * Complexity: O(m) for a set of m elements, each an effectively O(1) {@link #add(Object)}.
      *
      * @param elements The set to form the union with.
      * @return A set that contains all distinct elements of this and {@code elements} set.
@@ -1038,7 +1055,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The last {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
      * <p>
-     * Complexity: that of {@link #take(int)}, counted from the other end.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}, counted from the other end.
      *
      * @param n the number of elements to keep
      * @return the {@code n} elements inserted last
@@ -1079,7 +1096,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * All elements but the first {@code n} in insertion order: this set if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: that of {@link #take(int)}.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}.
      *
      * @param n the number of elements to drop
      * @return the elements after the {@code n} inserted first
@@ -1092,7 +1109,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * All elements but the last {@code n} in insertion order: this set if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: that of {@link #take(int)}.
+     * Complexity: effectively O(min(n, size - n)), that of {@link #take(int)}.
      *
      * @param n the number of elements to drop
      * @return the elements before the {@code n} inserted last
@@ -1144,7 +1161,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * The blocks of {@code size} consecutive elements in insertion order; the last block is smaller when
      * {@code size} does not divide {@code size()}. The same as {@code sliding(size, size)}.
      * <p>
-     * Complexity: that of {@link #sliding(int, int)}.
+     * Complexity: O(n), that of {@link #sliding(int, int)} with a step of {@code size}.
      *
      * @param size the block size, positive
      * @return the blocks, in order; empty if this set is empty
@@ -1158,7 +1175,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * The windows of {@code size} consecutive elements in insertion order, each starting one element after the
      * previous. The same as {@code sliding(size, 1)}.
      * <p>
-     * Complexity: that of {@link #sliding(int, int)}.
+     * Complexity: O(n * size), that of {@link #sliding(int, int)} with a step of 1.
      *
      * @param size the window size, positive
      * @return the windows, in order; empty if this set is empty
@@ -1174,9 +1191,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * the end, a window whose elements all belong to the previous one is not produced, a set smaller than
      * {@code size} is one window and an empty set has none.
      * <p>
-     * Complexity: O(n) to drop the removed elements' markers from the insertion order if there are any, then per
-     * window that of {@link #take(int)} on a window of {@code size} elements: effectively
-     * O((n / step) min(size, n - size)).
+     * Complexity: O(n + (n / step) * min(size, n - size)): O(n) to drop the removed elements' markers from the
+     * insertion order if there are any, then per window that of {@link #take(int)} on a window of {@code size}
+     * elements, effectively O(min(size, n - size)).
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive

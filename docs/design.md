@@ -886,6 +886,33 @@ inserted), `take(n)` the first n, and so on:
   they are whole-collection operations, O(n) on every type, not positional ones; `duplicates`/`duplicatesBy` already
   were in it, so the new `Queue` and `Stream` ones are checked.
 
+**Complexity page and vocabulary (#80, decided).** The `Complexity:` notes are the source of a generated documentation
+page, `docs/collections/complexity.md`, the zazr counterpart of Scala's performance-characteristics table, exhaustive
+and unable to drift:
+
+- **Every note starts with an expression of a fixed vocabulary** (`O(1)`, `effectively O(1)`, `amortised O(1)`,
+  `O(log n)`, `lazy`, and the listed `O(...)` forms in n, m, k and the named arguments), each mapped to a class of the
+  legend (constant, effectively constant, amortised constant, logarithmic, lazy, linear, n log n, polynomial,
+  combinatorial); free text follows. `scripts/check-complexity.scala` owns the list and fails on a note outside it, so a
+  new expression is added there, with its class, before it is used. Every note of an API method is checked this way,
+  whatever the method's name (`partitionMap`, the static `flatten`, the `*Option` wrappers), and appears on the page. A note that referred to another method ("that of
+  `take(int)`") now states its class first and keeps the reference as the explanation.
+- **The guard covers every collection and the set and map core operations.** `NonEmptyVector`, `HashSet`, `HashMap`,
+  `TreeSet` and `TreeMap` join `COMPLEXITY_FILES`, and the names grow with `contains`, `concat`, `add`, `addAll`, `put`,
+  `min`, `max`, `union`, `intersect`, `diff`, `containsKey`, `keySet`, `values`. Only API members are checked
+  (public or protected, or not private in an interface). A method without its own note passes when it overrides a
+  supertype declaration that has one (the `TreeSet`/`TreeMap` notes stay on `SortedSet`/`SortedMap`); `Traversable`,
+  `Set` and `Map` are read for that chain without being checked themselves, and the defaults the page reaches through
+  them (`Traversable.contains`, `Set.min`/`max`) carry a note.
+- **The page** (`make docs-complexity`) has a legend comparing the classes with Scala's `C`/`eC`/`aC`/`Log`/`L`,
+  matrices for the sequences, sets and maps (`n/a` where a type does not declare the operation; overloads split into
+  rows only when their costs differ; the whole note as the cell's tooltip), then every documented method per type. It
+  also writes one table per type under `docs/collections/.costs/`, included by the collection pages.
+  `make docs-complexity-check` (in `make verify` and CI) regenerates both and fails when the committed files differ.
+- Facts the page made visible, stated in the notes rather than changed here: `min()`/`max()` on the sets use the
+  natural order of the elements and walk them all, including on a `TreeSet` (whose least and greatest elements in its
+  own order are `head()` and `last()`, O(log n)).
+
 Which concrete collections survive (decided):
 
 | Keep | Why |

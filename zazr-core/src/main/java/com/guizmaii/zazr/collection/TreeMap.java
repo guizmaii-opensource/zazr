@@ -946,6 +946,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return new Tuple2<>(key, null);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) comparisons.
+     */
     @Override
     public boolean containsKey(K key) {
         return entries.contains(lookupEntry(key));
@@ -1002,6 +1007,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return flatMap(this, EntryComparator.of(keyComparator), mapper);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) comparisons.
+     */
     @Override
     public Option<V> get(K key) {
         return entries.find(TreeMap.<K, V>lookupEntry(key)).map(Tuple2::_2);
@@ -1022,6 +1032,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return entries.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) to create (the path to the least entry); a whole walk is O(n).
+     */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
         return entries.iterator();
@@ -1237,6 +1252,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return toJavaMap(() -> new java.util.TreeMap<>(comparator()), t -> t);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Vector<V> values() {
         return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));

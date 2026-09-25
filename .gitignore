@@ -34,3 +34,7 @@ hs_err_pid*
 # scala-cli build output of the scripts
 scripts/.bsp/
 scripts/.scala-build/
+
+# -- Website (make site)
+.venv-docs/
+site/

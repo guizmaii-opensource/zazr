@@ -513,6 +513,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.computeIfPresent(this, key, remappingFunction);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup).
+     */
     @Override
     public boolean containsKey(K key) {
         return trie.containsKey(key);
@@ -569,6 +574,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         });
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash lookup).
+     */
     @Override
     public Option<V> get(K key) {
         return trie.get(key);
@@ -593,11 +603,21 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return trie.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) to create; a whole walk is O(n).
+     */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
         return trie.iterator();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) (the keys are copied into a new HashSet).
+     */
     @Override
     public Set<K> keySet() {
         return HashSet.ofAll(trie.keysIterator());
@@ -666,33 +686,63 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.tap(this, action);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup and one {@link #put(Object, Object)}).
+     */
     @Override
     public <U extends V> HashMap<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
         return Maps.put(this, key, value, merge);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (a path copy of the trie).
+     */
     @Override
     public HashMap<K, V> put(K key, V value) {
         return new HashMap<>(trie.put(key, value));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1), that of {@link #put(Object, Object)}.
+     */
     @Override
     public HashMap<K, V> put(Tuple2<? extends K, ? extends V> entry) {
         return Maps.put(this, entry);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup and one {@link #put(Object, Object)}).
+     */
     @Override
     public <U extends V> HashMap<K, V> put(Tuple2<? extends K, U> entry,
                                            BiFunction<? super V, ? super U, ? extends V> merge) {
         return Maps.put(this, entry, merge);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (a path copy of the trie).
+     */
     @Override
     public HashMap<K, V> remove(K key) {
         final HashArrayMappedTrie<K, V> result = trie.remove(key);
         return result.size() == trie.size() ? this : wrap(result);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) (one filter pass).
+     */
     @Override
     @Deprecated
     public HashMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
@@ -700,6 +750,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return reject(predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for m given keys, each an effectively O(1) removal.
+     */
     @Override
     public HashMap<K, V> removeAll(Iterable<? extends K> keys) {
         Objects.requireNonNull(keys, "keys is null");
@@ -731,11 +786,21 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return rejectValues(predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup, one removal and one insertion).
+     */
     @Override
     public HashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         return Maps.replace(this, currentElement, newElement);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1), that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
+     */
     @Override
     public HashMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         return Maps.replaceAll(this, currentElement, newElement);
@@ -746,16 +811,31 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.replaceValue(this, key, value);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one lookup and one insertion).
+     */
     @Override
     public HashMap<K, V> replace(K key, V oldValue, V newValue) {
         return Maps.replace(this, key, oldValue, newValue);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n) (every entry mapped into a new map).
+     */
     @Override
     public HashMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         return Maps.replaceAll(this, function);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for m given entries (one lookup, and one insertion into a new map, per entry).
+     */
     @Override
     public HashMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -778,6 +858,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return toJavaMap(java.util.HashMap::new, t -> t);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n).
+     */
     @Override
     public Vector<V> values() {
         return Vector.ofAll(trie.valuesIterator());

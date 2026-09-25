@@ -211,6 +211,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#append(Object)}.
+     *
      * @param element An element
      * @return this vector followed by {@code element}
      * @throws NullPointerException if {@code element} is null
@@ -222,6 +224,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Accepts the possibly empty type and returns the non-empty one.
+     * <p>
+     * Complexity: O(m) for m appended elements, that of {@link Vector#appendAll(Iterable)}.
      *
      * @param elements Elements to append, possibly none
      * @return this vector followed by {@code elements}
@@ -232,6 +236,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(m) for m appended elements, that of {@link Vector#appendAll(Iterable)}.
+     *
      * @param elements Elements to append
      * @return this vector followed by {@code elements}
      * @throws NullPointerException if {@code elements} is null
@@ -242,6 +248,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(m) for m appended elements, that of {@link #appendAll(NonEmptyVector)}.
+     *
      * @param that A non-empty vector
      * @return this vector followed by {@code that}; the same as {@link #appendAll(NonEmptyVector)}
      * @throws NullPointerException if {@code that} is null
@@ -249,6 +257,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public NonEmptyVector<A> concat(NonEmptyVector<? extends A> that) { return appendAll(that); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#prepend(Object)}.
+     *
      * @param element An element
      * @return {@code element} followed by this vector
      * @throws NullPointerException if {@code element} is null
@@ -260,6 +270,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Accepts the possibly empty type and returns the non-empty one.
+     * <p>
+     * Complexity: O(m) for m prepended elements, that of {@link Vector#prependAll(Iterable)}.
      *
      * @param elements Elements to prepend, possibly none
      * @return {@code elements} followed by this vector
@@ -270,6 +282,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(m) for m prepended elements, that of {@link Vector#prependAll(Iterable)}.
+     *
      * @param elements Elements to prepend
      * @return {@code elements} followed by this vector
      * @throws NullPointerException if {@code elements} is null
@@ -280,16 +294,22 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n), that of {@link Vector#reverse()}.
+     *
      * @return the elements in reverse order
      */
     public NonEmptyVector<A> reverse() { return new NonEmptyVector<>(vector.reverse()); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#distinct()}.
+     *
      * @return the distinct elements, each at its first occurrence
      */
     public NonEmptyVector<A> distinct() { return new NonEmptyVector<>(vector.distinct()); }
 
     /**
+     * Complexity: O(n log n) comparisons, that of {@link Vector#distinctBy(Comparator)}.
+     *
      * @param comparator Decides which elements are equal
      * @return the elements distinct under {@code comparator}, each at its first occurrence
      * @throws NullPointerException if {@code comparator} is null
@@ -299,6 +319,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n), that of {@link Vector#distinctBy(Function)}.
+     *
      * @param keyExtractor Computes the key elements are distinct by
      * @param <K>          Key type
      * @return the elements with distinct keys, each at its first occurrence
@@ -309,12 +331,16 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n log n) comparisons, that of {@link Vector#sorted()}.
+     *
      * @return the elements sorted by their natural order
      * @throws ClassCastException if the elements are not {@link Comparable}
      */
     public NonEmptyVector<A> sorted() { return new NonEmptyVector<>(vector.sorted()); }
 
     /**
+     * Complexity: O(n log n) comparisons, that of {@link Vector#sorted(Comparator)}.
+     *
      * @param comparator The order
      * @return the elements sorted by {@code comparator} (stable)
      * @throws NullPointerException if {@code comparator} is null
@@ -324,6 +350,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n log n) comparisons, that of {@link Vector#sortBy(Function)}.
+     *
      * @param mapper Computes the sort key
      * @param <U>    Key type
      * @return the elements sorted by the natural order of their keys (stable)
@@ -334,6 +362,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n log n) comparisons, that of {@link Vector#sortBy(Comparator, Function)}.
+     *
      * @param comparator The order of the keys
      * @param mapper     Computes the sort key
      * @param <U>        Key type
@@ -346,6 +376,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Pairs the elements of both vectors by position, up to the shorter size; both are non-empty, so the result is too.
+     * <p>
+     * Complexity: O(min(n, m)) for m elements of {@code that}, that of {@link Vector#zip(Iterable)}.
      *
      * @param that A non-empty vector
      * @param <B>  Component type of {@code that}
@@ -359,6 +391,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Combines the elements of both vectors by position, up to the shorter size.
+     * <p>
+     * Complexity: O(min(n, m)) for m elements of {@code that}, that of {@link Vector#zipWith(Iterable, BiFunction)}.
      *
      * @param that   A non-empty vector
      * @param mapper Combines two elements
@@ -373,11 +407,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n), that of {@link Vector#zipWithIndex()}.
+     *
      * @return each element paired with its index
      */
     public NonEmptyVector<Tuple2<A, Integer>> zipWithIndex() { return new NonEmptyVector<>(vector.zipWithIndex()); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#zipWithIndex(BiFunction)}.
+     *
      * @param mapper Combines an element and its index
      * @param <B>    Component type of the result
      * @return the combined elements
@@ -389,6 +427,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The running left fold: {@code zero}, then each intermediate result. Has {@code size() + 1} elements.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#scanLeft(Object, BiFunction)}.
      *
      * @param zero      The initial accumulator
      * @param operation Combines the accumulator and an element
@@ -401,6 +441,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#update(int, Object)}.
+     *
      * @param index   A position
      * @param element The new element
      * @return this vector with {@code element} at {@code index}
@@ -413,6 +455,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#update(int, Function)}.
+     *
      * @param index   A position
      * @param updater Computes the new element from the current one
      * @return this vector with {@code updater} applied at {@code index}
@@ -437,6 +481,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Splits the elements into consecutive groups of {@code size}; only the last one may be shorter.
+     * <p>
+     * Complexity: O(n / size) blocks, each an effectively O(1) slice, that of {@link Vector#grouped(int)}.
      *
      * @param size The group size
      * @return the groups, each non-empty
@@ -535,6 +581,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The complement of {@link #distinct()}: the elements occurring more than once, each once, in order of first
      * occurrence. {@code isEmpty()} on the result is the "all distinct" test. O(n).
+     * <p>
+     * Complexity: O(n), that of {@link Vector#duplicates()}.
      *
      * @return the duplicated elements
      */
@@ -543,6 +591,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
      * occurrence. O(n).
+     * <p>
+     * Complexity: O(n), that of {@link Vector#duplicatesBy(Function)}.
      *
      * @param keyExtractor Computes the key
      * @param <K>          Key type
@@ -554,28 +604,38 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#tail()}.
+     *
      * @return all elements but the first; empty when {@code size()} is 1. See {@link #tailNonEmpty()}.
      */
     public Vector<A> tail() { return vector.tail(); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#init()}.
+     *
      * @return all elements but the last; empty when {@code size()} is 1. See {@link #initNonEmpty()}.
      */
     public Vector<A> init() { return vector.init(); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#drop(int)}.
+     *
      * @param n A count
      * @return all elements but the first {@code n}; all of them if {@code n <= 0}, none if {@code n >= size()}
      */
     public Vector<A> drop(int n) { return vector.drop(n); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#dropRight(int)}.
+     *
      * @param n A count
      * @return all elements but the last {@code n}; all of them if {@code n <= 0}, none if {@code n >= size()}
      */
     public Vector<A> dropRight(int n) { return vector.dropRight(n); }
 
     /**
+     * Complexity: O(k) for k dropped elements, that of {@link Vector#dropWhile(Predicate)}.
+     *
      * @param predicate A test
      * @return the elements from the first one that fails {@code predicate} on
      * @throws NullPointerException if {@code predicate} is null
@@ -583,6 +643,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> dropWhile(Predicate<? super A> predicate) { return vector.dropWhile(predicate); }
 
     /**
+     * Complexity: O(k) for k dropped elements, that of {@link Vector#dropUntil(Predicate)}.
+     *
      * @param predicate A test
      * @return the elements from the first one that passes {@code predicate} on
      * @throws NullPointerException if {@code predicate} is null
@@ -590,6 +652,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> dropUntil(Predicate<? super A> predicate) { return vector.dropUntil(predicate); }
 
     /**
+     * Complexity: O(k) for k dropped elements, that of {@link Vector#dropRightWhile(Predicate)}.
+     *
      * @param predicate A test
      * @return the elements up to and including the last one that fails {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -597,6 +661,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> dropRightWhile(Predicate<? super A> predicate) { return vector.dropRightWhile(predicate); }
 
     /**
+     * Complexity: O(k) for k dropped elements, that of {@link Vector#dropRightUntil(Predicate)}.
+     *
      * @param predicate A test
      * @return the elements up to and including the last one that passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -604,18 +670,24 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> dropRightUntil(Predicate<? super A> predicate) { return vector.dropRightUntil(predicate); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#take(int)}.
+     *
      * @param n A count
      * @return the first {@code n} elements; none if {@code n <= 0}, all of them if {@code n >= size()}
      */
     public Vector<A> take(int n) { return vector.take(n); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#takeRight(int)}.
+     *
      * @param n A count
      * @return the last {@code n} elements; none if {@code n <= 0}, all of them if {@code n >= size()}
      */
     public Vector<A> takeRight(int n) { return vector.takeRight(n); }
 
     /**
+     * Complexity: O(k) for k taken elements, that of {@link Vector#takeWhile(Predicate)}.
+     *
      * @param predicate A test
      * @return the leading elements that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -623,6 +695,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> takeWhile(Predicate<? super A> predicate) { return vector.takeWhile(predicate); }
 
     /**
+     * Complexity: O(k) for k taken elements, that of {@link Vector#takeUntil(Predicate)}.
+     *
      * @param predicate A test
      * @return the leading elements that fail {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -630,6 +704,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> takeUntil(Predicate<? super A> predicate) { return vector.takeUntil(predicate); }
 
     /**
+     * Complexity: O(k) for k taken elements, that of {@link Vector#takeRightWhile(Predicate)}.
+     *
      * @param predicate A test
      * @return the trailing elements that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -637,6 +713,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> takeRightWhile(Predicate<? super A> predicate) { return vector.takeRightWhile(predicate); }
 
     /**
+     * Complexity: O(k) for k taken elements, that of {@link Vector#takeRightUntil(Predicate)}.
+     *
      * @param predicate A test
      * @return the trailing elements that fail {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -644,6 +722,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> takeRightUntil(Predicate<? super A> predicate) { return vector.takeRightUntil(predicate); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#slice(int, int)}.
+     *
      * @param beginIndex The first index, inclusive
      * @param endIndex   The last index, exclusive
      * @return the elements in {@code [beginIndex, endIndex)}, both clamped to {@code [0, size()]}
@@ -651,6 +731,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> slice(int beginIndex, int endIndex) { return vector.slice(beginIndex, endIndex); }
 
     /**
+     * Complexity: O(min(i, n - i)), that of {@link Vector#removeAt(int)}.
+     *
      * @param index A position
      * @return this vector without the element at {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is not in {@code [0, size())}
@@ -658,18 +740,24 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> removeAt(int index) { return vector.removeAt(index); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#remove(Object)}.
+     *
      * @param element An element
      * @return this vector without the first occurrence of {@code element}
      */
     public Vector<A> remove(A element) { return vector.remove(element); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#removeAll(Object)}.
+     *
      * @param element An element
      * @return this vector without any occurrence of {@code element}
      */
     public Vector<A> removeAll(A element) { return vector.removeAll(element); }
 
     /**
+     * Complexity: O(n + m) for m given elements, that of {@link Vector#removeAll(Iterable)}.
+     *
      * @param elements Elements
      * @return this vector without any occurrence of any of {@code elements}
      * @throws NullPointerException if {@code elements} is null
@@ -677,6 +765,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Vector<A> removeAll(Iterable<? extends A> elements) { return vector.removeAll(elements); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#removeAll(Predicate)}.
+     *
      * @param predicate A test
      * @return this vector without the elements that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
@@ -686,16 +776,22 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     // -- total: what is partial on a Vector
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#head()}.
+     *
      * @return the first element
      */
     public A head() { return vector.get(0); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#last()}.
+     *
      * @return the last element
      */
     public A last() { return vector.get(vector.length() - 1); }
 
     /**
+     * Complexity: O(n), every element compared once.
+     *
      * @param comparator The order
      * @return the greatest element; the first one, if several are equal under {@code comparator}
      * @throws NullPointerException if {@code comparator} is null
@@ -714,6 +810,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n), every element compared once.
+     *
      * @param comparator The order
      * @return the least element; the first one, if several are equal under {@code comparator}
      * @throws NullPointerException if {@code comparator} is null
@@ -822,6 +920,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public int size() { return vector.length(); }
 
     /**
+     * Complexity: effectively O(1), that of {@link Vector#get(int)}.
+     *
      * @param index A position
      * @return the element at {@code index}; effectively O(1)
      * @throws IndexOutOfBoundsException if {@code index} is not in {@code [0, size())}
@@ -872,6 +972,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n).
+     *
      * @param element An element
      * @return whether an element equal to {@code element} is present
      */
@@ -899,11 +1001,18 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public int count(Predicate<? super A> predicate) { return vector.count(predicate); }
 
     /**
+     * Complexity: O(n).
+     *
      * @param element An element
      * @return the index of the first element equal to {@code element}, or -1. See {@link #indexOfOption(Object)}
      */
     public int indexOf(A element) { return vector.indexOf(element); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.
+     */
     @Override
     public java.util.Iterator<A> iterator() { return vector.iterator(); }
 
@@ -918,6 +1027,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public java.util.stream.Stream<A> stream() { return vector.stream(); }
 
     /**
+     * Complexity: O(1); {@code get} on the view is effectively O(1).
+     *
      * @return an immutable {@link java.util.List} view of the elements; O(1)
      */
     public java.util.List<A> asJava() { return vector.asJava(); }

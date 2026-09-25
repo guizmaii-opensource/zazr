@@ -127,6 +127,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Building the Stream is O(k) in the number of given iterables, since an iterator is eagerly
      * obtained from every one of them up front; only the traversal of the elements is lazy.
+     * <p>
+     * Complexity: O(k) for k iterables, whose iterators are obtained now; the elements are lazy.
      *
      * @param iterables The iterables
      * @param <T>       Component type.
@@ -144,6 +146,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The outer iterable is fully traversed and an iterator is eagerly obtained from every element
      * up front, so it must be finite (an infinite outer iterable causes this call to never return);
      * only the traversal of the resulting elements is lazy.
+     * <p>
+     * Complexity: O(k) for k iterables, whose iterators are obtained now; the elements are lazy.
      *
      * @param iterables The iterable of iterables
      * @param <T>       Component type.
@@ -1518,7 +1522,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
      * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
      * <p>
-     * Complexity: O(n choose k) combinations; the whole Stream is forced.
+     * Complexity: O(C(n, k)) combinations; the whole Stream is forced.
      *
      * @param k the size of each combination
      * @return the combinations
@@ -3447,6 +3451,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     * <p>
+     * Complexity: O(n), every element compared once; the whole Stream is forced, so it does not terminate on an
+     * infinite Stream.
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -3484,6 +3491,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
+     * <p>
+     * Complexity: O(n), every element compared once; the whole Stream is forced, so it does not terminate on an
+     * infinite Stream.
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -3651,7 +3661,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: that of {@link #head()}.
+     * Complexity: O(1), that of {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this Stream is empty
      */
@@ -3662,7 +3672,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: that of {@link #last()}.
+     * Complexity: O(n), that of {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this Stream is empty
      */
@@ -3710,7 +3720,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The number of elements; the same as {@link #length()}.
      * <p>
-     * Complexity: that of {@link #length()}.
+     * Complexity: O(n), that of {@link #length()}.
      *
      * @return the number of elements
      */

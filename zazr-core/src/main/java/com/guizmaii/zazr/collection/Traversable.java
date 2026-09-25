@@ -92,6 +92,9 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
     /**
      * Whether {@code element} is one of the elements, compared with {@link Objects#equals(Object, Object)}. The
      * sets and the maps answer it from their own structure, the sequences by walking their elements.
+     * <p>
+     * Complexity: O(n) for this default, which walks the elements; the sets and the maps override it with their own
+     * lookup.
      *
      * @param element the element to look for
      * @return {@code true} if an equal element is contained, {@code false} otherwise
