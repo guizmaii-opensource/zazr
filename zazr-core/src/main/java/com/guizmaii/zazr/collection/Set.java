@@ -287,6 +287,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     * <p>
+     * Complexity: O(n), every element compared once in natural order; on a TreeSet the greatest element in the
+     * comparator's order is {@code last()}, O(log n).
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -324,6 +327,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
+     * <p>
+     * Complexity: O(n), every element compared once in natural order; on a TreeSet the least element in the
+     * comparator's order is {@code head()}, O(log n).
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}

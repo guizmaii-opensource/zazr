@@ -721,6 +721,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * <p>
      * Whether {@code null} is accepted depends on the comparator: the natural comparator throws
      * {@code NullPointerException} for {@code null}.
+     * <p>
+     * Complexity: O(log n) comparisons.
      *
      * @param element the element to check
      * @return true, if element is contained, false otherwise.
@@ -792,6 +794,11 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.size();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n) to create (the path to the least element); a whole walk is O(n).
+     */
     @Override
     public java.util.Iterator<T> iterator() {
         return tree.iterator();

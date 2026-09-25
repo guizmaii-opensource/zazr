@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity bench javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples site site-serve bench javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,29 +38,64 @@ package: ## build the jars (runs tests)
 install: ## install the jars into ~/.m2 (runs tests)
 	$(MVN) install
 
-verify: ## what CI runs: full build with tests, formatting, nullness, vocabulary and complexity checks
+verify: ## what CI runs: full build with tests, formatting, nullness, vocabulary, complexity and docs checks
 	$(MVN) verify
 	$(MVN) -Pnullaway compile
 	$(MAKE) vocabulary
 	$(MAKE) complexity
+	$(MAKE) docs-complexity-check
+	$(MAKE) docs-examples
 
 vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE.md: use the ZIO names)
 	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs ':!docs/design.md')"; \
 	if [ -n "$$hits" ]; then echo "$$hits"; echo "category-theory vocabulary found; use the ZIO names (see CLAUDE.md)"; exit 1; fi
 
-# The files whose positional methods must document their cost (design.md 3.7).
-COMPLEXITY_FILES := \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/List.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/Queue.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/Stream.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/SortedSet.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/SortedMap.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/LinkedHashSet.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/LinkedHashMap.java
+# The files whose positional and size-sensitive methods must document their cost (design.md 3.7), and the
+# supertypes read to resolve the notes a type inherits.
+COMPLEXITY_DIR := zazr-core/src/main/java/com/guizmaii/zazr/collection
+COMPLEXITY_FILES := $(addprefix $(COMPLEXITY_DIR)/, \
+	Vector.java List.java Queue.java Stream.java NonEmptyVector.java \
+	HashSet.java LinkedHashSet.java TreeSet.java SortedSet.java \
+	HashMap.java LinkedHashMap.java TreeMap.java SortedMap.java)
+COMPLEXITY_CONTEXT := $(addprefix --context $(COMPLEXITY_DIR)/, Traversable.java Set.java Map.java)
+COMPLEXITY_PAGE := docs/collections/complexity.md
+COMPLEXITY_GLANCE := docs/collections/.costs
 
-complexity: ## fail when a positional method of a collection lacks a "Complexity:" javadoc line (design.md 3.7)
-	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_FILES)
+complexity: ## fail when a collection method lacks a "Complexity:" javadoc line or its class (design.md 3.7)
+	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_CONTEXT) $(COMPLEXITY_FILES)
+
+docs-complexity: ## regenerate docs/collections/complexity.md and the per-type tables from the "Complexity:" notes
+	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_CONTEXT) --page $(COMPLEXITY_PAGE) --glance $(COMPLEXITY_GLANCE) $(COMPLEXITY_FILES)
+
+docs-complexity-check: docs-complexity ## fail when the committed complexity page differs from a fresh generation
+	@if [ -n "$$(git status --porcelain -- $(COMPLEXITY_PAGE) $(COMPLEXITY_GLANCE))" ]; then \
+		git status --porcelain -- $(COMPLEXITY_PAGE) $(COMPLEXITY_GLANCE); \
+		git --no-pager diff -- $(COMPLEXITY_PAGE) $(COMPLEXITY_GLANCE); \
+		echo "the complexity page is stale or untracked: run make docs-complexity and commit the result"; exit 1; fi
+
+# The tests that compile and run every fenced java block of the site (zazr-test's own, since zazr-core cannot depend on it).
+DOCS_EXAMPLES_TESTS := \
+	zazr-core/src/test/java/com/guizmaii/zazr/docs/DocsExamplesTest.java \
+	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java
+
+docs-examples: ## fail when a java block of the site is not in a docs example test (they compile and run every snippet)
+	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)
+
+# The site (MkDocs + Material), built in a local virtualenv pinned by requirements-docs.txt.
+DOCS_VENV := .venv-docs
+DOCS_PYTHON ?= python3
+
+$(DOCS_VENV)/.installed: requirements-docs.txt
+	$(DOCS_PYTHON) -m venv $(DOCS_VENV)
+	$(DOCS_VENV)/bin/pip install --quiet --upgrade pip
+	$(DOCS_VENV)/bin/pip install --quiet -r requirements-docs.txt
+	@touch $@
+
+site: $(DOCS_VENV)/.installed ## build the website into site/ (mkdocs build --strict: fails on a broken link)
+	$(DOCS_VENV)/bin/mkdocs build --strict
+
+site-serve: $(DOCS_VENV)/.installed ## preview the website at http://127.0.0.1:8000/zazr/ with live reload
+	$(DOCS_VENV)/bin/mkdocs serve --dev-addr 127.0.0.1:8000
 
 fmt: ## format the sources (spotless apply)
 	$(MVN) spotless:apply
