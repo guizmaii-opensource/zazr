@@ -104,14 +104,14 @@ Some throwables are more severe than others. From the most severe:
 
 1. `VirtualMachineError`, such as `OutOfMemoryError` and `StackOverflowError`;
 2. `LinkageError`;
-3. `InterruptedException`;
+3. `InterruptedException` and `ThreadDeath`;
 4. any other exception.
 
 When a later throwable is more severe, it surfaces instead, with the earlier one suppressed in it. So an
 `OutOfMemoryError` thrown by `close()` is never hidden under the exception of your code, as it would be by
 `try`-with-resources.
 
-The first three are fatal for `Try`: they are rethrown rather than returned as a `Failure`. See
+The first three levels are fatal for `Try`: they are rethrown rather than returned as a `Failure`. See
 [what `Try` captures](try.md#what-is-captured).
 
 ### Nothing is suppressed in itself
