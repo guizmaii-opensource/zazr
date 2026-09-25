@@ -29,5 +29,21 @@ public class ComparatorsTest {
         public void shouldThrowNPEWhenComparingIntegerAndNullUsingNaturalOrder() {
             assertThrows(NullPointerException.class, () -> naturalComparator().compare(1, null));
         }
+
+        @Test
+        public void shouldBeEqualToTheNaturalComparatorOfEveryType() {
+            final Comparator<Integer> integers = naturalComparator();
+            final Comparator<String> strings = naturalComparator();
+            assertThat(integers).isEqualTo(strings);
+            assertThat(integers).isNotEqualTo(Comparator.<Integer> reverseOrder());
+        }
+
+        // The natural comparator is a single instance, so any constant satisfies the hashCode contract: this only
+        // checks that hashCode is consistent across calls.
+        @Test
+        public void shouldHaveAConsistentHashCode() {
+            final Comparator<Integer> comparator = naturalComparator();
+            assertThat(comparator.hashCode()).isEqualTo(comparator.hashCode());
+        }
     }
 }

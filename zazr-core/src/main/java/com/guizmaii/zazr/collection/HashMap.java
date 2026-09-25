@@ -649,6 +649,17 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         trie.forEach(action);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), a walk of the trie with no {@code Tuple2} per entry.
+     */
+    @Override
+    public void forEach(BiConsumer<K, V> action) {
+        Objects.requireNonNull(action, "action is null");
+        trie.forEach(action);
+    }
+
     @Override
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
