@@ -1214,7 +1214,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * A mutable copy is {@code new java.util.ArrayList<>(queue.asJava())}; {@code Queue.ofAll} given the view
      * returns this Queue without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(1).
+     * Complexity: O(1); {@code get(i)} on the view is that of {@link #get(int)}, {@code size()} is O(n) the first
+     * time, then O(1): the view keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */

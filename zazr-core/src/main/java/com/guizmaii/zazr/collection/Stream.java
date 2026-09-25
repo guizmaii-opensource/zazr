@@ -1455,7 +1455,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(1); the view forces no element ahead of the read that needs it: {@code get(i)} forces
      * the first {@code i + 1} elements, the iterator one element per step, and {@code size()}, {@code lastIndexOf},
      * {@code hashCode}, {@code getLast} and every read of {@code reversed()} force the whole Stream (they do not
-     * terminate on an infinite Stream).
+     * terminate on an infinite Stream). The view counts the size once and keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */

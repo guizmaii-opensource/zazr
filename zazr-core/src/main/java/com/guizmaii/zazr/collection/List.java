@@ -896,7 +896,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * A mutable copy is {@code new java.util.ArrayList<>(list.asJava())}; {@code List.ofAll} given the view
      * returns this List without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(1).
+     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(n) the first time, then O(1): the
+     * view keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */

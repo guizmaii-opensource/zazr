@@ -123,4 +123,23 @@ public class LengthComplexityTest {
         });
     }
 
+    @Test
+    public void shouldCountTheSizeOfAJavaListViewOnce() {
+        // K calls of size() on the view of a sequence of N elements: the size is counted once, far past the bound
+        // when every call walks the sequence
+        final java.util.List<java.util.List<Integer>> views = java.util.List.of(
+                List.range(0, N).asJava(),
+                Queue.ofAll(List.range(0, N)).asJava(),
+                Queue.<Integer> empty().enqueueAll(List.range(0, N)).asJava(),
+                Stream.range(0, N).asJava(),
+                List.range(0, N).asJava().reversed());
+        assertTimeoutPreemptively(BOUND, () -> {
+            for (java.util.List<Integer> view : views) {
+                for (int i = 0; i < K; i++) {
+                    assertThat(view.size()).isEqualTo(N);
+                }
+            }
+        });
+    }
+
 }

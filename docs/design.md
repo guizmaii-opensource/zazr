@@ -1042,6 +1042,12 @@ and unable to drift:
     returned an empty Stream, and a reversed range whose end is past the end threw `IllegalArgumentException`; both now
     throw at call time as `Vector` does, forcing the first `from` (or `to`) elements to check. The one lazy exception
     stays: with `from < to` and `to` past the end, the `IndexOutOfBoundsException` comes when the traversal gets there.
+  - `asJava()` views: the set views already answered `contains` with the set's own lookup (#26). The `Collection`
+    view of a map's entries walked them; its `contains` of a `Tuple2` is now the map's own `contains(Tuple2)`, one
+    lookup of the key (a key the order of a `TreeMap` cannot compare, or a null one, is answered `false`, as the walk
+    answered). The `java.util.List` view of a `List`, `Queue` or `Stream` counts the size of the sequence the first
+    time it is needed and keeps it, so an indexed loop over the view no longer counts it at every step; the Stream
+    view still forces nothing before an operation that needs the size.
 
 Which concrete collections survive (decided):
 

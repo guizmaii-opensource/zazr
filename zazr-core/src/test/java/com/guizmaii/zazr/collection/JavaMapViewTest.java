@@ -121,4 +121,72 @@ class JavaMapViewTest {
         assertThatThrownBy(() -> TreeMap.of(1, "a").asJavaMap().firstEntry().setValue("b")).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> LinkedHashMap.of(1, "a").asJavaMap().lastEntry().setValue("b")).isInstanceOf(UnsupportedOperationException.class);
     }
+
+    /** A key that counts the calls of its {@code equals} and {@code compareTo}. */
+    private record Key(int value, int[] calls) implements Comparable<Key> {
+
+        @Override
+        public boolean equals(Object o) {
+            calls[0]++;
+            return o instanceof Key key && key.value == value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Integer.hashCode(value);
+        }
+
+        @Override
+        public int compareTo(Key that) {
+            calls[0]++;
+            return Integer.compare(value, that.value);
+        }
+    }
+
+    @Test
+    void shouldLookEntriesUpInsteadOfWalkingThem() {
+        final int n = 1_000;
+        final int[] calls = new int[1];
+        final java.util.List<Tuple2<Key, Integer>> entries = new java.util.ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            entries.add(Tuple.of(new Key(i, calls), i));
+        }
+        final java.util.Map<String, Map<Key, Integer>> maps = new java.util.LinkedHashMap<>();
+        maps.put("HashMap", HashMap.ofEntries(entries));
+        maps.put("LinkedHashMap", LinkedHashMap.ofEntries(entries));
+        maps.put("TreeMap", TreeMap.ofEntries(entries));
+        for (java.util.Map.Entry<String, Map<Key, Integer>> map : maps.entrySet()) {
+            final java.util.Collection<Tuple2<Key, Integer>> view = map.getValue().asJava();
+            for (int i : new int[] { 0, n / 2, n - 1 }) {
+                calls[0] = 0;
+                assertThat(view.contains(Tuple.of(new Key(i, calls), i))).as(map.getKey()).isTrue();
+                // one hash lookup, or one descent of a tree of depth at most 2 log2(n): never a walk of the entries
+                assertThat(calls[0]).as(map.getKey() + " calls for key " + i).isLessThanOrEqualTo(22);
+            }
+            calls[0] = 0;
+            assertThat(view.contains(Tuple.of(new Key(n, calls), n))).isFalse();
+            assertThat(calls[0]).as(map.getKey() + " calls for an absent key").isLessThanOrEqualTo(22);
+        }
+    }
+
+    @Test
+    void shouldAnswerContainsAsTheWalkOverTheEntriesDoes() {
+        final java.util.Map<String, Map<Integer, String>> maps = new java.util.LinkedHashMap<>();
+        maps.put("HashMap", HashMap.of(1, "a", 2, "b"));
+        maps.put("LinkedHashMap", LinkedHashMap.of(1, "a", 2, "b"));
+        maps.put("TreeMap", TreeMap.of(1, "a", 2, "b"));
+        maps.put("TreeMap(reverse)", TreeMap.of(Comparator.<Integer> reverseOrder(), 1, "a", 2, "b"));
+        final java.util.List<Object> probes = java.util.Arrays.asList(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(1, "b"), Tuple.of(3, "a"),
+                Tuple.of("1", "a"), Tuple.of(null, "a"), Tuple.of(1, null), Tuple.of(1, 1), null, "not an entry", java.util.Map.entry(1, "a"),
+                Tuple.of(1));
+        for (java.util.Map.Entry<String, Map<Integer, String>> map : maps.entrySet()) {
+            final java.util.List<Tuple2<Integer, String>> walked = new java.util.ArrayList<>();
+            for (Tuple2<Integer, String> entry : map.getValue()) {
+                walked.add(entry);
+            }
+            for (Object probe : probes) {
+                assertThat(map.getValue().asJava().contains(probe)).as(map.getKey() + ".asJava().contains(" + probe + ")").isEqualTo(walked.contains(probe));
+            }
+        }
+    }
 }
