@@ -1,3 +1,7 @@
+# the decision log is for contributors: it stays in the repository and is not published
+exclude_docs: |
+  design.md
+
 site_name: Zazr
 site_url: https://guizmaii-opensource.github.io/zazr/
 site_description: >-
@@ -125,4 +129,4 @@ nav:
       - Maps: collections/maps.md
       - Complexity: collections/complexity.md
   - Compared to Vavr: vavr.md
-  - Design: design.md
+  - Design: principles.md
