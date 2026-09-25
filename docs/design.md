@@ -1357,9 +1357,13 @@ the public API does not change.
   test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
   (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
 
-Step 3 then deletes `BitMappedTrie` with `LeafVisitor` and `NodeModifier`, `TrieVector` and the differential test,
-and `ArrayType` with its generator (`genArrayTypes`); `ArrayType`'s last user outside `Vector`,
-`IterableWithSize.toArray` in `Collections`, gets a plain loop.
+**Step 3 (#74): the trie deleted.** `BitMappedTrie` goes, with `LeafVisitor` and `NodeModifier`, and so do
+`TrieVector` and the differential test, which had no other oracle. `ArrayType` goes with its generator
+(`genArrayTypes`); its last user outside `Vector`, `IterableWithSize.toArray` in `Collections`, copies the elements
+with a plain loop. `VectorPropertyTest` builds its primitive arrays itself, and `VectorTest` loses the test of
+`ArrayType.of(void.class)`. What the differential test checked beyond contents stays covered: the shapes and the
+sharing of the builder by `VectorBuilderTest` through `RadixVectorShapes`, and every boundary of the tree through
+the public API by `VectorContractTest`, `VectorPropertyTest` and `VectorTest`.
 
 #### 3.8.1 Builders for the other collections
 
