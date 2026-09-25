@@ -70,6 +70,11 @@ extra_css:
 
 plugins:
   - search
+  # the pages that moved keep their old address
+  - redirects:
+      redirect_maps:
+        control-types.md: control/index.md
+        validation.md: control/validation.md
 
 markdown_extensions:
   - abbr
@@ -111,14 +116,20 @@ validation:
 nav:
   - Home: index.md
   - Guide:
+      - "New to functional programming?": new-to-fp.md
       - Getting started: getting-started.md
-      - Control types: control-types.md
-      - Validation: validation.md
       - zip at arity N: zip.md
       - NonEmptyVector: non-empty-vector.md
       - Builders: builders.md
       - Java interop: java-interop.md
-      - Testing with zazr-test: testing.md
+  - Control types:
+      - Overview: control/index.md
+      - Option: control/option.md
+      - Either: control/either.md
+      - Try: control/try.md
+      - Using: control/using.md
+      - Validation: control/validation.md
+      - Lazy: control/lazy.md
   - Collections:
       - Overview: collections/index.md
       - Vector: collections/vector.md
@@ -128,5 +139,6 @@ nav:
       - Sets: collections/sets.md
       - Maps: collections/maps.md
       - Complexity: collections/complexity.md
+  - Testing: testing.md
   - Compared to Vavr: vavr.md
   - Design: principles.md

@@ -4,7 +4,7 @@
 |---|---|---|
 | `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
 | `containsKey` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
-| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one lookup and one put(Object,).">effectively O(1)</abbr> | effectively O(1) (one lookup and one put(Object,). |
+| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one lookup and one put(Object, Object)).">effectively O(1)</abbr> | effectively O(1) (one lookup and one put(Object, Object)). |
 | `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the markers outnumber the entries, the insertion order is rebuilt in O(n).">effectively O(1)</abbr> | effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the markers outnumber the entries, the insertion order is rebuilt in O(n). |
 | `keySet` | <abbr class="cx cx-constant" title="O(1) (a LinkedHashSet view sharing this map).">O(1)</abbr> | O(1) (a LinkedHashSet view sharing this map). |
 | `values` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |

@@ -352,22 +352,18 @@
   border-color: var(--md-accent-fg-color);
   box-shadow: 0 12px 32px -18px var(--md-accent-fg-color);
 }
-/* the seven principles: 4 + 3 on wide screens, 2 + 2 + 2 + 1 full-width, then one column; never an orphan */
+/* the nine features: 3 + 3 + 3 on wide screens, 2 + 2 + 2 + 2 + 1 full-width, then one column; never an orphan */
 .md-typeset .grid.cards.zz-cards--features {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .md-typeset .zz-cards--features > ul > li {
-  grid-column: span 3;
-}
-.md-typeset .zz-cards--features > ul > li:nth-child(n + 5) {
-  grid-column: span 4;
+  grid-column: span 1;
 }
 @media screen and (max-width: 70em) {
   .md-typeset .grid.cards.zz-cards--features {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .md-typeset .zz-cards--features > ul > li,
-  .md-typeset .zz-cards--features > ul > li:nth-child(n + 5) {
+  .md-typeset .zz-cards--features > ul > li {
     grid-column: span 1;
   }
   .md-typeset .zz-cards--features > ul > li:last-child {
@@ -423,11 +419,12 @@
   }
 }
 
-/* Documentation pages (every page but the landing page, which has the hero): a wider page and narrower navigation
-   columns, so the content gets more room while keeping a margin on each side. Material's defaults are a 61rem page
-   with 12.1rem side columns. */
+/* Documentation pages (every page but the landing page, which has the hero): a wider page body and narrower
+   navigation columns, so the content gets more room while keeping a margin on each side. Only the body widens: the
+   header and the tabs keep Material's 61rem grid, so they sit where they do on the landing page. Material's defaults
+   are a 61rem page with 12.1rem side columns. */
 @media screen and (min-width: 76.25em) {
-  body:not(:has(.zz-hero)) .md-grid {
+  body:not(:has(.zz-hero)) .md-main__inner.md-grid {
     max-width: 68rem;
   }
   body:not(:has(.zz-hero)) .md-sidebar--primary,

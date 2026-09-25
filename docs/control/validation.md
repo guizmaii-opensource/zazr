@@ -7,7 +7,16 @@ description: Validation keeps every error in a NonEmptyVector - accumulation wit
 `Validation<E, A>` is `Valid(A value)` or `Invalid(NonEmptyVector<E> errors)`. `Either` stops at the first
 failure; combining validations keeps the errors of every one of them, in order.
 
-The errors are held in a [`NonEmptyVector`](non-empty-vector.md), so an `Invalid` always carries at least one.
+The errors are held in a [`NonEmptyVector`](../non-empty-vector.md), so an `Invalid` always carries at least one.
+
+## When to use it
+
+Use `Validation` for independent checks whose errors should all be reported at once: the fields of a form, the
+entries of a configuration file.
+
+- If each step needs the result of the previous one, the first error stops the work anyway: use
+  [`Either`](either.md).
+- If the error is an exception thrown by the code you call, use [`Try`](try.md), or `Validation.of` below.
 
 ## Checks
 
@@ -28,12 +37,18 @@ static Validation<String, String> email(String value) {
 }
 ```
 
-`fromEither`, `fromOption` and `fromTry` convert the other control types.
+`fromEither`, `fromOption` and `fromTry` convert the other control types. `Validation.of` runs code that may throw
+and turns the exception into an error.
+
+```java
+Validation<String, Integer> port = Validation.of(() -> Integer.parseInt("80a"), e -> "port is not a number");
+// Invalid(port is not a number)
+```
 
 ## Accumulation with `zip` and `zipWith`
 
 `zipWith` combines independent checks and calls the function only when all of them are valid. The static form
-takes 2 to 8 checks ([zip at arity N](zip.md)); the instance form combines two.
+takes 2 to 8 checks ([zip at arity N](../zip.md)); the instance form combines two.
 
 ```java
 record User(String name, int age, String email) {}
@@ -52,7 +67,7 @@ Validation<String, String> both = name("").zipWith(age(-1), (n, a) -> n + a);
 
 ## Reading the result
 
-`switch` over the records, or `fold` with the errors first:
+Pattern match on the records, or `fold` with the errors first:
 
 ```java
 Validation<String, Integer> checked = age(-5);
@@ -108,5 +123,29 @@ Validation<String, User> adult = Validation.zipWith(name("Ada"), age(15), email(
 `flatMapEither` is the same for a step that returns an `Either`. If every step depends on the previous one, `Either`
 is the simpler type.
 
-`orElse` does not combine errors: when both sides are invalid, it returns the second one and drops the first one's
-errors.
+## Transforming the errors
+
+`mapError` transforms each error; `mapErrorAll` transforms the `NonEmptyVector` of errors as a whole, and the result
+stays non-empty. `mapBoth` transforms the errors and the value at once.
+
+## Conversions
+
+- `toEither()` gives an `Either<NonEmptyVector<E>, A>`; `toEitherWith(Function)` builds the left value from the
+  errors.
+- `toTry(Function)` builds the `Failure` cause from the errors.
+- `toOption()` and `toVector()` keep the value and drop the errors.
+
+```java
+Validation<String, Integer> negative = age(-3);
+Either<String, Integer> joined = negative.toEitherWith(errors -> errors.mkString("; "));
+Try<Integer> failure = negative.toTry(errors -> new IllegalArgumentException(errors.mkString("; ")));
+// Left(age is negative), Failure(java.lang.IllegalArgumentException: age is negative)
+```
+
+## Sharp edges
+
+- `orElse` does not combine errors: when both sides are invalid, it returns the second one and drops the first
+  one's errors.
+- Equality depends on the order of the errors: `Invalid(a, b)` is not equal to `Invalid(b, a)`.
+- There is no `flip`: the two sides are not alike, since one of them is never empty.
+- Neither case holds `null`: `valid(null)` and `invalid(null)` throw a `NullPointerException`.

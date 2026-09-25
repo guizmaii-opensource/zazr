@@ -1,194 +1,81 @@
-# How to Contribute
+# Contributing to Zazr
 
-[Fork](https://help.github.com/articles/fork-a-repo) the GitHub, send a [pull request](https://help.github.com/articles/using-pull-requests) and keep your fork in [sync](https://help.github.com/articles/syncing-a-fork/) with the upstream repository.
+Thanks for your interest. Zazr is small and opinionated, so a short conversation before the code saves everyone
+time.
 
-Vavr requires JDK 25+ to build. Maven 3.9.9+ is enforced by the build.
+## Before you start
 
-## AI-assisted contributions
+Open an issue or a discussion before starting anything non-trivial, so we can agree on the approach first. Bug
+reports with a failing snippet are always welcome as they are.
 
-Using AI tools to help write code is fine - please just make sure you understand and stand behind every line you submit. PRs that are easier to recreate from scratch than to review are unlikely to be merged.
+Using AI tools to write code is fine. Make sure you understand every line you submit and can explain it: a pull
+request that is easier to rewrite than to review is unlikely to be merged.
 
-To avoid disappointment, open a GitHub issue or discussion before starting work on anything non-trivial (especially AI-assisted changes) so we can align on the approach first.
-
-## Coding Conventions
-
-We follow _Rob Pike's 5 Rules of Programming_:
-
-> * **Rule 1. You can't tell where a program is going to spend its time.** Bottlenecks occur in surprising places, so don't try to second guess and put in a speed hack until you've proven that's where the bottleneck is.
-> * **Rule 2. Measure.** Don't tune for speed until you've measured, and even then don't unless one part of the code overwhelms the rest.
-> * **Rule 3. Fancy algorithms are slow when n is small, and n is usually small.** Fancy algorithms have big constants. Until you know that n is frequently going to be big, don't get fancy. (Even if n does get big, use Rule 2 first.)
-> * **Rule 4. Fancy algorithms are buggier than simple ones, and they're much harder to implement.** Use simple algorithms as well as simple data structures.
-> * **Rule 5. Data dominates.** If you've chosen the right data structures and organized things well, the algorithms will almost always be self-evident. Data structures, not algorithms, are central to programming.
->
-> Pike's rules 1 and 2 restate Tony Hoare's famous maxim, "Premature optimization is the root of all evil." Ken Thompson rephrased Pike's rules 3 and 4 as "When in doubt, use brute force.". Rules 3 and 4 are instances of the design philosophy KISS. Rule 5 was previously stated by Fred Brooks in The Mythical Man-Month. Rule 5 is often shortened to "write stupid code that uses smart objects".
-
-_Source: http://users.ece.utexas.edu/~adnan/pike.html_
-
-### Javadoc
-
-* Public API needs Javadoc, e.g., public classes and public methods.
-* Non-trivial private methods need Javadoc, too.
-* A package, which is part of the public API, contains a `package-info.java`.
-* Unit tests contain no Javadoc at all (because they introduce no new API and contain no business logic).
-* Running `mvn javadoc:javadoc` results in no javadoc errors.
-* Sources carry no license header (the attribution to Vavr is in `NOTICE`). Unused imports, import order, and trailing newlines are enforced by the Spotless plugin (`make fmt` to apply, `make fmt-check` to verify).
-
-### Packages
-
-* There is only one first-level package: com.guizmaii.zazr.
-* The maximum package depth is two.
-* Package names are denoted in the singular.
-* Packages are sliced by domain (no util or tool packages).
-* Package private classes are used in order to hide non-public API.
-* Inner classes are preferred over package-private classes in case of one-to-one dependencies.
-
-### File structure
-
-We organize our classes and interfaces in the following way:
-
-* The Javadoc of the type contains an overview of the new (i.e. not overridden) API declared in the actual type.
-* The type consists of three sections:
-   1. static API
-   2. non-static API
-   3. adjusted return types
-
-```java
-/**
- * Description of this class.
- * 
- * <ul>
- * <li>{@link #containsKey(Object)}}</li>
- * <li>{@link ...}</li>
- * </ul>
- * 
- * @author ...
- */
-public interface Map<K, V> extends Traversable<Tuple2<K, V>> {
-    
-    // -- static API
-    
-    static <K, V> Tuple2<K, V> entry(K key, V value) { ... }
-    
-    ...
-    
-    // -- non-static API
-
-    @Override
-    default boolean contains(Tuple2<K, V> element) { ... }
-    
-    boolean containsKey(K key);
-    
-    ...
-    
-    // -- Adjusted return types
-
-    @Override
-    Map<K, V> distinct();
-    
-    ...
-    
-}
-```
-
-### Unit tests
-
-* Public API is tested.
-* High-level functionality is tested in first place.
-* Corner cases are tested.
-* Trivial methods are not _directly_ tested, e.g. getters, setters.
-* The test method name documents the test, i.e. 'shouldFooWhenBarGivenBaz'
-* In most cases it makes sense to run one assertion per @Test.
-
-### 3rd party libraries
-
-* Vavr has no dependencies other than Java.
-* Unit tests depend solely on junit and assertj.
+The reasons behind the API are on the [Design](https://zazr.dev/principles/) page, and every decision is recorded,
+with its alternatives, in the [decision log](docs/design.md). If a change goes against a decision there, say so in
+the issue.
 
 ## Build
 
-### Useful Maven Goals
-
-* Executing tests: `mvn clean test`
-* Executing doclint: `mvn javadoc:javadoc`
-* Create -javadoc.jar: `mvn javadoc:jar`
-* Create -source.jar: `mvn source:jar`
-* Update version properties: `mvn versions:update-properties`
-* Check for new plugin version: `mvn versions:display-plugin-updates`
-
-### Releasing
-
-Publishing to Maven Central is handled by the `release` GitHub Actions workflow. Locally, a maintainer only needs to tag the release:
+You need JDK 25 or later. Everything goes through the Makefile; `make help` lists the targets.
 
 ```bash
-mvn release:prepare
+make verify                                   # what CI runs: tests, formatting, nullness and the checks below
+make test-one TEST=VectorTest MODULE=zazr-core
+make fmt                                      # format the sources
+make site-serve                               # preview the website at http://127.0.0.1:8000/
+make coverage                                 # test coverage report, in zazr-test/target/site/jacoco-aggregate
 ```
 
-The workflow is then dispatched with the resulting tag to publish the artifacts.
+`make verify` must pass before you open a pull request.
 
-## SCM
+Sources under `src-gen` are generated from `generator/Generator.scala` on every build. Change the generator, never
+the generated files.
 
-* Commits are coarsely granular grouped by feature/change.
-* Commits do not mix change sets of different domains/purpose.
-* Commit messages provide enough detail to extract a changelog for a new release.
+## Rules of the code
 
+- **Names say what an operation does.** Use ZIO's vocabulary: `zip`, `zipWith`, `collectAll`, `forEach`,
+  `mapBoth`, `tap`, `catchAll`, `flip`. Category-theory names (Monad, Functor, Applicative, `ap`, `traverse`, ...)
+  are not used anywhere, code or comments; `make vocabulary` checks it.
+- **No `null` inside.** `Some`, `Right`, `Success`, `Valid` and every collection reject it. A function that returns
+  `null` where a value is expected is rejected with a message naming the method.
+- **Modern Java.** Sealed interfaces, records, pattern-matching `switch`, the JDK's functional interfaces. No
+  preview features, and no runtime dependencies.
+- **Costs are documented.** Every method of a collection whose cost depends on its size states it in a
+  `Complexity:` line of its javadoc. `make complexity` checks it, and the website's complexity page is generated
+  from these lines.
+- **Internal types stay internal.** They live in `.internal` packages, which are not exported and never appear in a
+  public signature.
+- **Comments describe the code as it is.** No ticket numbers and no history of how the code got there: that belongs
+  in the commit message and the decision log.
+- **Measure before optimising.** Correctness comes first. Make a change for speed only with a measurement that shows
+  the gain, following [Rob Pike's rules](https://users.ece.utexas.edu/~adnan/pike.html).
+- No license header in source files; the attribution to Vavr is in [NOTICE](NOTICE).
 
-### Branching Model
+## Tests
 
-We follow a simple git workflow/branching model:
+- Every public method is tested, including its edge cases: empty and one-element inputs, `null` arguments, and
+  size boundaries (for `Vector`, 31, 32, 33 and 1023, 1024, 1025 elements).
+- Lazy operations are tested for what they force, not only for their result.
+- Test names describe the behaviour: `shouldFooWhenBar`.
+- Every Java snippet on the website also lives in a documentation test; `make docs-examples` checks that they match.
 
-```
-                         master
-                           |
-                           |     v2.0.x
-release v2.0.0 - - - - - - + - - - + 2.0.1-SNAPSHOT
-                           |       |
-                  bugfix1  |       |
-                     |     |       |
-                  PR x---->|<------+ cherry-picking bugfix1
-                           |       |
-                  featureA |       |
-                     |     |       |
-                  PR x---->|       |
-                           |       |
-release v2.0.1 - - - - - - | - - - + 2.0.2-SNAPSHOT
-                           |       |
-                           |       |     v2.1.x
-release v2.1.0 - - - - - - + - - - X - - - + 2.1.1-SNAPSHOT
-                           |               |
-                           |               |
-                  featureB |               |
-                     |     |               |
-                  PR x---->|               |
-                          ...             ...
-```
+## Documentation
 
-## Versioning
+The website is written for a Java developer deciding whether and how to use Zazr: short paragraphs, one idea each,
+a small example where it helps, and no internal names or ticket numbers. The method reference is the javadoc.
 
-We follow the [Semantic Versioning](http://semver.org) scheme.
+## Pull requests and commits
 
-### Backward compatibility
+- Branch from `main` and open a pull request against it; `main` only changes through pull requests.
+- Keep a pull request to one change. A large change is split into several pull requests, each building on the
+  previous one.
+- Write commit messages that explain what changed and why, enough to write the changelog from them.
 
-We distinguish between 3 kinds of (backward-)compatibilty:
+## Releases and versions
 
-1. **Source** - Source compatibility concerns translating Java source code into class files.
-2. **Binary** - Binary compatibility is [defined](http://java.sun.com/docs/books/jls/third_edition/html/binaryComp.html#13.2) in The Java Language Specification as preserving the ability to link without error.
-3. **Behavioral** - Behavioral compatibility includes the semantics of the code that is executed at runtime.
+Zazr is pre-1.0: the API changes between snapshots, with no compatibility promise. From 1.0, it follows
+[Semantic Versioning](https://semver.org).
 
-_Source: [OpenJDK Developers Guide v0.777, Kinds of Compatibility](http://cr.openjdk.java.net/~darcy/OpenJdkDevGuide/OpenJdkDevelopersGuide.v0.777.html#compatibility)_
-
-Given a version number `<major>.<minor>.<path>` Vavr
-
-* may affect **behavioral** compatibility in **all kind of releases**, especially bug fix/patch releases. For example we might decide to release a more effective hashing algorithm in the next minor release that reduces the probability of collisions.
-* may affect **source** compatibility in **patch** releases. For example this may be the case when generic type bounds of method signatures need to be fixed.
-* retains **binary** backwards compatibility (drop in replacement jar) within the same **minor** version (this includes **patch** versions)
-* is not **binary** backward compatible when the **major** version changes
-
-Summing up, drop-in replacements of Vavr can be made for **minor** and **patch** releases.
-
-### Tool Support
-
-We check for API changes (which may affect binary compatibility) using the maven-bundle-plugin:
-
-```bash
-mvn package org.apache.felix:maven-bundle-plugin:baseline -DcomparisonVersion=<latest-release> -DskipTests
-```
+Snapshots of `main` are published automatically. A release is made by publishing a GitHub release whose tag is the
+version prefixed with `v` (for example `v0.1.0`); the `release` workflow builds it and publishes it to Maven Central.
