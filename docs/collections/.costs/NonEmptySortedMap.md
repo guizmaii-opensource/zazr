@@ -6,7 +6,7 @@
 | `containsKey` | <abbr class="cx cx-logarithmic" title="O(log n), that of TreeMap#containsKey(Object).">O(log n)</abbr> | O(log n), that of TreeMap#containsKey(Object). |
 | `put` | <abbr class="cx cx-logarithmic" title="O(log n), that of TreeMap#put(Object, Object).">O(log n)</abbr> | O(log n), that of TreeMap#put(Object, Object). |
 | `remove` | <abbr class="cx cx-logarithmic" title="O(log n), that of TreeMap#remove(Object).">O(log n)</abbr> | O(log n), that of TreeMap#remove(Object). |
-| `keySet` | <abbr class="cx cx-linearithmic" title="O(n log n), the keys built into a new sorted set, that of TreeMap#keySet().">O(n log n)</abbr> | O(n log n), the keys built into a new sorted set, that of TreeMap#keySet(). |
+| `keySet` | <abbr class="cx cx-linear" title="O(n), with no key comparison, that of TreeMap#keySet().">O(n)</abbr> | O(n), with no key comparison, that of TreeMap#keySet(). |
 | `values` | <abbr class="cx cx-linear" title="O(n), that of TreeMap#values().">O(n)</abbr> | O(n), that of TreeMap#values(). |
 | `head` | <abbr class="cx cx-logarithmic" title="O(log n), that of TreeMap#head().">O(log n)</abbr> | O(log n), that of TreeMap#head(). |
 | `take` | <abbr class="cx cx-logarithmic" title="O(log n), that of TreeMap#take(int).">O(log n)</abbr> | O(log n), that of TreeMap#take(int). |

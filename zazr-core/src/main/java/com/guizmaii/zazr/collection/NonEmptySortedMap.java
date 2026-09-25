@@ -514,7 +514,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(n log n), that of {@link TreeMap#replaceAll(BiFunction)}.
+     * Complexity: O(n), with no key comparison, that of {@link TreeMap#replaceAll(BiFunction)}.
      *
      * @param function Computes the new value of a key from its current value
      * @return the same keys, with the new values
@@ -546,7 +546,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(n log n), the keys built into a new sorted set, that of {@link TreeMap#keySet()}.
+     * Complexity: O(n), with no key comparison, that of {@link TreeMap#keySet()}.
      *
      * @return the keys, a non-empty set with this map's comparator
      */

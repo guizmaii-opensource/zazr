@@ -23,12 +23,12 @@ Use `Either` for a step that can fail with an error you define, when the first e
 ```java
 var right = Either.<String, Integer>right(42); // Either<String, Integer>
 var left = Either.<String, Integer>left("not a number"); // Either<String, Integer>
-var checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative"); // Either<String, Integer>
-// Right(42), Left(not a number), Left(negative)
+var checked = Either.fromPredicate(-1, n -> n >= 0, n -> "negative: " + n); // Either<String, Integer>
+// Right(42), Left(not a number), Left(negative: -1)
 ```
 
-`fromPredicate` keeps the value as a `Right` when the test holds, and otherwise takes the `Left` from the
-`Supplier`.
+`fromPredicate` keeps the value as a `Right` when the test holds. Otherwise the last function turns the rejected
+value into the `Left`, so the error can name it; write `_ -> "negative"` when it doesn't need to.
 
 ## Pattern matching over the cases
 
