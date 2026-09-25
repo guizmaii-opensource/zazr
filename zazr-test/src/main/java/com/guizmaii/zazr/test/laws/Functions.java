@@ -23,10 +23,21 @@ final class Functions {
                 random.nextInt(3) == 0 ? 1 + random.nextInt(7) : 0);
     }
 
-    /// Functions to values of `values`: the argument's hash code and a random seed seed the draw.
+    /// Functions to values of `values`: the argument's hash code, mixed with a random seed, seeds the draw.
     static <F> Gen<Function<Object, F>> to(Arbitrary<F> values, int size) {
         final Gen<F> gen = values.apply(size);
         return random -> new SeededFunction<>(gen, random.nextLong());
+    }
+
+    /// The increment of SplitMix64.
+    private static final long GOLDEN_GAMMA = 0x9E3779B97F4A7C15L;
+
+    /// The SplitMix64 finaliser: every bit of the result depends on every bit of `z`, so adjacent arguments give
+    /// unrelated seeds.
+    static long mix(long z) {
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
     }
 
     record IntegerFunction(int a, int b, int m) implements Function<Object, Object> {
@@ -48,7 +59,7 @@ final class Functions {
 
         @Override
         public F apply(Object x) {
-            return gen.apply(new Random(seed * 31 + Objects.hashCode(x)));
+            return gen.apply(new Random(mix(seed + GOLDEN_GAMMA * Objects.hashCode(x))));
         }
 
         @Override
