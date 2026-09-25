@@ -67,6 +67,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * Same as {@link #flatMap(Function)} but using a specific comparator for values of the codomain of the given
      * {@code mapper}.
      *
+     * <p>
+     * Complexity: O(n + k log k) for k elements produced by {@code mapper}: each one is inserted into a new tree.
+     *
      * @param comparator A comparator for values of type U
      * @param mapper     A function which maps values of type T to Iterables of values of type U
      * @param <U>        Type of flat-mapped values
@@ -77,6 +80,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * Same as {@link #map(Function)} but using a specific comparator for values of the codomain of the given
      * {@code mapper}.
+     *
+     * <p>
+     * Complexity: O(n log n): every result is inserted into a new tree, even when {@code mapper} keeps the order.
      *
      * @param comparator A comparator for values of type U
      * @param mapper     A function which maps values of type T to values of type U
@@ -90,7 +96,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The first element in the comparator's order: the minimum.
      * <p>
-     * Complexity: O(log n) (the leftmost path of the tree).
+     * Complexity: O(log n): the smallest element is found by walking down the tree, with no comparison.
      *
      * @return the minimum
      * @throws java.util.NoSuchElementException if this set is empty
@@ -100,6 +106,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The first element in the comparator's order, if any.
      *
+     * <p>
+     * Complexity: O(log n), as {@link #head()}.
+     *
      * @return {@code Some} of the minimum, or {@code None} if this set is empty
      */
     Option<T> headOption();
@@ -107,7 +116,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The last element in the comparator's order: the maximum.
      * <p>
-     * Complexity: O(log n) (the rightmost path of the tree).
+     * Complexity: O(log n): the largest element is found by walking down the tree, with no comparison.
      *
      * @return the maximum
      * @throws java.util.NoSuchElementException if this set is empty
@@ -117,6 +126,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The last element in the comparator's order, if any.
      *
+     * <p>
+     * Complexity: O(log n), as {@link #last()}.
+     *
      * @return {@code Some} of the maximum, or {@code None} if this set is empty
      */
     Option<T> lastOption();
@@ -124,7 +136,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * All elements but the last, with the same comparator.
      * <p>
-     * Complexity: O(log n) (one rank split of the tree).
+     * Complexity: O(log n): the tree is cut without visiting the elements, and the result shares the rest of the
+     * tree.
      *
      * @return this set without its maximum
      * @throws UnsupportedOperationException if this set is empty
@@ -134,7 +147,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * All elements but the last, if this set is not empty.
      * <p>
-     * Complexity: O(log n) (one {@code init}).
+     * Complexity: O(log n), as {@link #init()}.
      *
      * @return {@code Some} of {@link #init()}, or {@code None} if this set is empty
      */
@@ -143,7 +156,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * All elements but the first, with the same comparator.
      * <p>
-     * Complexity: O(log n) (one rank split of the tree).
+     * Complexity: O(log n): the tree is cut without visiting the elements, and the result shares the rest of the
+     * tree.
      *
      * @return this set without its minimum
      * @throws UnsupportedOperationException if this set is empty
@@ -153,7 +167,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * All elements but the first, if this set is not empty.
      * <p>
-     * Complexity: O(log n) (one {@code tail}).
+     * Complexity: O(log n), as {@link #tail()}.
      *
      * @return {@code Some} of {@link #tail()}, or {@code None} if this set is empty
      */
@@ -163,7 +177,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * The first {@code n} elements in the comparator's order, with the same comparator: empty if {@code n <= 0},
      * this set if {@code n >= size()}.
      * <p>
-     * Complexity: O(log n) (one rank split of the tree).
+     * Complexity: O(log n): the tree is cut at that position without visiting the elements, and the result shares
+     * the rest of the tree.
      *
      * @param n the number of elements to keep
      * @return the {@code n} smallest elements
@@ -174,7 +189,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * The last {@code n} elements in the comparator's order, with the same comparator: empty if {@code n <= 0},
      * this set if {@code n >= size()}.
      * <p>
-     * Complexity: O(log n) (one rank split of the tree).
+     * Complexity: O(log n): the tree is cut at that position without visiting the elements, and the result shares
+     * the rest of the tree.
      *
      * @param n the number of elements to keep
      * @return the {@code n} largest elements
@@ -184,7 +200,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The longest prefix, in the comparator's order, of elements satisfying {@code predicate}.
      * <p>
-     * Complexity: O(k + log n) for a prefix of k elements (one walk, then one rank split of the tree).
+     * Complexity: O(k + log n) for a prefix of k elements: the prefix is walked, then the tree is cut after it.
      *
      * @param predicate tested on the elements from the smallest
      * @return the elements before the first one not satisfying {@code predicate}
@@ -195,7 +211,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The longest prefix, in the comparator's order, of elements not satisfying {@code predicate}.
      * <p>
-     * Complexity: O(k + log n) for a prefix of k elements (one walk, then one rank split of the tree).
+     * Complexity: O(k + log n) for a prefix of k elements: the prefix is walked, then the tree is cut after it.
      *
      * @param predicate tested on the elements from the smallest
      * @return the elements before the first one satisfying {@code predicate}
@@ -207,7 +223,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * All elements but the first {@code n} in the comparator's order, with the same comparator: this set if
      * {@code n <= 0}, empty if {@code n >= size()}.
      * <p>
-     * Complexity: O(log n) (one rank split of the tree).
+     * Complexity: O(log n): the tree is cut at that position without visiting the elements, and the result shares
+     * the rest of the tree.
      *
      * @param n the number of elements to drop
      * @return the elements after the {@code n} smallest
@@ -218,7 +235,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * All elements but the last {@code n} in the comparator's order, with the same comparator: this set if
      * {@code n <= 0}, empty if {@code n >= size()}.
      * <p>
-     * Complexity: O(log n) (one rank split of the tree).
+     * Complexity: O(log n): the tree is cut at that position without visiting the elements, and the result shares
+     * the rest of the tree.
      *
      * @param n the number of elements to drop
      * @return the elements before the {@code n} largest
@@ -228,7 +246,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The elements from the first one, in the comparator's order, that does not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(k + log n) for k dropped elements (one walk, then one rank split of the tree).
+     * Complexity: O(k + log n) for k dropped elements: they are walked, then the tree is cut after them.
      *
      * @param predicate tested on the elements from the smallest
      * @return the elements from the first one not satisfying {@code predicate}
@@ -239,7 +257,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The elements from the first one, in the comparator's order, that satisfies {@code predicate}.
      * <p>
-     * Complexity: O(k + log n) for k dropped elements (one walk, then one rank split of the tree).
+     * Complexity: O(k + log n) for k dropped elements: they are walked, then the tree is cut after them.
      *
      * @param predicate tested on the elements from the smallest
      * @return the elements from the first one satisfying {@code predicate}
@@ -250,7 +268,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * The elements paired with their rank in the comparator's order, from 0.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n): one walk in order.
      *
      * @return the pairs (element, rank), in order
      */
@@ -261,7 +279,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * comparator; the last block is smaller when {@code size} does not divide {@code size()}. The same as
      * {@code sliding(size, size)}.
      * <p>
-     * Complexity: O((n / size) log n) (one rank slice of the tree per block, sharing its subtrees).
+     * Complexity: O((n / size) log n): the tree is cut once per block, in O(log n); the blocks share the tree's
+     * structure, and the elements are not copied.
      *
      * @param size the block size, positive
      * @return the blocks, in order; empty if this set is empty
@@ -273,7 +292,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * The windows of {@code size} consecutive elements in the comparator's order, each starting one element after
      * the previous, each a set with the same comparator. The same as {@code sliding(size, 1)}.
      * <p>
-     * Complexity: O(n log n) (one rank slice of the tree per window, sharing its subtrees).
+     * Complexity: O(n log n): the tree is cut once per window, in O(log n); the windows share the tree's structure,
+     * and the elements are not copied.
      *
      * @param size the window size, positive
      * @return the windows, in order; empty if this set is empty
@@ -287,7 +307,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * last window is shorter than {@code size} when it reaches the end, a window whose elements all belong to the
      * previous one is not produced, a set smaller than {@code size} is one window and an empty set has none.
      * <p>
-     * Complexity: O((n / step) log n) (one rank slice of the tree per window, sharing its subtrees).
+     * Complexity: O((n / step) log n): the tree is cut once per window, in O(log n); the windows share the tree's
+     * structure, and the elements are not copied.
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -300,7 +321,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * The maximal runs of consecutive elements, in the comparator's order, with the same key, computed once per
      * element by {@code classifier}; each run is a set with the same comparator, and the runs together are this set.
      * <p>
-     * Complexity: O(n + r log n) for r runs (one walk, then one rank slice of the tree per run).
+     * Complexity: O(n + k log n) for k runs: one walk finds them, then the tree is cut once per run, in O(log n).
      *
      * @param classifier the key of an element; two consecutive elements are in the same run when their keys are equal
      * @return the runs, in order; empty if this set is empty
@@ -313,7 +334,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) (one lookup, then one insertion in the tree when the element is new).
+     * Complexity: O(log n): one lookup, then one insertion when the element is new.
      */
     @Override
     SortedSet<T> add(T element);
@@ -321,7 +342,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log(n + m)) for m elements (one lookup, and one insertion for a new element, each).
+     * Complexity: O(m log(n + m)) for m elements: one lookup each, then one insertion for each new one.
      */
     @Override
     SortedSet<T> addAll(Iterable<? extends T> elements);
@@ -329,38 +350,70 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O((n + m) log n) for a set of m elements: a split and a join per node of {@code elements} when it is
-     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and the kept elements built into a
-     * new tree.
+     * Complexity: O(m + n log n) for a set of m elements: they are put in a hash set, then the kept elements are
+     * inserted one by one into a new tree.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
+     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
     @Override
     SortedSet<T> diff(Set<? extends T> elements);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n): the kept elements are inserted one by one into a new tree.
+     */
     @Override
     SortedSet<T> filter(Predicate<? super T> predicate);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n): the kept elements are inserted one by one into a new tree.
+     */
     @Override
     SortedSet<T> reject(Predicate<? super T> predicate);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n + k log k) for k elements produced by {@code mapper}: each one is inserted into a new tree.
+     */
     @Override
     <U extends @Nullable Object> SortedSet<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n): each group is built by inserting its elements into a new tree.
+     */
     @Override
     <C extends @Nullable Object> Map<C, ? extends SortedSet<T>> groupBy(Function<? super T, ? extends C> classifier);
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O((n + m) log n) for a set of m elements: a split and a join per node of {@code elements} when it is
-     * a TreeSet with the same comparator, otherwise a hash set of {@code elements} and the kept elements built into a
-     * new tree.
+     * Complexity: O(m + n log n) for a set of m elements: they are put in a hash set, then the kept elements are
+     * inserted one by one into a new tree.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
+     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
     @Override
     SortedSet<T> intersect(Set<? extends T> elements);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n): every result is inserted into a new tree, even when {@code mapper} keeps the order.
+     */
     @Override
     <U extends @Nullable Object> SortedSet<U> map(Function<? super T, ? extends U> mapper);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n): the collected elements are inserted one by one into a new tree.
+     */
     @Override
     <U extends @Nullable Object> SortedSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
 
@@ -369,12 +422,29 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
         return map((o1, o2) -> 0, ignored -> value);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m log m) for the m elements of {@code other} when this set is empty: they are inserted into a new
+     * tree; O(1) when this set is not empty.
+     */
     @Override
     SortedSet<T> orElse(Iterable<? extends T> other);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m log m) for the m supplied elements when this set is empty: they are inserted into a new tree;
+     * O(1) when this set is not empty, and the supplier is not called.
+     */
     @Override
     SortedSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n): the elements of both results are inserted one by one into new trees.
+     */
     @Override
     Tuple2<? extends SortedSet<T>, ? extends SortedSet<T>> partition(Predicate<? super T> predicate);
 
@@ -384,7 +454,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) (one deletion from the tree).
+     * Complexity: O(log n): one deletion from the tree.
      */
     @Override
     SortedSet<T> remove(T element);
@@ -392,8 +462,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for m given elements (a hash set of them, then the kept elements inserted into a new
-     * tree).
+     * Complexity: O(m + n log n) for m elements: they are put in a hash set, then the kept elements are inserted one by
+     * one into a new tree, even when a single element is removed.
      */
     @Override
     SortedSet<T> removeAll(Iterable<? extends T> elements);
@@ -401,7 +471,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) (one lookup, one deletion and one insertion in the tree).
+     * Complexity: O(log n): one lookup, one deletion and one insertion.
      */
     @Override
     SortedSet<T> replace(T currentElement, T newElement);
@@ -409,7 +479,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n), that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: O(log n), as {@link #replace(Object, Object)}: a set holds an element once.
      */
     @Override
     SortedSet<T> replaceAll(T currentElement, T newElement);
@@ -417,8 +487,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for m given elements (a hash set of them, then the kept elements inserted into a new
-     * tree).
+     * Complexity: O(m + n log n) for m elements: they are put in a hash set, then the kept elements are inserted one by
+     * one into a new tree.
      */
     @Override
     SortedSet<T> retainAll(Iterable<? extends T> elements);
@@ -426,8 +496,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log(n + m)) for a set of m elements: a split and a join per node of {@code elements} when it is a
-     * TreeSet with the same comparator, otherwise one lookup and one insertion per element.
+     * Complexity: O(m log(n + m)) for a set of m elements: one lookup each, then one insertion for each new one.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
+     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
     @Override
     SortedSet<T> union(Set<? extends T> elements);

@@ -140,6 +140,8 @@ val vocabulary: Map[String, Cost] = Map(
   // HashSet, HashMap, LinkedHashSet, LinkedHashMap
 
   // TreeSet, TreeMap
+  "O(m log m)" -> Cost.Linearithmic,
+  "O(n + k log k)" -> Cost.Linearithmic,
 
   // the end of the vocabulary
   "O(1)" -> Cost.Constant
