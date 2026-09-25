@@ -1430,7 +1430,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      *
      * @return the last element
      */
-    public A last() { return vector.get(vector.length() - 1); }
+    public A last() { return vector.get(vector.size() - 1); }
 
     /**
      * Complexity: O(n), every element compared once.
@@ -1562,11 +1562,11 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: O(1), as {@link Vector#length()}.
+     * Complexity: O(1), as {@link Vector#size()}.
      *
      * @return the number of elements, at least 1
      */
-    public int size() { return vector.length(); }
+    public int size() { return vector.size(); }
 
     /**
      * Complexity: effectively O(1), as {@link Vector#get(int)}.
@@ -2038,7 +2038,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     @Override
     public Spliterator<A> spliterator() {
-        return Spliterators.spliterator(iterator(), vector.length(), Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL);
+        return Spliterators.spliterator(iterator(), vector.size(), Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL);
     }
 
     /**
@@ -2425,7 +2425,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return all elements but the first, if there are any
      */
     public Option<NonEmptyVector<A>> tailNonEmpty() {
-        return vector.length() == 1 ? Option.none() : Option.some(new NonEmptyVector<>(vector.tail()));
+        return vector.size() == 1 ? Option.none() : Option.some(new NonEmptyVector<>(vector.tail()));
     }
 
     /**
@@ -2434,7 +2434,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return all elements but the last, if there are any
      */
     public Option<NonEmptyVector<A>> initNonEmpty() {
-        return vector.length() == 1 ? Option.none() : Option.some(new NonEmptyVector<>(vector.init()));
+        return vector.size() == 1 ? Option.none() : Option.some(new NonEmptyVector<>(vector.init()));
     }
 
     // -- Object

@@ -21,6 +21,7 @@
 | `splitAt(int)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.splitAt.">effectively O(1)</abbr> | effectively O(1), as Vector.splitAt. |
 | `reverse` | <abbr class="cx cx-linear" title="O(n), as Vector.reverse.">O(n)</abbr> | O(n), as Vector.reverse. |
 | `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons, as Vector.sorted.">O(n log n)</abbr> | O(n log n) comparisons, as Vector.sorted. |
+| `size` | <abbr class="cx cx-constant" title="O(1), as Vector.size.">O(1)</abbr> | O(1), as Vector.size. |
 | `contains` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for m elements of that, as Vector.zip.">O(min(n, m))</abbr> | O(min(n, m)) for m elements of that, as Vector.zip. |

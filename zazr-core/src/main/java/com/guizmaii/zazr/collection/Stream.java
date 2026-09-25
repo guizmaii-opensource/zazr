@@ -955,7 +955,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
         final Stream<? extends T> suffix = Stream.ofAll(that);
-        final int skipped = length() - suffix.length();
+        final int skipped = size() - suffix.size();
         if (skipped < 0) {
             return false;
         }
@@ -1098,7 +1098,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     default int lastIndexWhere(Predicate<? super T> predicate) {
-        return lastIndexWhere(predicate, length() - 1);
+        return lastIndexWhere(predicate, size() - 1);
     }
 
     /**
@@ -1483,19 +1483,19 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * All combinations of the elements, for every size from 0 to {@code length()}, by position.
+     * All combinations of the elements, for every size from 0 to {@code size()}, by position.
      * <p>
      * Complexity: O(n * 2^n) to read the 2^n combinations; the whole Stream is computed now.
      *
      * @return the combinations, shortest first
      */
     default Stream<Stream<T>> combinations() {
-        return Stream.rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity());
+        return Stream.rangeClosed(0, size()).map(this::combinations).flatMap(Function.identity());
     }
 
     /**
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
-     * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
+     * counts as 0, and a {@code k} greater than {@code size()} gives no combination.
      * <p>
      * Complexity: lazy; the first k + 1 elements are computed now. Reading every combination costs O(n * C(n, k)) for a
      * small k, but the search explores every run of up to k positions, so it grows to O(n * 2^n) as k nears n, even
@@ -1858,7 +1858,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param index the position
      * @return the element at that position
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     default T get(int index) {
         if (isEmpty()) {
@@ -1951,7 +1951,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Because {@code Stream} is lazy, only {@code index < 0} (and {@code index > 0} on an empty Stream)
-     * is detected when this method is called; for {@code index > length()} the
+     * is detected when this method is called; for {@code index > size()} the
      * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
      * as the offending position.
      * <p>
@@ -1972,7 +1972,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Because {@code Stream} is lazy, only {@code index < 0} (and {@code index > 0} on an empty Stream)
-     * is detected when this method is called; for {@code index > length()} the
+     * is detected when this method is called; for {@code index > size()} the
      * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
      * as the offending position.
      * <p>
@@ -2044,18 +2044,6 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         return result;
     }
 
-    /**
-     * Returns the number of elements in this Stream.
-     * <p>
-     * Equivalent to {@link #size()}.
-     * <p>
-     * Complexity: O(n); the whole Stream is computed, so it never returns on an infinite Stream.
-     *
-     * @return the number of elements
-     */
-    default int length() {
-        return foldLeft(0, (n, ignored) -> n + 1);
-    }
 
     /**
      * The elements transformed by {@code mapper}, in order.
@@ -2138,7 +2126,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new Stream, or this Stream if it is already at least {@code length} long
      */
     default Stream<T> leftPadTo(int length, T element) {
-        final int actualLength = length();
+        final int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -2399,7 +2387,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Because {@code Stream} is lazy, only {@code index < 0} and an empty Stream are detected when
-     * this method is called; for {@code index >= length()} on a non-empty Stream the
+     * this method is called; for {@code index >= size()} on a non-empty Stream the
      * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
      * as the offending position.
      * <p>
@@ -2544,11 +2532,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the rotated Stream, or this Stream if the rotation is a multiple of the length
      */
     default Stream<T> rotateLeft(int n) {
-        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2563,11 +2551,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the rotated Stream, or this Stream if the rotation is a multiple of the length
      */
     default Stream<T> rotateRight(int n) {
-        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2788,7 +2776,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param beginIndex the first position
      * @return a new Stream
-     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code size()}
      */
     default Stream<T> subSequence(int beginIndex) {
         if (beginIndex < 0) {
@@ -2811,9 +2799,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * its first j.
      * <p>
      * The bounds are those of {@link Vector#subSequence(int, int)}: {@code IndexOutOfBoundsException} when
-     * {@code beginIndex < 0} or {@code endIndex > length()}, otherwise {@code IllegalArgumentException} when
+     * {@code beginIndex < 0} or {@code endIndex > size()}, otherwise {@code IllegalArgumentException} when
      * {@code beginIndex > endIndex}. Every such call throws when it is made, with one exception: because
-     * {@code Stream} is lazy, when {@code beginIndex < length() < endIndex} the {@code IndexOutOfBoundsException} is
+     * {@code Stream} is lazy, when {@code beginIndex < size() < endIndex} the {@code IndexOutOfBoundsException} is
      * thrown once the returned Stream is traversed past its last element, not when this method is called.
      *
      * @param beginIndex the first position
@@ -2821,7 +2809,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new Stream
      * @throws IndexOutOfBoundsException if {@code beginIndex} is negative; if {@code endIndex} is past the end and
      *                                   {@code beginIndex} is not before the end, a reversed range included; or, when
-     *                                   {@code beginIndex < length() < endIndex}, once the traversal passes the end
+     *                                   {@code beginIndex < size() < endIndex}, once the traversal passes the end
      * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex} and {@code endIndex} is
      *                                   within this Stream
      */
@@ -2899,7 +2887,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns the first {@code n} elements of this {@code Stream}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: lazy; nothing is computed now, each element when the result reaches it.
      *
@@ -2960,7 +2948,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns the last {@code n} elements of this {@code Stream}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n); the whole Stream is computed now, because the last elements are found by walking to the end.
      *
@@ -3059,7 +3047,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param index   the position to update
      * @param element the new element
      * @return a new Stream
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     default Stream<T> update(int index, T element) {
         if (isEmpty()) {
@@ -3091,7 +3079,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param index   the position to update
      * @param updater computes the new element from the current one
      * @return a new Stream
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      * @throws NullPointerException      if {@code updater} is null
      */
     default Stream<T> update(int index, Function<? super T, ? extends T> updater) {
@@ -3884,15 +3872,16 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The number of elements; the same as {@link #length()}.
+     * The number of elements.
      * <p>
-     * Complexity: O(n), as {@link #length()}: the whole Stream is walked at each call.
+     * Complexity: O(n): the whole Stream is computed and walked at each call, so it never returns on an infinite
+     * Stream.
      *
      * @return the number of elements
      */
     @Override
     default int size() {
-        return length();
+        return foldLeft(0, (n, ignored) -> n + 1);
     }
 
     /**

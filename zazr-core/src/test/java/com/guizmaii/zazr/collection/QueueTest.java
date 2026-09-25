@@ -1857,7 +1857,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateLeftForPositiveModuloLen() {
             Queue<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateLeft(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateLeft(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -1906,7 +1906,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateRightForPositiveModuloLen() {
             Queue<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateRight(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateRight(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -2763,7 +2763,7 @@ public class QueueTest extends AbstractTraversableTest {
             assertThat(queue.get(2)).isEqualTo(3);
             assertThat(queue.get(3)).isEqualTo(4);
             assertThatThrownBy(() -> queue.get(4)).isInstanceOf(IndexOutOfBoundsException.class);
-            assertThat(queue.length()).isEqualTo(4);
+            assertThat(queue.size()).isEqualTo(4);
             assertThat(queue.head()).isEqualTo(1);
             assertThat(queue.last()).isEqualTo(4);
             assertThat(queue.indexOf(3)).isEqualTo(2);
@@ -2801,7 +2801,7 @@ public class QueueTest extends AbstractTraversableTest {
             assertThat(empty.crossProduct().isEmpty()).isTrue();
             final Queue<Integer> one = Queue.of(1);
             assertThat(one.reverse().toList()).isEqualTo(com.guizmaii.zazr.collection.List.of(1));
-            assertThat(one.crossProduct().toList().length()).isEqualTo(1);
+            assertThat(one.crossProduct().toList().size()).isEqualTo(1);
             assertThat(one.endsWith(Queue.of(1))).isTrue();
             assertThat(one.endsWith(Queue.of(0, 1))).isFalse();
         }
@@ -3562,12 +3562,12 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeLengthOfNil() {
-        assertThat(empty().length()).isEqualTo(0);
+        assertThat(empty().size()).isEqualTo(0);
     }
 
     @TestTemplate
     public void shouldComputeLengthOfNonNil() {
-        assertThat(of(1, 2, 3).length()).isEqualTo(3);
+        assertThat(of(1, 2, 3).size()).isEqualTo(3);
     }
 
     // -- max
@@ -4259,7 +4259,7 @@ public class QueueTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -4269,7 +4269,7 @@ public class QueueTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -4279,7 +4279,7 @@ public class QueueTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     // -- slideBy(classifier)

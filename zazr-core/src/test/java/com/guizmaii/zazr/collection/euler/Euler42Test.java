@@ -53,7 +53,7 @@ public class Euler42Test {
                 .map(l -> l.replaceAll("\"", ""))
                 .flatMap(l -> List.of(l.split(",")))
                 .filter(Euler42Test::isTriangleWord)
-                .length();
+                .size();
     }
 
     private static boolean isTriangleWord(String word) {

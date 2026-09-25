@@ -54,10 +54,10 @@ public class Euler24Test {
      */
     private static String lexicographicPermutation(List<String> stringsToPermutate, int ordinal) {
         final List<String> sx = stringsToPermutate.sorted();
-        if (sx.length() == 1) {
+        if (sx.size() == 1) {
             return sx.mkString();
         }
-        final int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.length() - 1);
+        final int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.size() - 1);
         final int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
         final int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
         return List.of(sx.get(headCharPosition - 1)).mkString() + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);

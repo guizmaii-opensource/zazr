@@ -21,7 +21,7 @@
 | `splitAt(int)` | <abbr class="cx cx-linear" title="O(k) for the first k elements; they are copied, the rest of this List is shared.">O(k)</abbr> | O(k) for the first k elements; they are copied, the rest of this List is shared. |
 | `reverse` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons; the elements are copied to an array and sorted there.">O(n log n)</abbr> | O(n log n) comparisons; the elements are copied to an array and sorted there. |
-| `length` | <abbr class="cx cx-linear" title="O(n): a List does not store its size, so every call counts the elements.">O(n)</abbr> | O(n): a List does not store its size, so every call counts the elements. |
+| `size` | <abbr class="cx cx-linear" title="O(n): a List does not store its size, so every call counts the elements. isEmpty is O(1).">O(n)</abbr> | O(n): a List does not store its size, so every call counts the elements. isEmpty is O(1). |
 | `contains` | <abbr class="cx cx-linear" title="O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup.">O(n)</abbr> | O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup. |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for an argument of m elements.">O(min(n, m))</abbr> | O(min(n, m)) for an argument of m elements. |

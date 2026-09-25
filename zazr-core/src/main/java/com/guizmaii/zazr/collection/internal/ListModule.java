@@ -14,7 +14,7 @@ public interface ListModule {
     interface Combinations {
 
         static <T extends @Nullable Object> List<List<T>> apply(List<T> elements, int k) {
-            return combine(elements, elements.length(), k);
+            return combine(elements, elements.size(), k);
         }
 
         // Walks the tails of elements (of the given length): each element, followed by every combination of k - 1
@@ -68,14 +68,14 @@ public interface ListModule {
             if (source.isEmpty()) {
                 return _slice.isEmpty() ? 0 : -1;
             } else if (_slice.isEmpty()) {
-                final int len = source.length();
+                final int len = source.size();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
-            // lengths once, then counted down: List.length() walks the list
-            final int sliceLength = _slice.length();
-            int remaining = source.length();
+            // lengths once, then counted down: List.size() walks the list
+            final int sliceLength = _slice.size();
+            int remaining = source.size();
             while (remaining >= sliceLength) {
                 final int found = findNextSlice(source, _slice, remaining, sliceLength);
                 if (found < 0) {
@@ -94,15 +94,15 @@ public interface ListModule {
 
         private static <T extends @Nullable Object> int findFirstSlice(List<T> source, List<T> slice, int from) {
             int index = 0;
-            final int sliceLength = slice.length();
-            // length once, then counted down: List.length() walks the list
-            int remaining = source.length();
+            final int sliceLength = slice.size();
+            // length once, then counted down: List.size() walks the list
+            int remaining = source.size();
             while (remaining >= sliceLength) {
                 if (index >= from && source.startsWith(slice)) {
                     return index;
                 }
                 if (source.isEmpty()) {
-                    // only reachable for an empty slice with from > length()
+                    // only reachable for an empty slice with from > size()
                     return -1;
                 }
                 index++;

@@ -475,7 +475,7 @@ def generateTestClasses(): Unit = {
                             )));
                 final CheckResult result = Property.named("test")
                         .forAll(ints, strings)
-                        .suchThat((is, ss) -> is.length() == ss.length())
+                        .suchThat((is, ss) -> is.size() == ss.size())
                         .implies((is, ss) -> is.zip(ss).unzip(t -> t).equals($tuple.of(is, ss)))
                         .check();
                 $assertThat(result.isSatisfied()).isTrue();

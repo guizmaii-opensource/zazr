@@ -413,7 +413,7 @@ public final class Collections {
         } else if (iterable instanceof Vector) {
             final Vector<T> vector = (Vector<T>) iterable;
             return new AbstractIterator<T>() {
-                private int i = vector.length();
+                private int i = vector.size();
 
                 @Override
                 public boolean hasNext() {

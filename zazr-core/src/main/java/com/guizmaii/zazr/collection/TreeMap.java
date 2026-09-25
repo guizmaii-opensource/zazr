@@ -1304,6 +1304,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return new TreeMap<>(tree);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the size is stored.
+     */
     @Override
     public int size() {
         return entries.size();

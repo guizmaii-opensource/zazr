@@ -919,19 +919,19 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * All combinations of the elements, for every size from 0 to {@code length()}, by position.
+     * All combinations of the elements, for every size from 0 to {@code size()}, by position.
      * <p>
      * Complexity: O(n * 2^n): 2^n combinations of up to n elements each.
      *
      * @return the combinations, shortest first
      */
     default List<List<T>> combinations() {
-        return rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity());
+        return rangeClosed(0, size()).map(this::combinations).flatMap(Function.identity());
     }
 
     /**
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
-     * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
+     * counts as 0, and a {@code k} greater than {@code size()} gives no combination.
      * <p>
      * Complexity: O(k * C(n, k)): C(n, k) combinations of k elements each. The length is counted first, O(n).
      *
@@ -1101,7 +1101,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n <= 0) {
             return this;
         }
-        final int length = length();
+        final int length = size();
         if (n >= length) {
             return empty();
         }
@@ -1197,7 +1197,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
         final List<? extends T> suffix = List.ofAll(that);
-        final int skipped = length() - suffix.length();
+        final int skipped = size() - suffix.size();
         if (skipped < 0) {
             return false;
         }
@@ -1227,7 +1227,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             final List<T> filtered = foldLeft(empty(), (xs, x) -> predicate.test(x) ? xs.prepend(x) : xs);
             if (filtered.isEmpty()) {
                 return empty();
-            } else if (filtered.length() == length()) {
+            } else if (filtered.size() == size()) {
                 return this;
             } else {
                 return filtered.reverse();
@@ -1282,7 +1282,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param index the position
      * @return the element at that position
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     default T get(int index) {
         if (isEmpty()) {
@@ -1502,17 +1502,6 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Returns the number of elements in this List.
-     * <p>
-     * Equivalent to {@link #size()}.
-     * <p>
-     * Complexity: O(n): a List does not store its size, so every call counts the elements.
-     *
-     * @return the number of elements
-     */
-    int length();
-
-    /**
      * A new List with {@code element} inserted at {@code index}, the elements from {@code index} on shifted right.
      * <p>
      * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
@@ -1520,7 +1509,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param index   the position of the inserted element
      * @param element the element to insert
      * @return a new List
-     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code size()}
      */
     default List<T> insert(int index, T element) {
         if (index < 0) {
@@ -1530,7 +1519,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T> tail = this;
         for (int i = index; i > 0; i--, tail = tail.tail()) {
             if (tail.isEmpty()) {
-                throw new IndexOutOfBoundsException("insert(" + index + ", e) on List of length " + length());
+                throw new IndexOutOfBoundsException("insert(" + index + ", e) on List of length " + size());
             }
             preceding = preceding.prepend(tail.head());
         }
@@ -1550,7 +1539,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
      * @return a new List
-     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code size()}
      * @throws NullPointerException      if {@code elements} is null
      */
     default List<T> insertAll(int index, Iterable<? extends T> elements) {
@@ -1562,7 +1551,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T> tail = this;
         for (int i = index; i > 0; i--, tail = tail.tail()) {
             if (tail.isEmpty()) {
-                throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on List of length " + length());
+                throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on List of length " + size());
             }
             preceding = preceding.prepend(tail.head());
         }
@@ -1710,7 +1699,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @throws NullPointerException if {@code predicate} is null
      */
     default int lastIndexWhere(Predicate<? super T> predicate) {
-        return lastIndexWhere(predicate, length() - 1);
+        return lastIndexWhere(predicate, size() - 1);
     }
 
     /**
@@ -1804,7 +1793,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new List, or this List if it is already at least {@code length} long
      */
     default List<T> padTo(int length, T element) {
-        final int actualLength = length();
+        final int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -2163,7 +2152,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default List<T> removeLast(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final List<T> removedAndReversed = reverse().removeFirst(predicate);
-        return removedAndReversed.length() == length() ? this : removedAndReversed.reverse();
+        return removedAndReversed.size() == size() ? this : removedAndReversed.reverse();
     }
 
     /**
@@ -2173,7 +2162,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param index the position of the removed element
      * @return a new List
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     default List<T> removeAt(int index) {
         if (index < 0) {
@@ -2190,7 +2179,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             index--;
         }
         if (index > 0 || tail.isEmpty()) {
-            throw new IndexOutOfBoundsException("removeAt(" + (index + init.length()) + ") on List of length " + length());
+            throw new IndexOutOfBoundsException("removeAt(" + (index + init.size()) + ") on List of length " + size());
         }
         return init.reverse().appendAll(tail.tail());
     }
@@ -2321,11 +2310,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return the rotated List, or this List if the rotation is a multiple of the length
      */
     default List<T> rotateLeft(int n) {
-        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2339,11 +2328,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return the rotated List, or this List if the rotation is a multiple of the length
      */
     default List<T> rotateRight(int n) {
-        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2672,7 +2661,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param beginIndex the first position
      * @return a new List
-     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code size()}
      */
     default List<T> subSequence(int beginIndex) {
         if (beginIndex < 0) {
@@ -2695,22 +2684,22 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
      * @return a new List
-     * @throws IndexOutOfBoundsException if the range is not within {@code [0, length()]}
+     * @throws IndexOutOfBoundsException if the range is not within {@code [0, size()]}
      * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
      */
     default List<T> subSequence(int beginIndex, int endIndex) {
         // the checks walk the first endIndex cells, not the whole List; the length is counted only to throw
         if (beginIndex < 0) {
-            Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+            Collections.subSequenceRangeCheck(beginIndex, endIndex, size());
         }
         List<T> rest = this;
         for (int i = 0; i < endIndex; i++, rest = rest.tail()) {
             if (rest.isEmpty()) {
-                Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+                Collections.subSequenceRangeCheck(beginIndex, endIndex, size());
             }
         }
         if (beginIndex > endIndex) {
-            Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+            Collections.subSequenceRangeCheck(beginIndex, endIndex, size());
         }
         if (beginIndex == endIndex) {
             return empty();
@@ -2745,7 +2734,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns the first {@code n} elements of this {@code List}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(k) for k taken elements; they are copied. A List of at most k elements is returned as is.
      *
@@ -2817,7 +2806,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns the last {@code n} elements of this {@code List}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n); the length is counted, and the List is copied twice (reversed, then reversed back).
      *
@@ -2828,7 +2817,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n <= 0) {
             return empty();
         }
-        if (n >= length()) {
+        if (n >= size()) {
             return this;
         }
         return reverse().take(n).reverse();
@@ -2898,7 +2887,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param index   the position to update
      * @param element the new element
      * @return a new List
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     default List<T> update(int index, T element) {
         if (isEmpty()) {
@@ -2911,12 +2900,12 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T> tail = this;
         for (int i = index; i > 0; i--, tail = tail.tail()) {
             if (tail.isEmpty()) {
-                throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + length());
+                throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + size());
             }
             preceding = preceding.prepend(tail.head());
         }
         if (tail.isEmpty()) {
-            throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + length());
+            throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + size());
         }
         // skip the current head element because it is replaced
         List<T> result = tail.tail().prepend(element);
@@ -2934,7 +2923,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param index   the position to update
      * @param updater computes the new element from the current one
      * @return a new List
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      * @throws NullPointerException      if {@code updater} is null
      */
     default List<T> update(int index, Function<? super T, ? extends T> updater) {
@@ -3063,7 +3052,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         }
 
         @Override
-        public int length() {
+        public int size() {
             return 0;
         }
 
@@ -3118,14 +3107,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         }
 
         @Override
-        public int length() {
-            // Walks the list: a record has no field for a cached length. Scala's List does the same;
-            // a length component would leak into every record pattern and allow inconsistent instances.
-            int length = 0;
+        public int size() {
+            // Walks the list: a record has no field for a cached size. Scala's List does the same;
+            // a size component would leak into every record pattern and allow inconsistent instances.
+            int size = 0;
             for (List<T> list = this; !list.isEmpty(); list = list.tail()) {
-                length++;
+                size++;
             }
-            return length;
+            return size;
         }
 
         @Override
@@ -3608,16 +3597,15 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * The number of elements; the same as {@link #length()}.
+     * The number of elements.
      * <p>
-     * Complexity: O(n), as {@link #length()}: a List does not store its size.
+     * Complexity: O(n): a List does not store its size, so every call counts the elements. {@link #isEmpty()} is
+     * O(1).
      *
      * @return the number of elements
      */
     @Override
-    default int size() {
-        return length();
-    }
+    int size();
 
     /**
      * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.

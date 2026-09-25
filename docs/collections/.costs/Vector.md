@@ -21,7 +21,7 @@
 | `splitAt(int)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one take and one drop; both parts share their elements with this Vector.">effectively O(1)</abbr> | effectively O(1): one take and one drop; both parts share their elements with this Vector. |
 | `reverse` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons; the elements are copied to an array and sorted there.">O(n log n)</abbr> | O(n log n) comparisons; the elements are copied to an array and sorted there. |
-| `length` | <abbr class="cx cx-constant" title="O(1): the length is stored.">O(1)</abbr> | O(1): the length is stored. |
+| `size` | <abbr class="cx cx-constant" title="O(1): the size is stored.">O(1)</abbr> | O(1): the size is stored. |
 | `contains` | <abbr class="cx cx-linear" title="O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup.">O(n)</abbr> | O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup. |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for m elements of that.">O(min(n, m))</abbr> | O(min(n, m)) for m elements of that. |

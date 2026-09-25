@@ -932,7 +932,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public int lastIndexWhere(Predicate<? super T> predicate) {
-        return lastIndexWhere(predicate, length() - 1);
+        return lastIndexWhere(predicate, size() - 1);
     }
 
     /**
@@ -1257,7 +1257,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * All combinations of the elements, for every size from 0 to {@code length()}, by position.
+     * All combinations of the elements, for every size from 0 to {@code size()}, by position.
      * <p>
      * Complexity: O(n * 2^n): 2^n combinations of up to n elements each.
      *
@@ -1269,7 +1269,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     /**
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
-     * counts as 0, and a {@code k} greater than {@code length()} gives no combination.
+     * counts as 0, and a {@code k} greater than {@code size()} gives no combination.
      * <p>
      * Complexity: O(k * C(n, k)): C(n, k) combinations of k elements each, after an O(n) copy of this Queue.
      *
@@ -1399,10 +1399,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n <= 0) {
             return this;
         }
-        if (n >= length()) {
+        if (n >= size()) {
             return empty();
         }
-        return new Queue<>(front.drop(n), rear.dropRight(n - front.length()));
+        return new Queue<>(front.drop(n), rear.dropRight(n - front.size()));
     }
 
     /**
@@ -1421,7 +1421,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final List<T> dropped = toList().dropWhile(predicate);
-        return ofAll(dropped.length() == length() ? this : dropped);
+        return ofAll(dropped.size() == size() ? this : dropped);
     }
 
     /**
@@ -1437,10 +1437,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n <= 0) {
             return this;
         }
-        if (n >= length()) {
+        if (n >= size()) {
             return empty();
         }
-        return new Queue<>(front.dropRight(n - rear.length()), rear.drop(n));
+        return new Queue<>(front.dropRight(n - rear.size()), rear.drop(n));
     }
 
     /**
@@ -1487,7 +1487,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
         if (filtered.isEmpty()) {
             return empty();
-        } else if (filtered.length() == length()) {
+        } else if (filtered.size() == size()) {
             return this;
         } else {
             return ofAll(filtered);
@@ -1511,7 +1511,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param index the position
      * @return the element at that position
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     public T get(int index) {
         if (isEmpty()) {
@@ -1520,7 +1520,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
-        // walk the front instead of measuring it: List.length() is O(n)
+        // walk the front instead of measuring it: List.size() is O(n)
         int remaining = index;
         List<T> list = front;
         while (remaining > 0 && !list.isEmpty()) {
@@ -1531,7 +1531,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             return list.head();
         }
         final int rearIndex = remaining;
-        final int rearLength = rear.length();
+        final int rearLength = rear.size();
         if (rearIndex < rearLength) {
             return rear.get(rearLength - rearIndex - 1);
         } else {
@@ -1575,7 +1575,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             return frontIndex;
         } else {
             // we need to reverse because we search the first occurrence
-            final int frontLength = front.length();
+            final int frontLength = front.size();
             final int rearIndex = rear.reverse().indexOf(element, from - frontLength);
             return (rearIndex == -1) ? -1 : rearIndex + frontLength;
         }
@@ -1606,7 +1606,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     // init() of a Queue whose rear is empty: the first half of the front stays the front, the second half without its
     // last element becomes the rear (reversed), so that the next init() calls take from the rear in O(1)
     private Queue<T> initOfFront() {
-        final int length = front.length();
+        final int length = front.size();
         if (length == 1) {
             return empty();
         }
@@ -1631,23 +1631,23 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param index   the position of the inserted element
      * @param element the element to insert
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code size()}
      */
     public Queue<T> insert(int index, T element) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insert(" + index + ", element)");
         }
-        final int length = front.length();
+        final int length = front.size();
         if (index <= length) {
             return new Queue<>(front.insert(index, element), rear);
         } else {
             final int rearIndex = index - length;
-            final int rearLength = rear.length();
+            final int rearLength = rear.size();
             if (rearIndex <= rearLength) {
                 final int reverseRearIndex = rearLength - rearIndex;
                 return new Queue<>(front, rear.insert(reverseRearIndex, element));
             } else {
-                throw new IndexOutOfBoundsException("insert(" + index + ", element) on Queue of length " + length());
+                throw new IndexOutOfBoundsException("insert(" + index + ", element) on Queue of length " + size());
             }
         }
     }
@@ -1661,7 +1661,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or greater than {@code size()}
      * @throws NullPointerException      if {@code elements} is null
      */
     @SuppressWarnings("unchecked")
@@ -1670,7 +1670,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements)");
         }
-        final int length = front.length();
+        final int length = front.size();
         if (index <= length) {
             if (isEmpty() && elements instanceof Queue) {
                 return (Queue<T>) elements;
@@ -1680,13 +1680,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             }
         } else {
             final int rearIndex = index - length;
-            final int rearLength = rear.length();
+            final int rearLength = rear.size();
             if (rearIndex <= rearLength) {
                 final int reverseRearIndex = rearLength - rearIndex;
                 final com.guizmaii.zazr.collection.List<T> newRear = rear.insertAll(reverseRearIndex, com.guizmaii.zazr.collection.List.ofAll(elements).reverse());
                 return (newRear == rear) ? this : new Queue<>(front, newRear);
             } else {
-                throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on Queue of length " + length());
+                throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on Queue of length " + size());
             }
         }
     }
@@ -1755,18 +1755,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return toList().lastIndexOf(element, end);
     }
 
-    /**
-     * Returns the number of elements in this Queue.
-     * <p>
-     * Equivalent to {@link #size()}.
-     * <p>
-     * Complexity: O(n): the elements are counted. {@link #isEmpty()} is O(1).
-     *
-     * @return the number of elements
-     */
-    public int length() {
-        return front.length() + rear.length();
-    }
 
     public <U extends @Nullable Object> Queue<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1801,7 +1789,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if it is already at least {@code length} long
      */
     public Queue<T> padTo(int length, T element) {
-        final int actualLength = length();
+        final int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -1819,7 +1807,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if it is already at least {@code length} long
      */
     public Queue<T> leftPadTo(int length, T element) {
-        final int actualLength = length();
+        final int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -1932,7 +1920,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> remove(T element) {
         final com.guizmaii.zazr.collection.List<T> removed = toList().remove(element);
-        return ofAll(removed.length() == length() ? this : removed);
+        return ofAll(removed.size() == size() ? this : removed);
     }
 
     /**
@@ -1946,7 +1934,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> removeFirst(Predicate<T> predicate) {
         final com.guizmaii.zazr.collection.List<T> removed = toList().removeFirst(predicate);
-        return ofAll(removed.length() == length() ? this : removed);
+        return ofAll(removed.size() == size() ? this : removed);
     }
 
     /**
@@ -1960,7 +1948,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> removeLast(Predicate<T> predicate) {
         final com.guizmaii.zazr.collection.List<T> removed = toList().removeLast(predicate);
-        return ofAll(removed.length() == length() ? this : removed);
+        return ofAll(removed.size() == size() ? this : removed);
     }
 
     /**
@@ -1970,7 +1958,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param index the position of the removed element
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     public Queue<T> removeAt(int index) {
         return ofAll(toList().removeAt(index));
@@ -2048,11 +2036,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
      */
     public Queue<T> rotateLeft(int n) {
-        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2066,11 +2054,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
      */
     public Queue<T> rotateRight(int n) {
-        // n == 0 before length(): a no-op rotation must not walk the elements, let alone force a lazy sequence
+        // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2297,10 +2285,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param beginIndex the first position
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code size()}
      */
     public Queue<T> subSequence(int beginIndex) {
-        if (beginIndex < 0 || beginIndex > length()) {
+        if (beginIndex < 0 || beginIndex > size()) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
         } else {
             return drop(beginIndex);
@@ -2315,14 +2303,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if the range is not within {@code [0, length()]}
+     * @throws IndexOutOfBoundsException if the range is not within {@code [0, size()]}
      * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
      */
     public Queue<T> subSequence(int beginIndex, int endIndex) {
-        Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+        Collections.subSequenceRangeCheck(beginIndex, endIndex, size());
         if (beginIndex == endIndex) {
             return empty();
-        } else if (beginIndex == 0 && endIndex == length()) {
+        } else if (beginIndex == 0 && endIndex == size()) {
             return this;
         } else {
             return ofAll(toList().subSequence(beginIndex, endIndex));
@@ -2350,7 +2338,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns the first {@code n} elements of this {@code Queue}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n).
      *
@@ -2361,10 +2349,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n <= 0) {
             return empty();
         }
-        if (n >= length()) {
+        if (n >= size()) {
             return this;
         }
-        final int frontLength = front.length();
+        final int frontLength = front.size();
         if (n < frontLength) {
             return new Queue<>(front.take(n), com.guizmaii.zazr.collection.List.empty());
         } else if (n == frontLength) {
@@ -2389,13 +2377,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final com.guizmaii.zazr.collection.List<T> taken = toList().takeUntil(predicate);
-        return taken.length() == length() ? this : ofAll(taken);
+        return taken.size() == size() ? this : ofAll(taken);
     }
 
     /**
      * Returns the last {@code n} elements of this {@code Queue}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n).
      *
@@ -2406,10 +2394,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n <= 0) {
             return empty();
         }
-        if (n >= length()) {
+        if (n >= size()) {
             return this;
         }
-        final int rearLength = rear.length();
+        final int rearLength = rear.size();
         if (n < rearLength) {
             return new Queue<>(rear.take(n).reverse(), com.guizmaii.zazr.collection.List.empty());
         } else if (n == rearLength) {
@@ -2431,7 +2419,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final com.guizmaii.zazr.collection.List<T> taken = toList().takeRightUntil(predicate);
-        return taken.length() == length() ? this : ofAll(taken);
+        return taken.size() == size() ? this : ofAll(taken);
     }
 
     /**
@@ -2467,7 +2455,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param index   the position to update
      * @param element the new element
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     public Queue<T> update(int index, T element) {
         return ofAll(toList().update(index, element));
@@ -2481,7 +2469,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param index   the position to update
      * @param updater computes the new element from the current one
      * @return a new Queue
-     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code length()}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      * @throws NullPointerException      if {@code updater} is null
      */
     public Queue<T> update(int index, Function<? super T, ? extends T> updater) {
@@ -3210,15 +3198,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * The number of elements; the same as {@link #length()}.
+     * The number of elements.
      * <p>
-     * Complexity: O(n), as {@link #length()}. {@link #isEmpty()} is O(1).
+     * Complexity: O(n): the elements are counted. {@link #isEmpty()} is O(1).
      *
      * @return the number of elements
      */
     @Override
     public int size() {
-        return length();
+        return front.size() + rear.size();
     }
 
     /**

@@ -37,7 +37,7 @@ public class Euler39Test {
 
     private static int perimeterUpTo1000WithMaximisedNumberOfSolutions() {
         return SOLUTIONS_FOR_PERIMETERS_UP_TO_1000
-                .map((perimeter, listOfSolutions) -> Tuple.of(perimeter, listOfSolutions.length()))
+                .map((perimeter, listOfSolutions) -> Tuple.of(perimeter, listOfSolutions.size()))
                 .maxBy(Tuple2::_2)
                 .get()._1();
     }

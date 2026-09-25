@@ -416,7 +416,7 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : sizes) {
                 final Vector<Integer> actual = Vector.range(0, n).collect(i -> Option.some(i + 1));
                 assertThat(actual).isEqualTo(Vector.range(1, n + 1));
-                assertThat(actual.length()).isEqualTo(n);
+                assertThat(actual.size()).isEqualTo(n);
             }
         }
 
@@ -425,7 +425,7 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : sizes) {
                 final Vector<Integer> actual = Vector.range(0, n).collect(i -> i % 2 == 0 ? Option.some(i) : Option.none());
                 assertThat(actual).isEqualTo(Vector.range(0, n).filter(i -> i % 2 == 0));
-                assertThat(actual.length()).isEqualTo((n + 1) / 2);
+                assertThat(actual.size()).isEqualTo((n + 1) / 2);
             }
         }
 
@@ -1975,7 +1975,7 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateLeftForPositiveModuloLen() {
             Vector<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateLeft(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateLeft(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -2024,7 +2024,7 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateRightForPositiveModuloLen() {
             Vector<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateRight(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateRight(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -2902,7 +2902,7 @@ public class VectorTest extends AbstractTraversableTest {
     class IndexSearchTests {
 
         private int referenceIndexOf(Vector<Integer> vector, int element, int from) {
-            for (int i = Math.max(from, 0); i < vector.length(); i++) {
+            for (int i = Math.max(from, 0); i < vector.size(); i++) {
                 if (vector.get(i) == element) {
                     return i;
                 }
@@ -2911,7 +2911,7 @@ public class VectorTest extends AbstractTraversableTest {
         }
 
         private int referenceLastIndexOf(Vector<Integer> vector, int element, int end) {
-            for (int i = Math.min(end, vector.length() - 1); i >= 0; i--) {
+            for (int i = Math.min(end, vector.size() - 1); i >= 0; i--) {
                 if (vector.get(i) == element) {
                     return i;
                 }
@@ -4337,12 +4337,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeLengthOfNil() {
-        assertThat(empty().length()).isEqualTo(0);
+        assertThat(empty().size()).isEqualTo(0);
     }
 
     @TestTemplate
     public void shouldComputeLengthOfNonNil() {
-        assertThat(of(1, 2, 3).length()).isEqualTo(3);
+        assertThat(of(1, 2, 3).size()).isEqualTo(3);
     }
 
     // -- max
@@ -5006,7 +5006,7 @@ public class VectorTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -5016,7 +5016,7 @@ public class VectorTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -5026,7 +5026,7 @@ public class VectorTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     // -- slideBy(classifier)

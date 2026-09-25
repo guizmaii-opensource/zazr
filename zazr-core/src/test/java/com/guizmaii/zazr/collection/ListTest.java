@@ -1767,7 +1767,7 @@ public class ListTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateLeftForPositiveModuloLen() {
             List<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateLeft(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateLeft(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -1816,7 +1816,7 @@ public class ListTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateRightForPositiveModuloLen() {
             List<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateRight(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateRight(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -2725,7 +2725,7 @@ public class ListTest extends AbstractTraversableTest {
             assertThat(cons.drop(2)).isEqualTo(List.of(3, 2, 1));
             assertThat(nil.iterator().hasNext()).isFalse();
             assertThat(nil.crossProduct().isEmpty()).isTrue();
-            assertThat(List.of(1, 2).crossProduct().toList().length()).isEqualTo(4);
+            assertThat(List.of(1, 2).crossProduct().toList().size()).isEqualTo(4);
         }
 
         @Test
@@ -3401,12 +3401,12 @@ public class ListTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeLengthOfNil() {
-        assertThat(empty().length()).isEqualTo(0);
+        assertThat(empty().size()).isEqualTo(0);
     }
 
     @TestTemplate
     public void shouldComputeLengthOfNonNil() {
-        assertThat(of(1, 2, 3).length()).isEqualTo(3);
+        assertThat(of(1, 2, 3).size()).isEqualTo(3);
     }
 
     // -- max
@@ -4070,7 +4070,7 @@ public class ListTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -4080,7 +4080,7 @@ public class ListTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -4090,7 +4090,7 @@ public class ListTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     // -- slideBy(classifier)
@@ -5761,7 +5761,7 @@ public class ListTest extends AbstractTraversableTest {
                     list.subSequence(2), list.subSequence(2, 5), list.subSequence(0, 5), list.takeWhile(x -> true));
             final List<List<Integer>> expected = List.of(List.range(0, 5), List.range(0, 5), List.range(2, 5), List.range(2, 5), List.range(0, 5),
                     List.range(2, 5), List.range(2, 5), List.range(0, 5), List.range(0, 5));
-            for (int i = 0; i < results.length(); i++) {
+            for (int i = 0; i < results.size(); i++) {
                 final List<Integer> result = results.get(i);
                 final List<Integer> want = expected.get(i);
                 assertThat(result.prepend(-1).append(9).update(1, 7).remove(4).reverse().toVector())

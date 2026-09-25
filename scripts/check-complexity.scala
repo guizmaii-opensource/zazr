@@ -39,7 +39,7 @@ val documented: Set[String] = Set(
   "removeLast", "replace", "replaceAll", "leftPadTo", "asJava",
   "span", "retainAll", "transpose", "tailOption", "initOption", "iterator",
   // the same, under the names the cons list, the queue, the lazy list and the maps give them
-  "asJavaMap", "length", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
+  "asJavaMap", "size", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
   "segmentLength", "splitAtInclusive", "distinctByKeepLast", "dropRightUntil", "dropRightWhile", "takeRightUntil",
   "takeRightWhile", "duplicates", "duplicatesBy",
   "peek", "peekOption", "pop", "popOption", "pop2", "pop2Option", "push", "pushAll",
@@ -323,7 +323,7 @@ val families: List[Family] = List(
       "operations compute their result as it is read.",
     List("Vector", "List", "Queue", "Stream", "NonEmptyVector"),
     List("head", "tail", "last", "init", "get", "update", "prepend", "append", "prependAll", "appendAll", "insert",
-      "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "length", "contains", "indexOf",
+      "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "size", "contains", "indexOf",
       "zip", "sliding", "grouped", "distinct", "concat")
   ),
   Family(

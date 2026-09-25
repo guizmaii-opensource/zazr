@@ -93,8 +93,8 @@ public class ArbitraryTest {
     @Test
     public void shouldFavorEmptySingletonAndMaximumLengths() {
         assertLengthEdges(Arbitrary.string(Gen.of('a')).apply(100).map(String::length));
-        assertLengthEdges(Arbitrary.list(Arbitrary.of(1)).apply(100).map(List::length));
-        assertLengthEdges(Arbitrary.stream(Arbitrary.of(1)).apply(100).map(Stream::length));
+        assertLengthEdges(Arbitrary.list(Arbitrary.of(1)).apply(100).map(List::size));
+        assertLengthEdges(Arbitrary.stream(Arbitrary.of(1)).apply(100).map(Stream::size));
     }
 
     @Test
@@ -103,9 +103,9 @@ public class ArbitraryTest {
             final int max = size;
             assertThat(samples(Arbitrary.string(Gen.of('a')).apply(size).map(String::length)))
                     .contains(0, size).allMatch(length -> length >= 0 && length <= max);
-            assertThat(samples(Arbitrary.list(Arbitrary.of(1)).apply(size).map(List::length)))
+            assertThat(samples(Arbitrary.list(Arbitrary.of(1)).apply(size).map(List::size)))
                     .contains(0, size).allMatch(length -> length >= 0 && length <= max);
-            assertThat(samples(Arbitrary.stream(Arbitrary.of(1)).apply(size).map(Stream::length)))
+            assertThat(samples(Arbitrary.stream(Arbitrary.of(1)).apply(size).map(Stream::size)))
                     .contains(0, size).allMatch(length -> length >= 0 && length <= max);
         }
     }
@@ -154,7 +154,7 @@ public class ArbitraryTest {
         List.range(0, 1000)
                 .map(i -> arbitrary.apply(RANDOM))
                 .groupBy(Function.identity())
-                .forEach((key, value) -> assertThat(value.length())
+                .forEach((key, value) -> assertThat(value.size())
                         .describedAs(key)
                         .isGreaterThan(1));
     }
@@ -165,7 +165,7 @@ public class ArbitraryTest {
         List.range(0, 1000)
                 .map(i -> distinctArbitrary.apply(RANDOM))
                 .groupBy(Function.identity())
-                .forEach((key, value) -> assertThat(value.length())
+                .forEach((key, value) -> assertThat(value.size())
                         .describedAs(key)
                         .isEqualTo(1));
     }
@@ -177,7 +177,7 @@ public class ArbitraryTest {
         List.range(0, 10000)
                 .map(i -> distinctByArbitrary.apply(RANDOM))
                 .groupBy(Function.identity())
-                .forEach((key, value) -> assertThat(value.length())
+                .forEach((key, value) -> assertThat(value.size())
                         .describedAs(key)
                         .isEqualTo(1));
     }
@@ -226,7 +226,7 @@ public class ArbitraryTest {
                 return bound - 1;
             }
         });
-        assertThat(actual.length()).isEqualTo(10);
+        assertThat(actual.size()).isEqualTo(10);
     }
 
     @Test

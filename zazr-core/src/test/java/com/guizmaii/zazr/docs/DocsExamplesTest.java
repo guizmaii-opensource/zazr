@@ -1115,7 +1115,7 @@ public class DocsExamplesTest {
         void whenToChooseIt() {
             var list = List.of(1, 2, 3);
             var first = switch (list) {
-                case Cons(var head, var tail) -> "head " + head + ", then " + tail.length() + " more";
+                case Cons(var head, var tail) -> "head " + head + ", then " + tail.size() + " more";
                 case Nil() -> "empty";
             };
             // "head 1, then 2 more"

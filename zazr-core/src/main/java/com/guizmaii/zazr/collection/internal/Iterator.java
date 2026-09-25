@@ -1530,7 +1530,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
                 private com.guizmaii.zazr.collection.Queue<T> queue = com.guizmaii.zazr.collection.Queue.empty();
-                private int size = 0; // queue.length() walks the queue's lists, so the size is counted here
+                private int size = 0; // queue.size() walks the queue's lists, so the size is counted here
 
                 @Override
                 public boolean hasNext() {
@@ -1918,7 +1918,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             final Iterator<T> that = this;
             return new AbstractIterator<T>() {
                 private com.guizmaii.zazr.collection.Queue<T> queue = com.guizmaii.zazr.collection.Queue.empty();
-                private int size = 0; // queue.length() walks the queue's lists, so the size is counted here
+                private int size = 0; // queue.size() walks the queue's lists, so the size is counted here
 
                 @Override
                 public boolean hasNext() {

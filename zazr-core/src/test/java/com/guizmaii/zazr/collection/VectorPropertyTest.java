@@ -148,7 +148,7 @@ public class VectorPropertyTest {
                 expected = expected.drop(drop); // test the `trailing` drops and the internal tree offset
                 actual = assertAreEqual(actual, drop, Vector::drop, expected);
 
-                for (int i = 0; i < actual.length(); i++) {
+                for (int i = 0; i < actual.size(); i++) {
                     final Integer newValue = mapper.apply(actual.get(i));
                     actual = actual.update(i, newValue);
                 }
@@ -164,7 +164,7 @@ public class VectorPropertyTest {
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
-        for (int i = 0; i <= expected.length(); i++) {
+        for (int i = 0; i <= expected.size(); i++) {
             final com.guizmaii.zazr.collection.List<Integer> expectedDrop = expected.drop(i);
 
             assertAreEqual(actual, i, Vector::drop, expectedDrop);
@@ -180,7 +180,7 @@ public class VectorPropertyTest {
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
-        for (int i = 0; i <= expected.length(); i++) {
+        for (int i = 0; i <= expected.size(); i++) {
             final com.guizmaii.zazr.collection.List<Integer> expectedDrop = expected.dropRight(i);
 
             assertAreEqual(actual, i, Vector::dropRight, expectedDrop);
@@ -196,7 +196,7 @@ public class VectorPropertyTest {
             com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
             Vector<Integer> actual = Vector.ofAll(expected);
 
-            for (int i = 0; i <= expected.length(); i++) {
+            for (int i = 0; i <= expected.size(); i++) {
                 expected = expected.slice(1, expected.size() - 1);
                 actual = assertAreEqual(actual, i, (a, p) -> a.slice(1, a.size() - 1), expected);
             }

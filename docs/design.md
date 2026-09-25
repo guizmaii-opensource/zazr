@@ -651,9 +651,9 @@ now has every operation of `Vector`, each under the same contract, delegating to
 - **Deliberately absent:** `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`, `reduceRightOption`,
   `singleOption` (the `Option` forms of what is total here, or of `single`); `tailOption`, `initOption` (`tail` and
   `init` already return a `Vector`, and `tailNonEmpty`/`initNonEmpty` are the narrowing); `isEmpty`, `nonEmpty`,
-  `orElse`, `toNonEmptyVector` (constant on this type: false, true, `this`, `Some(this)`); `length` (`size` is the one
-  spelling, decided with the maintainer on 2026-09-25; the removal of `length` from `Vector`, `List`, `Queue` and
-  `Stream` is a separate change, #90 again, which also takes it off this list). `NonEmptyVectorTest` asserts
+  `orElse`, `toNonEmptyVector` (constant on this type: false, true, `this`, `Some(this)`). `size` is the one spelling
+  of the number of elements (decided with the maintainer on 2026-09-25): `Vector`, `List`, `Queue` and `Stream` lost
+  `length` in #94, so it is on no list. `NonEmptyVectorTest` asserts
   reflectively that every public instance method name of `Vector` exists on `NonEmptyVector` except exactly this
   list, and that every overload whose result holds a `NonEmptyVector` (directly, or in a tuple, a `Vector`, a map or
   an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the

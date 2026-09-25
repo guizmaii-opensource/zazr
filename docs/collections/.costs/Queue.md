@@ -21,7 +21,7 @@
 | `splitAt(int)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `reverse` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons.">O(n log n)</abbr> | O(n log n) comparisons. |
-| `length` | <abbr class="cx cx-linear" title="O(n): the elements are counted. isEmpty is O(1).">O(n)</abbr> | O(n): the elements are counted. isEmpty is O(1). |
+| `size` | <abbr class="cx cx-linear" title="O(n): the elements are counted. isEmpty is O(1).">O(n)</abbr> | O(n): the elements are counted. isEmpty is O(1). |
 | `contains` | <abbr class="cx cx-linear" title="O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup.">O(n)</abbr> | O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup. |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(n); O(min(n, m)) for an argument of m elements when the pairing stops before the elements held at the back, which it must otherwise put in order. On a Queue built by enqueue, even a one-element argument costs O(n).">O(n)</abbr> | O(n); O(min(n, m)) for an argument of m elements when the pairing stops before the elements held at the back, which it must otherwise put in order. On a Queue built by enqueue, even a one-element argument costs O(n). |

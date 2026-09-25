@@ -40,7 +40,7 @@ public class Euler57Test {
         return fractions()
                 .take(1000)
                 .filter(f -> f._1().toPlainString().length() > f._2().toPlainString().length())
-                .length();
+                .size();
     }
 
     private static Stream<Tuple2<BigDecimal, BigDecimal>> fractions() {

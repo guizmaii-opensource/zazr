@@ -1512,9 +1512,7 @@ public class NonEmptyVectorTest {
                 // tail and init already return a Vector
                 "tailOption", "initOption",
                 // constant on a non-empty vector: false, true, this, Some(this)
-                "isEmpty", "nonEmpty", "orElse", "toNonEmptyVector",
-                // size is the one spelling; Vector's length is to go as well, taking this entry with it
-                "length"
+                "isEmpty", "nonEmpty", "orElse", "toNonEmptyVector"
         );
 
         static java.util.Set<String> publicInstanceMethodNames(Class<?> type) {

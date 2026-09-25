@@ -318,8 +318,8 @@ public class SealedTypesTest {
         public void shouldBuildFromRecordConstructorsAndWalkLength() {
             final List<Integer> list = new Cons<>(1, new Cons<>(2, new Cons<>(3, Nil.instance())));
             assertThat(list).isEqualTo(List.of(1, 2, 3)).hasSameHashCodeAs(List.of(1, 2, 3));
-            assertThat(list.length()).isEqualTo(3);
-            assertThat(list.tail().length()).isEqualTo(2);
+            assertThat(list.size()).isEqualTo(3);
+            assertThat(list.tail().size()).isEqualTo(2);
             assertThat(list).hasToString("List(1, 2, 3)");
             assertThat(new Cons<>(1, List.empty()).tail()).isSameAs(List.empty());
         }

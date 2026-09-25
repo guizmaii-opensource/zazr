@@ -871,6 +871,11 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the size is stored.
+     */
     @Override
     public int size() {
         return tree.size();
