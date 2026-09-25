@@ -675,8 +675,9 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   non-empty type, and `zipWithIndex` a `NonEmptyVector`. A `HashSet` or a `HashMap` has none of these (no order, so no
   `head`, as decided in 3.7), so without the sorted variants a user wanting a total `head` would have to leave the
   non-empty types. `LinkedHashSet`/`LinkedHashMap` get no wrapper: nothing asked for one.
-- **Same API as the plain type, minus the deliberate absences**, checked reflectively by each test class as
-  `NonEmptyVectorTest` does: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
+- **Same API as the plain type, minus the deliberate absences**, checked reflectively by each test class overload by
+  overload (name and parameter types), so a missing overload fails as a missing name does; the absences are listed by
+  signature: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
   (`toNonEmptySet`, `toNonEmptySortedSet`, `toNonEmptyMap`, `toNonEmptySortedMap`); on the sorted ones also
   `headOption`, `lastOption`, `tailOption`, `initOption`; on the maps also `removeKeys`/`removeValues`, deprecated on
   `Map` in favour of `rejectKeys`/`rejectValues` (a new type does not start with deprecated methods; the deprecated
@@ -715,8 +716,10 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
 - **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
   `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
-  the wrapped collection's `hashCode`, which is unordered and therefore consistent. Never equal to a plain `Set` or
-  `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
+  the wrapped collection's `hashCode`, which is unordered. That holds, symmetric and hash-consistent, when the sorted
+  side's comparator is consistent with `equals`, as for the plain `HashSet`/`TreeSet`: with a case-insensitive order,
+  say, `equals` holds one way only (`Collections.equals` asks the argument's `contains`) and the hash codes differ.
+  Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
 - **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
   `TreeSet`).
 - **Not done here:** `NonEmptyVector.groupBy`/`toMap` and the non-empty sets' `toMap` still return a plain map, as 3.6

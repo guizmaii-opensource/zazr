@@ -430,7 +430,7 @@ public class NonEmptySortedMapTest {
     }
 
     /**
-     * {@code NonEmptySortedMap} has every operation of {@code TreeMap}, under the name {@code TreeMap} gives it, except
+     * {@code NonEmptySortedMap} has every operation of {@code TreeMap}, overload by overload, under the signature {@code TreeMap} gives it, except
      * the ones listed here on purpose.
      */
     @Nested
@@ -438,13 +438,13 @@ public class NonEmptySortedMapTest {
 
         static final java.util.Set<String> DELIBERATELY_ABSENT = java.util.Set.of(
                 // the Option forms of what is total on a non-empty map
-                "headOption", "lastOption", "reduceOption", "singleOption",
+                "headOption()", "lastOption()", "reduceOption(BiFunction)", "singleOption()",
                 // tail and init already return a TreeMap, and tailNonEmpty/initNonEmpty are the narrowing
-                "tailOption", "initOption",
+                "tailOption()", "initOption()",
                 // constant on a non-empty map: false, true, this, Some(this)
-                "isEmpty", "nonEmpty", "orElse", "toNonEmptySortedMap",
-                // deprecated on the plain maps in favour of rejectKeys and rejectValues
-                "removeKeys", "removeValues"
+                "isEmpty()", "nonEmpty()", "orElse(Iterable)", "orElse(Supplier)", "toNonEmptySortedMap()",
+                // deprecated on the plain maps in favour of reject, rejectKeys and rejectValues
+                "removeAll(BiPredicate)", "removeKeys(Predicate)", "removeValues(Predicate)"
         );
 
         @Test

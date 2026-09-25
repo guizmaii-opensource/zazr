@@ -37,4 +37,21 @@ public class NonEmptyChecksTest {
         NonEmptyChecks.assertEveryNonEmptyCollectionIsNonEmpty(Tuple.of(NonEmptyVector.of(1), NonEmptySet.of(1), NonEmptySortedSet.of(1),
                 NonEmptyMap.single(1, NonEmptySortedMap.single(1, 1))), "full");
     }
+
+    static class Plain {
+        public void f() {}
+
+        public void f(int x) {}
+
+        public void g() {}
+    }
+
+    static class Wrapper {
+        public void f() {}
+    }
+
+    @Test
+    public void shouldReportAMissingOverloadNotOnlyAMissingName() {
+        assertThat(NonEmptyChecks.missing(Plain.class, Wrapper.class)).containsExactly("f(int)", "g()");
+    }
 }

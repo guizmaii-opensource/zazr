@@ -418,7 +418,7 @@ public class NonEmptySortedSetTest {
     }
 
     /**
-     * {@code NonEmptySortedSet} has every operation of {@code TreeSet}, under the name {@code TreeSet} gives it, except
+     * {@code NonEmptySortedSet} has every operation of {@code TreeSet}, overload by overload, under the signature {@code TreeSet} gives it, except
      * the ones listed here on purpose.
      */
     @Nested
@@ -426,11 +426,11 @@ public class NonEmptySortedSetTest {
 
         static final java.util.Set<String> DELIBERATELY_ABSENT = java.util.Set.of(
                 // the Option forms of what is total on a non-empty set
-                "headOption", "lastOption", "reduceOption", "singleOption",
+                "headOption()", "lastOption()", "reduceOption(BiFunction)", "singleOption()",
                 // tail and init already return a TreeSet, and tailNonEmpty/initNonEmpty are the narrowing
-                "tailOption", "initOption",
+                "tailOption()", "initOption()",
                 // constant on a non-empty set: false, true, this, Some(this)
-                "isEmpty", "nonEmpty", "orElse", "toNonEmptySortedSet"
+                "isEmpty()", "nonEmpty()", "orElse(Iterable)", "orElse(Supplier)", "toNonEmptySortedSet()"
         );
 
         @Test

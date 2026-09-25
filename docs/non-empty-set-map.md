@@ -114,7 +114,8 @@ Every method: [complexity page](collections/complexity.md).
 
 - A non-empty set is not a `Set` and is not equal to one with the same elements; compare through `toSet()` or
   `toSortedSet()`. The same goes for the maps. A `NonEmptySet` and a `NonEmptySortedSet` with the same elements are
-  equal, as sets are.
+  equal, as sets are, when the comparator agrees with `equals`. With one that does not, such as a case-insensitive
+  order, equality can hold one way only, as between a plain `HashSet` and `TreeSet`.
 - They are `Iterable`, but not `Traversable`. `union`, `intersect` and `diff` take a `Set`; to pass a non-empty set,
   use `addAll`, `retainAll` and `removeAll`, which take any `Iterable`.
 - `reduce` and `fold` on a `NonEmptySet` or a `NonEmptyMap` see the elements in hash order: give them an operation

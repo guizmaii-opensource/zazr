@@ -45,6 +45,10 @@ import org.jspecify.annotations.Nullable;
  * Like every map, it rejects null keys and values. Equal to another {@code NonEmptyMap} or {@code NonEmptySortedMap}
  * with the same entries, as maps are equal to maps, never to a plain {@link Map}; use {@link #toMap()} to compare
  * across the two.
+ * <p>
+ * The equality across the two representations holds, symmetric and with equal hash codes, when the sorted map's key
+ * comparator is consistent with {@code equals}, as for a plain {@code HashMap} and {@code TreeMap}. With one that is
+ * not (a case-insensitive order, say), {@code equals} can hold one way only and the hash codes differ.
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -1042,7 +1046,8 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
 
     /**
      * Maps are equal to maps: a {@code NonEmptyMap} is equal to a {@code NonEmptyMap} or a {@code NonEmptySortedMap}
-     * with the same entries, and never to a plain {@link Map}.
+     * with the same entries, and never to a plain {@link Map}; symmetric only when the sorted map's key comparator is
+     * consistent with {@code equals}.
      */
     @Override
     public boolean equals(@Nullable Object o) {

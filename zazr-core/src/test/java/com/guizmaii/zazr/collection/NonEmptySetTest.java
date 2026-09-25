@@ -527,7 +527,7 @@ public class NonEmptySetTest {
     }
 
     /**
-     * {@code NonEmptySet} has every operation of {@code HashSet}, under the name {@code HashSet} gives it, except the
+     * {@code NonEmptySet} has every operation of {@code HashSet}, overload by overload, under the signature {@code HashSet} gives it, except the
      * ones listed here on purpose. The list is exact: a name missing from {@code NonEmptySet} and not listed fails, and
      * so does a listed name that {@code HashSet} lost or {@code NonEmptySet} gained.
      */
@@ -536,9 +536,9 @@ public class NonEmptySetTest {
 
         static final java.util.Set<String> DELIBERATELY_ABSENT = java.util.Set.of(
                 // the Option forms of what is total on a non-empty set
-                "reduceOption", "singleOption",
+                "reduceOption(BiFunction)", "singleOption()",
                 // constant on a non-empty set: false, true, this, Some(this)
-                "isEmpty", "nonEmpty", "orElse", "toNonEmptySet"
+                "isEmpty()", "nonEmpty()", "orElse(Iterable)", "orElse(Supplier)", "toNonEmptySet()"
         );
 
         @Test

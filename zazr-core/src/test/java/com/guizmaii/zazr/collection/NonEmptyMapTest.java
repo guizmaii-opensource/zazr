@@ -433,7 +433,7 @@ public class NonEmptyMapTest {
     }
 
     /**
-     * {@code NonEmptyMap} has every operation of {@code HashMap}, under the name {@code HashMap} gives it, except the
+     * {@code NonEmptyMap} has every operation of {@code HashMap}, overload by overload, under the signature {@code HashMap} gives it, except the
      * ones listed here on purpose.
      */
     @Nested
@@ -441,11 +441,11 @@ public class NonEmptyMapTest {
 
         static final java.util.Set<String> DELIBERATELY_ABSENT = java.util.Set.of(
                 // the Option forms of what is total on a non-empty map
-                "reduceOption", "singleOption",
+                "reduceOption(BiFunction)", "singleOption()",
                 // constant on a non-empty map: false, true, this, Some(this)
-                "isEmpty", "nonEmpty", "orElse", "toNonEmptyMap",
-                // deprecated on the plain maps in favour of rejectKeys and rejectValues
-                "removeKeys", "removeValues"
+                "isEmpty()", "nonEmpty()", "orElse(Iterable)", "orElse(Supplier)", "toNonEmptyMap()",
+                // deprecated on the plain maps in favour of reject, rejectKeys and rejectValues
+                "removeAll(BiPredicate)", "removeKeys(Predicate)", "removeValues(Predicate)"
         );
 
         @Test

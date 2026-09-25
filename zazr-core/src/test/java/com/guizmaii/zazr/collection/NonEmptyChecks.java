@@ -95,21 +95,22 @@ final class NonEmptyChecks {
         }
     }
 
-    static java.util.Set<String> publicInstanceMethodNames(Class<?> type) {
-        final java.util.Set<String> names = new TreeSet<>();
+    /* the signatures, name(SimpleParameterType, ...), of the public instance methods of type */
+    static java.util.Set<String> publicInstanceMethodSignatures(Class<?> type) {
+        final java.util.Set<String> signatures = new TreeSet<>();
         for (Method method : type.getMethods()) {
             if (!Modifier.isStatic(method.getModifiers()) && !method.isSynthetic() && !method.isBridge()
                     && method.getDeclaringClass() != Object.class) {
-                names.add(method.getName());
+                signatures.add(signature(method));
             }
         }
-        return names;
+        return signatures;
     }
 
-    /* the public instance method names of plain that wrapper does not have */
+    /* the public instance methods of plain, overload by overload, that wrapper does not have */
     static java.util.Set<String> missing(Class<?> plain, Class<?> wrapper) {
-        final java.util.Set<String> missing = new TreeSet<>(publicInstanceMethodNames(plain));
-        missing.removeAll(publicInstanceMethodNames(wrapper));
+        final java.util.Set<String> missing = new TreeSet<>(publicInstanceMethodSignatures(plain));
+        missing.removeAll(publicInstanceMethodSignatures(wrapper));
         return missing;
     }
 }

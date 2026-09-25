@@ -41,6 +41,10 @@ import org.jspecify.annotations.Nullable;
  * Like every collection, it rejects null elements. Equal to another {@code NonEmptySortedSet} or {@code NonEmptySet}
  * with the same elements, as sets are equal to sets, never to a plain {@link Set}; use {@link #toSortedSet()} to
  * compare across the two.
+ * <p>
+ * The equality across the two representations holds, symmetric and with equal hash codes, when the sorted set's
+ * comparator is consistent with {@code equals}, as for a plain {@code HashSet} and {@code TreeSet}. With one that is not
+ * (a case-insensitive order, say), {@code equals} can hold one way only and the hash codes differ.
  *
  * @param <A> Component type.
  */
@@ -1105,7 +1109,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
 
     /**
      * Sets are equal to sets: a {@code NonEmptySortedSet} is equal to a {@code NonEmptySortedSet} or a
-     * {@code NonEmptySet} with the same elements, and never to a plain {@link Set}.
+     * {@code NonEmptySet} with the same elements, and never to a plain {@link Set}; symmetric only when the comparator
+     * is consistent with {@code equals}.
      */
     @Override
     public boolean equals(@Nullable Object o) {
