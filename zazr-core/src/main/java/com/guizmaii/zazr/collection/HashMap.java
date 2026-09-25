@@ -541,44 +541,98 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return trie.containsKey(key);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
-        return Maps.filter(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered(predicate, true);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> reject(BiPredicate<? super K, ? super V> predicate) {
-        return Maps.reject(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered(predicate, false);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.filter(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered((k, v) -> predicate.test(Tuple.of(k, v)), true);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> reject(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.reject(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered((k, v) -> predicate.test(Tuple.of(k, v)), false);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> filterKeys(Predicate<? super K> predicate) {
-        return Maps.filterKeys(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered((k, v) -> predicate.test(k), true);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> rejectKeys(Predicate<? super K> predicate) {
-        return Maps.rejectKeys(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered((k, v) -> predicate.test(k), false);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> filterValues(Predicate<? super V> predicate) {
-        return Maps.filterValues(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered((k, v) -> predicate.test(v), true);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     */
     @Override
     public HashMap<K, V> rejectValues(Predicate<? super V> predicate) {
-        return Maps.rejectValues(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filtered((k, v) -> predicate.test(v), false);
+    }
+
+    // the entries for which the predicate answers `keep`, filtered node by node; this map when that is all of them
+    private HashMap<K, V> filtered(BiPredicate<? super K, ? super V> predicate, boolean keep) {
+        final BitmapIndexedMapNode<K, V> result = trie.filter(predicate, keep);
+        return (result == trie && result.size() != 0) ? this : wrap(result);
     }
 
     /**
@@ -681,14 +735,33 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Collections.mapKeys(this, HashMap.empty(), keyMapper, valueMerge);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the mapper per entry; the keys keep their places, so nothing is hashed again.
+     */
     @Override
     public <V2 extends @Nullable Object> HashMap<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        return map((k, v) -> Tuple.of(k, valueMapper.apply(v)));
+        return transformed((k, v) -> valueMapper.apply(v));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for m entries of {@code that}, each an effectively O(1) lookup and insertion; when {@code that}
+     * is a HashMap, the two tries are merged node by node, sharing the subtrees one side does not touch.
+     */
+    @SuppressWarnings("unchecked")
     @Override
     public HashMap<K, V> merge(Map<? extends K, ? extends V> that) {
+        Objects.requireNonNull(that, "that is null");
+        if (that instanceof HashMap<?, ?> other && !isEmpty() && !other.isEmpty()) {
+            // the entries of this map win: they are the right side of the concatenation
+            final BitmapIndexedMapNode<K, V> result = ((HashMap<K, V>) other).trie.concat(trie, 0);
+            // the same size: every key of `that` was a key of this map, whose entries win
+            return result.size() == trie.size() ? this : new HashMap<>(result);
+        }
         return Maps.merge(this, this::createFromEntries, that);
     }
 
@@ -861,7 +934,15 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        return Maps.replaceAll(this, function);
+        // no null check: an empty map never calls the function, so it accepts a null one
+        return transformed(function);
+    }
+
+    // the same keys, each value replaced by f(key, value); this map when every value is the same object
+    @SuppressWarnings("unchecked")
+    private <V2 extends @Nullable Object> HashMap<K, V2> transformed(BiFunction<? super K, ? super V, ? extends V2> f) {
+        final BitmapIndexedMapNode<K, V2> result = trie.transform(f);
+        return result == (Object) trie ? (HashMap<K, V2>) this : new HashMap<>(result);
     }
 
     /**
@@ -913,8 +994,21 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Vector.ofAll(trie.valuesIterator());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n); with another HashMap, the two tries are compared node by node, which answers a different
+     * size, bitmap or hash without looking at a key.
+     */
     @Override
     public boolean equals(@Nullable Object o) {
+        if (o instanceof HashMap<?, ?> other) {
+            try {
+                return this == other || MapNode.sameEntries(trie, other.trie);
+            } catch (ClassCastException e) {
+                return false;
+            }
+        }
         return Collections.equals(this, o);
     }
 

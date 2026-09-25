@@ -1251,9 +1251,48 @@ deleted. Attribution in `NOTICE`.
   one successive persistent puts give, node for node. With the default 12-byte header and compressed oops the token
   costs no memory (four ints and three references make 40 bytes, and 36 without it pad to 40); with compact object
   headers it costs a padded 8 bytes per bitmap node (40 against 32).
-- **Scope of the port.** Step 1 ports the nodes, the iteration, the persistent `updated`/`removed` and the builders;
-  every public operation keeps its algorithm (the same loops of persistent puts and removals, the same factories).
-  Scala's `updateWithShallowMutations` is not ported: it would reroute the bulk paths without a measurement.
+- **Scope of the port.** The nodes, the iteration, the persistent `updated`/`removed` and the builders, then the
+  operations on whole subtrees (below). Scala's `updateWithShallowMutations` is not ported: it would reroute the
+  bulk paths that take any iterable, without a measurement. `HashMap.forEach(BiConsumer)` walks the nodes, with no
+  `Tuple2` per entry.
+- **Operations on whole subtrees** (Scala's, rewritten where Zazr keeps another key or another call order). Each was
+  rerouted after a rough same-machine JMH run of `HashMapSetBenchmark` against the plain CHAMP port (1 fork, 3 × 1 s,
+  a machine with a load average near 50, microseconds, ± the 99.9% error; a second run of 2 forks, 8 × 1 s for the
+  closest rows), at 10 / 1 000 / 100 000 entries:
+  - `HashMap.equals`/`HashSet.equals` with another of their kind compare the tries node by node (bitmaps, hashes,
+    sizes and the cached hash sums first): map 0.23 ± 0.14 / 82 ± 337 / 8 200 ± 12 600 against 0.021 ± 0.066 /
+    5.2 ± 10 / 570 ± 2 200; set 0.10 ± 0.65 / 18 ± 50 / 2 600 ± 4 900 against 0.011 ± 0.022 / 3.9 ± 11 /
+    810 ± 3 700. Any other `Map` or `Set` goes through the element-by-element comparison.
+  - `HashSet.hashCode` is 1 plus the cached sum of the element hashes, the value the element walk gives: O(1)
+    (0.08 / 12.6 / 1 030 against 0.001 / 0.002 / 0.003). `HashMap.hashCode` hashes each entry's `Tuple2`, which the
+    nodes do not cache, and stays a walk.
+  - `HashSet.union` and `addAll` with a `HashSet`, and `HashMap.merge` with a `HashMap`, concatenate the tries
+    (Scala's `concat`, the right side winning; the map puts itself on the right, since its entries win a merge, and
+    the set puts the argument there, since additions replace equal elements); the receiver is returned when its size
+    does not change, as before. Union 0.22 ± 0.03 / 38 ± 2.6 / 8 300 ± 1 500 against 0.21 ± 0.01 / 24 ± 0.9 /
+    6 200 ± 410; merge 0.26 ± 0.04 / 62 ± 10 / 11 300 ± 2 400 against 0.45 ± 0.27 / 26 ± 0.6 / 6 600 ± 330: the row at
+    10 entries overlaps and may be slower, the two others win.
+  - `HashSet.diff` and `removeAll` with a `HashSet` walk both tries (Scala's `diff`): 0.55 ± 9.3 / 101 ± 276 /
+    15 800 ± 43 800 against 0.24 ± 1.4 / 12.5 ± 20 / 2 160 ± 2 000.
+  - `filter` and `reject` on both, and `filterKeys`, `filterValues`, `rejectKeys`, `rejectValues` on `HashMap`, filter
+    node by node, sharing the subtrees they keep whole and returning the receiver when nothing is dropped (Scala's
+    `filterImpl`, rewritten to call the predicate in iteration order: a node's entries, then its children). Map
+    0.43 ± 1.4 / 109 ± 163 / 28 800 ± 36 900 against 0.043 ± 0.031 / 4.2 ± 5.5 / 1 200 ± 13 600; set 0.13 ± 0.11 /
+    32 ± 39 / 6 300 ± 66 600 against 0.038 ± 0.11 / 4.5 ± 5.5 / 1 230 ± 4 200. `intersect` and `retainAll` end in
+    `filter` and follow (intersect 0.73 ± 0.25 / 94 ± 55 / 7 400 ± 670 against 0.08 ± 0.01 / 34 ± 14 / 4 400 ± 1 000).
+  - `HashSet.containsAll` of a `HashSet` is Scala's `subsetOf`, node by node: 0.025 ± 0.001 / 6.7 ± 1.0 /
+    9 200 ± 2 400 against 0.011 ± 0.001 / 2.2 ± 0.3 / 380 ± 29.
+  - `HashMap.mapValues` and `replaceAll(BiFunction)` keep the keys in place and replace the values (Scala's
+    `transform`), calling the function in iteration order, with the null check and message of a put: 0.27 ± 0.87 /
+    115 ± 406 / 41 400 ± 124 000 against 0.027 ± 0.015 / 6.6 ± 0.7 / 790 ± 800.
+  - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
+    `flatMap`. The coordinator's 3-fork JMH run is the reference table.
+  - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
+    colliding hashes, checking the invariants and the canonical form of every result, the unchanged inputs, the
+    iteration order of the calls, and the node boundaries; `HashBulkTest` checks the public operations, which key
+    each keeps and when each returns the receiver. The cross-version trace keeps the same keys and values as the
+    plain port; filters, `union` with a `HashSet` holding all of the receiver's elements (the argument returned) and
+    `mapValues` with the same values now return an existing collection where they built an equal new one.
 - **Tests.** `ChampMapTest`/`ChampSetTest` check the invariants of every trie they build (`ChampValidity`: bitmaps and
   array lengths, each entry in the slot of its hash fragment under its path, children of at least two entries, bitmap
   nodes above the last level and collision nodes below, cached sizes and hash sums), the canonical form after every

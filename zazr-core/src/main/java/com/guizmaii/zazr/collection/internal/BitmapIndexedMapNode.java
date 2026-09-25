@@ -3,6 +3,8 @@ package com.guizmaii.zazr.collection.internal;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 import static java.lang.Integer.bitCount;
@@ -342,6 +344,318 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         System.arraycopy(src, idxOld + 1, dst, idxOld + 2, src.length - idxOld - 1);
         return new BitmapIndexedMapNode<>(null, dataMap | bitpos, nodeMap ^ bitpos, dst, insertElement(hashes, dataIxNew, node.getHash(0)),
                 size - oldNode.size() + 1, keyHashSum - oldNode.keyHashSum() + node.keyHashSum());
+    }
+
+    // -- the operations on whole subtrees
+
+    // Scala's concat: a first pass sorts each slot into one of nine cases, a second builds the node
+    @Override
+    public BitmapIndexedMapNode<K, V> concat(MapNode<K, V> that, int shift) {
+        final BitmapIndexedMapNode<K, V> bm = (BitmapIndexedMapNode<K, V>) that;
+        if (size == 0) {
+            return bm;
+        } else if (bm.size == 0 || bm == this) {
+            return this;
+        } else if (bm.size == 1) {
+            final BitmapIndexedMapNode<K, V> result = updated(bm.getKey(0), bm.getValue(0), bm.hashes[0], shift, true);
+            // this node held only the key of `bm`, whose entry wins: the result is `bm`
+            return result.size == 1 ? bm : result;
+        }
+        // set as soon as the result differs from `bm`, which is returned otherwise
+        boolean anyChangesMadeSoFar = false;
+        final int allMap = dataMap | bm.dataMap | nodeMap | bm.nodeMap;
+        // both inclusive
+        final int minimumBitPos = bitposFrom(Integer.numberOfTrailingZeros(allMap));
+        final int maximumBitPos = bitposFrom(BRANCHING_FACTOR - Integer.numberOfLeadingZeros(allMap) - 1);
+
+        int leftNodeRightNode = 0;
+        int leftDataRightNode = 0;
+        int leftNodeRightData = 0;
+        int leftDataOnly = 0;
+        int rightDataOnly = 0;
+        int leftNodeOnly = 0;
+        int rightNodeOnly = 0;
+        int leftDataRightDataMigrateToNode = 0;
+        int leftDataRightDataRightOverwrites = 0;
+        int dataToNodeMigrationTargets = 0;
+
+        int bitpos = minimumBitPos;
+        int leftIdx = 0;
+        int rightIdx = 0;
+        while (true) {
+            if ((bitpos & dataMap) != 0) {
+                if ((bitpos & bm.dataMap) != 0) {
+                    final int leftHash = hashes[leftIdx];
+                    if (leftHash == bm.hashes[rightIdx] && Objects.equals(getKey(leftIdx), bm.getKey(rightIdx))) {
+                        leftDataRightDataRightOverwrites |= bitpos;
+                    } else {
+                        leftDataRightDataMigrateToNode |= bitpos;
+                        dataToNodeMigrationTargets |= bitposFrom(maskFrom(leftHash, shift));
+                    }
+                    rightIdx++;
+                } else if ((bitpos & bm.nodeMap) != 0) {
+                    leftDataRightNode |= bitpos;
+                } else {
+                    leftDataOnly |= bitpos;
+                }
+                leftIdx++;
+            } else if ((bitpos & nodeMap) != 0) {
+                if ((bitpos & bm.dataMap) != 0) {
+                    leftNodeRightData |= bitpos;
+                    rightIdx++;
+                } else if ((bitpos & bm.nodeMap) != 0) {
+                    leftNodeRightNode |= bitpos;
+                } else {
+                    leftNodeOnly |= bitpos;
+                }
+            } else if ((bitpos & bm.dataMap) != 0) {
+                rightDataOnly |= bitpos;
+                rightIdx++;
+            } else if ((bitpos & bm.nodeMap) != 0) {
+                rightNodeOnly |= bitpos;
+            }
+            if (bitpos == maximumBitPos) {
+                break;
+            }
+            bitpos <<= 1;
+        }
+
+        final int newDataMap = leftDataOnly | rightDataOnly | leftDataRightDataRightOverwrites;
+        final int newNodeMap = leftNodeRightNode | leftDataRightNode | leftNodeRightData | leftNodeOnly | rightNodeOnly
+                               | dataToNodeMigrationTargets;
+        if (newDataMap == (rightDataOnly | leftDataRightDataRightOverwrites) && newNodeMap == rightNodeOnly) {
+            // nothing of this node makes it into the result
+            return bm;
+        }
+
+        final int newDataSize = bitCount(newDataMap);
+        final int newContentSize = 2 * newDataSize + bitCount(newNodeMap);
+        final Object[] newContent = new Object[newContentSize];
+        final int[] newHashes = new int[newDataSize];
+        int newSize = 0;
+        int newKeyHashSum = 0;
+
+        int leftDataIdx = 0;
+        int rightDataIdx = 0;
+        int leftNodeIdx = 0;
+        int rightNodeIdx = 0;
+        final int nextShift = shift + BIT_PARTITION_SIZE;
+        int compressedDataIdx = 0;
+        int compressedNodeIdx = 0;
+        bitpos = minimumBitPos;
+        while (true) {
+            if ((bitpos & leftNodeRightNode) != 0) {
+                final MapNode<K, V> rightNode = bm.getNode(rightNodeIdx);
+                final MapNode<K, V> newNode = getNode(leftNodeIdx).concat(rightNode, nextShift);
+                if (rightNode != newNode) {
+                    anyChangesMadeSoFar = true;
+                }
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                rightNodeIdx++;
+                leftNodeIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataRightNode) != 0) {
+                final MapNode<K, V> n = bm.getNode(rightNodeIdx);
+                final MapNode<K, V> newNode = n.updated(getKey(leftDataIdx), getValue(leftDataIdx), hashes[leftDataIdx], nextShift, false);
+                if (newNode != n) {
+                    anyChangesMadeSoFar = true;
+                }
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                rightNodeIdx++;
+                leftDataIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftNodeRightData) != 0) {
+                anyChangesMadeSoFar = true;
+                final MapNode<K, V> newNode = getNode(leftNodeIdx).updated(bm.getKey(rightDataIdx), bm.getValue(rightDataIdx),
+                        bm.hashes[rightDataIdx], nextShift, true);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                leftNodeIdx++;
+                rightDataIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataOnly) != 0) {
+                anyChangesMadeSoFar = true;
+                newContent[2 * compressedDataIdx] = content[2 * leftDataIdx];
+                newContent[2 * compressedDataIdx + 1] = content[2 * leftDataIdx + 1];
+                newHashes[compressedDataIdx] = hashes[leftDataIdx];
+                newKeyHashSum += hashes[leftDataIdx];
+                compressedDataIdx++;
+                leftDataIdx++;
+                newSize++;
+            } else if ((bitpos & rightDataOnly) != 0) {
+                newContent[2 * compressedDataIdx] = bm.content[2 * rightDataIdx];
+                newContent[2 * compressedDataIdx + 1] = bm.content[2 * rightDataIdx + 1];
+                newHashes[compressedDataIdx] = bm.hashes[rightDataIdx];
+                newKeyHashSum += bm.hashes[rightDataIdx];
+                compressedDataIdx++;
+                rightDataIdx++;
+                newSize++;
+            } else if ((bitpos & leftNodeOnly) != 0) {
+                anyChangesMadeSoFar = true;
+                final MapNode<K, V> newNode = getNode(leftNodeIdx);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                leftNodeIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & rightNodeOnly) != 0) {
+                final MapNode<K, V> newNode = bm.getNode(rightNodeIdx);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                rightNodeIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataRightDataMigrateToNode) != 0) {
+                anyChangesMadeSoFar = true;
+                final MapNode<K, V> newNode = mergeTwoKeyValPairs(null, getKey(leftDataIdx), getValue(leftDataIdx), hashes[leftDataIdx],
+                        bm.getKey(rightDataIdx), bm.getValue(rightDataIdx), bm.hashes[rightDataIdx], nextShift);
+                newContent[newContentSize - compressedNodeIdx - 1] = newNode;
+                compressedNodeIdx++;
+                leftDataIdx++;
+                rightDataIdx++;
+                newSize += newNode.size();
+                newKeyHashSum += newNode.keyHashSum();
+            } else if ((bitpos & leftDataRightDataRightOverwrites) != 0) {
+                newContent[2 * compressedDataIdx] = bm.content[2 * rightDataIdx];
+                newContent[2 * compressedDataIdx + 1] = bm.content[2 * rightDataIdx + 1];
+                newHashes[compressedDataIdx] = bm.hashes[rightDataIdx];
+                newKeyHashSum += bm.hashes[rightDataIdx];
+                compressedDataIdx++;
+                rightDataIdx++;
+                leftDataIdx++;
+                newSize++;
+            }
+            if (bitpos == maximumBitPos) {
+                break;
+            }
+            bitpos <<= 1;
+        }
+        return anyChangesMadeSoFar
+               ? new BitmapIndexedMapNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum)
+               : bm;
+    }
+
+    @Override
+    public BitmapIndexedMapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
+        final int payload = payloadArity();
+        final int children = nodeArity();
+        // the entries first, then the children, as the iteration goes
+        int keptDataMap = 0;
+        int newSize = 0;
+        int newKeyHashSum = 0;
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if (predicate.test(getKey(i), getValue(i)) == keep) {
+                keptDataMap |= bitpos;
+                newSize++;
+                newKeyHashSum += hashes[i];
+            }
+        }
+        MapNode<K, V>[] newChildren = null;
+        int newNodeMap = 0;
+        // the children down to one entry, whose entry comes back inline
+        int migratedDataMap = 0;
+        bits = nodeMap;
+        for (int i = 0; i < children; i++) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            final MapNode<K, V> child = getNode(i);
+            final MapNode<K, V> newChild = child.filter(predicate, keep);
+            final int childSize = newChild.size();
+            if (newChild != child && newChildren == null) {
+                @SuppressWarnings("unchecked")
+                final MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
+                newChildren = array;
+            }
+            if (newChildren != null) {
+                newChildren[i] = newChild;
+            }
+            if (childSize >= 2) {
+                newNodeMap |= bitpos;
+            } else if (childSize == 1) {
+                migratedDataMap |= bitpos;
+            }
+            newSize += childSize;
+            newKeyHashSum += newChild.keyHashSum();
+        }
+        if (newSize == size) {
+            return this;
+        } else if (newSize == 0) {
+            return MapNode.empty();
+        }
+        final int newDataMap = keptDataMap | migratedDataMap;
+        final int newDataSize = bitCount(newDataMap);
+        final Object[] newContent = new Object[2 * newDataSize + bitCount(newNodeMap)];
+        final int[] newHashes = new int[newDataSize];
+        int dataIdx = 0;
+        int nodeIdx = 0;
+        int oldDataIdx = 0;
+        int oldNodeIdx = 0;
+        bits = dataMap | nodeMap;
+        while (bits != 0) {
+            final int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if ((bitpos & dataMap) != 0) {
+                if ((bitpos & keptDataMap) != 0) {
+                    newContent[2 * dataIdx] = content[2 * oldDataIdx];
+                    newContent[2 * dataIdx + 1] = content[2 * oldDataIdx + 1];
+                    newHashes[dataIdx++] = hashes[oldDataIdx];
+                }
+                oldDataIdx++;
+            } else {
+                // a child changes only when the filter drops one of its entries, so newChildren is set here
+                @SuppressWarnings("NullAway")
+                final MapNode<K, V> newChild = (newChildren == null || newChildren[oldNodeIdx] == null) ? getNode(oldNodeIdx) : newChildren[oldNodeIdx];
+                if ((bitpos & migratedDataMap) != 0) {
+                    newContent[2 * dataIdx] = newChild.getKey(0);
+                    newContent[2 * dataIdx + 1] = newChild.getValue(0);
+                    newHashes[dataIdx++] = newChild.getHash(0);
+                } else if ((bitpos & newNodeMap) != 0) {
+                    newContent[newContent.length - 1 - nodeIdx++] = newChild;
+                }
+                oldNodeIdx++;
+            }
+        }
+        return new BitmapIndexedMapNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum);
+    }
+
+    @Override
+    public <W extends @Nullable Object> BitmapIndexedMapNode<K, W> transform(BiFunction<? super K, ? super V, ? extends W> f) {
+        Object[] newContent = null;
+        final int payload = payloadArity();
+        for (int i = 0; i < payload; i++) {
+            final W value = Objects.requireNonNull(f.apply(getKey(i), getValue(i)), "HashMap: value is null");
+            if (newContent == null && value != content[2 * i + 1]) {
+                newContent = content.clone();
+            }
+            if (newContent != null) {
+                newContent[2 * i + 1] = value;
+            }
+        }
+        final int children = nodeArity();
+        for (int i = 0; i < children; i++) {
+            final MapNode<K, V> child = getNode(i);
+            final MapNode<K, W> newChild = child.transform(f);
+            if (newContent == null && newChild != (Object) child) {
+                newContent = content.clone();
+            }
+            if (newContent != null) {
+                newContent[content.length - 1 - i] = newChild;
+            }
+        }
+        if (newContent == null) {
+            @SuppressWarnings("unchecked")
+            final BitmapIndexedMapNode<K, W> unchanged = (BitmapIndexedMapNode<K, W>) this;
+            return unchanged;
+        }
+        return new BitmapIndexedMapNode<>(null, dataMap, nodeMap, newContent, hashes, size, keyHashSum);
     }
 
     // -- the updates in place of a builder

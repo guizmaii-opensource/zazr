@@ -3,6 +3,7 @@ package com.guizmaii.zazr.collection.internal;
 import com.guizmaii.zazr.Tuple2;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /// A node of the CHAMP trie behind `HashMap` (see [ChampNode]): a [BitmapIndexedMapNode], or a [HashCollisionMapNode]
@@ -44,6 +45,59 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// present), where a [BitmapIndexedMapNode] owned by `owner` is updated in place instead of copied, and the one
     /// not owned is copied into a node owned by `owner`, which is updated in place.
     abstract MapNode<K, V> putInPlace(Object owner, K key, V value, int hash, int shift);
+
+    // -- the operations on whole subtrees
+
+    /// The node of the entries of this node and of `that`, which sits at the same place in its trie: of equal keys,
+    /// the entry of `that` is kept, key and value. Returns `that` when this node adds nothing to it, and shares the
+    /// subtrees of either side that the other side does not touch.
+    abstract MapNode<K, V> concat(MapNode<K, V> that, int shift);
+
+    /// The node of the entries for which `predicate` answers `keep`; this node when that is all of them. The
+    /// predicate sees the entries in iteration order.
+    abstract MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep);
+
+    /// The node of the same keys, each value replaced by `f(key, value)`, called in iteration order; this node when
+    /// every new value is the same object as the old one. A null value is rejected as a put rejects it.
+    abstract <W extends @Nullable Object> MapNode<K, W> transform(BiFunction<? super K, ? super V, ? extends W> f);
+
+    /// `true` when the two subtrees, at the same place in their tries, hold equal keys mapped to equal values. Since
+    /// the shape is canonical, equal maps have equal bitmaps, hashes and sizes, compared before any key.
+    public static boolean sameEntries(MapNode<?, ?> a, MapNode<?, ?> b) {
+        if (a == b) {
+            return true;
+        } else if (a instanceof BitmapIndexedMapNode<?, ?> x && b instanceof BitmapIndexedMapNode<?, ?> y) {
+            if (x.keyHashSum != y.keyHashSum || x.dataMap != y.dataMap || x.nodeMap != y.nodeMap || x.size != y.size
+                || !java.util.Arrays.equals(x.hashes, y.hashes)) {
+                return false;
+            }
+            final int payload = 2 * Integer.bitCount(x.dataMap);
+            for (int i = 0; i < payload; i++) {
+                if (!java.util.Objects.equals(x.content[i], y.content[i])) {
+                    return false;
+                }
+            }
+            for (int i = payload; i < x.content.length; i++) {
+                if (!sameEntries((MapNode<?, ?>) x.content[i], (MapNode<?, ?>) y.content[i])) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (a instanceof HashCollisionMapNode<?, ?> x && b instanceof HashCollisionMapNode<?, ?> y) {
+            if (x.hash != y.hash || x.content.length != y.content.length) {
+                return false;
+            }
+            for (int i = 0; i < x.content.length; i += 2) {
+                final int j = y.indexOf(x.content[i]);
+                if (j < 0 || !java.util.Objects.equals(x.content[i + 1], y.content[2 * j + 1])) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     abstract K getKey(int index);
 
