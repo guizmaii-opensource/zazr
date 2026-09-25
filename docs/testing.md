@@ -161,7 +161,7 @@ A law set groups laws. `MapLaws.all()` is `mapIdentity` and `mapComposition`; `a
 
 ## Checking your own type
 
-A law needs two things from your type: arbitrary values of it, and the operation under test. You give them in a
+A law needs two things from your type: a generator of its values, and the operation under test. You give them in a
 subject, such as a `MapSubject` for the map laws. The elements are integers; the laws see them as `Object`.
 
 ```java
@@ -169,10 +169,10 @@ record Box(Vector<Object> items) {
     Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
 }
 MapSubject<Box> boxes = new MapSubject<>() {
-    public Arbitrary<Box> values() { return Arbitrary.vector(Arbitrary.integer()).map(v -> new Box(v.map(x -> (Object) x))); }
+    public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
     public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
 };
-MapLaws.<Box>all().assertSatisfied(boxes, new Random(42));
+MapLaws.<Box>all().assertSatisfied(boxes);
 ```
 
 The other subjects work the same way: `FlatMapSubject` adds `succeed` and `flatMap`, `ZipSubject` adds `zip`, and
@@ -185,8 +185,8 @@ value that broke it, with the two sides of the rule that differed. For a `map` t
 
 ```text
 2 law(s) failed:
-mapIdentity: falsified at check 3 by (Box[items=Vector(0, 1)]) (left = Box[items=Vector(0)], right = Box[items=Vector(0, 1)])
-mapComposition: falsified at check 1 by (Box[items=Vector(-5, -5)], x -> -9 * x + 92, x -> -10 * x + -59) (left = Box[items=Vector()], right = Box[items=Vector(-1429)])
+mapIdentity: falsified at sample 5 by (Box[items=Vector(6)]): left = Box[items=Vector()], right = Box[items=Vector(6)] (seed 42, replay with -Dzazr.check.seed=42)
+mapComposition: falsified at sample 7 by (Box[items=Vector(99, -6)], x -> -1 * x + -9, x -> -10 * x + 80): left = Box[items=Vector()], right = Box[items=Vector(1160)] (seed 42, replay with -Dzazr.check.seed=42)
 ```
 
-Pass the same `Random` seed to replay a failure.
+Run the test again with `-Dzazr.check.seed=42` to replay a failure.
