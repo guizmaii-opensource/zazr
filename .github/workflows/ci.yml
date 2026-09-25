@@ -119,7 +119,8 @@ jobs:
           cat coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
       # One comment per pull request, found by its marker and edited in place on every push. With gh, which the runner
       # already has, rather than a third-party action. Skipped for a pull request from a fork or from Dependabot, whose
-      # token cannot write.
+      # token cannot write. When make coverage failed before the report existed, the summary is empty and the
+      # previous comment is left as it is.
       - name: Coverage comment on the pull request
         if: >-
           (success() || failure())
@@ -132,6 +133,10 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          if [ ! -s coverage-summary.md ]; then
+            echo "no coverage summary: the comment is left unchanged"
+            exit 0
+          fi
           marker='<!-- zazr-coverage -->'
           body="$(printf '%s\n' "$marker"; cat coverage-summary.md; printf '\n_Commit %s._\n' "$SHA")"
           id="$(gh api --paginate "repos/$REPO/issues/$PR/comments" \

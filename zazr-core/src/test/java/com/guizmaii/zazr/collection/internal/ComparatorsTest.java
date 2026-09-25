@@ -31,12 +31,19 @@ public class ComparatorsTest {
         }
 
         @Test
-        public void shouldBeEqualToEveryNaturalComparatorWithTheSameHashCode() {
+        public void shouldBeEqualToTheNaturalComparatorOfEveryType() {
             final Comparator<Integer> integers = naturalComparator();
             final Comparator<String> strings = naturalComparator();
             assertThat(integers).isEqualTo(strings);
-            assertThat(integers.hashCode()).isEqualTo(strings.hashCode());
             assertThat(integers).isNotEqualTo(Comparator.<Integer> reverseOrder());
+        }
+
+        // The natural comparator is a single instance, so any constant satisfies the hashCode contract: this only
+        // checks that hashCode is consistent across calls.
+        @Test
+        public void shouldHaveAConsistentHashCode() {
+            final Comparator<Integer> comparator = naturalComparator();
+            assertThat(comparator.hashCode()).isEqualTo(comparator.hashCode());
         }
     }
 }

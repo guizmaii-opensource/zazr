@@ -119,10 +119,14 @@ coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in z
 	@echo "HTML report: $(COVERAGE_REPORT)/index.html"
 	@$(MAKE) --no-print-directory coverage-check
 
-# The check reads the execution data of the last make coverage; without it JaCoCo would skip the check and pass.
+# The check reads the execution data and the classes of the last make coverage. JaCoCo skips a merge whose data is
+# missing or empty, and a check without data or classes, and then passes; so both are required here, and the merged
+# file of an earlier run is deleted first, so that a skipped merge cannot leave it to be checked again.
 coverage-check: ## fail when zazr-core is below 95 % of lines or 95 % of branches in the last make coverage
 	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec; do \
-		test -f $$f || { echo "$$f not found: run make coverage first"; exit 1; }; done
+		test -s $$f || { echo "$$f is missing or empty: run make coverage first"; exit 1; }; done
+	@test -d zazr-core/target/classes || { echo "zazr-core/target/classes not found: run make coverage first"; exit 1; }
+	@rm -f zazr-core/target/jacoco-merged.exec
 	$(MVN) -Pcoverage -pl zazr-core jacoco:merge@coverage-merge jacoco:check@coverage-check
 
 coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
