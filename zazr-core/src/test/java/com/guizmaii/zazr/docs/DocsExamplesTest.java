@@ -4,6 +4,7 @@ import com.guizmaii.zazr.Lazy;
 import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.collection.HashMap;
 import com.guizmaii.zazr.collection.HashSet;
+import com.guizmaii.zazr.collection.LinkedHashMap;
 import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.List.Cons;
@@ -1270,6 +1271,38 @@ public class DocsExamplesTest {
             // TreeSet(pear, fig, apple)
 
             assertThat(sorted).hasToString("TreeSet(pear, fig, apple)");
+        }
+
+        @Test
+        void insertionOrderedBuilders() {
+            var firstSeen = LinkedHashSet.<String>newBuilder()
+                .addAll(List.of("b", "a", "b", "c"))
+                .result(); // LinkedHashSet<String>
+            var latest = LinkedHashMap.<String, Integer>newBuilder()
+                .put("b", 1).put("a", 2).put("b", 3)
+                .result(); // LinkedHashMap<String, Integer>
+            // LinkedHashSet(b, a, c), LinkedHashMap((b, 3), (a, 2))
+
+            assertThat(firstSeen).hasToString("LinkedHashSet(b, a, c)");
+            assertThat(latest).hasToString("LinkedHashMap((b, 3), (a, 2))");
+        }
+
+        @Test
+        void listBuilder() {
+            var builder = List.<Integer>newBuilder(); // List.Builder<Integer>
+            for (int i = 1; i <= 3; i++) {
+                builder.add(i * i);
+            }
+            var squares = builder.result(); // List<Integer>
+            // List(1, 4, 9)
+
+            var tail = List.of(8, 9);
+            var whole = List.<Integer>newBuilder().add(7).addAll(tail).result(); // List<Integer>
+            // List(7, 8, 9); whole.tail() is tail itself
+
+            assertThat(squares).hasToString("List(1, 4, 9)");
+            assertThat(whole).hasToString("List(7, 8, 9)");
+            assertThat(whole.tail()).isSameAs(tail);
         }
 
         @Test
