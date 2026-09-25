@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.LinkedHashMap;
 import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.TreeSet;
@@ -319,6 +320,20 @@ class LawsTest {
                 list -> LinkedHashSet.ofAll(Vector.ofAll(list).reverse()));
         assertFalsified(BuilderLaws.<Integer, LinkedHashSet<Integer>>collectorResultEqualsOfAll(), new BuilderLaws.CollectorSubject<>(
                 Arbitrary.list(Arbitrary.integer()), reversing, LinkedHashSet::ofAll, Option.some(IterationOrder.firstOccurrence())));
+    }
+
+    /// A map that moves a repeated key to its last occurrence breaks the order of the insertion-ordered maps.
+    @Test
+    void iterationOrderLawCatchesARepeatedKeyMovedToItsLastOccurrence() {
+        final CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> lastOccurrence = new CollectionSubject<>(
+                Arbitrary.linkedHashMap(Arbitrary.integer(), Arbitrary.integer()), entries -> {
+                    LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
+                    for (Tuple2<Integer, Integer> entry : entries) {
+                        map = map.remove(entry._1()).put(entry._1(), entry._2());
+                    }
+                    return map;
+                }, LinkedHashMap::size, LinkedHashMap::toList, false, Option.some(IterationOrder.keysByFirstOccurrence()));
+        assertFalsified(CollectionLaws.<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>>iterationOrder(), lastOccurrence);
     }
 
     @Test
