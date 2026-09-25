@@ -53,8 +53,9 @@ Every method: [complexity page](complexity.md#stream).
   element of their result.
 - Each `appendAll` or `prependAll` adds a step to reading every element of its result, so calling them in a loop is
   quadratic. `append` in a loop stays cheap; or build a `Vector`.
-- On a `Stream` that `append` returned, `appendAll` and `extend` (with a value or a supplier) read their whole
-  argument right away, so an infinite one never returns. Likewise, `s.prependAll(t)` with such a `t` reads all of `s`
-  right away.
+- On a `Stream` built by `append`, or a tail of one (the first part of `splitAtInclusive` and the results of
+  `crossProduct(power)` are such Streams), `appendAll` and `extend` with a value or a supplier read their whole
+  argument right away, so an infinite one never returns. Likewise, `s.prependAll(t)` and `s.insertAll(i, t)` with
+  such a `t` read all of `s`.
 - A `Stream` keeps every element it computed. Holding on to the start of a long `Stream` while walking it keeps all
   of it in memory.

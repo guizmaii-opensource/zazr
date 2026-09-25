@@ -1411,9 +1411,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new Stream with the given elements appended at the end, in iteration order.
      * <p>
-     * Complexity: O(m) for m elements when this Stream was returned by {@link #append(Object)}: the elements are read
-     * now, so an infinite argument never returns. Otherwise O(1): nothing is computed now, but each appendAll adds one
-     * step to reading every element of the result, so appendAll in a loop is quadratic: use append, or build a Vector.
+     * Complexity: O(m) for m elements on a Stream built by {@link #append(Object)}, or a tail of one (the prefix of
+     * {@link #splitAtInclusive(Predicate)} and the results of {@link #crossProduct(int)} are such Streams): the
+     * elements are read now, so an infinite argument never returns. Otherwise O(1): nothing is computed now, but each
+     * appendAll adds one step to reading every element of the result, so appendAll in a loop is quadratic: use append,
+     * or build a Vector.
      *
      * @param elements the elements to append
      * @return a new Stream ending with the given elements, or this Stream if there are none
@@ -1974,8 +1976,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
      * as the offending position.
      * <p>
-     * Complexity: lazy; nothing is computed now. The result copies the elements before index i as it reaches them, then
-     * joins {@code elements} and the rest as {@link #appendAll(Iterable)} does, with the same costs.
+     * Complexity: O(n) when {@code elements} is a Stream built by {@link #append(Object)}, or a tail of one (see
+     * {@link #appendAll(Iterable)}): the rest of this Stream is then read when the result reaches index i, now when i
+     * is 0, so an infinite one never returns. Otherwise lazy: nothing is computed now, and the result copies the
+     * elements before index i as it reaches them, then joins {@code elements} and the rest as appendAll does.
      */
     default Stream<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -2318,9 +2322,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * A new Stream with {@code elements} in front of this one, in iteration order.
      * <p>
-     * Complexity: O(n) when {@code elements} is a Stream that {@link #append(Object)} returned: this whole Stream is
-     * then read now, so an infinite one never returns. Otherwise O(1): nothing is computed now, but each prependAll
-     * adds one step to reading every element of the result, so prependAll in a loop is quadratic.
+     * Complexity: O(n) when {@code elements} is a Stream built by {@link #append(Object)}, or a tail of one (see
+     * {@link #appendAll(Iterable)}): this whole Stream is then read now, so an infinite one never returns. Otherwise
+     * O(1): nothing is computed now, but each prependAll adds one step to reading every element of the result, so
+     * prependAll in a loop is quadratic.
      *
      * @param elements the elements to prepend
      * @return a new Stream starting with the given elements, or this Stream if there are none
@@ -3188,8 +3193,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Extends (continues) this {@code Stream} with a constantly repeated value.
      * <p>
-     * Complexity: O(1); nothing is computed now, and the result is infinite. On a Stream that {@link #append(Object)}
-     * returned, the call never returns: it reads the infinite extension now, as {@link #appendAll(Iterable)} does.
+     * Complexity: O(1); nothing is computed now, and the result is infinite. On a Stream built by
+     * {@link #append(Object)}, or a tail of one, the call never returns: it reads the infinite extension now, as
+     * {@link #appendAll(Iterable)} does.
      *
      * @param next value with which the stream should be extended
      * @return new {@code Stream} composed from this stream extended with a Stream of provided value
@@ -3201,8 +3207,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Extends (continues) this {@code Stream} with values provided by a {@code Supplier}
      * <p>
-     * Complexity: O(1); nothing is computed now, and the result is infinite. On a Stream that {@link #append(Object)}
-     * returned, the call never returns: it reads the infinite extension now, as {@link #appendAll(Iterable)} does.
+     * Complexity: O(1); nothing is computed now, and the result is infinite. On a Stream built by
+     * {@link #append(Object)}, or a tail of one, the call never returns: it reads the infinite extension now, as
+     * {@link #appendAll(Iterable)} does.
      *
      * @param nextSupplier a supplier which will provide values for extending a stream
      * @return new {@code Stream} composed from this stream extended with values provided by the supplier
