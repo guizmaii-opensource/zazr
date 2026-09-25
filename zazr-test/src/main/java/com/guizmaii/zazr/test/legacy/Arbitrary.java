@@ -653,7 +653,7 @@ public interface Arbitrary<T> {
     /**
      * Generates arbitrary vectors of up to {@code size} elements of {@code arbitraryT}, favoring empty, singleton and
      * near-maximum lengths. Each vector is built along one of several paths: {@code ofAll}, a builder, appends,
-     * prepends, a dropped prefix (the trie keeps an offset) and a slice of a longer vector.
+     * prepends, a dropped prefix (the first leaf is left partly filled) and a slice of a longer vector.
      *
      * @param arbitraryT arbitrary elements, never null
      * @param <T>        element type

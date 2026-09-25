@@ -1,7 +1,6 @@
 import Generator._
 import JavaGenerator._
 
-import collection.immutable.ListMap
 import scala.language.implicitConversions
 
 val N = 8
@@ -78,7 +77,6 @@ def generateMainClasses(): Unit = {
 
   genFunctions()
   genTuples()
-  genArrayTypes()
 
   /**
    * Generator of Functions
@@ -884,202 +882,6 @@ def generateMainClasses(): Unit = {
       """
     }
   }
-
-  /**
-   * Generator of com.guizmaii.zazr.collection.internal.*ArrayType
-   */
-  def genArrayTypes(): Unit = {
-
-    val types = ListMap(
-      "boolean" -> "Boolean",
-      "byte" -> "Byte",
-      "char" -> "Character",
-      "double" -> "Double",
-      "float" -> "Float",
-      "int" -> "Integer",
-      "long" -> "Long",
-      "short" -> "Short",
-      "Object" -> "Object" // fallback
-    ) // note: there is no void[] in Java
-
-    genVavrFile("com.guizmaii.zazr.collection.internal", "ArrayType")((im: ImportManager, packageName: String, className: String) => xs"""
-      import java.util.Collection;
-
-      /**
-       * Helper to replace reflective array access.
-       *
-       * @author Pap Lőrinc
-       */
-      public interface ArrayType<T $nullableBound> {
-
-          @SuppressWarnings("unchecked")
-          static <T $nullableBound> ArrayType<T> obj() { return (ArrayType<T>) ObjectArrayType.INSTANCE; }
-
-          Class<T> type();
-          int lengthOf(Object array);
-          T getAt(Object array, int index);
-
-          Object empty();
-          void setAt(Object array, int index, T value) throws ClassCastException;
-          Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size);
-
-          @SuppressWarnings("unchecked")
-          static <T $nullableBound> ArrayType<T> of(Object array)  { return of((Class<T>) array.getClass().getComponentType()); }
-          static <T $nullableBound> ArrayType<T> of(Class<T> type) { return !type.isPrimitive() ? obj() : ofPrimitive(type); }
-          @SuppressWarnings("unchecked")
-          static <T $nullableBound> ArrayType<T> ofPrimitive(Class<T> type) {
-              if (boolean.class == type) {
-                  return (ArrayType<T>) BooleanArrayType.INSTANCE;
-              } else if (byte.class == type) {
-                  return (ArrayType<T>) ByteArrayType.INSTANCE;
-              } else if (char.class == type) {
-                  return (ArrayType<T>) CharArrayType.INSTANCE;
-              } else if (double.class == type) {
-                  return (ArrayType<T>) DoubleArrayType.INSTANCE;
-              } else if (float.class == type) {
-                  return (ArrayType<T>) FloatArrayType.INSTANCE;
-              } else if (int.class == type) {
-                  return (ArrayType<T>) IntArrayType.INSTANCE;
-              } else if (long.class == type) {
-                  return (ArrayType<T>) LongArrayType.INSTANCE;
-              } else if (short.class == type) {
-                  return (ArrayType<T>) ShortArrayType.INSTANCE;
-              } else {
-                  throw new IllegalArgumentException(String.valueOf(type));
-              }
-          }
-
-          default Object newInstance(int length) { return copy(empty(), length); }
-
-          /** copy the range [from, to) of the source into a new array of length (to - from), starting at index 0 */
-          default Object copyRange(Object array, int from, int to) {
-              final int length = to - from;
-              return copy(array, length, from, 0, length);
-          }
-
-          /** group an array into sub-arrays of groupSize elements each (the last one may be shorter) */
-          default Object grouped(Object array, int groupSize) {
-              final int arrayLength = lengthOf(array);
-              final Object results = obj().newInstance(1 + ((arrayLength - 1) / groupSize));
-              obj().setAt(results, 0, copyRange(array, 0, groupSize));
-
-              for (int start = groupSize, i = 1; start < arrayLength; i++) {
-                  final int nextLength = Math.min(groupSize, arrayLength - (i * groupSize));
-                  obj().setAt(results, i, copyRange(array, start, start + nextLength));
-                  start += nextLength;
-              }
-
-              return results;
-          }
-
-          /** clone the source and set the value at the given position */
-          default Object copyUpdate(Object array, int index, T element) {
-              final Object copy = copy(array, index + 1);
-              setAt(copy, index, element);
-              return copy;
-          }
-
-          default Object copy(Object array, int minLength) {
-              final int arrayLength = lengthOf(array);
-              final int length = Math.max(arrayLength, minLength);
-              return copy(array, length, 0, 0, arrayLength);
-          }
-
-          /** clone the source and keep everything at and after the index; the leading slots hold null (or the default value for primitive array types) */
-          default Object copyDrop(Object array, int index) {
-              final int length = lengthOf(array);
-              return copy(array, length, index, index, length - index);
-          }
-
-          /** clone the source and keep everything before and including the index */
-          default Object copyTake(Object array, int lastIndex) {
-              return copyRange(array, 0, lastIndex + 1);
-          }
-
-          /** Create a single element array */
-          default Object asArray(T element) {
-              final Object result = newInstance(1);
-              setAt(result, 0, element);
-              return result;
-          }
-
-          /** Store the content of an iterable in an array */
-          static Object[] asArray(java.util.Iterator<?> it, int length) {
-              final Object[] array = new Object[length];
-              for (int i = 0; i < length; i++) {
-                  array[i] = it.next();
-              }
-              return array;
-          }
-
-          @SuppressWarnings("unchecked")
-          static <T $nullableBound> T asPrimitives(Class<?> primitiveClass, Iterable<?> values) {
-              final java.util.List<Object> list = new java.util.ArrayList<>();
-              values.forEach(list::add);
-              final Object[] array = list.toArray();
-              final ArrayType<T> type = of((Class<T>) primitiveClass);
-              final Object results = type.newInstance(array.length);
-              for (int i = 0; i < array.length; i++) {
-                  type.setAt(results, i, (T) array[i]);
-              }
-              return (T) results;
-          }
-
-          ${types.keys.toSeq.gen(arrayType =>
-            genArrayType(arrayType)(im, packageName, arrayType.capitalize + className)
-          )(using "\n\n")}
-      }
-    """)
-
-    def genArrayType(arrayType: String)(im: ImportManager, packageName: String, className: String): String = {
-      val wrapperType = types(arrayType)
-      val isPrimitive = arrayType != "Object"
-
-      xs"""
-        final class $className implements ArrayType<$wrapperType> {
-            static final $className INSTANCE = new $className();
-            static final $arrayType[] EMPTY = new $arrayType[0];
-
-            private static $arrayType[] cast(Object array) { return ($arrayType[]) array; }
-
-            @Override
-            public Class<$wrapperType> type() { return $arrayType.class; }
-
-            @Override
-            public $arrayType[] empty() { return EMPTY; }
-
-            @Override
-            public int lengthOf(Object array) { return (array != null) ? cast(array).length : 0; }
-
-            @Override
-            public $wrapperType getAt(Object array, int index) { return cast(array)[index]; }
-
-            @Override
-            public void setAt(Object array, int index, $wrapperType value) ${if (isPrimitive) "throws ClassCastException " else ""}{
-                ${if (isPrimitive)
-                """if (value != null) {
-                  |    cast(array)[index] = value;
-                  |} else {
-                  |    throw new ClassCastException();
-                  |}""".stripMargin
-              else "cast(array)[index] = value;" }
-            }
-
-            @Override
-            public Object copy(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
-                return (size > 0)
-                        ? copyNonEmpty(array, arraySize, sourceFrom, destinationFrom, size)
-                        : new $arrayType[arraySize];
-            }
-            private static Object copyNonEmpty(Object array, int arraySize, int sourceFrom, int destinationFrom, int size) {
-                final $arrayType[] result = new $arrayType[arraySize];
-                System.arraycopy(array, sourceFrom, result, destinationFrom, size); /* has to be near the object allocation to avoid zeroing out the array */
-                return result;
-            }
-        }
-      """
-    }
-  }
 }
 
 /**
@@ -1133,6 +935,20 @@ def generateTestClasses(): Unit = {
         val narrowGenericResult = im.getType("java.lang.CharSequence")
         val narrowArgs = (1 to i).gen(j => j.toString)(using ", ")
 
+        // Integer arguments for the lift tests: the first one selects the outcome, the others are 1.
+        val OptionType = im.getType("com.guizmaii.zazr.control.Option")
+        val TryType = im.getType("com.guizmaii.zazr.control.Try")
+        val nonFatalType = if (checked) "Exception" else "IllegalStateException"
+        val intArgTypes = (1 to i).gen(j => "Integer")(using ", ")
+        val intParams = (1 to i).gen(j => s"i$j")(using ", ")
+        val intSum = (1 to i).gen(j => s"i$j")(using " + ")
+        def intArgs(first: Int): String = (1 to i).gen(j => if (j == 1) first.toString else "1")(using ", ")
+
+        // The arguments 1..i and the concatenation the Object-typed test functions return for them.
+        val digitArgs = (1 to i).gen(j => j.toString)(using ", ")
+        val digitString = (1 to i).gen(j => j.toString)
+        val concatBody = "\"\" + " + (1 to i).gen(j => s"o$j")(using " + ")
+
         xs"""
           public class $className {
 
@@ -1149,7 +965,38 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldLiftPartialFunction() {
-                  assertThat($name$i.lift(($functionArgs) -> { while(true); })).isNotNull();
+                  final $uncheckedSelfType<$intArgTypes, $OptionType<Integer>> lifted = $name$i.lift(($intParams) -> {
+                      if (i1 == 0) {
+                          return null;
+                      }
+                      if (i1 == 1) {
+                          throw new $nonFatalType("non-fatal");
+                      }
+                      if (i1 == 2) {
+                          throw new OutOfMemoryError("fatal");
+                      }
+                      return $intSum;
+                  });
+                  assertThat(lifted.apply(${intArgs(3)})).isEqualTo($OptionType.some(${3 + i - 1}));
+                  assertThat(lifted.apply(${intArgs(0)})).isEqualTo($OptionType.none());
+                  assertThat(lifted.apply(${intArgs(1)})).isEqualTo($OptionType.none());
+                  $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(2)}));
+              }
+
+              @$test
+              public void shouldRethrowFatalThrowableFromLiftTry() {
+                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                      $name$i.liftTry(($intParams) -> { throw new OutOfMemoryError("fatal"); });
+                  $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(1)}));
+              }
+
+              @$test
+              public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
+                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                      $name$i.liftTry(($intParams) -> { throw new $nonFatalType("non-fatal"); });
+                  final $TryType<Integer> result = lifted.apply(${intArgs(1)});
+                  assertThat(result.isFailure()).isTrue();
+                  assertThat(result.getCause()).isInstanceOf($nonFatalType.class).hasMessage("non-fatal");
               }
 
               ${(i == 1).gen(xs"""
@@ -1164,10 +1011,11 @@ def generateTestClasses(): Unit = {
               ${(i > 1).gen(xs"""
                 @$test
                 public void shouldPartiallyApply()${checked.gen(" throws Exception")} {
-                    final $name$i<$generics> f = ($functionArgs) -> null;
+                    final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                     ${(1 until i).gen(j => {
-                      val partialArgs = (1 to j).gen(k => "null")(using ", ")
-                      s"$assertThat(f.apply($partialArgs)).isNotNull();"
+                      val partialArgs = (1 to j).gen(k => k.toString)(using ", ")
+                      val remainingArgs = (j + 1 to i).gen(k => k.toString)(using ", ")
+                      s"$assertThat(f.apply($partialArgs).apply($remainingArgs)).isEqualTo(\"$digitString\");"
                     })(using "\n")}
                 }
               """)}
@@ -1179,17 +1027,17 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldCurry() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
+              public void shouldCurry()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                   final ${curriedType(i, name)} curried = f.curried();
-                  $assertThat(curried).isNotNull();
+                  $assertThat(curried${(1 to i).gen(j => s".apply($j)")}).isEqualTo("$digitString");
               }
 
               @$test
-              public void shouldTuple() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
+              public void shouldTuple()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                   final ${if (checked) s"${name}1" else jdkFunction1}<Tuple$i<${(1 to i).gen(j => "Object")(using ", ")}>, Object> tupled = f.tupled();
-                  $assertThat(tupled).isNotNull();
+                  $assertThat(tupled.apply(Tuple.of($digitArgs))).isEqualTo("$digitString");
               }
 
               ${(!checked).gen(xs"""
@@ -1243,23 +1091,21 @@ def generateTestClasses(): Unit = {
                           assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
                       }
 
-                      ${(i == 1 || i == N).gen(xs"""
-                        @$test
-                        public void shouldNotHandFatalThrowableToRecover() {
-                            final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
-                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
-                                fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
-                            $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
-                        }
+                      @$test
+                      public void shouldNotHandFatalThrowableToRecover() {
+                          final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                              fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+                          $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
+                      }
 
-                        @$test
-                        public void shouldHandNonFatalThrowableToRecover() {
-                            final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
-                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
-                                nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
-                            assertThat(recover.apply(${toArgList("MD5")})).isNull();
-                        }
-                      """)}
+                      @$test
+                      public void shouldHandNonFatalThrowableToRecover() {
+                          final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                              nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
+                          assertThat(recover.apply(${toArgList("MD5")})).isNull();
+                      }
 
                       @$test
                       public void shouldUncheckedWork() {
@@ -1304,12 +1150,21 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldComposeWithAndThen() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
-                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> null;
+              public void shouldComposeWithAndThen()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> o + "!";
                   final $name$i<$generics> composed = f.andThen(after);
-                  $assertThat(composed).isNotNull();
+                  $assertThat(composed.apply($digitArgs)).isEqualTo("$digitString!");
               }
+
+              ${(checked && i == 1).gen(xs"""
+                @$test
+                public void shouldComposeWithBefore() throws Exception {
+                    final $name$i<String, Integer> length = String::length;
+                    final $name$i<Integer, String> repeat = n -> "x".repeat(n);
+                    assertThat(length.compose(repeat).apply(3)).isEqualTo(3);
+                }
+              """)}
 
               @Nested
               class ComposeTests {

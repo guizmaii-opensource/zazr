@@ -65,7 +65,7 @@ final class Shapes {
 
     // -- sequences
 
-    /// `ofAll`, a builder, appends, prepends, a dropped prefix (the trie keeps an offset) and a slice.
+    /// `ofAll`, a builder, appends, prepends, a dropped prefix (the first leaf is left partly filled) and a slice.
     static <T> Gen<Vector<T>> vector(Gen<T> gen, int size) {
         final Gen<ArrayList<T>> elements = elements(gen, size);
         return random -> {

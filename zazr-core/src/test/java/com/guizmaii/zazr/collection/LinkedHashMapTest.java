@@ -61,7 +61,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> Collector<T, ArrayList<T>, IntMap<T>> collector() {
-        final Collector<Tuple2<Integer, T>, ArrayList<Tuple2<Integer, T>>, ? extends Map<Integer, T>> mapCollector = mapCollector();
+        final Collector<Tuple2<Integer, T>, ?, ? extends Map<Integer, T>> mapCollector = mapCollector();
         return new Collector<T, ArrayList<T>, IntMap<T>>() {
             @Override
             public Supplier<ArrayList<T>> supplier() {
@@ -75,7 +75,10 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
             @Override
             public BinaryOperator<ArrayList<T>> combiner() {
-                return (left, right) -> fromTuples(mapCollector.combiner().apply(toTuples(left), toTuples(right)));
+                return (left, right) -> {
+                    left.addAll(right);
+                    return left;
+                };
             }
 
             @Override
@@ -86,23 +89,6 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             @Override
             public java.util.Set<Characteristics> characteristics() {
                 return mapCollector.characteristics();
-            }
-
-            private ArrayList<Tuple2<Integer, T>> toTuples(java.util.List<T> list) {
-                final ArrayList<Tuple2<Integer, T>> result = new ArrayList<>();
-                Stream.ofAll(list)
-                        .zipWithIndex()
-                        .map(tu -> Tuple.of(tu._2(), tu._1()))
-                        .forEach(result::add);
-                return result;
-            }
-
-            private ArrayList<T> fromTuples(java.util.List<Tuple2<Integer, T>> list) {
-                final ArrayList<T> result = new ArrayList<>();
-                Stream.ofAll(list)
-                        .map(tu -> tu._2())
-                        .forEach(result::add);
-                return result;
             }
         };
     }
@@ -2096,15 +2082,15 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         return LinkedHashMap.empty();
     }
 
-    protected <K extends Comparable<? super K>, V, T extends V> Collector<T, ArrayList<T>, ? extends Map<K, V>> collectorWithMapper(Function<? super T, ? extends K> keyMapper) {
+    protected <K extends Comparable<? super K>, V, T extends V> Collector<T, ?, ? extends Map<K, V>> collectorWithMapper(Function<? super T, ? extends K> keyMapper) {
         return LinkedHashMap.collector(keyMapper);
     }
 
-    protected <K extends Comparable<? super K>, V, T> Collector<T, ArrayList<T>, ? extends Map<K, V>> collectorWithMappers(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    protected <K extends Comparable<? super K>, V, T> Collector<T, ?, ? extends Map<K, V>> collectorWithMappers(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return LinkedHashMap.collector(keyMapper, valueMapper);
     }
 
-    protected <T> Collector<Tuple2<Integer, T>, ArrayList<Tuple2<Integer, T>>, ? extends Map<Integer, T>> mapCollector() {
+    protected <T> Collector<Tuple2<Integer, T>, ?, ? extends Map<Integer, T>> mapCollector() {
         return LinkedHashMap.collector();
     }
 

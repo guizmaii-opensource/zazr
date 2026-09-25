@@ -121,8 +121,10 @@ nav:
       - Getting started: getting-started.md
       - zip at arity N: zip.md
       - NonEmptyVector: non-empty-vector.md
+      - NonEmptySet and NonEmptyMap: non-empty-set-map.md
       - Builders: builders.md
       - Java interop: java-interop.md
+      - "Zazr in your AI assistant": ai-assistant.md
   - Control types:
       - Overview: control/index.md
       - Option: control/option.md
