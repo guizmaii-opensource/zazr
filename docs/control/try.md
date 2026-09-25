@@ -19,9 +19,9 @@ Use `Try` around code that throws: parsing, I/O, a library that reports errors w
 its success value is the empty tuple `()`.
 
 ```java
-Try<Integer> parsed = Try.of(() -> Integer.parseInt("42"));
-Try<Integer> failed = Try.of(() -> Integer.parseInt("forty-two"));
-Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
+var parsed = Try.of(() -> Integer.parseInt("42")); // Try<Integer>
+var failed = Try.of(() -> Integer.parseInt("forty-two")); // Try<Integer>
+var ran = Try.run(() -> Thread.sleep(1)); // Try<Tuple0>
 // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
 ```
 
@@ -41,8 +41,8 @@ To open resources, use them and close them with the outcome in a `Try`, see [`Us
 `Success` and `Failure` are records, so pattern matching with a `switch` expression needs no `default`:
 
 ```java
-Try<Integer> result = Try.of(() -> Integer.parseInt("x"));
-String report = switch (result) {
+var result = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
+var report = switch (result) {
     case Success(var value) -> "parsed " + value;
     case Failure(var cause) -> "failed: " + cause.getClass().getSimpleName();
 };
@@ -56,18 +56,18 @@ String report = switch (result) {
 `catchSome` recovers from one type of exception and leaves the others alone. `catchAll` recovers from any.
 
 ```java
-Try<Integer> port = Try.of(() -> Integer.parseInt("80a"))
+var port = Try.of(() -> Integer.parseInt("80a"))
     .catchSome(NumberFormatException.class, e -> 8080)
-    .map(p -> p + 1);
+    .map(p -> p + 1); // Try<Integer>
 // Success(8081)
 ```
 
 `mapError` replaces the cause, typically to wrap it in an exception of your domain.
 
 ```java
-Try<Integer> recovered = Try.of(() -> Integer.parseInt("x")).catchAll(e -> 0);
-Try<Integer> wrapped = Try.<Integer>failure(new java.io.IOException("disk"))
-    .mapError(e -> new IllegalStateException("cannot read the configuration", e));
+var recovered = Try.of(() -> Integer.parseInt("x")).catchAll(e -> 0); // Try<Integer>
+var wrapped = Try.<Integer>failure(new java.io.IOException("disk"))
+    .mapError(e -> new IllegalStateException("cannot read the configuration", e)); // Try<Integer>
 // Success(0), Failure(java.lang.IllegalStateException: cannot read the configuration)
 ```
 
@@ -80,17 +80,17 @@ a value from the cause.
 value that does not pass a test, with the exception you build.
 
 ```java
-Try<Integer> ratio = Try.of(() -> 10).map(n -> 100 / (n - 10));
-Try<Integer> positive = Try.success(-1)
-    .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n));
+var ratio = Try.of(() -> 10).map(n -> 100 / (n - 10)); // Try<Integer>
+var positive = Try.success(-1)
+    .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n)); // Try<Integer>
 // Failure(java.lang.ArithmeticException: / by zero), Failure(java.lang.IllegalArgumentException: not positive: -1)
 ```
 
 `ensuring` runs an action whatever the outcome, like a `finally` block.
 
 ```java
-StringBuilder log = new StringBuilder();
-Try<Integer> done = Try.of(() -> 1).ensuring(() -> log.append("closed"));
+var log = new StringBuilder();
+var done = Try.of(() -> 1).ensuring(() -> log.append("closed")); // Try<Integer>
 // Success(1), and log is "closed"
 ```
 
@@ -109,9 +109,9 @@ Other members:
   captures its outcome.
 
 ```java
-Either<Throwable, Integer> either = Try.of(() -> Integer.parseInt("7")).toEither();
-java.util.concurrent.CompletableFuture<Integer> future = Try.success(7).toCompletableFuture();
-Try<Integer> back = Try.fromCompletableFuture(future);
+var either = Try.of(() -> Integer.parseInt("7")).toEither(); // Either<Throwable, Integer>
+var future = Try.success(7).toCompletableFuture(); // java.util.concurrent.CompletableFuture<Integer>
+var back = Try.fromCompletableFuture(future); // Try<Integer>
 // Right(7), a completed future, Success(7)
 ```
 
@@ -125,10 +125,10 @@ equal only if they hold the same exception object.
 Two failures of the same input are not equal. Compare the class or the message of the cause instead.
 
 ```java
-Try<Integer> first = Try.of(() -> Integer.parseInt("x"));
-Try<Integer> second = Try.of(() -> Integer.parseInt("x"));
-boolean same = first.equals(second);
-boolean sameClass = first.getCause().getClass() == second.getCause().getClass();
+var first = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
+var second = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
+var same = first.equals(second);
+var sameClass = first.getCause().getClass() == second.getCause().getClass();
 // same is false, sameClass is true
 ```
 

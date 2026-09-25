@@ -372,6 +372,39 @@ public interface RedBlackTreeModule {
             }
         }
 
+        /// Returns a balanced tree of the first `size` elements of `sorted`, which are strictly increasing under the
+        /// comparator of `empty`, in O(size) and with exactly `size` nodes. Port of `fromOrderedKeys` in the Scala 3
+        /// standard library (`scala.collection.immutable.RedBlackTree`, the Scala 2.13 collection library that Scala 3
+        /// ships unchanged): the range is split around its middle element (the left part is never larger than the
+        /// right), every node is black except the one-element subtrees on the deepest level, which are red; so every
+        /// path has the same number of black nodes and no red node has a red child.
+        static <T extends @Nullable Object> RedBlackTree<T> fromOrdered(Empty<T> empty, @Nullable Object[] sorted, int size) {
+            // the deepest level holding a node, the root being on level 1
+            final int maxUsedDepth = Integer.SIZE - Integer.numberOfLeadingZeros(size);
+            return fromOrdered(empty, sorted, 0, size, 1, maxUsedDepth);
+        }
+
+        // the slots read are within the first `size` of `sorted`, which hold elements, never null
+        @SuppressWarnings({"unchecked", "NullAway"})
+        private static <T extends @Nullable Object> RedBlackTree<T> fromOrdered(Empty<T> empty, @Nullable Object[] sorted, int from, int size,
+                int level, int maxUsedDepth) {
+            if (size == 0) {
+                return empty;
+            } else if (size == 1) {
+                final Color color = (level != maxUsedDepth || level == 1) ? BLACK : RED;
+                return new Node<>(color, 1, empty, (T) sorted[from], empty, empty);
+            } else {
+                final int leftSize = (size - 1) / 2;
+                final RedBlackTree<T> left = fromOrdered(empty, sorted, from, leftSize, level + 1, maxUsedDepth);
+                final RedBlackTree<T> right = fromOrdered(empty, sorted, from + leftSize + 1, size - 1 - leftSize, level + 1, maxUsedDepth);
+                // the stored blackHeight counts the black nodes below this one, the empty tree counting as one
+                final int blackHeight = left.isEmpty()
+                                        ? 1
+                                        : ((Node<T>) left).blackHeight + (left.color() == BLACK ? 1 : 0);
+                return new Node<>(BLACK, blackHeight, left, (T) sorted[from + leftSize], right, empty);
+            }
+        }
+
         public static <T extends @Nullable Object> T maximum(Node<T> node) {
             Node<T> curr = node;
             while (!curr.right.isEmpty()) {
