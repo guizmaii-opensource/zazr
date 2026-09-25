@@ -69,6 +69,10 @@ var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0); // Option<Integer>
 // None, Some(4)
 ```
 
+A function that returns `null` where a collection needs a value, such as the mapper of `flatMap` or the function of
+`toMap`, throws a `NullPointerException` naming the method: `Vector.flatMap: mapper returned null`. A `Stream` throws
+it when it reaches that element.
+
 ## Complexity
 
 Each collection's page has a table of its common operations. [Complexity](complexity.md) puts all the collections

@@ -796,7 +796,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     public <U extends @Nullable Object> TreeSet<U> flatMap(Comparator<? super U> comparator,
                                   Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return TreeSet.ofAll(comparator, Iterator.ofAll(this).flatMap(mapper));
+        return TreeSet.ofAll(comparator, Iterator.ofAll(this).flatMap(t -> Objects.requireNonNull(mapper.apply(t), "TreeSet.flatMap: mapper returned null")));
     }
 
     /**
@@ -814,7 +814,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public <C extends @Nullable Object> Map<C, TreeSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, elements -> ofAll(comparator(), elements));
+        return Collections.groupBy(this, classifier, elements -> ofAll(comparator(), elements), "TreeSet.groupBy: classifier returned null");
     }
 
     @SuppressWarnings("unchecked")
@@ -936,7 +936,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      */
     @Override
     public TreeSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(tree.comparator(), supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(tree.comparator(), Objects.requireNonNull(supplier.get(), "TreeSet.orElse: supplier returned null")) : this;
     }
 
     @Override

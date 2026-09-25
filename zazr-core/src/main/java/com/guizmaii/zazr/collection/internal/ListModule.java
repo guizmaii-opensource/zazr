@@ -53,10 +53,12 @@ public interface ListModule {
     interface Slice {
 
         static <T extends @Nullable Object> int indexOfSlice(List<T> source, Iterable<? extends T> slice, int from) {
+            // the slice is read now, even for an empty source: a null element throws as Vector's does
+            final List<T> _slice = toList(slice);
             if (source.isEmpty()) {
-                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
+                return from == 0 && _slice.isEmpty() ? 0 : -1;
             }
-            return findFirstSlice(source, toList(slice), Math.max(from, 0));
+            return findFirstSlice(source, _slice, Math.max(from, 0));
         }
 
         static <T extends @Nullable Object> int lastIndexOfSlice(List<T> source, Iterable<? extends T> slice, int end) {

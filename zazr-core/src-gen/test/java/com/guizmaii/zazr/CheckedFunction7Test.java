@@ -88,7 +88,8 @@ public class CheckedFunction7Test {
         assertThat(unknown).isNotNull();
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
-        assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
+        assertThat(unknown.getCause().getMessage()).isEqualTo("CheckedFunction7.recover: recover returned null");
+        assertThat(unknown.getCause().getCause()).isInstanceOf(java.security.NoSuchAlgorithmException.class).hasMessage("Unknown MessageDigest not available");
     }
 
     @Test

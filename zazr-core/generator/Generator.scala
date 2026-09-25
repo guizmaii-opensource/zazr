@@ -345,7 +345,8 @@ def generateMainClasses(): Unit = {
                  *
                  * @param recover the function applied in case of a non-fatal throwable
                  * @return a function composed of this and recover
-                 * @throws NullPointerException if recover is null
+                 * @throws NullPointerException if recover is null; the composed function throws it, with the throwable as its
+                 *                              cause, when recover returns null
                  */
                 default ${javaFunctionType(i, im)}$fullGenerics recover(${im.getType("java.util.function.Function")}<? super Throwable, ? extends ${fullGenericsTypeF(checked = false, i)}> recover) {
                     Objects.requireNonNull(recover, "recover is null");
@@ -357,7 +358,11 @@ def generateMainClasses(): Unit = {
                                 return sneakyThrow(throwable);
                             }
                             final ${fullGenericsTypeF(checked = false, i)} func = recover.apply(throwable);
-                            Objects.requireNonNull(func, () -> "recover return null for " + throwable.getClass() + ": " + throwable.getMessage());
+                            if (func == null) {
+                                final NullPointerException nullResult = new NullPointerException("$className.recover: recover returned null");
+                                nullResult.initCause(throwable);
+                                throw nullResult;
+                            }
                             return func.$callApply;
                         }
                     };
@@ -614,14 +619,14 @@ def generateMainClasses(): Unit = {
                * @param mapper the mapper function
                ${(1 to i).gen(j => s"* @param <U$j> new type of the ${j.ordinal} component")(using "\n")}
                * @return ${if (i == 1) "A new Tuple of same arity." else "the result of applying {@code mapper} to the components of this tuple"}
-               * @throws NullPointerException if {@code mapper} is null
+               * @throws NullPointerException if {@code mapper} is null${(i > 1).gen(" or returns null")}
                */
               public $resultGenericsDecl $className$resultGenerics map($functionType<$paramTypes, $mapResult> mapper) {
                   Objects.requireNonNull(mapper, "mapper is null");
                   ${if (i == 1)
                     "return Tuple.of(mapper.apply(_1));"
                   else
-                    s"return mapper.apply($params);"
+                    s"""return Objects.requireNonNull(mapper.apply($params), "$className.map: mapper returned null");"""
                   }
               }
             """)}
@@ -1239,7 +1244,8 @@ def generateTestClasses(): Unit = {
                           assertThat(unknown).isNotNull();
                           assertThat(unknown.isFailure()).isTrue();
                           assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
-                          assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
+                          assertThat(unknown.getCause().getMessage()).isEqualTo("$name$i.recover: recover returned null");
+                          assertThat(unknown.getCause().getCause()).isInstanceOf(java.security.NoSuchAlgorithmException.class).hasMessage("Unknown MessageDigest not available");
                       }
 
                       ${(i == 1 || i == N).gen(xs"""

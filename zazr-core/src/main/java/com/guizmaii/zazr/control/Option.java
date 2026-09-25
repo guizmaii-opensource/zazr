@@ -196,7 +196,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     static <T extends @Nullable Object> Option<T> when(boolean condition, Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return condition ? some(supplier.get()) : none();
+        return condition ? some(Objects.requireNonNull(supplier.get(), "Option.when: supplier returned null")) : none();
     }
 
     /**
@@ -322,12 +322,12 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      *
      * @param supplier a supplier of an alternative {@code Option} if this is {@code None}
      * @return this {@code Option} if defined, otherwise the result of {@code supplier.get()}
-     * @throws NullPointerException if {@code supplier} is null
+     * @throws NullPointerException if {@code supplier} is null or returns null
      */
     @SuppressWarnings("unchecked")
     default Option<T> orElse(Supplier<? extends Option<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? (Option<T>) supplier.get() : this;
+        return isEmpty() ? (Option<T>) Objects.requireNonNull(supplier.get(), "Option.orElse: supplier returned null") : this;
     }
 
     /**
@@ -399,12 +399,12 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @param mapper a function to transform the contained value
      * @param <U>    the type of the resulting {@code Option}'s value
      * @return a new {@code Option} containing the mapped value, or {@code None}
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Option<U> flatMap(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? none() : (Option<U>) mapper.apply(get());
+        return isEmpty() ? none() : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.flatMap: mapper returned null");
     }
 
     /**
@@ -441,11 +441,11 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @param mapper a function to transform the contained value
      * @param <U>    the type of the resulting {@code Some}'s value
      * @return a new {@code Some} with the mapped value if this is defined, otherwise {@code None}
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     default <U extends @Nullable Object> Option<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? none() : some(mapper.apply(get()));
+        return isEmpty() ? none() : some(Objects.requireNonNull(mapper.apply(get()), "Option.map: mapper returned null"));
     }
 
     /**
@@ -974,7 +974,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <L extends @Nullable Object> Either<L, T> toEither(Supplier<? extends L> leftSupplier) {
         Objects.requireNonNull(leftSupplier, "leftSupplier is null");
-        return isEmpty() ? Either.left(leftSupplier.get()) : Either.right(get());
+        return isEmpty() ? Either.left(Objects.requireNonNull(leftSupplier.get(), "Option.toEither: leftSupplier returned null")) : Either.right(get());
     }
 
     /**
@@ -988,7 +988,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default Try<T> toTry(Supplier<? extends Throwable> ifEmpty) {
         Objects.requireNonNull(ifEmpty, "ifEmpty is null");
-        return isEmpty() ? Try.failure(ifEmpty.get()) : Try.success(get());
+        return isEmpty() ? Try.failure(Objects.requireNonNull(ifEmpty.get(), "Option.toTry: ifEmpty returned null")) : Try.success(get());
     }
 
     /**
@@ -1003,7 +1003,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <E extends @Nullable Object> Validation<E, T> toValidation(Supplier<? extends E> invalidSupplier) {
         Objects.requireNonNull(invalidSupplier, "invalidSupplier is null");
-        return isEmpty() ? Validation.invalid(invalidSupplier.get()) : Validation.valid(get());
+        return isEmpty() ? Validation.invalid(Objects.requireNonNull(invalidSupplier.get(), "Option.toValidation: invalidSupplier returned null")) : Validation.valid(get());
     }
 
     /**

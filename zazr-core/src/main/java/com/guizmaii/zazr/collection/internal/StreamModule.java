@@ -14,10 +14,13 @@ public interface StreamModule {
     interface Slice {
 
         static <T extends @Nullable Object> int indexOfSlice(Stream<T> source, Iterable<? extends T> slice, int from) {
+            // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
+            final Stream<T> _slice = toStream(slice);
+            _slice.length();
             if (source.isEmpty()) {
-                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
+                return from == 0 && _slice.isEmpty() ? 0 : -1;
             }
-            return findFirstSlice(source, toStream(slice), Math.max(from, 0));
+            return findFirstSlice(source, _slice, Math.max(from, 0));
         }
 
         static <T extends @Nullable Object> int lastIndexOfSlice(Stream<T> source, Iterable<? extends T> slice, int end) {
@@ -124,7 +127,7 @@ public interface StreamModule {
         private Cons<T> appendAll(Cons<T> stream, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
             return (Cons<T>) Stream.cons(stream.head(), () -> {
                 final Stream<T> tail = stream.tail();
-                return tail.isEmpty() ? mapper.apply(self) : appendAll((Cons<T>) tail, mapper);
+                return tail.isEmpty() ? java.util.Objects.requireNonNull(mapper.apply(self), "Stream.appendSelf: mapper returned null") : appendAll((Cons<T>) tail, mapper);
             });
         }
 
@@ -206,18 +209,31 @@ public interface StreamModule {
 
         final Function<? super T, ? extends Iterable<? extends U>> mapper;
         final Iterator<? extends T> inputs;
+        final String nullResult;
+        // set once mapper returned null: its input is consumed, so every later call fails the same way instead of
+        // going on with the next input
+        boolean failed;
         java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
 
-        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper, String nullResult) {
             this.inputs = inputs;
+            this.nullResult = nullResult;
             this.mapper = mapper;
         }
 
         @Override
         public boolean hasNext() {
+            if (failed) {
+                throw new NullPointerException(nullResult);
+            }
             boolean currentHasNext;
             while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
-                current = mapper.apply(inputs.next()).iterator();
+                final Iterable<? extends U> mapped = mapper.apply(inputs.next());
+                if (mapped == null) {
+                    failed = true;
+                    throw new NullPointerException(nullResult);
+                }
+                current = mapped.iterator();
             }
             return currentHasNext;
         }

@@ -1280,6 +1280,21 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   removed. Tuples are not collections and keep allowing null components.
   Same for `Right(null)`, `Success(null)`, `Valid(null)`: records with `requireNonNull` in the compact
   constructor. Collections keep allowing null elements (Java's do), but document it.
+- **A function that returns null is rejected at the call, by name (decided 2026-09-25, #120).** Every public
+  method taking a function, supplier or callable whose result is a Zazr value (`Option`, `Either`, `Try`,
+  `Validation`, `Lazy`, a tuple, a collection or an iterable of elements) or is stored as an element checks that
+  result where it calls the function: `NullPointerException("<Type>.<method>: <parameter> returned null")`
+  (`Option.flatMap: mapper returned null`), never a `null` handed back to the caller or a bare NPE further down.
+  A default method shared by several types names the interface that declares it (`Set.toMap`, `Map.toMap`). A
+  method that runs the function under `Try` (`map`, `flatMap`, `flatMapTry`, `collect`, `filter`, `mapError`,
+  `catchAll`, `catchSome`, `catchAllWith`, `catchSomeWith`, and `Try.of` as before) returns that exception as a
+  `Failure`; `Try.orElse(Supplier)` and `Try.forEach` throw it. A lazy `Stream` rejects the null when the element
+  is reached, and forcing it again fails the same way rather than skipping the element. `fold`, `reduce` and
+  `getOrElse`-style methods return the caller's own value and are not checked. The check is a constant message on
+  the failure path only. `NullResultTest` holds one row per method and a reflective guard over the exported
+  types that fails when a public method taking a function whose result is a Zazr type has no row. A null
+  function *argument* is `<parameter> is null` at once, even where the function would not be called (an empty
+  map's `replaceAll`, a non-empty collection's `orElse(Supplier)`, a missing key's `computeIfPresent`).
 - **`Try.Failure` equality** stops comparing stack traces (`Try.java:1482`). Two failures are equal when
   their causes are the same object, or same class + message. Or simply make `Failure` a record and
   accept reference equality on the `Throwable`. Recommendation: record default (reference equality on the

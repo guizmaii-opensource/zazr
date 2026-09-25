@@ -713,14 +713,14 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             return empty();
         } else {
             final HashArrayMappedTrie<U, U> that = foldLeft(HashArrayMappedTrie.empty(),
-                    (tree, t) -> addAll(tree, mapper.apply(t)));
+                    (tree, t) -> addAll(tree, Objects.requireNonNull(mapper.apply(t), "HashSet.flatMap: mapper returned null")));
             return new HashSet<>(that);
         }
     }
 
     @Override
     public <C extends @Nullable Object> Map<C, HashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, HashSet::ofAll);
+        return Collections.groupBy(this, classifier, HashSet::ofAll, "HashSet.groupBy: classifier returned null");
     }
 
     /**
@@ -823,7 +823,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public HashSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "HashSet.orElse: supplier returned null")) : this;
     }
 
     @Override

@@ -172,7 +172,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> Stream<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        return StreamFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity()));
+        return StreamFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity(), "Stream.flatten: an inner iterable is null"));
     }
 
     /**
@@ -261,10 +261,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param supplier A Supplier of iterator values
      * @param <T> value type
      * @return A new Stream
+     * @throws NullPointerException if {@code supplier} is null, or, when the stream reaches it, returns null
      */
     static <T extends @Nullable Object> Stream<T> iterate(Supplier<? extends Option<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return Stream.ofAll(Iterator.iterate(supplier));
+        return Stream.ofAll(Iterator.iterate(supplier, "Stream.iterate: supplier returned null"));
     }
 
     /**
@@ -274,6 +275,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param tailSupplier A supplier of the tail values. To end the stream, return {@link Stream#empty}.
      * @param <T>          value type
      * @return A new Stream
+     * @throws NullPointerException if {@code head} or {@code tailSupplier} is null; {@code tail()} throws it when
+     *                              {@code tailSupplier} returns null
      */
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> Stream<T> cons(T head, Supplier<? extends Stream<? extends T>> tailSupplier) {
@@ -845,10 +848,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Stream with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     static <T extends @Nullable Object, U extends @Nullable Object> Stream<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f).toStream();
+        return Iterator.unfoldRight(seed, f, "Stream.unfoldRight: f returned null").toStream();
     }
 
     /**
@@ -874,10 +877,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Stream with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     static <T extends @Nullable Object, U extends @Nullable Object> Stream<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldLeft(seed, f).toStream();
+        return Iterator.unfoldLeft(seed, f, "Stream.unfoldLeft: f returned null").toStream();
     }
 
     /**
@@ -902,10 +905,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Stream with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     static <T extends @Nullable Object> Stream<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
-        return Iterator.unfold(seed, f).toStream();
+        return Iterator.unfold(seed, f, "Stream.unfold: f returned null").toStream();
     }
 
     /**
@@ -1439,6 +1442,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param mapper an mapper
      * @return this Stream if it is empty, otherwise a new Stream obtained by appending this Stream, mapped by {@code mapper}, to itself
+     * @throws NullPointerException if {@code mapper} is null, or, when the stream reaches it, returns null
      */
     default Stream<T> appendSelf(Function<? super Stream<T>, ? extends Stream<T>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1799,7 +1803,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     default <U extends @Nullable Object> Stream<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? Empty.instance() : Stream.ofAll(new FlatMapIterator<>(Iterator.ofAll(this), mapper));
+        return isEmpty() ? Empty.instance() : Stream.ofAll(new FlatMapIterator<>(Iterator.ofAll(this), mapper, "Stream.flatMap: mapper returned null"));
     }
 
     /**
@@ -1829,7 +1833,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     default <C extends @Nullable Object> Map<C, Stream<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Stream::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Stream::ofAll, "Stream.groupBy: classifier returned null");
     }
 
     /**
@@ -2063,7 +2067,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     default Stream<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "Stream.orElse: supplier returned null")) : this;
     }
 
     /**
@@ -2883,7 +2888,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Stream<T1>, Stream<T2>> unzip(
       Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Stream<Tuple2<? extends T1, ? extends T2>> stream = map(unzipper);
+        final Stream<Tuple2<? extends T1, ? extends T2>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "Stream.unzip: unzipper returned null"));
         final Stream<T1> stream1 = stream.map(t -> t._1());
         final Stream<T2> stream2 = stream.map(t -> t._2());
         return Tuple.of(stream1, stream2);
@@ -2892,7 +2897,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(
       Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Stream<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(unzipper);
+        final Stream<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "Stream.unzip3: unzipper returned null"));
         final Stream<T1> stream1 = stream.map(t -> t._1());
         final Stream<T2> stream2 = stream.map(t -> t._2());
         final Stream<T3> stream3 = stream.map(t -> t._3());
@@ -3242,7 +3247,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
             @Override
             public Stream<T> tail() {
-                return tail.get();
+                return Objects.requireNonNull(tail.get(), "Stream.cons: tailSupplier returned null");
             }
 
         }
@@ -3787,11 +3792,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Stream.toMap: f returned null");
     }
 
     /**
@@ -3819,11 +3824,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Stream.toLinkedMap: f returned null");
     }
 
     /**
@@ -3850,7 +3855,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -3888,7 +3893,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Stream.toSortedMap: f returned null");
     }
 
     /**

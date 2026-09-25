@@ -147,7 +147,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         Objects.requireNonNull(value, "value is null");
         Objects.requireNonNull(predicate, "predicate is null");
         Objects.requireNonNull(ifFalse, "ifFalse is null");
-        return predicate.test(value) ? right(value) : left(ifFalse.get());
+        return predicate.test(value) ? right(value) : left(Objects.requireNonNull(ifFalse.get(), "Either.fromPredicate: ifFalse returned null"));
     }
 
     /**
@@ -189,9 +189,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         Objects.requireNonNull(leftMapper, "leftMapper is null");
         Objects.requireNonNull(rightMapper, "rightMapper is null");
         if (isRight()) {
-            return new Right<>(rightMapper.apply(get()));
+            return new Right<>(Objects.requireNonNull(rightMapper.apply(get()), "Either.mapBoth: rightMapper returned null"));
         } else {
-            return new Left<>(leftMapper.apply(getLeft()));
+            return new Left<>(Objects.requireNonNull(leftMapper.apply(getLeft()), "Either.mapBoth: leftMapper returned null"));
         }
     }
 
@@ -400,7 +400,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     @SuppressWarnings("unchecked")
     default Either<L, R> orElse(Supplier<? extends Either<? extends L, ? extends R>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isRight() ? this : (Either<L, R>) supplier.get();
+        return isRight() ? this : (Either<L, R>) Objects.requireNonNull(supplier.get(), "Either.orElse: supplier returned null");
     }
 
     /**
@@ -475,13 +475,13 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @param mapper a function that maps the right value to another {@code Either<L, U>}
      * @param <U>    the type of the right value in the resulting {@code Either}
      * @return this {@code Either} unchanged if it is a {@link Either.Left}, or the result of applying {@code mapper} if it is a {@link Either.Right}
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Either<L, U> flatMap(Function<? super R, ? extends Either<L, ? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isRight()) {
-            return (Either<L, U>) mapper.apply(get());
+            return (Either<L, U>) Objects.requireNonNull(mapper.apply(get()), "Either.flatMap: mapper returned null");
         } else {
             return (Either<L, U>) this;
         }
@@ -507,13 +507,13 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @param mapper a function to transform the right value
      * @param <U>    the type of the right value in the resulting {@code Either}
      * @return a new {@code Either} with the right value transformed, or the original left value
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Either<L, U> map(Function<? super R, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isRight()) {
-            return Either.right(mapper.apply(get()));
+            return Either.right(Objects.requireNonNull(mapper.apply(get()), "Either.map: mapper returned null"));
         } else {
             return (Either<L, U>) this;
         }
@@ -539,13 +539,13 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @param leftMapper a function to transform the left value
      * @param <U>        the type of the left value in the resulting {@code Either}
      * @return a new {@code Either} with the left value transformed, or the original right value
-     * @throws NullPointerException if {@code leftMapper} is null
+     * @throws NullPointerException if {@code leftMapper} is null or returns null
      */
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Either<U, R> mapLeft(Function<? super L, ? extends U> leftMapper) {
         Objects.requireNonNull(leftMapper, "leftMapper is null");
         if (isLeft()) {
-            return Either.left(leftMapper.apply(getLeft()));
+            return Either.left(Objects.requireNonNull(leftMapper.apply(getLeft()), "Either.mapLeft: leftMapper returned null"));
         } else {
             return (Either<U, R>) this;
         }
@@ -581,7 +581,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         if (isLeft() || predicate.test(get())) {
             return this;
         } else {
-            return Either.left(zero.apply(get()));
+            return Either.left(Objects.requireNonNull(zero.apply(get()), "Either.filterOrElse: zero returned null"));
         }
     }
 
@@ -1219,7 +1219,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      */
     default Try<R> toTry(Function<? super L, ? extends Throwable> f) {
         Objects.requireNonNull(f, "f is null");
-        return isRight() ? Try.success(get()) : Try.failure(f.apply(getLeft()));
+        return isRight() ? Try.success(get()) : Try.failure(Objects.requireNonNull(f.apply(getLeft()), "Either.toTry: f returned null"));
     }
 
     /**

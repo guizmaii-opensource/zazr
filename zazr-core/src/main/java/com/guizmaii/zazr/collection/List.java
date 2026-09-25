@@ -798,10 +798,10 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a list with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     static <T extends @Nullable Object, U extends @Nullable Object> List<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f).toList();
+        return Iterator.unfoldRight(seed, f, "List.unfoldRight: f returned null").toList();
     }
 
     /**
@@ -827,10 +827,10 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a list with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     static <T extends @Nullable Object, U extends @Nullable Object> List<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldRight(seed, f.andThen(tupleOpt -> tupleOpt.map(Tuple2::swap)))
+        return Iterator.unfoldRight(seed, f.andThen(tupleOpt -> Objects.requireNonNull(tupleOpt, "List.unfoldLeft: f returned null").map(Tuple2::swap)), "List.unfoldLeft: f returned null")
           .foldLeft(List.empty(), List::prepend);
     }
 
@@ -856,10 +856,10 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a list with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     static <T extends @Nullable Object> List<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f.andThen(tupleOpt -> tupleOpt.map(Tuple2::swap)))
+        return Iterator.unfoldRight(seed, f.andThen(tupleOpt -> Objects.requireNonNull(tupleOpt, "List.unfold: f returned null").map(Tuple2::swap)), "List.unfold: f returned null")
           .foldLeft(List.empty(), List::prepend);
     }
 
@@ -1230,7 +1230,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         Objects.requireNonNull(mapper, "mapper is null");
         List<U> list = empty();
         for (T t : this) {
-            for (U u : mapper.apply(t)) {
+            for (U u : Objects.requireNonNull(mapper.apply(t), "List.flatMap: mapper returned null")) {
                 list = list.prepend(u);
             }
         }
@@ -1286,7 +1286,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     default <C extends @Nullable Object> Map<C, List<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, List::ofAll);
+        return Collections.groupBy(this, classifier, List::ofAll, "List.groupBy: classifier returned null");
     }
 
     /**
@@ -1776,7 +1776,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     default List<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "List.orElse: supplier returned null")) : this;
     }
 
     /**
@@ -2850,7 +2851,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T1> xs = Nil.instance();
         List<T2> ys = Nil.instance();
         for (T element : this) {
-            final Tuple2<? extends T1, ? extends T2> t = unzipper.apply(element);
+            final Tuple2<? extends T1, ? extends T2> t = Objects.requireNonNull(unzipper.apply(element), "List.unzip: unzipper returned null");
             xs = xs.prepend(t._1());
             ys = ys.prepend(t._2());
         }
@@ -2864,7 +2865,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T2> ys = Nil.instance();
         List<T3> zs = Nil.instance();
         for (T element : this) {
-            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(element);
+            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = Objects.requireNonNull(unzipper.apply(element), "List.unzip3: unzipper returned null");
             xs = xs.prepend(t._1());
             ys = ys.prepend(t._2());
             zs = zs.prepend(t._3());
@@ -3642,11 +3643,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "List.toMap: f returned null");
     }
 
     /**
@@ -3674,11 +3675,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "List.toLinkedMap: f returned null");
     }
 
     /**
@@ -3705,7 +3706,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -3743,7 +3744,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "List.toSortedMap: f returned null");
     }
 
     /**

@@ -714,14 +714,14 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
             return empty();
         } else {
             final LinkedHashMap<U, Object> that = foldLeft(LinkedHashMap.empty(),
-                    (tree, t) -> addAll(tree, mapper.apply(t)));
+                    (tree, t) -> addAll(tree, Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.flatMap: mapper returned null")));
             return new LinkedHashSet<>(that);
         }
     }
 
     @Override
     public <C extends @Nullable Object> Map<C, LinkedHashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, LinkedHashSet::ofAll);
+        return Collections.groupBy(this, classifier, LinkedHashSet::ofAll, "LinkedHashSet.groupBy: classifier returned null");
     }
 
     /**
@@ -820,7 +820,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public LinkedHashSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "LinkedHashSet.orElse: supplier returned null")) : this;
     }
 
     @Override

@@ -169,7 +169,8 @@ public interface CheckedFunction2<T1 extends @Nullable Object, T2 extends @Nulla
      *
      * @param recover the function applied in case of a non-fatal throwable
      * @return a function composed of this and recover
-     * @throws NullPointerException if recover is null
+     * @throws NullPointerException if recover is null; the composed function throws it, with the throwable as its
+     *                              cause, when recover returns null
      */
     default BiFunction<T1, T2, R> recover(Function<? super Throwable, ? extends BiFunction<? super T1, ? super T2, ? extends R>> recover) {
         Objects.requireNonNull(recover, "recover is null");
@@ -181,7 +182,11 @@ public interface CheckedFunction2<T1 extends @Nullable Object, T2 extends @Nulla
                     return sneakyThrow(throwable);
                 }
                 final BiFunction<? super T1, ? super T2, ? extends R> func = recover.apply(throwable);
-                Objects.requireNonNull(func, () -> "recover return null for " + throwable.getClass() + ": " + throwable.getMessage());
+                if (func == null) {
+                    final NullPointerException nullResult = new NullPointerException("CheckedFunction2.recover: recover returned null");
+                    nullResult.initCause(throwable);
+                    throw nullResult;
+                }
                 return func.apply(t1, t2);
             }
         };

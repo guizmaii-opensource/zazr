@@ -188,7 +188,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofAll(java.util.stream.Stream<? extends T> stream,
                                                 Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
-        return Maps.ofStream(empty(), stream, entryMapper);
+        return Maps.ofStream(empty(), stream, entryMapper, "HashMap.ofAll: entryMapper returned null");
     }
 
     /**
@@ -421,12 +421,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param f   The Function computing element values
      * @return A HashMap containing the entries {@code f(0), f(1), ..., f(n - 1)}; entries with equal keys collapse
      *         (the later one wins), so the result may contain fewer than {@code n} entries. Empty if {@code n <= 0}.
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> tabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
-        return ofEntries(Collections.tabulate(n, (Function<? super Integer, ? extends Tuple2<K, V>>) f));
+        return ofEntries(Collections.tabulate(n, i -> Objects.requireNonNull(f.apply(i), "HashMap.tabulate: f returned null")));
     }
 
     /**
@@ -438,12 +438,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param s   The Supplier computing element values
      * @return A HashMap containing the entries supplied by {@code s}; entries with equal keys collapse
      *         (the later one wins), so the result may contain fewer than {@code n} entries. Empty if {@code n <= 0}.
-     * @throws NullPointerException if {@code s} is null
+     * @throws NullPointerException if {@code s} is null or returns null
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> fill(int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         Objects.requireNonNull(s, "s is null");
-        return ofEntries(Collections.fill(n, (Supplier<? extends Tuple2<K, V>>) s));
+        return ofEntries(Collections.fill(n, () -> Objects.requireNonNull(s.get(), "HashMap.fill: s returned null")));
     }
 
     /**
@@ -582,7 +582,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return foldLeft(HashMap.<K2, V2> empty(), (acc, entry) -> {
-            for (Tuple2<? extends K2, ? extends V2> mappedEntry : mapper.apply(entry._1(), entry._2())) {
+            for (Tuple2<? extends K2, ? extends V2> mappedEntry : Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "HashMap.flatMap: mapper returned null")) {
                 acc = acc.put(mappedEntry);
             }
             return acc;
@@ -610,7 +610,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public <C extends @Nullable Object> Map<C, HashMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
-        return Maps.groupBy(this, this::createFromEntries, classifier);
+        return Maps.groupBy(this, this::createFromEntries, classifier, "HashMap.groupBy: classifier returned null");
     }
 
     @Override
@@ -650,7 +650,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return foldLeft(HashMap.empty(), (acc, entry) -> acc.put(entry.map(mapper)));
+        return foldLeft(HashMap.empty(), (acc, entry) -> acc.put(Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "HashMap.map: mapper returned null")));
     }
 
     @Override
@@ -688,7 +688,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public HashMap<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier) {
-        return isEmpty() ? ofEntries(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofEntries(Objects.requireNonNull(supplier.get(), "HashMap.orElse: supplier returned null")) : this;
     }
 
     @Override

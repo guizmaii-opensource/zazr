@@ -193,7 +193,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofAll(java.util.stream.Stream<? extends T> stream,
             Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
-        return Maps.ofStream(empty(), stream, entryMapper);
+        return Maps.ofStream(empty(), stream, entryMapper, "LinkedHashMap.ofAll: entryMapper returned null");
     }
 
     /**
@@ -464,12 +464,12 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A LinkedHashMap containing the entries {@code f(0), f(1), ..., f(n - 1)}; entries with equal keys collapse
      *         (the later value wins, keeping the earlier position), so the result may contain fewer than {@code n} entries.
      *         Empty if {@code n <= 0}.
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> tabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
-        return ofEntries(Collections.tabulate(n, (Function<? super Integer, ? extends Tuple2<K, V>>) f));
+        return ofEntries(Collections.tabulate(n, i -> Objects.requireNonNull(f.apply(i), "LinkedHashMap.tabulate: f returned null")));
     }
 
     /**
@@ -482,12 +482,12 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A LinkedHashMap containing the entries supplied by {@code s}; entries with equal keys collapse
      *         (the later value wins, keeping the earlier position), so the result may contain fewer than {@code n} entries.
      *         Empty if {@code n <= 0}.
-     * @throws NullPointerException if {@code s} is null
+     * @throws NullPointerException if {@code s} is null or returns null
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> fill(int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         Objects.requireNonNull(s, "s is null");
-        return ofEntries(Collections.fill(n, (Supplier<? extends Tuple2<K, V>>) s));
+        return ofEntries(Collections.fill(n, () -> Objects.requireNonNull(s.get(), "LinkedHashMap.fill: s returned null")));
     }
 
     /**
@@ -632,7 +632,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return foldLeft(LinkedHashMap.<K2, V2> empty(), (acc, entry) -> {
-            for (Tuple2<? extends K2, ? extends V2> mappedEntry : mapper.apply(entry._1(), entry._2())) {
+            for (Tuple2<? extends K2, ? extends V2> mappedEntry : Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "LinkedHashMap.flatMap: mapper returned null")) {
                 acc = acc.put(mappedEntry);
             }
             return acc;
@@ -667,7 +667,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     @Override
     public <C extends @Nullable Object> Map<C, LinkedHashMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
-        return Maps.groupBy(this, this::createFromEntries, classifier);
+        return Maps.groupBy(this, this::createFromEntries, classifier, "LinkedHashMap.groupBy: classifier returned null");
     }
 
     @Override
@@ -789,7 +789,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return foldLeft(LinkedHashMap.empty(), (acc, entry) -> acc.put(entry.map(mapper)));
+        return foldLeft(LinkedHashMap.empty(), (acc, entry) -> acc.put(Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "LinkedHashMap.map: mapper returned null")));
     }
 
     @Override
@@ -827,7 +827,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     @Override
     public LinkedHashMap<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier) {
-        return isEmpty() ? ofEntries(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofEntries(Objects.requireNonNull(supplier.get(), "LinkedHashMap.orElse: supplier returned null")) : this;
     }
 
     @Override

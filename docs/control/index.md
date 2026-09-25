@@ -102,6 +102,9 @@ var fromTry = Try.of(() -> Integer.parseInt("7")).toOption(); // Option<Integer>
 - Creating one with `null` throws a `NullPointerException`.
 - `Option.ofNullable` turns a value that may be `null` into an `Option`, and `getOrNull()` goes back.
 - A `Try` whose computation returns `null` is a `Failure` holding a `NullPointerException`.
+- A function you pass that returns `null` where a value is needed, such as the mapper of `flatMap` or the
+  supplier of `orElse`, throws a `NullPointerException` naming the method: `Option.flatMap: mapper returned null`.
+  When `Try` runs the function, as in `Try.map` or `Try.flatMap`, you get a `Failure` of it instead.
 
 ```java
 var absent = Option.<String>ofNullable(null); // Option<String>

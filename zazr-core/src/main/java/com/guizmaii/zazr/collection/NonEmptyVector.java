@@ -537,8 +537,9 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code classifier} is null or returns null
      */
     public <K extends @Nullable Object> HashMap<K, NonEmptyVector<A>> groupBy(Function<? super A, ? extends K> classifier) {
+        Objects.requireNonNull(classifier, "classifier is null");
         HashMap<K, NonEmptyVector<A>> groups = HashMap.empty();
-        for (Tuple2<K, Vector<A>> group : vector.<K> groupBy(classifier)) {
+        for (Tuple2<K, Vector<A>> group : vector.<K> groupBy(element -> Objects.requireNonNull(classifier.apply(element), "NonEmptyVector.groupBy: classifier returned null"))) {
             groups = groups.put(group._1(), new NonEmptyVector<>(group._2()));
         }
         return groups;
@@ -961,7 +962,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <B extends @Nullable Object> Vector<B> collect(Function<? super A, ? extends Option<? extends B>> mapper) {
-        return vector.collect(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return vector.collect(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptyVector.collect: mapper returned null"));
     }
 
     /**
@@ -974,7 +976,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code mapper} is null, returns null, or returns an iterable yielding null
      */
     public <B extends @Nullable Object> Vector<B> flatMapAll(Function<? super A, ? extends Iterable<? extends B>> mapper) {
-        return vector.flatMap(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return vector.flatMap(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptyVector.flatMapAll: mapper returned null"));
     }
 
     /**
