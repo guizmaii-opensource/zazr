@@ -53,7 +53,7 @@ result.assertIsSatisfied();
 ```java
 CheckResult broken = Property.named("every list is short")
     .forAll(Arbitrary.list(Arbitrary.integer()))
-    .suchThat(list -> list.length() < 5)
+    .suchThat(list -> list.size() < 5)
     .check(100, 1_000);
 boolean falsified = broken.isFalsified();
 // true, and broken.sample() holds the first list of 5 elements or more
