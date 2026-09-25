@@ -6,11 +6,15 @@ description: NonEmptyVector makes head, max and reduce total; its return types s
 
 `NonEmptyVector<A>` is a sequence with at least one element. It holds a `Vector` and has the same costs.
 
+It has every operation of `Vector`, under the same names. The only ones missing are those that mean nothing on a
+non-empty sequence: `isEmpty`, `nonEmpty`, `orElse`, and the `Option` forms of what is total here, such as
+`headOption` or `reduceOption`. The size is `size()`.
+
 ## Total operations
 
 On a `Vector`, `head`, `max` or `reduce` can fail or return an `Option`, because the `Vector` may be empty. On a
-`NonEmptyVector` they return the value itself. The same holds for `last`, `min`, `maxBy`, `minBy` and the other
-`reduce` methods.
+`NonEmptyVector` they return the value itself. The same holds for `last`, `min`, `maxBy`, `minBy`, `average` and the
+other `reduce` methods.
 
 ```java
 NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
@@ -26,18 +30,30 @@ The return type tells you whether the result can be empty:
 
 | Returns | When | For example |
 |---|---|---|
-| `NonEmptyVector` | the operation keeps or grows the size | `map`, `append`, `appendAll`, `sorted`, `distinct`, `zip` |
-| `Vector` | the operation may remove elements | `filter`, `collect`, `tail`, `take`, `drop`, `remove` |
-| `Option` | you ask for a part that may not exist | `find`, `tailNonEmpty()`, `initNonEmpty()` |
+| `NonEmptyVector` | the operation keeps or grows the size | `map`, `append`, `insert`, `sorted`, `distinct`, `zip`, `scan`, `rotateLeft` |
+| `Vector` | the operation may remove elements | `filter`, `collect`, `tail`, `take`, `drop`, `remove`, `patch` |
+| a tuple of `Vector`s | a split, where either part may be empty | `splitAt`, `span`, `partition` |
+| `Option` | you ask for a part that may not exist | `find`, `indexWhereOption`, `tailNonEmpty()`, `initNonEmpty()` |
 
-`grouped` returns a `Vector` of `NonEmptyVector`s, and `groupBy` a `HashMap` whose values are `NonEmptyVector`s.
-`appendAll` and `prependAll` accept a `Vector` that may be empty and still return a `NonEmptyVector`.
+`grouped`, `sliding` and `slideBy` return a `Vector` of `NonEmptyVector`s, and `groupBy` a `HashMap` whose values are
+`NonEmptyVector`s. `unzip` returns `NonEmptyVector`s, and the first part of `splitAtInclusive` is one.
+`appendAll`, `prependAll`, `insertAll` and `zipAll` accept an `Iterable` that may be empty and still return a
+`NonEmptyVector`. `zip` and `crossProduct` return a `NonEmptyVector` when given one, and a `Vector` when given any
+other `Iterable`.
 
 ```java
 NonEmptyVector<Integer> grown = NonEmptyVector.of(1).appendAll(Vector.empty());
 Vector<Integer> evens = NonEmptyVector.of(1, 2, 3).filter(n -> n % 2 == 0);
 Option<NonEmptyVector<Integer>> rest = NonEmptyVector.of(1).tailNonEmpty();
 // NonEmptyVector(1), Vector(2), None
+```
+
+```java
+NonEmptyVector<Integer> xs = NonEmptyVector.of(1, 2, 3, 4);
+Tuple2<Vector<Integer>, Vector<Integer>> halves = xs.splitAt(2);
+Vector<NonEmptyVector<Integer>> windows = xs.sliding(3);
+double mean = xs.average();
+// (Vector(1, 2), Vector(3, 4)), Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4)), 2.5
 ```
 
 `flatMap` takes a function that returns a `NonEmptyVector`, and keeps the result non-empty. `flatMapAll` takes a

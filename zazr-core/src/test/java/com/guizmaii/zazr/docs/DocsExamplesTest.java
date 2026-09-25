@@ -443,6 +443,19 @@ public class DocsExamplesTest {
         }
 
         @Test
+        void splitsWindowsAndTotalAggregates() {
+            NonEmptyVector<Integer> xs = NonEmptyVector.of(1, 2, 3, 4);
+            Tuple2<Vector<Integer>, Vector<Integer>> halves = xs.splitAt(2);
+            Vector<NonEmptyVector<Integer>> windows = xs.sliding(3);
+            double mean = xs.average();
+            // (Vector(1, 2), Vector(3, 4)), Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4)), 2.5
+
+            assertThat(halves).hasToString("(Vector(1, 2), Vector(3, 4))");
+            assertThat(windows).hasToString("Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4))");
+            assertThat(mean).isEqualTo(2.5);
+        }
+
+        @Test
         void construction() {
             Option<NonEmptyVector<String>> fromInput = Vector.of("a", "b").toNonEmptyVector();
             Option<NonEmptyVector<String>> fromNothing = Vector.<String>empty().toNonEmptyVector();

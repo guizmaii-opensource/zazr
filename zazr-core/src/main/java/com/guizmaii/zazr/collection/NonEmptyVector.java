@@ -2,16 +2,24 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.Tuple3;
+import com.guizmaii.zazr.collection.internal.Comparators;
+import com.guizmaii.zazr.collection.internal.TraversableModule;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -21,17 +29,26 @@ import org.jspecify.annotations.Nullable;
  * The contract, per method family:
  * <ul>
  * <li>operations that preserve or grow the size return a {@code NonEmptyVector}: {@code map}, {@code flatMap},
- * {@code append*}, {@code prepend*}, {@code concat}, {@code reverse}, {@code distinct*}, {@code sorted}, {@code sortBy},
- * {@code zip*}, {@code scanLeft}, {@code update}, {@code tap}; {@code grouped} and {@code groupBy} return non-empty
- * groups;</li>
- * <li>operations that can shrink return a {@link Vector}: {@code filter}, {@code reject}, {@code collect},
- * {@code flatMapAll}, {@code tail}, {@code init}, {@code drop*}, {@code take*}, {@code slice}, {@code remove*},
- * {@code duplicates*}, {@code partitionMap};</li>
+ * {@code as}, {@code append*}, {@code prepend*}, {@code concat}, {@code insert*}, {@code intersperse}, {@code padTo},
+ * {@code leftPadTo}, {@code reverse}, {@code rotate*}, {@code shuffle}, {@code replace*}, {@code distinct*},
+ * {@code sorted}, {@code sortBy}, {@code zip(NonEmptyVector)}, {@code zipWith(NonEmptyVector, ...)}, {@code zipAll},
+ * {@code zipWithIndex}, {@code scan}, {@code scanLeft}, {@code scanRight}, {@code update}, {@code tap},
+ * {@code permutations}, {@code combinations()}, {@code crossProduct()}, {@code crossProduct(NonEmptyVector)};
+ * {@code unzip} and {@code unzip3} return tuples of them; {@code grouped}, {@code sliding}, {@code slideBy} and
+ * {@code groupBy} return non-empty groups, as {@code splitAtInclusive} returns a non-empty first part;</li>
+ * <li>operations that can shrink return a {@link Vector}, or a tuple of them: {@code filter}, {@code reject},
+ * {@code collect}, {@code flatMapAll}, {@code tail}, {@code init}, {@code drop*}, {@code take*}, {@code slice},
+ * {@code subSequence}, {@code patch}, {@code remove*}, {@code retainAll}, {@code duplicates*}, {@code partition},
+ * {@code partitionMap}, {@code span}, {@code splitAt}, the {@code zip}, {@code zipWith} and {@code crossProduct} of
+ * any {@code Iterable}, {@code crossProduct(int)}, {@code combinations(int)};</li>
  * <li>operations that are partial on a {@code Vector} are total here: {@code head}, {@code last}, {@code max}, {@code min},
- * {@code maxBy}, {@code minBy}, {@code reduce*}, {@code reduceMap};</li>
+ * {@code maxBy}, {@code minBy}, {@code reduce*}, {@code reduceMap}, {@code average};</li>
  * <li>narrowing back to a {@code NonEmptyVector} returns an {@link Option}: {@code tailNonEmpty}, {@code initNonEmpty},
- * as do the searches {@code find}, {@code findLast}, {@code indexOfOption}.</li>
+ * as do the searches {@code find}, {@code findLast}, the {@code *Option} index searches and {@code arrangeBy}.</li>
  * </ul>
+ * The {@code Option} forms of what is total here ({@code headOption}, {@code reduceOption}, ...) are absent, and so are
+ * the members that are constant on a non-empty collection ({@code isEmpty}, {@code nonEmpty}, {@code orElse},
+ * {@code toNonEmptyVector}). The size is {@link #size()}.
  * Two {@code flatMap}s cannot share a name (a lambda argument would be ambiguous), so {@code flatMap} is the one whose
  * function returns a {@code NonEmptyVector} and {@code flatMapAll} the one whose function returns any {@code Iterable}.
  * <p>
@@ -165,6 +182,25 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             builder.addAll(inner.vector);
         }
         return new NonEmptyVector<>(builder.result());
+    }
+
+    /**
+     * Transposes a matrix given as non-empty rows of the same size: {@code ((1, 2, 3), (4, 5, 6))} becomes
+     * {@code ((1, 4), (2, 5), (3, 6))}. Static, like {@link Vector#transpose(Vector)}, because Java cannot demand of an
+     * instance method that the receiver's element type be a collection.
+     * <p>
+     * Complexity: O(rows * columns), that of {@link Vector#transpose(Vector)}.
+     *
+     * @param matrix The rows
+     * @param <A>    Component type of the rows
+     * @return the columns, one per element of a row, each with one element per row
+     * @throws IllegalArgumentException if the rows differ in size
+     * @throws NullPointerException     if {@code matrix} is null
+     */
+    public static <A extends @Nullable Object> NonEmptyVector<NonEmptyVector<A>> transpose(NonEmptyVector<? extends NonEmptyVector<? extends A>> matrix) {
+        Objects.requireNonNull(matrix, "matrix is null");
+        final Vector<Vector<A>> rows = matrix.vector.map(row -> Vector.<A> narrow(row.toVector()));
+        return new NonEmptyVector<>(Vector.transpose(rows).map(NonEmptyVector::new));
     }
 
     /* a Vector cannot hold a null, so it is appended by leaf copies; anything else is checked element by element, naming this type */
@@ -508,6 +544,392 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         return groups;
     }
 
+    /**
+     * Replaces every element by {@code value}.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#as(Object)}.
+     *
+     * @param value The element of the result
+     * @param <B>   Component type of the result
+     * @return a non-empty vector of the same size, every element {@code value}
+     * @throws NullPointerException if {@code value} is null
+     */
+    public <B extends @Nullable Object> NonEmptyVector<B> as(B value) {
+        Objects.requireNonNull(value, "NonEmptyVector.as: value is null");
+        return new NonEmptyVector<>(vector.as(value));
+    }
+
+    /**
+     * Accepts any iterable, possibly empty, and returns the non-empty type. The elements are read once.
+     * <p>
+     * Complexity: O(m) for m appended elements, that of {@link Vector#appendAll(Iterable)}.
+     *
+     * @param elements Elements to append, possibly none
+     * @return this vector followed by {@code elements}
+     * @throws NullPointerException if {@code elements} or one of its elements is null
+     */
+    public NonEmptyVector<A> appendAll(Iterable<? extends A> elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new NonEmptyVector<>(vector.appendAll(addAll(Vector.newBuilder(), elements).result()));
+    }
+
+    /**
+     * Accepts any iterable, possibly empty, and returns the non-empty type. The elements are read once.
+     * <p>
+     * Complexity: O(m) for m prepended elements, that of {@link Vector#prependAll(Iterable)}.
+     *
+     * @param elements Elements to prepend, possibly none
+     * @return {@code elements} followed by this vector
+     * @throws NullPointerException if {@code elements} or one of its elements is null
+     */
+    public NonEmptyVector<A> prependAll(Iterable<? extends A> elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new NonEmptyVector<>(vector.prependAll(addAll(Vector.newBuilder(), elements).result()));
+    }
+
+    /**
+     * Inserts an element at {@code index}; the elements from that position on shift right by one.
+     * <p>
+     * Complexity: O(min(i, n - i)), that of {@link Vector#insert(int, Object)}.
+     *
+     * @param index   A position, {@code 0 <= index <= size()}
+     * @param element The element to insert
+     * @return this vector with {@code element} at {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is not in {@code [0, size()]}
+     * @throws NullPointerException      if {@code element} is null
+     */
+    public NonEmptyVector<A> insert(int index, A element) {
+        Objects.requireNonNull(element, "NonEmptyVector.insert: element is null");
+        return new NonEmptyVector<>(vector.insert(index, element));
+    }
+
+    /**
+     * Inserts the elements, possibly none, at {@code index}, in iteration order; the elements from that position on
+     * shift right. The elements are read once.
+     * <p>
+     * Complexity: O(m + min(i, n - i)) for m inserted elements, that of {@link Vector#insertAll(int, Iterable)}.
+     *
+     * @param index    A position, {@code 0 <= index <= size()}
+     * @param elements The elements to insert
+     * @return this vector with {@code elements} at {@code index}
+     * @throws IndexOutOfBoundsException if {@code index} is not in {@code [0, size()]}
+     * @throws NullPointerException      if {@code elements} or one of its elements is null
+     */
+    public NonEmptyVector<A> insertAll(int index, Iterable<? extends A> elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new NonEmptyVector<>(vector.insertAll(index, addAll(Vector.newBuilder(), elements).result()));
+    }
+
+    /**
+     * Puts {@code element} between every two elements.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#intersperse(Object)}.
+     *
+     * @param element The separator
+     * @return a non-empty vector of {@code 2 * size() - 1} elements
+     * @throws NullPointerException if {@code element} is null, whatever the size
+     */
+    public NonEmptyVector<A> intersperse(A element) {
+        Objects.requireNonNull(element, "NonEmptyVector.intersperse: element is null");
+        return new NonEmptyVector<>(vector.intersperse(element));
+    }
+
+    /**
+     * Appends copies of {@code element} until there are {@code length} elements.
+     * <p>
+     * Complexity: O(k) for the k elements appended, that of {@link Vector#padTo(int, Object)}.
+     *
+     * @param length  The target size
+     * @param element The padding element
+     * @return this vector if it already has {@code length} or more elements, otherwise this vector padded to it
+     * @throws NullPointerException if {@code element} is null, whether or not padding is needed
+     */
+    public NonEmptyVector<A> padTo(int length, A element) {
+        Objects.requireNonNull(element, "NonEmptyVector.padTo: element is null");
+        return new NonEmptyVector<>(vector.padTo(length, element));
+    }
+
+    /**
+     * Prepends copies of {@code element} until there are {@code length} elements.
+     * <p>
+     * Complexity: O(k) for the k elements prepended, that of {@link Vector#leftPadTo(int, Object)}.
+     *
+     * @param length  The target size
+     * @param element The padding element
+     * @return this vector if it already has {@code length} or more elements, otherwise this vector padded to it
+     * @throws NullPointerException if {@code element} is null, whether or not padding is needed
+     */
+    public NonEmptyVector<A> leftPadTo(int length, A element) {
+        Objects.requireNonNull(element, "NonEmptyVector.leftPadTo: element is null");
+        return new NonEmptyVector<>(vector.leftPadTo(length, element));
+    }
+
+    /**
+     * Rotates the elements {@code n} positions to the left: {@code (1, 2, 3, 4, 5).rotateLeft(2)} is
+     * {@code (3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the size.
+     * <p>
+     * Complexity: O(k) for the k = n mod size() elements moved to the end, that of {@link Vector#rotateLeft(int)}.
+     *
+     * @param n The distance
+     * @return the rotated elements
+     */
+    public NonEmptyVector<A> rotateLeft(int n) { return new NonEmptyVector<>(vector.rotateLeft(n)); }
+
+    /**
+     * Rotates the elements {@code n} positions to the right: {@code (1, 2, 3, 4, 5).rotateRight(2)} is
+     * {@code (4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the size.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#rotateRight(int)}: the {@code size() - k} elements before the moved suffix
+     * of k = n mod size() elements are re-appended.
+     *
+     * @param n The distance
+     * @return the rotated elements
+     */
+    public NonEmptyVector<A> rotateRight(int n) { return new NonEmptyVector<>(vector.rotateRight(n)); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#shuffle()}.
+     *
+     * @return the elements in a uniformly random order
+     */
+    public NonEmptyVector<A> shuffle() { return new NonEmptyVector<>(vector.shuffle()); }
+
+    /**
+     * Complexity: O(n) to find the element, then one effectively O(1) update, that of
+     * {@link Vector#replace(Object, Object)}.
+     *
+     * @param currentElement The element to replace
+     * @param newElement     The replacement
+     * @return this vector with the first occurrence of {@code currentElement} replaced by {@code newElement}
+     * @throws NullPointerException if {@code newElement} is null, whether or not {@code currentElement} occurs
+     */
+    public NonEmptyVector<A> replace(A currentElement, A newElement) {
+        Objects.requireNonNull(newElement, "NonEmptyVector.replace: newElement is null");
+        return new NonEmptyVector<>(vector.replace(currentElement, newElement));
+    }
+
+    /**
+     * Complexity: O(n) plus one effectively O(1) update per occurrence, that of {@link Vector#replaceAll(Object, Object)}.
+     *
+     * @param currentElement The element to replace
+     * @param newElement     The replacement
+     * @return this vector with every occurrence of {@code currentElement} replaced by {@code newElement}
+     * @throws NullPointerException if {@code newElement} is null, whether or not {@code currentElement} occurs
+     */
+    public NonEmptyVector<A> replaceAll(A currentElement, A newElement) {
+        Objects.requireNonNull(newElement, "NonEmptyVector.replaceAll: newElement is null");
+        return new NonEmptyVector<>(vector.replaceAll(currentElement, newElement));
+    }
+
+    /**
+     * {@link #scanLeft(Object, BiFunction)} with an accumulator of the element type. Has {@code size() + 1} elements.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#scan(Object, BiFunction)}.
+     *
+     * @param zero      The initial accumulator
+     * @param operation Combines the accumulator and an element
+     * @return the intermediate results, starting with {@code zero}
+     * @throws NullPointerException if {@code zero} or {@code operation} is null, or {@code operation} returns null
+     */
+    public NonEmptyVector<A> scan(A zero, BiFunction<? super A, ? super A, ? extends A> operation) {
+        Objects.requireNonNull(zero, "NonEmptyVector.scan: zero is null");
+        Objects.requireNonNull(operation, "operation is null");
+        return new NonEmptyVector<>(vector.scan(zero, (acc, element) -> Objects.requireNonNull(operation.apply(acc, element), "NonEmptyVector.scan: operation returned null")));
+    }
+
+    /**
+     * The running right fold: each intermediate result, then {@code zero} last. Has {@code size() + 1} elements.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#scanRight(Object, BiFunction)}.
+     *
+     * @param zero      The initial accumulator
+     * @param operation Combines an element and the accumulator
+     * @param <B>       Accumulator type
+     * @return the intermediate results, ending with {@code zero}
+     * @throws NullPointerException if {@code zero} or {@code operation} is null, or {@code operation} returns null
+     */
+    public <B extends @Nullable Object> NonEmptyVector<B> scanRight(B zero, BiFunction<? super A, ? super B, ? extends B> operation) {
+        Objects.requireNonNull(zero, "NonEmptyVector.scanRight: zero is null");
+        Objects.requireNonNull(operation, "operation is null");
+        return new NonEmptyVector<>(vector.scanRight(zero, (element, acc) -> Objects.requireNonNull(operation.apply(element, acc), "NonEmptyVector.scanRight: operation returned null")));
+    }
+
+    /**
+     * Pairs the elements of both sides by position, up to the longer size, filling the shorter side; at least as long
+     * as this vector, so non-empty. {@code that} is read once.
+     * <p>
+     * Complexity: O(max(n, m)) for m elements of {@code that}, that of {@link Vector#zipAll(Iterable, Object, Object)}.
+     *
+     * @param that     The right-hand elements, possibly none
+     * @param thisElem Fills this side when it is the shorter
+     * @param thatElem Fills {@code that} side when it is the shorter
+     * @param <B>      Component type of {@code that}
+     * @return the pairs
+     * @throws NullPointerException if an argument or an element of {@code that} is null
+     */
+    public <B extends @Nullable Object> NonEmptyVector<Tuple2<A, B>> zipAll(Iterable<? extends B> that, A thisElem, B thatElem) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "NonEmptyVector.zipAll: thisElem is null");
+        Objects.requireNonNull(thatElem, "NonEmptyVector.zipAll: thatElem is null");
+        return new NonEmptyVector<>(vector.zipAll(addAll(Vector.<B> newBuilder(), that).result(), thisElem, thatElem));
+    }
+
+    /**
+     * Complexity: O(n log n) comparisons, that of {@link Vector#distinctByKeepLast(Comparator)}.
+     *
+     * @param comparator Decides which elements are equal
+     * @return the elements distinct under {@code comparator}, each at its last occurrence
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public NonEmptyVector<A> distinctByKeepLast(Comparator<? super A> comparator) {
+        return new NonEmptyVector<>(vector.distinctByKeepLast(comparator));
+    }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#distinctByKeepLast(Function)}.
+     *
+     * @param keyExtractor Computes the key elements are distinct by
+     * @param <K>          Key type
+     * @return the elements with distinct keys, each at its last occurrence
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
+    public <K extends @Nullable Object> NonEmptyVector<A> distinctByKeepLast(Function<? super A, ? extends K> keyExtractor) {
+        return new NonEmptyVector<>(vector.distinctByKeepLast(keyExtractor));
+    }
+
+    /**
+     * Splits every element into two with {@code unzipper}: one pass, two builders. Both sides have this vector's size.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param unzipper Splits an element
+     * @param <T1>     Component type of the first side
+     * @param <T2>     Component type of the second side
+     * @return the first halves and the second halves, each in order
+     * @throws NullPointerException if {@code unzipper} is null, returns null, or returns a tuple with a null component
+     */
+    public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<NonEmptyVector<T1>, NonEmptyVector<T2>> unzip(Function<? super A, Tuple2<? extends T1, ? extends T2>> unzipper) {
+        Objects.requireNonNull(unzipper, "unzipper is null");
+        final Vector.Builder<T1> xs = Vector.newBuilder(size());
+        final Vector.Builder<T2> ys = Vector.newBuilder(size());
+        for (A element : vector) {
+            final Tuple2<? extends T1, ? extends T2> t = Objects.requireNonNull(unzipper.apply(element), "NonEmptyVector.unzip: unzipper returned null");
+            xs.add(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip: unzipper returned a null component"));
+            ys.add(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip: unzipper returned a null component"));
+        }
+        return Tuple.of(new NonEmptyVector<>(xs.result()), new NonEmptyVector<>(ys.result()));
+    }
+
+    /**
+     * Splits every element into three with {@code unzipper}: one pass, three builders. The three sides have this
+     * vector's size.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param unzipper Splits an element
+     * @param <T1>     Component type of the first side
+     * @param <T2>     Component type of the second side
+     * @param <T3>     Component type of the third side
+     * @return the three sides, each in order
+     * @throws NullPointerException if {@code unzipper} is null, returns null, or returns a tuple with a null component
+     */
+    public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<NonEmptyVector<T1>, NonEmptyVector<T2>, NonEmptyVector<T3>> unzip3(Function<? super A, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
+        Objects.requireNonNull(unzipper, "unzipper is null");
+        final Vector.Builder<T1> xs = Vector.newBuilder(size());
+        final Vector.Builder<T2> ys = Vector.newBuilder(size());
+        final Vector.Builder<T3> zs = Vector.newBuilder(size());
+        for (A element : vector) {
+            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = Objects.requireNonNull(unzipper.apply(element), "NonEmptyVector.unzip3: unzipper returned null");
+            xs.add(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip3: unzipper returned a null component"));
+            ys.add(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip3: unzipper returned a null component"));
+            zs.add(Objects.requireNonNull(t._3(), "NonEmptyVector.unzip3: unzipper returned a null component"));
+        }
+        return Tuple.of(new NonEmptyVector<>(xs.result()), new NonEmptyVector<>(ys.result()), new NonEmptyVector<>(zs.result()));
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements, each starting one element after the previous; a vector shorter
+     * than {@code size} is one window. The same as {@code sliding(size, 1)}.
+     * <p>
+     * Complexity: O(n) windows, each an effectively O(1) slice, that of {@link Vector#sliding(int)}.
+     *
+     * @param size The window size
+     * @return the windows, at least one, each non-empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Vector<NonEmptyVector<A>> sliding(int size) { return vector.sliding(size).map(NonEmptyVector::new); }
+
+    /**
+     * The windows of {@code size} consecutive elements, each starting {@code step} elements after the previous; the
+     * last one is shorter when it reaches the end, and a window whose elements all belong to the previous one is not
+     * produced. A vector shorter than {@code size} is one window.
+     * <p>
+     * Complexity: O(n / step) windows, each an effectively O(1) slice, that of {@link Vector#sliding(int, int)}.
+     *
+     * @param size The window size
+     * @param step The distance between two window starts
+     * @return the windows, at least one, each non-empty
+     * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
+     */
+    public Vector<NonEmptyVector<A>> sliding(int size, int step) { return vector.sliding(size, step).map(NonEmptyVector::new); }
+
+    /**
+     * The elements in maximal runs of consecutive elements with the same key, computed once per element by
+     * {@code classifier}; the runs concatenate back to this vector.
+     * <p>
+     * Complexity: O(n); each run is an effectively O(1) slice, that of {@link Vector#slideBy(Function)}.
+     *
+     * @param classifier The key of an element
+     * @return the runs, at least one, each non-empty
+     * @throws NullPointerException if {@code classifier} is null
+     */
+    public Vector<NonEmptyVector<A>> slideBy(Function<? super A, ?> classifier) { return vector.slideBy(classifier).map(NonEmptyVector::new); }
+
+    /**
+     * All distinct permutations of the elements, in the order the distinct elements first occur.
+     * <p>
+     * Complexity: O(n! * n) in the worst case (all elements distinct), that of {@link Vector#permutations()}.
+     *
+     * @return the permutations, at least one, each of this vector's size
+     */
+    public NonEmptyVector<NonEmptyVector<A>> permutations() {
+        return new NonEmptyVector<>(vector.permutations().map(NonEmptyVector::new));
+    }
+
+    /**
+     * All combinations of the elements, for every size from 0 to {@code size()}, by position; the first one is empty
+     * and the last one is this vector's elements.
+     * <p>
+     * Complexity: O(2^n) combinations, each of size up to n, that of {@link Vector#combinations()}.
+     *
+     * @return the combinations, ordered by size, then by position
+     */
+    public NonEmptyVector<Vector<A>> combinations() { return new NonEmptyVector<>(vector.combinations()); }
+
+    /**
+     * The Cartesian square: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * <p>
+     * Complexity: O(n^2), that of {@link Vector#crossProduct()}.
+     *
+     * @return the {@code size() * size()} pairs
+     */
+    public NonEmptyVector<Tuple2<A, A>> crossProduct() { return new NonEmptyVector<>(vector.crossProduct()); }
+
+    /**
+     * The Cartesian product with a non-empty vector: every pair {@code (a, b)}, {@code a} varying slowest.
+     * <p>
+     * Complexity: O(n * m) for m elements of {@code that}, that of {@link Vector#crossProduct(Iterable)}.
+     *
+     * @param that The right-hand elements
+     * @param <B>  Component type of {@code that}
+     * @return the {@code size() * that.size()} pairs
+     * @throws NullPointerException if {@code that} is null
+     */
+    public <B extends @Nullable Object> NonEmptyVector<Tuple2<A, B>> crossProduct(NonEmptyVector<? extends B> that) {
+        Objects.requireNonNull(that, "that is null");
+        return new NonEmptyVector<>(vector.crossProduct(that.vector));
+    }
+
     // -- returns Vector: the result may be empty
 
     /**
@@ -773,6 +1195,205 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public Vector<A> removeAll(Predicate<? super A> predicate) { return vector.removeAll(predicate); }
 
+    /**
+     * Complexity: O(n), that of {@link Vector#removeFirst(Predicate)}.
+     *
+     * @param predicate A test
+     * @return this vector without the first element that passes {@code predicate}; all of them if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    @SuppressWarnings("unchecked")
+    public Vector<A> removeFirst(Predicate<? super A> predicate) { return vector.removeFirst((Predicate<A>) predicate); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#removeLast(Predicate)}.
+     *
+     * @param predicate A test
+     * @return this vector without the last element that passes {@code predicate}; all of them if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    @SuppressWarnings("unchecked")
+    public Vector<A> removeLast(Predicate<? super A> predicate) { return vector.removeLast((Predicate<A>) predicate); }
+
+    /**
+     * Complexity: O(n + m) for m given elements, that of {@link Vector#retainAll(Iterable)}.
+     *
+     * @param elements The elements to keep
+     * @return the elements of this vector present in {@code elements}, in this vector's order
+     * @throws NullPointerException if {@code elements} is null
+     */
+    public Vector<A> retainAll(Iterable<? extends A> elements) { return vector.retainAll(elements); }
+
+    /**
+     * Replaces the {@code replaced} elements from {@code from} on by the elements of {@code that}, read once. A
+     * negative {@code from} or {@code replaced} counts as 0; a {@code from} beyond the end appends.
+     * <p>
+     * Complexity: O(n + m) for m elements of {@code that}, that of {@link Vector#patch(int, Iterable, int)}.
+     *
+     * @param from     The first position to replace
+     * @param that     The replacement elements
+     * @param replaced How many elements to replace
+     * @return the patched elements; empty when every element is replaced by none
+     * @throws NullPointerException if {@code that} or one of its elements is null
+     */
+    public Vector<A> patch(int from, Iterable<? extends A> that, int replaced) {
+        Objects.requireNonNull(that, "that is null");
+        return vector.patch(from, addAll(Vector.newBuilder(), that).result(), replaced);
+    }
+
+    /**
+     * Unlike {@link #drop(int)}, an out-of-range index throws.
+     * <p>
+     * Complexity: effectively O(1), that of {@link Vector#subSequence(int)}.
+     *
+     * @param beginIndex The first position, {@code 0 <= beginIndex <= size()}
+     * @return the elements from {@code beginIndex} on; empty when it is {@code size()}
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is not in {@code [0, size()]}
+     */
+    public Vector<A> subSequence(int beginIndex) { return vector.subSequence(beginIndex); }
+
+    /**
+     * Unlike {@link #slice(int, int)}, out-of-range or reversed indices throw.
+     * <p>
+     * Complexity: effectively O(1), that of {@link Vector#subSequence(int, int)}.
+     *
+     * @param beginIndex The first position, inclusive, {@code >= 0}
+     * @param endIndex   The last position, exclusive, {@code <= size()}
+     * @return the elements in {@code [beginIndex, endIndex)}; empty when both are equal
+     * @throws IndexOutOfBoundsException if {@code beginIndex < 0} or {@code endIndex > size()}
+     * @throws IllegalArgumentException  if {@code beginIndex > endIndex}
+     */
+    public Vector<A> subSequence(int beginIndex, int endIndex) { return vector.subSequence(beginIndex, endIndex); }
+
+    /**
+     * Complexity: effectively O(1), that of {@link Vector#splitAt(int)}.
+     *
+     * @param n The split position, clamped to {@code [0, size()]}
+     * @return {@code (take(n), drop(n))}
+     */
+    public Tuple2<Vector<A>, Vector<A>> splitAt(int n) { return vector.splitAt(n); }
+
+    /**
+     * Splits before the first element that passes {@code predicate}; that element starts the second part.
+     * <p>
+     * Complexity: O(k) for k elements before the split, then an effectively O(1) split, that of
+     * {@link Vector#splitAt(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the elements before the first match and the rest; all of them and an empty vector if none matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<Vector<A>, Vector<A>> splitAt(Predicate<? super A> predicate) { return vector.splitAt(predicate); }
+
+    /**
+     * Splits after the first element that passes {@code predicate}; that element ends the first part, which therefore
+     * always has at least one element.
+     * <p>
+     * Complexity: O(k) for k elements up to the split, then an effectively O(1) split, that of
+     * {@link Vector#splitAtInclusive(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the elements up to and including the first match, and the rest; all of them and an empty vector if none
+     *         matches
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<NonEmptyVector<A>, Vector<A>> splitAtInclusive(Predicate<? super A> predicate) {
+        final Tuple2<Vector<A>, Vector<A>> split = vector.splitAtInclusive(predicate);
+        return Tuple.of(new NonEmptyVector<>(split._1()), split._2());
+    }
+
+    /**
+     * Complexity: O(k) for k elements before the split, then an effectively O(1) split, that of
+     * {@link Vector#span(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the longest prefix whose elements pass {@code predicate}, and the rest
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<Vector<A>, Vector<A>> span(Predicate<? super A> predicate) { return vector.span(predicate); }
+
+    /**
+     * Complexity: O(n), one pass.
+     *
+     * @param predicate A test
+     * @return the elements that pass {@code predicate} and those that fail it, each in order
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<Vector<A>, Vector<A>> partition(Predicate<? super A> predicate) { return vector.partition(predicate); }
+
+    /**
+     * Pairs the elements by position, up to the shorter size; empty when {@code that} is. For a non-empty argument,
+     * see {@link #zip(NonEmptyVector)}.
+     * <p>
+     * Complexity: O(min(n, m)) for m elements of {@code that}, that of {@link Vector#zip(Iterable)}.
+     *
+     * @param that The right-hand elements, read once
+     * @param <B>  Component type of {@code that}
+     * @return the pairs
+     * @throws NullPointerException if {@code that} or one of its elements is null
+     */
+    public <B extends @Nullable Object> Vector<Tuple2<A, B>> zip(Iterable<? extends B> that) {
+        Objects.requireNonNull(that, "that is null");
+        return vector.zip(addAll(Vector.<B> newBuilder(), that).result());
+    }
+
+    /**
+     * Combines the elements by position, up to the shorter size; empty when {@code that} is. For a non-empty
+     * argument, see {@link #zipWith(NonEmptyVector, BiFunction)}.
+     * <p>
+     * Complexity: O(min(n, m)) for m elements of {@code that}, that of {@link Vector#zipWith(Iterable, BiFunction)}.
+     *
+     * @param that   The right-hand elements, read once
+     * @param mapper Combines two elements
+     * @param <B>    Component type of {@code that}
+     * @param <R>    Component type of the result
+     * @return the combined elements
+     * @throws NullPointerException if {@code that}, one of its elements or {@code mapper} is null, or {@code mapper}
+     *                              returns null
+     */
+    public <B extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(Iterable<? extends B> that, BiFunction<? super A, ? super B, ? extends R> mapper) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        return vector.zipWith(addAll(Vector.<B> newBuilder(), that).result(), (a, b) -> Objects.requireNonNull(mapper.apply(a, b), "NonEmptyVector.zipWith: mapper returned null"));
+    }
+
+    /**
+     * The Cartesian product with any iterable: every pair {@code (a, b)}, {@code a} varying slowest; empty when
+     * {@code that} is. For a non-empty argument, see {@link #crossProduct(NonEmptyVector)}.
+     * <p>
+     * Complexity: O(n * m) for m elements of {@code that}, that of {@link Vector#crossProduct(Iterable)}.
+     *
+     * @param that The right-hand elements, read once
+     * @param <B>  Component type of {@code that}
+     * @return the pairs
+     * @throws NullPointerException if {@code that} or one of its elements is null
+     */
+    public <B extends @Nullable Object> Vector<Tuple2<A, B>> crossProduct(Iterable<? extends B> that) {
+        Objects.requireNonNull(that, "that is null");
+        return vector.crossProduct(addAll(Vector.<B> newBuilder(), that).result());
+    }
+
+    /**
+     * The Cartesian power: every vector of {@code power} elements drawn from this one, in lexicographic position
+     * order. {@code power == 0} gives one empty vector; a negative power gives none.
+     * <p>
+     * Complexity: O(n^power) vectors of size {@code power}, that of {@link Vector#crossProduct(int)}.
+     *
+     * @param power The size of each result
+     * @return the vectors
+     */
+    public Vector<Vector<A>> crossProduct(int power) { return vector.crossProduct(power); }
+
+    /**
+     * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
+     * <p>
+     * Complexity: O(C(n, k)) combinations of size k, that of {@link Vector#combinations(int)}.
+     *
+     * @param k The size of each combination; {@code k <= 0} gives one empty combination
+     * @return the k-combinations, in position order; none when {@code k > size()}
+     */
+    public Vector<Vector<A>> combinations(int k) { return vector.combinations(k); }
+
     // -- total: what is partial on a Vector
 
     /**
@@ -1009,6 +1630,357 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public int indexOf(A element) { return vector.indexOf(element); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#indexOf(Object, int)}.
+     *
+     * @param element An element
+     * @param from    The first position searched; a negative one counts as 0
+     * @return the index of the first element at or after {@code from} equal to {@code element}, or -1
+     */
+    public int indexOf(A element, int from) { return vector.indexOf(element, from); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#indexWhere(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the index of the first element that passes {@code predicate}, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int indexWhere(Predicate<? super A> predicate) { return vector.indexWhere(predicate); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#indexWhere(Predicate, int)}.
+     *
+     * @param predicate A test
+     * @param from      The first position searched; a negative one counts as 0
+     * @return the index of the first element at or after {@code from} that passes {@code predicate}, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int indexWhere(Predicate<? super A> predicate, int from) { return vector.indexWhere(predicate, from); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexOf(Object)}.
+     *
+     * @param element An element
+     * @return the index of the last element equal to {@code element}, or -1
+     */
+    public int lastIndexOf(A element) { return vector.lastIndexOf(element); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexOf(Object, int)}.
+     *
+     * @param element An element
+     * @param end     The last position searched
+     * @return the index of the last element at or before {@code end} equal to {@code element}, or -1
+     */
+    public int lastIndexOf(A element, int end) { return vector.lastIndexOf(element, end); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexWhere(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the index of the last element that passes {@code predicate}, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int lastIndexWhere(Predicate<? super A> predicate) { return vector.lastIndexWhere(predicate); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexWhere(Predicate, int)}.
+     *
+     * @param predicate A test
+     * @param end       The last position searched
+     * @return the index of the last element at or before {@code end} that passes {@code predicate}, or -1
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int lastIndexWhere(Predicate<? super A> predicate, int end) { return vector.lastIndexWhere(predicate, end); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#indexOfSlice(Iterable)}.
+     *
+     * @param that A slice
+     * @return the index of the first occurrence of {@code that} as a contiguous slice, or -1; 0 for an empty slice
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int indexOfSlice(Iterable<? extends A> that) { return vector.indexOfSlice(that); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#indexOfSlice(Iterable, int)}.
+     *
+     * @param that A slice
+     * @param from The first position searched
+     * @return the index of the first occurrence of {@code that} at or after {@code from}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int indexOfSlice(Iterable<? extends A> that, int from) { return vector.indexOfSlice(that, from); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#lastIndexOfSlice(Iterable)}.
+     *
+     * @param that A slice
+     * @return the index of the last occurrence of {@code that} as a contiguous slice, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int lastIndexOfSlice(Iterable<? extends A> that) { return vector.lastIndexOfSlice(that); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#lastIndexOfSlice(Iterable, int)}.
+     *
+     * @param that A slice
+     * @param end  The last position an occurrence may start at
+     * @return the index of the last occurrence of {@code that} starting at or before {@code end}, or -1
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int lastIndexOfSlice(Iterable<? extends A> that, int end) { return vector.lastIndexOfSlice(that, end); }
+
+    /**
+     * Complexity: O(m) for m elements of {@code that}, that of {@link Vector#startsWith(Iterable)}.
+     *
+     * @param that A prefix
+     * @return whether the first elements equal {@code that}; true for an empty {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean startsWith(Iterable<? extends A> that) { return vector.startsWith(that); }
+
+    /**
+     * Complexity: O(m) for m elements of {@code that}, that of {@link Vector#startsWith(Iterable, int)}.
+     *
+     * @param that   A prefix
+     * @param offset The position the prefix starts at
+     * @return false if {@code offset} is negative; otherwise whether the elements from {@code offset} on start with
+     *         {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean startsWith(Iterable<? extends A> that, int offset) { return vector.startsWith(that, offset); }
+
+    /**
+     * Complexity: O(m) for m elements of {@code that}, that of {@link Vector#endsWith(Iterable)}.
+     *
+     * @param that A suffix
+     * @return whether the last elements equal {@code that}; true for an empty {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean endsWith(Iterable<? extends A> that) { return vector.endsWith(that); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#containsSlice(Iterable)}.
+     *
+     * @param that A slice
+     * @return whether {@code that} occurs as a contiguous slice; true for an empty {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public boolean containsSlice(Iterable<? extends A> that) { return vector.containsSlice(that); }
+
+    /**
+     * Complexity: O(n * m) for m given elements, each looked up by a walk.
+     *
+     * @param elements Elements
+     * @return whether every one of {@code elements} is present
+     * @throws NullPointerException if {@code elements} is null
+     */
+    public boolean containsAll(Iterable<? extends A> elements) { return vector.containsAll(elements); }
+
+    /**
+     * Binary search in elements sorted in their natural order (otherwise the result is undefined).
+     * <p>
+     * Complexity: O(log n) comparisons, each an effectively O(1) access, that of {@link Vector#search(Object)}.
+     *
+     * @param element The element to find
+     * @return its index if present, otherwise {@code -(insertion point) - 1}
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    public int search(A element) { return vector.search(element); }
+
+    /**
+     * Binary search in elements sorted by {@code comparator} (otherwise the result is undefined).
+     * <p>
+     * Complexity: O(log n) comparisons, each an effectively O(1) access, that of
+     * {@link Vector#search(Object, Comparator)}.
+     *
+     * @param element    The element to find
+     * @param comparator The order of the elements
+     * @return its index if present, otherwise {@code -(insertion point) - 1}
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public int search(A element, Comparator<? super A> comparator) { return vector.search(element, comparator); }
+
+    /**
+     * Complexity: O(k) for a run of k elements, that of {@link Vector#segmentLength(Predicate, int)}.
+     *
+     * @param predicate A test
+     * @param from      The first position of the run; a negative one counts as 0
+     * @return the length of the longest run of elements from {@code from} on that pass {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int segmentLength(Predicate<? super A> predicate, int from) { return vector.segmentLength(predicate, from); }
+
+    /**
+     * Complexity: O(k) for a prefix of k elements, that of {@link Vector#prefixLength(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the length of the longest prefix whose elements pass {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public int prefixLength(Predicate<? super A> predicate) { return vector.prefixLength(predicate); }
+
+    /**
+     * Complexity: O(n).
+     *
+     * @param predicate A test
+     * @return whether exactly one element passes {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public boolean existsUnique(Predicate<? super A> predicate) { return vector.existsUnique(predicate); }
+
+    /**
+     * Complexity: O(n), every element compared once.
+     *
+     * @return the greatest element in the natural order of the elements; the first one, if several are equal
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    public A max() { return max(Comparators.naturalComparator()); }
+
+    /**
+     * Complexity: O(n), every element compared once.
+     *
+     * @return the least element in the natural order of the elements; the first one, if several are equal. Among
+     *         {@code Double}s or {@code Float}s, a {@code NaN} is the result whenever one is present, as on
+     *         {@link Vector#min()}
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    @SuppressWarnings("unchecked")
+    public A min() {
+        final java.util.Iterator<A> iterator = vector.iterator();
+        final A head = iterator.next();
+        if (head instanceof Double first) {
+            double min = first;
+            while (iterator.hasNext()) {
+                min = Math.min(min, (Double) iterator.next());
+            }
+            return (A) (Double) min;
+        } else if (head instanceof Float first) {
+            float min = first;
+            while (iterator.hasNext()) {
+                min = Math.min(min, (Float) iterator.next());
+            }
+            return (A) (Float) min;
+        } else {
+            return min(Comparators.naturalComparator());
+        }
+    }
+
+    /**
+     * Complexity: O(n), every element compared once, that of {@link #max(Comparator)}.
+     *
+     * @param comparator The order
+     * @return the greatest element; the first one, if several are equal under {@code comparator}
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public A maxBy(Comparator<? super A> comparator) { return max(comparator); }
+
+    /**
+     * Complexity: O(n), every element compared once, that of {@link #min(Comparator)}.
+     *
+     * @param comparator The order
+     * @return the least element; the first one, if several are equal under {@code comparator}
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public A minBy(Comparator<? super A> comparator) { return min(comparator); }
+
+    /**
+     * Folds the elements from the left with {@code combine}, starting from {@code zero}, which must be its neutral
+     * element.
+     *
+     * @param zero    The neutral element of {@code combine}
+     * @param combine Combines two elements
+     * @return {@code combine(combine(combine(zero, a0), a1), a2)...}
+     * @throws NullPointerException if {@code combine} is null
+     */
+    public A fold(A zero, BiFunction<? super A, ? super A, ? extends A> combine) { return vector.fold(zero, combine); }
+
+    /**
+     * The sum of the elements, which must be {@link Number}s, with the arithmetic of {@link Vector#sum()}.
+     *
+     * @return the sum
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Number sum() { return vector.sum(); }
+
+    /**
+     * The product of the elements, which must be {@link Number}s, with the arithmetic of {@link Vector#product()}.
+     *
+     * @return the product
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public Number product() { return vector.product(); }
+
+    /**
+     * The average of the elements, which must be {@link Number}s, summed as {@code double}s with Neumaier
+     * compensation: the value {@link Vector#average()} holds.
+     *
+     * @return the average
+     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     */
+    public double average() {
+        try {
+            final double[] sum = TraversableModule.neumaierSum(vector, element -> ((Number) element).doubleValue());
+            return sum[0] / sum[1];
+        } catch (ClassCastException x) {
+            throw new UnsupportedOperationException("Elements are not numeric", x);
+        }
+    }
+
+    /**
+     * The only element.
+     *
+     * @return the element
+     * @throws java.util.NoSuchElementException if there is more than one element
+     */
+    public A single() { return vector.single(); }
+
+    /**
+     * Arranges the elements by a key that must be unique.
+     *
+     * @param getKey The key of an element
+     * @param <K>    Key type
+     * @return {@code Some} of the map from each key to its element, or {@code None} if two elements share a key
+     * @throws NullPointerException if {@code getKey} is null or returns null
+     */
+    public <K extends @Nullable Object> Option<Map<K, A>> arrangeBy(Function<? super A, ? extends K> getKey) {
+        Objects.requireNonNull(getKey, "getKey is null");
+        return vector.arrangeBy(element -> Objects.requireNonNull(getKey.apply(element), "NonEmptyVector.arrangeBy: getKey returned null"));
+    }
+
+    /**
+     * Runs {@code action} on each element with its position, from 0, without boxing the index.
+     *
+     * @param action A side effect
+     * @throws NullPointerException if {@code action} is null
+     */
+    public void forEachWithIndex(ObjIntConsumer<? super A> action) { vector.forEachWithIndex(action); }
+
+    /**
+     * @param collector A collector
+     * @param <R>       Result type
+     * @param <C>       The collector's accumulation type
+     * @return the elements collected, as {@code stream().collect(collector)} does
+     * @throws NullPointerException if {@code collector} is null
+     */
+    public <R extends @Nullable Object, C extends @Nullable Object> R collect(Collector<? super A, C, R> collector) {
+        return vector.collect(collector);
+    }
+
+    /**
+     * @param supplier    Makes a new result container
+     * @param accumulator Adds an element to a container
+     * @param combiner    Merges two containers
+     * @param <R>         Result type
+     * @return the elements collected, as {@code stream().collect(supplier, accumulator, combiner)} does
+     * @throws NullPointerException if an argument is null
+     */
+    public <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super A> accumulator, BiConsumer<R, R> combiner) {
+        return vector.collect(supplier, accumulator, combiner);
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.
@@ -1048,6 +2020,201 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public Set<A> toSet() { return vector.toSet(); }
 
+    /**
+     * @return the elements as a {@link Queue}, in order
+     */
+    public Queue<A> toQueue() { return vector.toQueue(); }
+
+    /**
+     * @return the elements as a {@link Stream}, in order
+     */
+    public Stream<A> toStream() { return vector.toStream(); }
+
+    /**
+     * @return the distinct elements as a {@link LinkedHashSet}, in order
+     */
+    public Set<A> toLinkedSet() { return vector.toLinkedSet(); }
+
+    /**
+     * @return the distinct elements as a {@link TreeSet} in their natural order
+     * @throws ClassCastException if the elements are not {@link Comparable}
+     */
+    public SortedSet<A> toSortedSet() { return vector.toSortedSet(); }
+
+    /**
+     * @param comparator The order
+     * @return the distinct elements as a {@link TreeSet} ordered by {@code comparator}
+     * @throws NullPointerException if {@code comparator} is null
+     */
+    public SortedSet<A> toSortedSet(Comparator<? super A> comparator) { return vector.toSortedSet(comparator); }
+
+    /**
+     * @return a new array of the elements, in order
+     */
+    public Object[] toArray() { return vector.toArray(); }
+
+    /**
+     * @param arrayFactory Makes an array of the given length
+     * @return a new array of the elements, in order, of the type {@code arrayFactory} makes
+     * @throws NullPointerException if {@code arrayFactory} is null
+     */
+    public A[] toArray(IntFunction<A[]> arrayFactory) { return vector.toArray(arrayFactory); }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}; of two entries with the same key, the later one wins.
+     *
+     * @param keyMapper   The key of an element
+     * @param valueMapper The value of an element
+     * @param <K>         Key type
+     * @param <V>         Value type
+     * @return the map
+     * @throws NullPointerException if an argument is null or returns null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return vector.toMap(entryMapper(keyMapper, valueMapper, "NonEmptyVector.toMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link HashMap}; of two entries with the same key, the later one wins.
+     *
+     * @param f   The entry an element becomes
+     * @param <K> Key type
+     * @param <V> Value type
+     * @return the map
+     * @throws NullPointerException if {@code f} is null, returns null, or returns an entry with a null key or value
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return vector.toMap(checkedEntries(f, "NonEmptyVector.toMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in order; of two entries with the same key, the
+     * later one wins the value and the earlier one the position.
+     *
+     * @param keyMapper   The key of an element
+     * @param valueMapper The value of an element
+     * @param <K>         Key type
+     * @param <V>         Value type
+     * @return the map
+     * @throws NullPointerException if an argument is null or returns null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return vector.toLinkedMap(entryMapper(keyMapper, valueMapper, "NonEmptyVector.toLinkedMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link LinkedHashMap}, in order; of two entries with the same key, the
+     * later one wins the value and the earlier one the position.
+     *
+     * @param f   The entry an element becomes
+     * @param <K> Key type
+     * @param <V> Value type
+     * @return the map
+     * @throws NullPointerException if {@code f} is null, returns null, or returns an entry with a null key or value
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return vector.toLinkedMap(checkedEntries(f, "NonEmptyVector.toLinkedMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys; of two entries with the
+     * same key, the later one wins.
+     *
+     * @param keyMapper   The key of an element
+     * @param valueMapper The value of an element
+     * @param <K>         Key type
+     * @param <V>         Value type
+     * @return the map
+     * @throws NullPointerException if an argument is null or returns null
+     */
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return vector.toSortedMap(entryMapper(keyMapper, valueMapper, "NonEmptyVector.toSortedMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys; of two entries with the
+     * same key, the later one wins.
+     *
+     * @param f   The entry an element becomes
+     * @param <K> Key type
+     * @param <V> Value type
+     * @return the map
+     * @throws NullPointerException if {@code f} is null, returns null, or returns an entry with a null key or value
+     */
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return vector.toSortedMap(checkedEntries(f, "NonEmptyVector.toSortedMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}; of two entries with the
+     * same key, the later one wins.
+     *
+     * @param comparator  The order of the keys
+     * @param keyMapper   The key of an element
+     * @param valueMapper The value of an element
+     * @param <K>         Key type
+     * @param <V>         Value type
+     * @return the map
+     * @throws NullPointerException if an argument is null or a mapper returns null
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        return vector.toSortedMap(comparator, entryMapper(keyMapper, valueMapper, "NonEmptyVector.toSortedMap"));
+    }
+
+    /**
+     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}; of two entries with the
+     * same key, the later one wins.
+     *
+     * @param comparator The order of the keys
+     * @param f          The entry an element becomes
+     * @param <K>        Key type
+     * @param <V>        Value type
+     * @return the map
+     * @throws NullPointerException if an argument is null, or {@code f} returns null or an entry with a null key or
+     *                              value
+     */
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        return vector.toSortedMap(comparator, checkedEntries(f, "NonEmptyVector.toSortedMap"));
+    }
+
+    /* the entry of an element, its key and value checked, reported under the calling method's name */
+    private static <A extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> Function<A, Tuple2<K, V>> entryMapper(
+            Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper, String method) {
+        Objects.requireNonNull(keyMapper, "keyMapper is null");
+        Objects.requireNonNull(valueMapper, "valueMapper is null");
+        return element -> {
+            final K key = keyMapper.apply(element);
+            if (key == null) {
+                throw new NullPointerException(method + ": keyMapper returned null");
+            }
+            final V value = valueMapper.apply(element);
+            if (value == null) {
+                throw new NullPointerException(method + ": valueMapper returned null");
+            }
+            return Tuple.of(key, value);
+        };
+    }
+
+    /* f, with its entry, key and value checked, reported under the calling method's name */
+    private static <A extends @Nullable Object, E extends @Nullable Tuple2<?, ?>> Function<A, E> checkedEntries(Function<? super A, ? extends E> f, String method) {
+        Objects.requireNonNull(f, "f is null");
+        return element -> {
+            final E entry = f.apply(element);
+            if (entry == null) {
+                throw new NullPointerException(method + ": f returned null");
+            }
+            if (entry._1() == null) {
+                throw new NullPointerException(method + ": f returned an entry with a null key");
+            }
+            if (entry._2() == null) {
+                throw new NullPointerException(method + ": f returned an entry with a null value");
+            }
+            return entry;
+        };
+    }
+
     // -- returns Option
 
     /**
@@ -1069,6 +2236,108 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return the index of the first element equal to {@code element}
      */
     public Option<Integer> indexOfOption(A element) { return vector.indexOfOption(element); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#indexOfOption(Object, int)}.
+     *
+     * @param element An element
+     * @param from    The first position searched; a negative one counts as 0
+     * @return the index of the first element at or after {@code from} equal to {@code element}
+     */
+    public Option<Integer> indexOfOption(A element, int from) { return vector.indexOfOption(element, from); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#indexWhereOption(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the index of the first element that passes {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> indexWhereOption(Predicate<? super A> predicate) { return vector.indexWhereOption(predicate); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#indexWhereOption(Predicate, int)}.
+     *
+     * @param predicate A test
+     * @param from      The first position searched; a negative one counts as 0
+     * @return the index of the first element at or after {@code from} that passes {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> indexWhereOption(Predicate<? super A> predicate, int from) { return vector.indexWhereOption(predicate, from); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexOfOption(Object)}.
+     *
+     * @param element An element
+     * @return the index of the last element equal to {@code element}
+     */
+    public Option<Integer> lastIndexOfOption(A element) { return vector.lastIndexOfOption(element); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexOfOption(Object, int)}.
+     *
+     * @param element An element
+     * @param end     The last position searched
+     * @return the index of the last element at or before {@code end} equal to {@code element}
+     */
+    public Option<Integer> lastIndexOfOption(A element, int end) { return vector.lastIndexOfOption(element, end); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexWhereOption(Predicate)}.
+     *
+     * @param predicate A test
+     * @return the index of the last element that passes {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> lastIndexWhereOption(Predicate<? super A> predicate) { return vector.lastIndexWhereOption(predicate); }
+
+    /**
+     * Complexity: O(n), that of {@link Vector#lastIndexWhereOption(Predicate, int)}.
+     *
+     * @param predicate A test
+     * @param end       The last position searched
+     * @return the index of the last element at or before {@code end} that passes {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Option<Integer> lastIndexWhereOption(Predicate<? super A> predicate, int end) { return vector.lastIndexWhereOption(predicate, end); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#indexOfSliceOption(Iterable)}.
+     *
+     * @param that A slice
+     * @return the index of the first occurrence of {@code that} as a contiguous slice
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> indexOfSliceOption(Iterable<? extends A> that) { return vector.indexOfSliceOption(that); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#indexOfSliceOption(Iterable, int)}.
+     *
+     * @param that A slice
+     * @param from The first position searched
+     * @return the index of the first occurrence of {@code that} at or after {@code from}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> indexOfSliceOption(Iterable<? extends A> that, int from) { return vector.indexOfSliceOption(that, from); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#lastIndexOfSliceOption(Iterable)}.
+     *
+     * @param that A slice
+     * @return the index of the last occurrence of {@code that} as a contiguous slice
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> lastIndexOfSliceOption(Iterable<? extends A> that) { return vector.lastIndexOfSliceOption(that); }
+
+    /**
+     * Complexity: O(n * m) for a slice of m elements, that of {@link Vector#lastIndexOfSliceOption(Iterable, int)}.
+     *
+     * @param that A slice
+     * @param end  The last position an occurrence may start at
+     * @return the index of the last occurrence of {@code that} starting at or before {@code end}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public Option<Integer> lastIndexOfSliceOption(Iterable<? extends A> that, int end) { return vector.lastIndexOfSliceOption(that, end); }
 
     /**
      * @return all elements but the first, if there are any

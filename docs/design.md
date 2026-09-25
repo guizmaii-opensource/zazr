@@ -611,6 +611,50 @@ Implementation cost is low: every method is a one-line delegation to the wrapped
   `NonEmptyVector` with the same elements are not equal (compare through `toVector()`).
   `toString` is `NonEmptyVector(a, b)`.
 
+**The rest of `Vector`'s API (decided 2026-09-25, #90).** The table above was the first subset; `NonEmptyVector`
+now has every operation of `Vector`, each under the same contract, delegating to `Vector` and re-wrapping:
+
+- **Returns `NonEmptyVector`:** `as`, `appendAll(Iterable)`, `prependAll(Iterable)`, `insert`, `insertAll`,
+  `intersperse`, `padTo`, `leftPadTo`, `rotateLeft`, `rotateRight`, `shuffle`, `replace`, `replaceAll`, `scan` and
+  `scanRight` (n+1), `zipAll(Iterable, A, B)` (max(n, m) ≥ 1, so any `Iterable` is accepted), `distinctByKeepLast` ×2,
+  `permutations` as `NonEmptyVector<NonEmptyVector<A>>`, `combinations()` as `NonEmptyVector<Vector<A>>` (it always
+  holds the empty combination and the whole), `crossProduct()`, `crossProduct(NonEmptyVector)` (like `zip`, the
+  non-empty argument keeps the result non-empty), static `transpose(NonEmptyVector<? extends NonEmptyVector<? extends A>>)`
+  as `NonEmptyVector<NonEmptyVector<A>>`; `unzip`/`unzip3` as tuples of `NonEmptyVector`s; `sliding(size)`,
+  `sliding(size, step)` and `slideBy` as `Vector<NonEmptyVector<A>>` like `grouped`; `splitAtInclusive` as
+  `Tuple2<NonEmptyVector<A>, Vector<A>>`, because its first part always ends with the matching element or holds
+  everything.
+- **Returns `Vector` (or a tuple of them):** `splitAt(int)`, `splitAt(Predicate)`, `span`, `partition`, `retainAll`,
+  `removeFirst`, `removeLast` (both take `Predicate<? super A>`, where `Vector` takes `Predicate<T>`), `patch`,
+  `subSequence` ×2, `combinations(int)` and `crossProduct(int)` as `Vector<Vector<A>>` (`k > size()` or a negative
+  power gives none, 0 gives one empty vector), and the `Iterable` forms `zip(Iterable)`, `zipWith(Iterable, ·)`,
+  `crossProduct(Iterable)`, empty when the argument is.
+- **Total:** `max()`, `min()` (natural order; `min` returns a `NaN` whenever one is present, as `Vector.min()` does),
+  `maxBy(Comparator)`, `minBy(Comparator)`, `average()` as a `double` (the value `Vector.average()` holds, from the
+  same compensated sum, without the `Option`), `single()` (throws when there is more than one element), `fold`, `sum`,
+  `product`, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
+  `indexOfSlice` ×2, `lastIndexOfSlice` ×2, `startsWith` ×2, `endsWith`, `containsSlice`, `containsAll`, `search` ×2,
+  `segmentLength`, `prefixLength`, `existsUnique`, `forEachWithIndex`, `collect(Collector)`,
+  `collect(Supplier, BiConsumer, BiConsumer)`.
+- **Returns `Option`:** `arrangeBy` (two elements can share a key), `indexOfOption(a, from)`, `indexWhereOption` ×2,
+  `lastIndexOfOption` ×2, `lastIndexWhereOption` ×2, `indexOfSliceOption` ×2, `lastIndexOfSliceOption` ×2.
+- **Conversions:** `toQueue`, `toStream`, `toLinkedSet`, `toSortedSet` ×2, `toArray` ×2, `toMap` ×2, `toLinkedMap` ×2,
+  `toSortedMap` ×4.
+- **Nulls.** An element argument is checked before delegating, even where `Vector` would not look at it
+  (`intersperse` on one element, `padTo` to a size already reached, `replace` of an absent element), with a message
+  naming the method (`NonEmptyVector.padTo: element is null`). An `Iterable` argument is copied through the same check
+  as the constructors (`NonEmptyVector: element is null`), which also reads it once. A user function whose result is
+  stored is wrapped so that a null result names the method: `scan`, `scanRight`, `zipWith(Iterable, ·)`, `unzip`,
+  `unzip3` (the tuple and its components), `arrangeBy`, and the key, value and entry of the `to*Map` conversions.
+- **Deliberately absent:** `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`, `reduceRightOption`,
+  `singleOption` (the `Option` forms of what is total here, or of `single`); `tailOption`, `initOption` (`tail` and
+  `init` already return a `Vector`, and `tailNonEmpty`/`initNonEmpty` are the narrowing); `isEmpty`, `nonEmpty`,
+  `orElse`, `toNonEmptyVector` (constant on this type: false, true, `this`, `Some(this)`); `length` (`size` is the one
+  spelling, decided with the maintainer on 2026-09-25; the removal of `length` from `Vector`, `List`, `Queue` and
+  `Stream` is a separate change, #90 again, which also takes it off this list). `NonEmptyVectorTest` asserts
+  reflectively that every public instance method name of `Vector` exists on `NonEmptyVector` except exactly this
+  list, and that every method returning a `NonEmptyVector` is exercised by the non-empty guarantee test.
+
 **Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
 motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
 
