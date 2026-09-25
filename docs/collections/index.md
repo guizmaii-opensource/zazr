@@ -30,7 +30,8 @@ Each type declares its own methods, with its own return types, and every positio
 
 ## What they share
 
-Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their sorted variants) implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`,
+Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their sorted variants)
+implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`,
 `contains`, `find`, `foldLeft`, `mkString`, the conversions such as `toVector` and `stream()`, and the
 [`asJava()` view](../java-interop.md).
 
