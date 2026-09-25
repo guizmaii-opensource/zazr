@@ -44,7 +44,7 @@ Four types, all in `com.guizmaii.zazr.test`:
 `Check.check` takes the generators and the property. The property returns `true` when it holds.
 
 ```java
-var lists = Gen.list(Gen.intValue()); // Gen<List<Integer>>
+var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
 Check.check(lists, list -> list.reverse().reverse().equals(list)).assertIsSatisfied();
 ```
 
@@ -57,7 +57,7 @@ The error names the sample that broke the property, its number, and the seed of 
 
 ```java
 var config = CheckConfig.defaults().withSeed(42); // CheckConfig
-var shortLists = Check.check(config, Gen.list(Gen.intValue()), list -> list.size() < 5); // CheckResult
+var shortLists = Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5); // CheckResult
 shortLists.assertIsSatisfied(); // throws an AssertionError
 ```
 
@@ -86,7 +86,7 @@ A `CheckResult` is one of three records, so pattern matching over it covers ever
 - `Erroneous(sampleNumber, seed, cause, sample)`: a generator threw, or the property threw another exception.
 
 ```java
-var result = Check.check(CheckConfig.defaults().withSeed(42), Gen.intValue(0, 1000), n -> n < 500); // CheckResult
+var result = Check.check(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
 var summary = switch (result) {
     case CheckResult.Satisfied(var samples) -> "passed " + samples + " samples";
     case CheckResult.Falsified(var sampleNumber, _, var counterexample, _) -> "broken at sample " + sampleNumber + " by " + counterexample;
@@ -103,7 +103,7 @@ The property may use JUnit or AssertJ assertions. A failed assertion falsifies t
 in the result. A block body still ends with `return true`.
 
 ```java
-var digits = Gen.vector(Gen.intValue(0, 9)); // Gen<Vector<Integer>>
+var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
 var result = Check.check(CheckConfig.defaults().withSeed(42), digits, vector -> {
     assertThat(vector.distinct()).isEqualTo(vector);
     return true;
@@ -120,15 +120,15 @@ Any other exception thrown by the property makes the result `Erroneous`, with th
 
 | Values | Generators |
 |---|---|
-| numbers | `intValue()`, `intValue(min, max)`, `longValue()`, `longValue(min, max)`, `doubleValue()`, `doubleValue(min, max)` |
-| booleans | `booleanValue()` |
-| characters | `charValue()`, `charValue(min, max)`, `alphaChar()`, `numericChar()`, `alphaNumericChar()`, `asciiChar()`, `printableChar()`, `unicodeChar()` |
-| strings | `string()`, `string(chars)`, `stringN(n, chars)`, `alphaNumericString()` |
-| dates | `localDateTime()`, `localDateTime(min, max)` |
+| numbers | `integers()`, `integers(min, max)`, `longs()`, `longs(min, max)`, `doubles()`, `doubles(min, max)` |
+| booleans | `booleans()` |
+| characters | `chars()`, `chars(min, max)`, `alphaChars()`, `numericChars()`, `alphaNumericChars()`, `asciiChars()`, `printableChars()`, `unicodeChars()` |
+| strings | `strings()`, `strings(chars)`, `stringsN(n, chars)`, `alphaNumericStrings()` |
+| dates | `localDateTimes()`, `localDateTimes(min, max)` |
 
-The names end in `Value` where the plain name is a Java keyword: `intValue`, not `int`.
+The scalar generators have plural names, such as `integers()` and `strings()`: each one generates many values.
 
-A range favours its edges. Half of the draws of `intValue(min, max)` are the bounds, their neighbours, -1, 0 or 1;
+A range favours its edges. Half of the draws of `integers(min, max)` are the bounds, their neighbours, -1, 0 or 1;
 the others are uniform. Off-by-one mistakes show up in a few samples.
 
 ### Combining generators
@@ -137,7 +137,7 @@ the others are uniform. Off-by-one mistakes show up in a few samples.
 `weighted` choose among values or generators.
 
 ```java
-var dice = Gen.intValue(1, 6); // Gen<Integer>
+var dice = Gen.integers(1, 6); // Gen<Integer>
 var twoDice = dice.zipWith(dice, Integer::sum); // Gen<Integer>
 var coin = Gen.elements("heads", "tails"); // Gen<String>
 var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0)); // Gen<String>
@@ -178,9 +178,9 @@ The size bounds what a generator produces, such as the length of a collection. T
 - `withSize(n)` runs a generator at a fixed size.
 
 ```java
-var depth = Gen.sized(size -> Gen.intValue(0, size)); // Gen<Integer>
-var words = Gen.small(size -> Gen.stringN(size, Gen.alphaChar())); // Gen<String>
-var shortLists = Gen.list(Gen.intValue()).withSize(3); // Gen<List<Integer>>, at most 3 elements
+var depth = Gen.sized(size -> Gen.integers(0, size)); // Gen<Integer>
+var words = Gen.small(size -> Gen.stringsN(size, Gen.alphaChars())); // Gen<String>
+var shortLists = Gen.list(Gen.integers()).withSize(3); // Gen<List<Integer>>, at most 3 elements
 ```
 
 A check grows the size evenly over its samples, from 0 to the configured size:
@@ -198,9 +198,9 @@ Filtering has a budget: after more than 1,000 rejected values in a row, the chec
 predicate that rejects most values is better written as a `map` that builds the wanted values.
 
 ```java
-var evens = Gen.intValue(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
-var alsoEvens = Gen.intValue(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
-var impossible = Check.check(Gen.intValue().filter(n -> false), n -> true); // CheckResult
+var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
+var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
+var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
 // Erroneous: Gen.filter rejected 1001 values in a row, more than the discard budget of 1000
 ```
 
@@ -211,8 +211,8 @@ has a `with` method, and `check` and `checkAll` take a configuration as their fi
 
 ```java
 var config = CheckConfig.defaults().withSamples(1_000).withSeed(42); // CheckConfig
-Check.check(config, Gen.intValue(), n -> Integer.parseInt(Integer.toString(n)) == n).assertIsSatisfied();
-Check.checkN(50, Gen.alphaNumericString(), s -> s.strip().equals(s)).assertIsSatisfied();
+Check.check(config, Gen.integers(), n -> Integer.parseInt(Integer.toString(n)) == n).assertIsSatisfied();
+Check.checkN(50, Gen.alphaNumericStrings(), s -> s.strip().equals(s)).assertIsSatisfied();
 ```
 
 `checkN(n, ...)` is `check` with `n` samples.
@@ -248,7 +248,7 @@ build passes it to the test JVM. Maven does; a Gradle build needs `systemPropert
 | Maps | `hashMap`, `linkedHashMap`, `treeMap` |
 
 ```java
-var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.intValue()); // Gen<Validation<String, Integer>>
+var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
 Check.check(checks, checks, (a, b) -> a.zip(b).isValid() == (a.isValid() && b.isValid())).assertIsSatisfied();
 ```
 

@@ -1473,13 +1473,18 @@ unreleased).
   zio-test uses for its shrink budget). The system properties `zazr.check.samples`, `zazr.check.size`,
   `zazr.check.seed` and `zazr.check.maxDiscards` override the defaults, so `-Dzazr.check.seed=<seed>` replays a
   failure; a value set with a `with` method overrides the property.
-- **The `...Value` names.** `int`, `long`, `double`, `boolean` and `char` are Java keywords, so those scalars are
-  `intValue`, `longValue`, `doubleValue`, `booleanValue` and `charValue`. Every other generator keeps its zio-test
-  name (`alphaChar`, `string`, `stringN`, `alphaNumericString`, `elements`, `oneOf`, `weighted`, `unfoldGen`, ...).
-- **Edge-biased ranges.** zio-test's `Gen.int(min, max)` is uniform. Half of the draws of `intValue(min, max)` and
-  `longValue(min, max)` choose among the edges in range (the bounds, their neighbours, -1, 0 and 1), the other half
-  are uniform; `doubleValue(min, max)` adds both zeros, the smallest nonzero value of each sign, and the values next
-  to the bounds; `charValue` and `localDateTime` inherit it. Off-by-one and overflow bugs then show up within a few
+- **Plural names for the scalar generators** (#163). zio-test's `Gen.int`, `long`, `double`, `boolean` and `char` are
+  Java keywords, and `intValue`-style names read like `Number`'s accessors, so the scalars take the plural names Java
+  developers know from jqwik's `Arbitraries`: `integers`, `longs`, `doubles`, `booleans`, `chars`, with the ranged
+  overloads `integers(min, max)` and so on. Every scalar generator follows the same convention: `alphaChars`,
+  `numericChars`, `alphaNumericChars`, `asciiChars`, `printableChars`, `unicodeChars`, `strings`, `stringsN`,
+  `alphaNumericStrings`, `localDateTimes`. The combinators keep their zio-test names (`elements`, `oneOf`,
+  `weighted`, `unfoldGen`, ...), and the generators of the Zazr types stay singular, named after their type
+  (`option`, `vector`, `hashMap`, ...).
+- **Edge-biased ranges.** zio-test's `Gen.int(min, max)` is uniform. Half of the draws of `integers(min, max)` and
+  `longs(min, max)` choose among the edges in range (the bounds, their neighbours, -1, 0 and 1), the other half
+  are uniform; `doubles(min, max)` adds both zeros, the smallest nonzero value of each sign, and the values next
+  to the bounds; `chars` and `localDateTimes` inherit it. Off-by-one and overflow bugs then show up within a few
   samples, which matters more without shrinking.
 - **`elements` is random**, as in zio-test: one of its values per pass. The ticket listed it with the finite
   generators; the finite ones are `fromIterable`, `constant` and `empty`.
@@ -1493,7 +1498,7 @@ unreleased).
   rejected values. More rejected values in a row than `maxDiscards` throw an `IllegalStateException`, which the check
   reports as `Erroneous`; so do more passes in a row without a value. Never an endless loop.
 - **Edge-biased collection lengths, not zio-test's `small`.** zio-test's `listOf` draws its length with `small`, so
-  most collections are short. Zazr draws the length as `intValue(0, size)`: half of the lengths are 0, 1, the size or
+  most collections are short. Zazr draws the length as `integers(0, size)`: half of the lengths are 0, 1, the size or
   the size minus one. The laws then see collections past a 32-wide trie leaf at the default size, and the growing size
   already supplies the short ones at the start of a run. The collection generators keep the internal layouts of
   #107 (dropped prefixes and slices of a `Vector`, split `Queue`s, unevaluated `Stream` tails, sets and maps after
