@@ -29,7 +29,7 @@ Vector<String> words = builder.result();
 A builder is not thread-safe and not reusable: after `result()`, create a new one. Adding `null` throws a
 `NullPointerException`.
 
-`newBuilder(sizeHint)` takes the expected size. It only helps for small vectors, of 32 elements or fewer.
+`newBuilder(sizeHint)` takes the expected size. It matters only for vectors of up to 32 elements: the builder then allocates exactly that many slots. Larger vectors are built from full blocks of 32, so the hint changes nothing for them.
 
 ```java
 Vector.Builder<Integer> both = Vector.newBuilder(8);
