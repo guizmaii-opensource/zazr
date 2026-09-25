@@ -4,7 +4,8 @@ description: NonEmptyVector makes head, max and reduce total; its return types s
 
 # `NonEmptyVector`
 
-`NonEmptyVector<A>` is a sequence with at least one element. It holds a `Vector` and has the same costs.
+`NonEmptyVector<A>` is a sequence with at least one element. It holds a `Vector` and has the same costs. The sets and
+maps have their own: [`NonEmptySet` and `NonEmptyMap`](non-empty-set-map.md).
 
 It has every operation of `Vector`, under the same names, except those that mean nothing on a non-empty sequence:
 

@@ -20,7 +20,7 @@ final class NonEmptyChecks {
 
     /* the wrapper types whose instances must never be empty */
     static final java.util.List<Class<?>> NON_EMPTY_TYPES = java.util.List.of(
-            NonEmptyVector.class, NonEmptySet.class, NonEmptySortedSet.class);
+            NonEmptyVector.class, NonEmptySet.class, NonEmptySortedSet.class, NonEmptyMap.class, NonEmptySortedMap.class);
 
     /* the signature of a method as the tables key it: name(SimpleParameterType, ...) */
     static String signature(Method method) {
@@ -60,6 +60,14 @@ final class NonEmptyChecks {
             case NonEmptySortedSet<?> ness -> {
                 assertThat(ness.toSortedSet().isEmpty()).as(call).isFalse();
                 ness.forEach(element -> assertEveryNonEmptyCollectionIsNonEmpty(element, call));
+            }
+            case NonEmptyMap<?, ?> nem -> {
+                assertThat(nem.toMap().isEmpty()).as(call).isFalse();
+                nem.forEach(entry -> assertEveryNonEmptyCollectionIsNonEmpty(entry, call));
+            }
+            case NonEmptySortedMap<?, ?> nesm -> {
+                assertThat(nesm.toSortedMap().isEmpty()).as(call).isFalse();
+                nesm.forEach(entry -> assertEveryNonEmptyCollectionIsNonEmpty(entry, call));
             }
             case Tuple2<?, ?> t -> {
                 assertEveryNonEmptyCollectionIsNonEmpty(t._1(), call);

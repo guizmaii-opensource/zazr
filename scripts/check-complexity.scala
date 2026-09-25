@@ -280,14 +280,16 @@ val families: List[Family] = List(
   Family(
     "Sets",
     "`head`, `take` and `drop` exist only where the order is defined: insertion order on `LinkedHashSet`, the " +
-      "comparator's order on `TreeSet`.",
-    List("HashSet", "LinkedHashSet", "TreeSet"),
+      "comparator's order on `TreeSet`. `NonEmptySet` and `NonEmptySortedSet` wrap a `HashSet` and a `TreeSet`, so " +
+      "their costs are those of the set they wrap.",
+    List("HashSet", "LinkedHashSet", "TreeSet", "NonEmptySet", "NonEmptySortedSet"),
     List("contains", "add", "remove", "union", "intersect", "diff", "min", "max", "head", "take", "drop")
   ),
   Family(
     "Maps",
-    "As for the sets, only the ordered maps have positional methods.",
-    List("HashMap", "LinkedHashMap", "TreeMap"),
+    "As for the sets, only the ordered maps have positional methods. `NonEmptyMap` and `NonEmptySortedMap` wrap a " +
+      "`HashMap` and a `TreeMap`, so their costs are those of the map they wrap.",
+    List("HashMap", "LinkedHashMap", "TreeMap", "NonEmptyMap", "NonEmptySortedMap"),
     List("get", "containsKey", "put", "remove", "keySet", "values", "head", "take", "drop")
   )
 )

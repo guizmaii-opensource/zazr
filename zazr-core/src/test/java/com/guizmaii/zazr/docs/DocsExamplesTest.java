@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.docs;
 
 import com.guizmaii.zazr.Lazy;
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.Tuple3;
@@ -10,6 +11,8 @@ import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.List.Cons;
 import com.guizmaii.zazr.collection.List.Nil;
+import com.guizmaii.zazr.collection.NonEmptySet;
+import com.guizmaii.zazr.collection.NonEmptySortedMap;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Queue;
 import com.guizmaii.zazr.collection.Stream;
@@ -1037,6 +1040,46 @@ public class DocsExamplesTest {
             assertThat(NonEmptyVector.of(1, 2)).isNotEqualTo(Vector.of(1, 2));
             assertThatThrownBy(() -> NonEmptyVector.unsafeFromVector(Vector.empty()))
                 .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    class NonEmptySetMapPage {
+
+        @Test
+        void totalOperations() {
+            var tags = NonEmptySet.of("java", "scala", "java"); // NonEmptySet<String>
+            var longest = tags.maxBy(String::length); // String
+            var total = NonEmptySet.of(1, 2, 3).reduce(Integer::sum); // Integer
+            // scala, 6
+
+            assertThat(longest).isEqualTo("scala");
+            assertThat(total).isEqualTo(6);
+            assertThat(tags.size()).isEqualTo(2);
+        }
+
+        @Test
+        void returnTypeContract() {
+            var prices = NonEmptySortedMap.of(Tuple.of("pear", 3), Tuple.of("apple", 2)); // NonEmptySortedMap<String, Integer>
+            var first = prices.head(); // Tuple2<String, Integer>
+            var names = prices.keySet(); // NonEmptySortedSet<String>
+            var cheap = prices.filterValues(price -> price < 3); // TreeMap<String, Integer>
+            // (apple, 2), NonEmptySortedSet(apple, pear), TreeMap((apple, 2))
+
+            assertThat(first).isEqualTo(Tuple.of("apple", 2));
+            assertThat(names).hasToString("NonEmptySortedSet(apple, pear)");
+            assertThat(cheap).hasToString("TreeMap((apple, 2))");
+        }
+
+        @Test
+        void construction() {
+            var fromInput = HashMap.of("a", 1).toNonEmptyMap(); // Option<NonEmptyMap<String, Integer>>
+            var fromNothing = HashSet.<String>empty().toNonEmptySet(); // Option<NonEmptySet<String>>
+            // Some(NonEmptyMap((a, 1))), None
+
+            assertThat(fromInput).hasToString("Some(NonEmptyMap((a, 1)))");
+            assertThat(fromNothing).hasToString("None");
+            assertThat(NonEmptySet.of(1, 2)).isNotEqualTo(HashSet.of(1, 2));
         }
     }
 

@@ -1287,6 +1287,17 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
     }
 
+    /**
+     * Narrows to a {@link NonEmptySortedMap}, whose operations that cannot empty it keep that type and whose
+     * {@code head}, {@code last}, {@code max}, {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1).
+     *
+     * @return {@code Some(nonEmptySortedMap)} sharing this map's entries and comparator, or {@code None} if this map
+     *         is empty
+     */
+    public Option<NonEmptySortedMap<K, V>> toNonEmptySortedMap() { return NonEmptySortedMap.fromSortedMap(this); }
+
     // -- Object
 
     // -- Positional operations, in the comparator's order

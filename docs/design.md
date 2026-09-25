@@ -659,8 +659,69 @@ now has every operation of `Vector`, each under the same contract, delegating to
   an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
   result.
 
-**Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
-motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
+**Decided.** No `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the motivating cases and
+`NonEmptyVector` covers them. `NonEmptySet`/`NonEmptyMap` were to come only on demand; the maintainer asked for them
+on 2026-09-25 (#110), below.
+
+#### 3.6.1 `NonEmptySet`, `NonEmptyMap` and their sorted variants (decided 2026-09-25, #110)
+
+From zio-prelude's `NonEmptySet`/`NonEmptyMap`/`NonEmptySortedSet`/`NonEmptySortedMap`, under `NonEmptyVector`'s
+contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the entries, `Tuple2<K, V>`, for the maps).
+
+- **Four types, the sorted ones included.** `NonEmptySet<A>` wraps a `HashSet`, `NonEmptySortedSet<A>` a `TreeSet`,
+  `NonEmptyMap<K, V>` a `HashMap`, `NonEmptySortedMap<K, V>` a `TreeMap`. The sorted variants are where the contract
+  pays most: `head` and `last` (O(log n)) become total, `tail`/`init` return the plain type with
+  `tailNonEmpty`/`initNonEmpty` as the narrowing, `grouped`, `sliding` and `slideBy` return a `Vector` of the
+  non-empty type, and `zipWithIndex` a `NonEmptyVector`. A `HashSet` or a `HashMap` has none of these (no order, so no
+  `head`, as decided in 3.7), so without the sorted variants a user wanting a total `head` would have to leave the
+  non-empty types. `LinkedHashSet`/`LinkedHashMap` get no wrapper: nothing asked for one.
+- **Same API as the plain type, minus the deliberate absences**, checked reflectively by each test class as
+  `NonEmptyVectorTest` does: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
+  (`toNonEmptySet`, `toNonEmptySortedSet`, `toNonEmptyMap`, `toNonEmptySortedMap`); on the sorted ones also
+  `headOption`, `lastOption`, `tailOption`, `initOption`; on the maps also `removeKeys`/`removeValues`, deprecated on
+  `Map` in favour of `rejectKeys`/`rejectValues` (a new type does not start with deprecated methods; the deprecated
+  `removeAll(BiPredicate)` overload is left out for the same reason, `removeAll(Iterable)` keeps the name). Extra:
+  `reduceMap`, as on `NonEmptyVector`.
+- **Returns the non-empty type:** `add`, `addAll(Iterable)`, `union(Set)` (accept the possibly empty type), `map`
+  (equal results merge, never to zero), `as`, `replace`, `replaceAll`, `tap`; on the maps `put` ×4, `merge` ×2,
+  `computeIfAbsent`/`computeIfPresent` (as `Tuple2<V, NonEmptyMap>` / `Tuple2<Option<V>, NonEmptyMap>`: `Maps` only ever
+  puts), `map`, `mapBoth`, `mapKeys` ×2, `mapValues`, `replace` ×2, `replaceAll` ×2 (`replace(Tuple2, Tuple2)` onto a
+  present key shrinks the map by one, never below one), `replaceValue`; the `Comparator` overloads of `map`/`mapBoth`
+  on the sorted ones. `keySet()` returns a `NonEmptySet` (`NonEmptySortedSet` with the map's comparator on a sorted
+  map) and `values()` a `NonEmptyVector`. `groupBy` returns `HashMap<K, NonEmpty…>` on all four, as on
+  `NonEmptyVector`.
+- **`flatMap` / `flatMapAll`**, as on `NonEmptyVector`: `flatMap` takes a function returning the non-empty type,
+  `flatMapAll` one returning any `Iterable` and returns the plain type.
+- **Returns the plain type:** `filter*`, `reject*`, `collect`, `remove`, `removeAll`, `retainAll`, `intersect`, `diff`,
+  `partition`, `partitionMap` (`HashSet` only, `TreeSet` has none), and on the sorted ones `tail`, `init`, `take*`,
+  `drop*`.
+- **Total:** `max()`, `min()`, `maxBy` ×2, `minBy` ×2, `reduce`, `reduceMap`, `fold`, `single` (throws on more than one),
+  `average` as a `double` on the sets, `head`/`last` on the sorted ones, all through the loops of
+  `collection.internal.NonEmptyModule` (no `Option` wrapped to be unwrapped). `max`/`min` stay in the natural order of
+  the elements on the sorted variants, as on `TreeSet`/`TreeMap`; the comparator's extremes are `head`/`last`.
+- **Unwrap and narrowing.** `toSet()`, `toSortedSet()`, `toMap()`, `toSortedMap()` without arguments return the
+  wrapped collection, O(1), next to the existing `to*` conversions with arguments (`TreeSet.toSortedSet()` already
+  returns the set itself, so the name keeps its meaning). Constructors: `of`, `single`, `fromIterable(head, tail)`,
+  `fromIterable(Iterable) : Option`, `fromSet`/`fromSortedSet`/`fromMap`/`fromSortedMap : Option` (wrap without
+  copying), `unsafeFrom…`, static `flatten` on the sets; the sorted ones take an optional leading `Comparator` (natural
+  order otherwise). On the plain types, `HashSet.toNonEmptySet()`, `TreeSet.toNonEmptySortedSet()`,
+  `HashMap.toNonEmptyMap()`, `TreeMap.toNonEmptySortedMap()` return an `Option`.
+- **Set algebra arguments.** `union`/`intersect`/`diff` keep the plain types' `Set` parameter; no overloads taking the
+  non-empty types (they would double the set algebra for each wrapper pair). A non-empty set is an `Iterable`, so
+  `addAll`/`retainAll`/`removeAll` take it directly.
+- **Nulls.** Where the wrapper receives an element, key, value or entry itself (constructors, `add`, `put`, `replace`,
+  `replaceValue`, `as`), it checks first with a message naming the type (`NonEmptyMap.put: key is null`). `addAll` of an
+  `Iterable` and the mapper results go through the plain type's own checks (`HashSet: element is null`): unlike
+  `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
+- **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
+  `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
+  the wrapped collection's `hashCode`, which is unordered and therefore consistent. Never equal to a plain `Set` or
+  `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
+- **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
+  `TreeSet`).
+- **Not done here:** `NonEmptyVector.groupBy`/`toMap` and the non-empty sets' `toMap` still return a plain map, as 3.6
+  fixed before `NonEmptyMap` existed; whether a non-empty source should now give a `NonEmptyMap` is left to the
+  maintainer.
 
 ### 3.7 Removing the `Seq` abstraction
 
@@ -1480,6 +1541,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
 | #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
+| #110 | `NonEmptySet`, `NonEmptyMap`, `NonEmptySortedSet`, `NonEmptySortedMap` | 3.6.1 | #90, #27 |
 
 ---
 
