@@ -214,9 +214,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * Creates a TreeSet of the given elements, in their natural order.
      * <p>
      * Complexity: O(m log m) for m elements: they are sorted, then the tree is built in one pass; O(m) when they come
-     * sorted, and O(1)
-     * when {@code values} is a TreeSet created without a comparator, or its {@link #asJava()} view: that set is
-     * returned as is.
+     * sorted, and O(1) when {@code values} is a TreeSet created without a comparator, or its {@link #asJava()} view:
+     * that set is returned as is.
      *
      * @param values the elements
      * @param <T>    Component type
@@ -231,9 +230,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * Creates a TreeSet of the given elements, ordered by {@code comparator}.
      * <p>
      * Complexity: O(m log m) for m elements: they are sorted, then the tree is built in one pass; O(m) when they come
-     * sorted, and O(1)
-     * when {@code values} is a TreeSet, or its {@link #asJava()} view, ordered by the same comparator object: that
-     * set is returned as is.
+     * sorted, and O(1) when {@code values} is a TreeSet, or its {@link #asJava()} view, ordered by the same comparator
+     * object: that set is returned as is.
      *
      * @param comparator the order of the elements
      * @param values     the elements

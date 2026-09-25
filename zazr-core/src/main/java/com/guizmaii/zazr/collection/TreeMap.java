@@ -252,9 +252,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * Returns a {@code TreeMap}, from a source java.util.Map.
      * <p>
      * Complexity: O(m log m) for m entries: they are sorted, then the tree is built in one pass; O(m) when they come
-     * sorted, and O(1)
-     * when {@code map} is the {@link #asJavaMap()} view of a TreeMap created without a comparator: that map is
-     * returned as is.
+     * sorted, and O(1) when {@code map} is the {@link #asJavaMap()} view of a TreeMap created without a comparator:
+     * that map is returned as is.
      *
      * @param map A map
      * @param <K> The key type
@@ -339,9 +338,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * Returns a {@code TreeMap}, from a source java.util.Map.
      * <p>
      * Complexity: O(m log m) for m entries: they are sorted, then the tree is built in one pass; O(m) when they come
-     * sorted, and O(1)
-     * when {@code map} is the {@link #asJavaMap()} view of a TreeMap ordered by the same comparator object: that map
-     * is returned as is.
+     * sorted, and O(1) when {@code map} is the {@link #asJavaMap()} view of a TreeMap ordered by the same comparator
+     * object: that map is returned as is.
      *
      * @param keyComparator The comparator used to sort the entries by their key.
      * @param map           A map
