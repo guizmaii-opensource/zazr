@@ -16,7 +16,8 @@ new map.
 ## When to choose which
 
 - `HashMap` by default.
-- `LinkedHashMap` when the order the keys were inserted in matters. Overwriting a key keeps its position.
+- `LinkedHashMap` when the order the keys were inserted in matters. Overwriting a key keeps its position. A key
+  repeated in `of`, `ofEntries` or a collector does the same: it stays where it first appeared, with its last value.
 - `TreeMap` for keys in sorted order, ranges, or the least and the greatest key.
 
 ```java
