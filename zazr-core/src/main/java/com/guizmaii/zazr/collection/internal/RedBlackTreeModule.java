@@ -320,9 +320,9 @@ public interface RedBlackTreeModule {
         /// of `t1` is less than `value` and every element of `t2` greater. The roots of `t1` and `t2` can be red.
         static <T extends @Nullable Object> RedBlackTree<T> join(RedBlackTree<T> t1, T value, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
-                return t2.insert(value);
+                return insertMin(t2, value, (Empty<T>) t1).color(BLACK);
             } else if (t2.isEmpty()) {
-                return t1.insert(value);
+                return insertMax(t1, value, (Empty<T>) t2).color(BLACK);
             } else {
                 // The stored blackHeight of a node counts the node as black whatever its colour, so a red root has one
                 // black node fewer on its paths than a black root with the same blackHeight. Colouring both roots black
@@ -336,6 +336,133 @@ public interface RedBlackTreeModule {
                     return Node.joinGT(n1, value, n2, n2.blackHeight).color(BLACK);
                 } else {
                     return new Node<>(BLACK, n1.blackHeight + 1, n1, value, n2, n1.empty);
+                }
+            }
+        }
+
+        // `insert` of a value less than every element of `tree`: the same descent down the left spine and the same
+        // rebalancing, without calling the comparator
+        private static <T extends @Nullable Object> Node<T> insertMin(RedBlackTree<T> tree, T value, Empty<T> empty) {
+            if (tree.isEmpty()) {
+                return new Node<>(RED, 1, empty, value, empty, empty);
+            } else {
+                final Node<T> node = (Node<T>) tree;
+                return Node.balanceLeft(node.color, node.blackHeight, insertMin(node.left, value, empty), node.value, node.right,
+                        node.empty);
+            }
+        }
+
+        // `insert` of a value greater than every element of `tree`, without calling the comparator
+        private static <T extends @Nullable Object> Node<T> insertMax(RedBlackTree<T> tree, T value, Empty<T> empty) {
+            if (tree.isEmpty()) {
+                return new Node<>(RED, 1, empty, value, empty, empty);
+            } else {
+                final Node<T> node = (Node<T>) tree;
+                return Node.balanceRight(node.color, node.blackHeight, node.left, node.value, insertMax(node.right, value, empty),
+                        node.empty);
+            }
+        }
+
+        /// Returns a valid tree holding the elements of `t1`, then the elements of `t2`, sharing both when either is
+        /// empty. Every element of `t1` is less than every element of `t2`; the roots can be red. The maximum of `t1` is
+        /// the middle value of [#join]. The `join2` of the Scala 3 standard library (see [#filter]).
+        private static <T extends @Nullable Object> RedBlackTree<T> join2(RedBlackTree<T> t1, RedBlackTree<T> t2) {
+            if (t1.isEmpty()) {
+                return t2;
+            } else if (t2.isEmpty()) {
+                return t1;
+            } else {
+                final Node<T> n1 = (Node<T>) t1;
+                return join(withoutMaximum(n1), maximum(n1), t2);
+            }
+        }
+
+        // `node` without its greatest element, rebuilt with a join per level of the right spine; the root can be red
+        private static <T extends @Nullable Object> RedBlackTree<T> withoutMaximum(Node<T> node) {
+            if (node.right.isEmpty()) {
+                return node.left;
+            } else {
+                return join(node.left, node.value, withoutMaximum((Node<T>) node.right));
+            }
+        }
+
+        /// The elements of `tree` for which `predicate` holds, as a tree with a black root. Port of `filterEntries` in
+        /// the Scala 3 standard library (`scala.collection.immutable.RedBlackTree`, the Scala 2.13 collection library
+        /// that Scala 3 ships unchanged): every subtree whose elements are all kept is returned as it is, and the kept
+        /// parts are rejoined with [#join] (a kept node) or [#join2] (a removed node), so the result shares every
+        /// subtree the predicate leaves whole, and is `tree` itself when every element is kept. `predicate` is called
+        /// once per element, in ascending order. O(n) for n elements, with no comparator call.
+        public static <T extends @Nullable Object> RedBlackTree<T> filter(RedBlackTree<T> tree,
+                java.util.function.Predicate<? super T> predicate) {
+            return tree.isEmpty() ? tree : color(filter((Node<T>) tree, predicate), BLACK);
+        }
+
+        // the depth of the recursion is the height of the tree, at most 2 log2(n + 1)
+        private static <T extends @Nullable Object> RedBlackTree<T> filter(Node<T> node,
+                java.util.function.Predicate<? super T> predicate) {
+            final RedBlackTree<T> left = node.left.isEmpty() ? node.left : filter((Node<T>) node.left, predicate);
+            final boolean keep = predicate.test(node.value);
+            final RedBlackTree<T> right = node.right.isEmpty() ? node.right : filter((Node<T>) node.right, predicate);
+            if (!keep) {
+                return join2(left, right);
+            } else if (left == node.left && right == node.right) {
+                return node;
+            } else {
+                return join(left, node.value, right);
+            }
+        }
+
+        /// The elements of `tree` for which `predicate` holds, then the others, as two trees with a black root, in one
+        /// walk. Port of `partitionEntries` in the Scala 3 standard library (see [#filter]): each side shares every
+        /// subtree whose elements all go to it, and is `tree` itself when it gets every element. `predicate` is called
+        /// once per element, in ascending order. O(n) for n elements, with no comparator call.
+        public static <T extends @Nullable Object> Tuple2<RedBlackTree<T>, RedBlackTree<T>> partition(RedBlackTree<T> tree,
+                java.util.function.Predicate<? super T> predicate) {
+            if (tree.isEmpty()) {
+                return Tuple.of(tree, tree);
+            }
+            final Partition<T> partition = new Partition<>(tree);
+            partition.walk((Node<T>) tree, predicate);
+            return Tuple.of(color(partition.kept, BLACK), color(partition.rejected, BLACK));
+        }
+
+        // the two results of a partition of a subtree, written by `walk` in place of a pair allocated per node
+        private static final class Partition<T extends @Nullable Object> {
+
+            RedBlackTree<T> kept;
+            RedBlackTree<T> rejected;
+
+            Partition(RedBlackTree<T> tree) {
+                this.kept = tree;
+                this.rejected = tree;
+            }
+
+            // sets both fields to the results for the subtree `node`; the depth of the recursion is the height of the
+            // tree, at most 2 log2(n + 1)
+            void walk(Node<T> node, java.util.function.Predicate<? super T> predicate) {
+                RedBlackTree<T> leftKept = node.left;
+                RedBlackTree<T> leftRejected = node.left;
+                if (!node.left.isEmpty()) {
+                    walk((Node<T>) node.left, predicate);
+                    leftKept = kept;
+                    leftRejected = rejected;
+                }
+                final boolean keep = predicate.test(node.value);
+                RedBlackTree<T> rightKept = node.right;
+                RedBlackTree<T> rightRejected = node.right;
+                if (!node.right.isEmpty()) {
+                    walk((Node<T>) node.right, predicate);
+                    rightKept = kept;
+                    rightRejected = rejected;
+                }
+                if (keep) {
+                    kept = (leftKept == node.left && rightKept == node.right) ? node : join(leftKept, node.value, rightKept);
+                    rejected = join2(leftRejected, rightRejected);
+                } else {
+                    kept = join2(leftKept, rightKept);
+                    rejected = (leftRejected == node.left && rightRejected == node.right)
+                               ? node
+                               : join(leftRejected, node.value, rightRejected);
                 }
             }
         }

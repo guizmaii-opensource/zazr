@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 /// sorted), keeps the last of each run of elements the comparator finds equal, and builds a balanced red-black tree
 /// bottom-up in O(n) (`Node.fromOrdered`). The result holds the same elements as inserting them one by one, the later
 /// of two equal elements replacing the earlier one, but costs one array plus exactly one node per distinct element.
+/// A builder created with `keepFirst` keeps the first of equal elements instead.
 ///
 /// Single-use and not thread-safe: after [#result()], or after the comparator has thrown, every method throws
 /// [IllegalStateException]. Null elements are the caller's to reject.
@@ -23,7 +24,9 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
     private final Comparator<? super T> comparator;
     // the name used in the messages, e.g. "TreeSet.Builder"
     private final String name;
-    private @Nullable Object[] buffer = EMPTY_BUFFER;
+    // of equal elements, keep the one added first instead of the one added last
+    private final boolean keepFirst;
+    private @Nullable Object[] buffer;
     private int length;
     // buffer[0, compacted) is sorted and holds no two equal elements
     private int compacted;
@@ -32,8 +35,17 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
     private boolean sorting;
 
     public RedBlackTreeBuilder(Comparator<? super T> comparator, String name) {
+        this(comparator, name, 0, false);
+    }
+
+    /// A builder whose buffer starts with room for `capacity` elements, and which keeps the first of equal elements
+    /// when `keepFirst` is true (as successive insertions that skip an element already present would) instead of the
+    /// last.
+    public RedBlackTreeBuilder(Comparator<? super T> comparator, String name, int capacity, boolean keepFirst) {
         this.comparator = comparator;
         this.name = name;
+        this.keepFirst = keepFirst;
+        this.buffer = (capacity <= 0) ? EMPTY_BUFFER : new Object[capacity];
     }
 
     /// The comparator the tree is ordered by.
@@ -88,11 +100,13 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         // a throwing comparator can leave a partly merged buffer behind
         sorting = true;
         Arrays.sort(elements, 0, length, order);
-        // the sort is stable, so of equal elements the one added last comes last: keep it
+        // the sort is stable, so of equal elements the one added first comes first and the one added last comes last
         int kept = 1;
         for (int i = 1; i < length; i++) {
             if (order.compare(elements[kept - 1], elements[i]) == 0) {
-                elements[kept - 1] = elements[i];
+                if (!keepFirst) {
+                    elements[kept - 1] = elements[i];
+                }
             } else {
                 elements[kept++] = elements[i];
             }

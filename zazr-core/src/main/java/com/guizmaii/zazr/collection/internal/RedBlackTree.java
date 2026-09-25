@@ -43,11 +43,13 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
     static <T extends @Nullable Object> RedBlackTree<T> of(Comparator<? super T> comparator, T... values) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(values, "values is null");
-        RedBlackTree<T> tree = empty(comparator);
+        // sort-then-build, keeping the last of equal values as successive insertions would; `values` is copied, never
+        // reordered
+        final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder", values.length, false);
         for (T value : values) {
-            tree = tree.insert(value);
+            builder.add(Objects.requireNonNull(value, "TreeSet: element is null"));
         }
-        return tree;
+        return builder.result();
     }
 
     @SuppressWarnings("unchecked")
