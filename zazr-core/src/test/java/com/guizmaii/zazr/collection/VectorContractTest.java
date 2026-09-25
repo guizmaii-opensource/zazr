@@ -151,6 +151,17 @@ public class VectorContractTest {
     }
 
     @Test
+    public void ofCopiesTheCallersArray() {
+        for (int n : new int[] { 1, 31, 32, 33, 1025 }) {
+            final Integer[] elements = IntStream.range(0, n).boxed().toArray(Integer[]::new);
+            final Vector<Integer> v = Vector.of(elements);
+            elements[0] = -1;
+            elements[n - 1] = -1;
+            assertElements(v, IntStream.range(0, n).boxed().toList());
+        }
+    }
+
+    @Test
     public void filterStartsFromTheKeptPrefixAtEveryBoundary() {
         for (int n : SIZES) {
             for (Vector<Integer> v : histories(n)) {
