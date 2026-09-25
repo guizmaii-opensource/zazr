@@ -32,7 +32,7 @@ import java.util.random.RandomGenerator;
  * A generator of values of type {@code A}, to check a property against.
  * <p>
  * Given a seeded source of randomness and a size, a generator produces a sequence of values, one <em>pass</em>. A
- * random generator such as {@link #intValue()} gives one value per pass; a finite generator such as
+ * random generator such as {@link #integers()} gives one value per pass; a finite generator such as
  * {@link #fromIterable(Iterable)} gives all its values, in order, in one pass. {@link Check#check} runs pass after
  * pass until it has its samples, and {@link Check#checkAll} runs one pass, so it checks every value of a finite
  * generator exactly once. A generator holds no state: the same seed and size give the same values.
@@ -977,17 +977,17 @@ public final class Gen<A> {
      *
      * @return a random generator of booleans
      */
-    public static Gen<Boolean> booleanValue() {
+    public static Gen<Boolean> booleans() {
         return fromRandom(RandomGenerator::nextBoolean);
     }
 
     /**
-     * A random {@code int} of the whole range, as {@link #intValue(int, int)}.
+     * A random {@code int} of the whole range, as {@link #integers(int, int)}.
      *
      * @return a random generator of ints
      */
-    public static Gen<Integer> intValue() {
-        return intValue(Integer.MIN_VALUE, Integer.MAX_VALUE);
+    public static Gen<Integer> integers() {
+        return integers(Integer.MIN_VALUE, Integer.MAX_VALUE);
     }
 
     /**
@@ -999,7 +999,7 @@ public final class Gen<A> {
      * @return a random generator of ints
      * @throws IllegalArgumentException if {@code min > max}
      */
-    public static Gen<Integer> intValue(int min, int max) {
+    public static Gen<Integer> integers(int min, int max) {
         if (min > max) {
             throw new IllegalArgumentException("min " + min + " > max " + max);
         } else if (min == max) {
@@ -1013,12 +1013,12 @@ public final class Gen<A> {
     }
 
     /**
-     * A random {@code long} of the whole range, as {@link #longValue(long, long)}.
+     * A random {@code long} of the whole range, as {@link #longs(long, long)}.
      *
      * @return a random generator of longs
      */
-    public static Gen<Long> longValue() {
-        return longValue(Long.MIN_VALUE, Long.MAX_VALUE);
+    public static Gen<Long> longs() {
+        return longs(Long.MIN_VALUE, Long.MAX_VALUE);
     }
 
     /**
@@ -1030,7 +1030,7 @@ public final class Gen<A> {
      * @return a random generator of longs
      * @throws IllegalArgumentException if {@code min > max}
      */
-    public static Gen<Long> longValue(long min, long max) {
+    public static Gen<Long> longs(long min, long max) {
         if (min > max) {
             throw new IllegalArgumentException("min " + min + " > max " + max);
         } else if (min == max) {
@@ -1056,7 +1056,7 @@ public final class Gen<A> {
      *
      * @return a random generator of doubles
      */
-    public static Gen<Double> doubleValue() {
+    public static Gen<Double> doubles() {
         return fromRandom(RandomGenerator::nextDouble);
     }
 
@@ -1070,7 +1070,7 @@ public final class Gen<A> {
      * @return a random generator of doubles
      * @throws IllegalArgumentException if a bound is infinite or not a number, or if {@code min > max}
      */
-    public static Gen<Double> doubleValue(double min, double max) {
+    public static Gen<Double> doubles(double min, double max) {
         if (!Double.isFinite(min) || !Double.isFinite(max)) {
             throw new IllegalArgumentException("the bounds " + min + " and " + max + " are not both finite");
         } else if (Double.compare(min, max) > 0) {
@@ -1092,25 +1092,25 @@ public final class Gen<A> {
     }
 
     /**
-     * A random {@code char} of the whole range, as {@link #charValue(char, char)}.
+     * A random {@code char} of the whole range, as {@link #chars(char, char)}.
      *
      * @return a random generator of chars
      */
-    public static Gen<Character> charValue() {
-        return charValue(Character.MIN_VALUE, Character.MAX_VALUE);
+    public static Gen<Character> chars() {
+        return chars(Character.MIN_VALUE, Character.MAX_VALUE);
     }
 
     /**
      * A random {@code char} between {@code min} and {@code max}, both included, favouring the edges as
-     * {@link #intValue(int, int)}.
+     * {@link #integers(int, int)}.
      *
      * @param min the smallest char
      * @param max the largest char
      * @return a random generator of chars
      * @throws IllegalArgumentException if {@code min > max}
      */
-    public static Gen<Character> charValue(char min, char max) {
-        return intValue(min, max).map(i -> (char) (int) i);
+    public static Gen<Character> chars(char min, char max) {
+        return integers(min, max).map(i -> (char) (int) i);
     }
 
     /**
@@ -1118,7 +1118,7 @@ public final class Gen<A> {
      *
      * @return a random generator of letters
      */
-    public static Gen<Character> alphaChar() {
+    public static Gen<Character> alphaChars() {
         return charOf(ALPHA);
     }
 
@@ -1128,7 +1128,7 @@ public final class Gen<A> {
      *
      * @return a random generator of digits and letters
      */
-    public static Gen<Character> alphaNumericChar() {
+    public static Gen<Character> alphaNumericChars() {
         return charOf(ALPHA_NUMERIC);
     }
 
@@ -1137,27 +1137,27 @@ public final class Gen<A> {
      *
      * @return a random generator of digits
      */
-    public static Gen<Character> numericChar() {
+    public static Gen<Character> numericChars() {
         return charOf(NUMERIC);
     }
 
     /**
-     * A random ASCII character, {@code \u0000} to {@code \u007F}, favouring the edges as {@link #charValue(char, char)}.
+     * A random ASCII character, {@code \u0000} to {@code \u007F}, favouring the edges as {@link #chars(char, char)}.
      *
      * @return a random generator of ASCII characters
      */
-    public static Gen<Character> asciiChar() {
-        return charValue('\u0000', '\u007F');
+    public static Gen<Character> asciiChars() {
+        return chars('\u0000', '\u007F');
     }
 
     /**
      * A random printable ASCII character, {@code !} to {@code ~}, favouring the edges as
-     * {@link #charValue(char, char)}.
+     * {@link #chars(char, char)}.
      *
      * @return a random generator of printable characters
      */
-    public static Gen<Character> printableChar() {
-        return charValue('!', '~');
+    public static Gen<Character> printableChars() {
+        return chars('!', '~');
     }
 
     /**
@@ -1166,8 +1166,8 @@ public final class Gen<A> {
      *
      * @return a random generator of characters
      */
-    public static Gen<Character> unicodeChar() {
-        return oneOf(charValue('\u0000', '퟿'), charValue('', '�'));
+    public static Gen<Character> unicodeChars() {
+        return oneOf(chars('\u0000', '퟿'), chars('', '�'));
     }
 
     private static Gen<Character> charOf(String chars) {
@@ -1175,12 +1175,12 @@ public final class Gen<A> {
     }
 
     /**
-     * A random string of {@link #unicodeChar()}s, as {@link #string(Gen)}.
+     * A random string of characters of {@link #unicodeChars()}, as {@link #strings(Gen)}.
      *
      * @return a random generator of strings
      */
-    public static Gen<String> string() {
-        return string(unicodeChar());
+    public static Gen<String> strings() {
+        return strings(unicodeChars());
     }
 
     /**
@@ -1191,9 +1191,9 @@ public final class Gen<A> {
      * @return a random generator of strings
      * @throws NullPointerException if {@code chars} is null
      */
-    public static Gen<String> string(Gen<Character> chars) {
+    public static Gen<String> strings(Gen<Character> chars) {
         Objects.requireNonNull(chars, "chars is null");
-        return sized(size -> intValue(0, size)).flatMap(length -> stringN(length, chars));
+        return sized(size -> integers(0, size)).flatMap(length -> stringsN(length, chars));
     }
 
     /**
@@ -1206,39 +1206,39 @@ public final class Gen<A> {
      * @throws NullPointerException     if {@code chars} is null
      * @throws IllegalArgumentException if {@code n} is negative
      */
-    public static Gen<String> stringN(int n, Gen<Character> chars) {
+    public static Gen<String> stringsN(int n, Gen<Character> chars) {
         Objects.requireNonNull(chars, "chars is null");
         requireNonNegative(n, "n");
         return new Gen<>((sampling, size, sink) -> {
             final char[] string = new char[n];
             for (int i = 0; i < n; i++) {
-                string[i] = Objects.requireNonNull(chars.draw(sampling, size), "stringN: chars generated null");
+                string[i] = Objects.requireNonNull(chars.draw(sampling, size), "stringsN: chars generated null");
             }
             return sink.accept(new String(string));
         });
     }
 
     /**
-     * A random string of {@link #alphaNumericChar()}s, as {@link #string(Gen)}.
+     * A random string of characters of {@link #alphaNumericChars()}, as {@link #strings(Gen)}.
      *
      * @return a random generator of alphanumeric strings
      */
-    public static Gen<String> alphaNumericString() {
-        return string(alphaNumericChar());
+    public static Gen<String> alphaNumericStrings() {
+        return strings(alphaNumericChars());
     }
 
     /**
-     * A random {@link LocalDateTime} of the whole range, as {@link #localDateTime(LocalDateTime, LocalDateTime)}.
+     * A random {@link LocalDateTime} of the whole range, as {@link #localDateTimes(LocalDateTime, LocalDateTime)}.
      *
      * @return a random generator of date-times
      */
-    public static Gen<LocalDateTime> localDateTime() {
-        return localDateTime(LocalDateTime.MIN, LocalDateTime.MAX);
+    public static Gen<LocalDateTime> localDateTimes() {
+        return localDateTimes(LocalDateTime.MIN, LocalDateTime.MAX);
     }
 
     /**
      * A random {@link LocalDateTime} between {@code min} and {@code max}, both included. The epoch second and the
-     * nanosecond are drawn as {@link #longValue(long, long)} and {@link #intValue(int, int)}, so the bounds and the
+     * nanosecond are drawn as {@link #longs(long, long)} and {@link #integers(int, int)}, so the bounds and the
      * first and last nanoseconds of a second come up often; a date-time out of range is moved to the nearest bound.
      *
      * @param min the earliest date-time
@@ -1247,14 +1247,14 @@ public final class Gen<A> {
      * @throws NullPointerException     if an argument is null
      * @throws IllegalArgumentException if {@code min} is after {@code max}
      */
-    public static Gen<LocalDateTime> localDateTime(LocalDateTime min, LocalDateTime max) {
+    public static Gen<LocalDateTime> localDateTimes(LocalDateTime min, LocalDateTime max) {
         Objects.requireNonNull(min, "min is null");
         Objects.requireNonNull(max, "max is null");
         if (min.isAfter(max)) {
             throw new IllegalArgumentException("min " + min + " is after max " + max);
         }
-        return zipWith(longValue(min.toEpochSecond(ZoneOffset.UTC), max.toEpochSecond(ZoneOffset.UTC)),
-                intValue(0, 999_999_999),
+        return zipWith(longs(min.toEpochSecond(ZoneOffset.UTC), max.toEpochSecond(ZoneOffset.UTC)),
+                integers(0, 999_999_999),
                 (second, nano) -> {
                     final LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
                     return dateTime.isBefore(min) ? min : dateTime.isAfter(max) ? max : dateTime;

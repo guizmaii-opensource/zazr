@@ -39,27 +39,27 @@ class GenTest {
 
     @Test
     void aSeedReplaysTheSameValues() {
-        final Gen<Tuple2<Integer, String>> gen = Gen.zip(Gen.intValue(), Gen.alphaNumericString());
+        final Gen<Tuple2<Integer, String>> gen = Gen.zip(Gen.integers(), Gen.alphaNumericStrings());
         assertThat(gen.runCollectN(300, config(7))).isEqualTo(gen.runCollectN(300, config(7)));
         assertThat(gen.runCollect(config(7))).isEqualTo(gen.runCollect(config(7)));
     }
 
     @Test
     void anotherSeedGivesOtherValues() {
-        assertThat(Gen.intValue().runCollectN(50, config(7))).isNotEqualTo(Gen.intValue().runCollectN(50, config(8)));
+        assertThat(Gen.integers().runCollectN(50, config(7))).isNotEqualTo(Gen.integers().runCollectN(50, config(8)));
     }
 
     @Test
     void aGeneratorHoldsNoState() {
-        final Gen<Integer> gen = Gen.intValue(0, 1_000_000).map(i -> i * 2);
+        final Gen<Integer> gen = Gen.integers(0, 1_000_000).map(i -> i * 2);
         final List<Integer> first = gen.runCollectN(100, config(3));
-        Gen.intValue().runCollectN(100, config(4));
+        Gen.integers().runCollectN(100, config(4));
         assertThat(gen.runCollectN(100, config(3))).isEqualTo(first);
     }
 
     @Test
     void theDefaultConfigurationRuns() {
-        assertThat(Gen.intValue(0, 9).runCollectN(10)).hasSize(10).allMatch(i -> i >= 0 && i <= 9);
+        assertThat(Gen.integers(0, 9).runCollectN(10)).hasSize(10).allMatch(i -> i >= 0 && i <= 9);
         assertThat(Gen.constant(1).runCollect()).isEqualTo(List.of(1));
     }
 
@@ -349,8 +349,8 @@ class GenTest {
 
     @Test
     void flatMapOfARandomGeneratorGivesOneValuePerPass() {
-        assertThat(pass(Gen.intValue().flatMap(i -> Gen.constant(i)))).hasSize(1);
-        assertThat(pass(Gen.intValue(0, 9).flatMap(i -> Gen.fromIterable(java.util.List.of(i, i))))).hasSize(2);
+        assertThat(pass(Gen.integers().flatMap(i -> Gen.constant(i)))).hasSize(1);
+        assertThat(pass(Gen.integers(0, 9).flatMap(i -> Gen.fromIterable(java.util.List.of(i, i))))).hasSize(2);
     }
 
     @Test
@@ -384,14 +384,14 @@ class GenTest {
 
     @Test
     void aFilteredRandomGeneratorStillGivesOneValuePerPass() {
-        final Gen<Integer> evens = Gen.intValue().filter(i -> i % 2 == 0);
+        final Gen<Integer> evens = Gen.integers().filter(i -> i % 2 == 0);
         assertThat(pass(evens)).hasSize(1);
         assertThat(values(evens, 500)).hasSize(500).allMatch(i -> i % 2 == 0);
     }
 
     @Test
     void aFilteredElementGeneratorStillFillsAString() {
-        final List<String> strings = Gen.stringN(100, Gen.alphaNumericChar().filter(Character::isDigit)).runCollectN(50, config(1));
+        final List<String> strings = Gen.stringsN(100, Gen.alphaNumericChars().filter(Character::isDigit)).runCollectN(50, config(1));
         assertThat(strings).hasSize(50).allMatch(s -> s.length() == 100 && s.chars().allMatch(Character::isDigit));
     }
 
@@ -408,7 +408,7 @@ class GenTest {
 
     @Test
     void filterGivesUpAfterItsDiscardBudget() {
-        assertThatThrownBy(() -> Gen.intValue().filter(i -> false).runCollectN(1, config(1)))
+        assertThatThrownBy(() -> Gen.integers().filter(i -> false).runCollectN(1, config(1)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Gen.filter rejected 1001 values in a row, more than the discard budget of 1000:"
                         + " generate the wanted values with map or flatMap instead of filtering them");
@@ -577,7 +577,7 @@ class GenTest {
         final Set<Tuple2<Long, Long>> pairs = new HashSet<>(Gen.zip(Gen.fromRandom(r -> r.nextLong()), Gen.fromRandom(r -> r.nextLong())).runCollectN(100, config(1)).asJava());
         assertThat(pairs).hasSize(100).allMatch(pair -> !pair._1().equals(pair._2()));
         final Map<Long, Integer> counts = new HashMap<>();
-        Gen.longValue(0, 1_000_000_000L).runCollectN(1_000, config(1)).forEach(l -> counts.merge(l, 1, Integer::sum));
+        Gen.longs(0, 1_000_000_000L).runCollectN(1_000, config(1)).forEach(l -> counts.merge(l, 1, Integer::sum));
         assertThat(counts.size()).isGreaterThan(400);
     }
 }
