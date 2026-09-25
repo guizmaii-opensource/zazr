@@ -1258,6 +1258,7 @@ public class NonEmptyVectorTest {
             assertThatNullPointerException().isThrownBy(() -> nev.unzip3(i -> null)).withMessage("NonEmptyVector.unzip3: unzipper returned null");
             assertThatNullPointerException().isThrownBy(() -> nev.unzip3(i -> Tuple.of(i, i, null))).withMessage("NonEmptyVector.unzip3: unzipper returned a null component");
             assertThatNullPointerException().isThrownBy(() -> nev.arrangeBy(i -> null)).withMessage("NonEmptyVector.arrangeBy: getKey returned null");
+            assertThatNullPointerException().isThrownBy(() -> nev.distinctByKeepLast(i -> null)).withMessage("NonEmptyVector.distinctByKeepLast: keyExtractor returned null");
             assertThatNullPointerException().isThrownBy(() -> nev.toMap(i -> null, i -> i)).withMessage("NonEmptyVector.toMap: keyMapper returned null");
             assertThatNullPointerException().isThrownBy(() -> nev.toMap(i -> i, i -> null)).withMessage("NonEmptyVector.toMap: valueMapper returned null");
             assertThatNullPointerException().isThrownBy(() -> nev.toMap(i -> null)).withMessage("NonEmptyVector.toMap: f returned null");
@@ -1291,6 +1292,7 @@ public class NonEmptyVectorTest {
             assertThatNullPointerException().isThrownBy(() -> nev.partition(null));
             assertThatNullPointerException().isThrownBy(() -> nev.forEachWithIndex(null));
             assertThatNullPointerException().isThrownBy(() -> nev.distinctByKeepLast((Comparator<Integer>) null));
+            assertThatNullPointerException().isThrownBy(() -> nev.distinctByKeepLast((Function<Integer, Integer>) null)).withMessage("keyExtractor is null");
         }
     }
 

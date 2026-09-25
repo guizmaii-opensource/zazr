@@ -645,7 +645,9 @@ now has every operation of `Vector`, each under the same contract, delegating to
   naming the method (`NonEmptyVector.padTo: element is null`). An `Iterable` argument is copied through the same check
   as the constructors (`NonEmptyVector: element is null`), which also reads it once. A user function whose result is
   stored is wrapped so that a null result names the method: `scan`, `scanRight`, `zipWith(Iterable, ·)`, `unzip`,
-  `unzip3` (the tuple and its components), `arrangeBy`, and the key, value and entry of the `to*Map` conversions.
+  `unzip3` (the tuple and its components), `arrangeBy`, `distinctByKeepLast` (whose keys `Vector` rejects too), and the
+  key, value and entry of the `to*Map` conversions. `fold` and `slideBy` let a null through as `Vector` does: `fold`'s
+  result is returned, never stored, and `slideBy` only compares its keys.
 - **Deliberately absent:** `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`, `reduceRightOption`,
   `singleOption` (the `Option` forms of what is total here, or of `single`); `tailOption`, `initOption` (`tail` and
   `init` already return a `Vector`, and `tailNonEmpty`/`initNonEmpty` are the narrowing); `isEmpty`, `nonEmpty`,

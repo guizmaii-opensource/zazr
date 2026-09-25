@@ -6,9 +6,14 @@ description: NonEmptyVector makes head, max and reduce total; its return types s
 
 `NonEmptyVector<A>` is a sequence with at least one element. It holds a `Vector` and has the same costs.
 
-It has every operation of `Vector`, under the same names. The only ones missing are those that mean nothing on a
-non-empty sequence: `isEmpty`, `nonEmpty`, `orElse`, and the `Option` forms of what is total here, such as
-`headOption` or `reduceOption`. The size is `size()`.
+It has every operation of `Vector`, under the same names, except those that mean nothing on a non-empty sequence:
+
+- `isEmpty`, `nonEmpty`, `orElse` and `toNonEmptyVector`, which would always give the same answer;
+- the `Option` forms of what is total here: `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`,
+  `reduceRightOption`, `singleOption`;
+- `tailOption` and `initOption`: `tail` and `init` already return a `Vector`, and `tailNonEmpty()` and
+  `initNonEmpty()` narrow back;
+- `length`: the size is `size()`.
 
 ## Total operations
 

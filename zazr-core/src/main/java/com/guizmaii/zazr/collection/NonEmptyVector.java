@@ -791,10 +791,11 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @param keyExtractor Computes the key elements are distinct by
      * @param <K>          Key type
      * @return the elements with distinct keys, each at its last occurrence
-     * @throws NullPointerException if {@code keyExtractor} is null
+     * @throws NullPointerException if {@code keyExtractor} is null or returns null
      */
     public <K extends @Nullable Object> NonEmptyVector<A> distinctByKeepLast(Function<? super A, ? extends K> keyExtractor) {
-        return new NonEmptyVector<>(vector.distinctByKeepLast(keyExtractor));
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        return new NonEmptyVector<>(vector.distinctByKeepLast(element -> Objects.requireNonNull(keyExtractor.apply(element), "NonEmptyVector.distinctByKeepLast: keyExtractor returned null")));
     }
 
     /**
