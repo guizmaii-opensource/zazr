@@ -760,6 +760,51 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
 - **`Option.forEach`, `Either.forEach`, `Try.forEach`** loop over the elements straight into the `Vector.Builder`
   (the mapper stops at the first `None`/`Left`/`Failure`, as before, and a null result is rejected by name).
 
+**Positional subset on the ordered sets and maps (#72, decided).** Step 3 took every positional method off `Set` and
+`Map` because a `HashSet`/`HashMap` iterates in hash order, which the type does not promise. The ordered sets and maps
+do promise an order, insertion order on `LinkedHashSet`/`LinkedHashMap` and the comparator's order on
+`TreeSet`/`TreeMap`, so they get a positional subset back, where `head` is the first element (the minimum, or the first
+inserted), `take(n)` the first n, and so on:
+
+- **Members**: `head`, `headOption`, `last`, `lastOption`, `init`, `initOption`, `tail`, `tailOption`, `take`,
+  `takeRight`, `takeWhile`, `takeUntil`, `drop`, `dropRight`, `dropWhile`, `dropUntil`, `zipWithIndex` (a
+  `Vector<Tuple2<T, Integer>>`, of entries on the maps), `sliding` ×2, `grouped` and `slideBy` (a `Vector` of the
+  receiver's type, with the sequences' window rule). They are declared on `SortedSet` and `SortedMap` (implemented by
+  `TreeSet`/`TreeMap` with their own return types; the interfaces say `Vector<? extends SortedSet<T>>` and
+  `Option<? extends SortedSet<T>>` where the type is nested) and on the final classes `LinkedHashSet` and
+  `LinkedHashMap`. Nothing is added to `Set`, `Map`, `HashSet`, `HashMap` or `Traversable`; `HashSetTest` and
+  `HashMapTest` assert reflectively that none of these names is a member of `HashSet`, `HashMap`, `Set` or `Map`. An
+  empty receiver throws `NoSuchElementException` from `head`/`last` and `UnsupportedOperationException` from
+  `init`/`tail` ("head of empty TreeSet", as `Vector` words it); `take`/`drop` clamp `n` as `Vector` does: a count of
+  zero or less keeps nothing for `take`/`takeRight` and everything for `drop`/`dropRight`, a count of `size()` or more
+  the reverse. The sorted results keep the receiver's comparator.
+- **`TreeSet`/`TreeMap`: a rank split of the red-black tree.** `RedBlackTreeModule.Node.splitAt(tree, n)` is
+  `split(tree, value)` with the left subtree's size (a field of every node) in place of the comparison; it is built
+  from the one-sided `take(tree, n)` and `drop(tree, n)`, one descent and a `join` per level each, so O(log n), and the
+  operations that need one half call that half alone (no `Tuple2`, no second half built). `take`, `takeRight`,
+  `drop`, `dropRight`, `init` and `tail` are O(log n); `head`/`last` walk the leftmost or rightmost path (O(log n));
+  `takeWhile` and its siblings walk the prefix once, then split once (O(k + log n)); every window or run of `sliding`,
+  `grouped` and `slideBy` is one rank slice sharing the untouched subtrees, so O((n / step) log n), respectively
+  O(n + r log n) for r runs, with the classifier called once per element. A `TreeMap` is a tree of entries under the
+  key comparator, so it uses the same functions. `RedBlackTreeTest` splits trees of sizes 0 to 70 (random, ascending
+  and after deletions, a fixed seed) at every rank and checks the red-black invariants of both halves, including the
+  stored `blackHeight` and `size` fields that later joins rely on.
+- **`LinkedHashSet`/`LinkedHashMap`: a slice of the insertion order.** A `LinkedHashMap` pairs a `HashMap` of slots
+  (entry and absolute index) with a `Vector` of keys in insertion order, where a removed key leaves a marker until the
+  markers outnumber the entries. A positional result slices that `Vector` and moves the offset, so every kept slot
+  stays valid, and changes the `HashMap` by the smaller side: rebuilt from the kept keys or the dropped keys removed.
+  `head`/`last` are effectively O(1) (the order never starts or ends with a marker), `init`/`tail` too plus a walk
+  past the markers next to the removed end; `take`/`drop` and their right-hand forms are effectively
+  O(min(n, size - n)), plus a walk from the nearer end past the markers when there are any. The windows and runs
+  first drop the markers (O(n), only if there are any), so each window is found by index. `LinkedHashSet` is a
+  `LinkedHashMap<T, Object>` and delegates.
+- **Complexity guard**: `SortedSet.java`, `SortedMap.java`, `LinkedHashSet.java` and `LinkedHashMap.java` join
+  `COMPLEXITY_FILES`, and `slideBy` joins the script's names (`headOption`/`lastOption` stay out, one-line wrappers
+  like the `*Option` index variants). This reverses the step-3 note for these four files: the keyed members they share
+  with the list (`get`, `remove`, `removeAll`, `replace`, `replaceAll`, `retainAll`, `iterator`) now carry their
+  `Complexity:` line too. The notes of `TreeSet`/`TreeMap` live on the interface declarations, which the classes
+  inherit.
+
 Which concrete collections survive (decided):
 
 | Keep | Why |
@@ -1096,6 +1141,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #22 | `Validation` with a `NonEmptyVector` error side | 3.5 | #21 |
 | #23 | Generated `zip`/`zipWith` at arities 2..8 | 3.4 | #22 |
 | #24 | Remove `Seq`; concrete collection APIs; complexity notes. Done in three stacked steps: #66 (`Vector` declares its own API, `IndexedSeq` deleted; PR #69), #67 (`List`, `Queue`, `Stream`; `Seq`, `LinearSeq` deleted; PR #70), #68 (`Traversable` slimmed to the 3.7 list, `Foldable`/`Ordered` deleted, `Map`/`Set` lose the sequence methods, `Iterator` leaves the public API, own-type `grouped`/`sliding`/`crossProduct`) | 3.7 | #20 |
+| #72 | Positional subset on the ordered sets and maps: `SortedSet`/`SortedMap` (rank split of the red-black tree), `LinkedHashSet`/`LinkedHashMap` (slice of the insertion order) | 3.7 | #24 |
 | #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
 | #26 | `asJava` views for sets and maps | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |

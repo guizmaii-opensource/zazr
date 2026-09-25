@@ -2425,4 +2425,24 @@ public class HashSetTest extends AbstractTraversableTest {
             assertThat(List.ofAll(set.asJava())).isEqualTo(set.toList());
         }
     }
+
+    // -- no positional member: the hash order is not a promised order
+
+    @Nested
+    class NoPositionalMembersTests {
+        @Test
+        public void shouldDeclareNoPositionalMemberOnTheHashTypeNorItsInterface() {
+            for (Class<?> type : java.util.List.<Class<?>> of(HashSet.class, Set.class)) {
+                final java.util.Set<String> names = new java.util.HashSet<>();
+                for (java.lang.reflect.Method method : type.getMethods()) {
+                    names.add(method.getName());
+                }
+                for (java.lang.reflect.Method method : type.getDeclaredMethods()) {
+                    names.add(method.getName());
+                }
+                names.retainAll(ORDERED_POSITIONAL_MEMBERS);
+                org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of(), names, type.getSimpleName());
+            }
+        }
+    }
 }

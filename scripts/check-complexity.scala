@@ -21,7 +21,7 @@ val positional: Set[String] = Set(
   "get", "update", "insert", "insertAll", "removeAt", "head", "tail", "init", "last", "slice", "subSequence", "take",
   "takeRight", "takeWhile", "takeUntil", "drop", "dropRight", "dropWhile", "dropUntil", "append", "appendAll",
   "prepend", "prependAll", "reverse", "sorted", "sortBy", "zip", "zipAll", "zipWith", "zipWithIndex", "sliding",
-  "grouped", "scan", "scanLeft", "scanRight", "indexOf", "lastIndexOf", "indexWhere", "lastIndexWhere", "search",
+  "grouped", "slideBy", "scan", "scanLeft", "scanRight", "indexOf", "lastIndexOf", "indexWhere", "lastIndexWhere", "search",
   "padTo", "patch", "permutations", "combinations", "crossProduct", "intersperse", "rotateLeft", "rotateRight",
   "shuffle", "splitAt", "startsWith", "endsWith", "distinct", "distinctBy", "remove", "removeAll", "removeFirst",
   "removeLast", "replace", "replaceAll", "leftPadTo", "asJava",

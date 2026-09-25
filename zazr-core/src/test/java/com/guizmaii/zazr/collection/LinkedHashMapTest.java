@@ -28,7 +28,10 @@ import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The LinkedHashMap API: the shared cases over the values (through {@code IntMap}), the map cases over the entries, and the insertion-order ones. */
 public class LinkedHashMapTest extends AbstractTraversableTest {
@@ -2443,4 +2446,353 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         }
     }
 
+    // -- positional operations, in insertion order
+
+    @Nested
+    class PositionalTests {
+
+        private static final int[] WINDOW_SIZES = { 1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE };
+        private static final int[] WINDOW_STEPS = { 1, 2, 3, 70, 71, Integer.MAX_VALUE };
+
+        private java.util.List<LinkedHashMap<Integer, String>> receivers() {
+            final LinkedHashMap<Integer, String> five = mk(5, 3, 9, 1, 7);
+            LinkedHashMap<Integer, String> everyThirdRemoved = mk(Vector.range(0, 70));
+            for (int i = 0; i < 70; i += 3) {
+                everyThirdRemoved = everyThirdRemoved.remove(i);
+            }
+            // 35 markers for 35 entries: the most the insertion order keeps before it is rebuilt
+            LinkedHashMap<Integer, String> atThreshold = mk(Vector.range(0, 70));
+            for (int i = 10; i < 45; i++) {
+                atThreshold = atThreshold.remove(i);
+            }
+            final java.util.List<Integer> shuffled = new java.util.ArrayList<>(Vector.range(0, 70).asJava());
+            java.util.Collections.shuffle(shuffled, new java.util.Random(72));
+            return java.util.List.of(
+                    LinkedHashMap.<Integer, String> empty(),
+                    mk(7),
+                    five,
+                    five.put(3, "again"),
+                    five.remove(9),
+                    five.remove(5),
+                    five.remove(5).remove(9),
+                    five.remove(7),
+                    five.remove(3).put(3, "back"),
+                    mk(Vector.range(0, 70)),
+                    mk(shuffled),
+                    everyThirdRemoved,
+                    atThreshold);
+        }
+
+        private int[] counts(int size) {
+            return new int[] { Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE };
+        }
+
+        // Vector's own takeRight/dropRight compute length - n, so the reference is given an n that cannot overflow
+        private int clamp(int n, int size) {
+            return Math.max(-1, Math.min(n, size + 1));
+        }
+
+        // `actual` holds exactly `expected`, in order, and behaves as a LinkedHashMap built from it
+        private void assertValid(LinkedHashMap<Integer, String> receiver, LinkedHashMap<Integer, String> actual, Vector<Tuple2<Integer, String>> expected) {
+            assertEquals(expected, actual.toVector());
+            assertEquals(expected.size(), actual.size());
+            if (expected.isEmpty()) {
+                assertSame(LinkedHashMap.empty(), actual);
+            }
+            for (Tuple2<Integer, String> entry : expected) {
+                assertEquals(Option.some(entry._2()), actual.get(entry._1()));
+            }
+            for (Tuple2<Integer, String> entry : receiver) {
+                assertEquals(expected.contains(entry), actual.containsKey(entry._1()));
+            }
+            // the result's insertion order is consistent with its hash map: a new key goes last, an existing key keeps
+            // its position, and a removal takes out exactly that entry
+            assertEquals(expected.append(Tuple.of(1000, "new")), actual.put(1000, "new").toVector());
+            for (int i = 0; i < expected.size(); i++) {
+                final Tuple2<Integer, String> entry = expected.get(i);
+                assertEquals(expected.update(i, Tuple.of(entry._1(), "changed")), actual.put(entry._1(), "changed").toVector());
+                assertEquals(expected.removeAt(i), actual.remove(entry._1()).toVector());
+            }
+        }
+
+        @Test
+        public void shouldTakeAndDropLikeTheSequenceOfTheElements() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                final int size = receiver.size();
+                for (int n : counts(size)) {
+                    final int m = clamp(n, size);
+                    final LinkedHashMap<Integer, String> take = receiver.take(n);
+                    final LinkedHashMap<Integer, String> takeRight = receiver.takeRight(n);
+                    final LinkedHashMap<Integer, String> drop = receiver.drop(n);
+                    final LinkedHashMap<Integer, String> dropRight = receiver.dropRight(n);
+                    assertValid(receiver, take, elements.take(m));
+                    assertValid(receiver, takeRight, elements.takeRight(m));
+                    assertValid(receiver, drop, elements.drop(m));
+                    assertValid(receiver, dropRight, elements.dropRight(m));
+                    if (n >= size) {
+                        assertSame(receiver, take);
+                        assertSame(receiver, takeRight);
+                    }
+                    if (n <= 0) {
+                        assertSame(receiver, drop);
+                        assertSame(receiver, dropRight);
+                    }
+                }
+                assertEquals(elements, receiver.toVector());
+            }
+        }
+
+        @Test
+        public void shouldReturnTheFirstAndTheLastElement() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                if (elements.isEmpty()) {
+                    assertEquals("head of empty LinkedHashMap", assertThrows(NoSuchElementException.class, receiver::head).getMessage());
+                    assertEquals("last of empty LinkedHashMap", assertThrows(NoSuchElementException.class, receiver::last).getMessage());
+                    assertEquals(Option.none(), receiver.headOption());
+                    assertEquals(Option.none(), receiver.lastOption());
+                } else {
+                    assertEquals(elements.head(), receiver.head());
+                    assertEquals(elements.last(), receiver.last());
+                    assertEquals(Option.some(elements.head()), receiver.headOption());
+                    assertEquals(Option.some(elements.last()), receiver.lastOption());
+                }
+            }
+            assertEquals(Tuple.of(5, "v5"), mk(5, 3, 9, 1, 7).head());
+            assertEquals(Tuple.of(7, "v7"), mk(5, 3, 9, 1, 7).last());
+            assertEquals(Tuple.of(3, "v3"), mk(5, 3, 9, 1, 7).remove(5).head());
+            assertEquals(Tuple.of(1, "v1"), mk(5, 3, 9, 1, 7).remove(7).last());
+        }
+
+        @Test
+        public void shouldDropTheFirstOrTheLastElementWithTailAndInit() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                if (elements.isEmpty()) {
+                    assertEquals("tail of empty LinkedHashMap", assertThrows(UnsupportedOperationException.class, receiver::tail).getMessage());
+                    assertEquals("init of empty LinkedHashMap", assertThrows(UnsupportedOperationException.class, receiver::init).getMessage());
+                    assertEquals(Option.none(), receiver.tailOption());
+                    assertEquals(Option.none(), receiver.initOption());
+                } else {
+                    final LinkedHashMap<Integer, String> tail = receiver.tail();
+                    final LinkedHashMap<Integer, String> init = receiver.init();
+                    assertValid(receiver, tail, elements.tail());
+                    assertValid(receiver, init, elements.init());
+                    final Option<LinkedHashMap<Integer, String>> tailOption = receiver.tailOption();
+                    final Option<LinkedHashMap<Integer, String>> initOption = receiver.initOption();
+                    assertValid(receiver, tailOption.get(), elements.tail());
+                    assertValid(receiver, initOption.get(), elements.init());
+                }
+            }
+        }
+
+        @Test
+        public void shouldTakeAndDropWhileOrUntilAPredicateHolds() {
+            final java.util.List<java.util.function.Predicate<Tuple2<Integer, String>>> predicates = java.util.List.of(
+                    e -> true, e -> false, e -> e._1() < 5, e -> e._1() >= 5, e -> e._1() % 2 == 1, e -> e._1() != 40);
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                for (java.util.function.Predicate<Tuple2<Integer, String>> predicate : predicates) {
+                    final LinkedHashMap<Integer, String> takeWhile = receiver.takeWhile(predicate);
+                    final LinkedHashMap<Integer, String> takeUntil = receiver.takeUntil(predicate);
+                    final LinkedHashMap<Integer, String> dropWhile = receiver.dropWhile(predicate);
+                    final LinkedHashMap<Integer, String> dropUntil = receiver.dropUntil(predicate);
+                    assertValid(receiver, takeWhile, elements.takeWhile(predicate));
+                    assertValid(receiver, takeUntil, elements.takeUntil(predicate));
+                    assertValid(receiver, dropWhile, elements.dropWhile(predicate));
+                    assertValid(receiver, dropUntil, elements.dropUntil(predicate));
+                }
+                // the walk stops at the first element that ends the prefix
+                final int[] calls = { 0 };
+                receiver.takeWhile(e -> {
+                    calls[0]++;
+                    return false;
+                });
+                assertEquals(receiver.isEmpty() ? 0 : 1, calls[0]);
+                assertThrows(NullPointerException.class, () -> receiver.takeWhile(null));
+                assertThrows(NullPointerException.class, () -> receiver.takeUntil(null));
+                assertThrows(NullPointerException.class, () -> receiver.dropWhile(null));
+                assertThrows(NullPointerException.class, () -> receiver.dropUntil(null));
+            }
+        }
+
+        @Test
+        public void shouldZipWithThePosition() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Tuple2<Integer, String>, Integer>> zipped = receiver.zipWithIndex();
+                assertEquals(receiver.toVector().zipWithIndex(), zipped);
+                for (int i = 0; i < zipped.size(); i++) {
+                    assertEquals(i, zipped.get(i)._2());
+                }
+            }
+        }
+
+        @Test
+        public void shouldGroupAndSlideLikeTheSequenceOfTheElements() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                for (int size : WINDOW_SIZES) {
+                    for (int step : WINDOW_STEPS) {
+                        final Vector<LinkedHashMap<Integer, String>> windows = receiver.sliding(size, step);
+                        final Vector<Vector<Tuple2<Integer, String>>> expected = elements.sliding(size, step);
+                        assertEquals(expected.size(), windows.size());
+                        for (int i = 0; i < windows.size(); i++) {
+                            assertValid(receiver, windows.get(i), expected.get(i));
+                        }
+                    }
+                    final Vector<LinkedHashMap<Integer, String>> groups = receiver.grouped(size);
+                    assertEquals(elements.grouped(size), groups.map(LinkedHashMap::toVector));
+                    groups.forEach(group -> assertValid(receiver, group, group.toVector()));
+                    final Vector<LinkedHashMap<Integer, String>> windows = receiver.sliding(size);
+                    assertEquals(elements.sliding(size), windows.map(LinkedHashMap::toVector));
+                    windows.forEach(window -> assertValid(receiver, window, window.toVector()));
+                }
+            }
+        }
+
+        @Test
+        public void shouldSlideFollowingTheWindowRules() {
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)), mk(1, 2, 3, 4).sliding(3).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(4, 5)), mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(5)), mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)), mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
+                    mk(1, 2, 3, 4, 5, 6).sliding(3, 2).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1)), mk(1, 2, 3).sliding(1, 3).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2)), mk(1, 2).sliding(5).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1)), mk(1).sliding(1).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)), mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
+                    mk(1, 2, 3, 10, 12, 20, 29).slideBy(e -> e._1() / 10).map(this::keys));
+            // a huge step or size does not overflow the window start
+            assertEquals(Vector.of(Vector.range(0, 3)), mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
+            assertEquals(Vector.of(Vector.range(0, 40)),
+                    mk(Vector.range(0, 40)).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE).map(this::keys));
+            assertTrue(LinkedHashMap.<Integer, String> empty().sliding(1).isEmpty());
+            assertTrue(LinkedHashMap.<Integer, String> empty().sliding(2, 3).isEmpty());
+            assertTrue(LinkedHashMap.<Integer, String> empty().grouped(2).isEmpty());
+        }
+
+        @Test
+        public void shouldRejectANonPositiveWindowSizeOrStep() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                assertThrows(IllegalArgumentException.class, () -> receiver.grouped(0));
+                assertThrows(IllegalArgumentException.class, () -> receiver.grouped(-1));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(0));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(2, 0));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(0, 2));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(-1, -1));
+            }
+        }
+
+        @Test
+        public void shouldSlideByCallingTheClassifierOncePerElement() {
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                final java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
+                final Vector<LinkedHashMap<Integer, String>> runs = receiver.slideBy(e -> {
+                    seen.add(e);
+                    return e._1() / 3;
+                });
+                assertEquals(new java.util.ArrayList<>(elements.asJava()), seen);
+                final Vector<Vector<Tuple2<Integer, String>>> expected = elements.slideBy(e -> e._1() / 3);
+                assertEquals(expected.size(), runs.size());
+                for (int i = 0; i < runs.size(); i++) {
+                    assertValid(receiver, runs.get(i), expected.get(i));
+                }
+                assertEquals(receiver.isEmpty() ? 0 : 1, receiver.slideBy(e -> "same").size());
+                assertEquals(receiver.size(), receiver.slideBy(e -> e).size());
+                assertThrows(NullPointerException.class, () -> receiver.slideBy(null));
+            }
+        }
+
+        @Test
+        public void shouldDeclareThePositionalMembersWithTheOwnType() throws Exception {
+            for (String name : new String[] { "init", "tail" }) {
+                assertEquals(LinkedHashMap.class, LinkedHashMap.class.getDeclaredMethod(name).getReturnType());
+            }
+            for (String name : new String[] { "take", "takeRight", "drop", "dropRight" }) {
+                assertEquals(LinkedHashMap.class, LinkedHashMap.class.getDeclaredMethod(name, int.class).getReturnType());
+            }
+            for (String name : new String[] { "takeWhile", "takeUntil", "dropWhile", "dropUntil" }) {
+                assertEquals(LinkedHashMap.class, LinkedHashMap.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
+            }
+            assertEquals("com.guizmaii.zazr.control.Option<com.guizmaii.zazr.collection.LinkedHashMap<K, V>>",
+                    LinkedHashMap.class.getDeclaredMethod("tailOption").getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.control.Option<com.guizmaii.zazr.collection.LinkedHashMap<K, V>>",
+                    LinkedHashMap.class.getDeclaredMethod("initOption").getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.LinkedHashMap<K, V>>",
+                    LinkedHashMap.class.getDeclaredMethod("grouped", int.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.LinkedHashMap<K, V>>",
+                    LinkedHashMap.class.getDeclaredMethod("sliding", int.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.LinkedHashMap<K, V>>",
+                    LinkedHashMap.class.getDeclaredMethod("sliding", int.class, int.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.LinkedHashMap<K, V>>",
+                    LinkedHashMap.class.getDeclaredMethod("slideBy", Function.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.Tuple2<com.guizmaii.zazr.Tuple2<K, V>, java.lang.Integer>>",
+                    LinkedHashMap.class.getDeclaredMethod("zipWithIndex").getGenericReturnType().getTypeName());
+            final java.util.Set<String> declared = new java.util.HashSet<>();
+            for (java.lang.reflect.Method method : LinkedHashMap.class.getDeclaredMethods()) {
+                declared.add(method.getName());
+            }
+            assertTrue(declared.containsAll(ORDERED_POSITIONAL_MEMBERS));
+        }
+
+        @Test
+        public void shouldKeepTheInsertionOrderAfterAPutOfAnExistingKey() {
+            final LinkedHashMap<Integer, String> map = mk(3, 1, 2).put(3, "three").put(1, "one");
+            assertEquals(Tuple.of(3, "three"), map.head());
+            assertEquals(Tuple.of(2, "v2"), map.last());
+            assertEquals(Vector.of(3, 1), keys(map.take(2)));
+            assertEquals(Vector.of(1, 2), keys(map.tail()));
+            assertEquals(Vector.of(Tuple.of(Tuple.of(3, "three"), 0), Tuple.of(Tuple.of(1, "one"), 1), Tuple.of(Tuple.of(2, "v2"), 2)),
+                    map.zipWithIndex());
+            // a removed key put again goes last
+            assertEquals(Vector.of(1, 2, 3), keys(map.remove(3).put(3, "back")));
+            assertEquals(Tuple.of(3, "back"), map.remove(3).put(3, "back").last());
+        }
+
+        @Test
+        public void shouldCoverEveryRepresentationOfTheInsertionOrder() throws Exception {
+            // offset > 0, markers of removed keys in the middle, and as many markers as keys (one more rebuilds)
+            final java.util.List<LinkedHashMap<Integer, String>> receivers = receivers();
+            final java.util.Set<String> shapes = new java.util.HashSet<>();
+            for (LinkedHashMap<Integer, String> receiver : receivers) {
+                final int offset = representation(receiver, "offset");
+                final int tombstones = representation(receiver, "tombstones");
+                if (offset > 0) {
+                    shapes.add(tombstones > 0 ? "offset and markers" : "offset");
+                }
+                if (tombstones > 0 && tombstones == receiver.size()) {
+                    shapes.add("markers at the rebuild threshold");
+                } else if (tombstones > 0) {
+                    shapes.add("markers");
+                }
+            }
+            assertEquals(java.util.Set.of("offset", "offset and markers", "markers", "markers at the rebuild threshold"), shapes);
+        }
+
+        private int representation(LinkedHashMap<Integer, String> receiver, String field) throws Exception {
+            final java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
+            declared.setAccessible(true);
+            return (int) declared.get(receiver);
+        }
+
+        private Vector<Integer> keys(LinkedHashMap<Integer, String> map) {
+            return map.toVector().map(Tuple2::_1);
+        }
+
+        private LinkedHashMap<Integer, String> mk(Integer... keys) {
+            return mk(Vector.of(keys));
+        }
+
+        private LinkedHashMap<Integer, String> mk(Iterable<Integer> keys) {
+            LinkedHashMap<Integer, String> map = LinkedHashMap.empty();
+            for (Integer key : keys) {
+                map = map.put(key, "v" + key);
+            }
+            return map;
+        }
+    }
 }

@@ -757,6 +757,161 @@ interface RedBlackTreeModule {
             }
         }
 
+        /**
+         * Splits {@code tree} by rank: the first {@code n} elements in order and the others, both valid red-black
+         * trees with a black root. {@link #split(RedBlackTree, Object)} with the left subtree's size in place of the
+         * comparison; each half is built by one descent, a {@link #join(RedBlackTree, Object, RedBlackTree)} per
+         * level, so O(log n).
+         *
+         * @param tree a tree
+         * @param n    the rank of the split, from 0 to {@code tree.size()}
+         * @return the elements of rank below {@code n} and those of rank {@code n} or more
+         */
+        static <T extends @Nullable Object> Tuple2<RedBlackTree<T>, RedBlackTree<T>> splitAt(RedBlackTree<T> tree, int n) {
+            return Tuple.of(take(tree, n), drop(tree, n));
+        }
+
+        /**
+         * The elements of rank below {@code n}, as a tree with a black root: the first half of
+         * {@link #splitAt(RedBlackTree, int)}, without building the second. O(log n).
+         *
+         * @param tree a tree
+         * @param n    the number of elements kept, from 0 to {@code tree.size()}
+         * @return the first {@code n} elements
+         */
+        static <T extends @Nullable Object> RedBlackTree<T> take(RedBlackTree<T> tree, int n) {
+            if (n <= 0 || tree.isEmpty()) {
+                return tree.emptyInstance();
+            } else if (n >= tree.size()) {
+                return color(tree, BLACK);
+            }
+            final Node<T> node = (Node<T>) tree;
+            final int leftSize = node.left.size();
+            if (n < leftSize) {
+                return take(node.left, n);
+            } else if (n == leftSize) {
+                return color(node.left, BLACK);
+            } else {
+                return join(color(node.left, BLACK), node.value, take(node.right, n - leftSize - 1));
+            }
+        }
+
+        /**
+         * The elements of rank {@code n} or more, as a tree with a black root: the second half of
+         * {@link #splitAt(RedBlackTree, int)}, without building the first. O(log n).
+         *
+         * @param tree a tree
+         * @param n    the number of elements dropped, from 0 to {@code tree.size()}
+         * @return the elements after the first {@code n}
+         */
+        static <T extends @Nullable Object> RedBlackTree<T> drop(RedBlackTree<T> tree, int n) {
+            if (n <= 0 || tree.isEmpty()) {
+                return color(tree, BLACK);
+            } else if (n >= tree.size()) {
+                return tree.emptyInstance();
+            }
+            final Node<T> node = (Node<T>) tree;
+            final int leftSize = node.left.size();
+            if (n <= leftSize) {
+                return join(drop(node.left, n), node.value, color(node.right, BLACK));
+            } else {
+                return drop(node.right, n - leftSize - 1);
+            }
+        }
+
+        /**
+         * The elements of rank {@code from} (inclusive) to {@code until} (exclusive), clamped to the tree, as a tree
+         * with a black root: one {@link #drop(RedBlackTree, int)} then one {@link #take(RedBlackTree, int)}, so
+         * O(log n); the result shares its untouched subtrees with {@code tree}.
+         */
+        static <T extends @Nullable Object> RedBlackTree<T> slice(RedBlackTree<T> tree, int from, int until) {
+            final int size = tree.size();
+            final int start = Math.max(from, 0);
+            final int end = Math.min(until, size);
+            if (start >= end) {
+                return tree.emptyInstance();
+            } else if (start == 0 && end == size) {
+                return tree;
+            } else {
+                return take(drop(tree, start), end - start);
+            }
+        }
+
+        /**
+         * The number of leading elements, in order, for which {@code predicate} returns {@code expected}: the length
+         * of the prefix {@code takeWhile} ({@code expected} true) or {@code takeUntil} ({@code expected} false) keeps.
+         * O(k) for a prefix of k elements.
+         */
+        static <T extends @Nullable Object> int prefixLength(RedBlackTree<T> tree, java.util.function.Predicate<? super T> predicate, boolean expected) {
+            int length = 0;
+            final java.util.Iterator<T> iterator = tree.iterator();
+            while (iterator.hasNext() && predicate.test(iterator.next()) == expected) {
+                length++;
+            }
+            return length;
+        }
+
+        /**
+         * The windows of {@code size} consecutive elements, each starting {@code step} elements after the previous,
+         * each wrapped by {@code wrap}; the loop and the window rule are {@link Vector#sliding(int, int)}'s. Each
+         * window is one {@link #slice(RedBlackTree, int, int)}, so O((n / step) log n).
+         */
+        static <T extends @Nullable Object, R extends @Nullable Object> Vector<R> sliding(RedBlackTree<T> tree, int size, int step,
+                java.util.function.Function<RedBlackTree<T>, R> wrap) {
+            Collections.checkWindow(size, step);
+            final int length = tree.size();
+            if (length == 0) {
+                return Vector.empty();
+            }
+            final Vector.Builder<R> builder = Vector.newBuilder();
+            // past the first, a window is produced only while it holds at least one element the previous one did not
+            for (long start = 0; start < length && (start == 0 || start - step + size < length); start += step) {
+                builder.add(wrap.apply(slice(tree, (int) start, (int) Math.min(start + size, length))));
+            }
+            return builder.result();
+        }
+
+        /**
+         * The maximal runs of consecutive elements with an equal key, {@code classifier} called once per element in
+         * order, each run wrapped by {@code wrap}. One walk, then one {@link #slice(RedBlackTree, int, int)} per run:
+         * O(n + r log n) for r runs.
+         */
+        static <T extends @Nullable Object, R extends @Nullable Object> Vector<R> slideBy(RedBlackTree<T> tree,
+                java.util.function.Function<? super T, ?> classifier, java.util.function.Function<RedBlackTree<T>, R> wrap) {
+            Objects.requireNonNull(classifier, "classifier is null");
+            if (tree.isEmpty()) {
+                return Vector.empty();
+            }
+            final Vector.Builder<R> builder = Vector.newBuilder();
+            final java.util.Iterator<T> iterator = tree.iterator();
+            Object key = classifier.apply(iterator.next());
+            int start = 0;
+            int index = 1;
+            while (iterator.hasNext()) {
+                final Object next = classifier.apply(iterator.next());
+                if (!Objects.equals(key, next)) {
+                    builder.add(wrap.apply(slice(tree, start, index)));
+                    start = index;
+                    key = next;
+                }
+                index++;
+            }
+            builder.add(wrap.apply(slice(tree, start, index)));
+            return builder.result();
+        }
+
+        /**
+         * The elements paired with their rank, in order. O(n).
+         */
+        static <T extends @Nullable Object> Vector<Tuple2<T, Integer>> zipWithIndex(RedBlackTree<T> tree) {
+            final Vector.Builder<Tuple2<T, Integer>> builder = Vector.newBuilder(tree.size());
+            int index = 0;
+            for (T value : tree) {
+                builder.add(Tuple.of(value, index++));
+            }
+            return builder.result();
+        }
+
         private static <T extends @Nullable Object> Tuple2<Node<T>, Boolean> unbalancedLeft(Color color, int blackHeight, RedBlackTree<T> left,
                 T value, RedBlackTree<T> right, Empty<T> empty) {
             if (!left.isEmpty()) {

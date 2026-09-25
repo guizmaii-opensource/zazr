@@ -357,4 +357,183 @@ public class RedBlackTreeTest {
         assertThat(actual.toString()).isEqualTo("List(1, 2, 3, 4, 5, 6, 7)");
     }
 
+
+    // rank split: splitAt, take, drop, slice
+
+    private static final long SEED = 20260925L;
+
+    private static RedBlackTree<Integer> shuffledTree(int size, java.util.Random random) {
+        final java.util.List<Integer> values = new java.util.ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            values.add(i);
+        }
+        java.util.Collections.shuffle(values, random);
+        RedBlackTree<Integer> tree = empty();
+        for (Integer value : values) {
+            tree = tree.insert(value);
+        }
+        return tree;
+    }
+
+    // the trees of sizes 0..70: one random insertion order, one ascending, and one with a third of a larger tree deleted
+    private static java.util.List<RedBlackTree<Integer>> treesUpTo70() {
+        final java.util.Random random = new java.util.Random(SEED);
+        final java.util.List<RedBlackTree<Integer>> trees = new java.util.ArrayList<>();
+        for (int size = 0; size <= 70; size++) {
+            trees.add(shuffledTree(size, random));
+            RedBlackTree<Integer> ascending = empty();
+            for (int i = 0; i < size; i++) {
+                ascending = ascending.insert(i);
+            }
+            trees.add(ascending);
+            final int larger = size + size / 2;
+            RedBlackTree<Integer> deleted = shuffledTree(larger, random);
+            for (int i = size; i < larger; i++) {
+                deleted = deleted.delete(i);
+            }
+            trees.add(deleted);
+        }
+        return trees;
+    }
+
+    /** Asserts that {@code tree} is a valid red-black tree: black root, no red node with a red child, the same number
+     *  of black nodes on every path, the {@code blackHeight} and {@code size} fields equal to the recomputed values,
+     *  and the elements strictly increasing. */
+    private static void assertValid(RedBlackTree<Integer> tree) {
+        assertThat(tree.color()).as("root of %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
+        blackNodesBelow(tree);
+        Integer previous = null;
+        int count = 0;
+        for (Integer value : tree) {
+            if (previous != null) {
+                assertThat(value).as("order of %s", tree).isGreaterThan(previous);
+            }
+            previous = value;
+            count++;
+        }
+        assertThat(tree.size()).isEqualTo(count);
+    }
+
+    // the number of black nodes on every path from the root of `tree` down, counting the empty leaf as one
+    private static int blackNodesBelow(RedBlackTree<Integer> tree) {
+        if (tree.isEmpty()) {
+            return 1;
+        }
+        final RedBlackTreeModule.Node<Integer> node = (RedBlackTreeModule.Node<Integer>) tree;
+        if (node.color == RedBlackTree.Color.RED) {
+            assertThat(node.left.color()).as("red-red in %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
+            assertThat(node.right.color()).as("red-red in %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
+        }
+        final int left = blackNodesBelow(node.left);
+        final int right = blackNodesBelow(node.right);
+        assertThat(left).as("black height of %s", tree).isEqualTo(right);
+        assertThat(node.blackHeight).as("blackHeight field of %s", tree).isEqualTo(left);
+        assertThat(node.size).as("size field of %s", tree).isEqualTo(node.left.size() + node.right.size() + 1);
+        return left + (node.color == RedBlackTree.Color.BLACK ? 1 : 0);
+    }
+
+    private static java.util.List<Integer> elements(RedBlackTree<Integer> tree) {
+        final java.util.List<Integer> result = new java.util.ArrayList<>();
+        tree.forEach(result::add);
+        return result;
+    }
+
+    @Test
+    public void shouldBuildValidTreesForTheSplitTests() {
+        for (RedBlackTree<Integer> tree : treesUpTo70()) {
+            assertValid(tree);
+        }
+    }
+
+    @Test
+    public void shouldSplitAtEveryRankIntoTwoValidTrees() {
+        int splits = 0;
+        for (RedBlackTree<Integer> tree : treesUpTo70()) {
+            final java.util.List<Integer> all = elements(tree);
+            for (int n = 0; n <= tree.size(); n++) {
+                final com.guizmaii.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split = RedBlackTreeModule.Node.splitAt(tree, n);
+                assertValid(split._1());
+                assertValid(split._2());
+                assertThat(split._1().size()).isEqualTo(n);
+                assertThat(split._2().size()).isEqualTo(tree.size() - n);
+                assertThat(elements(split._1())).isEqualTo(all.subList(0, n));
+                assertThat(elements(split._2())).isEqualTo(all.subList(n, all.size()));
+                assertThat(split._1().comparator()).isSameAs(tree.comparator());
+                assertThat(split._2().comparator()).isSameAs(tree.comparator());
+                splits++;
+            }
+        }
+        assertThat(splits).isEqualTo(3 * (71 * 72 / 2));
+    }
+
+    @Test
+    public void shouldTakeAndDropAtEveryRankIncludingOutOfRange() {
+        for (RedBlackTree<Integer> tree : treesUpTo70()) {
+            final java.util.List<Integer> all = elements(tree);
+            for (int n = -1; n <= tree.size() + 1; n++) {
+                final int clamped = Math.max(0, Math.min(n, tree.size()));
+                final RedBlackTree<Integer> taken = RedBlackTreeModule.Node.take(tree, n);
+                final RedBlackTree<Integer> dropped = RedBlackTreeModule.Node.drop(tree, n);
+                assertValid(taken);
+                assertValid(dropped);
+                assertThat(elements(taken)).isEqualTo(all.subList(0, clamped));
+                assertThat(elements(dropped)).isEqualTo(all.subList(clamped, all.size()));
+            }
+        }
+    }
+
+    @Test
+    public void shouldSliceEveryRangeIntoAValidTree() {
+        final java.util.List<RedBlackTree<Integer>> trees = treesUpTo70();
+        // every range on the trees up to size 20, then every range starting or ending at a boundary on the larger ones
+        for (RedBlackTree<Integer> tree : trees) {
+            final java.util.List<Integer> all = elements(tree);
+            final int size = tree.size();
+            for (int from = -1; from <= size + 1; from++) {
+                for (int until = -1; until <= size + 1; until++) {
+                    if (size > 20 && from > 1 && from < size - 1 && until > 1 && until < size - 1) {
+                        continue;
+                    }
+                    final int start = Math.max(0, from);
+                    final int end = Math.min(until, size);
+                    final RedBlackTree<Integer> slice = RedBlackTreeModule.Node.slice(tree, from, until);
+                    assertValid(slice);
+                    assertThat(elements(slice)).isEqualTo(start < end ? all.subList(start, end) : java.util.List.of());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void shouldReturnTheSameTreeForAFullSlice() {
+        final RedBlackTree<Integer> tree = of(1, 2, 3);
+        assertThat(RedBlackTreeModule.Node.slice(tree, 0, 3)).isSameAs(tree);
+        assertThat(RedBlackTreeModule.Node.slice(tree, -5, 10)).isSameAs(tree);
+    }
+
+    @Test
+    public void shouldKeepTheComparatorOnAnEmptySlice() {
+        final RedBlackTree<Integer> tree = RedBlackTree.of(java.util.Comparator.<Integer> reverseOrder(), 1, 2, 3);
+        assertThat(RedBlackTreeModule.Node.take(tree, 0).comparator()).isSameAs(tree.comparator());
+        assertThat(RedBlackTreeModule.Node.drop(tree, 3).comparator()).isSameAs(tree.comparator());
+        assertThat(RedBlackTreeModule.Node.slice(tree, 2, 1).comparator()).isSameAs(tree.comparator());
+        assertThat(elements(RedBlackTreeModule.Node.take(tree, 2))).containsExactly(3, 2);
+    }
+
+    @Test
+    public void shouldJoinAfterSplitIntoTheSameElements() {
+        // the halves of a split are used by later joins, so their blackHeight fields must be right
+        for (RedBlackTree<Integer> tree : treesUpTo70()) {
+            for (int n = 0; n < tree.size(); n++) {
+                final RedBlackTree<Integer> left = RedBlackTreeModule.Node.take(tree, n);
+                final RedBlackTree<Integer> right = RedBlackTreeModule.Node.drop(tree, n + 1);
+                final Integer pivot = elements(tree).get(n);
+                final RedBlackTree<Integer> joined = RedBlackTreeModule.Node.join(left, pivot, right);
+                assertValid(joined);
+                assertThat(elements(joined)).isEqualTo(elements(tree));
+                assertValid(left.union(right));
+            }
+        }
+    }
+
 }
