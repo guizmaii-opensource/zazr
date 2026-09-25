@@ -241,7 +241,7 @@ Decided while implementing:
   `values()`, which copy); on the `LinkedHashMap` and `TreeMap` views they are `SequencedSet`/`SequencedCollection`
   (a `TreeMap` view's key set is its `NavigableSet`), and `sequencedKeySet()`/`sequencedValues()`/
   `sequencedEntrySet()` are the same views. The `HashMap` view reads the trie directly (its key and value
-  iterators, and its leaf nodes for the entries), so no `Tuple2` is made per entry. Lookups answer the value or
+  iterators, and the key and value slots of its nodes for the entries), so no `Tuple2` is made per entry. Lookups answer the value or
   `Maps.ABSENT`, so `get`, `containsKey` and `getOrDefault` tell a missing key from a present one without an
   `Option`.
 - **Equality** follows the JDK interface: a list view equals any `java.util.List` with the same elements in the
@@ -1315,6 +1315,60 @@ split.
 Step 2 rebases `Vector` and `Vector.Builder` on `RadixVector` and `VectorBuilder`, with the coordinator's JMH table.
 Step 3 deletes `BitMappedTrie`, `ArrayType` and the differential test.
 
+**Step 2 (#74): `Vector` on the finger tree.** `Vector` holds a `RadixVector` and `Vector.Builder` a `VectorBuilder`;
+the public API does not change.
+- **Contract.** The exception types and messages are those of step 1. A probe of 1 615 edge calls (nulls, bad indices,
+  empty vectors, closed builders, identity results such as `drop(0) == this`, at sizes 0 to 40 000, built by `range` and
+  by `ofAll`) prints the same output on both, but for two messages, both now `Vector: element is null` like every other
+  path that rejects a null element: a `map` whose function returns null on a vector built by `range` or `ofAll(int[])`
+  said `Vector.map: element is null`, and `append(null)`/`prepend(null)` said `List: element is null`, a leftover of
+  the old path through `List.of` (decided with the maintainer, #163). One behaviour changes on purpose:
+  `Vector.of(array)` of 32 elements or fewer used the caller's array as its leaf, so writing into the array afterwards
+  changed the vector; the array is now copied, as it always was above 32 elements.
+- **Primitive leaves (decided): `Object[]` only**, as Scala does. `ofAll(int[])` and the other primitive `ofAll` add
+  each boxed value to the builder; `range` and its variants build from their `Iterator`. A rough probe (one JVM, best
+  of 15 batches after warm-up, not a benchmark; µs per operation at 100 000 elements, step 1 → step 2) shows what
+  primitive leaves bought and cost:
+  - they are cheaper to build and to keep: `ofAll(int[])` 27 → 410, and 4.6 → 20.6 retained bytes per element for
+    values outside the `Integer` cache;
+  - they box on every read: a `get` loop 1 970 → 290, iteration 670 → 130, `map` 1 300 → 540, `filter` 710 → 200.
+
+  Two more shapes lose in the same probe: `range(0, 100 000)` 330 → 570, since every value is now kept boxed (the
+  primitive path boxed it in the `Iterator` too, then unboxed it into an `int[]`), and `drop(1)` 0.02 → 0.05 to 0.12,
+  since a slice goes through `VectorSliceBuilder` (`tail` has its own path and does not).
+
+  A vector is read more often than it is built, and a primitive leaf also made the first write of another class convert
+  the whole vector. So no primitive path is kept; #29 (the `ClassCastException` fallbacks of primitive leaves) has
+  nothing left to fix in `Vector`.
+- **Size hint.** `newBuilder(sizeHint)` still rejects a negative hint but ignores the value: `VectorBuilder` always fills
+  32-wide leaves, and only the arrays cut at the end are trimmed by `result()`. The javadoc and `docs/builders.md` say so.
+- **Operations.** `appendAll`/`prependAll` hand a `Vector` (or the `java.util.List` view of one) to the tree as a tree,
+  so the two are concatenated by arrays; another iterable that can be traversed again is turned into a tree first, and a
+  one-shot one goes through the builder as before. `map` is `RadixVector.map` (the same shape, array by array); `filter`
+  finds the first rejected element and starts the builder from the kept prefix, whose arrays are shared; `flatMap` and
+  `collect` walk the tree with `forEach`; `head`, `last`, `tail`, `init` and `slice` are the tree's own.
+- **Complexity notes.** `head` and `last` are O(1); `append`, `prepend`, `tail` and `init` copy one leaf, amortised
+  O(1); `appendAll`/`prependAll` of a `Vector` are O(min(n, m)) plus O(log n) arrays: Scala's `appendedAll0` appends
+  a short argument element by element, prepends a much shorter receiver onto the argument (`LOG2_CONCAT_FASTER`),
+  aligns the builder on the longer side (`ALIGN_TO_FASTER`) so its arrays are reused whole, and otherwise starts the
+  builder from the receiver's arrays (`initFrom`) and copies the argument, which is then at most 64 elements longer.
+- **Tests.** `VectorTest`, `NonEmptyVectorTest`, the law tests and the docs examples pass unchanged. `VectorBuilderTest`
+  and `VectorPropertyTest` read the trie's leaves and depth, so they change: they read the tree's through a test-only
+  `RadixVectorShapes`, the depth replaces the root shift, and the sharing they assert is the finger tree's (a builder
+  started from a vector keeps all its leaves; an aligned builder shares the inner leaves of the vector it adds and copies
+  its first and last leaves; a builder whose current leaf is partly filled copies every leaf). The checks of primitive
+  leaf types and the package-private `addMapped` are gone. `ArbitraryShapesTest` in `zazr-test` looked for a trie
+  with an offset; it now looks for a tree whose first leaf is partly filled, the shape a dropped prefix leaves.
+  `VectorContractTest` pins the exception types and messages and the identity of the results at every boundary of the
+  tree, for six ways of building the same vector.
+- **The differential test** keeps its oracle independent: `TrieVector`, a test-only class, computes the operations the
+  test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
+  (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
+
+Step 3 then deletes `BitMappedTrie` with `LeafVisitor` and `NodeModifier`, `TrieVector` and the differential test,
+and `ArrayType` with its generator (`genArrayTypes`); `ArrayType`'s last user outside `Vector`,
+`IterableWithSize.toArray` in `Collections`, gets a plain loop.
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same
@@ -1346,7 +1400,8 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   nodes, red one-element subtrees on the deepest level only. `size()` compacts the buffer (sort and dedupe) so that it
   counts distinct keys, like the hash builders. A comparator that throws closes the builder, since the sort may have
   left the buffer half merged.
-- The transient trie puts the owner token on `IndexedNode` and `ArrayNode` only. Leaves (`LeafSingleton`,
+- The transient trie (on the Vavr trie, replaced by CHAMP in 3.8.2, which keeps the same owner-token scheme) puts
+  the owner token on `IndexedNode` and `ArrayNode` only. Leaves (`LeafSingleton`,
   `LeafList`) stay immutable and are replaced; a collision list goes through the persistent `modify`, so the builder
   produces the very trie successive persistent puts produce, node for node (the tests compare them). The cost is one
   reference field per internal node (about 8 bytes with compressed oops). The mutable node fields lose their `final`
@@ -1369,6 +1424,68 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+
+#### 3.8.2 `HashMap` and `HashSet` on CHAMP (decided 2026-09-25)
+
+**Decision.** `HashMap` and `HashSet` sit on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer and
+Vinju, OOPSLA 2015) ported from `scala/collection/immutable/HashMap.scala`, `HashSet.scala` and `ChampCommon.scala`
+of the Scala 3 standard library (the Scala 2.13.18 collection library, which Scala 3 ships unchanged). The Vavr hash
+array mapped trie (`HashArrayMappedTrie`, one leaf object per entry, `IndexedNode`/`ArrayNode` internal nodes) is
+deleted. Attribution in `NOTICE`.
+
+- **Shape.** A `BitmapIndexedMapNode`/`BitmapIndexedSetNode` has two bitmaps, `dataMap` for the slots holding an
+  entry inline and `nodeMap` for the slots holding a child; the entries (key and value side by side for a map) fill
+  the front of one `Object[]`, the children its back in reverse slot order, and an `int[]` holds each entry's hash.
+  Every node caches its size and the sum of its key hashes. Seven levels of 5 bits consume the hash; keys of one
+  whole hash share a `HashCollisionMapNode`/`HashCollisionSetNode` below them, a flat array (Scala uses a `Vector` of
+  pairs). Removal pulls a child that is down to one entry back inline, so the shape is canonical: equal collections
+  have equal trees, up to the order inside a collision node. Iteration yields a node's entries before its children's,
+  so the order of a `HashMap` or `HashSet` differs from the Vavr trie's whenever a node has children.
+- **Hash mixing, as Scala (decided 2026-09-26, the rule being to copy what Scala does).** A key's slots come from
+  Scala's `Hashing.improve` of its `hashCode`, so hash codes that differ only in their high bits still spread over the
+  first levels; the nodes store the `hashCode` itself, as Scala stores the original hash. The mixing is a bijection, so
+  equal stored hashes mean equal mixed ones. One difference: Scala caches per node the sum of the mixed hashes; Zazr
+  caches the sum of the hash codes, which serves the same comparisons and is also the `java.util.Set` hash of the keys
+  (`HashSet.hashCode` reads it). Iteration orders changed accordingly; tests that placed keys by their hash code place
+  them by their mixed hash (`ChampValidity.hashCodeFor` undoes the mixing).
+- **Which of two equal keys is kept: `put`'s rule for maps, `add`'s for sets (decided 2026-09-25).** Scala's
+  `updated` keeps the old key and replaces only the value (the key write is commented out in `copyAndSetValue`), and
+  its collision node skips an update whose value is the same object whatever the key. Zazr's `HashMap.put` has always
+  replaced the key along with the value, so the nodes write both and return the same node only when both are the same
+  objects; the factories, the collector and the builder do as successive puts, and `merge(that)` keeps this map's
+  entries. On `main`, `HashSet.add` kept the element already there, but every factory and every operation building a
+  set from elements kept the last of equal elements (`of`, `ofAll` of an iterable or a stream, `tabulate`, `fill`,
+  `flatten`, the builder, the collector, `map`, `flatMap`, `collect`, `partitionMap`), and `addAll`/`union` replaced
+  the elements already there unless nothing was new (then the receiver, with its old elements, came back): the
+  inconsistency #136 removed from `LinkedHashSet`. Every `HashSet` factory and operation now keeps the first of equal
+  elements, as `add` does: the set nodes take a `replace` flag, which the public operations never set. `intersect` keeps the receiver's elements whichever side is
+  smaller (on `main`, those of the smaller side), looking each element of a smaller argument up in the receiver.
+  `replace(current, equalNew)` swaps in the new object: it is an explicit replacement.
+- **Cross-version trace.** A trace of every public `HashMap`/`HashSet`/`LinkedHashMap`/`LinkedHashSet` operation over
+  colliding and boundary hashes, with a tag on every key and value object, was run against the Vavr trie and the port
+  before the set rule above: it kept the same keys and values everywhere, and the maps still do after it. The only
+  other differences are the identity of some results (a `put` of the key and value objects already there, and a
+  `remove` of an absent key that shares a collision node, now return the map itself; a removal down to nothing returns
+  the shared empty instance) and the message of `HashSet.map` given a function returning null
+  (`HashSet: element is null`, no longer `HashMap: key is null`).
+- **Builder: owner tokens, not Scala's aliasing.** Scala's `HashMapBuilder` mutates every node of its trie and copies
+  the whole trie before writing to one it has handed out. `HashMapBuilder`/`HashSetBuilder` keep the scheme of 3.8.1:
+  the bitmap nodes carry an owner token, the builder updates only its own nodes in place and copies a foreign node the
+  first time a write goes through it; collision nodes are immutable. So `putAll(HashMap)`/`addAll(HashSet)` on an empty
+  builder still adopts the source root in O(1) and copies only the paths later writes touch, and the built trie is the
+  one successive persistent puts give, node for node. With the default 12-byte header and compressed oops the token
+  costs no memory (four ints and three references make 40 bytes, and 36 without it pad to 40); with compact object
+  headers it costs a padded 8 bytes per bitmap node (40 against 32).
+- **Scope of the port.** Step 1 ports the nodes, the iteration, the persistent `updated`/`removed` and the builders;
+  every public operation keeps its algorithm (the same loops of persistent puts and removals, the same factories).
+  Scala's `updateWithShallowMutations` is not ported: it would reroute the bulk paths without a measurement.
+- **Tests.** `ChampMapTest`/`ChampSetTest` check the invariants of every trie they build (`ChampValidity`: bitmaps and
+  array lengths, each entry in the slot of its hash fragment under its path, children of at least two entries, bitmap
+  nodes above the last level and collision nodes below, cached sizes and hash sums), the canonical form after every
+  removal of a model-based fuzz (a model of the kept key and value objects), the node boundaries (0/1/2/31/32/33
+  entries in the root, 1023/1024/1025 over two levels, the deepest shift, collision nodes), and every scenario of the
+  Vavr trie's builder test (shape against persistent puts, ownership, adoption, the pool fuzz of adopted tries that must
+  never change). `HashBuilderTest` passes unchanged.
 
 ### 3.9 Null, equality, serialisation
 
@@ -1639,6 +1756,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
 | #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
+| #117 | `HashMap` and `HashSet` on CHAMP, ported from Scala | 3.8.2 | #27 |
 
 ---
 
