@@ -6441,4 +6441,124 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(forced.get()).isEqualTo(40);
         }
     }
+
+    /// Walks to a start index close to the end of a long Stream: the walk is a loop, not one stack frame per element.
+    @Nested
+    class DeepIndexTests {
+        private static final int SIZE = 1_000_000;
+        private static final int START = 999_000;
+
+        private Stream<Integer> longStream() {
+            return Stream.range(0, SIZE);
+        }
+
+        @Test
+        public void sliceStartsDeepWithoutOverflow() {
+            assertThat(longStream().slice(START, START + 3)).isEqualTo(Stream.of(START, START + 1, START + 2));
+            assertThat(longStream().slice(START, SIZE + 10).length()).isEqualTo(SIZE - START);
+        }
+
+        @Test
+        public void subSequenceFromStartsDeepWithoutOverflow() {
+            final Stream<Integer> actual = longStream().subSequence(START);
+            assertThat(actual.length()).isEqualTo(SIZE - START);
+            assertThat(actual.head()).isEqualTo(START);
+        }
+
+        @Test
+        public void subSequenceFromToStartsDeepWithoutOverflow() {
+            assertThat(longStream().subSequence(START, START + 3)).isEqualTo(Stream.of(START, START + 1, START + 2));
+            assertThat(longStream().subSequence(START, SIZE).length()).isEqualTo(SIZE - START);
+        }
+
+        @Test
+        public void subSequenceFromToPastTheEndThrowsOnTraversalAfterADeepStart() {
+            final Stream<Integer> actual = longStream().subSequence(START, SIZE + 1);
+            assertThatThrownBy(actual::length).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+        }
+
+        @Test
+        public void otherIndexedMethodsStartDeepWithoutOverflow() {
+            assertThat(longStream().drop(START).head()).isEqualTo(START);
+            assertThat(longStream().get(START)).isEqualTo(START);
+            assertThat(longStream().update(START, -1).drop(START).take(2)).isEqualTo(Stream.of(-1, START + 1));
+            assertThat(longStream().insert(START, -1).drop(START).take(2)).isEqualTo(Stream.of(-1, START));
+            assertThat(longStream().insertAll(START, List.of(-1, -2)).drop(START).take(3)).isEqualTo(Stream.of(-1, -2, START));
+            assertThat(longStream().removeAt(START).drop(START).head()).isEqualTo(START + 1);
+            assertThat(longStream().splitAt(START)._2().head()).isEqualTo(START);
+            assertThat(longStream().patch(START, List.of(-1), 2).drop(START).take(2)).isEqualTo(Stream.of(-1, START + 2));
+            assertThat(longStream().dropRight(START).length()).isEqualTo(SIZE - START);
+            assertThat(longStream().takeRight(SIZE - START).head()).isEqualTo(START);
+        }
+    }
+
+    /// The part of a slice after its start is forced only when the result reaches it, so a slice of an infinite
+    /// Stream works.
+    @Nested
+    class SliceLazinessTests {
+        private Stream<Integer> counted(AtomicInteger forced) {
+            return Stream.continually(forced::getAndIncrement);
+        }
+
+        @Test
+        public void sliceForcesTheStartOnlyAndTheRestOnDemand() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> actual = counted(forced).slice(5, 8);
+            assertThat(forced.get()).isEqualTo(6);
+            assertThat(actual.toList()).isEqualTo(List.of(5, 6, 7));
+            assertThat(forced.get()).isEqualTo(8);
+        }
+
+        @Test
+        public void subSequenceForcesTheStartOnlyAndTheRestOnDemand() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> actual = counted(forced).subSequence(5, 8);
+            assertThat(forced.get()).isEqualTo(6);
+            assertThat(actual.toList()).isEqualTo(List.of(5, 6, 7));
+            assertThat(forced.get()).isEqualTo(8);
+        }
+
+        @Test
+        public void subSequenceFromForcesTheStartOnly() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> actual = counted(forced).subSequence(5);
+            assertThat(forced.get()).isEqualTo(6);
+            assertThat(actual.take(3).toList()).isEqualTo(List.of(5, 6, 7));
+            assertThat(forced.get()).isEqualTo(8);
+        }
+
+        @Test
+        public void sliceToTheLargestIndexOfAnInfiniteStream() {
+            assertThat(Stream.from(0).slice(5, Integer.MAX_VALUE).take(3)).isEqualTo(Stream.of(5, 6, 7));
+            assertThat(Stream.from(0).subSequence(5, Integer.MAX_VALUE).take(3)).isEqualTo(Stream.of(5, 6, 7));
+        }
+
+        @Test
+        public void sliceClampsANegativeRangeToEmpty() {
+            assertThat(Stream.of(1, 2, 3).slice(-5, -1)).isEmpty();
+            assertThat(Stream.of(1, 2, 3).slice(-1, 0)).isEmpty();
+            assertThat(Stream.of(1, 2, 3).slice(-1, 1)).isEqualTo(Stream.of(1));
+            assertThat(Stream.of(1, 2, 3).slice(1, 10)).isEqualTo(Stream.of(2, 3));
+            assertThat(Stream.of(1, 2, 3).slice(3, 10)).isEmpty();
+            assertThat(Stream.of(1, 2, 3).slice(10, 20)).isEmpty();
+        }
+
+        @Test
+        public void subSequenceBoundsAreCheckedAsBefore() {
+            assertThat(Stream.of(1).subSequence(5, 5)).isEmpty();
+            assertThat(Stream.of(1, 2).subSequence(2, 2)).isEmpty();
+            assertThat(Stream.of(1, 2).subSequence(1, 2)).isEqualTo(Stream.of(2));
+            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 3))
+                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(5, 6))
+                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+            assertThatThrownBy(() -> Stream.empty().subSequence(0, 1))
+                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(-1, 1)).isInstanceOf(IndexOutOfBoundsException.class);
+            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 1)).isInstanceOf(IllegalArgumentException.class);
+            final Stream<Integer> pastTheEnd = Stream.of(1, 2).subSequence(1, 3);
+            assertThat(pastTheEnd.head()).isEqualTo(2);
+            assertThatThrownBy(pastTheEnd::tail).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+        }
+    }
 }

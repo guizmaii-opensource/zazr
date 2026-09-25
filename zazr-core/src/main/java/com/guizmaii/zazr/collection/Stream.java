@@ -2503,22 +2503,20 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive, both clamped to the bounds of
      * this Stream.
      * <p>
-     * Complexity: lazy; the elements up to {@code endIndex} are forced as the result reaches them.
+     * Complexity: O(beginIndex); the elements up to {@code beginIndex} are forced, the rest when the result reaches
+     * them, so it works on an infinite Stream.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
      * @return a new Stream, empty if the range is empty
      */
     default Stream<T> slice(int beginIndex, int endIndex) {
-        if (beginIndex >= endIndex || isEmpty()) {
+        final int lowerBound = Math.max(beginIndex, 0);
+        if (lowerBound >= endIndex) {
             return empty();
         } else {
-            final int lowerBound = Math.max(beginIndex, 0);
-            if (lowerBound == 0) {
-                return cons(head(), () -> tail().slice(0, endIndex - 1));
-            } else {
-                return tail().slice(lowerBound - 1, endIndex - 1);
-            }
+            // drop walks to the start in a loop; take is lazy past it
+            return drop(lowerBound).take(endIndex - lowerBound);
         }
     }
 
@@ -2687,12 +2685,29 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         }
         if (beginIndex == endIndex) {
             return Empty.instance();
-        } else if (isEmpty()) {
+        }
+        Stream<T> start = this;
+        for (int i = 0; i < beginIndex && !start.isEmpty(); i++) {
+            start = start.tail();
+        }
+        if (start.isEmpty()) {
             throw new IndexOutOfBoundsException("subSequence of Nil");
-        } else if (beginIndex == 0) {
-            return cons(head(), () -> tail().subSequence(0, endIndex - 1));
+        }
+        return takeExactly(start, endIndex - beginIndex);
+    }
+
+    // The first n > 0 elements of a non-empty stream, lazily; throws once the traversal passes the end of the stream.
+    private static <T extends @Nullable Object> Stream<T> takeExactly(Stream<T> stream, int n) {
+        if (n == 1) {
+            return cons(stream.head(), Stream::empty);
         } else {
-            return tail().subSequence(beginIndex - 1, endIndex - 1);
+            return cons(stream.head(), () -> {
+                final Stream<T> tail = stream.tail();
+                if (tail.isEmpty()) {
+                    throw new IndexOutOfBoundsException("subSequence of Nil");
+                }
+                return takeExactly(tail, n - 1);
+            });
         }
     }
 
