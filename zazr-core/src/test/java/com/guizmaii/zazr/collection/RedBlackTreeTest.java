@@ -205,18 +205,59 @@ public class RedBlackTreeTest {
         assertThat(Collections.areEqual(actual, expected)).isTrue();
     }
 
+    // the stored blackHeight of a tree, 0 for the empty tree
+    private static int blackHeight(RedBlackTree<Integer> tree) {
+        return tree.isEmpty() ? 0 : ((RedBlackTreeModule.Node<Integer>) tree).blackHeight;
+    }
+
+    private static RedBlackTree<Integer> range(int from, int to) {
+        RedBlackTree<Integer> tree = empty();
+        for (int i = from; i <= to; i++) {
+            tree = tree.insert(i);
+        }
+        return tree;
+    }
+
     @Test
     public void shouldIntersectOnNonEmptyGivenNonEmptyUnbalancedHeightLeft() {
-        // Trees have
-        // - different values
-        // - similar to each other left children
-        // - and unlike each other right children
-        final RedBlackTree<Integer> t1 = of(1, 2, 3, 4, 5, 6, 7, 8, 60, 66, 67);
-        final RedBlackTree<Integer> t2 = of(1, 2, 3, 10, 11, 12, 13, 14, 60, 76, 77);
+        // The root of t2 is not in t1, so the intersection merges the intersections below and above it: 1..20 and
+        // 80..82. merge takes 80 out and joins 1..20 with 81, 82, which is at least two black levels lower.
+        final RedBlackTree<Integer> t1 = range(1, 20).union(range(80, 82));
+        final RedBlackTree<Integer> t2 = range(1, 82);
+        final Integer root = t2.value();
+        assertThat(t1.contains(root)).isFalse();
+        final com.guizmaii.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split = RedBlackTreeModule.Node.split(t1, root);
+        final RedBlackTree<Integer> below = split._1().intersection(t2.left());
+        final RedBlackTree<Integer> above = split._2().intersection(t2.right());
+        assertThat(elements(below)).isEqualTo(elements(range(1, 20)));
+        assertThat(elements(above)).containsExactly(80, 81, 82);
+        // every valid tree of two elements, such as what is left of 80..82 once 80 is taken out, has a stored
+        // blackHeight of 1
+        assertThat(blackHeight(below) - 1).isGreaterThanOrEqualTo(2);
         final RedBlackTree<Integer> actual = t1.intersection(t2);
-        final RedBlackTree<Integer> expected = of(1, 2, 3, 60);
         assertValid(actual);
-        assertThat(Collections.areEqual(actual, expected)).isTrue();
+        assertThat(elements(actual)).isEqualTo(elements(t1));
+    }
+
+    @Test
+    public void shouldMergeTreesAtLeastTwoBlackLevelsApart() {
+        // A valid tree of n elements has a stored blackHeight h with n <= 4^h - 1, so every valid tree of 20 or 30
+        // elements has h >= 3, and one of one or two elements has h = 1: the two sides merge passes to join, the right
+        // one once its minimum is taken out, are at least two black levels apart whatever their shape.
+        // The left tree is the taller one: 1..20 joined with 31, 32 around 30.
+        final RedBlackTree<Integer> tall = range(1, 20);
+        final RedBlackTree<Integer> shortRight = range(30, 32);
+        assertThat(blackHeight(tall) - blackHeight(range(31, 32))).isGreaterThanOrEqualTo(2);
+        final RedBlackTree<Integer> mergedLeft = RedBlackTreeModule.Node.merge(tall, shortRight);
+        assertValid(mergedLeft);
+        assertThat(elements(mergedLeft)).isEqualTo(elements(tall.union(shortRight)));
+        // the right tree without its minimum is the taller one: 1 joined with 31..60 around 30
+        final RedBlackTree<Integer> shortLeft = range(1, 1);
+        final RedBlackTree<Integer> tallRight = range(30, 60);
+        assertThat(blackHeight(range(31, 60)) - blackHeight(shortLeft)).isGreaterThanOrEqualTo(2);
+        final RedBlackTree<Integer> mergedRight = RedBlackTreeModule.Node.merge(shortLeft, tallRight);
+        assertValid(mergedRight);
+        assertThat(elements(mergedRight)).isEqualTo(elements(shortLeft.union(tallRight)));
     }
 
     @Test
@@ -388,7 +429,7 @@ public class RedBlackTreeTest {
         int count = 0;
         for (Integer value : tree) {
             if (previous != null) {
-                assertThat(value).as("order of %s", tree).isGreaterThan(previous);
+                assertThat(tree.comparator().compare(previous, value)).as("order of %s", tree).isNegative();
             }
             previous = value;
             count++;
@@ -520,8 +561,8 @@ public class RedBlackTreeTest {
 
     // validity of the set operations: difference, intersection, union, delete, split, join, merge
 
-    // a random valid tree of 0..100 elements drawn from 0..199, in one of three shapes: shuffled insertion, ascending
-    // insertion, or a larger tree with random deletions
+    // a random valid tree of 0..100 elements drawn from 0..199, ordered by the comparator of `model` (natural when it
+    // has none), in one of three shapes: shuffled insertion, insertion in order, or a larger tree with random deletions
     private static RedBlackTree<Integer> randomTree(java.util.Random random, java.util.TreeSet<Integer> model) {
         final int size = random.nextInt(101);
         final java.util.List<Integer> values = new java.util.ArrayList<>();
@@ -532,7 +573,7 @@ public class RedBlackTreeTest {
             }
         }
         final int shape = random.nextInt(3);
-        RedBlackTree<Integer> tree = empty();
+        RedBlackTree<Integer> tree = model.comparator() == null ? empty() : RedBlackTree.empty(model.comparator());
         if (shape == 0) {
             for (Integer value : values) {
                 tree = tree.insert(value);
@@ -593,6 +634,12 @@ public class RedBlackTreeTest {
         return new java.util.TreeSet<>(values);
     }
 
+    private static java.util.TreeSet<Integer> model(java.util.Comparator<Integer> order, java.util.Collection<Integer> values) {
+        final java.util.TreeSet<Integer> model = new java.util.TreeSet<>(order);
+        model.addAll(values);
+        return model;
+    }
+
     @Test
     public void shouldBuildValidRandomTrees() {
         final java.util.Random random = new java.util.Random(SEED);
@@ -607,29 +654,38 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldKeepSetOperationsValid() {
+        sweepSetOperations(Comparators.naturalComparator());
+    }
+
+    @Test
+    public void shouldKeepSetOperationsValidUnderAReversedComparator() {
+        sweepSetOperations(java.util.Comparator.reverseOrder());
+    }
+
+    private static void sweepSetOperations(java.util.Comparator<Integer> order) {
         final java.util.Random random = new java.util.Random(SEED);
         final FailureCounter counter = new FailureCounter();
         for (int i = 0; i < 20_000; i++) {
-            final java.util.TreeSet<Integer> model1 = new java.util.TreeSet<>();
-            final java.util.TreeSet<Integer> model2 = new java.util.TreeSet<>();
+            final java.util.TreeSet<Integer> model1 = new java.util.TreeSet<>(order);
+            final java.util.TreeSet<Integer> model2 = new java.util.TreeSet<>(order);
             final RedBlackTree<Integer> t1 = randomTree(random, model1);
             final RedBlackTree<Integer> t2 = randomTree(random, model2);
 
-            final java.util.TreeSet<Integer> difference = model(model1);
+            final java.util.TreeSet<Integer> difference = model(order, model1);
             difference.removeAll(model2);
             counter.check("difference", difference, () -> t1.difference(t2));
 
-            final java.util.TreeSet<Integer> intersection = model(model1);
+            final java.util.TreeSet<Integer> intersection = model(order, model1);
             intersection.retainAll(model2);
             counter.check("intersection", intersection, () -> t1.intersection(t2));
 
-            final java.util.TreeSet<Integer> union = model(model1);
+            final java.util.TreeSet<Integer> union = model(order, model1);
             union.addAll(model2);
             counter.check("union", union, () -> t1.union(t2));
 
             // the results of difference and intersection used as inputs of the other operations
             counter.check("difference then union", union, () -> t1.difference(t2).union(t2));
-            counter.check("intersection then insert", model(model2), () -> {
+            counter.check("intersection then insert", model(order, model2), () -> {
                 RedBlackTree<Integer> tree = t2.intersection(t1);
                 for (Integer value : model2) {
                     tree = tree.insert(value);
@@ -638,10 +694,10 @@ public class RedBlackTreeTest {
             });
 
             final int value = random.nextInt(200);
-            final java.util.TreeSet<Integer> deleted = model(model1);
+            final java.util.TreeSet<Integer> deleted = model(order, model1);
             deleted.remove(value);
             counter.check("delete", deleted, () -> t1.delete(value));
-            counter.check("difference then delete", model(difference.headSet(value)), () -> {
+            counter.check("difference then delete", model(order, difference.headSet(value)), () -> {
                 RedBlackTree<Integer> tree = t1.difference(t2);
                 for (Integer element : difference.tailSet(value)) {
                     tree = tree.delete(element);
@@ -653,9 +709,9 @@ public class RedBlackTreeTest {
             final java.util.List<Integer> differenceList = new java.util.ArrayList<>(difference);
             final int rank = random.nextInt(differenceList.size() + 3) - 1;
             final int clamped = Math.max(0, Math.min(rank, differenceList.size()));
-            counter.check("take of a difference", model(differenceList.subList(0, clamped)),
+            counter.check("take of a difference", model(order, differenceList.subList(0, clamped)),
                     () -> RedBlackTreeModule.Node.take(t1.difference(t2), rank));
-            counter.check("drop of a difference", model(differenceList.subList(clamped, differenceList.size())),
+            counter.check("drop of a difference", model(order, differenceList.subList(clamped, differenceList.size())),
                     () -> RedBlackTreeModule.Node.drop(t1.difference(t2), rank));
             final java.util.List<Integer> intersectionList = new java.util.ArrayList<>(intersection);
             final int from = random.nextInt(intersectionList.size() + 2) - 1;
@@ -663,21 +719,21 @@ public class RedBlackTreeTest {
             final int start = Math.max(0, from);
             final int end = Math.min(until, intersectionList.size());
             counter.check("slice of an intersection",
-                    model(start < end ? intersectionList.subList(start, end) : java.util.List.of()),
+                    model(order, start < end ? intersectionList.subList(start, end) : java.util.List.of()),
                     () -> RedBlackTreeModule.Node.slice(t1.intersection(t2), from, until));
 
             final com.guizmaii.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split = RedBlackTreeModule.Node.split(t1, value);
-            counter.check("split left", model(model1.headSet(value)), split::_1);
-            counter.check("split right", model(model1.tailSet(value, false)), split::_2);
+            counter.check("split left", model(order, model1.headSet(value)), split::_1);
+            counter.check("split right", model(order, model1.tailSet(value, false)), split::_2);
 
             // join and merge on trees that are strictly ordered around the value
-            final java.util.TreeSet<Integer> joined = model(model1.headSet(value));
+            final java.util.TreeSet<Integer> joined = model(order, model1.headSet(value));
             joined.add(value);
             joined.addAll(model2.tailSet(value, false));
             final RedBlackTree<Integer> left = RedBlackTreeModule.Node.split(t1, value)._1();
             final RedBlackTree<Integer> right = RedBlackTreeModule.Node.split(t2, value)._2();
             counter.check("join", joined, () -> RedBlackTreeModule.Node.join(left, value, right));
-            final java.util.TreeSet<Integer> merged = model(joined);
+            final java.util.TreeSet<Integer> merged = model(order, joined);
             merged.remove(value);
             counter.check("merge", merged, () -> RedBlackTreeModule.Node.merge(left, right));
         }
