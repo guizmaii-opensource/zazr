@@ -28,20 +28,32 @@
 > **Pre-1.0 and changing fast.** Nothing is released yet. Snapshots of `main` are published to Maven Central's
 > snapshot repository, and the API changes between them.
 
-## What it is
+## What Zazr is
 
-Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
-`Option`, `Either`, `Try`, `Validation` and `Lazy`, and reshapes them around a few rules.
+Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`, `Try`,
+`Validation` and `Lazy`. It is built for Java 25: sealed interfaces, records and pattern matching are part of its
+API, not an afterthought. Its design comes from modern Scala's collections and from ZIO.
 
-| | |
-|---|---|
-| **Names say what an operation does** | `zip`, `zipWith`, `collectAll`, `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`: the name tells you the result, not which algebra it comes from. |
-| **[`zip` at arity 2 to 8](https://zazr.dev/zip/)** | One static call per arity replaces `ap` and the builder ladders, and never nests a tuple inside a tuple. |
-| **[`Validation` keeps every error](https://zazr.dev/validation/)** | The errors accumulate in a `NonEmptyVector`, so an invalid value always carries at least one. |
-| **[Non-empty types make partial operations total](https://zazr.dev/non-empty-vector/)** | `head()`, `max`, `reduce` on a `NonEmptyVector` cannot fail, and the return types say what can become empty. |
-| **[Each collection states its cost](https://zazr.dev/collections/complexity/)** | There is no `Seq` promising `get(i)` on a cons list. Every positional method documents its complexity. |
-| **[Modern Java](https://zazr.dev/java-interop/)** | Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, O(1) `java.util` views through `asJava()`. |
-| **[No `null` inside](https://zazr.dev/control-types/)** | `Some`, `Right`, `Success`, `Valid` and every collection reject it. Absence is an `Option`. |
+## What it brings
+
+- **[Collections that state their cost.](https://zazr.dev/collections/complexity/)** Every operation whose cost
+  depends on the size documents it, and the complexity page lists them all. You choose a collection for what you do
+  with it, not by guessing.
+- **[Persistent collections you can build fast.](https://zazr.dev/builders/)** A builder fills a collection in place
+  and hands it over once, so building one in a loop copies nothing.
+- **[Errors you do not lose.](https://zazr.dev/control/validation/)** `Validation` collects every error instead of stopping
+  at the first, in a list that is never empty.
+- **[Combine up to eight values in one call.](https://zazr.dev/zip/)** `zipWith` takes all of them and a function of
+  their values, with no nested tuples to unpack.
+- **[Collections that cannot be empty.](https://zazr.dev/non-empty-vector/)** On a `NonEmptyVector`, `head`, `max`
+  and `reduce` cannot fail, and the return types tell you when that guarantee is lost.
+- **[Pattern matching on results.](https://zazr.dev/control/)** `Option`, `Either`, `Try` and `Validation` are
+  sealed interfaces of records, so a `switch` over them is checked by the compiler.
+- **No `null` inside.** Values and collections reject it, and absence is an `Option`.
+- **[Java interop without copies.](https://zazr.dev/java-interop/)** `asJava()` gives a read-only `java.util` view in
+  constant time, and the way back does not copy either.
+- **Names that say what happens.** `zip`, `collectAll`, `catchAll`, `mapBoth`: the vocabulary of ZIO, with no theory
+  to learn first.
 
 ## Installation
 
@@ -106,17 +118,7 @@ for (int i = 0; i < 1_000; i++) {
 Vector<Integer> numbers = builder.result();
 ```
 
-More in the [guide](https://zazr.dev/getting-started/).
-
-## Compared to Vavr
-
-Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise` and `Task`, `Array`, `CharSeq`,
-`Tree`, `BitSet`, `PriorityQueue`, the `Multimap` family, `Seq`, `IndexedSeq`, `LinearSeq`, `Foldable`, `Value`,
-`Function0..2` (use `java.util.function`), `Serializable`, and the category-theory names. Control types are no
-longer `Iterable`; each has its own conversions. Sets and maps have no positional methods, except the ordered
-ones (`TreeSet`, `TreeMap`, `LinkedHashSet`, `LinkedHashMap`).
-
-[Design](https://zazr.dev/principles/) explains the ideas behind them, and the [decision log](docs/design.md) records every decision with its reasons; the [comparison page](https://zazr.dev/vavr/) has the details.
+More in the [guide](https://zazr.dev/getting-started/), and the ideas behind the API on the [Design](https://zazr.dev/principles/) page.
 
 ## Building
 
@@ -128,4 +130,5 @@ make test-one TEST=VectorTest MODULE=zazr-core
 
 ## License
 
-Apache License 2.0. Zazr is derived from Vavr, copyright its authors; see [NOTICE](NOTICE).
+Apache License 2.0. Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr), copyright its authors; see
+[NOTICE](NOTICE). Coming from Vavr? [This page](https://zazr.dev/vavr/) lists what changed.

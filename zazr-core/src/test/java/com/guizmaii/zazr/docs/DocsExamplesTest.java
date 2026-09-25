@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 public class DocsExamplesTest {
 
-    // -- the checks of docs/validation.md, used by the landing page too
+    // -- the checks of docs/control/validation.md, used by the landing page too
 
     static Validation<String, String> name(String value) {
         return value.isBlank() ? Validation.invalid("name is blank") : Validation.valid(value);
@@ -196,66 +196,10 @@ public class DocsExamplesTest {
     }
 
     @Nested
-    class ControlTypes {
-
-        @Test
-        void construction() {
-            Option<Integer> some = Option.some(1);
-            Option<Integer> none = Option.none();
-            Option<String> fromNullable = Option.ofNullable(null);
-            Option<Integer> when = Option.when(3 > 2, () -> 3);
-            // Some(1), None, None, Some(3)
-
-            Either<String, Integer> right = Either.right(42);
-            Either<String, Integer> left = Either.left("not a number");
-            Either<String, Integer> checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative");
-            // Right(42), Left(not a number), Left(negative)
-
-            Try<Integer> parsed = Try.of(() -> Integer.parseInt("42"));
-            Try<Integer> failed = Try.of(() -> Integer.parseInt("forty-two"));
-            Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
-            // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
-
-            assertThat(Vector.of(some, none, fromNullable, when)).hasToString("Vector(Some(1), None, None, Some(3))");
-            assertThat(Vector.of(right, left, checked)).hasToString("Vector(Right(42), Left(not a number), Left(negative))");
-            assertThat(parsed).hasToString("Success(42)");
-            assertThat(failed).hasToString("Failure(java.lang.NumberFormatException: For input string: \"forty-two\")");
-            assertThat(ran).hasToString("Success(())");
-        }
-
-        @Test
-        void switchOverTheCases() {
-            Option<Integer> age = Option.some(17);
-            String label = switch (age) {
-                case Some(var years) when years >= 18 -> "adult";
-                case Some(var years) -> "minor, " + years;
-                case None() -> "unknown";
-            };
-            // "minor, 17"
-
-            Try<Integer> result = Try.of(() -> Integer.parseInt("x"));
-            String report = switch (result) {
-                case Success(var value) -> "parsed " + value;
-                case Failure(var cause) -> "failed: " + cause.getClass().getSimpleName();
-            };
-            // "failed: NumberFormatException"
-
-            assertThat(label).isEqualTo("minor, 17");
-            assertThat(report).isEqualTo("failed: NumberFormatException");
-        }
+    class ControlOverview {
 
         @Test
         void membersTheyShare() {
-            Try<Integer> port = Try.of(() -> Integer.parseInt("80a"))
-                .catchSome(NumberFormatException.class, e -> 8080)
-                .map(p -> p + 1);
-            // Success(8081)
-
-            Either<String, Integer> total = Either.<String, Integer>right(2)
-                .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
-                .mapLeft(error -> "rejected: " + error);
-            // Right(20)
-
             Option<Vector<Integer>> all = Option.collectAll(Vector.of(Option.some(1), Option.some(2)));
             Either<String, Vector<Integer>> parsed = Either.forEach(Vector.of("1", "x", "3"),
                 s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
@@ -265,12 +209,10 @@ public class DocsExamplesTest {
             Either<String, Integer> inner = Either.flatten(Either.right(Either.left("inner failure")));
             // Some(1), Left(inner failure)
 
-            assertThat(flat).hasToString("Some(1)");
-            assertThat(inner).hasToString("Left(inner failure)");
-            assertThat(port).hasToString("Success(8081)");
-            assertThat(total).hasToString("Right(20)");
             assertThat(all).hasToString("Some(Vector(1, 2))");
             assertThat(parsed).hasToString("Left(bad: x)");
+            assertThat(flat).hasToString("Some(1)");
+            assertThat(inner).hasToString("Left(inner failure)");
         }
 
         @Test
@@ -298,13 +240,271 @@ public class DocsExamplesTest {
             // the claims of the prose around the snippet
             assertThatThrownBy(() -> Option.some(null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Either.right(null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Either.left(null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Try.success(null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Validation.valid(null)).isInstanceOf(NullPointerException.class);
             assertThat(Lazy.of(() -> null).get()).isNull();
         }
+    }
+
+    @Nested
+    class OptionPage {
 
         @Test
-        void lazy() {
+        void construction() {
+            Option<Integer> some = Option.some(1);
+            Option<Integer> none = Option.none();
+            Option<String> fromNullable = Option.ofNullable(null);
+            Option<Integer> when = Option.when(3 > 2, () -> 3);
+            // Some(1), None, None, Some(3)
+
+            assertThat(Vector.of(some, none, fromNullable, when)).hasToString("Vector(Some(1), None, None, Some(3))");
+        }
+
+        @Test
+        void switchOverTheCases() {
+            Option<Integer> age = Option.some(17);
+            String label = switch (age) {
+                case Some(var years) when years >= 18 -> "adult";
+                case Some(var years) -> "minor, " + years;
+                case None() -> "unknown";
+            };
+            // "minor, 17"
+
+            assertThat(label).isEqualTo("minor, 17");
+        }
+
+        @Test
+        void operations() {
+            int port = Option.some("8080")
+                .filter(s -> s.chars().allMatch(Character::isDigit))
+                .map(Integer::parseInt)
+                .getOrElse(80);
+            String shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
+            // 8080, "no value"
+
+            Try<Integer> parsed = Option.some("x").mapTry(Integer::parseInt);
+            Try<Integer> absent = Option.<String>none().mapTry(Integer::parseInt);
+            // Failure(java.lang.NumberFormatException: For input string: "x"), Failure(java.util.NoSuchElementException: ...)
+
+            assertThat(port).isEqualTo(8080);
+            assertThat(shown).isEqualTo("no value");
+            assertThat(parsed).hasToString("Failure(java.lang.NumberFormatException: For input string: \"x\")");
+            assertThat(absent.getCause()).isInstanceOf(java.util.NoSuchElementException.class);
+        }
+
+        @Test
+        void conversions() {
+            Option<Integer> fromOptional = Option.ofOptional(java.util.Optional.of(3));
+            Either<String, Integer> either = fromOptional.toEither(() -> "missing");
+            Validation<String, Integer> validation = Option.<Integer>none().toValidation(() -> "missing");
+            java.util.Optional<Integer> back = fromOptional.toOptional();
+            // Some(3), Right(3), Invalid(missing), Optional[3]
+
+            assertThat(fromOptional).hasToString("Some(3)");
+            assertThat(either).hasToString("Right(3)");
+            assertThat(validation).hasToString("Invalid(missing)");
+            assertThat(back).hasToString("Optional[3]");
+        }
+
+        @Test
+        void sharpEdges() {
+            java.util.Map<String, String> env = java.util.Map.of("HOME", "/home/ada");
+            Option<String> shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)));
+            // None, where map(env::get) would throw
+
+            assertThat(shell).isEqualTo(Option.none());
+            assertThatThrownBy(() -> Option.some("SHELL").map(env::get)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Option.none().get()).isInstanceOf(java.util.NoSuchElementException.class);
+        }
+    }
+
+    @Nested
+    class EitherPage {
+
+        @Test
+        void construction() {
+            Either<String, Integer> right = Either.right(42);
+            Either<String, Integer> left = Either.left("not a number");
+            Either<String, Integer> checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative");
+            // Right(42), Left(not a number), Left(negative)
+
+            assertThat(Vector.of(right, left, checked)).hasToString("Vector(Right(42), Left(not a number), Left(negative))");
+        }
+
+        @Test
+        void switchOverTheCases() {
+            Either<String, Integer> result = Either.right(42);
+            String text = switch (result) {
+                case Right(var value) -> "got " + value;
+                case Left(var error) -> "failed: " + error;
+            };
+            // "got 42"
+
+            assertThat(text).isEqualTo("got 42");
+        }
+
+        @Test
+        void operations() {
+            Either<String, Integer> total = Either.<String, Integer>right(2)
+                .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
+                .mapLeft(error -> "rejected: " + error);
+            // Right(20)
+
+            Either<String, Integer> adult = Either.<String, Integer>right(15)
+                .filterOrElse(n -> n >= 18, n -> n + " is under 18");
+            String message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n);
+            Either<Integer, String> flipped = adult.flip();
+            // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
+
+            assertThat(total).hasToString("Right(20)");
+            assertThat(adult).hasToString("Left(15 is under 18)");
+            assertThat(message).isEqualTo("rejected: 15 is under 18");
+            assertThat(flipped).hasToString("Right(15 is under 18)");
+        }
+
+        @Test
+        void conversions() {
+            Either<String, Integer> missing = Either.left("missing");
+            Option<Integer> option = missing.toOption();
+            Try<Integer> attempt = missing.toTry(IllegalArgumentException::new);
+            Validation<String, Integer> validation = missing.toValidation();
+            // None, Failure(java.lang.IllegalArgumentException: missing), Invalid(missing)
+
+            assertThat(option).hasToString("None");
+            assertThat(attempt).hasToString("Failure(java.lang.IllegalArgumentException: missing)");
+            assertThat(validation).hasToString("Invalid(missing)");
+        }
+
+        @Test
+        void sharpEdges() {
+            assertThatThrownBy(() -> Either.left("x").get()).isInstanceOf(java.util.NoSuchElementException.class);
+            IllegalStateException cause = new IllegalStateException("boom");
+            assertThat(Either.<Throwable, Integer>left(cause).toTry(t -> t).getCause()).isSameAs(cause);
+        }
+    }
+
+    @Nested
+    class TryPage {
+
+        @Test
+        void construction() {
+            Try<Integer> parsed = Try.of(() -> Integer.parseInt("42"));
+            Try<Integer> failed = Try.of(() -> Integer.parseInt("forty-two"));
+            Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
+            // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
+
+            Try<String> firstLine = Try.withResources(() -> new java.io.BufferedReader(new java.io.StringReader("a\nb")),
+                java.io.BufferedReader::readLine);
+            // Success(a)
+
+            assertThat(parsed).hasToString("Success(42)");
+            assertThat(failed).hasToString("Failure(java.lang.NumberFormatException: For input string: \"forty-two\")");
+            assertThat(ran).hasToString("Success(())");
+            assertThat(firstLine).hasToString("Success(a)");
+            assertThat(Try.success(1)).hasToString("Success(1)");
+            assertThatThrownBy(() -> Try.of(() -> {
+                throw new StackOverflowError();
+            })).isInstanceOf(StackOverflowError.class);
+        }
+
+        @Test
+        void switchOverTheCases() {
+            Try<Integer> result = Try.of(() -> Integer.parseInt("x"));
+            String report = switch (result) {
+                case Success(var value) -> "parsed " + value;
+                case Failure(var cause) -> "failed: " + cause.getClass().getSimpleName();
+            };
+            // "failed: NumberFormatException"
+
+            assertThat(report).isEqualTo("failed: NumberFormatException");
+        }
+
+        @Test
+        void recovering() {
+            Try<Integer> port = Try.of(() -> Integer.parseInt("80a"))
+                .catchSome(NumberFormatException.class, e -> 8080)
+                .map(p -> p + 1);
+            // Success(8081)
+
+            Try<Integer> recovered = Try.of(() -> Integer.parseInt("x")).catchAll(e -> 0);
+            Try<Integer> wrapped = Try.<Integer>failure(new java.io.IOException("disk"))
+                .mapError(e -> new IllegalStateException("cannot read the configuration", e));
+            // Success(0), Failure(java.lang.IllegalStateException: cannot read the configuration)
+
+            assertThat(port).hasToString("Success(8081)");
+            assertThat(recovered).hasToString("Success(0)");
+            assertThat(wrapped).hasToString("Failure(java.lang.IllegalStateException: cannot read the configuration)");
+            assertThat(wrapped.getCause().getCause()).isInstanceOf(java.io.IOException.class);
+        }
+
+        @Test
+        void chaining() {
+            Try<Integer> ratio = Try.of(() -> 10).map(n -> 100 / (n - 10));
+            Try<Integer> positive = Try.success(-1)
+                .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n));
+            // Failure(java.lang.ArithmeticException: / by zero), Failure(java.lang.IllegalArgumentException: not positive: -1)
+
+            StringBuilder log = new StringBuilder();
+            Try<Integer> done = Try.of(() -> 1).ensuring(() -> log.append("closed"));
+            // Success(1), and log is "closed"
+
+            assertThat(ratio).hasToString("Failure(java.lang.ArithmeticException: / by zero)");
+            assertThat(positive).hasToString("Failure(java.lang.IllegalArgumentException: not positive: -1)");
+            assertThat(done).hasToString("Success(1)");
+            assertThat(log).hasToString("closed");
+        }
+
+        @Test
+        void conversions() {
+            Either<Throwable, Integer> either = Try.of(() -> Integer.parseInt("7")).toEither();
+            java.util.concurrent.CompletableFuture<Integer> future = Try.success(7).toCompletableFuture();
+            Try<Integer> back = Try.fromCompletableFuture(future);
+            // Right(7), a completed future, Success(7)
+
+            assertThat(either).hasToString("Right(7)");
+            assertThat(future).isCompletedWithValue(7);
+            assertThat(back).hasToString("Success(7)");
+        }
+
+        @Test
+        void sharpEdges() {
+            Try<Integer> first = Try.of(() -> Integer.parseInt("x"));
+            Try<Integer> second = Try.of(() -> Integer.parseInt("x"));
+            boolean same = first.equals(second);
+            boolean sameClass = first.getCause().getClass() == second.getCause().getClass();
+            // same is false, sameClass is true
+
+            assertThat(same).isFalse();
+            assertThat(sameClass).isTrue();
+            // the same exception object: equal
+            assertThat(Try.failure(first.getCause())).isEqualTo(first);
+            // an exception class that defines its own equals is compared with it
+            class Timeout extends RuntimeException {
+                @Override
+                public boolean equals(Object o) {
+                    return o instanceof Timeout;
+                }
+
+                @Override
+                public int hashCode() {
+                    return 1;
+                }
+            }
+            assertThat(Try.failure(new Timeout())).isEqualTo(Try.failure(new Timeout()));
+            // get() throws the cause itself
+            assertThatThrownBy(first::get).isSameAs(first.getCause());
+            // a future completed with null is a Failure of a NullPointerException
+            assertThat(Try.fromCompletableFuture(java.util.concurrent.CompletableFuture.completedFuture(null)).getCause())
+                .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class LazyPage {
+
+        @Test
+        void construction() {
             Lazy<Integer> answer = Lazy.of(() -> 6 * 7);
             boolean before = answer.isEvaluated();
             int value = answer.map(n -> n + 1).get();
@@ -314,6 +514,69 @@ public class DocsExamplesTest {
             assertThat(before).isFalse();
             assertThat(value).isEqualTo(43);
             assertThat(after).isTrue();
+        }
+
+        @Test
+        void operations() {
+            Lazy<String> host = Lazy.of(() -> "localhost");
+            Lazy<Integer> port = Lazy.of(() -> 8080);
+            Lazy<String> address = host.zipWith(port, (h, p) -> h + ":" + p);
+            boolean evaluated = host.isEvaluated();
+            String value = address.get();
+            // evaluated is false, value is "localhost:8080"
+
+            Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2)));
+            // all.get() is Vector(1, 2)
+
+            assertThat(evaluated).isFalse();
+            assertThat(value).isEqualTo("localhost:8080");
+            assertThat(all.isEvaluated()).isFalse();
+            assertThat(all.get()).isEqualTo(Vector.of(1, 2));
+        }
+
+        @Test
+        void conversions() {
+            int[] calls = {0};
+            Lazy<String> greeting = Lazy.of(() -> {
+                calls[0]++;
+                return "hello";
+            });
+            java.util.function.Supplier<String> supplier = greeting.toSupplier();
+            String twice = supplier.get() + supplier.get();
+            // twice is "hellohello", calls[0] is 1: computed once
+
+            assertThat(twice).isEqualTo("hellohello");
+            assertThat(calls[0]).isEqualTo(1);
+            assertThat(greeting.get()).isEqualTo("hello");
+            assertThat(calls[0]).isEqualTo(1);
+        }
+
+        @Test
+        void sharpEdges() {
+            java.util.concurrent.atomic.AtomicInteger attempts = new java.util.concurrent.atomic.AtomicInteger();
+            Lazy<String> flaky = Lazy.of(() -> {
+                if (attempts.incrementAndGet() == 1) {
+                    throw new IllegalStateException("not yet");
+                }
+                return "ready";
+            });
+            Try<String> first = Try.of(flaky::get);
+            String second = flaky.get();
+            // first is Failure(java.lang.IllegalStateException: not yet), second is "ready", attempts is 2
+
+            Lazy<Integer> unread = Lazy.of(() -> 1);
+            Lazy<Integer> other = Lazy.of(() -> 1);
+            String shown = unread.toString();
+            boolean equal = unread.equals(other);
+            // shown is "Lazy(?)", equal is true, and both are now evaluated
+
+            assertThat(first).hasToString("Failure(java.lang.IllegalStateException: not yet)");
+            assertThat(second).isEqualTo("ready");
+            assertThat(attempts.get()).isEqualTo(2);
+            assertThat(shown).isEqualTo("Lazy(?)");
+            assertThat(equal).isTrue();
+            assertThat(unread.isEvaluated()).isTrue();
+            assertThat(other.isEvaluated()).isTrue();
         }
     }
 
@@ -379,6 +642,33 @@ public class DocsExamplesTest {
             assertThat(adult).hasToString("Invalid(Ada is under 18)");
             assertThat(Validation.<String, Integer>invalid("a").orElse(() -> Validation.invalid("b")))
                 .hasToString("Invalid(b)");
+        }
+
+        @Test
+        void checks() {
+            Validation<String, Integer> port = Validation.of(() -> Integer.parseInt("80a"), e -> "port is not a number");
+            // Invalid(port is not a number)
+
+            assertThat(port).hasToString("Invalid(port is not a number)");
+        }
+
+        @Test
+        void conversions() {
+            Validation<String, Integer> negative = age(-3);
+            Either<String, Integer> joined = negative.toEitherWith(errors -> errors.mkString("; "));
+            Try<Integer> failure = negative.toTry(errors -> new IllegalArgumentException(errors.mkString("; ")));
+            // Left(age is negative), Failure(java.lang.IllegalArgumentException: age is negative)
+
+            assertThat(joined).hasToString("Left(age is negative)");
+            assertThat(failure).hasToString("Failure(java.lang.IllegalArgumentException: age is negative)");
+        }
+
+        @Test
+        void sharpEdges() {
+            Validation<String, Integer> ab = Validation.invalidAll(NonEmptyVector.of("a", "b"));
+            Validation<String, Integer> ba = Validation.invalidAll(NonEmptyVector.of("b", "a"));
+            assertThat(ab).isNotEqualTo(ba);
+            assertThatThrownBy(() -> Validation.invalid(null)).isInstanceOf(NullPointerException.class);
         }
     }
 

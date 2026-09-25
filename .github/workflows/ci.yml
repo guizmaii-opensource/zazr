@@ -35,6 +35,20 @@ jobs:
           directory: 'zazr-core/target'
           java-version: '25'
 
+  javadoc:
+    runs-on: ubuntu-latest
+    name: Javadoc (doclint)
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+          cache: 'maven'
+      - name: Build the javadoc
+        run: make javadoc
+
   vocabulary:
     runs-on: ubuntu-latest
     name: No category-theory vocabulary
@@ -94,7 +108,7 @@ jobs:
 
   deploy-snapshot:
     runs-on: ubuntu-latest
-    needs: [build, nullness, vocabulary, complexity, docs]
+    needs: [build, nullness, javadoc, vocabulary, complexity, docs]
     if: github.ref == 'refs/heads/main'
 
     steps:
