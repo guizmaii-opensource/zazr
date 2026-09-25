@@ -1801,37 +1801,4 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return new Failure<>(x);
         }
     }
-
-    // -- try with resources
-
-    /**
-     * Runs {@code f} with a resource and closes the resource afterwards, like {@code try}-with-resources under
-     * {@code Try}: the resource is obtained from {@code resource}, passed to {@code f}, then closed whatever
-     * happened. The result is {@code Success} of what {@code f} returned, or a {@code Failure} of the first
-     * non-fatal exception thrown by the acquisition, by {@code f} or by {@code close()}; an exception thrown by
-     * {@code close()} after {@code f} threw is added to the cause as
-     * {@linkplain Throwable#addSuppressed(Throwable) suppressed}. A {@code null} result is a {@code Failure} of a
-     * {@link NullPointerException}, see {@link #of(Callable)}. Several resources nest:
-     * <pre>{@code
-     * Try<String> firstLine = Try.withResources(() -> new FileReader(path), reader ->
-     *     Try.withResources(() -> new BufferedReader(reader), BufferedReader::readLine).get());
-     * }</pre>
-     *
-     * @param resource obtains the resource; called once
-     * @param f        the computation over the resource
-     * @param <R>      the resource type
-     * @param <T>      the result type
-     * @return {@code Success} of the result of {@code f}, or a {@code Failure}
-     * @throws NullPointerException if {@code resource} or {@code f} is null
-     */
-    @SuppressWarnings("try") /* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-    static <R extends AutoCloseable, T extends @Nullable Object> Try<T> withResources(Callable<? extends R> resource, CheckedFunction1<? super R, ? extends T> f) {
-        Objects.requireNonNull(resource, "resource is null");
-        Objects.requireNonNull(f, "f is null");
-        return Try.of(() -> {
-            try (R r = resource.call()) {
-                return f.apply(r);
-            }
-        });
-    }
 }

@@ -123,10 +123,12 @@ public final class JavaConverters {
     /**
      * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
      * the delegate's iterator and size, nothing copied. On the view of a {@link Map}, {@code contains} of a
-     * {@link Tuple2} is the map's own {@link Map#contains(Tuple2)}, a lookup of its key (effectively O(1), or
-     * O(log n) on a sorted map, whose order decides which key matches) then a comparison of the values; anything
-     * else, {@code null} or of another type, a key the order of a sorted map cannot compare included, is answered
-     * {@code false}. On the view of any other {@link Traversable}, {@code contains} compares with {@code equals} along
+     * {@link Tuple2} is the map's own {@link Map#contains(Tuple2)}: a lookup of its key (effectively O(1), or
+     * O(log n) on a sorted map), then {@code equals} on the values. The key is matched as the map matches keys: on a
+     * {@code TreeMap} by its comparator, so with a comparator that disagrees with {@code equals} the view contains an
+     * entry whose key only compares equal to a stored one, as {@code java.util.TreeMap.entrySet().contains} does.
+     * Anything else, {@code null} or of another type, a key the order of a sorted map cannot compare included, is
+     * answered {@code false}; an exception thrown by a value's {@code equals} is not caught. On the view of any other {@link Traversable}, {@code contains} compares with {@code equals} along
      * the iterator, as {@link AbstractCollection} does.
      *
      * @param <T> the element type
@@ -166,12 +168,15 @@ public final class JavaConverters {
                 if (!(element instanceof Tuple2<?, ?> entry)) {
                     return false;
                 }
+                final Object value;
                 try {
-                    return ((Map<Object, Object>) map).contains((Tuple2<Object, Object>) entry);
+                    value = Maps.getOrAbsent((Map<Object, Object>) map, entry._1());
                 } catch (ClassCastException | NullPointerException e) {
                     // the order of a sorted map rejects a key of another type, or a null key: no entry holds it
                     return false;
                 }
+                // outside the catch: an exception thrown by a value's equals reaches the caller
+                return value != Maps.ABSENT && java.util.Objects.equals(value, entry._2());
             }
             return super.contains(element);
         }

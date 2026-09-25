@@ -24,8 +24,9 @@ public interface StreamModule {
             if (end < 0) {
                 return -1;
             }
-            // the slice is read once, whatever its shape; its emptiness is answered by the copy
+            // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
             final Stream<T> _slice = toStream(slice);
+            _slice.length();
             if (_slice.isEmpty()) {
                 // the last position at or before end: the length when this Stream is shorter; no cell past end - 1 is
                 // forced

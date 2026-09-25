@@ -29,13 +29,7 @@ Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
 
 ### Resources
 
-`Try.withResources` opens a resource, uses it and closes it, like a `try`-with-resources block:
-
-```java
-Try<String> firstLine = Try.withResources(() -> new java.io.BufferedReader(new java.io.StringReader("a\nb")),
-    java.io.BufferedReader::readLine);
-// Success(a)
-```
+To open resources, use them and close them with the outcome in a `Try`, see [`Using`](using.md).
 
 ### What is captured
 

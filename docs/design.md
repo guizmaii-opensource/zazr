@@ -372,7 +372,7 @@ duplication is cheaper than a god interface).
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
 | `Try.andFinally`, `andFinallyTry` | `ensuring(CheckedRunnable)` only | ZIO name. One overload, not two: `ensuring(Runnable)` next to `ensuring(CheckedRunnable)` is ambiguous for every lambda (javac: both `void` functional interfaces match), and a `Runnable` lambda already is a `CheckedRunnable` lambda; a `Runnable` variable is passed as `r::run` (decided, #20) |
-| `Try.withResources(...)` ×8 + `WithResources1..8` | keep one `Try.withResources(Callable<R>, CheckedFunction1<R,A>)`; N resources nest | arity ladder not worth it |
+| `Try.withResources(...)` ×8 + `WithResources1..8` | `Using.of(Callable<R>, CheckedFunction1<R,A>)` for one resource, `Using.manager` for any number (3.14). A single `Try.withResources` was kept first, then replaced by `Using` (decided 2026-09-25) | arity ladder not worth it; Scala's `Using` covers N resources decided at run time |
 | `Try.filter` ×3, `filterTry` ×3 | one `filter(Predicate, Function<A,Throwable>)` and `filter(Predicate)` | |
 | `Either.left()/right()` projections + `LeftProjection`/`RightProjection` (24 members each) | delete; `Either` is right-biased and has `mapLeft`, `flip`, `fold` | ZIO 2 deleted all arrow combinators for the same reason |
 | `Either.filterOrElse`, `filter -> Option<Either>` | `filterOrElse(Predicate, Function<R,L>)` only | `filter` returning `Option<Either>` is a type pun |
@@ -1339,6 +1339,43 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   `Validation<String,A>`) is the one candidate worth revisiting in v2: it composes naturally with
   `Validation` and has no Java equivalent. Not in v1.
 
+### 3.14 `Using` and `Using.Manager` (decided 2026-09-25)
+
+`Try.withResources` is removed and replaced by `com.guizmaii.zazr.control.Using`, a port of `scala.util.Using` from
+the Scala 3 standard library (which ships the Scala 2.13 library's `Using` unchanged;
+[source](https://github.com/scala/scala/blob/2.13.x/src/library/scala/util/Using.scala)). `withResources` handled one
+resource, nesting for more, and let `try`-with-resources pick which exception surfaced; `Using` adds a manager for
+any number of resources decided at run time, and Scala's rule for which throwable surfaces.
+
+- API: `Using.of(Callable<? extends R>, CheckedFunction1<? super R, ? extends T>)` returns `Try<T>` (Scala's
+  `Using.apply`); `Using.manager(CheckedFunction1<? super Using.Manager, ? extends T>)` returns `Try<T>` (Scala's
+  `Using.Manager.apply`). `Manager.acquire(R extends AutoCloseable)` and `Manager.acquire(A value,
+  CheckedConsumer<? super A> release)` register a resource and return it. `Using` is a final class with a private
+  constructor, `Manager` a final nested class with a private constructor.
+- Release: in reverse order of acquisition, every resource once, when the block returns or throws, including when an
+  acquisition throws after earlier ones succeeded.
+- Which throwable surfaces: Scala's `preferentiallySuppress`. Severity `VirtualMachineError` > `LinkageError` >
+  `InterruptedException` and `ThreadDeath` (the same level, as in Scala) > anything else; a later throwable surfaces
+  only when strictly more severe, with the earlier one suppressed in it; otherwise it is suppressed in the one
+  surfacing. Scala's level for `ControlThrowable` (below everything) has no Java counterpart and is not ported. An
+  `OutOfMemoryError` from `close()` therefore surfaces over the block's exception, unlike `try`-with-resources.
+- The outcome is captured as `Try.of` does: fatal throwables (`Throwables.isFatal`, which includes
+  `InterruptedException`) are rethrown, a `null` result is a `Failure` of a `NullPointerException`. A `null` resource
+  is a `NullPointerException` thrown inside the block (so a `Failure`, after the earlier resources are released); a
+  `null` callable, block or release action throws at once.
+- Two departures from Scala's source, both decided here:
+  - a throwable is never suppressed in itself. Scala calls `addSuppressed` without an identity check, so a `close()`
+    that rethrows the block's exception makes it throw an `IllegalArgumentException` (in `Manager`, out of the
+    release loop, leaving the remaining resources unreleased);
+  - `acquire` after the block (including from a release, since the manager is closed before releasing) releases the
+    resource it was given, then throws `IllegalStateException`; a throwable from that release goes through the same
+    severity rule. Scala throws without releasing it, leaking it.
+- Not ported: `Using.resource`/`Using.resources` (the throwing forms: Java's `try`-with-resources is that), the
+  `Releasable` type class (a lambda is an `AutoCloseable`, and `acquire(value, release)` covers the rest), and the
+  `Manager.apply` alias of `acquire`.
+- Storage: the manager keeps its resources in one growable `Object[]`, value and release action (`null` for
+  `close()`) side by side, so an acquisition allocates no wrapper.
+
 ---
 
 ## 4. Build, tooling, packaging
@@ -1461,6 +1498,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
+| #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
 
 ---
 

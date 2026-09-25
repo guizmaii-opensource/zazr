@@ -170,7 +170,10 @@ class JavaMapViewTest {
     }
 
     @Test
-    void shouldAnswerContainsAsTheWalkOverTheEntriesDoes() {
+    void shouldAnswerContainsAsJavaUtilTreeMapEntrySetDoes() {
+        // the rule: the key is looked up as the map matches keys (a TreeMap by its comparator), then the values are
+        // compared with equals; anything that is not a Tuple2, or a key the map's order cannot compare, is false.
+        // java.util.TreeMap.entrySet().contains follows the same rule, and so does a java.util.HashMap for the others.
         final java.util.Map<String, Map<Integer, String>> maps = new java.util.LinkedHashMap<>();
         maps.put("HashMap", HashMap.of(1, "a", 2, "b"));
         maps.put("LinkedHashMap", LinkedHashMap.of(1, "a", 2, "b"));
@@ -180,13 +183,54 @@ class JavaMapViewTest {
                 Tuple.of("1", "a"), Tuple.of(null, "a"), Tuple.of(1, null), Tuple.of(1, 1), null, "not an entry", java.util.Map.entry(1, "a"),
                 Tuple.of(1));
         for (java.util.Map.Entry<String, Map<Integer, String>> map : maps.entrySet()) {
-            final java.util.List<Tuple2<Integer, String>> walked = new java.util.ArrayList<>();
-            for (Tuple2<Integer, String> entry : map.getValue()) {
-                walked.add(entry);
-            }
+            final java.util.Map<Integer, String> reference = map.getKey().startsWith("TreeMap")
+                    ? new java.util.TreeMap<>(map.getValue().asJavaMap()) : new java.util.HashMap<>(map.getValue().asJavaMap());
             for (Object probe : probes) {
-                assertThat(map.getValue().asJava().contains(probe)).as(map.getKey() + ".asJava().contains(" + probe + ")").isEqualTo(walked.contains(probe));
+                final boolean expected = probe instanceof Tuple2<?, ?> t && lookup(reference, t._1()) && java.util.Objects.equals(reference.get(t._1()), t._2());
+                assertThat(map.getValue().asJava().contains(probe)).as(map.getKey() + ".asJava().contains(" + probe + ")").isEqualTo(expected);
             }
+        }
+    }
+
+    // whether reference holds key, false when its order cannot compare it (java.util.TreeMap throws there)
+    private static boolean lookup(java.util.Map<Integer, String> reference, Object key) {
+        try {
+            return reference.containsKey(key);
+        } catch (ClassCastException | NullPointerException e) {
+            return false;
+        }
+    }
+
+    @Test
+    void shouldMatchTheKeyByTheComparatorOfATreeMap() {
+        final TreeMap<String, Integer> map = TreeMap.of(String.CASE_INSENSITIVE_ORDER, "a", 1, "B", 2);
+        final java.util.TreeMap<String, Integer> reference = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        reference.put("a", 1);
+        reference.put("B", 2);
+        for (Tuple2<String, Integer> probe : List.of(Tuple.of("A", 1), Tuple.of("a", 1), Tuple.of("b", 2), Tuple.of("A", 2), Tuple.of("c", 1))) {
+            assertThat(map.asJava().contains(probe)).as("contains(%s)", probe)
+                    .isEqualTo(reference.entrySet().contains(java.util.Map.entry(probe._1(), probe._2())));
+        }
+        assertThat(map.asJava().contains(Tuple.of("A", 1))).isTrue();
+    }
+
+    @Test
+    void shouldLetAnExceptionOfAValueEqualsReachTheCaller() {
+        record Touchy(int value) {
+            @Override
+            public boolean equals(Object o) {
+                throw new ClassCastException("Touchy.equals");
+            }
+
+            @Override
+            public int hashCode() {
+                return value;
+            }
+        }
+        for (Map<Integer, Touchy> map : List.<Map<Integer, Touchy>> of(HashMap.of(1, new Touchy(1)), LinkedHashMap.of(1, new Touchy(1)), TreeMap.of(1, new Touchy(1)))) {
+            assertThatThrownBy(() -> map.asJava().contains(Tuple.of(1, new Touchy(1)))).isInstanceOf(ClassCastException.class).hasMessage("Touchy.equals");
+            // a key that is absent never reaches the values
+            assertThat(map.asJava().contains(Tuple.of(2, new Touchy(1)))).isFalse();
         }
     }
 }

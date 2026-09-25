@@ -5753,6 +5753,27 @@ public class ListTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void shouldStayCorrectAfterOperationsOnEitherSideOfASharedResult() {
+            // the results of slice, drop, take and subSequence may be the receiver or share its cells: a persistent List
+            // never changes, so writes on either side leave the other as it was
+            final List<Integer> list = List.range(0, 5);
+            final List<List<Integer>> results = List.of(list.slice(0, 5), list.slice(0, 9), list.slice(2, 9), list.drop(2), list.take(9),
+                    list.subSequence(2), list.subSequence(2, 5), list.subSequence(0, 5), list.takeWhile(x -> true));
+            final List<List<Integer>> expected = List.of(List.range(0, 5), List.range(0, 5), List.range(2, 5), List.range(2, 5), List.range(0, 5),
+                    List.range(2, 5), List.range(2, 5), List.range(0, 5), List.range(0, 5));
+            for (int i = 0; i < results.length(); i++) {
+                final List<Integer> result = results.get(i);
+                final List<Integer> want = expected.get(i);
+                assertThat(result.prepend(-1).append(9).update(1, 7).remove(4).reverse().toVector())
+                        .isEqualTo(want.prepend(-1).append(9).update(1, 7).remove(4).reverse().toVector());
+                assertThat(result.tail().prepend(8)).isEqualTo(want.tail().prepend(8));
+                assertThat(result).isEqualTo(want);
+                assertThat(list.prepend(-1).append(9).update(3, 7).slice(1, 4)).isEqualTo(List.of(0, 1, 7));
+                assertThat(list).isEqualTo(List.range(0, 5));
+            }
+        }
+
+        @Test
         public void shouldCombineAsVectorDoes() {
             for (int n = 0; n <= 6; n++) {
                 final List<Integer> list = List.range(0, n);
