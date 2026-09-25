@@ -445,6 +445,11 @@ public class NonEmptyVectorTest {
             assertThat(actual._2()).isEqualTo(vector.filter(i -> i % 2 != 0));
             assertThat(nev.partitionMap(i -> Either.<Integer, Integer> left(i))).isEqualTo(Tuple.of(vector, Vector.empty()));
             assertThat(nev.partitionMap(i -> Either.<Integer, Integer> right(i))).isEqualTo(Tuple.of(Vector.empty(), vector));
+            final int last = n - 1;
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nev.partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                    .withMessage("NonEmptyVector.partitionMap: f returned null");
+            assertThatNullPointerException().isThrownBy(() -> nev.partitionMap(null)).withMessage("f is null");
         }
 
         @ParameterizedTest

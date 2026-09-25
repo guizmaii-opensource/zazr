@@ -2556,7 +2556,7 @@ public class HashSetTest extends AbstractTraversableTest {
         public void shouldRejectNulls() {
             assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(null)).withMessage("nested is null");
             assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(java.util.Arrays.asList(HashSet.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(List.of(java.util.Arrays.asList(1, null))));
+            assertThatNullPointerException().isThrownBy(() -> HashSet.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("HashSet: element is null");
         }
     }
 }

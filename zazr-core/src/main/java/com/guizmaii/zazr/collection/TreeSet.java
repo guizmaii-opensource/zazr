@@ -221,7 +221,14 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     public static <T extends @Nullable Object> TreeSet<T> flatten(Comparator<? super T> comparator, Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(nested, "nested is null");
-        return ofAll(comparator, Iterator.ofAll(nested).flatMap(Function.identity()));
+        // the insertions of ofAll, inlined so that a null element is reported under this type's name
+        RedBlackTree<T> tree = RedBlackTree.empty(comparator);
+        for (Iterable<? extends T> inner : nested) {
+            for (T element : inner) {
+                tree = tree.insert(Objects.requireNonNull(element, "TreeSet.flatten: element is null"));
+            }
+        }
+        return tree.isEmpty() ? empty(comparator) : new TreeSet<>(tree);
     }
 
     /**

@@ -5832,7 +5832,7 @@ public class ListTest extends AbstractTraversableTest {
         public void shouldRejectNulls() {
             assertThatNullPointerException().isThrownBy(() -> List.flatten(null)).withMessage("nested is null");
             assertThatNullPointerException().isThrownBy(() -> List.flatten(java.util.Arrays.asList(List.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> List.flatten(List.of(java.util.Arrays.asList(1, null))));
+            assertThatNullPointerException().isThrownBy(() -> List.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("List: element is null");
         }
     }
 }

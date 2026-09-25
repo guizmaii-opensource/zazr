@@ -183,7 +183,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
      */
     public static <T extends @Nullable Object> Queue<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
-        return ofAll(com.guizmaii.zazr.collection.List.flatten(nested));
+        Objects.requireNonNull(nested, "nested is null");
+        // List.flatten's loop, not a delegation, so that a null element is reported under this type's name
+        com.guizmaii.zazr.collection.List<T> reversed = com.guizmaii.zazr.collection.List.empty();
+        for (Iterable<? extends T> inner : nested) {
+            for (T element : inner) {
+                reversed = reversed.prepend(Objects.requireNonNull(element, "Queue.flatten: element is null"));
+            }
+        }
+        return reversed.isEmpty() ? empty() : new Queue<>(reversed.reverse(), com.guizmaii.zazr.collection.List.empty());
     }
 
     /**

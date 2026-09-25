@@ -2849,7 +2849,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         public void shouldRejectNulls() {
             assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(null)).withMessage("nested is null");
             assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(java.util.Arrays.asList(LinkedHashSet.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(List.of(java.util.Arrays.asList(1, null))));
+            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("LinkedHashSet: element is null");
         }
     }
 

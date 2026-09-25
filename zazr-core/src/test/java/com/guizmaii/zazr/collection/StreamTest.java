@@ -6478,7 +6478,8 @@ public class StreamTest extends AbstractTraversableTest {
             // lazy: a null inner iterable or element fails when the result reaches it
             assertThatNullPointerException().isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(null, Stream.of(1))));
             assertThatNullPointerException().isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(Stream.of(1), null)).toList());
-            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(Stream.of(java.util.Arrays.asList(1, null))).toList());
+            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(Stream.of(java.util.Arrays.asList(1, null))).toList())
+                    .withMessage("Stream: element is null");
         }
     }
 

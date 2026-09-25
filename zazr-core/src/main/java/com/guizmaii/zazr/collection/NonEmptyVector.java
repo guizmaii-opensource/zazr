@@ -1,5 +1,6 @@
 package com.guizmaii.zazr.collection;
 
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
@@ -518,7 +519,17 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code f} is null or returns null
      */
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Vector<L>, Vector<R>> partitionMap(Function<? super A, ? extends Either<? extends L, ? extends R>> f) {
-        return vector.partitionMap(f);
+        Objects.requireNonNull(f, "f is null");
+        // Vector's loop, not a delegation, so that a null result is reported under this type's name
+        final Vector.Builder<L> lefts = Vector.newBuilder();
+        final Vector.Builder<R> rights = Vector.newBuilder();
+        for (A element : vector) {
+            switch (Objects.requireNonNull(f.apply(element), "NonEmptyVector.partitionMap: f returned null")) {
+                case Either.Left(var left) -> lefts.add(left);
+                case Either.Right(var right) -> rights.add(right);
+            }
+        }
+        return Tuple.of(lefts.result(), rights.result());
     }
 
     /**

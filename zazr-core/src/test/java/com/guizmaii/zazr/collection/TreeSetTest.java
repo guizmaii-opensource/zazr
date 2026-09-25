@@ -3024,7 +3024,7 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(null, List.of(List.of(1)))).withMessage("comparator is null");
             assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(Comparator.<Integer> naturalOrder(), null)).withMessage("nested is null");
             assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(java.util.Arrays.asList(List.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(List.of(java.util.Arrays.asList(1, null))));
+            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("TreeSet.flatten: element is null");
         }
     }
 }

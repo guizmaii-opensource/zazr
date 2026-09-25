@@ -6061,7 +6061,7 @@ public class QueueTest extends AbstractTraversableTest {
         public void shouldRejectNulls() {
             assertThatNullPointerException().isThrownBy(() -> Queue.flatten(null)).withMessage("nested is null");
             assertThatNullPointerException().isThrownBy(() -> Queue.flatten(java.util.Arrays.asList(Queue.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> Queue.flatten(Queue.of(java.util.Arrays.asList(1, null))));
+            assertThatNullPointerException().isThrownBy(() -> Queue.flatten(Queue.of(java.util.Arrays.asList(1, null)))).withMessage("Queue.flatten: element is null");
         }
     }
 
