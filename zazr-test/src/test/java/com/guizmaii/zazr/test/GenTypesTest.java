@@ -535,14 +535,18 @@ class GenTypesTest {
     }
 
     @Test
-    void vectorReachesATrieWithAnOffset() {
+    void vectorReachesAPartlyFilledFirstLeaf() {
         final List<Vector<Integer>> vectors = samples(Gen.vector(Gen.integers()));
         assertSome(vectors, Vector::isEmpty, "an empty vector");
         assertSome(vectors, v -> v.size() > 32, "a vector longer than a leaf");
         assertSome(vectors, v -> {
-            final Object trie = field(v, Vector.class, "trie");
-            return (int) field(trie, trie.getClass(), "offset") != 0;
-        }, "a trie with an offset");
+            final Object tree = field(v, Vector.class, "trie");
+            Class<?> owner = tree.getClass();
+            while (owner.getSuperclass() != Object.class) {
+                owner = owner.getSuperclass();
+            }
+            return v.size() > 32 && ((Object[]) field(tree, owner, "prefix1")).length < 32;
+        }, "a tree of two levels or more whose first leaf is partly filled");
     }
 
     @Test

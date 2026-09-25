@@ -98,7 +98,7 @@ final class Shapes {
         });
     }
 
-    /// `ofAll`, a builder, appends, prepends, a dropped prefix (the trie keeps an offset) and a slice.
+    /// `ofAll`, a builder, appends, prepends, a dropped prefix (the first leaf is left partly filled) and a slice.
     static <T> Vector<T> vector(int layout, ArrayList<T> xs, Gen<T> gen, Sampling sampling, int size) {
         return switch (layout) {
             case 0 -> Vector.ofAll(xs);
