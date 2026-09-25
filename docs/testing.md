@@ -4,9 +4,10 @@ description: Property-based testing with zazr-test - Arbitrary, Gen, Property an
 
 # Testing with `zazr-test`
 
-`com.guizmaii:zazr-test` checks properties against random inputs: you state what must hold for every value, it
-generates many values and reports the first one that breaks it. It runs inside any test framework; a check is a method
-call that returns a result you assert on.
+`com.guizmaii:zazr-test` checks properties against random inputs. You state what must hold for every value; it
+generates many values and reports the first one that breaks the rule.
+
+It works in any test framework, such as JUnit: a check is a method call that returns a result you assert on.
 
 === "Maven"
 
@@ -32,7 +33,7 @@ The types are in `com.guizmaii.zazr.test`:
 | Type | Role |
 |---|---|
 | `Gen<T>` | a generator: a function from a `java.util.Random` to a `T`, with `map`, `flatMap`, `filter`, `choose`, `oneOf`, `frequency` |
-| `Arbitrary<T>` | a generator per size hint: `Arbitrary.integer()`, `string(Gen<Character>)`, `list(Arbitrary)`, `stream(Arbitrary)`, `of(values...)`, `localDateTime()` |
+| `Arbitrary<T>` | a generator whose values grow with a size: `Arbitrary.integer()`, `string(Gen<Character>)`, `list(Arbitrary)`, `of(values...)` |
 | `Property` | the builder: `Property.def(name).forAll(arbitraries...).suchThat(predicate)`, from 1 to 8 arbitraries |
 | `CheckResult` | the outcome: satisfied, falsified (with the sample) or erroneous; `assertIsSatisfied()` throws an `AssertionError` otherwise |
 
@@ -46,8 +47,8 @@ CheckResult result = Property.def("reversing twice gives the list back")
 result.assertIsSatisfied();
 ```
 
-`check()` tries 1,000 samples with a size hint of 100; `check(size, tries)` chooses both. A falsified result carries
-the sample that broke the property in `sample()`.
+`check()` tries 1,000 samples with a size of 100: lists of up to 100 elements, integers between -100 and 100.
+`check(size, tries)` chooses both. When the property fails, `sample()` returns the value that broke it.
 
 ```java
 CheckResult broken = Property.def("every list is short")
@@ -60,8 +61,8 @@ boolean falsified = broken.isFalsified();
 
 ## Generators
 
-Build a `Gen` from the combinators, then turn it into an `Arbitrary` (which ignores the size hint) or write an
-`Arbitrary` that uses the size.
+Build a `Gen` with `choose`, `map`, `flatMap` and the others, then turn it into an `Arbitrary` with
+`arbitrary()`.
 
 ```java
 Gen<Integer> dice = Gen.choose(1, 6);
@@ -75,8 +76,8 @@ sums.assertIsSatisfied();
 
 ## Preconditions
 
-`implies` turns the property into a precondition: samples that fail it are not counted against the property, only
-the ones that pass it are checked against the postcondition.
+With `implies`, the `suchThat` condition becomes a precondition. Samples that fail it are skipped; the others must
+satisfy the `implies` condition.
 
 ```java
 Checkable halving = Property.def("an even number is twice its half")
@@ -86,5 +87,4 @@ Checkable halving = Property.def("an even number is twice its half")
 halving.check().assertIsSatisfied();
 ```
 
-Properties compose with `and` and `or`. `suchThatResult` and `impliesResult` take a predicate returning a
-`PredicateResult`, whose failure message ends up in the `CheckResult`.
+Properties combine with `and` and `or`.

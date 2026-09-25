@@ -4,14 +4,15 @@ description: Validation keeps every error in a NonEmptyVector - accumulation wit
 
 # Validation
 
-`Validation<E, A>` is `Valid(A value)` or `Invalid(NonEmptyVector<E> errors)`. Where `Either` stops at the first
-failure, combining validations keeps the errors of every side, in argument order. The error side is a
-[`NonEmptyVector`](non-empty-vector.md), so an `Invalid` always carries at least one error and the type says so.
+`Validation<E, A>` is `Valid(A value)` or `Invalid(NonEmptyVector<E> errors)`. `Either` stops at the first
+failure; combining validations keeps the errors of every one of them, in order.
+
+The errors are held in a [`NonEmptyVector`](non-empty-vector.md), so an `Invalid` always carries at least one.
 
 ## Checks
 
-A check returns a `Validation`. `fromPredicate` builds one from a test and a function of the rejected value, so the
-error can name it.
+A check returns a `Validation`. `fromPredicate` builds one from a test, and from a function that turns the rejected
+value into an error message.
 
 ```java
 static Validation<String, String> name(String value) {
@@ -27,13 +28,12 @@ static Validation<String, String> email(String value) {
 }
 ```
 
-Other ways in: `Validation.valid`, `invalid`, `invalidAll(NonEmptyVector)`, `fromEither`, `fromOption`, `fromTry`, and
-`of(Callable, Function<Throwable, E>)`, which is `Try.of` followed by a conversion.
+`fromEither`, `fromOption` and `fromTry` convert the other control types.
 
 ## Accumulation with `zip` and `zipWith`
 
-`zipWith` combines independent checks and calls the function only when all of them are valid. The static forms go
-from 2 to 8 arguments ([zip at arity N](zip.md)); the instance forms combine two.
+`zipWith` combines independent checks and calls the function only when all of them are valid. The static form
+takes 2 to 8 checks ([zip at arity N](zip.md)); the instance form combines two.
 
 ```java
 record User(String name, int age, String email) {}
@@ -63,13 +63,12 @@ String message = switch (checked) {
 // "1 error(s): age is negative"
 ```
 
-`getOrElse`, `getOrElseThrow`, `tapError`, `mapError`, `mapErrorAll` and the conversions `toEither()`
-(`Either<NonEmptyVector<E>, A>`), `toEitherWith`, `toOption()` and `toTry(Function)` cover the rest.
+`toEither()` gives an `Either<NonEmptyVector<E>, A>`, for code that expects one.
 
 ## Many values: `collectAll`, `forEach`, `partition`
 
-`collectAll` turns many validations into one validation of a `Vector`, accumulating every error. `forEach` maps each
-input to a validation first. Both loop once.
+`collectAll` turns many validations into one validation of a `Vector`, keeping every error. `forEach` does the
+same after running a check on each input.
 
 ```java
 Validation<String, Vector<Integer>> ages = Validation.forEach(Vector.of(3, -1, 7, -2), n -> age(n));
@@ -81,7 +80,7 @@ Validation<String, Vector<String>> names = Validation.collectAll(Vector.of(name(
 // Valid(Vector(Ada, Grace))
 ```
 
-`forEach` over a `NonEmptyVector` keeps the result non-empty: its valid side is a `NonEmptyVector` too.
+`forEach` over a `NonEmptyVector` returns a `NonEmptyVector` on the valid side too.
 
 ```java
 Validation<String, NonEmptyVector<Integer>> scores = Validation.forEach(NonEmptyVector.of(1, 2), n -> age(n));
@@ -97,8 +96,8 @@ Tuple2<Vector<String>, Vector<Integer>> split = Validation.partition(Vector.of(4
 
 ## Short-circuiting on purpose: `flatMap`
 
-`flatMap` runs the next check only when this one is valid, so its errors are never accumulated with this one's. That
-is the right tool for a rule that needs the valid value, after the independent checks:
+`flatMap` runs the next check only when this one is valid, so the two checks' errors are never combined. Use it
+for a rule that needs the valid value, after the independent checks:
 
 ```java
 Validation<String, User> adult = Validation.zipWith(name("Ada"), age(15), email("ada@example.com"), User::new)
@@ -107,6 +106,4 @@ Validation<String, User> adult = Validation.zipWith(name("Ada"), age(15), email(
 ```
 
 `flatMapEither` is the same for a step that returns an `Either`. If every step depends on the previous one, `Either`
-is the simpler type. `orElse` keeps the second validation and drops the first one's errors.
-
-There is no `flip`: the two sides are not symmetric, since one is non-empty.
+is the simpler type.

@@ -4,8 +4,8 @@ description: asJava views of the Zazr collections, the copies into java.util typ
 
 # Java interop
 
-Zazr collections do not implement `java.util.List`, `Set` or `Map`: a Zazr type never advertises `add()` or `put()`
-it cannot honour. At a JDK boundary, `asJava()` gives a view with no copy.
+Zazr collections do not implement `java.util.List`, `Set` or `Map`, because they cannot support `add()` or `put()`.
+To pass one to Java code, `asJava()` gives a read-only view, without copying.
 
 ## `asJava()` views
 
@@ -14,8 +14,8 @@ it cannot honour. At a JDK boundary, `asJava()` gives a view with no copy.
 | `Vector`, `List`, `Queue`, `Stream`, `NonEmptyVector` | an unmodifiable `java.util.List` | O(1) to create; `get(i)` costs what the type's `get(i)` costs |
 | sets and maps (any `Traversable`) | an unmodifiable `java.util.Collection` of the elements, of `Tuple2` entries for a map | O(1) to create |
 
-Reads go through to the Zazr value. Every mutator throws `UnsupportedOperationException`, whether or not it would
-change anything, as `Collections.unmodifiableList` does.
+Reads go through to the Zazr value. Every method that would modify the view throws
+`UnsupportedOperationException`, as with `Collections.unmodifiableList`.
 
 ```java
 Vector<String> names = Vector.of("Ada", "Grace");
@@ -27,7 +27,7 @@ boolean rejected = Try.run(() -> view.add("Linus")).getCause() instanceof Unsupp
 
 A `java.util.List` view is a `SequencedCollection`, so `getFirst()`, `getLast()` and `reversed()` work on it.
 
-## Copies
+## Copies and mutable views
 
 When a JDK API needs a collection it can modify, copy the view with the JDK constructor you need.
 
@@ -38,12 +38,19 @@ java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJa
 // mutable is [1, 2, 3], jdkSet holds a and b
 ```
 
+`Vector`, `List`, `Queue` and `Stream` also have `asJavaMutable()`, a `java.util.List` view that accepts
+changes. The original collection is never modified: the view switches to a new collection at each change.
+`asJavaMutable(action)` runs `action` on such a view and returns the collection as it is at the end.
+
 ## The way back, and streams
 
-`ofAll` takes any `Iterable` or a `java.util.stream.Stream`; `collector()` collects a stream
-([Builders](builders.md)). `Vector.ofAll` copies a `java.util.Collection` in one bulk copy, and returns the `Vector`
-itself, with no copy, when given the `asJava()` view of a `Vector`. `stream()` on any Zazr collection is a
-`java.util.stream.Stream` that reports the size and the ordering of the type.
+To come back from Java:
+
+- `ofAll` takes any `Iterable` or `java.util.stream.Stream`.
+- `collector()` collects a `java.util.stream.Stream` ([Builders](builders.md)).
+- `Vector.ofAll` of the `asJava()` view of a `Vector` returns that `Vector`, without copying.
+
+In the other direction, `stream()` on any Zazr collection returns a `java.util.stream.Stream`.
 
 ```java
 Vector<Integer> fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));

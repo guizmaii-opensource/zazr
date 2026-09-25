@@ -4,14 +4,15 @@ description: NonEmptyVector makes head, max and reduce total; its return types s
 
 # `NonEmptyVector`
 
-`NonEmptyVector<A>` is a `Vector<A>` that has at least one element. It wraps a `Vector` rather than extending it: if
-it were a subtype, `filter` would be inherited and the type would promise nothing where it is used. Every method
-delegates to the wrapped `Vector`, so the costs are `Vector`'s.
+`NonEmptyVector<A>` is a sequence with at least one element. It holds a `Vector` and has the same costs.
+
+It is not a subtype of `Vector`. If it were, `filter` would return a `NonEmptyVector` that could be empty.
 
 ## Total operations
 
-On a `NonEmptyVector`, the operations that are partial on a `Vector` cannot fail and return the value itself, not an
-`Option`: `head`, `last`, `max`, `min`, `maxBy`, `minBy`, `reduce`, `reduceLeft`, `reduceRight`, `reduceMap`.
+On a `Vector`, `head`, `max` or `reduce` can fail or return an `Option`, because the `Vector` may be empty. On a
+`NonEmptyVector` they return the value itself. The same holds for `last`, `min`, `maxBy`, `minBy` and the other
+`reduce` methods.
 
 ```java
 NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
@@ -23,15 +24,16 @@ int first = scores.head();
 
 ## The return-type contract
 
-Operations that keep or grow the size return a `NonEmptyVector`; operations that can shrink it return a `Vector`;
-narrowing a possibly empty value returns an `Option`.
+The return type tells you whether the result can be empty:
 
-| Returns `NonEmptyVector` | Returns `Vector` | Returns `Option` |
+| Returns | When | For example |
 |---|---|---|
-| `map`, `flatMap` (to a `NonEmptyVector`), `append`, `appendAll`, `prepend`, `prependAll`, `concat`, `reverse`, `distinct`, `distinctBy`, `sorted`, `sortBy`, `zip`, `zipWith`, `zipWithIndex`, `scanLeft`, `update`, `tap`; `grouped` returns `Vector<NonEmptyVector<A>>`, `groupBy` a `HashMap<K, NonEmptyVector<A>>` | `filter`, `reject`, `collect`, `flatMapAll` (to any `Iterable`), `partitionMap`, `duplicates`, `duplicatesBy`, `tail`, `init`, `drop*`, `take*`, `slice`, `removeAt`, `remove`, `removeAll`, `toVector()` | `find`, `findLast`, `indexOfOption`, `tailNonEmpty()`, `initNonEmpty()` |
+| `NonEmptyVector` | the operation keeps or grows the size | `map`, `append`, `appendAll`, `sorted`, `distinct`, `zip` |
+| `Vector` | the operation may remove elements | `filter`, `collect`, `tail`, `take`, `drop`, `remove` |
+| `Option` | you ask for a part that may not exist | `find`, `tailNonEmpty()`, `initNonEmpty()` |
 
-`appendAll` and `prependAll` accept a possibly empty `Vector` and still return a `NonEmptyVector`: accept the weak
-type, return the strong one.
+`grouped` returns a `Vector` of `NonEmptyVector`s, and `groupBy` a `HashMap` whose values are `NonEmptyVector`s.
+`appendAll` and `prependAll` accept a `Vector` that may be empty and still return a `NonEmptyVector`.
 
 ```java
 NonEmptyVector<Integer> grown = NonEmptyVector.of(1).appendAll(Vector.empty());
@@ -40,8 +42,8 @@ Option<NonEmptyVector<Integer>> rest = NonEmptyVector.of(1).tailNonEmpty();
 // NonEmptyVector(1), Vector(2), None
 ```
 
-`flatMap` and `flatMapAll` are two names because a lambda fits both a function returning a `NonEmptyVector` and one
-returning any `Iterable`, and Java would report the overload as ambiguous.
+`flatMap` takes a function that returns a `NonEmptyVector`, and keeps the result non-empty. `flatMapAll` takes a
+function that returns any `Iterable`, and returns a `Vector`.
 
 ## Construction
 
@@ -60,12 +62,9 @@ Option<NonEmptyVector<String>> fromNothing = Vector.<String>empty().toNonEmptyVe
 // Some(NonEmptyVector(a, b)), None
 ```
 
-`fromIterable(head, tail)` is not an `of` overload on purpose: `of(nev1, nev2)` would otherwise pick "head, then the
-elements of the second" whenever the elements are themselves iterables.
-
 ## Sharp edges
 
 - A `NonEmptyVector` is not a `Vector` and is not equal to one with the same elements; compare through `toVector()`.
-- It is `Iterable`, but not a `Traversable`: it declares the collection methods it keeps itself.
+- It is `Iterable`, but not a `Traversable`: a method that takes a `Traversable` needs `toVector()`.
 - `Validation` uses it for its errors, and `Validation.forEach` over a `NonEmptyVector` returns one
   ([Validation](validation.md)).
