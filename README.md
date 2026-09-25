@@ -90,7 +90,7 @@ dependencies {
 }
 ```
 
-`com.guizmaii:zazr-test` adds property-based testing (`Arbitrary`, `Gen`, `Checkable`).
+`com.guizmaii:zazr-test` adds property-based testing (`Gen`, `Check`) and ready-made laws.
 
 ## A short tour
 
