@@ -40,6 +40,20 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     Comparator<K> comparator();
 
     /**
+     * An unmodifiable {@link java.util.NavigableMap} view of this map, in the order of its keys: nothing is copied,
+     * reads go through to this map, which never changes, and every mutator of the view throws
+     * {@link UnsupportedOperationException}, {@code pollFirstEntry} and {@code pollLastEntry} included. The
+     * sub-maps, the head and tail maps, the descending map and the key sets are views too.
+     * <p>
+     * Complexity: O(1); {@code get}, {@code containsKey}, {@code firstKey}, {@code ceilingEntry} and the other
+     * navigation methods of the view are O(log n).
+     *
+     * @return an unmodifiable {@code java.util.NavigableMap} view
+     */
+    @Override
+    java.util.NavigableMap<K, V> asJavaMap();
+
+    /**
      * Same as {@link #mapBoth(Function, Function)}, using a specific comparator for keys of the codomain of the given
      * {@code keyMapper}.
      *
@@ -486,8 +500,5 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     SortedMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements);
-
-    @Override
-    java.util.SortedMap<K, V> toJavaMap();
 
 }

@@ -276,7 +276,7 @@ public class VectorPropertyTest {
 
                 if (!expected.isEmpty()) {
                     assertThat(actual.head()).isEqualTo(expected.head());
-                    Assertions.assertThat(actual.tail().toJavaList()).isEqualTo(expected.tail().toJavaList());
+                    Assertions.assertThat(new java.util.ArrayList<>(actual.tail().asJava())).isEqualTo(new java.util.ArrayList<>(expected.tail().asJava()));
                     history = history.append(Tuple.of(expected, actual));
                 }
 
@@ -332,7 +332,7 @@ public class VectorPropertyTest {
         final Vector<Object> values = Vector.range(0, count).map(v -> randomValue(random));
         final int percent = percent(random);
         if (percent < 30) {
-            return values.toJavaList();  /* not Traversable */
+            return new java.util.ArrayList<>(values.asJava());  /* not Traversable */
         } else {
             return values;
         }

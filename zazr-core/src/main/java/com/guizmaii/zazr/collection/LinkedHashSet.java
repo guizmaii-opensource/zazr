@@ -3,6 +3,8 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.SetViews;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
@@ -144,13 +146,16 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @param elements Set elements
      * @param <T>      The value type
      * @return A LinkedHashSet containing the given elements; if {@code elements} is already a
-     *         LinkedHashSet, it is returned unchanged.
+     *         LinkedHashSet, or the {@link #asJava()} view of one (not its {@code reversed()} view), that
+     *         LinkedHashSet is returned unchanged.
      */
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> LinkedHashSet<T> ofAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (elements instanceof LinkedHashSet) {
             return (LinkedHashSet<T>) elements;
+        } else if (JavaConverters.underlying(elements) instanceof LinkedHashSet<?> underlying) {
+            return (LinkedHashSet<T>) underlying;
         } else {
             final LinkedHashMap<T, Object> mao = addAll(LinkedHashMap.empty(), elements);
             return mao.isEmpty() ? empty() : new LinkedHashSet<>(mao);
@@ -732,6 +737,24 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         return Iterator.ofAll(map).map(t -> t._1());
     }
 
+    /**
+     * An unmodifiable {@link java.util.SequencedSet} view of this LinkedHashSet, in insertion order: nothing is
+     * copied, reads go through to this set, which never changes, and every mutator of the view (including those of
+     * its iterator) throws {@link UnsupportedOperationException}. {@code reversed()} is a view in reverse insertion
+     * order. The view equals any {@code java.util.Set} with the same elements. A mutable copy is
+     * {@code new java.util.LinkedHashSet<>(set.asJava())}; {@code LinkedHashSet.ofAll} given the view returns this
+     * set without copying.
+     * <p>
+     * Complexity: O(1); {@code contains} on the view is effectively O(1), and each step of its iterator, in either
+     * order, is effectively O(1).
+     *
+     * @return an unmodifiable {@code java.util.SequencedSet} view
+     */
+    @Override
+    public java.util.SequencedSet<T> asJava() {
+        return SetViews.asJava(this, () -> Iterator.ofAll(map.reverseIterator()).map(Tuple2::_1));
+    }
+
     @Override
     public <U extends @Nullable Object> LinkedHashSet<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -874,11 +897,6 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public LinkedHashSet<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements, kept -> filter(kept));
-    }
-
-    @Override
-    public java.util.LinkedHashSet<T> toJavaSet() {
-        return toJavaSet(java.util.LinkedHashSet::new);
     }
 
     /**

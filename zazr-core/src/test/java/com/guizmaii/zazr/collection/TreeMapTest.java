@@ -412,12 +412,6 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Nested
     class TojavamapTests {
-        @Test
-        public void shouldConvertToJavaMap() {
-            final Map<Integer, String> actual = mapOf(1, "1", 2, "2", 3, "3");
-            final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
-            assertThat(actual.toJavaMap()).isEqualTo(expected);
-        }
     }
 
     @Nested
@@ -1185,11 +1179,11 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldSortTheEntriesOfAReversedMapWithAJavaStream() {
             final TreeMap<Integer, String> reversed = TreeMap.of(Comparator.<Integer>reverseOrder(), 3, "c", 1, "a", 2, "b");
-            assertThat(reversed.toJavaList()).isEqualTo(java.util.List.of(Tuple.of(3, "c"), Tuple.of(2, "b"), Tuple.of(1, "a")));
+            assertThat(new java.util.ArrayList<>(reversed.asJava())).isEqualTo(java.util.List.of(Tuple.of(3, "c"), Tuple.of(2, "b"), Tuple.of(1, "a")));
             assertThat(reversed.stream().sorted().toList()).isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
             final TreeMap<Integer, String> natural = TreeMap.of(3, "c", 1, "a", 2, "b");
             assertThat(natural.stream().sorted().toList()).isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
-            assertThat(natural.stream().sorted(Comparator.reverseOrder()).toList()).isEqualTo(reversed.toJavaList());
+            assertThat(natural.stream().sorted(Comparator.reverseOrder()).toList()).isEqualTo(new java.util.ArrayList<>(reversed.asJava()));
         }
 
         @Test
@@ -1444,7 +1438,6 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
         assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-").max().get()._1()).isEqualTo(Float.POSITIVE_INFINITY);
     }
-
 
     /** A map whose keys are not mutually comparable (a Double and a Float), so that comparing its entries fails. */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1967,49 +1960,6 @@ public class TreeMapTest extends AbstractTraversableTest {
         assertThat(array).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2));
     }
 
-    // -- toJavaList
-
-    @Test
-    public void shouldConvertNilToArrayList() {
-        assertThat(emptyMap().toJavaList()).isEqualTo(new ArrayList<Tuple2<Integer, Integer>>());
-    }
-
-    @Test
-    public void shouldConvertNonNilToArrayList() {
-        assertThat(entries(1, 2, 3).toJavaList()).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
-    }
-
-    // -- toJavaMap(Function)
-
-    @Test
-    public void shouldConvertNilToHashMap() {
-        assertThat(this.<Integer, Integer>emptyMap().toJavaMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(new java.util.HashMap<>());
-    }
-
-    @Test
-    public void shouldConvertNonNilToHashMap() {
-        final java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
-        expected.put(1, 1);
-        expected.put(2, 2);
-        assertThat(entries(1, 2).toJavaMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(expected);
-    }
-
-    // -- toJavaSet
-
-    @Test
-    public void shouldConvertNilToHashSet() {
-        assertThat(emptyMap().toJavaSet()).isEqualTo(new java.util.HashSet<>());
-    }
-
-    @Test
-    public void shouldConvertNonNilToHashSet() {
-        final java.util.Set<Tuple2<Integer, Integer>> expected = new java.util.HashSet<>();
-        expected.add(entry(1, 2));
-        expected.add(entry(0, 1));
-        expected.add(entry(2, 3));
-        assertThat(entries(1, 2, 3).toJavaSet()).containsExactlyInAnyOrderElementsOf(expected);
-    }
-
     // -- the conversions
 
     @Test
@@ -2068,7 +2018,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> value = entries(3, 7, 1, 15, 0);
         final Set<Tuple2<Integer, Integer>> set = value.toLinkedSet();
         assertThat(set).isEqualTo(value.toList().foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
-        Assertions.assertThat(set.toJavaList()).isEqualTo(value.toJavaList());
+        Assertions.assertThat(new java.util.ArrayList<>(set.asJava())).isEqualTo(new java.util.ArrayList<>(value.asJava()));
         assertThat(emptyMap().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
 
@@ -2090,64 +2040,6 @@ public class TreeMapTest extends AbstractTraversableTest {
         assertThat(emptyMap().toStream()).isSameAs(Stream.empty());
     }
 
-    @Test
-    public void shouldConvertToJavaCollectionUsingSupplier() {
-        final java.util.List<Tuple2<Integer, Integer>> entries = entries(1, 2, 3).toJavaCollection(ArrayList::new);
-        assertThat(entries).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
-    }
-
-    @Test
-    public void shouldConvertToJavaList() {
-        final java.util.List<Tuple2<Integer, Integer>> list = entries(1, 2, 3).toJavaList();
-        assertThat(list).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
-        assertThat(emptyMap().toJavaList()).isEmpty();
-    }
-
-    @Test
-    public void shouldConvertToJavaListUsingSupplier() {
-        final java.util.List<Tuple2<Integer, Integer>> entries = entries(1, 2, 3).toJavaList(ArrayList::new);
-        assertThat(entries).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
-    }
-
-    @Test
-    public void shouldConvertToJavaMapUsingFunction() {
-        final java.util.Map<Integer, Integer> map = entries(1, 2, 3).toJavaMap(t -> Tuple.of(t._2(), t._2()));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-        assertThat(this.<Integer, Integer>emptyMap().toJavaMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(java.util.Map.of());
-    }
-
-    @Test
-    public void shouldConvertToJavaMapUsingSupplierAndFunction() {
-        final java.util.Map<Integer, Integer> map = entries(1, 2, 3).toJavaMap(java.util.HashMap::new, t -> Tuple.of(t._2(), t._2()));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-    }
-
-    @Test
-    public void shouldConvertToJavaMapUsingSupplierAndTwoFunction() {
-        final java.util.Map<Integer, String> map = entries(1, 2, 3).toJavaMap(java.util.HashMap::new, Tuple2::_2, t -> String.valueOf(t._2()));
-        assertThat(map).isEqualTo(java.util.Map.of(1, "1", 2, "2", 3, "3"));
-    }
-
-    @Test
-    public void shouldConvertToJavaSet() {
-        final java.util.Set<Tuple2<Integer, Integer>> set = entries(1, 2, 3).toJavaSet();
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-        assertThat(emptyMap().toJavaSet()).isEmpty();
-    }
-
-    @Test
-    public void shouldConvertToJavaSetUsingSupplier() {
-        final java.util.Set<Tuple2<Integer, Integer>> set = entries(1, 2, 3).toJavaSet(java.util.HashSet::new);
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-    }
-
-    @Test
-    public void shouldConvertToJavaParallelStream() {
-        final java.util.stream.Stream<Tuple2<Integer, Integer>> s1 = entries(1, 2, 3).toJavaParallelStream();
-        assertThat(s1.isParallel()).isTrue();
-        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-    }
-
     // -- values
 
     @Nested
@@ -2162,8 +2054,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldReturnValuesInTheIterationOrderOfTheMap() {
             final Map<Integer, String> map = mapOf(3, "c", 1, "a", 2, "b");
-            Assertions.assertThat(map.values().toJavaList()).isEqualTo(map.toList().map(Tuple2::_2).toJavaList());
-            Assertions.assertThat(map.values().toJavaList()).isEqualTo(map.keySet().toList().map(k -> map.get(k).get()).toJavaList());
+            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava())).isEqualTo(new java.util.ArrayList<>(map.toList().map(Tuple2::_2).asJava()));
+            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava())).isEqualTo(new java.util.ArrayList<>(map.keySet().toList().map(k -> map.get(k).get()).asJava()));
         }
 
         @Test
@@ -2183,7 +2075,7 @@ public class TreeMapTest extends AbstractTraversableTest {
             assertThat(view.size()).isEqualTo(3);
             assertThat(view.contains(entry(2, "b"))).isTrue();
             assertThat(view.contains(entry(2, "x"))).isFalse();
-            Assertions.assertThat(new ArrayList<>(view)).isEqualTo(map.toJavaList());
+            Assertions.assertThat(new ArrayList<>(view)).isEqualTo(new java.util.ArrayList<>(map.asJava()));
             assertThrows(UnsupportedOperationException.class, () -> view.add(entry(4, "d")));
             assertThrows(UnsupportedOperationException.class, view::clear);
         }
@@ -2323,77 +2215,77 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldReturnSingletonFromTupleUsingComparator() {
         final TreeMap<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), Tuple.of(1, "1"));
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom1EntryWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom2EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom3EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom4EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom5EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom6EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom7EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom8EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"), asJavaEntry(8, "8"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom9EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"), asJavaEntry(8, "8"), asJavaEntry(9, "9"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom10EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9", 10, "10");
         final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"), asJavaEntry(8, "8"), asJavaEntry(9, "9"), asJavaEntry(10, "10"));
-        assertThat(actual.toJavaMap()).isEqualTo(expected);
+        assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Nested
@@ -2451,7 +2343,7 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCreateKeyComparatorForJavaUtilMap() {
-        final TreeMap<String, Integer> actual = TreeMap.ofAll(mapOfTuples(Tuple.of("c", 0), Tuple.of("a", 0), Tuple.of("b", 0)).toJavaMap());
+        final TreeMap<String, Integer> actual = TreeMap.ofAll(new java.util.HashMap<>(mapOfTuples(Tuple.of("c", 0), Tuple.of("a", 0), Tuple.of("b", 0)).asJavaMap()));
         final List<String> expected = List.of("a", "b", "c");
         assertThat(actual.keySet().toList()).isEqualTo(expected);
     }

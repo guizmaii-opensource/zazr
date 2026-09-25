@@ -6,9 +6,6 @@ import com.guizmaii.zazr.Tuple3;
 import com.guizmaii.zazr.collection.internal.ArrayType;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.Iterator;
-import com.guizmaii.zazr.collection.internal.JavaConverters;
-import com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy;
-import com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
@@ -28,7 +25,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 
-import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -211,10 +207,9 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfListView() {
-            final ListView<Integer, Vector<Integer>> source = JavaConverters
-                    .asJava(ofAll(1, 2, 3), ChangePolicy.IMMUTABLE);
-            final Vector<Integer> target = Vector.ofAll(source);
-            assertThat(target).isSameAs(source.getDelegate());
+            final Vector<Integer> persistent = ofAll(1, 2, 3);
+            final Vector<Integer> target = Vector.ofAll(persistent.asJava());
+            assertThat(target).isSameAs(persistent);
         }
     }
 
@@ -420,7 +415,7 @@ public class VectorTest extends AbstractTraversableTest {
             final Function<Integer, Option<Integer>> mapper = i -> i % 3 == 0 ? Option.some(i * 2) : Option.none();
             for (int n : sizes) {
                 final Vector<Integer> primitive = Vector.range(0, n); // int[] leaves
-                final Vector<Integer> boxed = Vector.ofAll(primitive.toJavaList()); // Object[] leaves
+                final Vector<Integer> boxed = Vector.ofAll(new java.util.ArrayList<>(primitive.asJava())); // Object[] leaves
                 assertThat(boxed.collect(mapper)).isEqualTo(primitive.collect(mapper));
             }
         }
@@ -445,7 +440,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     static java.util.List<Vector<Integer>> bothRepresentations(int n) {
         final Vector<Integer> primitive = Vector.range(0, n);
-        return java.util.List.of(primitive, Vector.ofAll(primitive.toJavaList()));
+        return java.util.List.of(primitive, Vector.ofAll(new java.util.ArrayList<>(primitive.asJava())));
     }
 
     @Nested
@@ -538,7 +533,7 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> inner : bothRepresentations(n)) {
                     assertThat(Vector.flatten(Vector.of(inner, inner))).isEqualTo(inner.appendAll(inner));
-                    assertThat(Vector.flatten(java.util.List.of(inner.toJavaList(), inner))).isEqualTo(inner.appendAll(inner));
+                    assertThat(Vector.flatten(java.util.List.of(new java.util.ArrayList<>(inner.asJava()), inner))).isEqualTo(inner.appendAll(inner));
                     assertThat(Vector.flatten(Vector.of(Vector.<Integer> empty(), inner, Vector.<Integer> empty()))).isEqualTo(inner);
                     assertThat(Vector.flatten(Vector.of(inner))).isEqualTo(inner);
                 }
@@ -733,51 +728,12 @@ public class VectorTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class AsjavamutableTests {
-        @Test
-        public void shouldConvertAsJava() {
-            final java.util.List<Integer> list = of(1, 2, 3).asJavaMutable();
-            list.add(4);
-            assertThat(list).isEqualTo(Arrays.asList(1, 2, 3, 4));
-        }
-
-        @Test
-        public void shouldConvertAsJavaWithConsumer() {
-            final Vector<Integer> seq = of(1, 2, 3).asJavaMutable(list -> {
-                assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
-                list.add(4);
-            });
-            assertThat(seq).isEqualTo(of(1, 2, 3, 4));
-        }
-
-        @Test
-        public void shouldConvertAsJavaAndRethrowException() {
-            assertThatThrownBy(() -> of(1, 2, 3).asJavaMutable(list -> { throw new RuntimeException("test");}))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("test");
-        }
-
+    class AsjavaTests {
         @Test
         public void shouldConvertAsJavaImmutable() {
             final java.util.List<Integer> list = of(1, 2, 3).asJava();
             assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
             assertThatThrownBy(() -> list.add(4)).isInstanceOf(UnsupportedOperationException.class);
-        }
-
-        @Test
-        public void shouldConvertAsJavaImmutableWithConsumer() {
-            final Vector<Integer> seq = of(1, 2, 3).asJava(list -> {
-                assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
-                assertThatThrownBy(() -> list.add(4)).isInstanceOf(UnsupportedOperationException.class);
-            });
-            assertThat(seq).isEqualTo(of(1, 2, 3));
-        }
-
-        @Test
-        public void shouldConvertAsJavaImmutableAndRethrowException() {
-            assertThatThrownBy(() -> of(1, 2, 3).asJava(list -> { throw new RuntimeException("test");}))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("test");
         }
     }
 
@@ -1404,7 +1360,6 @@ public class VectorTest extends AbstractTraversableTest {
     public void shouldIntersperseMultipleElements() {
         assertThat(of('a', 'b').intersperse(',')).isEqualTo(of('a', ',', 'b'));
     }
-
 
     @Nested
     class PadtoTests {
@@ -2854,9 +2809,9 @@ public class VectorTest extends AbstractTraversableTest {
     /* range(0, n) in every representation the trie has: primitive and Object leaves, each with and without an offset */
     static java.util.List<Vector<Integer>> representations(int n) {
         final Vector<Integer> primitive = Vector.range(0, n);
-        final Vector<Integer> boxed = Vector.ofAll(primitive.toJavaList());
+        final Vector<Integer> boxed = Vector.ofAll(new java.util.ArrayList<>(primitive.asJava()));
         final Vector<Integer> offsetPrimitive = Vector.range(-5, n).drop(5);
-        final Vector<Integer> offsetBoxed = Vector.ofAll(Vector.range(-5, n).toJavaList()).drop(5);
+        final Vector<Integer> offsetBoxed = Vector.ofAll(new java.util.ArrayList<>(Vector.range(-5, n).asJava())).drop(5);
         return java.util.List.of(primitive, boxed, offsetPrimitive, offsetBoxed);
     }
 
@@ -3042,7 +2997,7 @@ public class VectorTest extends AbstractTraversableTest {
                         }
                         final Vector<Integer> slice = vector.slice(k, k + 3);
                         // a Vector, a JDK list (traversable again), a lazy Stream and a one-shot Iterator
-                        for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>> of(slice, slice.toJavaList(), Stream.ofAll(slice))) {
+                        for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>> of(slice, new java.util.ArrayList<>(slice.asJava()), Stream.ofAll(slice))) {
                             assertThat(vector.indexOfSlice(shape)).isEqualTo(k);
                             assertThat(vector.indexOfSliceOption(shape)).isEqualTo(Option.some(k));
                             assertThat(vector.lastIndexOfSlice(shape)).isEqualTo(k);
@@ -3127,28 +3082,28 @@ public class VectorTest extends AbstractTraversableTest {
                         final Vector<Integer> suffix = vector.drop(k);
                         // a Vector (compared by index), a JDK list, a Stream and a one-shot Iterator (walked once)
                         assertThat(vector.startsWith(prefix)).isTrue();
-                        assertThat(vector.startsWith(prefix.toJavaList())).isTrue();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(prefix.asJava()))).isTrue();
                         assertThat(vector.startsWith(Stream.ofAll(prefix))).isTrue();
                         assertThat(vector.startsWith(Iterator.ofAll(prefix))).isTrue();
                         assertThat(vector.startsWith(suffix, k)).isTrue();
-                        assertThat(vector.startsWith(suffix.toJavaList(), k)).isTrue();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.asJava()), k)).isTrue();
                         assertThat(vector.startsWith(Iterator.ofAll(suffix), k)).isTrue();
                         assertThat(vector.endsWith(suffix)).isTrue();
-                        assertThat(vector.endsWith(suffix.toJavaList())).isTrue();
+                        assertThat(vector.endsWith(new java.util.ArrayList<>(suffix.asJava()))).isTrue();
                         assertThat(vector.endsWith(Stream.ofAll(suffix))).isTrue();
                         assertThat(vector.endsWith(Iterator.ofAll(suffix))).isTrue();
                         // one element too many, or one element wrong, in either shape
                         assertThat(vector.startsWith(prefix.append(-1))).isFalse();
-                        assertThat(vector.startsWith(prefix.append(-1).toJavaList())).isFalse();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(prefix.append(-1).asJava()))).isFalse();
                         assertThat(vector.startsWith(suffix.append(-1), k)).isFalse();
-                        assertThat(vector.startsWith(suffix.append(-1).toJavaList(), k)).isFalse();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.append(-1).asJava()), k)).isFalse();
                         assertThat(vector.endsWith(suffix.prepend(-1))).isFalse();
-                        assertThat(vector.endsWith(suffix.prepend(-1).toJavaList())).isFalse();
+                        assertThat(vector.endsWith(new java.util.ArrayList<>(suffix.prepend(-1).asJava()))).isFalse();
                         if (k < n) {
                             assertThat(vector.startsWith(prefix.append(-1).appendAll(vector.drop(k + 1)))).isFalse();
                             assertThat(vector.endsWith(vector.take(k).append(-1).appendAll(vector.drop(k + 1)))).isFalse();
                             assertThat(vector.startsWith(suffix.update(0, -1), k)).isFalse();
-                            assertThat(vector.startsWith(suffix.update(0, -1).toJavaList(), k)).isFalse();
+                            assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.update(0, -1).asJava()), k)).isFalse();
                         }
                     }
                     // an empty prefix starts anywhere, even beyond the end; a negative offset never matches
@@ -3213,9 +3168,9 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldReverseAndIterateBackwardsAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final java.util.List<Integer> expected = new java.util.ArrayList<>(vector.toJavaList());
+                    final java.util.List<Integer> expected = new java.util.ArrayList<>(vector.asJava());
                     java.util.Collections.reverse(expected);
-                    assertThat(vector.reverse().toJavaList()).isEqualTo(expected);
+                    assertThat(new java.util.ArrayList<>(vector.reverse().asJava())).isEqualTo(expected);
                     assertThat(vector.reverse().reverse()).isEqualTo(vector);
                     final java.util.Iterator<Integer> iterator = vector.reverse().iterator();
                     assertThat(new java.util.ArrayList<>(vector.reverse().asJava())).isEqualTo(expected);
@@ -3374,7 +3329,7 @@ public class VectorTest extends AbstractTraversableTest {
     class RotateTests {
 
         private java.util.List<Integer> rotatedLeft(Vector<Integer> vector, int n) {
-            final java.util.List<Integer> list = new java.util.ArrayList<>(vector.toJavaList());
+            final java.util.List<Integer> list = new java.util.ArrayList<>(vector.asJava());
             if (!list.isEmpty()) {
                 java.util.Collections.rotate(list, -Math.floorMod(n, list.size()));
             }
@@ -3382,7 +3337,7 @@ public class VectorTest extends AbstractTraversableTest {
         }
 
         private java.util.List<Integer> rotatedRight(Vector<Integer> vector, int n) {
-            final java.util.List<Integer> list = new java.util.ArrayList<>(vector.toJavaList());
+            final java.util.List<Integer> list = new java.util.ArrayList<>(vector.asJava());
             if (!list.isEmpty()) {
                 java.util.Collections.rotate(list, Math.floorMod(n, list.size()));
             }
@@ -3394,8 +3349,8 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
                     for (int distance : new int[] { Integer.MIN_VALUE, -2 * n - 3, -n - 1, -n, -33, -32, -31, -1, 0, 1, 31, 32, 33, n - 1, n, n + 1, 2 * n + 3, Integer.MAX_VALUE }) {
-                        assertThat(vector.rotateLeft(distance).toJavaList()).isEqualTo(rotatedLeft(vector, distance));
-                        assertThat(vector.rotateRight(distance).toJavaList()).isEqualTo(rotatedRight(vector, distance));
+                        assertThat(new java.util.ArrayList<>(vector.rotateLeft(distance).asJava())).isEqualTo(rotatedLeft(vector, distance));
+                        assertThat(new java.util.ArrayList<>(vector.rotateRight(distance).asJava())).isEqualTo(rotatedRight(vector, distance));
                         if (distance != Integer.MIN_VALUE) { // -MIN_VALUE overflows
                             assertThat(vector.rotateRight(distance)).isEqualTo(vector.rotateLeft(-distance));
                         }
@@ -3427,18 +3382,18 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
                     final Vector<Integer> shuffled = vector.shuffle();
-                    final java.util.List<Integer> before = shuffled.toJavaList();
+                    final java.util.List<Integer> before = new java.util.ArrayList<>(shuffled.asJava());
                     assertThat(shuffled.size()).isEqualTo(n);
                     assertThat(shuffled.sorted()).isEqualTo(vector);
                     assertThat(shuffled.sorted(Comparator.reverseOrder())).isEqualTo(vector.reverse());
                     assertThat(shuffled.sortBy(i -> -i)).isEqualTo(vector.reverse());
                     assertThat(shuffled.sortBy(Comparator.reverseOrder(), i -> -i)).isEqualTo(vector);
-                    assertThat(shuffled.sorted().toJavaList()).isEqualTo(vector.toJavaList());
+                    assertThat(new java.util.ArrayList<>(shuffled.sorted().asJava())).isEqualTo(new java.util.ArrayList<>(vector.asJava()));
                     if (n <= 1) {
                         assertThat(shuffled).isSameAs(vector);
                     }
                     // the receiver is never touched: the sorts copy to an array, Arrays.sort that copy and regroup it
-                    assertThat(shuffled.toJavaList()).isEqualTo(before);
+                    assertThat(new java.util.ArrayList<>(shuffled.asJava())).isEqualTo(before);
                 }
             }
         }
@@ -3449,7 +3404,7 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : new int[] { 3, 32, 33, 1025 }) {
                 for (Vector<Integer> vector : representations(n)) {
                     final Vector<Integer> shuffled = vector.shuffle();
-                    final java.util.List<Integer> before = shuffled.toJavaList();
+                    final java.util.List<Integer> before = new java.util.ArrayList<>(shuffled.asJava());
                     final java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
                     final Comparator<Integer> failing = (a, b) -> {
                         if (calls.incrementAndGet() > n / 2) {
@@ -3458,10 +3413,10 @@ public class VectorTest extends AbstractTraversableTest {
                         return Integer.compare(a, b);
                     };
                     assertThatThrownBy(() -> shuffled.sorted(failing)).isInstanceOf(IllegalStateException.class).hasMessage("mid-sort");
-                    assertThat(shuffled.toJavaList()).isEqualTo(before);
+                    assertThat(new java.util.ArrayList<>(shuffled.asJava())).isEqualTo(before);
                     calls.set(0);
                     assertThatThrownBy(() -> shuffled.sortBy(failing, i -> i)).isInstanceOf(IllegalStateException.class).hasMessage("mid-sort");
-                    assertThat(shuffled.toJavaList()).isEqualTo(before);
+                    assertThat(new java.util.ArrayList<>(shuffled.asJava())).isEqualTo(before);
                     assertThat(shuffled.sorted()).isEqualTo(vector);
                 }
             }
@@ -3536,11 +3491,12 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
                     final java.util.List<Integer> view = vector.asJava();
+                    final java.util.List<Object> expected = java.util.Arrays.asList(vector.toArray());
                     assertThat(view.size()).isEqualTo(n);
                     assertThat(view.isEmpty()).isEqualTo(n == 0);
-                    assertThat(new java.util.ArrayList<>(view)).isEqualTo(vector.toJavaList());
-                    assertThat(view).isEqualTo(vector.toJavaList());
-                    assertThat(view.hashCode()).isEqualTo(vector.toJavaList().hashCode());
+                    assertThat(new java.util.ArrayList<>(view)).isEqualTo(expected);
+                    assertThat(view).isEqualTo(expected);
+                    assertThat(view.hashCode()).isEqualTo(expected.hashCode());
                     for (int k : positions(n)) {
                         if (k < n) {
                             assertThat(view.get(k)).isEqualTo(k);
@@ -3548,85 +3504,26 @@ public class VectorTest extends AbstractTraversableTest {
                             assertThat(view.lastIndexOf(k)).isEqualTo(k);
                             assertThat(view.contains(k)).isTrue();
                         }
-                        assertThat(view.subList(k, n)).isEqualTo(vector.drop(k).toJavaList());
-                        assertThat(view.subList(0, k)).isEqualTo(vector.take(k).toJavaList());
+                        assertThat(view.subList(k, n)).isEqualTo(java.util.Arrays.asList(vector.drop(k).toArray()));
+                        assertThat(view.subList(0, k)).isEqualTo(java.util.Arrays.asList(vector.take(k).toArray()));
                     }
                     assertThat(view.indexOf(-1)).isEqualTo(-1);
                     assertThat(view.lastIndexOf(n)).isEqualTo(-1);
                     assertThat(view.contains(n)).isFalse();
-                    assertThat(view.containsAll(vector.take(3).toJavaList())).isTrue();
+                    assertThat(view.containsAll(java.util.Arrays.asList(vector.take(3).toArray()))).isTrue();
                     assertThatThrownBy(() -> view.get(n)).isInstanceOf(IndexOutOfBoundsException.class);
                     assertThatThrownBy(() -> view.add(1)).isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(() -> view.add(0, 1)).isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(() -> view.set(0, 1)).isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(() -> view.remove(0)).isInstanceOf(UnsupportedOperationException.class);
-                    if (n > 0) {
-                        // sort and clear return early on an empty list, as java.util.Collections.unmodifiableList does
-                        assertThatThrownBy(() -> view.sort(Comparator.reverseOrder())).isInstanceOf(UnsupportedOperationException.class);
-                        assertThatThrownBy(view::clear).isInstanceOf(UnsupportedOperationException.class);
-                    }
+                    // even where the call would change nothing (an empty view)
+                    assertThatThrownBy(() -> view.sort(Comparator.reverseOrder())).isInstanceOf(UnsupportedOperationException.class);
+                    assertThatThrownBy(view::clear).isInstanceOf(UnsupportedOperationException.class);
                     assertThat(Vector.ofAll(view)).isSameAs(vector);
                 }
             }
         }
-
-        @Test
-        public void shouldWriteThroughTheMutableViewWithEveryOperation() {
-            for (int n : new int[] { 1, 32, 33, 1025 }) {
-                for (Vector<Integer> vector : representations(n)) {
-                    final java.util.List<Integer> view = vector.asJavaMutable();
-                    final java.util.List<Integer> reference = new java.util.ArrayList<>(vector.toJavaList());
-                    view.add(-1);
-                    reference.add(-1);
-                    view.add(0, -2);
-                    reference.add(0, -2);
-                    view.addAll(java.util.List.of(-3, -4));
-                    reference.addAll(java.util.List.of(-3, -4));
-                    view.addAll(1, java.util.List.of(-5, -6));
-                    reference.addAll(1, java.util.List.of(-5, -6));
-                    assertThat(view.set(1, -7)).isEqualTo(-5);
-                    reference.set(1, -7);
-                    assertThat(view.remove(Integer.valueOf(-6))).isTrue();
-                    reference.remove(Integer.valueOf(-6));
-                    assertThat(view.remove(Integer.valueOf(-99))).isFalse();
-                    assertThat(view.remove(0)).isEqualTo(-2);
-                    reference.remove(0);
-                    assertThat(view.removeAll(java.util.List.of(-3, -99))).isTrue();
-                    reference.removeAll(java.util.List.of(-3, -99));
-                    assertThat(view.retainAll(reference)).isFalse();
-                    view.sort(Comparator.reverseOrder());
-                    reference.sort(Comparator.reverseOrder());
-                    assertThat(view).isEqualTo(reference);
-                    assertThat(view.subList(1, view.size())).isEqualTo(reference.subList(1, reference.size()));
-                    final java.util.Iterator<Integer> iterator = view.iterator();
-                    iterator.next();
-                    iterator.remove();
-                    reference.remove(0);
-                    assertThat(view).isEqualTo(reference);
-                    assertThat(vector.size()).isEqualTo(n); // the Vector itself never changes
-                    view.clear();
-                    assertThat(view).isEmpty();
-                    assertThat(view.retainAll(java.util.List.of(1))).isFalse();
-                }
-            }
-        }
-
-        @Test
-        public void shouldPassTheViewToTheActionAndReturnTheVectorItHolds() {
-            final Vector<Integer> vector = of(1, 2, 3);
-            final java.util.List<java.util.List<Integer>> seen = new java.util.ArrayList<>();
-            assertThat(vector.asJava(seen::add)).isSameAs(vector);
-            assertThat(seen.get(0)).isEqualTo(java.util.List.of(1, 2, 3));
-            assertThatThrownBy(() -> seen.get(0).add(4)).isInstanceOf(UnsupportedOperationException.class);
-            assertThat(vector.asJavaMutable(list -> { })).isSameAs(vector);
-            final Vector<Integer> modified = vector.asJavaMutable(list -> { list.add(4); list.remove(0); });
-            assertThat(modified).isEqualTo(of(2, 3, 4));
-            assertThat(vector).isEqualTo(of(1, 2, 3));
-            assertThatNullPointerException().isThrownBy(() -> vector.asJava(null)).withMessage("action is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.asJavaMutable(null)).withMessage("action is null");
-        }
     }
-
 
     @Nested
     class EqualityAcrossSequenceTypesTests {
@@ -3646,7 +3543,7 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(List.empty().equals(Vector.empty())).isTrue();
             assertThat(Vector.range(0, 1025).equals(List.range(0, 1025))).isTrue();
             assertThat(List.range(0, 1025).equals(Vector.range(0, 1025))).isTrue();
-            assertThat(Vector.range(0, 1025).equals(Vector.ofAll(Vector.range(0, 1025).toJavaList()))).isTrue();
+            assertThat(Vector.range(0, 1025).equals(Vector.ofAll(new java.util.ArrayList<>(Vector.range(0, 1025).asJava())))).isTrue();
         }
     }
 
@@ -3657,28 +3554,28 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : new int[] { 1, 31, 32, 33, 1023, 1024, 1025 }) {
                 for (Vector<Integer> vector : representations(n)) {
                     for (int i : positions(n)) {
-                        final java.util.List<Integer> reference = new java.util.ArrayList<>(vector.toJavaList());
+                        final java.util.List<Integer> reference = new java.util.ArrayList<>(vector.asJava());
                         reference.add(i, -1);
-                        assertThat(vector.insert(i, -1).toJavaList()).isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(vector.insert(i, -1).asJava())).isEqualTo(reference);
                         reference.add(i + 1, -2);
-                        assertThat(vector.insertAll(i, Vector.of(-1, -2)).toJavaList()).isEqualTo(reference);
-                        assertThat(vector.insertAll(i, java.util.List.of(-1, -2)).toJavaList()).isEqualTo(reference);
-                        assertThat(vector.insertAll(i, Iterator.of(-1, -2)).toJavaList()).isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, Vector.of(-1, -2)).asJava())).isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, java.util.List.of(-1, -2)).asJava())).isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, Iterator.of(-1, -2)).asJava())).isEqualTo(reference);
                         assertThat(vector.insertAll(i, Vector.empty())).isEqualTo(vector);
                         if (i < n) {
-                            final java.util.List<Integer> removed = new java.util.ArrayList<>(vector.toJavaList());
+                            final java.util.List<Integer> removed = new java.util.ArrayList<>(vector.asJava());
                             removed.remove(i);
-                            assertThat(vector.removeAt(i).toJavaList()).isEqualTo(removed);
-                            assertThat(vector.remove(i).toJavaList()).isEqualTo(removed);
-                            assertThat(vector.removeFirst(e -> e == i).toJavaList()).isEqualTo(removed);
-                            assertThat(vector.removeLast(e -> e == i).toJavaList()).isEqualTo(removed);
-                            final java.util.List<Integer> updated = new java.util.ArrayList<>(vector.toJavaList());
+                            assertThat(new java.util.ArrayList<>(vector.removeAt(i).asJava())).isEqualTo(removed);
+                            assertThat(new java.util.ArrayList<>(vector.remove(i).asJava())).isEqualTo(removed);
+                            assertThat(new java.util.ArrayList<>(vector.removeFirst(e -> e == i).asJava())).isEqualTo(removed);
+                            assertThat(new java.util.ArrayList<>(vector.removeLast(e -> e == i).asJava())).isEqualTo(removed);
+                            final java.util.List<Integer> updated = new java.util.ArrayList<>(vector.asJava());
                             updated.set(i, -1);
-                            assertThat(vector.update(i, -1).toJavaList()).isEqualTo(updated);
-                            assertThat(vector.update(i, e -> -1).toJavaList()).isEqualTo(updated);
-                            assertThat(vector.replace(i, -1).toJavaList()).isEqualTo(updated);
-                            assertThat(vector.replaceAll(i, -1).toJavaList()).isEqualTo(updated);
-                            assertThat(vector.patch(i, Vector.of(-1), 1).toJavaList()).isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(vector.update(i, -1).asJava())).isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(vector.update(i, e -> -1).asJava())).isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(vector.replace(i, -1).asJava())).isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(vector.replaceAll(i, -1).asJava())).isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(vector.patch(i, Vector.of(-1), 1).asJava())).isEqualTo(updated);
                         }
                     }
                     assertThatThrownBy(() -> vector.insert(n + 1, 0)).isInstanceOf(IndexOutOfBoundsException.class);
@@ -5657,49 +5554,6 @@ public class VectorTest extends AbstractTraversableTest {
         assertThat(array).isEqualTo(expected);
     }
 
-    // -- toJavaList
-
-    @TestTemplate
-    public void shouldConvertNilToArrayList() {
-        assertThat(this.<Integer>empty().toJavaList()).isEqualTo(new ArrayList<Integer>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToArrayList() {
-        assertThat(of(1, 2, 3).toJavaList()).isEqualTo(asList(1, 2, 3));
-    }
-
-    // -- toJavaMap(Function)
-
-    @TestTemplate
-    public void shouldConvertNilToHashMap() {
-        assertThat(this.<Integer>empty().toJavaMap(x -> Tuple.of(x, x))).isEqualTo(new java.util.HashMap<>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToHashMap() {
-        final java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
-        expected.put(1, 1);
-        expected.put(2, 2);
-        assertThat(of(1, 2).toJavaMap(x -> Tuple.of(x, x))).isEqualTo(expected);
-    }
-
-    // -- toJavaSet
-
-    @TestTemplate
-    public void shouldConvertNilToHashSet() {
-        assertThat(this.<Integer>empty().toJavaSet()).isEqualTo(new java.util.HashSet<>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToHashSet() {
-        final java.util.Set<Integer> expected = new java.util.HashSet<>();
-        expected.add(2);
-        expected.add(1);
-        expected.add(3);
-        assertThat(of(1, 2, 2, 3).toJavaSet()).containsExactlyInAnyOrderElementsOf(expected);
-    }
-
     // -- single
 
     @TestTemplate
@@ -5889,65 +5743,6 @@ public class VectorTest extends AbstractTraversableTest {
     public void shouldConvertToStream() {
         assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
         assertThat(empty().toStream()).isSameAs(Stream.empty());
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaCollectionUsingSupplier() {
-        final java.util.List<Integer> ints = of(1, 2, 3).toJavaCollection(ArrayList::new);
-        assertThat(ints).isEqualTo(asList(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaList() {
-        final java.util.List<Integer> list = of(1, 2, 3).toJavaList();
-        assertThat(list).isEqualTo(asList(1, 2, 3));
-        assertThat(empty().toJavaList()).isEmpty();
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaListUsingSupplier() {
-        final java.util.List<Integer> ints = of(1, 2, 3).toJavaList(ArrayList::new);
-        assertThat(ints).isEqualTo(asList(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingFunction() {
-        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(v -> Tuple.of(v, v));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-        assertThat(empty().toJavaMap(v -> Tuple.of(v, v))).isEqualTo(java.util.Map.of());
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingSupplierAndFunction() {
-        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, i -> Tuple.of(i, i));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingSupplierAndTwoFunction() {
-        final java.util.Map<Integer, String> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, Function.identity(), String::valueOf);
-        assertThat(map).isEqualTo(java.util.Map.of(1, "1", 2, "2", 3, "3"));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaSet() {
-        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet();
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
-        assertThat(empty().toJavaSet()).isEmpty();
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaSetUsingSupplier() {
-        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet(java.util.HashSet::new);
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaParallelStream() {
-        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).toJavaParallelStream();
-        assertThat(s1.isParallel()).isTrue();
-        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
-        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
     }
 
     // -- the range factories
@@ -6511,7 +6306,6 @@ public class VectorTest extends AbstractTraversableTest {
         }
     }
 
-
     @Nested
     class WindowsOfVectorsTests {
 
@@ -6701,7 +6495,6 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(Vector.of(1).crossProduct(5)).isEqualTo(Vector.of(Vector.of(1, 1, 1, 1, 1)));
         }
     }
-
 
     // -- one-shot arguments (a java.util.stream can be iterated once): every argument is read exactly once
 

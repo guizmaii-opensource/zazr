@@ -334,8 +334,12 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
     }
 
     /**
-     * An unmodifiable {@link java.util.Collection} view of this collection: no copy, O(1) to create, every
-     * mutator throws {@link UnsupportedOperationException}. The sequences return a {@link java.util.List} view.
+     * An unmodifiable {@link java.util.Collection} view of this collection: no copy, O(1) to create, reads go through
+     * to this collection, which never changes, and every mutator of the view throws
+     * {@link UnsupportedOperationException}, whether or not it would change anything. The sequences narrow it to a
+     * {@link java.util.List} view, the sets to a {@link java.util.Set} view; a map's is the {@code Collection} of its
+     * entries, and its {@link java.util.Map} view is {@link Map#asJavaMap()}. A mutable copy is
+     * {@code new java.util.ArrayList<>(traversable.asJava())}.
      *
      * @return a read-only view of the elements
      */

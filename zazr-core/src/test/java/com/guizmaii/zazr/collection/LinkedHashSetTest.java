@@ -1165,49 +1165,6 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).sum()).isEqualTo(BigDecimal.ONE);
     }
 
-    // -- toJavaList
-
-    @TestTemplate
-    public void shouldConvertNilToArrayList() {
-        assertThat(this.<Integer>empty().toJavaList()).isEqualTo(new ArrayList<Integer>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToArrayList() {
-        assertThat(of(1, 2, 3).toJavaList()).isEqualTo(asList(1, 2, 3));
-    }
-
-    // -- toJavaMap(Function)
-
-    @TestTemplate
-    public void shouldConvertNilToHashMap() {
-        assertThat(this.<Integer>empty().toJavaMap(x -> Tuple.of(x, x))).isEqualTo(new java.util.HashMap<>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToHashMap() {
-        final java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
-        expected.put(1, 1);
-        expected.put(2, 2);
-        assertThat(of(1, 2).toJavaMap(x -> Tuple.of(x, x))).isEqualTo(expected);
-    }
-
-    // -- toJavaSet
-
-    @TestTemplate
-    public void shouldConvertNilToHashSet() {
-        assertThat(this.<Integer>empty().toJavaSet()).isEqualTo(new java.util.HashSet<>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToHashSet() {
-        final java.util.Set<Integer> expected = new java.util.HashSet<>();
-        expected.add(2);
-        expected.add(1);
-        expected.add(3);
-        assertThat(of(1, 2, 2, 3).toJavaSet()).containsExactlyInAnyOrderElementsOf(expected);
-    }
-
     // -- as
 
     @TestTemplate
@@ -1397,65 +1354,6 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     public void shouldConvertToStream() {
         assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
         assertThat(empty().toStream()).isSameAs(Stream.empty());
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaCollectionUsingSupplier() {
-        final java.util.List<Integer> ints = of(1, 2, 3).toJavaCollection(ArrayList::new);
-        assertThat(ints).isEqualTo(asList(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaList() {
-        final java.util.List<Integer> list = of(1, 2, 3).toJavaList();
-        assertThat(list).isEqualTo(asList(1, 2, 3));
-        assertThat(empty().toJavaList()).isEmpty();
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaListUsingSupplier() {
-        final java.util.List<Integer> ints = of(1, 2, 3).toJavaList(ArrayList::new);
-        assertThat(ints).isEqualTo(asList(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingFunction() {
-        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(v -> Tuple.of(v, v));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-        assertThat(empty().toJavaMap(v -> Tuple.of(v, v))).isEqualTo(java.util.Map.of());
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingSupplierAndFunction() {
-        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, i -> Tuple.of(i, i));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingSupplierAndTwoFunction() {
-        final java.util.Map<Integer, String> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, Function.identity(), String::valueOf);
-        assertThat(map).isEqualTo(java.util.Map.of(1, "1", 2, "2", 3, "3"));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaSet() {
-        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet();
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
-        assertThat(empty().toJavaSet()).isEmpty();
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaSetUsingSupplier() {
-        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet(java.util.HashSet::new);
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaParallelStream() {
-        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).toJavaParallelStream();
-        assertThat(s1.isParallel()).isTrue();
-        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
-        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
     }
 
     // -- static range, rangeBy, rangeClosed, rangeClosedBy

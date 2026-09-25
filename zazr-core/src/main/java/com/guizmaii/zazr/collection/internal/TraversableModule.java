@@ -14,7 +14,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import org.jspecify.annotations.Nullable;
 
@@ -52,38 +51,11 @@ public interface TraversableModule {
         return traversable.isEmpty() ? empty : ofAll.apply(Iterator.ofAll(traversable).map(f));
     }
 
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, M extends java.util.Map<K, V>> M toJavaMap(
-            Traversable<T> traversable, Supplier<M> factory, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        Objects.requireNonNull(factory, "factory is null");
-        Objects.requireNonNull(f, "f is null");
-        final M map = factory.get();
-        for (T a : traversable) {
-            final Tuple2<? extends K, ? extends V> entry = f.apply(a);
-            map.put(entry._1(), entry._2());
-        }
-        return map;
-    }
-
     static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> Function<T, Tuple2<K, V>> entryMapper(
             Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         return t -> Tuple.of(keyMapper.apply(t), valueMapper.apply(t));
-    }
-
-    static <T extends @Nullable Object, R extends java.util.Collection<T>> R toJavaCollection(
-            Traversable<T> traversable, Function<Integer, R> containerSupplier) {
-        return toJavaCollection(traversable, containerSupplier, 16);
-    }
-
-    static <T extends @Nullable Object, R extends java.util.Collection<T>> R toJavaCollection(
-            Traversable<T> traversable, Function<Integer, R> containerSupplier, int defaultInitialCapacity) {
-        Objects.requireNonNull(containerSupplier, "factory is null");
-        // a lazy collection has no cheap size: the default capacity avoids a second traversal
-        final int size = Collections.hasDefiniteSize(traversable) ? traversable.size() : defaultInitialCapacity;
-        final R container = containerSupplier.apply(size);
-        traversable.forEach(container::add);
-        return container;
     }
 
     static <K extends @Nullable Object, T extends @Nullable Object> Option<Map<K, T>> arrangeBy(Map<K, ? extends Traversable<T>> groups) {

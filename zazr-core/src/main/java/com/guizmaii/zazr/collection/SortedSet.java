@@ -49,6 +49,20 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     Comparator<T> comparator();
 
     /**
+     * An unmodifiable {@link java.util.NavigableSet} view of this set, in the comparator's order: nothing is copied,
+     * reads go through to this set, which never changes, and every mutator of the view throws
+     * {@link UnsupportedOperationException}, {@code pollFirst} and {@code pollLast} included. The sub-sets, the
+     * head and tail sets and the descending set are views too.
+     * <p>
+     * Complexity: O(1); {@code contains}, {@code first}, {@code ceiling} and the other navigation methods of the view
+     * are O(log n).
+     *
+     * @return an unmodifiable {@code java.util.NavigableSet} view
+     */
+    @Override
+    java.util.NavigableSet<T> asJava();
+
+    /**
      * Same as {@link #flatMap(Function)} but using a specific comparator for values of the codomain of the given
      * {@code mapper}.
      *
@@ -383,9 +397,6 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      */
     @Override
     SortedSet<T> retainAll(Iterable<? extends T> elements);
-
-    @Override
-    java.util.SortedSet<T> toJavaSet();
 
     @Override
     SortedSet<T> union(Set<? extends T> elements);

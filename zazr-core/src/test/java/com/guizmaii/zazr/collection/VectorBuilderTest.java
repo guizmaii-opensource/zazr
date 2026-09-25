@@ -204,12 +204,12 @@ public class VectorBuilderTest {
             final java.util.List<Object> builtLeaves = leafIdentities(built);
             for (Vector<Integer> mutated : mutations(built, size)) {
                 assertThat(mutated).isNotNull();
-                assertThat(source.toJavaList()).as("source after mutating built").isEqualTo(list);
+                assertThat(new java.util.ArrayList<>(source.asJava())).as("source after mutating built").isEqualTo(list);
                 assertThat(leafIdentities(source)).as("source leaves after mutating built").isEqualTo(sourceLeaves);
             }
             for (Vector<Integer> mutated : mutations(source, size)) {
                 assertThat(mutated).isNotNull();
-                assertThat(built.toJavaList()).as("built after mutating source").isEqualTo(list);
+                assertThat(new java.util.ArrayList<>(built.asJava())).as("built after mutating source").isEqualTo(list);
                 assertThat(leafIdentities(built)).as("built leaves after mutating source").isEqualTo(builtLeaves);
             }
         }
@@ -240,7 +240,7 @@ public class VectorBuilderTest {
         final Vector<Integer> range = Vector.range(0, 100);
         // flatMap whose mapper returns primitive-backed Vectors: the boxing branch of addLeafRange
         final Vector<Integer> boxed = range.flatMap(i -> Vector.range(0, 40));
-        assertSameShape(boxed, Vector.ofAll(range.toJavaList().stream().flatMap(i -> IntStream.range(0, 40).boxed()).toList()), 4000);
+        assertSameShape(boxed, Vector.ofAll(new java.util.ArrayList<>(range.asJava()).stream().flatMap(i -> IntStream.range(0, 40).boxed()).toList()), 4000);
         // flatMap whose mapper returns the same full Object[] Vector: its leaf is shared in every position
         final Vector<Integer> shared = range.flatMap(i -> full32);
         assertSameShape(shared, Vector.ofAll(java.util.Collections.nCopies(100, list32).stream().flatMap(java.util.List::stream).toList()), 3200);
@@ -255,7 +255,7 @@ public class VectorBuilderTest {
         for (Vector<Integer> receiver : java.util.List.of(Vector.ofAll(big).take(5000), Vector.range(0, 5000))) {
             for (int k : new int[] { 1, 5, 31, 32, 33, 1025 }) {
                 final Vector<Integer> offset = receiver.prepend(-1).drop(k);
-                final java.util.List<Integer> expected = receiver.prepend(-1).drop(k).toJavaList();
+                final java.util.List<Integer> expected = new java.util.ArrayList<>(receiver.prepend(-1).drop(k).asJava());
                 assertSameShape(offset.map(i -> i * 2), Vector.ofAll(expected.stream().map(i -> i * 2).toList()), expected.size());
                 assertSameShape(offset.filter(i -> i % 3 == 0), Vector.ofAll(expected.stream().filter(i -> i % 3 == 0).toList()), (int) expected.stream().filter(i -> i % 3 == 0).count());
                 assertThat(offset.filter(i -> true)).isSameAs(offset);
@@ -425,7 +425,7 @@ public class VectorBuilderTest {
                     case 1 -> {
                         final int from = random.nextInt(2000), count = random.nextInt(1100);
                         final Vector<Integer> vector = Vector.range(0, 3000).slice(from, Math.min(3000, from + count));
-                        expected.addAll(vector.toJavaList());
+                        expected.addAll(new java.util.ArrayList<>(vector.asJava()));
                         builder.addAll(vector);
                     }
                     case 2 -> {
@@ -437,12 +437,12 @@ public class VectorBuilderTest {
                         // an Object[]-backed sliced source: shared leaves once aligned, copied ones otherwise
                         final int from = random.nextInt(2000), count = random.nextInt(1100);
                         final Vector<Integer> vector = boxed3000.slice(from, Math.min(3000, from + count));
-                        expected.addAll(vector.toJavaList());
+                        expected.addAll(new java.util.ArrayList<>(vector.asJava()));
                         builder.addAll(vector);
                     }
                     default -> {
                         final Vector<Integer> vector = Vector.ofAll(IntStream.range(0, random.nextInt(100)).toArray());
-                        expected.addAll(vector.toJavaList());
+                        expected.addAll(new java.util.ArrayList<>(vector.asJava()));
                         builder.addAll(vector);
                     }
                 }

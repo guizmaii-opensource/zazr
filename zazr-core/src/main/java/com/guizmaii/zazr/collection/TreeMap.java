@@ -5,9 +5,11 @@ import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.collection.internal.RedBlackTree;
 import com.guizmaii.zazr.collection.internal.RedBlackTreeModule;
+import com.guizmaii.zazr.collection.internal.TreeViews;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -217,7 +219,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param map A map
      * @param <K> The key type
      * @param <V> The value type
-     * @return A new Map containing the given map
+     * @return A new Map containing the given map; the {@link #asJavaMap()} view of a TreeMap in the natural order
+     *         gives that TreeMap back, not a copy
      */
     public static <K extends Comparable<? super K>, V extends @Nullable Object> TreeMap<K, V> ofAll(java.util.Map<? extends K, ? extends V> map) {
         Objects.requireNonNull(map, "map is null");
@@ -299,7 +302,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param map           A map
      * @param <K>           The key type
      * @param <V>           The value type
-     * @return A new Map containing the given map
+     * @return A new Map containing the given map; the {@link #asJavaMap()} view of a TreeMap ordered by
+     *         {@code keyComparator} (the same instance) gives that TreeMap back, not a copy
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> ofAll(Comparator<? super K> keyComparator, java.util.Map<? extends K, ? extends V> map) {
         Objects.requireNonNull(map, "map is null");
@@ -1233,11 +1237,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public java.util.TreeMap<K, V> toJavaMap() {
-        return toJavaMap(() -> new java.util.TreeMap<>(comparator()), t -> t);
-    }
-
-    @Override
     public Vector<V> values() {
         return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
     }
@@ -1469,6 +1468,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @SuppressWarnings("unchecked")
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromMap(EntryComparator<K, V> entryComparator, java.util.Map<? extends K, ? extends V> map) {
         Objects.requireNonNull(map, "map is null");
+        if (JavaConverters.underlying(map) instanceof TreeMap<?, ?> underlying && underlying.comparator() == entryComparator.keyComparator()) {
+            return (TreeMap<K, V>) underlying;
+        }
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (java.util.Map.Entry<K, V> entry : ((java.util.Map<K, V>) map).entrySet()) {
             tree = tree.insert(Tuple.of(requireKey(entry.getKey()), requireValue(entry.getValue())));
@@ -1534,6 +1536,28 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     private TreeMap<K, V> emptyInstance() {
         return isEmpty() ? this : new TreeMap<>(entries.emptyInstance());
+    }
+
+    /**
+     * An unmodifiable {@link java.util.NavigableMap} view of this TreeMap, in the order of its keys: nothing is copied,
+     * reads go through to this map, which never changes, and every mutator of the view (including those of its key
+     * sets, values, entry set, iterators and sub-views, and {@code setValue} on its entries) throws
+     * {@link UnsupportedOperationException}, {@code pollFirstEntry} and {@code pollLastEntry} included.
+     * {@code subMap}, {@code headMap}, {@code tailMap}, {@code descendingMap} and the key sets are views too, with the
+     * bounds rules of {@link java.util.TreeMap}; {@code comparator()} is {@code null} when this map uses the natural
+     * order of its keys. The view equals any {@code java.util.Map} with the same mappings. A mutable copy is
+     * {@code new java.util.TreeMap<>(map.asJavaMap())}; {@code TreeMap.ofAll} given the view and this map's comparator
+     * returns this map without copying.
+     * <p>
+     * Complexity: O(1); {@code get}, {@code containsKey}, {@code size}, {@code firstKey}, {@code lastKey} and the
+     * {@code ceiling}, {@code floor}, {@code higher} and {@code lower} lookups on the view and on its sub-views are
+     * O(log n), an iterator is O(log n) to create and amortized O(1) per step.
+     *
+     * @return an unmodifiable {@code java.util.NavigableMap} view
+     */
+    @Override
+    public java.util.NavigableMap<K, V> asJavaMap() {
+        return TreeViews.asJavaMap(this, entries, comparator());
     }
 
     @Override

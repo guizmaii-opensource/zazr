@@ -5,6 +5,8 @@ import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.AbstractIterator;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.MapViews;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
@@ -156,10 +158,15 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @param map A map
      * @param <K> The key type
      * @param <V> The value type
-     * @return A new Map containing the given map
+     * @return A new Map containing the given map; the {@link #asJavaMap()} view of a LinkedHashMap (not its
+     *         {@code reversed()} view) gives that LinkedHashMap back, not a copy
      */
+    @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofAll(java.util.Map<? extends K, ? extends V> map) {
         Objects.requireNonNull(map, "map is null");
+        if (JavaConverters.underlying(map) instanceof LinkedHashMap<?, ?> underlying) {
+            return (LinkedHashMap<K, V>) underlying;
+        }
         LinkedHashMap<K, V> result = LinkedHashMap.empty();
         for (java.util.Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             result = result.put(entry.getKey(), entry.getValue());
@@ -524,13 +531,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @param entries Map entries
      * @param <K>     The key type
      * @param <V>     The value type
-     * @return A LinkedHashMap containing the given entries (the same instance if {@code entries} is already a LinkedHashMap)
+     * @return A LinkedHashMap containing the given entries (the same instance if {@code entries} is already a
+     *         LinkedHashMap, or the {@link #asJava()} view of one)
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofEntries(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         Objects.requireNonNull(entries, "entries is null");
         if (entries instanceof LinkedHashMap) {
             return (LinkedHashMap<K, V>) entries;
+        } else if (JavaConverters.underlying(entries) instanceof LinkedHashMap<?, ?> underlying) {
+            return (LinkedHashMap<K, V>) underlying;
         } else {
             HashMap<K, V> map = HashMap.empty();
             Vector<K> list = Vector.empty();
@@ -685,6 +695,61 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             protected Tuple2<K, V> getNext() {
                 nextKeyDefined = false;
                 return map.get(nextKey).get().entry();
+            }
+        };
+    }
+
+    /**
+     * An unmodifiable {@link java.util.SequencedMap} view of this LinkedHashMap, in insertion order: nothing is
+     * copied, reads go through to this map, which never changes, and every mutator of the view (including those of
+     * its key set, values, entry set and their iterators, and {@code setValue} on its entries) throws
+     * {@link UnsupportedOperationException}. {@code reversed()} is a view in reverse insertion order. The view equals
+     * any {@code java.util.Map} with the same mappings. A mutable copy is
+     * {@code new java.util.LinkedHashMap<>(map.asJavaMap())}; {@code LinkedHashMap.ofAll} given the view returns this
+     * map without copying.
+     * <p>
+     * Complexity: O(1); {@code get} and {@code containsKey} on the view are effectively O(1), and so is each step of
+     * its iterators, in either order.
+     *
+     * @return an unmodifiable {@code java.util.SequencedMap} view
+     */
+    @Override
+    public java.util.SequencedMap<K, V> asJavaMap() {
+        return MapViews.asJavaMap(this, this::reverseIterator);
+    }
+
+    /**
+     * The entries in reverse insertion order, which the reversed views of {@code asJavaMap()} and of
+     * {@link LinkedHashSet#asJava()} walk.
+     * <p>
+     * Complexity: O(1) to create; each step is effectively O(1) (one positional read and one hash lookup per key,
+     * skipping the removed keys' markers), a whole walk O(n).
+     *
+     * @return a new iterator
+     */
+    java.util.Iterator<Tuple2<K, V>> reverseIterator() {
+        return new AbstractIterator<Tuple2<K, V>>() {
+            private int index = list.size() - 1;
+            private @Nullable Tuple2<K, V> next;
+
+            @Override
+            public boolean hasNext() {
+                while (next == null && index >= 0) {
+                    final K key = list.get(index--);
+                    if (key != TOMBSTONE) {
+                        next = entryAt(key);
+                    }
+                }
+                return next != null;
+            }
+
+            @Override
+            // AbstractIterator only calls getNext() after hasNext() returned true, which set next
+            @SuppressWarnings("NullAway")
+            protected Tuple2<K, V> getNext() {
+                final Tuple2<K, V> entry = next;
+                next = null;
+                return entry;
             }
         };
     }
@@ -953,11 +1018,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public int size() {
         return map.size();
-    }
-
-    @Override
-    public java.util.LinkedHashMap<K, V> toJavaMap() {
-        return toJavaMap(java.util.LinkedHashMap::new, t -> t);
     }
 
     @Override

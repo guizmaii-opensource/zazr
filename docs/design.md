@@ -174,6 +174,96 @@ on the zazr type). The other direction stays `Vector.ofAll(Iterable)` with a fas
 does). Trade-off accepted: a call to `asJava()` is needed at every JDK boundary, in exchange for zazr
 types that only expose the operations they support.
 
+**Implemented (#26).** The views, all in `collection.internal`, never named by a public signature:
+
+| type | method | view |
+|---|---|---|
+| `Vector`, `List`, `Queue`, `Stream` (and `NonEmptyVector`, whose view is its `Vector`'s) | `asJava()` | `java.util.List` (`JavaConverters.ListView`, one subclass per type) |
+| every other `Traversable` | `asJava()` | `java.util.Collection` (`JavaConverters.CollectionView`) |
+| `HashSet` | `asJava()` | `java.util.Set` (`SetViews.HashSetView`) |
+| `LinkedHashSet` | `asJava()` | `SequencedSet` (`SetViews.SequencedSetView`) |
+| `TreeSet` (and `SortedSet`) | `asJava()` | `NavigableSet` (`TreeViews.NavigableKeySetView`) |
+| `HashMap` (and `Map`) | `asJavaMap()` | `java.util.Map` (`MapViews.HashMapView`) |
+| `LinkedHashMap` | `asJavaMap()` | `SequencedMap` (`MapViews.SequencedMapView`) |
+| `TreeMap` (and `SortedMap`) | `asJavaMap()` | `NavigableMap` (`TreeViews.NavigableMapView`) |
+
+Deleted on every type: `toJavaList` ×2, `toJavaSet` ×2, `toJavaMap` ×3 (and the abstract `Set.toJavaSet()`,
+`SortedSet.toJavaSet()`, `Map.toJavaMap()`, `SortedMap.toJavaMap()`), `toJavaCollection`, `toJavaParallelStream`
+(`stream().parallel()`), `asJavaMutable` ×2, `asJava(Consumer)`, with the list view's `mutable` flag,
+`ChangePolicy` and `ensureMutable()`. `toJavaArray` and `toJavaStream` were already gone (step 3 of #24). A copy is
+`new ArrayList<>(x.asJava())`, `new HashMap<>(m.asJavaMap())`, which the javadoc of each `asJava`/`asJavaMap` says.
+Decided while implementing:
+
+- **Unmodifiable, unconditionally.** Every mutator throws `UnsupportedOperationException` whatever its arguments
+  and whether or not it would change anything: `clear()` on an empty view, `removeIf` matching nothing,
+  `remove` of an absent element, `sort`/`replaceAll` on an empty list, `retainAll` of the same elements, the
+  `compute*`/`merge`/`putIfAbsent`/`replace` family of a map whatever its function returns, `iterator().remove()`,
+  the `ListIterator` mutators, `addFirst`/`addLast`/`removeFirst`/`removeLast`, `putFirst`/`putLast`, and
+  `Map.Entry.setValue` (entries are `AbstractMap.SimpleImmutableEntry`). The JDK defaults that would return early
+  (`List.removeFirst` on an empty list, `SequencedMap.pollFirstEntry` on an empty map) are overridden.
+  **`pollFirst`/`pollLast` and `pollFirstEntry`/`pollLastEntry` throw** too: they remove, as
+  `Collections.unmodifiableNavigableSet` has them throw.
+- **Live without staleness.** A view reads the persistent value it was made from; nothing can change it, so a
+  sub-list, a sub-map or a key set is a view of the same value for as long as it lives (the old "detached snapshot"
+  note of `subList` is gone: a snapshot of a value that never changes is the value).
+- **`Stream`'s list view forces no more than the read needs**: `get(i)` forces `i + 1` cells, the iterator and the
+  spliterator one per step, `isEmpty`, `contains`, `indexOf` and `equals` until they have the answer, the bound
+  checks of `subList(from, to)` and `listIterator(i)` `to` and `i` cells; `size()`, `lastIndexOf`, `hashCode`,
+  `getLast()` and every read of `reversed()` force the whole Stream and do not terminate on an infinite one
+  (the javadoc of `Stream.asJava()` says so).
+- **`reversed()` of a list view** is a view of the same sequence with the positions mirrored. Its iterator walks
+  a `Vector` down by index (effectively O(1) per step) and reverses a `List`, `Queue` or `Stream` once when it is
+  created (O(n)). A list iterator moves forward on the delegate's own iterator (O(1) per step on every type) and
+  backward by positional `get` (O(i) on the linear types).
+- **`subList` range errors follow the JDK class of the reference**: the forward view throws as `ArrayList` does
+  (`IndexOutOfBoundsException` for `from < 0` or `to > size`, `IllegalArgumentException` for `from > to`), the
+  reversed view as the JDK's reversed list views do (`Objects.checkFromToIndex`, an `IndexOutOfBoundsException` in
+  every case).
+- **The tree views read the red-black tree.** `TreeSet`/`TreeMap` have no public key navigation (`ceiling`,
+  `floor`, split by key), so `asJava()`/`asJavaMap()` hand their private tree to `TreeViews`, as they already hand
+  it to `RedBlackTreeModule`; no member is widened. A `TreeViews.TreeRange` is the tree, the key comparator and
+  optional bounds; the sub-views, the descending views and a map's key sets share the tree and carry other bounds or
+  the other direction. `ceiling`/`floor`/`higher`/`lower`, `first`/`last`, `contains`/`get` and `size` (a rank
+  difference over the subtree sizes every node stores) are O(log n), an iterator is O(log n) to create (an array
+  stack down to the lower bound) and amortized O(1) per step; a `TreeMap` lookup compares the probe with each
+  node's key in place, with no probe `Tuple2`. The bounds rules are those of `java.util.TreeMap`'s sub-maps: the
+  bounds are compared when a sub-view is made (a bound the comparator cannot compare fails then, even on an empty
+  view), a lower bound above the upper bound and a sub-view outside its parent's range are
+  `IllegalArgumentException`s, and under the natural order `get`/`containsKey`/`contains` reject a `null` or
+  non-`Comparable` key even when the view is empty. `comparator()` is `null` for the natural order
+  (`Comparators.naturalComparator()`), and a descending view's is `Collections.reverseOrder(comparator())`, so both
+  equal the JDK's.
+- **`LinkedHashSet`/`LinkedHashMap` walk their insertion order backward** for the reversed views through a
+  package-private `LinkedHashMap.reverseIterator()` (an index walk down the insertion-order `Vector`, skipping the
+  removed keys' markers: O(1) to create, effectively O(1) per step), handed to the view as an `Iterable` by the
+  owning class; `LinkedHashSet` reaches it because both are in `collection`.
+- **Map views**: `keySet()`, `values()` and `entrySet()` are views of the same map (not the zazr `keySet()`/
+  `values()`, which copy); on the `LinkedHashMap` and `TreeMap` views they are `SequencedSet`/`SequencedCollection`
+  (a `TreeMap` view's key set is its `NavigableSet`), and `sequencedKeySet()`/`sequencedValues()`/
+  `sequencedEntrySet()` are the same views. The `HashMap` view reads the trie directly (its key and value
+  iterators, and its leaf nodes for the entries), so no `Tuple2` is made per entry. Lookups answer the value or
+  `Maps.ABSENT`, so `get`, `containsKey` and `getOrDefault` tell a missing key from a present one without an
+  `Option`.
+- **Equality** follows the JDK interface: a list view equals any `java.util.List` with the same elements in the
+  same order (ordered hash), a set view any `java.util.Set` with the same elements (sum of the hashes), a map view
+  any `java.util.Map` with the same mappings (sum of `key.hashCode() ^ value.hashCode()`); the set and map views
+  inherit `equals`/`hashCode` from `AbstractSet`/`AbstractMap`.
+- **The `ofAll` fast path reads `JavaConverters.View.underlying()`**, implemented by every view: the persistent value
+  the view shows exactly, or `null` for a view that shows something else (a reversed or descending view, a key range,
+  the keys or the values of a map). `Vector`/`List`/`Queue`/`Stream.ofAll`, `HashSet`/`LinkedHashSet.ofAll`,
+  `TreeSet.ofAll` (same comparator instance, as for a `TreeSet` argument), `HashMap`/`LinkedHashMap.ofAll(Map)`,
+  `TreeMap.ofAll(Map)` ×2 (same key comparator) and `HashMap`/`LinkedHashMap.ofEntries` (given a map's
+  `asJava()`) return that value instead of copying. A sub-list's underlying value is the sub-sequence it shows.
+- **Tests**: a local contract suite in the style of Guava's testlib (`JavaViewContract`, no new dependency) runs
+  every read of `Collection`, `List`, `Set`, `SequencedSet`, `SortedSet`/`NavigableSet`, `Map`, `SequencedMap` and
+  `SortedMap`/`NavigableMap` differentially against `ArrayList`, `java.util.HashSet`/`LinkedHashSet`/`TreeSet` and
+  `java.util.HashMap`/`LinkedHashMap`/`TreeMap` with the same content (the same result or the same exception type),
+  on 0, 1, 32, 33 and 1025 elements, natural and reversed comparators, down to sub-views of sub-views and the
+  descending and reversed views; `JavaViewMutatorTest` asserts that every mutator of every view and derived view
+  throws, and `JavaViewOfAllTest` checks the fast path by identity and its absence on the views that show something
+  else. `JavaConvertersTest` loses its mutable rows; its cases that expected a no-op or an argument check from a
+  mutator of a zazr view now expect `UnsupportedOperationException`.
+
 **`Optional` interop only.** `java.util.Optional` is not sealed, cannot be pattern-matched, and is
 documented as a return type only. `Option` stays, with `toOptional()`/`fromOptional()`.
 
@@ -908,7 +998,7 @@ Which concrete collections survive (decided):
 | `BitSet` | niche |
 | `Multimap`, `HashMultimap`, `LinkedHashMultimap`, `TreeMultimap`, `SortedMultimap`, `AbstractMultimap`, `Multimaps` (3,896 lines) | `Map<K, Vector<V>>` / `Map<K, HashSet<V>>` with `groupBy` covers most uses. Scala's stdlib has only a deprecated mutable `MultiMap` mixin and points to `MultiDict` in the optional `scala-collection-contrib`; same move here: out of `zazr-core`, back as a `zazr-multimap` module if wanted |
 | `Iterator extends Traversable` (2,651 lines) | a mutable single-pass object implementing the persistent-collection interface. Replace with a package-private helper over `java.util.Iterator` |
-| `toJava*` copies, `asJavaMutable`, `asJava(Consumer)` scopes | keep only `asJava()` O(1) views (3.1); `JavaConverters` gains `SetView`/`MapView` |
+| `toJava*` copies, `asJavaMutable`, `asJava(Consumer)` scopes | keep only the `asJava()`/`asJavaMap()` O(1) views (3.1, implemented by #26: `SetViews`, `MapViews`, `TreeViews` beside `JavaConverters`) |
 
 Decided as above: `Queue` survives; `Array`, `CharSeq`, `Tree`, `BitSet`, `PriorityQueue` and the `Multimap`
 family are deleted from `zazr-core`. Nothing that survives depends on anything deleted, so any of them can
@@ -1225,7 +1315,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #72 | Positional subset on the ordered sets and maps: `SortedSet`/`SortedMap` (rank split of the red-black tree), `LinkedHashSet`/`LinkedHashMap` (slice of the insertion order) | 3.7 | #24 |
 | #73 | Internal types move to `.internal` packages: `collection.internal` for the collection internals, `com.guizmaii.zazr.internal` for the rest | 3.1 | #72 |
 | #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
-| #26 | `asJava` views for sets and maps | 3.1 | #24 |
+| #26 | `asJava` views for every collection (`asJavaMap` for the maps); the `toJava*` copies deleted | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |
 | #28 | Rename `Stream` to `LazyList` | 3.7 | #24 |
 | #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |

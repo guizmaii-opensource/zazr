@@ -471,7 +471,7 @@ public final class Collections {
             return source;
         }
 
-        final java.util.List<T> list = TraversableModule.toJavaCollection(source, ArrayList::new, 10);
+        final java.util.List<T> list = new ArrayList<>(source.asJava());
         java.util.Collections.shuffle(list);
         return ofAll.apply(list);
     }

@@ -3,7 +3,6 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.TraversableModule;
 import com.guizmaii.zazr.control.Option;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -14,7 +13,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -108,13 +106,16 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     Set<T> removeAll(Iterable<? extends T> elements);
 
     /**
-     * Converts this zazr set to a {@code java.util.Set}. Ordered implementations ({@code LinkedHashSet},
-     * {@code SortedSet}) preserve their insertion or sort order in the returned set; {@code HashSet} makes
-     * no ordering guarantee.
+     * An unmodifiable {@link java.util.Set} view of this set: nothing is copied, reads go through to this set, which
+     * never changes, and every mutator of the view throws {@link UnsupportedOperationException}. The view equals any
+     * {@code java.util.Set} with the same elements. A mutable copy is {@code new java.util.HashSet<>(set.asJava())}.
+     * <p>
+     * Complexity: O(1).
      *
-     * @return a new {@code java.util.Set} instance
+     * @return an unmodifiable {@code java.util.Set} view
      */
-    java.util.Set<T> toJavaSet();
+    @Override
+    java.util.Set<T> asJava();
 
     /**
      * Returns a set containing all distinct elements from this set and the given set.
@@ -489,112 +490,6 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      */
     default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
         return stream().collect(supplier, accumulator, combiner);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.Collection} that {@code factory} makes for the given
-     * capacity, in this Set's order: {@code toJavaCollection(java.util.LinkedHashSet::new)}.
-     *
-     * @param factory makes an empty mutable collection with the given initial capacity
-     * @param <C>     the collection type
-     * @return the new collection, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <C extends java.util.Collection<T>> C toJavaCollection(Function<Integer, C> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * The elements copied into a new {@link java.util.ArrayList}, in this Set's order.
-     *
-     * @return the new list
-     */
-    default java.util.List<T> toJavaList() {
-        return TraversableModule.toJavaCollection(this, ArrayList::new, 10);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.List} that {@code factory} makes for the given
-     * capacity, in this Set's order: {@code toJavaList(capacity -> new java.util.LinkedList<>())}.
-     *
-     * @param factory makes an empty mutable list with the given initial capacity
-     * @param <LIST>  the list type
-     * @return the new list, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <LIST extends java.util.List<T>> LIST toJavaList(Function<Integer, LIST> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * The elements as the entries of a new {@link java.util.HashMap}, each mapped to a key and a value by
-     * {@code f}; of two entries with the same key, the later one in this Set's order wins.
-     *
-     * @param f   the entry an element becomes
-     * @param <K> the key type
-     * @param <V> the value type
-     * @return the new map
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> toJavaMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return TraversableModule.toJavaMap(this, java.util.HashMap::new, f);
-    }
-
-    /**
-     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
-     * to a key by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the
-     * later one in this Set's order wins.
-     *
-     * @param factory     makes an empty mutable map
-     * @param keyMapper   the key of an element
-     * @param valueMapper the value of an element
-     * @param <K>         the key type
-     * @param <V>         the value type
-     * @param <MAP>       the map type
-     * @return the new map, filled
-     * @throws NullPointerException if an argument is null
-     */
-    default <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
-        return TraversableModule.toJavaMap(this, factory, TraversableModule.entryMapper(keyMapper, valueMapper));
-    }
-
-    /**
-     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
-     * to a key and a value by {@code f}; of two entries with the same key, the later one in this Set's order
-     * wins.
-     *
-     * @param factory makes an empty mutable map
-     * @param f       the entry an element becomes
-     * @param <K>     the key type
-     * @param <V>     the value type
-     * @param <MAP>   the map type
-     * @return the new map, filled
-     * @throws NullPointerException if an argument is null
-     */
-    default <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return TraversableModule.toJavaMap(this, factory, f);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.Set} that {@code factory} makes for the given
-     * capacity: {@code toJavaSet(capacity -> new java.util.TreeSet<>(Comparator.reverseOrder()))}.
-     *
-     * @param factory makes an empty mutable set with the given initial capacity
-     * @param <SET>   the set type
-     * @return the new set, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <SET extends java.util.Set<T>> SET toJavaSet(Function<Integer, SET> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * A parallel {@link java.util.stream.Stream} over the elements, built on {@link #spliterator()}.
-     *
-     * @return a new parallel {@code java.util.stream.Stream}
-     */
-    default java.util.stream.Stream<T> toJavaParallelStream() {
-        return StreamSupport.stream(spliterator(), true);
     }
 
     /**
