@@ -405,6 +405,28 @@ public interface RedBlackTreeModule {
             }
         }
 
+        /// Returns a tree of the same shape and colours as `tree`, holding `mapper.apply(e)` in place of each element
+        /// `e` and ordered by `comparator`. `mapper` must be strictly increasing from the order of `tree` to
+        /// `comparator` (not checked): the result is then a valid red-black tree, built in O(n) with no comparison
+        /// and exactly one node per element. `mapper` is called once per element, in ascending order.
+        public static <T extends @Nullable Object, R extends @Nullable Object> RedBlackTree<R> mapOrdered(RedBlackTree<T> tree,
+                Comparator<? super R> comparator, java.util.function.Function<? super T, ? extends R> mapper) {
+            return mapOrdered(tree, new Empty<>(comparator), mapper);
+        }
+
+        // the depth of the recursion is the height of the tree, at most 2 log2(n + 1)
+        private static <T extends @Nullable Object, R extends @Nullable Object> RedBlackTree<R> mapOrdered(RedBlackTree<T> tree,
+                Empty<R> empty, java.util.function.Function<? super T, ? extends R> mapper) {
+            if (tree.isEmpty()) {
+                return empty;
+            }
+            final Node<T> node = (Node<T>) tree;
+            final RedBlackTree<R> left = mapOrdered(node.left, empty, mapper);
+            final R value = mapper.apply(node.value);
+            final RedBlackTree<R> right = mapOrdered(node.right, empty, mapper);
+            return new Node<>(node.color, node.blackHeight, left, value, right, empty);
+        }
+
         public static <T extends @Nullable Object> T maximum(Node<T> node) {
             Node<T> curr = node;
             while (!curr.right.isEmpty()) {
