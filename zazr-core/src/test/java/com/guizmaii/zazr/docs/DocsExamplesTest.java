@@ -110,6 +110,18 @@ public class DocsExamplesTest {
     class Design {
 
         @Test
+        void builders() {
+            Vector.Builder<Integer> squares = Vector.newBuilder();
+            for (int i = 1; i <= 5; i++) {
+                squares.add(i * i);
+            }
+            Vector<Integer> result = squares.result();  // Vector(1, 4, 9, 16, 25)
+
+            assertThat(result).isEqualTo(Vector.of(1, 4, 9, 16, 25));
+            assertThatThrownBy(() -> squares.add(36)).isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
         void zipInsteadOfAp() {
             Option<Integer> total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
                 (a, b, c) -> a + b + c);
