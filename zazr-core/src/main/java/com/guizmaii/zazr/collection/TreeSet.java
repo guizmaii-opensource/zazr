@@ -206,6 +206,40 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     /**
+     * The union of nested iterables, ordered by {@code comparator}. Static, like every {@code flatten} in zazr, because
+     * Java cannot demand of an instance method that the receiver's element type be a collection. The outer iterable
+     * and each inner one are iterated once, so one-shot iterables are accepted.
+     * <p>
+     * Complexity: O(n log n) comparisons for n inner elements in total.
+     *
+     * @param comparator the order of the result
+     * @param nested     Iterables of elements
+     * @param <T>        Component type of the inner iterables
+     * @return the distinct inner elements, in {@code comparator} order
+     * @throws NullPointerException if {@code comparator}, {@code nested}, an inner iterable or an element is null
+     */
+    public static <T extends @Nullable Object> TreeSet<T> flatten(Comparator<? super T> comparator, Iterable<? extends Iterable<? extends T>> nested) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        Objects.requireNonNull(nested, "nested is null");
+        return ofAll(comparator, Iterator.ofAll(nested).flatMap(Function.identity()));
+    }
+
+    /**
+     * The union of nested iterables, in natural order: {@link #flatten(Comparator, Iterable)} with the natural
+     * comparator, as {@link #ofAll(Iterable)} is {@link #ofAll(Comparator, Iterable)}.
+     * <p>
+     * Complexity: O(n log n) comparisons for n inner elements in total.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the distinct inner elements, in natural order
+     * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
+     */
+    public static <T extends Comparable<? super T>> TreeSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        return flatten(Comparators.naturalComparator(), nested);
+    }
+
+    /**
      * Creates a TreeSet from boolean values.
      *
      * @param elements boolean values

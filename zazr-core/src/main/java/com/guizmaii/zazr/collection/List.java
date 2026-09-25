@@ -12,6 +12,7 @@ import com.guizmaii.zazr.collection.internal.ListModule;
 import com.guizmaii.zazr.collection.internal.ListModule.Combinations;
 import com.guizmaii.zazr.collection.internal.ListModule.SplitAt;
 import com.guizmaii.zazr.collection.internal.TraversableModule;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.*;
@@ -270,6 +271,29 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             list = list.prepend(iterator.next());
         }
         return list.reverse();
+    }
+
+    /**
+     * Concatenates nested iterables into one List. Static, like every {@code flatten} in zazr, because Java cannot
+     * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
+     * one are iterated once, so one-shot iterables are accepted.
+     * <p>
+     * Complexity: O(n) for n inner elements in total: one cell per element, built reversed and reversed once.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the inner elements, in order
+     * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
+     */
+    static <T extends @Nullable Object> List<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        List<T> reversed = empty();
+        for (Iterable<? extends T> inner : nested) {
+            for (T element : inner) {
+                reversed = reversed.prepend(element);
+            }
+        }
+        return reversed.reverse();
     }
 
     /**
@@ -1876,6 +1900,32 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             }
         }
         return Tuple.of(left.reverse(), right.reverse());
+    }
+
+    /**
+     * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
+     * generalisation of {@link #partition(Predicate)}. One pass, {@code f} called once per element in order, no
+     * intermediate list of {@code Either}s.
+     * <p>
+     * Complexity: O(n); each side is built reversed and reversed once.
+     *
+     * @param f   Classifies an element
+     * @param <L> Component type of the left side
+     * @param <R> Component type of the right side
+     * @return the left values and the right values, each in the order of the elements they come from
+     * @throws NullPointerException if {@code f} is null or returns null
+     */
+    default <L extends @Nullable Object, R extends @Nullable Object> Tuple2<List<L>, List<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+        Objects.requireNonNull(f, "f is null");
+        List<L> lefts = empty();
+        List<R> rights = empty();
+        for (T element : this) {
+            switch (Objects.requireNonNull(f.apply(element), "List.partitionMap: f returned null")) {
+                case Either.Left(var left) -> lefts = lefts.prepend(left);
+                case Either.Right(var right) -> rights = rights.prepend(right);
+            }
+        }
+        return Tuple.of(lefts.reverse(), rights.reverse());
     }
 
     /**

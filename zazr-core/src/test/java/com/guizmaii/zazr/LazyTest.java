@@ -459,4 +459,69 @@ public class LazyTest {
             assertThatThrownBy(() -> lazy.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
+
+    // -- flatten
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldEvaluateNothingUntilGet() {
+            final AtomicInteger outer = new AtomicInteger();
+            final AtomicInteger inner = new AtomicInteger();
+            final Lazy<Lazy<Integer>> nested = Lazy.of(() -> {
+                outer.incrementAndGet();
+                return Lazy.of(() -> inner.incrementAndGet() + 41);
+            });
+            final Lazy<Integer> flat = Lazy.flatten(nested);
+            assertThat(flat.isEvaluated()).isFalse();
+            assertThat(outer.get()).isZero();
+            assertThat(inner.get()).isZero();
+            assertThat(flat.get()).isEqualTo(42);
+            assertThat(flat.get()).isEqualTo(42);
+            assertThat(flat.isEvaluated()).isTrue();
+            assertThat(outer.get()).isEqualTo(1);
+            assertThat(inner.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldShareAnAlreadyEvaluatedLevel() {
+            final Lazy<Integer> inner = Lazy.of(() -> 1);
+            assertThat(inner.get()).isEqualTo(1);
+            final Lazy<Lazy<Integer>> nested = Lazy.of(() -> inner);
+            assertThat(nested.get()).isSameAs(inner);
+            final Lazy<Number> flat = Lazy.flatten(nested);
+            assertThat(flat.isEvaluated()).isFalse();
+            assertThat(flat.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldRemoveOneLevelOnly() {
+            // Lazy(Lazy(Lazy(1))) flattens to Lazy(Lazy(1)): its value is the Lazy that twice holds
+            final Lazy<Integer> once = Lazy.of(() -> 1);
+            final Lazy<Lazy<Integer>> twice = Lazy.of(() -> once);
+            assertThat(Lazy.flatten(Lazy.of(() -> twice)).get()).isSameAs(once);
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatThrownBy(() -> Lazy.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
+            final Lazy<Integer> flat = Lazy.flatten(Lazy.<Lazy<Integer>> of(() -> null));
+            assertThatThrownBy(flat::get).isInstanceOf(NullPointerException.class).hasMessage("Lazy.flatten: the outer Lazy holds null");
+            assertThat(flat.isEvaluated()).isFalse();
+        }
+
+        @Test
+        public void shouldEvaluateAgainAfterAThrowingLevel() {
+            final AtomicInteger attempts = new AtomicInteger();
+            final Lazy<Integer> flat = Lazy.flatten(Lazy.of(() -> Lazy.of(() -> {
+                if (attempts.incrementAndGet() == 1) {
+                    throw new IllegalStateException("first");
+                }
+                return 7;
+            })));
+            assertThatThrownBy(flat::get).isInstanceOf(IllegalStateException.class).hasMessage("first");
+            assertThat(flat.get()).isEqualTo(7);
+        }
+    }
 }

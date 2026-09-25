@@ -5,6 +5,7 @@ import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.TraversableModule;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
@@ -167,6 +168,22 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public static <T extends @Nullable Object> Queue<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
         return new Queue<>(com.guizmaii.zazr.collection.List.ofAll(javaStream), com.guizmaii.zazr.collection.List.empty());
+    }
+
+    /**
+     * Concatenates nested iterables into one Queue. Static, like every {@code flatten} in zazr, because Java cannot
+     * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
+     * one are iterated once, so one-shot iterables are accepted.
+     * <p>
+     * Complexity: O(n) for n inner elements in total: they are collected into the front list of the result.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the inner elements, in order
+     * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
+     */
+    public static <T extends @Nullable Object> Queue<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        return ofAll(com.guizmaii.zazr.collection.List.flatten(nested));
     }
 
     /**
@@ -1298,6 +1315,36 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
+     * The complement of {@link #distinct()}: the elements occurring more than once, each once, in order of first
+     * occurrence. {@code Queue.of(3, 1, 3, 2, 1, 3).duplicates()} is {@code Queue.of(3, 1)}. {@code isEmpty()} on the
+     * result is the "all distinct" test.
+     * <p>
+     * Complexity: O(n), one hash lookup per element.
+     *
+     * @return a new Queue of the repeated elements
+     */
+    public Queue<T> duplicates() {
+        return duplicatesBy(Function.identity());
+    }
+
+    /**
+     * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
+     * occurrence. One pass, the key computed once per element.
+     * <p>
+     * Complexity: O(n), one key and one hash lookup per element.
+     *
+     * @param keyExtractor computes the key an element is compared by
+     * @param <U>          the key type
+     * @return a new Queue of the first element of each repeated key
+     * @throws NullPointerException if {@code keyExtractor} is null
+     */
+    public <U extends @Nullable Object> Queue<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        final java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
+        return duplicated.isEmpty() ? empty() : ofAll(duplicated);
+    }
+
+    /**
      * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
      * equal, in the order of those last occurrences.
      * <p>
@@ -1765,6 +1812,32 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return toList().partition(predicate).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
+    }
+
+    /**
+     * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
+     * generalisation of {@link #partition(Predicate)}. One pass in queue order, {@code f} called once per element, no
+     * intermediate list of {@code Either}s.
+     * <p>
+     * Complexity: O(n); each side is built reversed and becomes the front list of its Queue.
+     *
+     * @param f   Classifies an element
+     * @param <L> Component type of the left side
+     * @param <R> Component type of the right side
+     * @return the left values and the right values, each in the order of the elements they come from
+     * @throws NullPointerException if {@code f} is null or returns null
+     */
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Queue<L>, Queue<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+        Objects.requireNonNull(f, "f is null");
+        com.guizmaii.zazr.collection.List<L> lefts = com.guizmaii.zazr.collection.List.empty();
+        com.guizmaii.zazr.collection.List<R> rights = com.guizmaii.zazr.collection.List.empty();
+        for (T element : this) {
+            switch (Objects.requireNonNull(f.apply(element), "Queue.partitionMap: f returned null")) {
+                case Either.Left(var left) -> lefts = lefts.prepend(left);
+                case Either.Right(var right) -> rights = rights.prepend(right);
+            }
+        }
+        return Tuple.of(ofAll(lefts.reverse()), ofAll(rights.reverse()));
     }
 
     /**

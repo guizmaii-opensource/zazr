@@ -771,4 +771,48 @@ public class ValidationTest {
             }
         }
     }
+
+    // -- flatten
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenEveryCombination() {
+            final Validation<String, Integer> valid = Validation.valid(1);
+            final Validation<String, Integer> innerInvalid = Validation.invalidAll(NonEmptyVector.of("i1", "i2"));
+            final Validation<String, Validation<String, Integer>> outerInvalid = Validation.invalidAll(NonEmptyVector.of("o1", "o2"));
+            assertThat(Validation.flatten(Validation.<String, Validation<String, Integer>> valid(valid))).isSameAs(valid);
+            assertThat(Validation.flatten(Validation.<String, Validation<String, Integer>> valid(innerInvalid))).isSameAs(innerInvalid);
+            assertThat(Validation.flatten(outerInvalid)).isSameAs(outerInvalid);
+        }
+
+        @Test
+        public void shouldNotAccumulate() {
+            // the outer errors and the inner validation never coexist: an Invalid outer has no value to look into
+            final Validation<String, Validation<String, Integer>> outerInvalid = Validation.invalid("outer");
+            assertThat(Validation.flatten(outerInvalid)).isEqualTo(Validation.invalid("outer"));
+            final Validation<String, Integer> flat = Validation.flatten(Validation.valid(Validation.invalidAll(NonEmptyVector.of("i1", "i2"))));
+            assertThat(flat).isInstanceOf(Invalid.class);
+            assertThat(((Invalid<String, Integer>) flat).errors()).isEqualTo(NonEmptyVector.of("i1", "i2"));
+        }
+
+        @Test
+        public void shouldRemoveOneLevelOnly() {
+            final Validation<String, Validation<String, Integer>> twice = Validation.valid(Validation.valid(1));
+            assertThat(Validation.flatten(Validation.<String, Validation<String, Validation<String, Integer>>> valid(twice))).isSameAs(twice);
+        }
+
+        @Test
+        public void shouldWidenBothTypes() {
+            final Validation<CharSequence, Number> valid = Validation.flatten(Validation.<String, Validation<String, Integer>> valid(Validation.valid(1)));
+            assertThat(valid).isEqualTo(Validation.valid(1));
+            assertThat(valid).isInstanceOf(Valid.class);
+        }
+
+        @Test
+        public void shouldRejectANullValidation() {
+            assertThatThrownBy(() -> Validation.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
+        }
+    }
 }

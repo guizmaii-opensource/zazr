@@ -4,6 +4,7 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.ArrayList;
@@ -163,6 +164,27 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     public static <T extends @Nullable Object> HashSet<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
         return HashSet.ofAll(Iterator.ofAll(javaStream.iterator()));
+    }
+
+    /**
+     * The union of nested iterables. Static, like every {@code flatten} in zazr, because Java cannot demand of an
+     * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
+     * iterated once, so one-shot iterables are accepted.
+     * <p>
+     * Complexity: effectively O(n) for n inner elements in total, one insertion each.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the distinct inner elements
+     * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
+     */
+    public static <T extends @Nullable Object> HashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        HashArrayMappedTrie<T, T> all = HashArrayMappedTrie.empty();
+        for (Iterable<? extends T> inner : nested) {
+            all = addAll(all, inner);
+        }
+        return all.isEmpty() ? empty() : new HashSet<>(all);
     }
 
     /**
@@ -743,6 +765,32 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public Tuple2<HashSet<T>, HashSet<T>> partition(Predicate<? super T> predicate) {
         return Collections.partition(this, HashSet::ofAll, predicate);
+    }
+
+    /**
+     * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
+     * generalisation of {@link #partition(Predicate)}. One pass, {@code f} called once per element, no intermediate
+     * collection of {@code Either}s. Values equal on one side are kept once.
+     * <p>
+     * Complexity: effectively O(n), one insertion per element.
+     *
+     * @param f   Classifies an element
+     * @param <L> Component type of the left side
+     * @param <R> Component type of the right side
+     * @return the left values and the right values
+     * @throws NullPointerException if {@code f} is null or returns null
+     */
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+        Objects.requireNonNull(f, "f is null");
+        HashArrayMappedTrie<L, L> lefts = HashArrayMappedTrie.empty();
+        HashArrayMappedTrie<R, R> rights = HashArrayMappedTrie.empty();
+        for (T element : this) {
+            switch (Objects.requireNonNull(f.apply(element), "HashSet.partitionMap: f returned null")) {
+                case Either.Left(var left) -> lefts = lefts.put(left, left);
+                case Either.Right(var right) -> rights = rights.put(right, right);
+            }
+        }
+        return Tuple.of(lefts.isEmpty() ? empty() : new HashSet<>(lefts), rights.isEmpty() ? empty() : new HashSet<>(rights));
     }
 
     @Override

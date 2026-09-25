@@ -109,6 +109,26 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
+     * Removes one level of nesting on the right: {@code Right(Right(r))} is {@code Right(r)}, {@code Right(Left(l))}
+     * is {@code Left(l)}, and an outer {@code Left} is returned as it is. Static, like every {@code flatten} in zazr,
+     * because Java cannot demand of an instance method that the right value be an {@code Either} itself.
+     *
+     * @param nested an {@code Either} whose right value is an {@code Either} with the same left type
+     * @param <L>    the type of the left value
+     * @param <R>    the type of the inner right value
+     * @return the inner {@code Either}, or the outer {@code Left}
+     * @throws NullPointerException if {@code nested} is null
+     */
+    @SuppressWarnings("unchecked")
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> flatten(Either<? extends L, ? extends Either<? extends L, ? extends R>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        return switch (nested) {
+            case Right(var inner) -> narrow(inner);
+            case Left<?, ?> left -> (Either<L, R>) left;
+        };
+    }
+
+    /**
      * Tests {@code value} with {@code predicate}: {@code Right(value)} if it holds, {@code Left(ifFalse.get())} if
      * it does not. The supplier is called only when the predicate fails.
      * <pre>{@code

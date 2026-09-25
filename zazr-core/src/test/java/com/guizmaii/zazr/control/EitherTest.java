@@ -862,4 +862,40 @@ public class EitherTest {
             assertThatThrownBy(() -> right.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
         }
     }
+
+    // -- flatten
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenEveryCombination() {
+            final Either<String, Integer> right = Either.right(1);
+            final Either<String, Integer> innerLeft = Either.left("inner");
+            final Either<String, Either<String, Integer>> outerLeft = Either.left("outer");
+            assertThat(Either.flatten(Either.<String, Either<String, Integer>> right(right))).isSameAs(right);
+            assertThat(Either.flatten(Either.<String, Either<String, Integer>> right(innerLeft))).isSameAs(innerLeft);
+            assertThat(Either.flatten(outerLeft)).isSameAs(outerLeft);
+            assertThat(Either.flatten(outerLeft)).isEqualTo(Either.left("outer"));
+        }
+
+        @Test
+        public void shouldRemoveOneLevelOnly() {
+            final Either<String, Either<String, Integer>> twice = Either.right(Either.right(1));
+            assertThat(Either.flatten(Either.<String, Either<String, Either<String, Integer>>> right(twice))).isSameAs(twice);
+        }
+
+        @Test
+        public void shouldWidenBothTypes() {
+            final Either<CharSequence, Number> right = Either.flatten(Either.<String, Either<String, Integer>> right(Either.right(1)));
+            assertThat(right).isEqualTo(Either.right(1));
+            final Either<CharSequence, Number> left = Either.flatten(Either.<String, Either<StringBuilder, Integer>> right(Either.left(new StringBuilder("sb"))));
+            assertThat(left.getLeft().toString()).isEqualTo("sb");
+        }
+
+        @Test
+        public void shouldRejectANullEither() {
+            assertThatThrownBy(() -> Either.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
+        }
+    }
 }

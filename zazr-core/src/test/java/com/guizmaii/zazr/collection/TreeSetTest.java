@@ -2961,4 +2961,70 @@ public class TreeSetTest extends AbstractTraversableTest {
             return TreeSet.ofAll(reverseOrder(), elements);
         }
     }
+
+    // -- flatten (no partitionMap on a TreeSet: the two sides would need comparators of their own)
+
+    @SafeVarargs
+    private static <T> Iterable<T> oneShotOf(T... elements) {
+        // a java.util.stream can be iterated once: a second iterator() throws IllegalStateException
+        return java.util.stream.Stream.of(elements)::iterator;
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenInNaturalOrderAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final TreeSet<Integer> expected = TreeSet.range(0, n);
+                final Vector<Integer> descending = Vector.range(0, n).reverse();
+                assertEquals(expected.toVector(), TreeSet.flatten(List.of(descending)).toVector());
+                assertEquals(expected.toVector(), TreeSet.flatten(List.of(descending, Vector.range(0, n))).toVector());
+                assertEquals(expected.toVector(), TreeSet.flatten(List.of(Vector.range(n / 2, n), List.<Integer> empty(), List.range(0, n / 2))).toVector());
+                assertEquals(expected.toVector(), TreeSet.flatten(descending.map(List::of)).toVector());
+            }
+        }
+
+        @Test
+        public void shouldFlattenWithAComparatorAtEveryBoundary() {
+            final Comparator<Integer> reversed = reverseOrder();
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final TreeSet<Integer> flat = TreeSet.flatten(reversed, List.of(Vector.range(0, n), List.range(0, n)));
+                assertEquals(Vector.range(0, n).reverse(), flat.toVector());
+                assertSame(reversed, flat.comparator());
+            }
+            // the comparator decides what is a duplicate, and of equal elements the last one met is kept, as by ofAll
+            final Comparator<String> byLength = comparingInt(String::length);
+            final TreeSet<String> flat = TreeSet.flatten(byLength, List.of(List.of("bb", "a"), List.of("c", "ddd")));
+            assertEquals(Vector.of("c", "bb", "ddd"), flat.toVector());
+            assertEquals(TreeSet.ofAll(byLength, List.of("bb", "a", "c", "ddd")).toVector(), flat.toVector());
+        }
+
+        @Test
+        public void shouldFlattenEmpties() {
+            assertTrue(TreeSet.flatten(List.<List<Integer>> empty()).isEmpty());
+            assertTrue(TreeSet.flatten(List.of(List.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of())).isEmpty());
+            final Comparator<Integer> reversed = reverseOrder();
+            final TreeSet<Integer> empty = TreeSet.flatten(reversed, List.<List<Integer>> empty());
+            assertTrue(empty.isEmpty());
+            assertSame(reversed, empty.comparator());
+            assertSame(reversed, TreeSet.flatten(reversed, List.of(List.<Integer> empty())).comparator());
+        }
+
+        @Test
+        public void shouldReadOneShotIterablesOnce() {
+            assertEquals(Vector.of(1, 2, 3), TreeSet.flatten(oneShotOf(oneShotOf(3, 1), oneShotOf(), oneShotOf(2, 1))).toVector());
+            assertEquals(Vector.of(3, 2, 1), TreeSet.flatten(reverseOrder(), oneShotOf(oneShotOf(3, 1), oneShotOf(2))).toVector());
+            assertTrue(TreeSet.<Integer> flatten(oneShotOf()).isEmpty());
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> TreeSet.<Integer> flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(null, List.of(List.of(1)))).withMessage("comparator is null");
+            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(Comparator.<Integer> naturalOrder(), null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(java.util.Arrays.asList(List.of(1), null)));
+            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(List.of(java.util.Arrays.asList(1, null))));
+        }
+    }
 }

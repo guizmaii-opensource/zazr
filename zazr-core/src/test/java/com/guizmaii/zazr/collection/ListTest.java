@@ -4,6 +4,7 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -5726,4 +5727,112 @@ public class ListTest extends AbstractTraversableTest {
         }
     }
 
+    // -- partitionMap and flatten, at the empty/1/32/33 boundaries
+
+    @SafeVarargs
+    private static <T> Iterable<T> oneShotOf(T... elements) {
+        // a java.util.stream can be iterated once: a second iterator() throws IllegalStateException
+        return java.util.stream.Stream.of(elements)::iterator;
+    }
+
+    @Nested
+    class PartitionMapTests {
+
+        @Test
+        public void shouldPartitionMapLikePartitionAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final List<Integer> source = List.range(0, n);
+                final Tuple2<List<String>, List<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<List<Integer>, List<Integer>> expected = source.partition(i -> i % 3 == 0);
+                assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
+                assertThat(actual._2()).isEqualTo(expected._2());
+                assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
+                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, List.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(List.empty(), source));
+            }
+        }
+
+        @Test
+        public void shouldKeepTheSourceOrderOnEachSide() {
+            final Tuple2<List<Integer>, List<String>> actual = List.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
+            assertThat(actual).isEqualTo(Tuple.of(List.of(2, 8, 4), List.of("o5", "o1", "o9")));
+        }
+
+        @Test
+        public void shouldCallTheFunctionOncePerElementInOrder() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final java.util.List<Integer> seen = new ArrayList<>();
+                List.range(0, n).partitionMap(i -> {
+                    seen.add(i);
+                    return i % 2 == 0 ? Either.left(i) : Either.right(i);
+                });
+                assertThat(List.ofAll(seen)).isEqualTo(List.range(0, n));
+            }
+        }
+
+        @Test
+        public void shouldReturnTheEmptyListForAnEmptySide() {
+            final Tuple2<List<Integer>, List<Integer>> none = List.<Integer> empty().partitionMap(Either::left);
+            assertThat(none._1()).isSameAs(List.empty());
+            assertThat(none._2()).isSameAs(List.empty());
+            assertThat(List.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2()).isSameAs(List.empty());
+            assertThat(List.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1()).isSameAs(List.empty());
+        }
+
+        @Test
+        public void shouldRejectNullFunctionAndNullEither() {
+            assertThatNullPointerException().isThrownBy(() -> List.of(1).partitionMap(null)).withMessage("f is null");
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                assertThatNullPointerException()
+                        .isThrownBy(() -> List.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .withMessage("List.partitionMap: f returned null");
+            }
+        }
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final List<Integer> inner = List.range(0, n);
+                assertThat(List.flatten(List.of(inner))).isEqualTo(inner);
+                assertThat(List.flatten(List.of(inner, inner))).isEqualTo(inner.appendAll(inner));
+                assertThat(List.flatten(List.of(List.<Integer> empty(), inner, List.<Integer> empty()))).isEqualTo(inner);
+                assertThat(List.flatten(java.util.List.of(Vector.range(0, n), inner.toJavaList()))).isEqualTo(inner.appendAll(inner));
+                // n inner iterables of one element each
+                assertThat(List.flatten(inner.map(List::of))).isEqualTo(inner);
+            }
+        }
+
+        @Test
+        public void shouldFlattenEmptiesToTheEmptyList() {
+            assertThat(List.flatten(List.<List<Integer>> empty())).isSameAs(List.empty());
+            assertThat(List.flatten(List.of(List.<Integer> empty()))).isSameAs(List.empty());
+            assertThat(List.flatten(List.of(List.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of()))).isSameAs(List.empty());
+            assertThat(List.flatten(java.util.List.<java.util.List<Integer>> of())).isSameAs(List.empty());
+        }
+
+        @Test
+        public void shouldWidenTheElementType() {
+            final List<Number> numbers = List.flatten(List.of(List.of(1), List.of(2.0)));
+            assertThat(numbers).isEqualTo(List.<Number> of(1, 2.0));
+        }
+
+        @Test
+        public void shouldReadOneShotIterablesOnce() {
+            assertThat(List.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3)))).isEqualTo(List.of(1, 2, 3));
+            assertThat(List.flatten(List.<Iterable<Integer>> empty())).isSameAs(List.empty());
+            assertThat(List.<Integer> flatten(oneShotOf())).isSameAs(List.empty());
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> List.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> List.flatten(java.util.Arrays.asList(List.of(1), null)));
+            assertThatNullPointerException().isThrownBy(() -> List.flatten(List.of(java.util.Arrays.asList(1, null))));
+        }
+    }
 }

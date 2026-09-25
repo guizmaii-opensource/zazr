@@ -2,6 +2,7 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -2737,6 +2738,145 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         private LinkedHashSet<Integer> mk(Iterable<Integer> elements) {
             return LinkedHashSet.ofAll(elements);
+        }
+    }
+
+    // -- partitionMap and flatten, at the empty/1/32/33 boundaries
+
+    @SafeVarargs
+    private static <T> Iterable<T> oneShotOf(T... elements) {
+        // a java.util.stream can be iterated once: a second iterator() throws IllegalStateException
+        return java.util.stream.Stream.of(elements)::iterator;
+    }
+
+    @Nested
+    class PartitionMapTests {
+
+        @Test
+        public void shouldPartitionMapLikePartitionAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
+                final Tuple2<LinkedHashSet<String>, LinkedHashSet<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> expected = source.partition(i -> i % 3 == 0);
+                assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
+                assertThat(actual._2()).isEqualTo(expected._2());
+                assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
+                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, LinkedHashSet.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(LinkedHashSet.empty(), source));
+            }
+        }
+
+        @Test
+        public void shouldKeepEqualValuesOnceOnEachSide() {
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual = LinkedHashSet.range(0, 33).partitionMap(i -> i % 2 == 0 ? Either.left(i % 5) : Either.right(i % 3));
+            assertThat(actual).isEqualTo(Tuple.of(LinkedHashSet.of(0, 1, 2, 3, 4), LinkedHashSet.of(0, 1, 2)));
+            assertThat(actual._1().size()).isEqualTo(5);
+            assertThat(actual._2().size()).isEqualTo(3);
+        }
+
+        @Test
+        public void shouldCallTheFunctionOncePerElementInIterationOrder() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
+                final java.util.List<Integer> seen = new ArrayList<>();
+                source.partitionMap(i -> {
+                    seen.add(i);
+                    return i % 2 == 0 ? Either.left(i) : Either.right(i);
+                });
+                assertThat(Vector.ofAll(seen)).isEqualTo(source.toVector());
+            }
+        }
+
+        @Test
+        public void shouldReturnTheEmptyLinkedHashSetForAnEmptySide() {
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> none = LinkedHashSet.<Integer> empty().partitionMap(Either::left);
+            assertSame(LinkedHashSet.empty(), none._1());
+            assertSame(LinkedHashSet.empty(), none._2());
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2());
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1());
+        }
+
+        @Test
+        public void shouldRejectNullFunctionAndNullEither() {
+            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.of(1).partitionMap(null)).withMessage("f is null");
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                assertThatNullPointerException()
+                        .isThrownBy(() -> LinkedHashSet.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .withMessage("LinkedHashSet.partitionMap: f returned null");
+            }
+        }
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final LinkedHashSet<Integer> inner = LinkedHashSet.range(0, n);
+                assertThat(LinkedHashSet.flatten(List.of(inner))).isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(List.of(inner, inner))).isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.range(0, n / 2), LinkedHashSet.range(n / 2, n)))).isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer> empty(), inner, LinkedHashSet.<Integer> empty()))).isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(java.util.List.of(Vector.range(0, n), List.range(0, n)))).isEqualTo(inner);
+                // n inner iterables of one element each
+                assertThat(LinkedHashSet.flatten(inner.toVector().map(LinkedHashSet::of))).isEqualTo(inner);
+            }
+        }
+
+        @Test
+        public void shouldFlattenEmptiesToTheEmptyLinkedHashSet() {
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.<LinkedHashSet<Integer>> empty()));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer> empty())));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of())));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(java.util.List.<java.util.List<Integer>> of()));
+        }
+
+        @Test
+        public void shouldWidenTheElementType() {
+            final LinkedHashSet<Number> numbers = LinkedHashSet.flatten(List.of(LinkedHashSet.of(1), LinkedHashSet.of(2.0)));
+            assertThat(numbers).isEqualTo(LinkedHashSet.<Number> of(1, 2.0));
+        }
+
+        @Test
+        public void shouldReadOneShotIterablesOnce() {
+            assertThat(LinkedHashSet.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3, 1)))).isEqualTo(LinkedHashSet.of(1, 2, 3));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.<Integer> flatten(oneShotOf()));
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(java.util.Arrays.asList(LinkedHashSet.of(1), null)));
+            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(List.of(java.util.Arrays.asList(1, null))));
+        }
+    }
+
+    @Nested
+    class PartitionMapAndFlattenOrderTests {
+
+        @Test
+        public void shouldKeepTheIterationOrderOnEachSide() {
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<String>> actual = LinkedHashSet.of(5, 2, 8, 1, 9, 4)
+                    .partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
+            assertThat(actual._1().toVector()).isEqualTo(Vector.of(2, 8, 4));
+            assertThat(actual._2().toVector()).isEqualTo(Vector.of("o5", "o1", "o9"));
+        }
+
+        @Test
+        public void shouldKeepEqualValuesAtTheirFirstPosition() {
+            // 3 -> 0, 1 -> 1, 4 -> 1, 6 -> 0, 2 -> 2: each value keeps the position of its first occurrence
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual = LinkedHashSet.of(3, 1, 4, 6, 2).partitionMap(i -> Either.left(i % 3));
+            assertThat(actual._1().toVector()).isEqualTo(Vector.of(0, 1, 2));
+            assertThat(actual._1().toVector()).isEqualTo(LinkedHashSet.ofAll(List.of(3, 1, 4, 6, 2).map(i -> i % 3)).toVector());
+        }
+
+        @Test
+        public void shouldFlattenInOrderOfFirstOccurrence() {
+            final LinkedHashSet<Integer> flat = LinkedHashSet.flatten(List.of(List.of(3, 1), List.of(2, 3), List.of(), List.of(1, 4)));
+            assertThat(flat.toVector()).isEqualTo(Vector.of(3, 1, 2, 4));
+            assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.range(0, 33).toVector().reverse())).toVector()).isEqualTo(Vector.range(0, 33).reverse());
         }
     }
 }

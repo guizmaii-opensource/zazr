@@ -117,6 +117,28 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     }
 
     /**
+     * Removes one level of nesting: {@code Valid(Valid(a))} is {@code Valid(a)}, {@code Valid(Invalid(errors))} is
+     * {@code Invalid(errors)}, and an outer {@code Invalid} is returned as it is. Nothing accumulates: the outer
+     * validation is either invalid with its own errors or valid with the inner one as its value, so there is never a
+     * second set of errors to add. Static, like every {@code flatten} in zazr, because Java cannot demand of an
+     * instance method that the value be a {@code Validation} itself.
+     *
+     * @param nested a {@code Validation} whose value is a {@code Validation} with the same error type
+     * @param <E>    the error type
+     * @param <A>    the type of the inner value
+     * @return the inner {@code Validation}, or the outer {@code Invalid}
+     * @throws NullPointerException if {@code nested} is null
+     */
+    @SuppressWarnings("unchecked")
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> flatten(Validation<? extends E, ? extends Validation<? extends E, ? extends A>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        return switch (nested) {
+            case Valid(var inner) -> (Validation<E, A>) inner;
+            case Invalid<?, ?> invalid -> (Validation<E, A>) invalid;
+        };
+    }
+
+    /**
      * Converts an {@link Either}: {@code Valid(value)} for a {@code Right}, {@code Invalid} of the single left value
      * for a {@code Left}.
      *

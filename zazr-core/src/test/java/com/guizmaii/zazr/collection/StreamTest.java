@@ -5,6 +5,7 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import java.math.BigDecimal;
@@ -6333,4 +6334,261 @@ public class StreamTest extends AbstractTraversableTest {
         }
     }
 
+    // -- partitionMap and flatten, at the empty/1/32/33 boundaries
+
+    @SafeVarargs
+    private static <T> Iterable<T> oneShotOf(T... elements) {
+        // a java.util.stream can be iterated once: a second iterator() throws IllegalStateException
+        return java.util.stream.Stream.of(elements)::iterator;
+    }
+
+    @Nested
+    class PartitionMapTests {
+
+        @Test
+        public void shouldPartitionMapLikePartitionAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final Stream<Integer> source = Stream.range(0, n);
+                final Tuple2<Stream<String>, Stream<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<Stream<Integer>, Stream<Integer>> expected = source.partition(i -> i % 3 == 0);
+                assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
+                assertThat(actual._2()).isEqualTo(expected._2());
+                assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
+                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, Stream.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(Stream.empty(), source));
+            }
+        }
+
+        @Test
+        public void shouldKeepTheSourceOrderOnEachSide() {
+            final Tuple2<Stream<Integer>, Stream<String>> actual = Stream.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
+            assertThat(actual).isEqualTo(Tuple.of(Stream.of(2, 8, 4), Stream.of("o5", "o1", "o9")));
+        }
+
+        @Test
+        public void shouldCallTheFunctionOncePerElementInOrder() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final java.util.List<Integer> seen = new ArrayList<>();
+                final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.range(0, n).partitionMap(i -> {
+                    seen.add(i);
+                    return i % 2 == 0 ? Either.left(i) : Either.right(i);
+                });
+                // both sides forced to the end, each in turn: every element was classified once, in order
+                sides._1().length();
+                sides._2().length();
+                sides._1().length();
+                assertThat(List.ofAll(seen)).isEqualTo(List.range(0, n));
+            }
+        }
+
+        @Test
+        public void shouldBeLazyAndMemoiseTheResultsOfTheFunction() {
+            final java.util.List<Integer> seen = new ArrayList<>();
+            final Tuple2<Stream<Integer>, Stream<String>> sides = Stream.from(0).partitionMap(i -> {
+                seen.add(i);
+                return i % 3 == 0 ? Either.left(i) : Either.right("r" + i);
+            });
+            // head-strict, like partition: each side is forced to its first element, no further
+            assertThat(seen).containsExactly(0, 1);
+            assertThat(sides._1().take(3).toList()).isEqualTo(List.of(0, 3, 6));
+            assertThat(seen).containsExactly(0, 1, 2, 3, 4, 5, 6);
+            assertThat(sides._2().take(4).toList()).isEqualTo(List.of("r1", "r2", "r4", "r5"));
+            assertThat(seen).containsExactly(0, 1, 2, 3, 4, 5, 6);
+            assertThat(sides._2().take(5).toList()).isEqualTo(List.of("r1", "r2", "r4", "r5", "r7"));
+            assertThat(sides._1().take(3).toList()).isEqualTo(List.of(0, 3, 6));
+            assertThat(seen).containsExactly(0, 1, 2, 3, 4, 5, 6, 7);
+        }
+
+        @Test
+        public void shouldPartitionAnInfiniteStream() {
+            final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.from(0).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right(i));
+            assertThat(sides._1().take(33).toList()).isEqualTo(List.range(0, 66).filter(i -> i % 2 == 0));
+            assertThat(sides._2().take(33).toList()).isEqualTo(List.range(0, 66).filter(i -> i % 2 != 0));
+        }
+
+        @Test
+        public void shouldRejectANullEitherWhenASideReachesIt() {
+            final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.from(0).partitionMap(i -> i == 4 ? null : i % 2 == 0 ? Either.left(i) : Either.right(i));
+            assertThat(sides._1().take(2).toList()).isEqualTo(List.of(0, 2));
+            assertThat(sides._2().take(2).toList()).isEqualTo(List.of(1, 3));
+            assertThatNullPointerException().isThrownBy(() -> sides._1().take(3).toList()).withMessage("Stream.partitionMap: f returned null");
+        }
+
+        @Test
+        public void shouldReturnTheEmptyStreamForAnEmptySide() {
+            final Tuple2<Stream<Integer>, Stream<Integer>> none = Stream.<Integer> empty().partitionMap(Either::left);
+            assertThat(none._1()).isSameAs(Stream.empty());
+            assertThat(none._2()).isSameAs(Stream.empty());
+            assertThat(Stream.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2()).isSameAs(Stream.empty());
+            assertThat(Stream.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1()).isSameAs(Stream.empty());
+        }
+
+        @Test
+        public void shouldRejectNullFunctionAndNullEither() {
+            assertThatNullPointerException().isThrownBy(() -> Stream.of(1).partitionMap(null)).withMessage("f is null");
+            for (int n : new int[] { 1, 32, 33 }) {
+                final int last = n - 1;
+                assertThatNullPointerException()
+                        .isThrownBy(() -> Stream.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .withMessage("Stream.partitionMap: f returned null");
+            }
+        }
+    }
+
+    @Nested
+    class FlattenTests {
+
+        @Test
+        public void shouldFlattenAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final Stream<Integer> inner = Stream.range(0, n);
+                assertThat(Stream.flatten(Stream.of(inner))).isEqualTo(inner);
+                assertThat(Stream.flatten(Stream.of(inner, inner))).isEqualTo(inner.appendAll(inner));
+                assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty(), inner, Stream.<Integer> empty()))).isEqualTo(inner);
+                assertThat(Stream.flatten(java.util.List.of(Vector.range(0, n), inner.toJavaList()))).isEqualTo(inner.appendAll(inner));
+                // n inner iterables of one element each
+                assertThat(Stream.flatten(inner.map(Stream::of))).isEqualTo(inner);
+            }
+        }
+
+        @Test
+        public void shouldFlattenEmptiesToTheEmptyStream() {
+            assertThat(Stream.flatten(Stream.<Stream<Integer>> empty())).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty()))).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of()))).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(java.util.List.<java.util.List<Integer>> of())).isSameAs(Stream.empty());
+        }
+
+        @Test
+        public void shouldWidenTheElementType() {
+            final Stream<Number> numbers = Stream.flatten(Stream.of(Stream.of(1), Stream.of(2.0)));
+            assertThat(numbers).isEqualTo(Stream.<Number> of(1, 2.0));
+        }
+
+        @Test
+        public void shouldReadOneShotIterablesOnce() {
+            assertThat(Stream.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3)))).isEqualTo(Stream.of(1, 2, 3));
+            assertThat(Stream.flatten(Stream.<Iterable<Integer>> empty())).isSameAs(Stream.empty());
+            assertThat(Stream.<Integer> flatten(oneShotOf())).isSameAs(Stream.empty());
+        }
+
+        @Test
+        public void shouldRejectNulls() {
+            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(null)).withMessage("nested is null");
+            // lazy: a null inner iterable or element fails when the result reaches it
+            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(null, Stream.of(1))));
+            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(Stream.of(1), null)).toList());
+            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(Stream.of(java.util.Arrays.asList(1, null))).toList());
+        }
+    }
+
+    @Nested
+    class DuplicatesTests {
+
+        @Test
+        public void shouldReturnDuplicatesInOrderOfFirstOccurrence() {
+            assertThat(Stream.of(3, 1, 3, 2, 1, 3).duplicates()).isEqualTo(Stream.of(3, 1));
+            assertThat(Stream.of(1, 2, 2, 1).duplicates()).isEqualTo(Stream.of(1, 2));
+            assertThat(Stream.of("a", "b", "c").duplicates()).isSameAs(Stream.empty());
+            assertThat(Stream.<Integer> empty().duplicates()).isSameAs(Stream.empty());
+            assertThat(Stream.of(1).duplicates()).isSameAs(Stream.empty());
+        }
+
+        @Test
+        public void shouldReturnTheFirstElementOfEachDuplicatedKey() {
+            assertThat(Stream.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length)).isEqualTo(Stream.of("aa", "b"));
+            assertThat(Stream.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length)).isEqualTo(Stream.of("aa"));
+            assertThat(Stream.of("b", "aa", "e", "cc").duplicatesBy(String::length)).isEqualTo(Stream.of("b", "aa"));
+            assertThat(Stream.of("a", "bb").duplicatesBy(String::length)).isSameAs(Stream.empty());
+            assertThatNullPointerException().isThrownBy(() -> Stream.of(1).duplicatesBy(null)).withMessage("keyExtractor is null");
+        }
+
+        @Test
+        public void shouldFindDuplicatesOfANullKey() {
+            // an Stream never holds a null element, but a key extractor may return null for several of them
+            assertThat(Stream.of("a", "b").duplicatesBy(s -> null)).isEqualTo(Stream.of("a"));
+            assertThat(Stream.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s)).isEqualTo(Stream.of("a"));
+            assertThat(Stream.of("a").duplicatesBy(s -> null)).isSameAs(Stream.empty());
+        }
+
+        @Test
+        public void shouldComputeTheKeyOncePerElementInOrder() {
+            final java.util.List<Integer> seen = new ArrayList<>();
+            assertThat(Stream.range(0, 33).duplicatesBy(i -> {
+                seen.add(i);
+                return i % 5;
+            })).isEqualTo(Stream.of(0, 1, 2, 3, 4));
+            assertThat(Stream.ofAll(seen)).isEqualTo(Stream.range(0, 33));
+        }
+
+        @Test
+        public void shouldFindDuplicatesAtEveryBoundary() {
+            for (int n : new int[] { 0, 1, 32, 33 }) {
+                final Stream<Integer> source = Stream.range(0, n);
+                assertThat(source.duplicates()).isSameAs(Stream.empty());
+                assertThat(source.appendAll(source).duplicates()).isEqualTo(source);
+                assertThat(source.appendAll(source.reverse()).duplicates()).isEqualTo(source);
+                assertThat(source.duplicatesBy(i -> i % 5)).isEqualTo(source.take(Math.max(n - 5, 0)).take(5));
+            }
+        }
+    }
+
+    @Nested
+    class LazyFlattenTests {
+
+        /** An infinite outer Iterable counting the inner iterables it has handed out; one-shot like a java.util.stream. */
+        private Iterable<List<Integer>> countingOuter(AtomicInteger opened) {
+            return java.util.stream.Stream.iterate(0, i -> i + 1).map(i -> {
+                opened.incrementAndGet();
+                return List.of(i, i);
+            })::iterator;
+        }
+
+        @Test
+        public void shouldFlattenAnInfiniteOuterIterableLazily() {
+            final AtomicInteger opened = new AtomicInteger();
+            final Stream<Integer> flat = Stream.flatten(countingOuter(opened));
+            assertThat(opened.get()).isEqualTo(1);
+            assertThat(flat.take(5).toList()).isEqualTo(List.of(0, 0, 1, 1, 2));
+            assertThat(opened.get()).isEqualTo(3);
+            // memoised: reading the same prefix again opens nothing
+            assertThat(flat.take(5).toList()).isEqualTo(List.of(0, 0, 1, 1, 2));
+            assertThat(opened.get()).isEqualTo(3);
+        }
+
+        @Test
+        public void shouldFlattenAnInfiniteInnerIterable() {
+            assertThat(Stream.flatten(List.of(Stream.from(0))).take(3).toList()).isEqualTo(List.of(0, 1, 2));
+            assertThat(Stream.flatten(List.of(List.of(-1), Stream.from(0), List.of(-2))).take(3).toList()).isEqualTo(List.of(-1, 0, 1));
+            assertThat(Stream.flatten(Stream.from(0).map(i -> Stream.from(i))).take(3).toList()).isEqualTo(List.of(0, 1, 2));
+        }
+
+        @Test
+        public void shouldSkipEmptyInnerIterablesOfAnInfiniteOuter() {
+            final Stream<Integer> flat = Stream.flatten(Stream.from(0).map(i -> i % 3 == 0 ? List.of(i) : List.<Integer> empty()));
+            assertThat(flat.take(4).toList()).isEqualTo(List.of(0, 3, 6, 9));
+        }
+
+        @Test
+        public void shouldRejectANullElementWhenTheResultReachesIt() {
+            final Stream<Integer> flat = Stream.flatten(List.of(List.of(1), java.util.Arrays.asList(2, null)));
+            assertThat(flat.take(2).toList()).isEqualTo(List.of(1, 2));
+            assertThatNullPointerException().isThrownBy(flat::toList);
+        }
+    }
+
+    @Nested
+    class InfiniteDuplicatesTests {
+
+        @Test
+        public void shouldForceTheWholeStream() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> source = Stream.range(0, 40).map(i -> {
+                forced.incrementAndGet();
+                return i % 7;
+            });
+            assertThat(source.duplicates()).isEqualTo(Stream.range(0, 7));
+            assertThat(forced.get()).isEqualTo(40);
+        }
+    }
 }

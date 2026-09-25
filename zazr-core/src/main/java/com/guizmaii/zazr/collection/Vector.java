@@ -772,6 +772,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten} in
      * zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
+     * <p>
+     * Complexity: O(n) for n inner elements in total, one builder append each.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -1811,6 +1813,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
      * generalisation of {@link #partition(Predicate)}. Two builders, one pass, no intermediate list.
+     * <p>
+     * Complexity: O(n), one builder append per element.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side

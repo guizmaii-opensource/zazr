@@ -3,6 +3,7 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.ArrayList;
@@ -166,6 +167,27 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     public static <T extends @Nullable Object> LinkedHashSet<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
         return ofAll(Iterator.ofAll(javaStream.iterator()));
+    }
+
+    /**
+     * The union of nested iterables, in the order in which their elements first occur. Static, like every {@code flatten} in zazr, because Java cannot demand of an
+     * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
+     * iterated once, so one-shot iterables are accepted.
+     * <p>
+     * Complexity: effectively O(n) for n inner elements in total, one insertion each.
+     *
+     * @param nested Iterables of elements
+     * @param <T>    Component type of the inner iterables
+     * @return the distinct inner elements, in order of first occurrence
+     * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
+     */
+    public static <T extends @Nullable Object> LinkedHashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+        Objects.requireNonNull(nested, "nested is null");
+        LinkedHashMap<T, Object> all = LinkedHashMap.empty();
+        for (Iterable<? extends T> inner : nested) {
+            all = addAll(all, inner);
+        }
+        return all.isEmpty() ? empty() : new LinkedHashSet<>(all);
     }
 
     /**
@@ -759,6 +781,32 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public Tuple2<LinkedHashSet<T>, LinkedHashSet<T>> partition(Predicate<? super T> predicate) {
         return Collections.partition(this, LinkedHashSet::ofAll, predicate);
+    }
+
+    /**
+     * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
+     * generalisation of {@link #partition(Predicate)}. One pass in iteration order, {@code f} called once per element, no intermediate
+     * collection of {@code Either}s. Values equal on one side are kept once, at the position of the first.
+     * <p>
+     * Complexity: effectively O(n), one insertion per element.
+     *
+     * @param f   Classifies an element
+     * @param <L> Component type of the left side
+     * @param <R> Component type of the right side
+     * @return the left values and the right values, each in the iteration order of the elements they come from
+     * @throws NullPointerException if {@code f} is null or returns null
+     */
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<LinkedHashSet<L>, LinkedHashSet<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+        Objects.requireNonNull(f, "f is null");
+        LinkedHashMap<L, Object> lefts = LinkedHashMap.empty();
+        LinkedHashMap<R, Object> rights = LinkedHashMap.empty();
+        for (T element : this) {
+            switch (Objects.requireNonNull(f.apply(element), "LinkedHashSet.partitionMap: f returned null")) {
+                case Either.Left(var left) -> lefts = lefts.put(left, left);
+                case Either.Right(var right) -> rights = rights.put(right, right);
+            }
+        }
+        return Tuple.of(lefts.isEmpty() ? empty() : new LinkedHashSet<>(lefts), rights.isEmpty() ? empty() : new LinkedHashSet<>(rights));
     }
 
     @Override
