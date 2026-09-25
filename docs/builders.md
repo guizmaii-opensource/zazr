@@ -10,11 +10,11 @@ A mutable, single-use accumulator for a `Vector`. Use it when you build a `Vecto
 `Vector` copies part of it, while the builder writes each element once.
 
 ```java
-Vector.Builder<String> builder = Vector.newBuilder();
+var builder = Vector.<String>newBuilder(); // Vector.Builder<String>
 for (String word : "the quick brown fox".split(" ")) {
     builder.add(word.toUpperCase());
 }
-Vector<String> words = builder.result();
+var words = builder.result(); // Vector<String>
 // Vector(THE, QUICK, BROWN, FOX)
 ```
 
@@ -32,10 +32,10 @@ A builder is not thread-safe and not reusable: after `result()`, create a new on
 `newBuilder(sizeHint)` takes the expected size. It only helps for small vectors, of 32 elements or fewer.
 
 ```java
-Vector.Builder<Integer> both = Vector.newBuilder(8);
+var both = Vector.<Integer>newBuilder(8); // Vector.Builder<Integer>
 both.addAll(Vector.of(1, 2, 3)).add(4);
-int added = both.size();
-Vector<Integer> result = both.result();
+var added = both.size();
+var result = both.result(); // Vector<Integer>
 // added is 4, result is Vector(1, 2, 3, 4)
 ```
 
@@ -47,8 +47,9 @@ Every collection has a `collector()` for `java.util.stream.Stream.collect`. `Vec
 `Vector.Builder`.
 
 ```java
-Vector<Integer> lengths = java.util.stream.Stream.of("a", "bb", "ccc").map(String::length).collect(Vector.collector());
-TreeSet<String> sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector());
+var lengths = java.util.stream.Stream.of("a", "bb", "ccc").map(String::length)
+    .collect(Vector.collector()); // Vector<Integer>
+var sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector()); // TreeSet<String>
 // Vector(1, 2, 3), TreeSet(a, b)
 ```
 

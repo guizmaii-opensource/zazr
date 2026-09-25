@@ -61,8 +61,8 @@ below are deliberate. [Design](principles.md) explains the ideas behind them.
 
 ```java
 // Vavr: Match(option).of(Case($Some($()), v -> ...), Case($None(), () -> ...))
-Option<String> maybe = Option.some("Zazr");
-int length = switch (maybe) {
+var maybe = Option.some("Zazr");
+var length = switch (maybe) {
     case Some(var value) -> value.length();
     case None() -> 0;
 };

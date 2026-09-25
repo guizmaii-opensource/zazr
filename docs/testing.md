@@ -40,10 +40,10 @@ The types are in `com.guizmaii.zazr.test`:
 ## A property
 
 ```java
-CheckResult result = Property.def("reversing twice gives the list back")
+var result = Property.def("reversing twice gives the list back")
     .forAll(Arbitrary.list(Arbitrary.integer()))
     .suchThat(list -> list.reverse().reverse().equals(list))
-    .check();
+    .check(); // CheckResult
 result.assertIsSatisfied();
 ```
 
@@ -51,11 +51,11 @@ result.assertIsSatisfied();
 `check(size, tries)` chooses both. When the property fails, `sample()` returns the value that broke it.
 
 ```java
-CheckResult broken = Property.def("every list is short")
+var broken = Property.def("every list is short")
     .forAll(Arbitrary.list(Arbitrary.integer()))
     .suchThat(list -> list.length() < 5)
-    .check(100, 1_000);
-boolean falsified = broken.isFalsified();
+    .check(100, 1_000); // CheckResult
+var falsified = broken.isFalsified();
 // true, and broken.sample() holds the first list of 5 elements or more
 ```
 
@@ -65,12 +65,13 @@ Build a `Gen` with `choose`, `map`, `flatMap` and the others, then turn it into 
 `arbitrary()`.
 
 ```java
-Gen<Integer> dice = Gen.choose(1, 6);
-Arbitrary<Tuple2<Integer, Integer>> pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b))).arbitrary();
-CheckResult sums = Property.def("two dice sum to 2..12")
+var dice = Gen.choose(1, 6); // Gen<Integer>
+var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b)))
+    .arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
+var sums = Property.def("two dice sum to 2..12")
     .forAll(pairs)
     .suchThat(p -> p._1() + p._2() >= 2 && p._1() + p._2() <= 12)
-    .check();
+    .check(); // CheckResult
 sums.assertIsSatisfied();
 ```
 
@@ -80,10 +81,10 @@ With `implies`, the `suchThat` condition becomes a precondition. Samples that fa
 satisfy the `implies` condition.
 
 ```java
-Checkable halving = Property.def("an even number is twice its half")
+var halving = Property.def("an even number is twice its half")
     .forAll(Arbitrary.integer())
     .suchThat(n -> n % 2 == 0)
-    .implies(n -> (n / 2) * 2 == n);
+    .implies(n -> (n / 2) * 2 == n); // Checkable
 halving.check().assertIsSatisfied();
 ```
 

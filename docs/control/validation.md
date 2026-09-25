@@ -41,7 +41,8 @@ static Validation<String, String> email(String value) {
 and turns the exception into an error.
 
 ```java
-Validation<String, Integer> port = Validation.of(() -> Integer.parseInt("80a"), e -> "port is not a number");
+var port = Validation.of(() -> Integer.parseInt("80a"),
+    e -> "port is not a number"); // Validation<String, Integer>
 // Invalid(port is not a number)
 ```
 
@@ -53,13 +54,13 @@ takes 2 to 8 checks ([zip at arity N](../zip.md)); the instance form combines tw
 ```java
 record User(String name, int age, String email) {}
 
-Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
+var user = Validation.zipWith(name(""), age(-1), email("jules"), User::new); // Validation<String, User>
 // Invalid(name is blank, age is negative, email has no @)
 ```
 
 ```java
-Validation<String, Tuple2<String, Integer>> pair = name("Ada").zip(age(36));
-Validation<String, String> both = name("").zipWith(age(-1), (n, a) -> n + a);
+var pair = name("Ada").zip(age(36)); // Validation<String, Tuple2<String, Integer>>
+var both = name("").zipWith(age(-1), (n, a) -> n + a); // Validation<String, String>
 // Valid((Ada, 36)), Invalid(name is blank, age is negative)
 ```
 
@@ -70,8 +71,8 @@ Validation<String, String> both = name("").zipWith(age(-1), (n, a) -> n + a);
 `switch` over the records, or `fold` with the errors first:
 
 ```java
-Validation<String, Integer> checked = age(-5);
-String message = switch (checked) {
+var checked = age(-5); // Validation<String, Integer>
+var message = switch (checked) {
     case Valid(var years) -> "age " + years;
     case Invalid(var errors) -> errors.size() + " error(s): " + errors.mkString("; ");
 };
@@ -86,26 +87,30 @@ String message = switch (checked) {
 same after running a check on each input.
 
 ```java
-Validation<String, Vector<Integer>> ages = Validation.forEach(Vector.of(3, -1, 7, -2), n -> age(n));
+var ages = Validation.forEach(Vector.of(3, -1, 7, -2),
+    n -> age(n)); // Validation<String, Vector<Integer>>
 // Invalid(age is negative, age is negative)
 ```
 
 ```java
-Validation<String, Vector<String>> names = Validation.collectAll(Vector.of(name("Ada"), name("Grace")));
+var names = Validation.collectAll(
+    Vector.of(name("Ada"), name("Grace"))); // Validation<String, Vector<String>>
 // Valid(Vector(Ada, Grace))
 ```
 
 `forEach` over a `NonEmptyVector` returns a `NonEmptyVector` on the valid side too.
 
 ```java
-Validation<String, NonEmptyVector<Integer>> scores = Validation.forEach(NonEmptyVector.of(1, 2), n -> age(n));
+var scores = Validation.forEach(NonEmptyVector.of(1, 2),
+    n -> age(n)); // Validation<String, NonEmptyVector<Integer>>
 // Valid(NonEmptyVector(1, 2))
 ```
 
 `partition` never fails: it returns the errors and the successes side by side.
 
 ```java
-Tuple2<Vector<String>, Vector<Integer>> split = Validation.partition(Vector.of(4, -1, 9), n -> age(n));
+var split = Validation.partition(Vector.of(4, -1, 9),
+    n -> age(n)); // Tuple2<Vector<String>, Vector<Integer>>
 // (Vector(age is negative), Vector(4, 9))
 ```
 
@@ -115,7 +120,7 @@ Tuple2<Vector<String>, Vector<Integer>> split = Validation.partition(Vector.of(4
 for a rule that needs the valid value, after the independent checks:
 
 ```java
-Validation<String, User> adult = Validation.zipWith(name("Ada"), age(15), email("ada@example.com"), User::new)
+var adult = Validation.zipWith(name("Ada"), age(15), email("ada@example.com"), User::new)
     .flatMapEither(u -> u.age() >= 18 ? Either.right(u) : Either.left(u.name() + " is under 18"));
 // Invalid(Ada is under 18)
 ```
@@ -136,9 +141,10 @@ stays non-empty. `mapBoth` transforms the errors and the value at once.
 - `toOption()` and `toVector()` keep the value and drop the errors.
 
 ```java
-Validation<String, Integer> negative = age(-3);
-Either<String, Integer> joined = negative.toEitherWith(errors -> errors.mkString("; "));
-Try<Integer> failure = negative.toTry(errors -> new IllegalArgumentException(errors.mkString("; ")));
+var negative = age(-3); // Validation<String, Integer>
+var joined = negative.toEitherWith(errors -> errors.mkString("; ")); // Either<String, Integer>
+var failure = negative.toTry(
+    errors -> new IllegalArgumentException(errors.mkString("; "))); // Try<Integer>
 // Left(age is negative), Failure(java.lang.IllegalArgumentException: age is negative)
 ```
 
