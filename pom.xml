@@ -352,6 +352,12 @@
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
+                                <configuration>
+                                    <!-- target/jacoco.exec is kept between builds: appending would merge the data of
+                                         an earlier run, of code or tests that may have changed since, into the
+                                         report. Safe with surefire's single fork per module. -->
+                                    <append>false</append>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

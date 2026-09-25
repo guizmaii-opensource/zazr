@@ -110,8 +110,7 @@ nullness: ## NullAway / JSpecify nullness check
 bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
-# One Maven run up to test with the coverage profile: a later Maven run would empty target/ at generate-sources and lose
-# the execution data. zazr-benchmark has no tests and stays out of the report.
+# zazr-benchmark has no tests and stays out of the report.
 COVERAGE_REPORT := zazr-test/target/site/jacoco-aggregate
 
 coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in zazr-test/target/site/jacoco-aggregate
