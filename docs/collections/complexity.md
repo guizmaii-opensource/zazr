@@ -1024,6 +1024,7 @@ Lookups, insertions and removals by key are effectively O(1); an insertion or a 
 | `computeIfPresent(K, BiFunction<? super K, ? super V, ? extends V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup, and one put when the key is present.">effectively O(1)</abbr> | effectively O(1): one lookup, and one put when the key is present. |
 | `contains(Tuple2<K, V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup of the key, then its value is compared.">effectively O(1)</abbr> | effectively O(1): one lookup of the key, then its value is compared. |
 | `containsKey(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
+| `forEach(BiConsumer<K, V>)` | <abbr class="cx cx-linear" title="O(n): one walk over the entries, with no Tuple2 made for each.">O(n)</abbr> | O(n): one walk over the entries, with no Tuple2 made for each. |
 | `get(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
 | `getOrElse(K, V)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
 | `isEmpty()` | <abbr class="cx cx-constant" title="O(1).">O(1)</abbr> | O(1). |
