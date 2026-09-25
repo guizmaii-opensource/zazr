@@ -23,6 +23,13 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>
  * Provides efficient sorted key access and typical map operations in a functional style.
+ * <p>
+ * Complexity: the methods without a note of their own are O(n) at most, one walk over the entries (the folds,
+ * {@code find}, {@code count}, {@code tap}, {@code hashCode}, {@code toString}, {@code toList}), except
+ * {@code size}, {@code isEmpty} and {@code comparator}, O(1), and {@code containsAll}, one lookup per entry,
+ * O(m log n). {@code toSortedMap} and {@code toSortedSet} insert the entries one by one into a new tree:
+ * O(n log n). The factories ({@code of}, {@code ofAll}, {@code ofEntries}, {@code tabulate}, {@code fill},
+ * {@code collector}) insert the entries one by one: O(m log m) for m entries, even when they come sorted.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
@@ -241,6 +248,10 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     /**
      * Returns a {@code TreeMap}, from a source java.util.Map.
+     * <p>
+     * Complexity: O(m log m) for m entries: each one is inserted into the tree, even when they come sorted. O(1)
+     * when {@code map} is the {@link #asJavaMap()} view of a TreeMap created without a comparator: that map is
+     * returned as is.
      *
      * @param map A map
      * @param <K> The key type
@@ -323,6 +334,10 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     /**
      * Returns a {@code TreeMap}, from a source java.util.Map.
+     * <p>
+     * Complexity: O(m log m) for m entries: each one is inserted into the tree, even when they come sorted. O(1)
+     * when {@code map} is the {@link #asJavaMap()} view of a TreeMap ordered by the same comparator object: that map
+     * is returned as is.
      *
      * @param keyComparator The comparator used to sort the entries by their key.
      * @param map           A map
@@ -979,7 +994,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n): one lookup of the key, then its value is compared.
+     * Complexity: O(log n): one lookup of the key, then the value found is compared with {@code equals}.
      */
     @Override
     public boolean contains(Tuple2<K, V> element) {
@@ -989,7 +1004,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) comparisons.
+     * Complexity: O(log n): one walk down the tree, comparing keys with the comparator.
      */
     @Override
     public boolean containsKey(K key) {
@@ -1050,13 +1065,18 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) comparisons.
+     * Complexity: O(log n): one walk down the tree, comparing keys with the comparator.
      */
     @Override
     public Option<V> get(K key) {
         return entries.find(TreeMap.<K, V>lookupEntry(key)).map(Tuple2::_2);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n), as {@link #get(Object)}.
+     */
     @Override
     public V getOrElse(K key, V defaultValue) {
         return get(key).getOrElse(defaultValue);
@@ -1075,7 +1095,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) to create (the path to the least entry); a whole walk is O(n).
+     * Complexity: O(log n) to create, then O(1) per step on average; a whole walk is O(n).
      */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
@@ -1290,7 +1310,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n): one walk in key order, the values copied into a Vector.
      */
     @Override
     public Vector<V> values() {
@@ -1429,6 +1449,16 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return sliced == entries ? this : new TreeMap<>(sliced);
     }
 
+    /**
+     * Whether {@code o} is a Map with the same entries, in any order: another TreeMap, a HashMap or a
+     * LinkedHashMap. Each entry of this map is looked up in {@code o} with {@code o}'s own {@code contains}.
+     * <p>
+     * Complexity: O(n log n) against another TreeMap: one lookup in it per entry; O(n) against a HashMap or a
+     * LinkedHashMap, and O(1) when the sizes differ.
+     *
+     * @param o any object
+     * @return true if {@code o} is a Map of the same entries
+     */
     @Override
     public boolean equals(@Nullable Object o) {
         return Collections.equals(this, o);
@@ -1590,9 +1620,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@code new java.util.TreeMap<>(map.asJavaMap())}; {@code TreeMap.ofAll} given the view and this map's comparator
      * returns this map without copying.
      * <p>
-     * Complexity: O(1); {@code get}, {@code containsKey}, {@code size}, {@code firstKey}, {@code lastKey} and the
-     * {@code ceiling}, {@code floor}, {@code higher} and {@code lower} lookups on the view and on its sub-views are
-     * O(log n), an iterator is O(log n) to create and amortized O(1) per step.
+     * Complexity: O(1): nothing is copied. On the view and on its sub-views, {@code get}, {@code containsKey},
+     * {@code size}, {@code firstKey}, {@code lastKey} and the {@code ceiling}, {@code floor}, {@code higher} and
+     * {@code lower} lookups are O(log n); an iterator is O(log n) to create, then O(1) per step on average.
      *
      * @return an unmodifiable {@code java.util.NavigableMap} view
      */
