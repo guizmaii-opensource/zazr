@@ -918,6 +918,15 @@ public class RadixVectorDifferentialTest {
         assertThat(ontoSuffix.get(20)).isEqualTo(bigPrefix.head());
         assertThat(ontoSuffix.last()).isEqualTo(bigPrefix.last());
         checkShape(ontoSuffix.take(1 << 16));
+        // prepending to a suffix whose prefix and data are full cannot go further: near the limit the builder takes over
+        final RadixVector<Integer> front = RadixVector.ofAll(sequence(-1024, 0));
+        final RadixVector<Integer> fullFront = full.dropRight(2048);
+        final RadixVector<Integer> beforeFullFront = front.appendedAll(fullFront);
+        assertThat(beforeFullFront.length()).isEqualTo(Integer.MAX_VALUE - 1024);
+        assertThat(beforeFullFront.get(1023)).isEqualTo(-1);
+        assertThat(beforeFullFront.get(1024)).isEqualTo(fullFront.head());
+        assertThat(beforeFullFront.last()).isEqualTo(fullFront.last());
+        checkShape(beforeFullFront.take(1 << 16));
 
         // one element too many still throws, whatever the kind of argument
         assertThatThrownBy(() -> x.appended(0).prependedAll(p)).isInstanceOf(IllegalArgumentException.class);

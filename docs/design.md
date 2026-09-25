@@ -1237,7 +1237,10 @@ Differences from Scala:
   `length0` wrap to `Integer.MIN_VALUE` when the outer leaf still has room, and its builder fails with a negative size.
   The tree has 2^31 positions, and the free slots in front of a prefix that is not full count among them. So a vector
   whose front was dropped, and a builder started from it, hold that many fewer elements, and grow no further, as in
-  Scala. `alignTo` skips its padding when the padding would not fit.
+  Scala. Only the receiver's free slots count. An argument of `appendedAll`/`prependedAll` never limits the result,
+  so a `RadixVector` argument gives the same result as a list of the same elements. The builder adds the argument
+  without its padding when the padding would not fit. `alignTo` then skips its own padding and stays aligned. Appending
+  to the argument (or prepending to it) is used only far from the limit.
 - **Single-shot builder.** `result()` hands the arrays over without copying them, and the builder is closed afterwards,
   the same contract as `Vector.Builder`. Scala's builder is reusable instead. There is no `clear()`, and `initSparse`
   (`fillSparse`) is left out.
