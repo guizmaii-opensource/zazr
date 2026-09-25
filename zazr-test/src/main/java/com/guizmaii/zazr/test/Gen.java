@@ -6,6 +6,7 @@ import com.guizmaii.zazr.Function5;
 import com.guizmaii.zazr.Function6;
 import com.guizmaii.zazr.Function7;
 import com.guizmaii.zazr.Function8;
+import com.guizmaii.zazr.Lazy;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.Tuple3;
@@ -14,7 +15,21 @@ import com.guizmaii.zazr.Tuple5;
 import com.guizmaii.zazr.Tuple6;
 import com.guizmaii.zazr.Tuple7;
 import com.guizmaii.zazr.Tuple8;
+import com.guizmaii.zazr.collection.HashMap;
+import com.guizmaii.zazr.collection.HashSet;
+import com.guizmaii.zazr.collection.LinkedHashMap;
+import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.NonEmptyVector;
+import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.TreeMap;
+import com.guizmaii.zazr.collection.TreeSet;
+import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.control.Either;
+import com.guizmaii.zazr.control.Option;
+import com.guizmaii.zazr.control.Try;
+import com.guizmaii.zazr.control.Validation;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -1259,6 +1274,493 @@ public final class Gen<A> {
                     final LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
                     return dateTime.isBefore(min) ? min : dateTime.isAfter(max) ? max : dateTime;
                 });
+    }
+
+    // -- the Zazr types
+
+    /// The exceptions {@link #tryOf(Gen)} fails with, shared so that equal failures can be drawn twice.
+    private static final Exception[] FAILURES = {
+            new IllegalStateException("generated failure 1"),
+            new IllegalArgumentException("generated failure 2"),
+            new java.io.IOException("generated failure 3"),
+    };
+
+    /**
+     * A random option: {@code None} for one pass in four, otherwise {@code Some} of each value of a pass of
+     * {@code gen}.
+     *
+     * @param gen the generator of the values, possibly null ones
+     * @param <A> the type of the values
+     * @return a generator of options
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Option<A>> option(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return new Gen<>((sampling, size, sink) -> sampling.draw().nextInt(4) == 0
+                ? sink.accept(Option.none())
+                : gen.run(sampling, size, a -> sink.accept(Option.some(a))));
+    }
+
+    /**
+     * {@code Some} of each value of {@code gen}.
+     *
+     * @param gen the generator of the values, possibly null ones
+     * @param <A> the type of the values
+     * @return a generator of {@code Some}s, finite when {@code gen} is
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Option<A>> some(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return gen.map(Option::some);
+    }
+
+    /**
+     * {@code None}, once.
+     *
+     * @param <A> the type of the values the option does not hold
+     * @return a finite generator of {@code None}
+     */
+    public static <A> Gen<Option<A>> none() {
+        return constant(Option.none());
+    }
+
+    /**
+     * A random either, {@code Left} and {@code Right} as likely: for each pass, a {@code Left} of each value of a
+     * pass of {@code left}, or a {@code Right} of each value of a pass of {@code right}.
+     *
+     * @param left  the generator of the left values
+     * @param right the generator of the right values
+     * @param <L>   the type of the left values
+     * @param <R>   the type of the right values
+     * @return a generator of eithers
+     * @throws NullPointerException if an argument is null
+     */
+    public static <L, R> Gen<Either<L, R>> either(Gen<L> left, Gen<R> right) {
+        Objects.requireNonNull(left, "left is null");
+        Objects.requireNonNull(right, "right is null");
+        return new Gen<>((sampling, size, sink) -> sampling.draw().nextBoolean()
+                ? left.run(sampling, size, l -> sink.accept(Either.left(l)))
+                : right.run(sampling, size, r -> sink.accept(Either.right(r))));
+    }
+
+    /**
+     * A random try: for one pass in four, a {@code Failure} of one of three exceptions shared by every call, so that
+     * two failures drawn with the same exception are equal ({@code Failure} compares its cause by reference);
+     * otherwise a {@code Success} of each value of a pass of {@code gen}.
+     *
+     * @param gen the generator of the values, possibly null ones
+     * @param <A> the type of the values
+     * @return a generator of tries
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Try<A>> tryOf(Gen<A> gen) {
+        return tryOf(gen, elements(FAILURES));
+    }
+
+    /**
+     * A random try: for one pass in four, a {@code Failure} of each exception of a pass of {@code failures};
+     * otherwise a {@code Success} of each value of a pass of {@code gen}.
+     *
+     * @param gen      the generator of the values, possibly null ones
+     * @param failures the generator of the exceptions; a fatal one is rethrown by {@code Try.failure}
+     * @param <A>      the type of the values
+     * @return a generator of tries
+     * @throws NullPointerException if an argument is null
+     */
+    public static <A> Gen<Try<A>> tryOf(Gen<A> gen, Gen<? extends Exception> failures) {
+        Objects.requireNonNull(gen, "gen is null");
+        Objects.requireNonNull(failures, "failures is null");
+        return new Gen<>((sampling, size, sink) -> sampling.draw().nextInt(4) == 0
+                ? failures.run(sampling, size, e -> sink.accept(Try.failure(e)))
+                : gen.run(sampling, size, a -> sink.accept(Try.success(a))));
+    }
+
+    /**
+     * A random validation, {@code Valid} and {@code Invalid} as likely: for each pass, a {@code Valid} of each value
+     * of a pass of {@code values}, or an {@code Invalid} of one to three errors, each the first value of one pass
+     * of {@code errors}. A single error is built by {@code invalid} or {@code invalidAll}, as likely.
+     *
+     * @param errors the generator of the errors
+     * @param values the generator of the values
+     * @param <E>    the type of the errors
+     * @param <A>    the type of the values
+     * @return a generator of validations
+     * @throws NullPointerException if an argument is null
+     */
+    public static <E, A> Gen<Validation<E, A>> validation(Gen<E> errors, Gen<A> values) {
+        Objects.requireNonNull(errors, "errors is null");
+        Objects.requireNonNull(values, "values is null");
+        return new Gen<>((sampling, size, sink) -> {
+            if (sampling.draw().nextBoolean()) {
+                return values.run(sampling, size, a -> sink.accept(Validation.valid(a)));
+            }
+            NonEmptyVector<E> drawn = NonEmptyVector.single(errors.draw(sampling, size));
+            for (int extra = sampling.draw().nextInt(3); extra > 0; extra--) {
+                drawn = drawn.append(errors.draw(sampling, size));
+            }
+            return sink.accept(drawn.size() == 1 && sampling.draw().nextBoolean()
+                    ? Validation.invalid(drawn.head())
+                    : Validation.invalidAll(drawn));
+        });
+    }
+
+    /**
+     * A lazy value of each value of {@code gen}, already evaluated or not, as likely.
+     *
+     * @param gen the generator of the values, possibly null ones
+     * @param <A> the type of the values
+     * @return a generator of lazy values
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Lazy<A>> lazy(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return new Gen<>((sampling, size, sink) -> gen.run(sampling, size, a -> {
+            final Lazy<A> lazy = Lazy.of(() -> a);
+            if (sampling.draw().nextBoolean()) {
+                lazy.get();
+            }
+            return sink.accept(lazy);
+        }));
+    }
+
+    /**
+     * A generator of pairs, as {@link #zip(Gen, Gen)}.
+     *
+     * @param g1   the generator of the first component
+     * @param g2   the generator of the second component
+     * @param <T1> the type of the first component
+     * @param <T2> the type of the second component
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2> Gen<Tuple2<T1, T2>> tuple2(Gen<T1> g1, Gen<T2> g2) {
+        return zip(g1, g2);
+    }
+
+    /**
+     * A generator of 3-tuples, as {@link #zip(Gen, Gen, Gen)}.
+     *
+     * @param g1   the generator of component 1
+     * @param g2   the generator of component 2
+     * @param g3   the generator of component 3
+     * @param <T1> the type of component 1
+     * @param <T2> the type of component 2
+     * @param <T3> the type of component 3
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2, T3> Gen<Tuple3<T1, T2, T3>> tuple3(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3) {
+        return zip(g1, g2, g3);
+    }
+
+    /**
+     * A generator of 4-tuples, as {@link #zip(Gen, Gen, Gen, Gen)}.
+     *
+     * @param g1   the generator of component 1
+     * @param g2   the generator of component 2
+     * @param g3   the generator of component 3
+     * @param g4   the generator of component 4
+     * @param <T1> the type of component 1
+     * @param <T2> the type of component 2
+     * @param <T3> the type of component 3
+     * @param <T4> the type of component 4
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2, T3, T4> Gen<Tuple4<T1, T2, T3, T4>> tuple4(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4) {
+        return zip(g1, g2, g3, g4);
+    }
+
+    /**
+     * A generator of 5-tuples, as {@link #zip(Gen, Gen, Gen, Gen, Gen)}.
+     *
+     * @param g1   the generator of component 1
+     * @param g2   the generator of component 2
+     * @param g3   the generator of component 3
+     * @param g4   the generator of component 4
+     * @param g5   the generator of component 5
+     * @param <T1> the type of component 1
+     * @param <T2> the type of component 2
+     * @param <T3> the type of component 3
+     * @param <T4> the type of component 4
+     * @param <T5> the type of component 5
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> tuple5(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5) {
+        return zip(g1, g2, g3, g4, g5);
+    }
+
+    /**
+     * A generator of 6-tuples, as {@link #zip(Gen, Gen, Gen, Gen, Gen, Gen)}.
+     *
+     * @param g1   the generator of component 1
+     * @param g2   the generator of component 2
+     * @param g3   the generator of component 3
+     * @param g4   the generator of component 4
+     * @param g5   the generator of component 5
+     * @param g6   the generator of component 6
+     * @param <T1> the type of component 1
+     * @param <T2> the type of component 2
+     * @param <T3> the type of component 3
+     * @param <T4> the type of component 4
+     * @param <T5> the type of component 5
+     * @param <T6> the type of component 6
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> tuple6(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6) {
+        return zip(g1, g2, g3, g4, g5, g6);
+    }
+
+    /**
+     * A generator of 7-tuples, as {@link #zip(Gen, Gen, Gen, Gen, Gen, Gen, Gen)}.
+     *
+     * @param g1   the generator of component 1
+     * @param g2   the generator of component 2
+     * @param g3   the generator of component 3
+     * @param g4   the generator of component 4
+     * @param g5   the generator of component 5
+     * @param g6   the generator of component 6
+     * @param g7   the generator of component 7
+     * @param <T1> the type of component 1
+     * @param <T2> the type of component 2
+     * @param <T3> the type of component 3
+     * @param <T4> the type of component 4
+     * @param <T5> the type of component 5
+     * @param <T6> the type of component 6
+     * @param <T7> the type of component 7
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> tuple7(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7) {
+        return zip(g1, g2, g3, g4, g5, g6, g7);
+    }
+
+    /**
+     * A generator of 8-tuples, as {@link #zip(Gen, Gen, Gen, Gen, Gen, Gen, Gen, Gen)}.
+     *
+     * @param g1   the generator of component 1
+     * @param g2   the generator of component 2
+     * @param g3   the generator of component 3
+     * @param g4   the generator of component 4
+     * @param g5   the generator of component 5
+     * @param g6   the generator of component 6
+     * @param g7   the generator of component 7
+     * @param g8   the generator of component 8
+     * @param <T1> the type of component 1
+     * @param <T2> the type of component 2
+     * @param <T3> the type of component 3
+     * @param <T4> the type of component 4
+     * @param <T5> the type of component 5
+     * @param <T6> the type of component 6
+     * @param <T7> the type of component 7
+     * @param <T8> the type of component 8
+     * @return a new generator
+     * @throws NullPointerException if an argument is null
+     */
+    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> tuple8(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7, Gen<T8> g8) {
+        return zip(g1, g2, g3, g4, g5, g6, g7, g8);
+    }
+
+    // -- the Zazr collections
+    //
+    // Each collection generator gives one collection per pass. Its length is drawn between 0 and the current size,
+    // favouring the edges as intValue(0, size): half of the lengths are 0, 1, the size or the size minus one, so the
+    // laws see collections as long as the size allows, not only short ones. Each element is the first value of one
+    // pass of the element generator, at the current size; a filtered element generator is run again until it gives
+    // one. The collection is then built along one of several paths, each reaching another internal representation.
+
+    /**
+     * A random vector of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size and
+     * the size minus one. Each element is the first value of one pass of {@code gen}. The vector is built by
+     * {@code ofAll}, a builder, appends, prepends, as what is left after dropping a prefix (the trie keeps an
+     * offset), or as a slice of a longer vector, each as likely.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of vectors
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Vector<A>> vector(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.vector(gen, Shapes.Length.UP_TO_SIZE);
+    }
+
+    /**
+     * A random vector of exactly {@code n} elements of {@code gen}, built as {@link #vector(Gen)}; the elements drawn
+     * to be dropped again are drawn only when the current size is not 0.
+     *
+     * @param n   the number of elements
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of vectors of {@code n} elements
+     * @throws NullPointerException     if {@code gen} is null
+     * @throws IllegalArgumentException if {@code n} is negative
+     */
+    public static <A> Gen<Vector<A>> vectorN(int n, Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        requireNonNegative(n, "n");
+        return Shapes.vector(gen, Shapes.Length.exactly(n));
+    }
+
+    /**
+     * A random non-empty vector of one to {@code max(1, size)} elements of {@code gen}: a head, then a tail as
+     * {@link #vector(Gen)} of up to the size minus one elements. Each element is the first value of one pass of
+     * {@code gen}. The head and the tail are joined by {@code appendAll}, {@code fromVector} or {@code prepend},
+     * each as likely.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of non-empty vectors
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<NonEmptyVector<A>> nonEmptyVector(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.nonEmptyVector(gen);
+    }
+
+    /**
+     * A random list of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size and the
+     * size minus one. Each element is the first value of one pass of {@code gen}. The list is built by
+     * {@code ofAll}, by prepends, or as the rest of a longer list after {@code drop}, each as likely.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of lists
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<List<A>> list(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.list(gen);
+    }
+
+    /**
+     * A random queue of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size and the
+     * size minus one. Each element is the first value of one pass of {@code gen}. The elements sit in the front
+     * list only ({@code ofAll}), one in front and the rest in the rear list (enqueues), in both lists
+     * ({@code ofAll} then {@code enqueueAll}), or in a rear list reversed into the front by {@code drop}, each as
+     * likely.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of queues
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Queue<A>> queue(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.queue(gen);
+    }
+
+    /**
+     * A random finite stream of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size
+     * and the size minus one. Each element is the first value of one pass of {@code gen}, drawn when the stream is
+     * generated. The stream is built by {@code ofAll}, as a chain of lazy tails, as the same chain with a prefix
+     * already evaluated, as an eager prefix with a lazy suffix appended, or as the rest of a longer chain after
+     * {@code drop}, each as likely.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of streams
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<Stream<A>> stream(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.stream(gen);
+    }
+
+    /**
+     * A random hash set of up to the current size drawn elements of {@code gen} (fewer when draws repeat), the number
+     * of draws favouring 0, 1, the size and the size minus one. Each element is the first value of one pass of
+     * {@code gen}. The set is built by {@code ofAll}, by one {@code add} at a time, after extra elements were added
+     * and removed again, or after elements were removed and added back, each as likely.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of hash sets
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<HashSet<A>> hashSet(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.set(gen, Shapes.hashSetOps());
+    }
+
+    /**
+     * A random linked hash set, built as {@link #hashSet(Gen)}.
+     *
+     * @param gen the generator of the elements, possibly null ones
+     * @param <A> the type of the elements
+     * @return a random generator of linked hash sets
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<LinkedHashSet<A>> linkedHashSet(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.set(gen, Shapes.linkedHashSetOps());
+    }
+
+    /**
+     * A random tree set in the natural order of the elements, built as {@link #hashSet(Gen)}.
+     *
+     * @param gen the generator of the elements; a null one makes the tree set throw
+     * @param <A> the type of the elements
+     * @return a random generator of tree sets
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A extends Comparable<? super A>> Gen<TreeSet<A>> treeSet(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.set(gen, Shapes.treeSetOps());
+    }
+
+    /**
+     * A random hash map of up to the current size drawn entries (fewer when keys repeat), the number of draws
+     * favouring 0, 1, the size and the size minus one. Each entry is a key then a value, each the first value of one
+     * pass of its generator. The map is built by {@code ofAll} of a JDK map, by one {@code put} at a time, after
+     * extra keys were put and removed again, or with every key first put with another value and then overwritten,
+     * each as likely.
+     *
+     * @param keys   the generator of the keys, possibly null ones
+     * @param values the generator of the values, possibly null ones
+     * @param <K>    the type of the keys
+     * @param <V>    the type of the values
+     * @return a random generator of hash maps
+     * @throws NullPointerException if an argument is null
+     */
+    public static <K, V> Gen<HashMap<K, V>> hashMap(Gen<K> keys, Gen<V> values) {
+        Objects.requireNonNull(keys, "keys is null");
+        Objects.requireNonNull(values, "values is null");
+        return Shapes.map(keys, values, Shapes.hashMapOps());
+    }
+
+    /**
+     * A random linked hash map, built as {@link #hashMap(Gen, Gen)}.
+     *
+     * @param keys   the generator of the keys, possibly null ones
+     * @param values the generator of the values, possibly null ones
+     * @param <K>    the type of the keys
+     * @param <V>    the type of the values
+     * @return a random generator of linked hash maps
+     * @throws NullPointerException if an argument is null
+     */
+    public static <K, V> Gen<LinkedHashMap<K, V>> linkedHashMap(Gen<K> keys, Gen<V> values) {
+        Objects.requireNonNull(keys, "keys is null");
+        Objects.requireNonNull(values, "values is null");
+        return Shapes.map(keys, values, Shapes.linkedHashMapOps());
+    }
+
+    /**
+     * A random tree map in the natural order of the keys, built as {@link #hashMap(Gen, Gen)}.
+     *
+     * @param keys   the generator of the keys; a null one makes the tree map throw
+     * @param values the generator of the values, possibly null ones
+     * @param <K>    the type of the keys
+     * @param <V>    the type of the values
+     * @return a random generator of tree maps
+     * @throws NullPointerException if an argument is null
+     */
+    public static <K extends Comparable<? super K>, V> Gen<TreeMap<K, V>> treeMap(Gen<K> keys, Gen<V> values) {
+        Objects.requireNonNull(keys, "keys is null");
+        Objects.requireNonNull(values, "values is null");
+        return Shapes.map(keys, values, Shapes.treeMapOps());
     }
 
     // -- running outside a check
