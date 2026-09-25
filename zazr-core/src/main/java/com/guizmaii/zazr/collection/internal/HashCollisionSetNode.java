@@ -120,7 +120,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
 
     @Override
     SetNode<T> addInPlace(Object owner, T element, int hash, int shift) {
-        return updated(element, hash, shift, true);
+        return updated(element, hash, shift, false);
     }
 
     // `that` is a collision node too: two nodes at the same place below the last level hold elements of one hash

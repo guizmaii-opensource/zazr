@@ -42,10 +42,11 @@ public class ChampSetTest {
         return new Key(hash, random.nextInt(3));
     }
 
+    // successive persistent additions, each keeping an equal element already there, as the builder does
     private static <T> BitmapIndexedSetNode<T> persistent(java.util.List<T> elements) {
         BitmapIndexedSetNode<T> trie = SetNode.empty();
         for (T element : elements) {
-            trie = trie.updated(element, true);
+            trie = trie.updated(element, false);
         }
         return trie;
     }
@@ -270,12 +271,12 @@ public class ChampSetTest {
                 final int hash = random.nextBoolean() ? random.nextInt(hashRange) : -random.nextInt(hashRange);
                 final Key key = new Key(hash, random.nextInt(idRange));
                 elements.add(key);
-                model.put(key, key);
+                model.putIfAbsent(key, key);
             }
             final BitmapIndexedSetNode<Key> built = built(elements);
             assertValid(built);
             assertSameShape(persistent(elements), built, true);
-            // the last of equal elements is kept
+            // the first of equal elements is kept
             assertHolds(built, model);
         }
     }
@@ -383,15 +384,15 @@ public class ChampSetTest {
                                     : randomKey(random);
                     final Key equal = new Key(key.hash(), key.id());
                     left.add(equal);
-                    leftModel.put(equal, equal);
+                    leftModel.putIfAbsent(equal, equal);
                     final Key other = randomKey(random);
                     right.add(other);
-                    rightModel.put(other, other);
+                    rightModel.putIfAbsent(other, other);
                 }
                 if (random.nextInt(3) == 0) {
                     final int second = random.nextInt(pool.size());
                     left.addAll(pool.get(second));
-                    leftModel.putAll(poolContents.get(second));
+                    poolContents.get(second).forEach(leftModel::putIfAbsent);
                 }
                 final BitmapIndexedSetNode<Key> l = left.result();
                 final BitmapIndexedSetNode<Key> r = right.result();

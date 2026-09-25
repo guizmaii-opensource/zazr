@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 /// handed out, the nodes this builder creates carry its owner token and are the only ones updated in place. A node it
 /// did not create (one of a set adopted by [#addAll], or of any persistent operation) is copied the first time an
 /// addition goes through it, and the copy is owned. Collision nodes are immutable and replaced. The trie produced is
-/// the one successive persistent additions of the same elements produce, node for node, the last of equal elements
+/// the one successive persistent additions of the same elements produce, node for node, the first of equal elements
 /// kept.
 ///
 /// [#result()] closes the builder, so no owned node is updated after it: the returned trie never changes. Single-use
@@ -33,8 +33,8 @@ public final class HashSetBuilder<T extends @Nullable Object> {
         this.name = name;
     }
 
-    /// Adds one element, replacing an equal one already present. The caller has called [#checkOpen()] and checked that
-    /// it is not null.
+    /// Adds one element, unless an equal one is already there, which is kept. The caller has called [#checkOpen()] and
+    /// checked that it is not null.
     public void add(T element) {
         root = root.addInPlace(owner, element, Objects.hashCode(element), 0);
     }

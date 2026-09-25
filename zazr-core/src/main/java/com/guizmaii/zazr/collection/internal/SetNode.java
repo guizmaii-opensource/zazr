@@ -32,7 +32,7 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
     /// The node without `element`; this node when it is absent.
     abstract SetNode<T> removed(T element, int hash, int shift);
 
-    /// The addition of a [HashSetBuilder]: the node with `element` (an equal element replaced), where a
+    /// The addition of a [HashSetBuilder]: the node with `element` (an equal element already there kept), where a
     /// [BitmapIndexedSetNode] owned by `owner` is updated in place instead of copied, and the one not owned is copied
     /// into a node owned by `owner`, which is updated in place.
     abstract SetNode<T> addInPlace(Object owner, T element, int hash, int shift);

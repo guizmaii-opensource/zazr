@@ -684,7 +684,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             final T element0 = getPayload(index);
             final int hash0 = hashes[index];
             if (hash0 == hash && Objects.equals(element0, element)) {
-                content[index] = element;
+                // the element already there is kept
+                return;
             } else {
                 final SetNode<T> subNodeNew = mergeTwoKeyValPairs(owner, element0, hash0, element, hash, shift + BIT_PARTITION_SIZE);
                 // an element and a child take one slot each, so the owned array is reused: the elements after the

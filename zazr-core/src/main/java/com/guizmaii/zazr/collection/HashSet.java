@@ -21,6 +21,9 @@ import org.jspecify.annotations.Nullable;
  * and Vinju, <em>Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections</em>, OOPSLA 2015),
  * ported from the {@code HashSet} of the Scala 3 standard library. Each node keeps its elements inline, with no object
  * per element.
+ * <p>
+ * Of two equal elements, a HashSet keeps the one it received first: {@link #add(Object)}, {@link #addAll(Iterable)},
+ * {@link #union(Set)}, the factories, the collector and the {@link Builder} never replace an element already there.
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -113,7 +116,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         BitmapIndexedSetNode<T> tree = SetNode.empty();
         for (T element : elements) {
             Objects.requireNonNull(element, "HashSet.of: element is null");
-            tree = tree.updated(element, true);
+            tree = tree.updated(element, false);
         }
         return wrap(tree);
     }
@@ -1049,7 +1052,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * set never changes. The HashSet returned by {@link #result()} is the one {@link HashSet#ofAll(Iterable)} of the
      * same elements gives, and never changes either.
      * <p>
-     * Of equal elements, the one added last is kept, as with {@link HashSet#ofAll(Iterable)}. Not thread-safe. After
+     * Of equal elements, the one added first is kept, as with {@link HashSet#add(Object)}. Not thread-safe. After
      * {@link #result()} has been called, every method throws {@link IllegalStateException}; create a new builder
      * instead.
      *
@@ -1063,7 +1066,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
 
         /**
-         * Adds one element, replacing an equal one.
+         * Adds one element, unless an equal one is already there: that one is kept.
          *
          * @param element the element, never null
          * @return this builder
@@ -1123,21 +1126,21 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
-    // persistent additions, each replacing an equal element
+    // persistent additions, each keeping an equal element already there
     private static <T extends @Nullable Object> BitmapIndexedSetNode<T> addAll(BitmapIndexedSetNode<T> initial,
             Iterable<? extends T> additional) {
         BitmapIndexedSetNode<T> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "HashSet: element is null");
-            that = that.updated(t, true);
+            that = that.updated(t, false);
         }
         return that;
     }
 
-    // a persistent addition replacing an equal element, with the null check of every addition
+    // a persistent addition keeping an equal element already there, with the null check of every addition
     private static <T extends @Nullable Object> BitmapIndexedSetNode<T> put(BitmapIndexedSetNode<T> tree, T element) {
         Objects.requireNonNull(element, "HashSet: element is null");
-        return tree.updated(element, true);
+        return tree.updated(element, false);
     }
 
     private static <T extends @Nullable Object> HashSet<T> wrap(BitmapIndexedSetNode<T> tree) {

@@ -1319,18 +1319,24 @@ deleted. Attribution in `NOTICE`.
 - **No hash scrambling.** Scala scrambles `hashCode` (`Hashing.improve`) and keeps both hashes in the nodes; Zazr uses
   `Objects.hashCode(key)` as is, as the Vavr trie did. Same distribution as before (no new pathological inputs, no
   lost ones), one hash per entry, and the cached per-node hash sum is then the `java.util.Set` hash of the keys.
-- **Which of two equal keys is kept is unchanged.** Scala's `updated` keeps the old key and replaces only the value
-  (the key write is commented out in `copyAndSetValue`), and its collision node skips an update whose value is the same
-  object whatever the key; Zazr writes the key and the value, and returns the same node only when both are the same
-  objects, because `HashMap.put`, the builders and the factories have always kept the last key. The set nodes take a
-  `replace` flag: `HashSet.add` keeps the element present (as it did through its `contains` check), and `of`, `ofAll`,
-  `flatten`, the builder, `addAll`, `union`, `map`, `flatMap`, `collect` and `partitionMap` replace it. A trace of
-  every public `HashMap`/`HashSet`/`LinkedHashMap`/`LinkedHashSet` operation over colliding and boundary hashes, run
-  against the Vavr trie and the port, keeps the same keys and values everywhere; the only differences are the identity
-  of some results (a `put` of the key and value objects already there, and a `remove` of an absent key that shares a
-  collision node, now return the map itself; a removal down to nothing returns the shared empty instance) and the
-  message of `HashSet.map` given a function returning null (`HashSet: element is null`, no longer
-  `HashMap: key is null`).
+- **Which of two equal keys is kept: `put`'s rule for maps, `add`'s for sets (decided 2026-09-25).** Scala's
+  `updated` keeps the old key and replaces only the value (the key write is commented out in `copyAndSetValue`), and
+  its collision node skips an update whose value is the same object whatever the key. Zazr's `HashMap.put` has always
+  replaced the key along with the value, so the nodes write both and return the same node only when both are the same
+  objects; the factories, the collector and the builder do as successive puts, and `merge(that)` keeps this map's
+  entries. On `main`, `HashSet.add` kept the element already there but `of`, `ofAll`, `flatten`, the builder and the
+  collector kept the last of equal elements, and `addAll`/`union` replaced the elements already there unless nothing
+  was new (then the receiver, with its old elements, came back): the inconsistency #136 removed from `LinkedHashSet`.
+  Every `HashSet` factory and bulk addition now keeps the first of equal elements, as `add` does: the set nodes take a
+  `replace` flag, which the public operations never set. (`replace(current, new)` still swaps in the new object, and
+  `intersect` still keeps the elements of the smaller side.)
+- **Cross-version trace.** A trace of every public `HashMap`/`HashSet`/`LinkedHashMap`/`LinkedHashSet` operation over
+  colliding and boundary hashes, with a tag on every key and value object, was run against the Vavr trie and the port
+  before the set rule above: it kept the same keys and values everywhere, and the maps still do after it. The only
+  other differences are the identity of some results (a `put` of the key and value objects already there, and a
+  `remove` of an absent key that shares a collision node, now return the map itself; a removal down to nothing returns
+  the shared empty instance) and the message of `HashSet.map` given a function returning null
+  (`HashSet: element is null`, no longer `HashMap: key is null`).
 - **Builder: owner tokens, not Scala's aliasing.** Scala's `HashMapBuilder` mutates every node of its trie and copies
   the whole trie before writing to one it has handed out. `HashMapBuilder`/`HashSetBuilder` keep the scheme of 3.8.1:
   the bitmap nodes carry an owner token, the builder updates only its own nodes in place and copies a foreign node the
