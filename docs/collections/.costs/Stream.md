@@ -16,7 +16,7 @@
 | `removeAt` | <abbr class="cx cx-lazy" title="lazy; the first index elements are forced when the result reaches them.">lazy</abbr> | lazy; the first index elements are forced when the result reaches them. |
 | `take` | <abbr class="cx cx-lazy" title="lazy; O(1), one element is forced and the rest on demand.">lazy</abbr> | lazy; O(1), one element is forced and the rest on demand. |
 | `drop` | <abbr class="cx cx-linear" title="O(n); the first n elements are forced, the rest stays deferred.">O(n)</abbr> | O(n); the first n elements are forced, the rest stays deferred. |
-| `slice` | <abbr class="cx cx-lazy" title="lazy; the elements up to endIndex are forced as the result reaches them.">lazy</abbr> | lazy; the elements up to endIndex are forced as the result reaches them. |
+| `slice` | <abbr class="cx cx-linear" title="O(beginIndex); the elements up to beginIndex are forced, the rest when the result reaches them, so it works on an infinite Stream.">O(beginIndex)</abbr> | O(beginIndex); the elements up to beginIndex are forced, the rest when the result reaches them, so it works on an infinite Stream. |
 | `splitAt(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k); the k elements before the split are forced, the suffix stays deferred.">O(k)</abbr> | O(k); the k elements before the split are forced, the suffix stays deferred. |
 | `splitAt(int)` | <abbr class="cx cx-linear" title="O(n); the first n elements are forced, the suffix stays deferred.">O(n)</abbr> | O(n); the first n elements are forced, the suffix stays deferred. |
 | `reverse` | <abbr class="cx cx-linear" title="O(n); the whole Stream is forced.">O(n)</abbr> | O(n); the whole Stream is forced. |

@@ -969,33 +969,38 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
         // We replace the whole element, i.e. key and value have to be present.
         if (!Objects.equals(currentElement, newElement) && contains(currentElement)) {
-
-            Vector<K> newList = list;
-            HashMap<K, Slot<K, V>> newMap = map;
-            int newTombstones = tombstones;
-
-            final K currentKey = currentElement._1();
-            final K newKey = newElement._1();
-
-            // If current key and new key are equal, the key keeps its position,
-            // otherwise we need to remove an already present newKey from the order manually.
-            if (!Objects.equals(currentKey, newKey) && newMap.containsKey(newKey)) {
-                final Slot<K, V> obsolete = newMap.get(newKey).get();
-                final K tombstone = tombstone();
-                newList = newList.update(obsolete.index() - offset, tombstone);
-                newMap = newMap.remove(newKey);
-                newTombstones++;
-            }
-
-            final Slot<K, V> currentSlot = newMap.get(currentKey).get();
-            newList = newList.update(currentSlot.index() - offset, newKey);
-            newMap = newMap.remove(currentKey).put(newKey, new Slot<>(newElement, currentSlot.index()));
-
-            return normalized(newList, newMap, offset, newTombstones);
-
+            return replaceKey(currentElement._1(), newElement);
         } else {
             return this;
         }
+    }
+
+    /// This map with the entry of `currentKey`, which must be present, replaced by `newElement` at the same position
+    /// in the iteration order; an entry of `newElement`'s key elsewhere in the map is removed. The value of
+    /// `currentKey` plays no part, which is what [LinkedHashSet#replace] needs for a key set whose values are not its
+    /// elements.
+    LinkedHashMap<K, V> replaceKey(K currentKey, Tuple2<K, V> newElement) {
+        Vector<K> newList = list;
+        HashMap<K, Slot<K, V>> newMap = map;
+        int newTombstones = tombstones;
+
+        final K newKey = newElement._1();
+
+        // If current key and new key are equal, the key keeps its position,
+        // otherwise we need to remove an already present newKey from the order manually.
+        if (!Objects.equals(currentKey, newKey) && newMap.containsKey(newKey)) {
+            final Slot<K, V> obsolete = newMap.get(newKey).get();
+            final K tombstone = tombstone();
+            newList = newList.update(obsolete.index() - offset, tombstone);
+            newMap = newMap.remove(newKey);
+            newTombstones++;
+        }
+
+        final Slot<K, V> currentSlot = newMap.get(currentKey).get();
+        newList = newList.update(currentSlot.index() - offset, newKey);
+        newMap = newMap.remove(currentKey).put(newKey, new Slot<>(newElement, currentSlot.index()));
+
+        return normalized(newList, newMap, offset, newTombstones);
     }
 
     /**

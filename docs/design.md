@@ -1270,7 +1270,17 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   never a dependency of `zazr-core`. Their *operator inventory*
   (`partitionMap`, `reduceMap`, `mapAccum`, `groupByNonEmpty`, `intersperse`, `maxByOption`...) is the
   checklist for `Vector`/`NonEmptyVector` methods.
-- `Newtype`/`Subtype`, `Derive`, `ZPure`/`State`/`Reader`/`Writer`, `ZSet`/`MultiSet`, the `experimental`
+- `Newtype`/`Subtype` (re-examined and rejected with the maintainer, 2026-09-25). zio-prelude's newtypes are free
+  because Scala erases them to the underlying type, and `Subtype` makes a refined value usable wherever the
+  underlying type is expected. Java has neither: a class cannot extend `String`, `Long` or a record, so a newtype
+  is always a wrapper, and without `Subtype` every call into code expecting the underlying type means unwrapping,
+  which is what makes newtypes tiresome to use. A public record cannot even enforce its refinement without
+  throwing, since its canonical constructor is public; a final class with a private constructor and a
+  `Validation`-returning `make` can, at the cost of record patterns. The one true `Subtype` in Java is a type
+  qualifier checked at compile time (`@Email String`, the Checker Framework's subtyping checker), which exists
+  without Zazr and only protects users who run the checker. So no newtype module; revisit only if Valhalla's value
+  classes and a subtyping story change the trade-off.
+- `Derive`, `ZPure`/`State`/`Reader`/`Writer`, `ZSet`/`MultiSet`, the `experimental`
   algebra module, `Debug`/`Repr`, `Equal`/`Hash`/`Ord` as typeclasses (Java has `Comparator`; structural
   equality is `equals`). A three-valued `Ordering` enum is cute but `Comparator` returns `int`; skip.
 - `Assertion<A>` (the refinement DSL: `greaterThan`, `matches`, `hasLength`, `&&`/`||`, returning

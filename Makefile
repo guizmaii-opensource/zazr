@@ -38,9 +38,10 @@ package: ## build the jars (runs tests)
 install: ## install the jars into ~/.m2 (runs tests)
 	$(MVN) install
 
-verify: ## what CI runs: full build with tests, formatting, nullness, vocabulary, complexity and docs checks
+verify: ## what CI runs: full build with tests, formatting, nullness, javadoc, vocabulary, complexity and docs checks
 	$(MVN) verify
 	$(MVN) -Pnullaway compile
+	$(MAKE) javadoc
 	$(MAKE) vocabulary
 	$(MAKE) complexity
 	$(MAKE) docs-complexity-check
@@ -109,8 +110,11 @@ nullness: ## NullAway / JSpecify nullness check
 bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
-javadoc: ## build the javadoc (doclint)
-	$(MVN) javadoc:javadoc
+# javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
+# where the src-gen clean also empties target/, so the plugin finds no module-info.class in zazr-core and refuses
+# the named module. Output: <module>/target/reports/apidocs.
+javadoc: ## build the javadoc of zazr-core and zazr-test (doclint: fails on a broken reference or malformed tag)
+	$(MVN) compile javadoc:javadoc-no-fork
 
 deps-updates: ## list newer versions of dependencies and plugins
 	$(MVN) versions:display-dependency-updates versions:display-plugin-updates
