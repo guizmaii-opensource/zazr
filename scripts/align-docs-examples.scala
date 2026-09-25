@@ -17,7 +17,7 @@
 // - when two or more lines of a group end with a `//` comment, the comments start at one column, two spaces after the
 //   longest of those commented statements (a longer line without a comment does not push the column); a group with a
 //   single comment keeps it one space after the `;`;
-// - a lone line, and every line outside a group, is left as written.
+// - a lone line, every line outside a group, and every line of a text block (`"""`) are left as written.
 // An alignment that would push a line past --max columns (the width of a code block on the site, 110 by default) is
 // not applied and fails the run in both modes: move that group's type comments to their own line above the
 // declaration, or drop the ones the reader does not need.
@@ -28,7 +28,7 @@ import scala.jdk.CollectionConverters.*
 
 val opening = """^\s*```java(\s.*)?$""".r
 val closing = """^\s*```\s*$""".r
-val leftHandSide = """^\s*[A-Za-z_$][\w$.<>\[\]?, ]*[\w$]\s*$""".r
+val leftHandSide = """^\s*[A-Za-z_$]([\w$.<>\[\]?, ]*[\w$])?\s*$""".r
 val keywordStart = """^\s*(case|return|yield|throw|assert)\b.*""".r
 
 // The code of a line (without a trailing `//` comment and without trailing spaces), the comment (from `//`, or ""),
@@ -71,6 +71,47 @@ def parse(line: String): Line = {
   Line(code, comment, balance, if (isAssignment) assignment else -1)
 }
 
+// For each line, whether it opens, continues or closes a text block (`"""`): such a line is part of a string value,
+// so it is never a statement of a group and never changed.
+def inTextBlock(lines: Vector[String]): Vector[Boolean] = {
+  var open = false
+  lines.map { line =>
+    var touched = open
+    var i = 0
+    var comment = false
+    while (i < line.length && !comment) {
+      if (open) {
+        if (line.startsWith("\"\"\"", i)) {
+          open = false
+          i += 3
+        } else {
+          if (line.charAt(i) == '\\') i += 1
+          i += 1
+        }
+      } else if (line.startsWith("\"\"\"", i)) {
+        open = true
+        touched = true
+        i += 3
+      } else {
+        val c = line.charAt(i)
+        if (c == '"' || c == '\'') {
+          i += 1
+          while (i < line.length && line.charAt(i) != c) {
+            if (line.charAt(i) == '\\') i += 1
+            i += 1
+          }
+          i += 1
+        } else if (line.startsWith("//", i)) {
+          comment = true
+        } else {
+          i += 1
+        }
+      }
+    }
+    touched
+  }
+}
+
 def indentation(s: String): Int = s.length - s.stripLeading.length
 
 def endsStatement(line: Line): Boolean = {
@@ -83,10 +124,12 @@ final case class Problem(line: Int, message: String)
 // Aligns one block (its lines, `first` being the file line of the first one); returns the new lines and the problems.
 def alignBlock(lines: Vector[String], first: Int, max: Int): (Vector[String], List[Problem]) = {
   val parsed = lines.map(parse)
+  val textBlock = inTextBlock(lines)
   def isStatement(i: Int): Boolean = {
     val line = parsed(i)
     val code = line.code.trim
-    code.nonEmpty && code.endsWith(";") && line.balance == 0 && (i == 0 || endsStatement(parsed(i - 1)))
+    !textBlock(i) && code.nonEmpty && code.endsWith(";") && line.balance == 0 &&
+      (i == 0 || endsStatement(parsed(i - 1)))
   }
   val out = lines.toArray
   val problems = List.newBuilder[Problem]
@@ -142,7 +185,40 @@ def alignBlock(lines: Vector[String], first: Int, max: Int): (Vector[String], Li
   (out.toVector, problems.result())
 }
 
+// The cases the rule must get right, run before every use of the script.
+def selfTest(): Unit = {
+  def expect(input: Seq[String], expected: Seq[String]): Unit = {
+    val (out, problems) = alignBlock(input.toVector, 1, 110)
+    if (out != expected.toVector || problems.nonEmpty) {
+      System.err.println(
+        "align-docs-examples self-test failed on:\n" + input.mkString("\n") + "\nexpected:\n" +
+          expected.mkString("\n") + "\ngot:\n" + out.mkString("\n") + "\n" + problems
+      )
+      sys.exit(3)
+    }
+  }
+  val q = "\"\"\""
+  expect(
+    Seq("var right = Either.right(42); // Either<String, Integer>", "var checked = Either.left(\"no\"); // Either"),
+    Seq("var right   = Either.right(42);   // Either<String, Integer>", "var checked = Either.left(\"no\");  // Either")
+  )
+  // a one-letter variable aligns like any other
+  expect(Seq("x = 2;", "longer = 3;"), Seq("x      = 2;", "longer = 3;"))
+  expect(Seq("var x = 2;", "var yy = 3;"), Seq("var x  = 2;", "var yy = 3;"))
+  // `=` and `//` inside a literal are not alignment points; a lone comment is not padded
+  expect(
+    Seq("var a = \"b = c // d\"; // String", "var bb = 'x';"),
+    Seq("var a  = \"b = c // d\"; // String", "var bb = 'x';")
+  )
+  // the lines of a text block are part of a string value: never touched
+  val sql =
+    Seq(s"var sql = $q", "    SELECT 1;", "    ab = 1;", "    bbbb = 2; // kept", "    cc = 3;  // as is", s"    $q;")
+  expect(sql :+ "var x = 1;", sql :+ "var x = 1;")
+  expect(sql ++ Seq("var x = 1;", "var yy = 2;"), sql ++ Seq("var x  = 1;", "var yy = 2;"))
+}
+
 @main def run(args: String*): Unit = {
+  selfTest()
   var check = false
   var max = 110
   var excluded = Set.empty[Path]
