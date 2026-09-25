@@ -1277,8 +1277,10 @@ Differences from Scala:
   whose front was dropped, and a builder started from it, hold that many fewer elements, and grow no further, as in
   Scala. Only the receiver's free slots count. An argument of `appendedAll`/`prependedAll` never limits the result,
   so a `RadixVector` argument gives the same result as a list of the same elements. The builder adds the argument
-  without its padding when the padding would not fit. `alignTo` then skips its own padding and stays aligned. Appending
-  to the argument (or prepending to it) is used only far from the limit.
+  without its padding when the padding would not fit. `alignTo` then skips its own padding and stays aligned. Adding
+  elements one by one is used only far from the limit, below `Integer.MAX_VALUE - 2^25`: to the argument, to the
+  receiver in the tiny branches, and to a `Vector6`'s `suffix1`. Above that the builder decides, so a `RadixVector`, a
+  list and a one-shot `Iterable` of the same elements give the same outcome.
 - **Single-shot builder.** `result()` hands the arrays over without copying them, and the builder is closed afterwards,
   the same contract as `Vector.Builder`. Scala's builder is reusable instead. There is no `clear()`, and `initSparse`
   (`fillSparse`) is left out.
