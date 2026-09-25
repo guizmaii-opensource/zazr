@@ -22,7 +22,8 @@ import org.jspecify.annotations.Nullable;
  * Complexity: the methods without a note of their own are O(n) at most, one walk over the elements (the folds,
  * {@code find}, {@code count}, {@code tap}, {@code hashCode}, {@code toString}, {@code toList}), except
  * {@code size}, {@code isEmpty} and {@code comparator}, O(1), and {@code containsAll}, one lookup per element,
- * O(m log n). The factories ({@code of}, {@code ofAll}, {@code range}, {@code tabulate}, {@code fill},
+ * O(m log n). {@code toSortedMap} and {@code toSortedSet(Comparator)} insert the elements one by one into a new
+ * tree: O(n log n). The factories ({@code of}, {@code ofAll}, {@code range}, {@code tabulate}, {@code fill},
  * {@code collector}) insert the elements one by one: O(m log m) for m elements, even when they come sorted.
  *
  * @param <T> Component type
@@ -190,8 +191,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * Creates a TreeSet of the given elements, in their natural order.
      * <p>
      * Complexity: O(m log m) for m elements: each one is inserted into the tree, even when they come sorted. O(1)
-     * when {@code values} is a TreeSet in the natural order, or its {@link #asJava()} view: that set is returned as
-     * is.
+     * when {@code values} is a TreeSet created without a comparator, or its {@link #asJava()} view: that set is
+     * returned as is.
      *
      * @param values the elements
      * @param <T>    Component type

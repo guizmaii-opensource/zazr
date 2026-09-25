@@ -46,8 +46,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * sub-maps, the head and tail maps, the descending map and the key sets are views too. A mutable copy is
      * {@code new java.util.TreeMap<>(map.asJavaMap())}.
      * <p>
-     * Complexity: O(1); {@code get}, {@code containsKey}, {@code firstKey}, {@code ceilingEntry} and the other
-     * navigation methods of the view are O(log n).
+     * Complexity: O(1): nothing is copied. On the view, {@code get}, {@code containsKey}, {@code firstKey},
+     * {@code ceilingEntry} and the other navigation methods are O(log n).
      *
      * @return an unmodifiable {@code java.util.NavigableMap} view
      */

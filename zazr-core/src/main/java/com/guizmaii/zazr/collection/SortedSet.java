@@ -55,8 +55,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * head and tail sets and the descending set are views too. A mutable copy is
      * {@code new java.util.TreeSet<>(set.asJava())}.
      * <p>
-     * Complexity: O(1); {@code contains}, {@code first}, {@code ceiling} and the other navigation methods of the view
-     * are O(log n).
+     * Complexity: O(1): nothing is copied. On the view, {@code contains}, {@code first}, {@code ceiling} and the other
+     * navigation methods are O(log n).
      *
      * @return an unmodifiable {@code java.util.NavigableSet} view
      */

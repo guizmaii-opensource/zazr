@@ -27,7 +27,8 @@ import org.jspecify.annotations.Nullable;
  * Complexity: the methods without a note of their own are O(n) at most, one walk over the entries (the folds,
  * {@code find}, {@code count}, {@code tap}, {@code hashCode}, {@code toString}, {@code toList}), except
  * {@code size}, {@code isEmpty} and {@code comparator}, O(1), and {@code containsAll}, one lookup per entry,
- * O(m log n). The factories ({@code of}, {@code ofAll}, {@code ofEntries}, {@code tabulate}, {@code fill},
+ * O(m log n). {@code toSortedMap} and {@code toSortedSet} insert the entries one by one into a new tree:
+ * O(n log n). The factories ({@code of}, {@code ofAll}, {@code ofEntries}, {@code tabulate}, {@code fill},
  * {@code collector}) insert the entries one by one: O(m log m) for m entries, even when they come sorted.
  *
  * @param <K> the type of keys maintained by this map
@@ -223,8 +224,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * Returns a {@code TreeMap}, from a source java.util.Map.
      * <p>
      * Complexity: O(m log m) for m entries: each one is inserted into the tree, even when they come sorted. O(1)
-     * when {@code map} is the {@link #asJavaMap()} view of a TreeMap in the natural order: that map is returned as
-     * is.
+     * when {@code map} is the {@link #asJavaMap()} view of a TreeMap created without a comparator: that map is
+     * returned as is.
      *
      * @param map A map
      * @param <K> The key type
