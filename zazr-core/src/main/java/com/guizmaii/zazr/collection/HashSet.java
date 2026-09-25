@@ -1,11 +1,12 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.internal.BitmapIndexedSetNode;
 import com.guizmaii.zazr.collection.internal.Collections;
-import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
-import com.guizmaii.zazr.collection.internal.HashArrayMappedTrieBuilder;
+import com.guizmaii.zazr.collection.internal.HashSetBuilder;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.SetNode;
 import com.guizmaii.zazr.collection.internal.SetViews;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
@@ -16,18 +17,21 @@ import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code HashSet} implementation.
+ * An immutable {@code HashSet} implementation based on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer
+ * and Vinju, <em>Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections</em>, OOPSLA 2015),
+ * ported from the {@code HashSet} of the Scala 3 standard library. Each node keeps its elements inline, with no object
+ * per element.
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
  */
 public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
-    private static final HashSet<?> EMPTY = new HashSet<>(HashArrayMappedTrie.empty());
+    private static final HashSet<?> EMPTY = new HashSet<>(SetNode.empty());
 
-    private final HashArrayMappedTrie<T, T> tree;
+    private final BitmapIndexedSetNode<T> tree;
 
-    private HashSet(HashArrayMappedTrie<T, T> tree) {
+    private HashSet(BitmapIndexedSetNode<T> tree) {
         this.tree = tree;
     }
 
@@ -106,12 +110,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @SafeVarargs
     public static <T extends @Nullable Object> HashSet<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        HashArrayMappedTrie<T, T> tree = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<T> tree = SetNode.empty();
         for (T element : elements) {
             Objects.requireNonNull(element, "HashSet.of: element is null");
-            tree = tree.put(element, element);
+            tree = tree.updated(element, true);
         }
-        return tree.isEmpty() ? empty() : new HashSet<>(tree);
+        return wrap(tree);
     }
 
     /**
@@ -161,13 +165,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         } else if (JavaConverters.underlying(elements) instanceof HashSet<?> underlying) {
             return (HashSet<T>) underlying;
         } else {
-            final HashArrayMappedTrieBuilder<T, T> builder = new HashArrayMappedTrieBuilder<>("HashSet.Builder");
+            final HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
             for (T element : elements) {
                 Objects.requireNonNull(element, "HashSet: element is null");
-                builder.put(element, element);
+                builder.add(element);
             }
-            final HashArrayMappedTrie<T, T> tree = builder.result();
-            return tree.isEmpty() ? empty() : new HashSet<>(tree);
+            return wrap(builder.result());
         }
     }
 
@@ -197,11 +200,11 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public static <T extends @Nullable Object> HashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        HashArrayMappedTrie<T, T> all = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<T> all = SetNode.empty();
         for (Iterable<? extends T> inner : nested) {
             all = addAll(all, inner);
         }
-        return all.isEmpty() ? empty() : new HashSet<>(all);
+        return wrap(all);
     }
 
     /**
@@ -636,7 +639,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public HashSet<T> add(T element) {
         Objects.requireNonNull(element, "HashSet.add: element is null");
-        return contains(element) ? this : new HashSet<>(tree.put(element, element));
+        final BitmapIndexedSetNode<T> result = tree.updated(element, false);
+        return result == tree ? this : new HashSet<>(result);
     }
 
     /**
@@ -653,7 +657,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             final HashSet<T> set = (HashSet<T>) elements;
             return set;
         }
-        final HashArrayMappedTrie<T, T> that = addAll(tree, elements);
+        final BitmapIndexedSetNode<T> that = addAll(tree, elements);
         if (that.size() == tree.size()) {
             return this;
         } else {
@@ -668,7 +672,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public boolean contains(T element) {
-        return tree.containsKey(element);
+        return tree.contains(element);
     }
 
     /**
@@ -712,7 +716,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final HashArrayMappedTrie<U, U> that = foldLeft(HashArrayMappedTrie.empty(),
+            final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(),
                     (tree, t) -> addAll(tree, mapper.apply(t)));
             return new HashSet<>(that);
         }
@@ -746,7 +750,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public boolean isEmpty() {
-        return tree.isEmpty();
+        return tree.size() == 0;
     }
 
     @Override
@@ -761,7 +765,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public java.util.Iterator<T> iterator() {
-        return tree.keysIterator();
+        return tree.iterator();
     }
 
     /**
@@ -786,9 +790,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final HashArrayMappedTrie<U, U> that = foldLeft(HashArrayMappedTrie.empty(), (tree, t) -> {
+            final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(), (tree, t) -> {
                 final U u = mapper.apply(t);
-                return tree.put(u, u);
+                return put(tree, u);
             });
             return new HashSet<>(that);
         }
@@ -800,12 +804,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         }
-        HashArrayMappedTrie<U, U> that = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<U> that = SetNode.empty();
         for (T t : this) {
             final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "HashSet.collect: mapper returned null");
             if (collected.isDefined()) {
                 final U u = collected.get();
-                that = that.put(u, u);
+                that = put(that, u);
             }
         }
         return new HashSet<>(that);
@@ -846,15 +850,15 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
-        HashArrayMappedTrie<L, L> lefts = HashArrayMappedTrie.empty();
-        HashArrayMappedTrie<R, R> rights = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<L> lefts = SetNode.empty();
+        BitmapIndexedSetNode<R> rights = SetNode.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "HashSet.partitionMap: f returned null")) {
-                case Either.Left(var left) -> lefts = lefts.put(left, left);
-                case Either.Right(var right) -> rights = rights.put(right, right);
+                case Either.Left(var left) -> lefts = put(lefts, left);
+                case Either.Right(var right) -> rights = put(rights, right);
             }
         }
-        return Tuple.of(lefts.isEmpty() ? empty() : new HashSet<>(lefts), rights.isEmpty() ? empty() : new HashSet<>(rights));
+        return Tuple.of(wrap(lefts), wrap(rights));
     }
 
     @Override
@@ -871,8 +875,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public HashSet<T> remove(T element) {
-        final HashArrayMappedTrie<T, T> newTree = tree.remove(element);
-        return (newTree == tree) ? this : new HashSet<>(newTree);
+        final BitmapIndexedSetNode<T> newTree = tree.removed(element);
+        return (newTree == tree) ? this : wrap(newTree);
     }
 
     /**
@@ -892,7 +896,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
-        if (tree.containsKey(currentElement)) {
+        if (tree.contains(currentElement)) {
             return remove(currentElement).add(newElement);
         } else {
             return this;
@@ -938,7 +942,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         } else if (elements.isEmpty()) {
             return this;
         } else {
-            final HashArrayMappedTrie<T, T> that = addAll(tree, elements);
+            final BitmapIndexedSetNode<T> that = addAll(tree, elements);
             if (that.size() == tree.size()) {
                 return this;
             } else {
@@ -966,8 +970,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     /**
      * A mutable, single-use accumulator that builds a {@link HashSet}. It is a transient trie: the internal nodes it
-     * creates are updated in place while it is open, so an addition allocates the new leaf and little else, where a
-     * persistent addition copies every node on the path from the root. The nodes of a set passed to
+     * creates are updated in place while it is open, so an addition allocates little more than the grown node array,
+     * where a persistent addition copies every node on the path from the root. The nodes of a set passed to
      * {@link #addAll(Iterable)} are shared, not copied, and copied only when a later addition goes through them: that
      * set never changes. The HashSet returned by {@link #result()} is the one {@link HashSet#ofAll(Iterable)} of the
      * same elements gives, and never changes either.
@@ -980,7 +984,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public static final class Builder<T extends @Nullable Object> {
 
-        private final HashArrayMappedTrieBuilder<T, T> trie = new HashArrayMappedTrieBuilder<>("HashSet.Builder");
+        private final HashSetBuilder<T> trie = new HashSetBuilder<>("HashSet.Builder");
 
         private Builder() {
         }
@@ -996,7 +1000,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         public Builder<T> add(T element) {
             trie.checkOpen();
             Objects.requireNonNull(element, "HashSet.Builder.add: element is null");
-            trie.put(element, element);
+            trie.add(element);
             return this;
         }
 
@@ -1016,9 +1020,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             trie.checkOpen();
             Objects.requireNonNull(elements, "elements is null");
             if (elements instanceof HashSet<?> set) {
-                trie.putAll(((HashSet<T>) set).tree);
+                trie.addAll(((HashSet<T>) set).tree);
             } else if (JavaConverters.underlying(elements) instanceof HashSet<?> set) {
-                trie.putAll(((HashSet<T>) set).tree);
+                trie.addAll(((HashSet<T>) set).tree);
             } else {
                 for (T element : elements) {
                     add(element);
@@ -1042,19 +1046,29 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public HashSet<T> result() {
-            final HashArrayMappedTrie<T, T> tree = trie.result();
-            return tree.isEmpty() ? empty() : new HashSet<>(tree);
+            return wrap(trie.result());
         }
     }
 
-    private static <T extends @Nullable Object> HashArrayMappedTrie<T, T> addAll(HashArrayMappedTrie<T, T> initial,
+    // persistent additions, each replacing an equal element
+    private static <T extends @Nullable Object> BitmapIndexedSetNode<T> addAll(BitmapIndexedSetNode<T> initial,
             Iterable<? extends T> additional) {
-        HashArrayMappedTrie<T, T> that = initial;
+        BitmapIndexedSetNode<T> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "HashSet: element is null");
-            that = that.put(t, t);
+            that = that.updated(t, true);
         }
         return that;
+    }
+
+    // a persistent addition replacing an equal element, with the null check of every addition
+    private static <T extends @Nullable Object> BitmapIndexedSetNode<T> put(BitmapIndexedSetNode<T> tree, T element) {
+        Objects.requireNonNull(element, "HashSet: element is null");
+        return tree.updated(element, true);
+    }
+
+    private static <T extends @Nullable Object> HashSet<T> wrap(BitmapIndexedSetNode<T> tree) {
+        return tree.size() == 0 ? empty() : new HashSet<>(tree);
     }
 
 }

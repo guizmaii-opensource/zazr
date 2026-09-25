@@ -2,11 +2,12 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.internal.BitmapIndexedMapNode;
 import com.guizmaii.zazr.collection.internal.Collections;
-import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
-import com.guizmaii.zazr.collection.internal.HashArrayMappedTrieBuilder;
+import com.guizmaii.zazr.collection.internal.HashMapBuilder;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.MapNode;
 import com.guizmaii.zazr.collection.internal.MapViews;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.control.Option;
@@ -16,8 +17,10 @@ import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code HashMap} implementation based on a
- * <a href="https://en.wikipedia.org/wiki/Hash_array_mapped_trie">Hash array mapped trie (HAMT)</a>.
+ * An immutable {@code HashMap} implementation based on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer
+ * and Vinju, <em>Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections</em>, OOPSLA 2015),
+ * ported from the {@code HashMap} of the Scala 3 standard library. Each node keeps its entries inline, keys and values
+ * side by side in one array, with no object per entry.
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -25,11 +28,11 @@ import org.jspecify.annotations.Nullable;
  */
 public final class HashMap<K extends @Nullable Object, V extends @Nullable Object> implements Map<K, V> {
 
-    private static final HashMap<?, ?> EMPTY = new HashMap<>(HashArrayMappedTrie.empty());
+    private static final HashMap<?, ?> EMPTY = new HashMap<>(MapNode.empty());
 
-    private final HashArrayMappedTrie<K, V> trie;
+    private final BitmapIndexedMapNode<K, V> trie;
 
-    private HashMap(HashArrayMappedTrie<K, V> trie) {
+    private HashMap(BitmapIndexedMapNode<K, V> trie) {
         this.trie = trie;
     }
 
@@ -134,7 +137,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return A new Map containing the given entry
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(Tuple2<? extends K, ? extends V> entry) {
-        return new HashMap<>(HashArrayMappedTrie.<K, V> empty().put(entry._1(), entry._2()));
+        return new HashMap<>(putChecked(MapNode.<K, V> empty(), entry._1(), entry._2()));
     }
 
     /**
@@ -152,7 +155,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         if (JavaConverters.underlying(map) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
         }
-        final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
+        final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             putChecked(builder, entry.getKey(), entry.getValue());
         }
@@ -201,7 +204,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return A new Map containing the given entry
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K key, V value) {
-        return new HashMap<>(HashArrayMappedTrie.<K, V> empty().put(key, value));
+        return new HashMap<>(putChecked(MapNode.<K, V> empty(), key, value));
     }
 
     /**
@@ -457,7 +460,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @SafeVarargs
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(java.util.Map.Entry<? extends K, ? extends V> ... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
+        final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
             putChecked(builder, entry.getKey(), entry.getValue());
@@ -476,7 +479,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @SafeVarargs
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(Tuple2<? extends K, ? extends V> ... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
+        final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
             putChecked(builder, entry._1(), entry._2());
@@ -501,7 +504,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         } else if (JavaConverters.underlying(entries) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
         } else {
-            final HashArrayMappedTrieBuilder<K, V> builder = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
+            final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
             for (Tuple2<? extends K, ? extends V> entry : entries) {
                 Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
                 putChecked(builder, entry._1(), entry._2());
@@ -578,6 +581,17 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.rejectValues(this, this::createFromEntries, predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), a walk of the trie with no {@code Tuple2} per entry.
+     */
+    @Override
+    public void forEach(BiConsumer<K, V> action) {
+        Objects.requireNonNull(action, "action is null");
+        trie.forEach(action);
+    }
+
     @Override
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -594,13 +608,16 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * <p>
      * Complexity: effectively O(1) (one hash lookup).
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Option<V> get(K key) {
-        return trie.get(key);
+        final V value = trie.getOrElse(key, (V) Maps.ABSENT);
+        return value == Maps.ABSENT ? Option.none() : Option.some(value);
     }
 
     Option<Tuple2<K, V>> getEntry(K key) {
-        return trie.getEntry(key);
+        final Tuple2<K, V> entry = trie.getEntry(key);
+        return entry == null ? Option.none() : Option.some(entry);
     }
 
     @Override
@@ -615,7 +632,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public boolean isEmpty() {
-        return trie.isEmpty();
+        return trie.size() == 0;
     }
 
     /**
@@ -625,7 +642,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
-        return trie.iterator();
+        return trie.iterator(Tuple::of);
     }
 
     /**
@@ -718,7 +735,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> put(K key, V value) {
-        return new HashMap<>(trie.put(key, value));
+        final BitmapIndexedMapNode<K, V> result = putChecked(trie, key, value);
+        return result == trie ? this : new HashMap<>(result);
     }
 
     /**
@@ -749,8 +767,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> remove(K key) {
-        final HashArrayMappedTrie<K, V> result = trie.remove(key);
-        return result.size() == trie.size() ? this : wrap(result);
+        final BitmapIndexedMapNode<K, V> result = trie.removed(key);
+        return result == trie ? this : wrap(result);
     }
 
     /**
@@ -773,14 +791,14 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public HashMap<K, V> removeAll(Iterable<? extends K> keys) {
         Objects.requireNonNull(keys, "keys is null");
-        HashArrayMappedTrie<K, V> result = trie;
+        BitmapIndexedMapNode<K, V> result = trie;
         for (K key : keys) {
-            result = result.remove(key);
+            result = result.removed(key);
         }
 
-        if (result.isEmpty()) {
+        if (result.size() == 0) {
             return empty();
-        } else if (result.size() == trie.size()) {
+        } else if (result == trie) {
             return this;
         } else {
             return wrap(result);
@@ -854,10 +872,10 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public HashMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        HashArrayMappedTrie<K, V> tree = HashArrayMappedTrie.empty();
+        BitmapIndexedMapNode<K, V> tree = MapNode.empty();
         for (Tuple2<K, V> entry : elements) {
             if (contains(entry)) {
-                tree = tree.put(entry._1(), entry._2());
+                tree = putChecked(tree, entry._1(), entry._2());
             }
         }
         return wrap(tree);
@@ -912,8 +930,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
 
     /**
      * A mutable, single-use accumulator that builds a {@link HashMap}. It is a transient trie: the internal nodes it
-     * creates are updated in place while it is open, so a put allocates the new leaf and little else, where a
-     * persistent put copies every node on the path from the root. The nodes of a map passed to
+     * creates are updated in place while it is open, so a put allocates little more than the grown node array, where
+     * a persistent put copies every node on the path from the root. The nodes of a map passed to
      * {@link #putAll(Iterable)} are shared, not copied, and copied only when a later put goes through them: that map
      * never changes. The HashMap returned by {@link #result()} is the one successive puts of the same entries would
      * give, and never changes either.
@@ -927,7 +945,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     public static final class Builder<K extends @Nullable Object, V extends @Nullable Object> {
 
-        private final HashArrayMappedTrieBuilder<K, V> trie = new HashArrayMappedTrieBuilder<>("HashMap.Builder");
+        private final HashMapBuilder<K, V> trie = new HashMapBuilder<>("HashMap.Builder");
 
         private Builder() {
         }
@@ -1010,14 +1028,21 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     // the bulk factories: a transient trie, with the null checks and messages of a persistent put
-    private static <K extends @Nullable Object, V extends @Nullable Object> void putChecked(HashArrayMappedTrieBuilder<K, V> builder, K key, V value) {
+    private static <K extends @Nullable Object, V extends @Nullable Object> void putChecked(HashMapBuilder<K, V> builder, K key, V value) {
         Objects.requireNonNull(key, "HashMap: key is null");
         Objects.requireNonNull(value, "HashMap: value is null");
         builder.put(key, value);
     }
 
-    private static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> wrap(HashArrayMappedTrie<K, V> trie) {
-        return trie.isEmpty() ? empty() : new HashMap<>(trie);
+    // a persistent put, with the null checks and messages of every put
+    private static <K extends @Nullable Object, V extends @Nullable Object> BitmapIndexedMapNode<K, V> putChecked(BitmapIndexedMapNode<K, V> trie, K key, V value) {
+        Objects.requireNonNull(key, "HashMap: key is null");
+        Objects.requireNonNull(value, "HashMap: value is null");
+        return trie.updated(key, value);
+    }
+
+    private static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> wrap(BitmapIndexedMapNode<K, V> trie) {
+        return trie.size() == 0 ? empty() : new HashMap<>(trie);
     }
 
     // We need this method to narrow the argument of `ofEntries`.

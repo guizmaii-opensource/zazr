@@ -887,6 +887,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | Method | Cost | Note |
 |---|---|---|
 | `containsKey(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
+| `forEach(BiConsumer<K, V>)` | <abbr class="cx cx-linear" title="O(n), a walk of the trie with no Tuple2 per entry.">O(n)</abbr> | O(n), a walk of the trie with no Tuple2 per entry. |
 | `get(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
 | `iterator()` | <abbr class="cx cx-constant" title="O(1) to create; a whole walk is O(n).">O(1)</abbr> | O(1) to create; a whole walk is O(n). |
 | `keySet()` | <abbr class="cx cx-linear" title="O(n) (the keys are copied into a new HashSet).">O(n)</abbr> | O(n) (the keys are copied into a new HashSet). |

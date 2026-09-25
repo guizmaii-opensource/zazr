@@ -33,7 +33,7 @@ public final class MapViews {
     private MapViews() {
     }
 
-    public static <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> asJavaMap(HashMap<K, V> map, HashArrayMappedTrie<K, V> trie) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> asJavaMap(HashMap<K, V> map, BitmapIndexedMapNode<K, V> trie) {
         return new HashMapView<>(map, trie);
     }
 
@@ -499,9 +499,9 @@ public final class MapViews {
     static final class HashMapView<K extends @Nullable Object, V extends @Nullable Object> extends UnmodifiableMap<K, V> {
 
         private final HashMap<K, V> map;
-        private final HashArrayMappedTrie<K, V> trie;
+        private final BitmapIndexedMapNode<K, V> trie;
 
-        HashMapView(HashMap<K, V> map, HashArrayMappedTrie<K, V> trie) {
+        HashMapView(HashMap<K, V> map, BitmapIndexedMapNode<K, V> trie) {
             this.map = map;
             this.trie = trie;
         }
@@ -524,24 +524,12 @@ public final class MapViews {
 
         @Override
         public boolean isEmpty() {
-            return trie.isEmpty();
+            return trie.size() == 0;
         }
 
         @Override
         java.util.Iterator<java.util.Map.Entry<K, V>> entryIterator() {
-            final java.util.Iterator<HashArrayMappedTrieModule.LeafNode<K, V>> nodes = ((HashArrayMappedTrieModule.AbstractNode<K, V>) trie).nodes();
-            return new java.util.Iterator<>() {
-                @Override
-                public boolean hasNext() {
-                    return nodes.hasNext();
-                }
-
-                @Override
-                public java.util.Map.Entry<K, V> next() {
-                    final HashArrayMappedTrieModule.LeafNode<K, V> node = nodes.next();
-                    return entry(node.key(), node.value());
-                }
-            };
+            return trie.iterator(MapViews::entry);
         }
 
         @Override

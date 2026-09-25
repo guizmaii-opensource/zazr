@@ -5,3 +5,11 @@ This product is a fork of Vavr (https://vavr.io), Copyright 2014-2026 Vavr,
 licensed under the Apache License, Version 2.0 (see LICENSE). The per-file
 copyright and license notices of the original Vavr sources have been
 consolidated into this NOTICE file.
+
+The HashMap and HashSet tries (com.guizmaii.zazr.collection.internal:
+ChampNode, ChampIterator, MapNode, BitmapIndexedMapNode, HashCollisionMapNode,
+HashMapBuilder, SetNode, BitmapIndexedSetNode, HashCollisionSetNode,
+HashSetBuilder) are ported from scala/collection/immutable/HashMap.scala,
+HashSet.scala and ChampCommon.scala of the Scala standard library
+(https://www.scala-lang.org), Copyright EPFL and Lightbend, Inc. dba Akka,
+licensed under the Apache License, Version 2.0.

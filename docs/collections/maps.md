@@ -9,9 +9,14 @@ new map.
 
 | Type | Representation | Iteration order | Positional methods |
 |---|---|---|---|
-| `HashMap` | a hash-based tree | not defined | none |
+| `HashMap` | a compressed hash trie (CHAMP) | not defined | none |
 | `LinkedHashMap` | a hash-based map that also records the insertion order | insertion order | yes |
 | `TreeMap` | a sorted, balanced tree of entries | the key comparator's | yes |
+
+`HashMap` is the structure of Scala's immutable `HashMap`: a tree of nodes with up to 32 slots each, where five bits
+of the key's hash pick the slot at each level. A node stores its entries inline, keys and values side by side in one
+array, so an entry costs no object of its own. Removing an entry folds the tree back, so equal maps have the same
+shape whatever order their entries came in.
 
 ## When to choose which
 

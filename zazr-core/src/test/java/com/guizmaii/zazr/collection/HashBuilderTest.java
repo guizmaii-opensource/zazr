@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** HashSet.Builder and HashMap.Builder through the public API; the shape of the trie and the ownership of its nodes are
- *  checked by HashArrayMappedTrieBuilderTest. */
+ *  checked by ChampMapTest and ChampSetTest. */
 public class HashBuilderTest {
 
     private static final long SEED = 20260925L;
