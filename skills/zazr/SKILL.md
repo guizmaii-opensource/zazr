@@ -26,7 +26,7 @@ matching. Its names come from ZIO and its collections from Scala's. Website: htt
 | Package | Types |
 |---|---|
 | `com.guizmaii.zazr.control` | `Option` (`Some`, `None`), `Either` (`Left`, `Right`), `Try` (`Success`, `Failure`), `Validation` (`Valid`, `Invalid`), `Using` |
-| `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List` (`Cons`, `Nil`), `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `Traversable` |
+| `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List` (`Cons`, `Nil`), `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap`, `Traversable` |
 | `com.guizmaii.zazr` | `Lazy`, `Tuple`, `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
 The cases are nested records: `import com.guizmaii.zazr.control.Option.Some;`. With a `module-info.java`, add

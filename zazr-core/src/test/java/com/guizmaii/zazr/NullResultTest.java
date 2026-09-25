@@ -5,6 +5,10 @@ import com.guizmaii.zazr.collection.HashSet;
 import com.guizmaii.zazr.collection.LinkedHashMap;
 import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.NonEmptyMap;
+import com.guizmaii.zazr.collection.NonEmptySet;
+import com.guizmaii.zazr.collection.NonEmptySortedMap;
+import com.guizmaii.zazr.collection.NonEmptySortedSet;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Queue;
 import com.guizmaii.zazr.collection.Stream;
@@ -71,7 +75,11 @@ public class NullResultTest {
             java.util.Map.entry("LinkedHashMap.reduceOption", "a fold returns the caller's own result"),
             java.util.Map.entry("TreeMap.fold", "a fold returns the caller's own result"),
             java.util.Map.entry("TreeMap.reduce", "a fold returns the caller's own result"),
-            java.util.Map.entry("TreeMap.reduceOption", "a fold returns the caller's own result"));
+            java.util.Map.entry("TreeMap.reduceOption", "a fold returns the caller's own result"),
+            java.util.Map.entry("NonEmptyMap.fold", "a fold returns the caller's own result"),
+            java.util.Map.entry("NonEmptyMap.reduce", "a fold returns the caller's own result"),
+            java.util.Map.entry("NonEmptySortedMap.fold", "a fold returns the caller's own result"),
+            java.util.Map.entry("NonEmptySortedMap.reduce", "a fold returns the caller's own result"));
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static java.util.List<Case> cases() {
@@ -310,6 +318,54 @@ public class NullResultTest {
         cases.add(throwing("TreeMap.toMap(java.util.function.Function)", "Map.toMap: f returned null", () -> TreeMap.of(1, "a").toMap(e -> null)));
         cases.add(throwing("TreeMap.toSortedMap(java.util.function.Function)", "Map.toSortedMap: f returned null", () -> TreeMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
         cases.add(throwing("TreeMap.toSortedMap(java.util.Comparator, java.util.function.Function)", "Map.toSortedMap: f returned null", () -> TreeMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        // -- the non-empty sets and maps
+        cases.add(throwing("NonEmptyMap.collect(java.util.function.BiFunction)", "NonEmptyMap.collect: mapper returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).collect((k, v) -> (Option<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("NonEmptyMap.flatMap(java.util.function.BiFunction)", "NonEmptyMap.flatMap: mapper returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).flatMap((k, v) -> (NonEmptyMap<Integer, String>) null)));
+        cases.add(throwing("NonEmptyMap.flatMapAll(java.util.function.BiFunction)", "NonEmptyMap.flatMapAll: mapper returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).flatMapAll((k, v) -> (Iterable<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("NonEmptyMap.map(java.util.function.BiFunction)", "NonEmptyMap.map: mapper returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).map((k, v) -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptyMap.toLinkedMap(java.util.function.Function)", "NonEmptyMap.toLinkedMap: f returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).toLinkedMap(e -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptyMap.toMap(java.util.function.Function)", "NonEmptyMap.toMap: f returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).toMap(e -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptyMap.toSortedMap(java.util.function.Function)", "NonEmptyMap.toSortedMap: f returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptyMap.toSortedMap(java.util.Comparator, java.util.function.Function)", "NonEmptyMap.toSortedMap: f returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).toSortedMap(Comparator.<Integer> naturalOrder(), e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptyMap.groupBy", "NonEmptyMap.groupBy: classifier returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).groupBy(e -> null)));
+        cases.add(throwing("NonEmptyMap.arrangeBy", "NonEmptyMap.arrangeBy: getKey returned null", () -> NonEmptyMap.of(Tuple.of(1, "a")).arrangeBy(e -> null)));
+        cases.add(throwing("NonEmptySortedMap.collect(java.util.function.BiFunction)", "NonEmptySortedMap.collect: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).collect((k, v) -> (Option<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("NonEmptySortedMap.flatMap(java.util.function.BiFunction)", "NonEmptySortedMap.flatMap: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).flatMap((k, v) -> (NonEmptySortedMap<Integer, String>) null)));
+        cases.add(throwing("NonEmptySortedMap.flatMapAll(java.util.function.BiFunction)", "NonEmptySortedMap.flatMapAll: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).flatMapAll((k, v) -> (Iterable<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("NonEmptySortedMap.map(java.util.function.BiFunction)", "NonEmptySortedMap.map: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).map((k, v) -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptySortedMap.toLinkedMap(java.util.function.Function)", "NonEmptySortedMap.toLinkedMap: f returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).toLinkedMap(e -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptySortedMap.toMap(java.util.function.Function)", "NonEmptySortedMap.toMap: f returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).toMap(e -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptySortedMap.toSortedMap(java.util.function.Function)", "NonEmptySortedMap.toSortedMap: f returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedMap.toSortedMap(java.util.Comparator, java.util.function.Function)", "NonEmptySortedMap.toSortedMap: f returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).toSortedMap(Comparator.<Integer> naturalOrder(), e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedMap.groupBy", "NonEmptySortedMap.groupBy: classifier returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).groupBy(e -> null)));
+        cases.add(throwing("NonEmptySortedMap.arrangeBy", "NonEmptySortedMap.arrangeBy: getKey returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).arrangeBy(e -> null)));
+        cases.add(throwing("NonEmptySortedMap.collect(java.util.Comparator, java.util.function.BiFunction)", "NonEmptySortedMap.collect: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).collect(Comparator.<Integer> naturalOrder(), (k, v) -> (Option<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("NonEmptySortedMap.flatMap(java.util.Comparator, java.util.function.BiFunction)", "NonEmptySortedMap.flatMap: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).flatMap(Comparator.<Integer> naturalOrder(), (k, v) -> (NonEmptySortedMap<Integer, String>) null)));
+        cases.add(throwing("NonEmptySortedMap.flatMapAll(java.util.Comparator, java.util.function.BiFunction)", "NonEmptySortedMap.flatMapAll: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).flatMapAll(Comparator.<Integer> naturalOrder(), (k, v) -> (Iterable<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("NonEmptySortedMap.map(java.util.Comparator, java.util.function.BiFunction)", "NonEmptySortedMap.map: mapper returned null", () -> NonEmptySortedMap.of(Tuple.of(1, "a")).map(Comparator.<Integer> naturalOrder(), (k, v) -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("NonEmptySet.collect(java.util.function.Function)", "NonEmptySet.collect: mapper returned null", () -> NonEmptySet.of(1).collect(x -> (Option<Integer>) null)));
+        cases.add(throwing("NonEmptySet.flatMap(java.util.function.Function)", "NonEmptySet.flatMap: mapper returned null", () -> NonEmptySet.of(1).flatMap(x -> (NonEmptySet<Integer>) null)));
+        cases.add(throwing("NonEmptySet.flatMapAll(java.util.function.Function)", "NonEmptySet.flatMapAll: mapper returned null", () -> NonEmptySet.of(1).flatMapAll(x -> (Iterable<Integer>) null)));
+        cases.add(throwing("NonEmptySet.toLinkedMap(java.util.function.Function)", "NonEmptySet.toLinkedMap: f returned null", () -> NonEmptySet.of(1).toLinkedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySet.toMap(java.util.function.Function)", "NonEmptySet.toMap: f returned null", () -> NonEmptySet.of(1).toMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySet.toSortedMap(java.util.function.Function)", "NonEmptySet.toSortedMap: f returned null", () -> NonEmptySet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySet.toSortedMap(java.util.Comparator, java.util.function.Function)", "NonEmptySet.toSortedMap: f returned null", () -> NonEmptySet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySet.groupBy", "NonEmptySet.groupBy: classifier returned null", () -> NonEmptySet.of(1).groupBy(x -> null)));
+        cases.add(throwing("NonEmptySet.arrangeBy", "NonEmptySet.arrangeBy: getKey returned null", () -> NonEmptySet.of(1).arrangeBy(x -> null)));
+        cases.add(throwing("NonEmptySortedSet.collect(java.util.function.Function)", "NonEmptySortedSet.collect: mapper returned null", () -> NonEmptySortedSet.of(1).collect(x -> (Option<Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.flatMap(java.util.function.Function)", "NonEmptySortedSet.flatMap: mapper returned null", () -> NonEmptySortedSet.of(1).flatMap(x -> (NonEmptySortedSet<Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.flatMapAll(java.util.function.Function)", "NonEmptySortedSet.flatMapAll: mapper returned null", () -> NonEmptySortedSet.of(1).flatMapAll(x -> (Iterable<Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.toLinkedMap(java.util.function.Function)", "NonEmptySortedSet.toLinkedMap: f returned null", () -> NonEmptySortedSet.of(1).toLinkedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.toMap(java.util.function.Function)", "NonEmptySortedSet.toMap: f returned null", () -> NonEmptySortedSet.of(1).toMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.toSortedMap(java.util.function.Function)", "NonEmptySortedSet.toSortedMap: f returned null", () -> NonEmptySortedSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.toSortedMap(java.util.Comparator, java.util.function.Function)", "NonEmptySortedSet.toSortedMap: f returned null", () -> NonEmptySortedSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.groupBy", "NonEmptySortedSet.groupBy: classifier returned null", () -> NonEmptySortedSet.of(1).groupBy(x -> null)));
+        cases.add(throwing("NonEmptySortedSet.arrangeBy", "NonEmptySortedSet.arrangeBy: getKey returned null", () -> NonEmptySortedSet.of(1).arrangeBy(x -> null)));
+        cases.add(throwing("NonEmptySet.partitionMap(java.util.function.Function)", "NonEmptySet.partitionMap: f returned null", () -> NonEmptySet.of(1).partitionMap(x -> (Either<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.collect(java.util.Comparator, java.util.function.Function)", "NonEmptySortedSet.collect: mapper returned null", () -> NonEmptySortedSet.of(1).collect(Comparator.<Integer> naturalOrder(), x -> (Option<Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.flatMap(java.util.Comparator, java.util.function.Function)", "NonEmptySortedSet.flatMap: mapper returned null", () -> NonEmptySortedSet.of(1).flatMap(Comparator.<Integer> naturalOrder(), x -> (NonEmptySortedSet<Integer>) null)));
+        cases.add(throwing("NonEmptySortedSet.flatMapAll(java.util.Comparator, java.util.function.Function)", "NonEmptySortedSet.flatMapAll: mapper returned null", () -> NonEmptySortedSet.of(1).flatMapAll(Comparator.<Integer> naturalOrder(), x -> (Iterable<Integer>) null)));
+
         // arrangeBy classifies through groupBy, and names itself
         cases.add(throwing("Vector.arrangeBy", "Vector.arrangeBy: getKey returned null", () -> Vector.of(1).arrangeBy(x -> null)));
         cases.add(throwing("List.arrangeBy", "List.arrangeBy: getKey returned null", () -> List.of(1).arrangeBy(x -> null)));
