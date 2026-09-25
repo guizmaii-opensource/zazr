@@ -1417,7 +1417,12 @@ any number of resources decided at run time, and Scala's rule for which throwabl
   Secrets, at the `guizmaii-opensource` organisation level: `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`,
   `PGP_SECRET` (armored private key, base64-encoded or plain), `PGP_PASSPHRASE`. The `vavr-match`
   artifacts stay `io.vavr:*:1.0.0` until PR 3 deletes them.
-- **Changelog**: start `CHANGELOG.md` with this document's section numbers as the first entry.
+- **Changelog (decided 2026-09-25)**: `CHANGELOG.md` at the root, in the Keep a Changelog format, written for users
+  under the website rules (no ticket numbers, no internal names, no history of a decision). The 0.1.0 entry compares
+  Zazr with Vavr: what Zazr is, then Added, Changed and Removed grouped by area. Vavr bugs that Zazr fixes are listed
+  under Changed. A fix for a bug Zazr introduced gets no entry. An HTML comment at the end lists the open pull requests
+  and issues that would change the entry, and the section each one goes into. The README, the "Compared to Vavr" page
+  and the site nav link to the file on GitHub. The nav entry is an external URL, not a page that includes the file.
 - **Documentation lives in the repo (decided).** Vavr's user guide is a separate repository
   (`vavr-io/vavr-docs`, AsciiDoc, published at docs.vavr.io) and is not forked: it teaches `Match`,
   `For`, `ap`, `Seq`, `Value` and `Future`, all of which Zazr removes. Zazr keeps a `docs/` folder in the
