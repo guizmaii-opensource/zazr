@@ -53,7 +53,11 @@ COMPLEXITY_FILES := \
 	zazr-core/src/main/java/com/guizmaii/zazr/collection/Vector.java \
 	zazr-core/src/main/java/com/guizmaii/zazr/collection/List.java \
 	zazr-core/src/main/java/com/guizmaii/zazr/collection/Queue.java \
-	zazr-core/src/main/java/com/guizmaii/zazr/collection/Stream.java
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/Stream.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/SortedSet.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/SortedMap.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/LinkedHashSet.java \
+	zazr-core/src/main/java/com/guizmaii/zazr/collection/LinkedHashMap.java
 
 complexity: ## fail when a positional method of a collection lacks a "Complexity:" javadoc line (design.md 3.7)
 	@scala-cli run scripts/check-complexity.scala -- $(COMPLEXITY_FILES)

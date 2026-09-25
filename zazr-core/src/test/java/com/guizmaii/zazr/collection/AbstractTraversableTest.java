@@ -54,6 +54,15 @@ public abstract class AbstractTraversableTest {
             "iterator", "size", "isEmpty", "nonEmpty", "contains", "containsAll", "exists", "forAll", "count", "find",
             "foldLeft", "mkString", "forEach", "toVector", "toList", "toSet", "stream", "toArray", "asJava", "spliterator");
 
+    /**
+     * The positional members the ordered sets and maps declare ({@code SortedSet}, {@code SortedMap},
+     * {@code LinkedHashSet}, {@code LinkedHashMap}) and the hash-ordered ones must not (design 3.7).
+     */
+    static final java.util.Set<String> ORDERED_POSITIONAL_MEMBERS = java.util.Set.of(
+            "head", "headOption", "last", "lastOption", "init", "initOption", "tail", "tailOption", "take", "takeRight",
+            "takeWhile", "takeUntil", "drop", "dropRight", "dropWhile", "dropUntil", "zipWithIndex", "sliding", "grouped",
+            "slideBy");
+
     protected <T> IterableAssert<T> assertThat(Iterable<T> actual) {
         return new IterableAssert<T>(actual) {
         };

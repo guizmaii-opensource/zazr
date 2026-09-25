@@ -898,6 +898,136 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
     }
 
+    // -- Positional operations, in the comparator's order
+
+    @Override
+    public T head() {
+        if (tree.isEmpty()) {
+            throw new java.util.NoSuchElementException("head of empty TreeSet");
+        }
+        return RedBlackTreeModule.Node.minimum((RedBlackTreeModule.Node<T>) tree);
+    }
+
+    @Override
+    public Option<T> headOption() {
+        return tree.min();
+    }
+
+    @Override
+    public T last() {
+        if (tree.isEmpty()) {
+            throw new java.util.NoSuchElementException("last of empty TreeSet");
+        }
+        return RedBlackTreeModule.Node.maximum((RedBlackTreeModule.Node<T>) tree);
+    }
+
+    @Override
+    public Option<T> lastOption() {
+        return tree.max();
+    }
+
+    @Override
+    public TreeSet<T> init() {
+        if (tree.isEmpty()) {
+            throw new UnsupportedOperationException("init of empty TreeSet");
+        }
+        return new TreeSet<>(RedBlackTreeModule.Node.take(tree, tree.size() - 1));
+    }
+
+    @Override
+    public Option<TreeSet<T>> initOption() {
+        return tree.isEmpty() ? Option.none() : Option.some(init());
+    }
+
+    @Override
+    public TreeSet<T> tail() {
+        if (tree.isEmpty()) {
+            throw new UnsupportedOperationException("tail of empty TreeSet");
+        }
+        return new TreeSet<>(RedBlackTreeModule.Node.drop(tree, 1));
+    }
+
+    @Override
+    public Option<TreeSet<T>> tailOption() {
+        return tree.isEmpty() ? Option.none() : Option.some(tail());
+    }
+
+    @Override
+    public TreeSet<T> take(int n) {
+        return slice(0, n);
+    }
+
+    @Override
+    public TreeSet<T> takeRight(int n) {
+        // n <= 0 keeps nothing; the subtraction cannot overflow because size() >= 0
+        return n <= 0 ? slice(0, 0) : slice(tree.size() - n, tree.size());
+    }
+
+    @Override
+    public TreeSet<T> takeWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(0, RedBlackTreeModule.Node.prefixLength(tree, predicate, true));
+    }
+
+    @Override
+    public TreeSet<T> takeUntil(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(0, RedBlackTreeModule.Node.prefixLength(tree, predicate, false));
+    }
+
+    @Override
+    public TreeSet<T> drop(int n) {
+        return slice(n, tree.size());
+    }
+
+    @Override
+    public TreeSet<T> dropRight(int n) {
+        return n <= 0 ? this : slice(0, tree.size() - n);
+    }
+
+    @Override
+    public TreeSet<T> dropWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(RedBlackTreeModule.Node.prefixLength(tree, predicate, true), tree.size());
+    }
+
+    @Override
+    public TreeSet<T> dropUntil(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(RedBlackTreeModule.Node.prefixLength(tree, predicate, false), tree.size());
+    }
+
+    @Override
+    public Vector<Tuple2<T, Integer>> zipWithIndex() {
+        return RedBlackTreeModule.Node.zipWithIndex(tree);
+    }
+
+    @Override
+    public Vector<TreeSet<T>> grouped(int size) {
+        return sliding(size, size);
+    }
+
+    @Override
+    public Vector<TreeSet<T>> sliding(int size) {
+        return sliding(size, 1);
+    }
+
+    @Override
+    public Vector<TreeSet<T>> sliding(int size, int step) {
+        return RedBlackTreeModule.Node.sliding(tree, size, step, TreeSet::new);
+    }
+
+    @Override
+    public Vector<TreeSet<T>> slideBy(Function<? super T, ?> classifier) {
+        return RedBlackTreeModule.Node.slideBy(tree, classifier, TreeSet::new);
+    }
+
+    // the elements of rank from (inclusive) to until (exclusive), clamped; this set when nothing is cut off
+    private TreeSet<T> slice(int from, int until) {
+        final RedBlackTree<T> sliced = RedBlackTreeModule.Node.slice(tree, from, until);
+        return sliced == tree ? this : new TreeSet<>(sliced);
+    }
+
     // -- Object
 
     @Override

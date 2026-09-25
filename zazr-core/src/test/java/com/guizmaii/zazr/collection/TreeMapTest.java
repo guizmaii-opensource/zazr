@@ -28,7 +28,10 @@ import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The TreeMap API: the shared cases over the values (through {@code IntMap}), the map cases over the entries, and the sorted ones. */
 public class TreeMapTest extends AbstractTraversableTest {
@@ -2538,5 +2541,320 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldThrowOnCollectWithNullComparator() {
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class,
           () -> TreeMap.of(1, "a").collect(null, (k, v) -> Option.some(Tuple.of(v, k))));
+    }
+
+    // -- positional operations, in key order
+
+    @Nested
+    class PositionalTests {
+
+        private static final int[] WINDOW_SIZES = { 1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE };
+        private static final int[] WINDOW_STEPS = { 1, 2, 3, 70, 71, Integer.MAX_VALUE };
+
+        private java.util.List<TreeMap<Integer, String>> receivers() {
+            return java.util.List.of(
+                    TreeMap.<Integer, String> empty(),
+                    TreeMap.of(7, "v7"),
+                    mk(5, 3, 9, 1, 7),
+                    mkReversed(5, 3, 9, 1, 7),
+                    mk(Vector.range(0, 70)),
+                    mkReversed(Vector.range(0, 70)),
+                    mk(Vector.range(0, 100)).removeAll(Vector.range(0, 100).filter(i -> i % 3 == 0)));
+        }
+
+        private int[] counts(int size) {
+            return new int[] { Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE };
+        }
+
+        // Vector's own takeRight/dropRight compute length - n, so the reference is given an n that cannot overflow
+        private int clamp(int n, int size) {
+            return Math.max(-1, Math.min(n, size + 1));
+        }
+
+        // `actual` holds exactly `expected`, in order, and behaves as a TreeMap built from it
+        private void assertValid(TreeMap<Integer, String> receiver, TreeMap<Integer, String> actual, Vector<Tuple2<Integer, String>> expected) {
+            assertEquals(expected, actual.toVector());
+            assertEquals(expected.size(), actual.size());
+            assertSame(receiver.comparator(), actual.comparator());
+            for (Tuple2<Integer, String> entry : expected) {
+                assertEquals(Option.some(entry._2()), actual.get(entry._1()));
+            }
+            // the result is a tree like any other: an insertion and a removal land in order
+            assertEquals(TreeMap.ofEntries(receiver.comparator(), expected.append(Tuple.of(1000, "new"))).toVector(),
+                    actual.put(1000, "new").toVector());
+            if (!expected.isEmpty()) {
+                assertEquals(expected.tail(), actual.remove(expected.head()._1()).toVector());
+                assertEquals(expected.init(), actual.remove(expected.last()._1()).toVector());
+            }
+        }
+
+        @Test
+        public void shouldTakeAndDropLikeTheSequenceOfTheElements() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                final int size = receiver.size();
+                for (int n : counts(size)) {
+                    final int m = clamp(n, size);
+                    final TreeMap<Integer, String> take = receiver.take(n);
+                    final TreeMap<Integer, String> takeRight = receiver.takeRight(n);
+                    final TreeMap<Integer, String> drop = receiver.drop(n);
+                    final TreeMap<Integer, String> dropRight = receiver.dropRight(n);
+                    assertValid(receiver, take, elements.take(m));
+                    assertValid(receiver, takeRight, elements.takeRight(m));
+                    assertValid(receiver, drop, elements.drop(m));
+                    assertValid(receiver, dropRight, elements.dropRight(m));
+                    if (n >= size) {
+                        assertSame(receiver, take);
+                        assertSame(receiver, takeRight);
+                    }
+                    if (n <= 0) {
+                        assertSame(receiver, drop);
+                        assertSame(receiver, dropRight);
+                    }
+                }
+                assertEquals(elements, receiver.toVector());
+            }
+        }
+
+        @Test
+        public void shouldReturnTheFirstAndTheLastElement() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                if (elements.isEmpty()) {
+                    assertEquals("head of empty TreeMap", assertThrows(NoSuchElementException.class, receiver::head).getMessage());
+                    assertEquals("last of empty TreeMap", assertThrows(NoSuchElementException.class, receiver::last).getMessage());
+                    assertEquals(Option.none(), receiver.headOption());
+                    assertEquals(Option.none(), receiver.lastOption());
+                } else {
+                    assertEquals(elements.head(), receiver.head());
+                    assertEquals(elements.last(), receiver.last());
+                    assertEquals(Option.some(elements.head()), receiver.headOption());
+                    assertEquals(Option.some(elements.last()), receiver.lastOption());
+                }
+            }
+            assertEquals(Tuple.of(1, "v1"), mk(5, 3, 9, 1, 7).head());
+            assertEquals(Tuple.of(9, "v9"), mk(5, 3, 9, 1, 7).last());
+            assertEquals(Tuple.of(9, "v9"), mkReversed(5, 3, 9, 1, 7).head());
+            assertEquals(Tuple.of(1, "v1"), mkReversed(5, 3, 9, 1, 7).last());
+        }
+
+        @Test
+        public void shouldDropTheFirstOrTheLastElementWithTailAndInit() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                if (elements.isEmpty()) {
+                    assertEquals("tail of empty TreeMap", assertThrows(UnsupportedOperationException.class, receiver::tail).getMessage());
+                    assertEquals("init of empty TreeMap", assertThrows(UnsupportedOperationException.class, receiver::init).getMessage());
+                    assertEquals(Option.none(), receiver.tailOption());
+                    assertEquals(Option.none(), receiver.initOption());
+                } else {
+                    final TreeMap<Integer, String> tail = receiver.tail();
+                    final TreeMap<Integer, String> init = receiver.init();
+                    assertValid(receiver, tail, elements.tail());
+                    assertValid(receiver, init, elements.init());
+                    final Option<TreeMap<Integer, String>> tailOption = receiver.tailOption();
+                    final Option<TreeMap<Integer, String>> initOption = receiver.initOption();
+                    assertValid(receiver, tailOption.get(), elements.tail());
+                    assertValid(receiver, initOption.get(), elements.init());
+                }
+            }
+        }
+
+        @Test
+        public void shouldTakeAndDropWhileOrUntilAPredicateHolds() {
+            final java.util.List<java.util.function.Predicate<Tuple2<Integer, String>>> predicates = java.util.List.of(
+                    e -> true, e -> false, e -> e._1() < 5, e -> e._1() >= 5, e -> e._1() % 2 == 1, e -> e._1() != 40);
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                for (java.util.function.Predicate<Tuple2<Integer, String>> predicate : predicates) {
+                    final TreeMap<Integer, String> takeWhile = receiver.takeWhile(predicate);
+                    final TreeMap<Integer, String> takeUntil = receiver.takeUntil(predicate);
+                    final TreeMap<Integer, String> dropWhile = receiver.dropWhile(predicate);
+                    final TreeMap<Integer, String> dropUntil = receiver.dropUntil(predicate);
+                    assertValid(receiver, takeWhile, elements.takeWhile(predicate));
+                    assertValid(receiver, takeUntil, elements.takeUntil(predicate));
+                    assertValid(receiver, dropWhile, elements.dropWhile(predicate));
+                    assertValid(receiver, dropUntil, elements.dropUntil(predicate));
+                }
+                // the walk stops at the first element that ends the prefix
+                final int[] calls = { 0 };
+                receiver.takeWhile(e -> {
+                    calls[0]++;
+                    return false;
+                });
+                assertEquals(receiver.isEmpty() ? 0 : 1, calls[0]);
+                assertThrows(NullPointerException.class, () -> receiver.takeWhile(null));
+                assertThrows(NullPointerException.class, () -> receiver.takeUntil(null));
+                assertThrows(NullPointerException.class, () -> receiver.dropWhile(null));
+                assertThrows(NullPointerException.class, () -> receiver.dropUntil(null));
+            }
+        }
+
+        @Test
+        public void shouldZipWithThePosition() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Tuple2<Integer, String>, Integer>> zipped = receiver.zipWithIndex();
+                assertEquals(receiver.toVector().zipWithIndex(), zipped);
+                for (int i = 0; i < zipped.size(); i++) {
+                    assertEquals(i, zipped.get(i)._2());
+                }
+            }
+        }
+
+        @Test
+        public void shouldGroupAndSlideLikeTheSequenceOfTheElements() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                for (int size : WINDOW_SIZES) {
+                    for (int step : WINDOW_STEPS) {
+                        final Vector<TreeMap<Integer, String>> windows = receiver.sliding(size, step);
+                        final Vector<Vector<Tuple2<Integer, String>>> expected = elements.sliding(size, step);
+                        assertEquals(expected.size(), windows.size());
+                        for (int i = 0; i < windows.size(); i++) {
+                            assertValid(receiver, windows.get(i), expected.get(i));
+                        }
+                    }
+                    final Vector<TreeMap<Integer, String>> groups = receiver.grouped(size);
+                    assertEquals(elements.grouped(size), groups.map(TreeMap::toVector));
+                    groups.forEach(group -> assertValid(receiver, group, group.toVector()));
+                    final Vector<TreeMap<Integer, String>> windows = receiver.sliding(size);
+                    assertEquals(elements.sliding(size), windows.map(TreeMap::toVector));
+                    windows.forEach(window -> assertValid(receiver, window, window.toVector()));
+                }
+            }
+        }
+
+        @Test
+        public void shouldSlideFollowingTheWindowRules() {
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)), mk(1, 2, 3, 4).sliding(3).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(4, 5)), mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(5)), mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)), mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
+                    mk(1, 2, 3, 4, 5, 6).sliding(3, 2).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1)), mk(1, 2, 3).sliding(1, 3).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2)), mk(1, 2).sliding(5).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1)), mk(1).sliding(1).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)), mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
+            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
+                    mk(1, 2, 3, 10, 12, 20, 29).slideBy(e -> e._1() / 10).map(this::keys));
+            // a huge step or size does not overflow the window start
+            assertEquals(Vector.of(Vector.range(0, 3)), mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
+            assertEquals(Vector.of(Vector.range(0, 40)),
+                    mk(Vector.range(0, 40)).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE).map(this::keys));
+            assertTrue(TreeMap.<Integer, String> empty().sliding(1).isEmpty());
+            assertTrue(TreeMap.<Integer, String> empty().sliding(2, 3).isEmpty());
+            assertTrue(TreeMap.<Integer, String> empty().grouped(2).isEmpty());
+        }
+
+        @Test
+        public void shouldRejectANonPositiveWindowSizeOrStep() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                assertThrows(IllegalArgumentException.class, () -> receiver.grouped(0));
+                assertThrows(IllegalArgumentException.class, () -> receiver.grouped(-1));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(0));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(2, 0));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(0, 2));
+                assertThrows(IllegalArgumentException.class, () -> receiver.sliding(-1, -1));
+            }
+        }
+
+        @Test
+        public void shouldSlideByCallingTheClassifierOncePerElement() {
+            for (TreeMap<Integer, String> receiver : receivers()) {
+                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                final java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
+                final Vector<TreeMap<Integer, String>> runs = receiver.slideBy(e -> {
+                    seen.add(e);
+                    return e._1() / 3;
+                });
+                assertEquals(new java.util.ArrayList<>(elements.asJava()), seen);
+                final Vector<Vector<Tuple2<Integer, String>>> expected = elements.slideBy(e -> e._1() / 3);
+                assertEquals(expected.size(), runs.size());
+                for (int i = 0; i < runs.size(); i++) {
+                    assertValid(receiver, runs.get(i), expected.get(i));
+                }
+                assertEquals(receiver.isEmpty() ? 0 : 1, receiver.slideBy(e -> "same").size());
+                assertEquals(receiver.size(), receiver.slideBy(e -> e).size());
+                assertThrows(NullPointerException.class, () -> receiver.slideBy(null));
+            }
+        }
+
+        @Test
+        public void shouldDeclareThePositionalMembersWithTheOwnType() throws Exception {
+            for (String name : new String[] { "init", "tail" }) {
+                assertEquals(TreeMap.class, TreeMap.class.getDeclaredMethod(name).getReturnType());
+                assertEquals(SortedMap.class, SortedMap.class.getDeclaredMethod(name).getReturnType());
+            }
+            for (String name : new String[] { "take", "takeRight", "drop", "dropRight" }) {
+                assertEquals(TreeMap.class, TreeMap.class.getDeclaredMethod(name, int.class).getReturnType());
+                assertEquals(SortedMap.class, SortedMap.class.getDeclaredMethod(name, int.class).getReturnType());
+            }
+            for (String name : new String[] { "takeWhile", "takeUntil", "dropWhile", "dropUntil" }) {
+                assertEquals(TreeMap.class, TreeMap.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
+                assertEquals(SortedMap.class, SortedMap.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
+            }
+            assertEquals("com.guizmaii.zazr.control.Option<com.guizmaii.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class.getDeclaredMethod("tailOption").getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.control.Option<com.guizmaii.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class.getDeclaredMethod("initOption").getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class.getDeclaredMethod("grouped", int.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class.getDeclaredMethod("sliding", int.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class.getDeclaredMethod("sliding", int.class, int.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class.getDeclaredMethod("slideBy", Function.class).getGenericReturnType().getTypeName());
+            assertEquals("com.guizmaii.zazr.collection.Vector<com.guizmaii.zazr.Tuple2<com.guizmaii.zazr.Tuple2<K, V>, java.lang.Integer>>",
+                    TreeMap.class.getDeclaredMethod("zipWithIndex").getGenericReturnType().getTypeName());
+            final java.util.Set<String> declared = new java.util.HashSet<>();
+            for (java.lang.reflect.Method method : SortedMap.class.getDeclaredMethods()) {
+                declared.add(method.getName());
+            }
+            assertTrue(declared.containsAll(ORDERED_POSITIONAL_MEMBERS));
+        }
+
+        @Test
+        public void shouldKeepTheReversedKeyComparatorInTheResults() {
+            final TreeMap<Integer, String> reversed = mkReversed(1, 2, 3, 4, 5);
+            assertEquals(Vector.of(5, 4), keys(reversed.take(2)));
+            assertEquals(Vector.of(2, 1), keys(reversed.takeRight(2)));
+            assertEquals(Vector.of(3, 2, 1), keys(reversed.drop(2)));
+            assertEquals(Vector.of(5, 4, 3), keys(reversed.takeWhile(e -> e._1() > 2)));
+            assertEquals(Vector.of(Vector.of(5, 4), Vector.of(3, 2), Vector.of(1)), reversed.grouped(2).map(this::keys));
+            assertSame(reversed.comparator(), reversed.take(0).comparator());
+            assertSame(reversed.comparator(), reversed.drop(9).comparator());
+            // the comparator keeps ordering what is put into a result
+            assertEquals(Vector.of(9, 5, 4), keys(reversed.take(2).put(9, "v9")));
+        }
+
+        private Vector<Integer> keys(TreeMap<Integer, String> map) {
+            return map.toVector().map(Tuple2::_1);
+        }
+
+        private TreeMap<Integer, String> mk(Integer... keys) {
+            return mk(Vector.of(keys));
+        }
+
+        private TreeMap<Integer, String> mk(Iterable<Integer> keys) {
+            TreeMap<Integer, String> map = TreeMap.empty();
+            for (Integer key : keys) {
+                map = map.put(key, "v" + key);
+            }
+            return map;
+        }
+
+        private TreeMap<Integer, String> mkReversed(Integer... keys) {
+            return mkReversed(Vector.of(keys));
+        }
+
+        private TreeMap<Integer, String> mkReversed(Iterable<Integer> keys) {
+            TreeMap<Integer, String> map = TreeMap.empty(Comparator.<Integer> reverseOrder());
+            for (Integer key : keys) {
+                map = map.put(key, "v" + key);
+            }
+            return map;
+        }
     }
 }

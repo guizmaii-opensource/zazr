@@ -1238,6 +1238,136 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // -- Object
 
+    // -- Positional operations, in the comparator's order
+
+    @Override
+    public Tuple2<K, V> head() {
+        if (entries.isEmpty()) {
+            throw new java.util.NoSuchElementException("head of empty TreeMap");
+        }
+        return RedBlackTreeModule.Node.minimum((RedBlackTreeModule.Node<Tuple2<K, V>>) entries);
+    }
+
+    @Override
+    public Option<Tuple2<K, V>> headOption() {
+        return entries.min();
+    }
+
+    @Override
+    public Tuple2<K, V> last() {
+        if (entries.isEmpty()) {
+            throw new java.util.NoSuchElementException("last of empty TreeMap");
+        }
+        return RedBlackTreeModule.Node.maximum((RedBlackTreeModule.Node<Tuple2<K, V>>) entries);
+    }
+
+    @Override
+    public Option<Tuple2<K, V>> lastOption() {
+        return entries.max();
+    }
+
+    @Override
+    public TreeMap<K, V> init() {
+        if (entries.isEmpty()) {
+            throw new UnsupportedOperationException("init of empty TreeMap");
+        }
+        return new TreeMap<>(RedBlackTreeModule.Node.take(entries, entries.size() - 1));
+    }
+
+    @Override
+    public Option<TreeMap<K, V>> initOption() {
+        return entries.isEmpty() ? Option.none() : Option.some(init());
+    }
+
+    @Override
+    public TreeMap<K, V> tail() {
+        if (entries.isEmpty()) {
+            throw new UnsupportedOperationException("tail of empty TreeMap");
+        }
+        return new TreeMap<>(RedBlackTreeModule.Node.drop(entries, 1));
+    }
+
+    @Override
+    public Option<TreeMap<K, V>> tailOption() {
+        return entries.isEmpty() ? Option.none() : Option.some(tail());
+    }
+
+    @Override
+    public TreeMap<K, V> take(int n) {
+        return slice(0, n);
+    }
+
+    @Override
+    public TreeMap<K, V> takeRight(int n) {
+        // n <= 0 keeps nothing; the subtraction cannot overflow because size() >= 0
+        return n <= 0 ? slice(0, 0) : slice(entries.size() - n, entries.size());
+    }
+
+    @Override
+    public TreeMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(0, RedBlackTreeModule.Node.prefixLength(entries, predicate, true));
+    }
+
+    @Override
+    public TreeMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(0, RedBlackTreeModule.Node.prefixLength(entries, predicate, false));
+    }
+
+    @Override
+    public TreeMap<K, V> drop(int n) {
+        return slice(n, entries.size());
+    }
+
+    @Override
+    public TreeMap<K, V> dropRight(int n) {
+        return n <= 0 ? this : slice(0, entries.size() - n);
+    }
+
+    @Override
+    public TreeMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(RedBlackTreeModule.Node.prefixLength(entries, predicate, true), entries.size());
+    }
+
+    @Override
+    public TreeMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return slice(RedBlackTreeModule.Node.prefixLength(entries, predicate, false), entries.size());
+    }
+
+    @Override
+    public Vector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
+        return RedBlackTreeModule.Node.zipWithIndex(entries);
+    }
+
+    @Override
+    public Vector<TreeMap<K, V>> grouped(int size) {
+        return sliding(size, size);
+    }
+
+    @Override
+    public Vector<TreeMap<K, V>> sliding(int size) {
+        return sliding(size, 1);
+    }
+
+    @Override
+    public Vector<TreeMap<K, V>> sliding(int size, int step) {
+        return RedBlackTreeModule.Node.sliding(entries, size, step, TreeMap::new);
+    }
+
+    @Override
+    public Vector<TreeMap<K, V>> slideBy(Function<? super Tuple2<K, V>, ?> classifier) {
+        return RedBlackTreeModule.Node.slideBy(entries, classifier, TreeMap::new);
+    }
+
+    // the elements of rank from (inclusive) to until (exclusive), clamped; this map when nothing is cut off
+    private TreeMap<K, V> slice(int from, int until) {
+        final RedBlackTree<Tuple2<K, V>> sliced = RedBlackTreeModule.Node.slice(entries, from, until);
+        return sliced == entries ? this : new TreeMap<>(sliced);
+    }
+
     @Override
     public boolean equals(@Nullable Object o) {
         return Collections.equals(this, o);

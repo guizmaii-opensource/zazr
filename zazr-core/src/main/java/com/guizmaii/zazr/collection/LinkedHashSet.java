@@ -698,6 +698,11 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         return map.size();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1) to create; each step is effectively O(1) (one hash lookup), a whole walk O(n).
+     */
     @Override
     public java.util.Iterator<T> iterator() {
         return Iterator.ofAll(map).map(t -> t._1());
@@ -761,17 +766,34 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the
+     * markers outnumber the elements, the insertion order is rebuilt in O(n).
+     */
     @Override
     public LinkedHashSet<T> remove(T element) {
         final LinkedHashMap<T, Object> newMap = map.remove(element);
         return (newMap == map) ? this : new LinkedHashSet<>(newMap);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m + n) for m given elements (a hash set of them, then the kept elements copied into a new set).
+     */
     @Override
     public LinkedHashSet<T> removeAll(Iterable<? extends T> elements) {
         return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1) amortised, as {@link #remove(Object)}; the new element takes the position of the
+     * replaced one.
+     */
     @Override
     public LinkedHashSet<T> replace(T currentElement, T newElement) {
         if (!Objects.equals(currentElement, newElement) && contains(currentElement)) {
@@ -784,11 +806,21 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: that of {@link #replace(Object, Object)}: a set holds an element once.
+     */
     @Override
     public LinkedHashSet<T> replaceAll(T currentElement, T newElement) {
         return replace(currentElement, newElement);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m + n) for m given elements (a hash set of them, then the kept elements copied into a new set).
+     */
     @Override
     public LinkedHashSet<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements, kept -> filter(kept));
@@ -833,6 +865,296 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
                 return new LinkedHashSet<>(that);
             }
         }
+    }
+
+    // -- Positional operations, in insertion order
+
+    /**
+     * The first element in insertion order.
+     * <p>
+     * Complexity: effectively O(1) (the first element of the insertion order).
+     *
+     * @return the element inserted first among those present
+     * @throws java.util.NoSuchElementException if this set is empty
+     */
+    public T head() {
+        if (isEmpty()) {
+            throw new java.util.NoSuchElementException("head of empty LinkedHashSet");
+        }
+        return map.head()._1();
+    }
+
+    /**
+     * The first element in insertion order, if any.
+     *
+     * @return {@code Some} of {@link #head()}, or {@code None} if this set is empty
+     */
+    public Option<T> headOption() {
+        return isEmpty() ? Option.none() : Option.some(head());
+    }
+
+    /**
+     * The last element in insertion order.
+     * <p>
+     * Complexity: effectively O(1) (the last element of the insertion order).
+     *
+     * @return the element inserted last among those present
+     * @throws java.util.NoSuchElementException if this set is empty
+     */
+    public T last() {
+        if (isEmpty()) {
+            throw new java.util.NoSuchElementException("last of empty LinkedHashSet");
+        }
+        return map.last()._1();
+    }
+
+    /**
+     * The last element in insertion order, if any.
+     *
+     * @return {@code Some} of {@link #last()}, or {@code None} if this set is empty
+     */
+    public Option<T> lastOption() {
+        return isEmpty() ? Option.none() : Option.some(last());
+    }
+
+    /**
+     * All elements but the last in insertion order.
+     * <p>
+     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced), plus a walk
+     * past the removed elements' markers next to the last element, if any.
+     *
+     * @return this set without its last element
+     * @throws UnsupportedOperationException if this set is empty
+     */
+    public LinkedHashSet<T> init() {
+        if (isEmpty()) {
+            throw new UnsupportedOperationException("init of empty LinkedHashSet");
+        }
+        return with(map.slice(0, size() - 1));
+    }
+
+    /**
+     * All elements but the last in insertion order, if this set is not empty.
+     * <p>
+     * Complexity: effectively O(1) (one {@code init}).
+     *
+     * @return {@code Some} of {@link #init()}, or {@code None} if this set is empty
+     */
+    public Option<LinkedHashSet<T>> initOption() {
+        return isEmpty() ? Option.none() : Option.some(init());
+    }
+
+    /**
+     * All elements but the first in insertion order.
+     * <p>
+     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced), plus a walk
+     * past the removed elements' markers next to the first element, if any.
+     *
+     * @return this set without its first element
+     * @throws UnsupportedOperationException if this set is empty
+     */
+    public LinkedHashSet<T> tail() {
+        if (isEmpty()) {
+            throw new UnsupportedOperationException("tail of empty LinkedHashSet");
+        }
+        return with(map.slice(1, size()));
+    }
+
+    /**
+     * All elements but the first in insertion order, if this set is not empty.
+     * <p>
+     * Complexity: effectively O(1) (one {@code tail}).
+     *
+     * @return {@code Some} of {@link #tail()}, or {@code None} if this set is empty
+     */
+    public Option<LinkedHashSet<T>> tailOption() {
+        return isEmpty() ? Option.none() : Option.some(tail());
+    }
+
+    /**
+     * The first {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
+     * <p>
+     * Complexity: effectively O(min(n, size - n)) (the smaller of the kept and the removed elements is inserted into
+     * or removed from the hash map; the insertion order is sliced). After removals, finding the cut also walks the
+     * insertion order from the nearer end past the removed elements' markers.
+     *
+     * @param n the number of elements to keep
+     * @return the {@code n} elements inserted first
+     */
+    public LinkedHashSet<T> take(int n) {
+        return with(map.slice(0, n));
+    }
+
+    /**
+     * The last {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
+     * <p>
+     * Complexity: that of {@link #take(int)}, counted from the other end.
+     *
+     * @param n the number of elements to keep
+     * @return the {@code n} elements inserted last
+     */
+    public LinkedHashSet<T> takeRight(int n) {
+        return n <= 0 ? empty() : with(map.slice(size() - n, size()));
+    }
+
+    /**
+     * The longest prefix, in insertion order, of elements satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(k) for a prefix of k elements (one walk), then one {@link #take(int)}.
+     *
+     * @param predicate tested on the elements from the first inserted
+     * @return the elements before the first one not satisfying {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public LinkedHashSet<T> takeWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return with(map.slice(0, map.countLeadingKeys(predicate, true)));
+    }
+
+    /**
+     * The longest prefix, in insertion order, of elements not satisfying {@code predicate}.
+     * <p>
+     * Complexity: O(k) for a prefix of k elements (one walk), then one {@link #take(int)}.
+     *
+     * @param predicate tested on the elements from the first inserted
+     * @return the elements before the first one satisfying {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public LinkedHashSet<T> takeUntil(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return with(map.slice(0, map.countLeadingKeys(predicate, false)));
+    }
+
+    /**
+     * All elements but the first {@code n} in insertion order: this set if {@code n <= 0}, empty if
+     * {@code n >= size()}.
+     * <p>
+     * Complexity: that of {@link #take(int)}.
+     *
+     * @param n the number of elements to drop
+     * @return the elements after the {@code n} inserted first
+     */
+    public LinkedHashSet<T> drop(int n) {
+        return with(map.slice(n, size()));
+    }
+
+    /**
+     * All elements but the last {@code n} in insertion order: this set if {@code n <= 0}, empty if
+     * {@code n >= size()}.
+     * <p>
+     * Complexity: that of {@link #take(int)}.
+     *
+     * @param n the number of elements to drop
+     * @return the elements before the {@code n} inserted last
+     */
+    public LinkedHashSet<T> dropRight(int n) {
+        return n <= 0 ? this : with(map.slice(0, size() - n));
+    }
+
+    /**
+     * The elements from the first one, in insertion order, that does not satisfy {@code predicate}.
+     * <p>
+     * Complexity: O(k) for k dropped elements (one walk), then one {@link #drop(int)}.
+     *
+     * @param predicate tested on the elements from the first inserted
+     * @return the elements from the first one not satisfying {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public LinkedHashSet<T> dropWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return with(map.slice(map.countLeadingKeys(predicate, true), size()));
+    }
+
+    /**
+     * The elements from the first one, in insertion order, that satisfies {@code predicate}.
+     * <p>
+     * Complexity: O(k) for k dropped elements (one walk), then one {@link #drop(int)}.
+     *
+     * @param predicate tested on the elements from the first inserted
+     * @return the elements from the first one satisfying {@code predicate}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public LinkedHashSet<T> dropUntil(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return with(map.slice(map.countLeadingKeys(predicate, false), size()));
+    }
+
+    /**
+     * The elements paired with their position in insertion order, from 0.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @return the pairs (element, position), in order
+     */
+    public Vector<Tuple2<T, Integer>> zipWithIndex() {
+        return map.zipKeysWithIndex();
+    }
+
+    /**
+     * The blocks of {@code size} consecutive elements in insertion order; the last block is smaller when
+     * {@code size} does not divide {@code size()}. The same as {@code sliding(size, size)}.
+     * <p>
+     * Complexity: that of {@link #sliding(int, int)}.
+     *
+     * @param size the block size, positive
+     * @return the blocks, in order; empty if this set is empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Vector<LinkedHashSet<T>> grouped(int size) {
+        return sliding(size, size);
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements in insertion order, each starting one element after the
+     * previous. The same as {@code sliding(size, 1)}.
+     * <p>
+     * Complexity: that of {@link #sliding(int, int)}.
+     *
+     * @param size the window size, positive
+     * @return the windows, in order; empty if this set is empty
+     * @throws IllegalArgumentException if {@code size} is not positive
+     */
+    public Vector<LinkedHashSet<T>> sliding(int size) {
+        return sliding(size, 1);
+    }
+
+    /**
+     * The windows of {@code size} consecutive elements in insertion order, each starting {@code step} elements after
+     * the previous. The window rule is {@link Vector}'s: the last window is shorter than {@code size} when it reaches
+     * the end, a window whose elements all belong to the previous one is not produced, a set smaller than
+     * {@code size} is one window and an empty set has none.
+     * <p>
+     * Complexity: O(n) to drop the removed elements' markers from the insertion order if there are any, then per
+     * window that of {@link #take(int)} on a window of {@code size} elements: effectively
+     * O((n / step) min(size, n - size)).
+     *
+     * @param size the window size, positive
+     * @param step the distance between two window starts, positive
+     * @return the windows, in order
+     * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
+     */
+    public Vector<LinkedHashSet<T>> sliding(int size, int step) {
+        return map.windows(size, step, LinkedHashSet::wrap);
+    }
+
+    /**
+     * The maximal runs of consecutive elements, in insertion order, with the same key, computed once per element by
+     * {@code classifier}; the runs together are this set.
+     * <p>
+     * Complexity: O(n) walk (plus O(n) to drop the removed elements' markers from the insertion order if there are
+     * any), then per run that of {@link #take(int)} on the run.
+     *
+     * @param classifier the key of an element; two consecutive elements are in the same run when their keys are equal
+     * @return the runs, in order; empty if this set is empty
+     * @throws NullPointerException if {@code classifier} is null
+     */
+    public Vector<LinkedHashSet<T>> slideBy(Function<? super T, ?> classifier) {
+        return map.runsByKey(classifier, LinkedHashSet::wrap);
+    }
+
+    // this set when `that` is its own map, the empty set when `that` is empty, otherwise a set over `that`
+    private LinkedHashSet<T> with(LinkedHashMap<T, Object> that) {
+        return that == map ? this : that.isEmpty() ? empty() : new LinkedHashSet<>(that);
     }
 
     // -- Object
