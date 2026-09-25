@@ -66,8 +66,8 @@ A value that may be absent is an `Option`. It never holds `null`; use `ofNullabl
 `null`.
 
 ```java
-Option<String> name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET"));
-String greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
+var name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET")); // Option<String>
+var greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
 // "hello stranger"
 ```
 
@@ -75,8 +75,8 @@ String greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
 `switch` is exhaustive, and record patterns take the records apart.
 
 ```java
-Either<String, Integer> parsed = Either.right(42);
-String text = switch (parsed) {
+var parsed = Either.<String, Integer>right(42);
+var text = switch (parsed) {
     case Right(var n) -> "got " + n;
     case Left(var error) -> "failed: " + error;
 };
@@ -85,8 +85,8 @@ String text = switch (parsed) {
 A computation that may throw is a `Try`; `catchAll` recovers.
 
 ```java
-Try<Integer> port = Try.of(() -> Integer.parseInt("80a"));
-int value = port.catchAll(error -> 8080).get();
+var port = Try.of(() -> Integer.parseInt("80a")); // Try<Integer>
+var value = port.catchAll(error -> 8080).get();
 // 8080
 ```
 
@@ -94,9 +94,9 @@ int value = port.catchAll(error -> 8080).get();
 at any size.
 
 ```java
-Vector<Integer> numbers = Vector.of(1, 2, 3, 4);
-Vector<Integer> doubled = numbers.map(n -> n * 2).append(10);
-int third = doubled.get(2);
+var numbers = Vector.of(1, 2, 3, 4);
+var doubled = numbers.map(n -> n * 2).append(10); // Vector<Integer>
+var third = doubled.get(2);
 // doubled is Vector(2, 4, 6, 8, 10), third is 6
 ```
 

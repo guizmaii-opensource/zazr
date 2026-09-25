@@ -367,7 +367,7 @@ duplication is cheaper than a god interface).
 | javadoc: "monadic container type", "behave like a monad", "applicative functor, not a Monad", "more like a Functor than a Monad", `// Monad implementation`, "For-comprehension" | rewritten in plain English: "a value that may be absent", "a computation that either fails with `L` or succeeds with `R`", "`Validation` keeps *all* errors: combining two invalid values with `zip` concatenates their errors, whereas `Either` stops at the first". No mention of Monad/Functor/Applicative anywhere in the repo, generator included (`monadicTypesFor` etc.). | Principle 1 applies to prose too; a grep for `monad\|functor\|applicative` in CI keeps it that way |
 | `Option.of(nullable)` / `Option.some` / `Option.when` | `Option.ofNullable`, `Option.some` (**rejects null**), `Option.when(boolean, Supplier)` | see 3.9 |
 | `Validation.valid/invalid`, `Either.right/left`, `Try.success/failure` | keep | already purpose-named |
-| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Supplier<L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. `Validation`'s takes the rejected value (3.5, #22) so the error can name it, the everyday case for a field check; `Either`'s keeps the supplier |
+| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Function<A, L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. Both take the rejected value (3.5) so the error can name it, the everyday case for a field check |
 | `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. | |
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
@@ -535,7 +535,7 @@ Notes:
   accessor `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or
   `toEither()`.
 - **`fromPredicate(A, Predicate<A>, Function<A, E>)`**, as sketched, not the `Supplier<E>` of the 3.3 row: the
-  function receives the rejected value so the error can name it. `Either.fromPredicate` keeps its supplier.
+  function receives the rejected value so the error can name it. `Either.fromPredicate` takes the same `Function` (decided 2026-09-26: a supplier could not name the rejected value, and the two constructors now agree).
 - **`of(Callable, Function<Throwable, E>)` is `Try.of` followed by a conversion**, so it has exactly `Try.of`'s
   policy: a fatal throwable is rethrown, a `null` result is a `NullPointerException` handed to `onError`.
 - **`forEach(NonEmptyVector, f)` and `forEach(Iterable, f)` are overloads.** Unlike 3.6's `flatMap`/`flatMapAll`,
@@ -982,6 +982,43 @@ inserted), `take(n)` the first n, and so on:
   `Complexity:` line too. The notes of `TreeSet`/`TreeMap` live on the interface declarations, which the classes
   inherit.
 
+**A repeated key in `LinkedHashMap`/`LinkedHashSet` keeps its first position (decided 2026-09-25).** Before this,
+`put` on an existing key kept the key where it was, but `ofEntries`, the `of` overloads, `collector()`, `tabulate`,
+`fill` and `mapBoth` moved a repeated key to its last occurrence, so two ways of building the same map iterated
+differently (`ofEntries((1, a), (2, b), (1, c))` gave `(2, b), (1, c)`, successive `put`s gave `(1, c), (2, b)`). The
+iteration-order law of `zazr-test` needed two orders for one type. Every way of building now follows `put`:
+
+- **`LinkedHashMap`**: a repeated key stays at the position of its first occurrence and takes the key object and the
+  value of its last. Every factory, collector and bulk operation (`of` at every arity, `ofEntries` ×3, `ofAll`,
+  `collector()` ×3, `tabulate`, `fill`, `orElse`, `mapBoth`, `mapKeys(keyMapper)`, `map`, `flatMap`, `collect`, and
+  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives.
+  `merge(that, f)` and `mapKeys(keyMapper, valueMerge)` are successive `put`s of the combined value: first position,
+  last key object, combined value. `merge(that)` on a non-empty receiver is deliberately different: a key the receiver
+  already holds keeps the receiver's key object and value, and only absent keys are added. Scala's insertion-ordered maps do the
+  same: `VectorMap.updated` and `ListMap.updated` keep an existing key where it is, and building one from a sequence
+  is repeated `updated` (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its classes).
+- **`put` of an equal but distinct key object** also writes that object into the insertion-order `Vector`, not only
+  into the entry: the positional operations of the key set (`zipWithIndex`, `takeWhile` and its siblings,
+  `slideBy`) read the keys from that `Vector`, and returned the first key object while iteration returned the last.
+  The `Vector` is updated only when the key object differs, so a plain overwrite stays as cheap as before.
+- **`LinkedHashSet`**: a repeated element keeps its first position and its first object, as `add` does (it returns
+  the set unchanged when the element is present). `of`, `ofAll`, `collector()`, `tabulate`, `fill`, `flatten`,
+  `addAll`, `union`, `map`, `flatMap`, `collect` and `partitionMap` used to put every element again, which kept the
+  position but replaced the object with the last one met; `addAll` was not even consistent with itself (it
+  returned the receiver, old objects included, when nothing was new). They now insert only absent elements, through
+  a package-private `LinkedHashMap.putIfAbsent`, and the javadoc of `addAll`/`union` states the rule instead of
+  calling it unspecified.
+- **How the map factories build**: a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
+  slots in the `HashMap`, replacing the slot of a repeated key in place, and makes the insertion-order `Vector` once.
+  It replaces the old path (a `HashMap` of entries, a `Vector` of every key, `reverse().distinct().reverse()`, then a
+  second `HashMap` of slots), so it does less work, not more.
+- **Tests**: `LinkedHashRepeatedKeyTest` compares each of these operations against successive `put`s or `add`s on
+  random inputs with repeated, equal but not identical keys, checking the key and value objects by identity, the
+  positional operations of the key set, and that the result stays a regular map (`remove`, `take`, `drop`, `put`).
+  In `zazr-test`, `IterationOrder.keysByLastOccurrence` is gone: `LinkedHashMap`'s subjects, its collector and
+  successive `put`s all use `keysByFirstOccurrence`, and `LawsTest` checks that the law catches a map that moves a
+  repeated key to its last occurrence.
+
 **Decided while implementing #25 (`partitionMap`, `duplicates`, static `flatten`):**
 
 - **Where they are.** `partitionMap` on `List`, `Queue`, `Stream` (`LazyList` after #28), `HashSet`, `LinkedHashSet`
@@ -990,7 +1027,8 @@ inserted), `take(n)` the first n, and so on:
   no `distinct` (a set is distinct) and get neither. Static `flatten(Iterable<? extends Iterable<? extends A>>)` on
   `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, and on `TreeSet` in two overloads,
   `flatten(Comparator, Iterable)` and the natural-order `flatten(Iterable)` (for `T extends Comparable<? super T>`),
-  mirroring `TreeSet.ofAll`; of equal elements the last one met is kept, as `ofAll` keeps it. The maps get no
+  mirroring `TreeSet.ofAll`; of equal elements the last one met is kept, as `ofAll` keeps it (except on
+  `LinkedHashSet`, which keeps the first, as its `add` does; see the repeated-key decision above). The maps get no
   `flatten`, for the reason they get no `partitionMap` (their elements are entries). On the control types:
   `Option.flatten(Option<? extends Option<? extends A>>)`, `Either.flatten(Either<? extends L, ? extends Either<?
   extends L, ? extends R>>)`, `Try.flatten`, `Validation.flatten(Validation<? extends E, ? extends Validation<?
@@ -1050,6 +1088,56 @@ and unable to drift:
 - Facts the page made visible, stated in the notes rather than changed here: `min()`/`max()` on the sets use the
   natural order of the elements and walk them all, including on a `TreeSet` (whose least and greatest elements in its
   own order are `head()` and `last()`, O(log n)).
+- Cost defects found by the review of the page (2026-09-25, #93), one decision each:
+  - `List`: `take`, `drop`, `takeWhile`/`takeUntil`, `slice`, `subSequence`, `remove`, `leftPadTo` and
+    `segmentLength` measured the whole List (`length()` walks it) before walking their prefix, so each was O(n) even
+    for one element. Fixed: they walk only the cells they need (`subSequence` counts the length only to build the
+    message of the exception it throws; `leftPadTo` counts up to the target). `lastIndexOfSlice` drops the found
+    prefix with the fixed `drop`, and `combinations(k)` walks the tails instead of dropping i + 1 elements per index,
+    so both lose their quadratic factor.
+  - `Queue`: `startsWith`, `zip`/`zipWith`, `prefixLength` and `segmentLength` copied the whole Queue into a `List`
+    first. Fixed: they walk the front, then the rear, reversed only when the walk reaches it; their notes say that a
+    walk reaching the elements added at the back since the last rebalancing pays O(n) for that reversal.
+  - `Queue.init()` copied the whole front (`front.init()`) on every call once the rear was empty, and the result
+    still had an empty rear, so a chain of k calls cost O(k * n). Fixed without changing the structure: when the rear
+    is empty, `init()` splits the front in two in O(n), the second half without its last element becoming the rear,
+    so the next calls take from the rear in O(1) (the mirror of `tail()` reversing the rear onto an empty front).
+  - Documented, not fixed: the banker's queue is amortised over a chain of calls, each on the result of the previous
+    one. A Queue is persistent, so an older version can be used again, and `tail()`/`dequeue()` on a Queue whose
+    front holds one element, or `init()` on one whose rear is empty, pays the O(n) rebalancing again on every call on
+    that same version. The class javadoc and the notes of the three methods say so. A structure without that caveat
+    exists: Okasaki's real-time queue (*Purely Functional Data Structures*, 7.2) spreads the reversal over the
+    following operations with a lazy, memoised rotation, so every operation is O(1) in the worst case, older versions
+    included, at the cost of a lazy list and a schedule per Queue. It is a follow-up if a workload needs it; this
+    change keeps the two-list representation.
+  - `LinkedHashMap`/`LinkedHashSet`: cutting the removed keys' markers off the ends of the insertion order took one
+    `tail()`/`init()` of the `Vector` per marker. Fixed: the run is found by reading and cut with one slice. Documented,
+    not fixed (the class javadoc of both types and the notes of `remove`, `replace`, `tail`, `init` and `take`): the
+    rebuild of the insertion order once the markers outnumber the entries is amortised over a chain of removals, so
+    `remove`/`replace` or a slice on an older version that is about to be rebuilt pays O(n) each time; after
+    removals, `tail`, `init`, `take` and `drop` find their cut by walking past the markers in the way, O(n) at worst.
+    Removing both would need a different order structure (an order-statistics tree keyed by insertion stamp, as
+    `TreeMap` gives), which is a follow-up if a workload needs it.
+  - `Stream`: `patch` dropped `from + replaced` elements at call time, and `lastIndexOfSlice(that, end)` measured the
+    whole Stream (it never returned on an infinite one). Fixed: `patch` builds each cell when the result reaches it
+    (only `patch(0, <empty>, r)` forces its r + 1 first elements now, for its head), and `lastIndexOfSlice` forces at
+    most the first `end + m` elements. `dropRight(k)` forcing its first k + 1 elements at call time is what tells
+    whether the result is empty, so its note says so rather than "lazy". `slice` and `subSequence` walk to their
+    start in a loop and stay lazy past it (#92).
+  - `Stream.subSequence(from, to)` now throws exactly when `Vector.subSequence` throws. An empty range past the end
+    returned an empty Stream, and a reversed range whose end is past the end threw `IllegalArgumentException`; both now
+    throw at call time as `Vector` does, forcing the first `from` (or `to`) elements to check. The one lazy exception
+    stays: with `from < to` and `to` past the end, the `IndexOutOfBoundsException` comes when the traversal gets there.
+  - `asJava()` views: the set views already answered `contains` with the set's own lookup (#26). The `Collection`
+    view of a map's entries walked them; its `contains` of a `Tuple2` is now the map's own `contains(Tuple2)`, one
+    lookup of the key (a key the order of a `TreeMap` cannot compare, or a null one, is answered `false`, as the walk
+    answered). The `java.util.List` view of a `List`, `Queue` or `Stream` counts the size of the sequence the first
+    time it is needed and keeps it, so an indexed loop over the view no longer counts it at every step; the Stream
+    view still forces nothing before an operation that needs the size.
+  - `Vector` of primitive values (`range`, the primitive `ofAll`, `filter` of those): the first write of a value of
+    another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
+    the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
+    path would break that invariant. The class javadoc and the notes of the ten write methods say so.
 
 Which concrete collections survive (decided):
 
