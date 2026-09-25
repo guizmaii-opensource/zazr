@@ -660,11 +660,11 @@ public class DocsExamplesTest {
 
         @Test
         void mapAndSetBuilders() {
-            HashMap.Builder<String, Integer> counts = HashMap.newBuilder();
-            for (String word : "to be or not to be".split(" ")) {
+            var counts = HashMap.<String, Integer>newBuilder(); // HashMap.Builder<String, Integer>
+            for (var word : "to be or not to be".split(" ")) {
                 counts.put(word, word.length());
             }
-            HashMap<String, Integer> lengths = counts.result();
+            var lengths = counts.result(); // HashMap<String, Integer>
             // HashMap((to, 2), (be, 2), (or, 2), (not, 3)), in some order
 
             assertThat(lengths).isEqualTo(HashMap.of("to", 2, "be", 2, "or", 2, "not", 3));
@@ -672,9 +672,9 @@ public class DocsExamplesTest {
 
         @Test
         void treeSetBuilder() {
-            TreeSet<String> sorted = TreeSet.newBuilder(java.util.Comparator.<String> reverseOrder())
+            var sorted = TreeSet.newBuilder(java.util.Comparator.<String>reverseOrder())
                 .addAll(List.of("pear", "apple", "fig"))
-                .result();
+                .result(); // TreeSet<String>
             // TreeSet(pear, fig, apple)
 
             assertThat(sorted).hasToString("TreeSet(pear, fig, apple)");

@@ -47,11 +47,11 @@ Vector<Integer> result = both.result();
 instead of `add` and `addAll`.
 
 ```java
-HashMap.Builder<String, Integer> counts = HashMap.newBuilder();
-for (String word : "to be or not to be".split(" ")) {
+var counts = HashMap.<String, Integer>newBuilder(); // HashMap.Builder<String, Integer>
+for (var word : "to be or not to be".split(" ")) {
     counts.put(word, word.length());
 }
-HashMap<String, Integer> lengths = counts.result();
+var lengths = counts.result(); // HashMap<String, Integer>
 // HashMap((to, 2), (be, 2), (or, 2), (not, 3)), in some order
 ```
 
@@ -67,9 +67,9 @@ tree in one pass. Input that is already sorted costs a single pass. `newBuilder(
 natural order is the default.
 
 ```java
-TreeSet<String> sorted = TreeSet.newBuilder(java.util.Comparator.<String> reverseOrder())
+var sorted = TreeSet.newBuilder(java.util.Comparator.<String>reverseOrder())
     .addAll(List.of("pear", "apple", "fig"))
-    .result();
+    .result(); // TreeSet<String>
 // TreeSet(pear, fig, apple)
 ```
 

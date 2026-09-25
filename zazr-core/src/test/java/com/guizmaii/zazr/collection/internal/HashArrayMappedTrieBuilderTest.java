@@ -453,6 +453,150 @@ public class HashArrayMappedTrieBuilderTest {
     }
 
     @Test
+    public void shouldCopyAnAdoptedPersistentIndexedNodeBeforeAddingAChildToIt() {
+        // the first write through the adopted root adds a child: the root is not owned and must be copied, not grown
+        final HashArrayMappedTrie<Integer, Integer> source = HashArrayMappedTrie.<Integer, Integer> empty().put(0, 0).put(1, 1);
+        assertThat(source).isInstanceOf(IndexedNode.class);
+        final String before = describe(source);
+        final HashArrayMappedTrieBuilder<Integer, Integer> builder = new HashArrayMappedTrieBuilder<>("test");
+        builder.putAll(source);
+        builder.put(2, 2);
+        final HashArrayMappedTrie<Integer, Integer> built = builder.result();
+        assertThat(describe(source)).isEqualTo(before);
+        assertThat(((IndexedNode<?, ?>) source).bitmap).isEqualTo(0b11);
+        assertThat(source.size()).isEqualTo(2);
+        assertThat(built.size()).isEqualTo(3);
+        assertThat(built).isNotSameAs(source);
+    }
+
+    // hash codes that hit the edges of the trie: the first fragments, the 32 and 1024 boundaries, the sign bit, and
+    // values that share their low fragments and differ only at a deep shift
+    private static final int[] HOT_HASHES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, -1, Integer.MIN_VALUE, Integer.MAX_VALUE,
+            1 << 30, 2 << 30, 3 << 30, 1 << 25, 1 << 20, (1 << 25) | 1, (1 << 30) | 1 };
+
+    private static Key randomKey(Random random) {
+        final int hash = switch (random.nextInt(4)) {
+            case 0 -> HOT_HASHES[random.nextInt(HOT_HASHES.length)];
+            case 1 -> random.nextInt(64);
+            case 2 -> random.nextInt(64) << (5 * (1 + random.nextInt(5)));
+            default -> random.nextInt();
+        };
+        // a few ids per hash make collision lists
+        return new Key(hash, random.nextInt(3));
+    }
+
+    // a trie made by persistent operations only: puts, and sometimes removes that pack array nodes back into indexed nodes
+    private static HashArrayMappedTrie<Key, Integer> persistentTrie(Random random, java.util.Map<Key, Integer> oracle) {
+        HashArrayMappedTrie<Key, Integer> trie = HashArrayMappedTrie.empty();
+        final int size = random.nextInt(4) == 0 ? random.nextInt(40) : random.nextInt(1500);
+        for (int i = 0; i < size; i++) {
+            final Key key = randomKey(random);
+            trie = trie.put(key, i);
+            oracle.put(key, i);
+        }
+        if (random.nextBoolean()) {
+            for (Key key : new ArrayList<>(oracle.keySet())) {
+                if (random.nextInt(4) != 0) {
+                    trie = trie.remove(key);
+                    oracle.remove(key);
+                }
+            }
+        }
+        return trie;
+    }
+
+    private static java.util.Map<Key, Integer> contents(HashArrayMappedTrie<Key, Integer> trie) {
+        final java.util.Map<Key, Integer> result = new java.util.HashMap<>();
+        trie.forEach(t -> result.put(t._1(), t._2()));
+        return result;
+    }
+
+    @Test
+    public void shouldNeverChangeAnAdoptedTrieBuiltByPersistentOperations() {
+        for (long seed = 1; seed <= 12; seed++) {
+            final Random random = new Random(SEED + seed);
+            final java.util.List<HashArrayMappedTrie<Key, Integer>> pool = new ArrayList<>();
+            final java.util.List<java.util.Map<Key, Integer>> poolContents = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                final java.util.Map<Key, Integer> oracle = new java.util.HashMap<>();
+                pool.add(persistentTrie(random, oracle));
+                poolContents.add(oracle);
+            }
+            for (int step = 0; step < 25; step++) {
+                // every node reachable from every trie of the pool, by identity and fields, before the builders run
+                final java.util.List<String> snapshots = pool.stream().map(HashArrayMappedTrieBuilderTest::describe).toList();
+                final int from = random.nextInt(pool.size());
+                final HashArrayMappedTrie<Key, Integer> source = pool.get(from);
+
+                // two builders adopt the same trie and are written to in turn
+                final HashArrayMappedTrieBuilder<Key, Integer> left = new HashArrayMappedTrieBuilder<>("test");
+                final HashArrayMappedTrieBuilder<Key, Integer> right = new HashArrayMappedTrieBuilder<>("test");
+                left.putAll(source);
+                right.putAll(source);
+                final java.util.Map<Key, Integer> leftOracle = new java.util.HashMap<>(poolContents.get(from));
+                final java.util.Map<Key, Integer> rightOracle = new java.util.HashMap<>(poolContents.get(from));
+                final java.util.List<Key> sourceKeys = new ArrayList<>(poolContents.get(from).keySet());
+                final int puts = random.nextInt(4) == 0 ? random.nextInt(5) : random.nextInt(600);
+                for (int i = 0; i < puts; i++) {
+                    // a new object equal to a key of the source, or a fresh key
+                    final Key key = (!sourceKeys.isEmpty() && random.nextBoolean())
+                                    ? sourceKeys.get(random.nextInt(sourceKeys.size()))
+                                    : randomKey(random);
+                    final Key equalKey = new Key(key.hash(), key.id());
+                    left.put(equalKey, -i);
+                    leftOracle.put(equalKey, -i);
+                    final Key other = randomKey(random);
+                    right.put(other, i);
+                    rightOracle.put(other, i);
+                }
+                if (random.nextInt(3) == 0) {
+                    // a second trie of the pool into the non-empty builder
+                    final int second = random.nextInt(pool.size());
+                    left.putAll(pool.get(second));
+                    leftOracle.putAll(poolContents.get(second));
+                }
+                final HashArrayMappedTrie<Key, Integer> l = left.result();
+                final HashArrayMappedTrie<Key, Integer> r = right.result();
+
+                for (int i = 0; i < pool.size(); i++) {
+                    assertThat(describe(pool.get(i))).as("seed %s, step %s, trie %s of the pool", seed, step, i).isEqualTo(snapshots.get(i));
+                    assertThat(contents(pool.get(i))).isEqualTo(poolContents.get(i));
+                }
+                assertValid(l);
+                assertValid(r);
+                assertThat(contents(l)).isEqualTo(leftOracle);
+                assertThat(contents(r)).isEqualTo(rightOracle);
+
+                // persistent derivatives of the results and of the source join the pool, to be adopted in later steps
+                HashArrayMappedTrie<Key, Integer> derived = random.nextBoolean() ? l : source;
+                final java.util.Map<Key, Integer> derivedOracle = new java.util.HashMap<>(derived == l ? leftOracle : poolContents.get(from));
+                for (Key key : new ArrayList<>(derivedOracle.keySet())) {
+                    if (random.nextInt(3) == 0) {
+                        derived = derived.remove(key);
+                        derivedOracle.remove(key);
+                    }
+                }
+                for (int i = 0; i < 20; i++) {
+                    final Key key = randomKey(random);
+                    derived = derived.put(key, 1000 + i);
+                    derivedOracle.put(key, 1000 + i);
+                }
+                pool.add(l);
+                poolContents.add(leftOracle);
+                pool.add(r);
+                poolContents.add(rightOracle);
+                pool.add(derived);
+                poolContents.add(derivedOracle);
+                while (pool.size() > 8) {
+                    final int drop = random.nextInt(pool.size());
+                    pool.remove(drop);
+                    poolContents.remove(drop);
+                }
+            }
+        }
+    }
+
+    @Test
     public void shouldRefuseAnyUseAfterResult() {
         final HashArrayMappedTrieBuilder<Integer, Integer> builder = new HashArrayMappedTrieBuilder<>("Some.Builder");
         builder.put(1, 1);

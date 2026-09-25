@@ -143,6 +143,23 @@ public class HashBuilderTest {
     }
 
     @Test
+    public void shouldNeverChangeAnAdoptedHashSetOrHashMapBuiltByPersistentAdditions() {
+        // sources made by persistent add and put, whose nodes no builder owns; the first write adds a child to the root
+        final HashSet<Integer> set = HashSet.<Integer> empty().add(0).add(1);
+        final HashSet<Integer> builtSet = HashSet.<Integer> newBuilder().addAll(set).add(2).result();
+        assertThat(javaList(set)).containsExactlyInAnyOrder(0, 1);
+        assertThat(set.size()).isEqualTo(2);
+        assertThat(set.contains(2)).isFalse();
+        assertThat(builtSet).isEqualTo(HashSet.of(0, 1, 2));
+
+        final HashMap<Integer, String> map = HashMap.<Integer, String> empty().put(0, "a").put(1, "b");
+        final HashMap<Integer, String> builtMap = HashMap.<Integer, String> newBuilder().putAll(map).put(2, "c").put(0, "z").result();
+        assertThat(javaMap(map)).isEqualTo(java.util.Map.of(0, "a", 1, "b"));
+        assertThat(map.size()).isEqualTo(2);
+        assertThat(builtMap).isEqualTo(HashMap.of(0, "z", 1, "b", 2, "c"));
+    }
+
+    @Test
     public void shouldBuildTheSameHashSetFromNothingAsAfterAnAdoptedOne() {
         final HashSet<Integer> source = HashSet.ofAll(IntStream.range(0, 1025).boxed().toList());
         final java.util.List<Integer> more = IntStream.range(500, 2000).boxed().toList();
