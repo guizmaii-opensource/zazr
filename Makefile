@@ -120,7 +120,7 @@ coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in z
 	@echo "HTML report: $(COVERAGE_REPORT)/index.html"
 
 coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
-	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.csv
+	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml
 
 # javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
 # where the src-gen clean also empties target/, so the plugin finds no module-info.class in zazr-core and refuses
