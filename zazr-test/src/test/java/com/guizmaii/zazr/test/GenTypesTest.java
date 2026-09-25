@@ -737,4 +737,18 @@ class GenTypesTest {
         assertThat(Gen.validation(size, size).withSize(7).runCollectN(100, config(1)))
                 .allMatch(v -> v.isValid() ? v.get() == 7 : ((Validation.Invalid<Integer, Integer>) v).errors().forAll(e -> e == 7));
     }
+
+    // -- filters that reject the empty collection
+
+    @Test
+    void aCollectionFilteredToNonEmptyWorksWithTheDefaultConfiguration() {
+        for (long seed = 0; seed < 10; seed++) {
+            final CheckConfig config = CheckConfig.defaults().withSeed(seed);
+            Check.check(config, Gen.list(Gen.integers()).filter(l -> !l.isEmpty()), l -> !l.isEmpty()).assertIsSatisfied();
+            Check.check(config, Gen.vector(Gen.integers()).filter(v -> !v.isEmpty()), v -> !v.isEmpty()).assertIsSatisfied();
+            Check.check(config, Gen.hashSet(Gen.integers()).filter(s -> !s.isEmpty()), s -> !s.isEmpty()).assertIsSatisfied();
+            Check.check(config, Gen.hashMap(Gen.integers(), Gen.integers()).filter(m -> !m.isEmpty()), m -> !m.isEmpty()).assertIsSatisfied();
+            Check.check(config, Gen.list(Gen.alphaNumericStrings().filter(s -> !s.isEmpty())), l -> l.forAll(s -> !s.isEmpty())).assertIsSatisfied();
+        }
+    }
 }
