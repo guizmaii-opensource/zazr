@@ -21,9 +21,9 @@ Use `Either` for a step that can fail with an error you define, when the first e
 ## Construction
 
 ```java
-Either<String, Integer> right = Either.right(42);
-Either<String, Integer> left = Either.left("not a number");
-Either<String, Integer> checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative");
+var right = Either.<String, Integer>right(42); // Either<String, Integer>
+var left = Either.<String, Integer>left("not a number"); // Either<String, Integer>
+var checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative"); // Either<String, Integer>
 // Right(42), Left(not a number), Left(negative)
 ```
 
@@ -35,8 +35,8 @@ Either<String, Integer> checked = Either.fromPredicate(-1, n -> n >= 0, () -> "n
 `Left` and `Right` are records, so pattern matching with a `switch` expression needs no `default`:
 
 ```java
-Either<String, Integer> result = Either.right(42);
-String text = switch (result) {
+var result = Either.<String, Integer>right(42);
+var text = switch (result) {
     case Right(var value) -> "got " + value;
     case Left(var error) -> "failed: " + error;
 };
@@ -52,9 +52,9 @@ String text = switch (result) {
 `flatMap` runs the next step only on a `Right`. `mapLeft` transforms the error.
 
 ```java
-Either<String, Integer> total = Either.<String, Integer>right(2)
+var total = Either.<String, Integer>right(2)
     .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
-    .mapLeft(error -> "rejected: " + error);
+    .mapLeft(error -> "rejected: " + error); // Either<String, Integer>
 // Right(20)
 ```
 
@@ -64,10 +64,10 @@ Either<String, Integer> total = Either.<String, Integer>right(2)
 sides.
 
 ```java
-Either<String, Integer> adult = Either.<String, Integer>right(15)
-    .filterOrElse(n -> n >= 18, n -> n + " is under 18");
-String message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n);
-Either<Integer, String> flipped = adult.flip();
+var adult = Either.<String, Integer>right(15)
+    .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
+var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n); // String
+var flipped = adult.flip(); // Either<Integer, String>
 // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
 ```
 
@@ -87,10 +87,10 @@ Either<Integer, String> flipped = adult.flip();
 - `toVector()` gives zero or one element.
 
 ```java
-Either<String, Integer> missing = Either.left("missing");
-Option<Integer> option = missing.toOption();
-Try<Integer> attempt = missing.toTry(IllegalArgumentException::new);
-Validation<String, Integer> validation = missing.toValidation();
+var missing = Either.<String, Integer>left("missing");
+var option = missing.toOption(); // Option<Integer>
+var attempt = missing.toTry(IllegalArgumentException::new); // Try<Integer>
+var validation = missing.toValidation(); // Validation<String, Integer>
 // None, Failure(java.lang.IllegalArgumentException: missing), Invalid(missing)
 ```
 
