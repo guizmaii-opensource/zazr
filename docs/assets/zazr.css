@@ -423,23 +423,18 @@
   }
 }
 
-/* Documentation pages: a wider page and narrower navigation columns, so the content gets the room.
-   Material's defaults are a 61rem page with 12.1rem side columns. */
+/* Documentation pages (every page but the landing page, which has the hero): a wider page and narrower navigation
+   columns, so the content gets more room while keeping a margin on each side. Material's defaults are a 61rem page
+   with 12.1rem side columns. */
 @media screen and (min-width: 76.25em) {
-  .md-grid {
-    max-width: 76rem;
+  body:not(:has(.zz-hero)) .md-grid {
+    max-width: 68rem;
   }
-  /* the landing page keeps its composed hero width */
-  .zz-hero__inner.md-grid {
-    max-width: 61rem;
+  body:not(:has(.zz-hero)) .md-sidebar--primary,
+  body:not(:has(.zz-hero)) .md-sidebar--secondary {
+    width: 10.5rem;
   }
-  .md-sidebar--primary {
-    width: 9.5rem;
-  }
-  .md-sidebar--secondary {
-    width: 9.5rem;
-  }
-  .md-sidebar .md-nav {
+  body:not(:has(.zz-hero)) .md-sidebar .md-nav {
     font-size: 0.66rem;
   }
 }
