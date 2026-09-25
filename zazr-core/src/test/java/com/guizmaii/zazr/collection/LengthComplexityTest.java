@@ -60,13 +60,19 @@ public class LengthComplexityTest {
         });
     }
 
+    // The tests below pin costs that no count can observe (walking cells of a List or a Queue). Each workload is
+    // sized so that the code before the fix needs over a minute on the maintainer's machine and the fixed code well
+    // under a second, both measured there with the same workload outside JUnit; the bound sits between the two.
+
+    private static final Duration WIDE_BOUND = Duration.ofSeconds(20);
+    private static final int MILLION = 1_000_000;
+
     @Test
     public void shouldWalkOnlyThePrefixOfAList() {
-        // K calls on a List of N elements: milliseconds when each call walks a few cells, far past the bound when
-        // each call walks the whole List
-        final List<Integer> list = List.range(0, N);
-        assertTimeoutPreemptively(BOUND, () -> {
-            for (int i = 0; i < K; i++) {
+        // 1,000 rounds of ten prefix operations on a List of 1,000,000: 84 s when each walks the whole List, 2 ms fixed
+        final List<Integer> list = List.range(0, MILLION);
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            for (int i = 0; i < 1_000; i++) {
                 assertThat(list.take(1).head()).isEqualTo(0);
                 assertThat(list.drop(1).head()).isEqualTo(1);
                 assertThat(list.takeWhile(x -> x < 1).head()).isEqualTo(0);
@@ -83,22 +89,25 @@ public class LengthComplexityTest {
 
     @Test
     public void shouldFindTheLastSliceAndTheCombinationsOfAListInLinearTime() {
-        assertTimeoutPreemptively(BOUND, () -> {
-            final List<Integer> ones = List.fill(2 * N, 1);
-            assertThat(ones.lastIndexOfSlice(List.of(1))).isEqualTo(2 * N - 1);
-            assertThat(ones.lastIndexOfSlice(List.of(1), N)).isEqualTo(N);
-            assertThat(List.range(0, N).combinations(1).length()).isEqualTo(N);
+        // two lastIndexOfSlice and one combinations(1) on 150,000 elements: 99 s when quadratic, 22 ms fixed
+        final int size = 150_000;
+        final List<Integer> ones = List.fill(size, 1);
+        final List<Integer> range = List.range(0, size);
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            assertThat(ones.lastIndexOfSlice(List.of(1))).isEqualTo(size - 1);
+            assertThat(ones.lastIndexOfSlice(List.of(1), size / 2)).isEqualTo(size / 2);
+            assertThat(range.combinations(1).length()).isEqualTo(size);
         });
     }
 
     @Test
     public void shouldWalkOnlyTheFrontOfAQueue() {
-        // K calls on a Queue of 2N elements: milliseconds when each call reads the first elements, far past the bound
-        // when each call copies the whole Queue first
-        final Queue<Integer> queue = Queue.ofAll(List.range(0, N)).enqueueAll(List.range(N, 2 * N));
+        // 100 rounds of six prefix reads on a Queue of 2,000,000 (half in the rear): 81 s when each copies the Queue
+        // first, 11 ms fixed
+        final Queue<Integer> queue = Queue.ofAll(List.range(0, MILLION)).enqueueAll(List.range(MILLION, 2 * MILLION));
         final List<Integer> one = List.of(0);
-        assertTimeoutPreemptively(BOUND, () -> {
-            for (int i = 0; i < K; i++) {
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            for (int i = 0; i < 100; i++) {
                 assertThat(queue.startsWith(one)).isTrue();
                 assertThat(queue.startsWith(one, 0)).isTrue();
                 assertThat(queue.zip(one).length()).isEqualTo(1);
@@ -111,32 +120,33 @@ public class LengthComplexityTest {
 
     @Test
     public void shouldTakeChainedInitsOfAQueueFromTheRear() {
-        // K chained init() calls on a Queue whose rear is empty: one split of the front, then O(1) each; far past the
-        // bound when each call copies the front
-        assertTimeoutPreemptively(BOUND, () -> {
-            Queue<Integer> queue = Queue.ofAll(List.range(0, N));
-            for (int i = 0; i < K; i++) {
+        // 6,000 chained init() on a Queue of 1,000,000 with an empty rear: 80 s when each copies the front, 16 ms
+        // fixed (one split, then O(1) each)
+        final Queue<Integer> start = Queue.ofAll(List.range(0, MILLION));
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            Queue<Integer> queue = start;
+            for (int i = 0; i < 6_000; i++) {
                 queue = queue.init();
             }
-            assertThat(queue.length()).isEqualTo(N - K);
-            assertThat(queue.last()).isEqualTo(N - K - 1);
+            assertThat(queue.length()).isEqualTo(MILLION - 6_000);
+            assertThat(queue.last()).isEqualTo(MILLION - 6_001);
         });
     }
 
     @Test
     public void shouldCountTheSizeOfAJavaListViewOnce() {
-        // K calls of size() on the view of a sequence of N elements: the size is counted once, far past the bound
-        // when every call walks the sequence
+        // 2,500 size() calls on each of five views of 1,000,000 elements: 80 s when every call counts the sequence,
+        // 59 ms fixed (one count per view)
         final java.util.List<java.util.List<Integer>> views = java.util.List.of(
-                List.range(0, N).asJava(),
-                Queue.ofAll(List.range(0, N)).asJava(),
-                Queue.<Integer> empty().enqueueAll(List.range(0, N)).asJava(),
-                Stream.range(0, N).asJava(),
-                List.range(0, N).asJava().reversed());
-        assertTimeoutPreemptively(BOUND, () -> {
+                List.range(0, MILLION).asJava(),
+                Queue.ofAll(List.range(0, MILLION)).asJava(),
+                Queue.<Integer> empty().enqueueAll(List.range(0, MILLION)).asJava(),
+                Stream.range(0, MILLION).asJava(),
+                List.range(0, MILLION).asJava().reversed());
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
             for (java.util.List<Integer> view : views) {
-                for (int i = 0; i < K; i++) {
-                    assertThat(view.size()).isEqualTo(N);
+                for (int i = 0; i < 2_500; i++) {
+                    assertThat(view.size()).isEqualTo(MILLION);
                 }
             }
         });
