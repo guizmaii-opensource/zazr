@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Override
-    protected <T> Collector<T, ArrayList<T>, LinkedHashSet<T>> collector() {
+    protected <T> Collector<T, LinkedHashSet.Builder<T>, LinkedHashSet<T>> collector() {
         return LinkedHashSet.collector();
     }
 

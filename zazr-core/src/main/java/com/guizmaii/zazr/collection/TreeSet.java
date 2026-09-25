@@ -1198,6 +1198,17 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
     }
 
+    /**
+     * Narrows to a {@link NonEmptySortedSet}, whose operations that cannot empty it keep that type and whose
+     * {@code head}, {@code last}, {@code max}, {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1).
+     *
+     * @return {@code Some(nonEmptySortedSet)} sharing this set's elements and comparator, or {@code None} if this set
+     *         is empty
+     */
+    public Option<NonEmptySortedSet<T>> toNonEmptySortedSet() { return NonEmptySortedSet.fromSortedSet(this); }
+
     // -- Object
 
     @Override

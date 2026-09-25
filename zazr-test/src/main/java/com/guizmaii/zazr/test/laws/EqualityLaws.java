@@ -2,10 +2,10 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.test.Arbitrary;
-import com.guizmaii.zazr.test.Gen;
-import com.guizmaii.zazr.test.PredicateResult;
-import com.guizmaii.zazr.test.Property;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Gen;
+import com.guizmaii.zazr.test.legacy.PredicateResult;
+import com.guizmaii.zazr.test.legacy.Property;
 
 import java.util.Objects;
 

@@ -132,15 +132,23 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param <T> Component type of the List.
      * @return A com.guizmaii.zazr.collection.List Collector.
      */
-    static <T extends @Nullable Object> Collector<T, ArrayList<T>, List<T>> collector() {
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
-            left.addAll(right);
-            return left;
-        };
-        final Function<ArrayList<T>, List<T>> finisher = List::ofAll;
+    static <T extends @Nullable Object> Collector<T, Builder<T>, List<T>> collector() {
+        final Supplier<Builder<T>> supplier = List::newBuilder;
+        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        final Function<Builder<T>, List<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
+    }
+
+    /**
+     * Returns a new {@link Builder}: the cheapest way to build a List in order, element by element. It makes one cell
+     * per element, where prepending the elements and reversing the result makes two.
+     *
+     * @param <T> Component type of the List.
+     * @return an empty builder
+     */
+    static <T extends @Nullable Object> Builder<T> newBuilder() {
+        return new Builder<>(0);
     }
 
     /**
@@ -243,11 +251,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             }
             return result;
         } else {
-            List<T> result = Nil.instance();
+            final Builder<T> builder = new Builder<>(elements instanceof java.util.Collection<?> collection ? collection.size() : 0);
             for (T element : elements) {
-                result = result.prepend(element);
+                builder.addChecked(element);
             }
-            return result.reverse();
+            return builder.result();
         }
     }
 
@@ -261,11 +269,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     static <T extends @Nullable Object> List<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
         final java.util.Iterator<? extends T> iterator = javaStream.iterator();
-        List<T> list = List.empty();
+        final Builder<T> builder = new Builder<>(0);
         while (iterator.hasNext()) {
-            list = list.prepend(iterator.next());
+            builder.addChecked(iterator.next());
         }
-        return list.reverse();
+        return builder.result();
     }
 
     /**
@@ -273,7 +281,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
      * one are iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: O(n) for n inner elements in total: one cell per element, built reversed and reversed once.
+     * Complexity: O(n) for n inner elements in total: the elements go into an array, then one cell per element is
+     * made from the last to the first.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -282,13 +291,13 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     static <T extends @Nullable Object> List<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        List<T> reversed = empty();
+        final Builder<T> builder = new Builder<>(0);
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
-                reversed = reversed.prepend(element);
+                builder.addChecked(element);
             }
         }
-        return reversed.reverse();
+        return builder.result();
     }
 
     /**
@@ -3013,6 +3022,170 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default <U extends @Nullable Object> List<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
+    }
+
+    /**
+     * A mutable, single-use accumulator that builds a {@link List} element by element. The elements go into an array,
+     * and {@link #result()} makes the cells from the last element to the first, one cell per element: no list is
+     * built backwards and reversed. A {@link List} passed to {@link #addAll(Iterable)} becomes the tail of the result
+     * as it is, sharing its cells, when nothing is added after it; it is copied into the array only when something is.
+     * <p>
+     * Not thread-safe. After {@link #result()} has been called, every method throws {@link IllegalStateException};
+     * create a new builder instead.
+     *
+     * @param <T> Component type of the List.
+     */
+    final class Builder<T extends @Nullable Object> {
+
+        private static final Object[] EMPTY = new Object[0];
+
+        /* the elements added one by one, in order, in buffer[0, size) */
+        private Object[] buffer;
+        private int size;
+        /* a List given to addAll with nothing added since: the tail of the result, after the buffered elements */
+        private List<T> tail = Nil.instance();
+        /* the length of tail, -1 until size() needs it */
+        private int tailLength;
+        private boolean done;
+
+        Builder(int capacity) {
+            this.buffer = capacity == 0 ? EMPTY : new Object[capacity];
+        }
+
+        /**
+         * Appends one element.
+         *
+         * @param element the element, never null
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code element} is null
+         */
+        public Builder<T> add(T element) {
+            checkOpen();
+            Objects.requireNonNull(element, "List.Builder.add: element is null");
+            append(element);
+            return this;
+        }
+
+        /**
+         * Appends all elements of the given iterable, in iteration order. A {@link List} (or the {@link List#asJava()}
+         * view of one) is kept as it is, to become the tail of the result if nothing is added after it: an empty
+         * builder given a List returns that List. Otherwise the elements are appended one by one, and a null element
+         * part-way through is rejected only when reached: the builder keeps the elements added before it.
+         *
+         * @param elements the elements to append
+         * @return this builder
+         * @throws IllegalStateException if {@link #result()} has already been called
+         * @throws NullPointerException if {@code elements} is null, or if it yields a null element
+         */
+        @SuppressWarnings("unchecked")
+        public Builder<T> addAll(Iterable<? extends T> elements) {
+            checkOpen();
+            Objects.requireNonNull(elements, "elements is null");
+            if (elements instanceof List<?> list) {
+                setTail((List<T>) list);
+            } else if (JavaConverters.underlying(elements) instanceof List<?> list) {
+                setTail((List<T>) list);
+            } else {
+                if (elements instanceof java.util.Collection<?> collection) {
+                    reserve(collection.size());
+                }
+                for (T element : elements) {
+                    add(element);
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Complexity: O(1), or O(m) the first time after a List of length m was passed to {@link #addAll(Iterable)},
+         * to count its cells.
+         *
+         * @return the number of elements added so far
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        public int size() {
+            checkOpen();
+            if (tail.isEmpty()) {
+                return size;
+            }
+            if (tailLength < 0) {
+                tailLength = tail.length();
+            }
+            return size + tailLength;
+        }
+
+        /**
+         * Builds the List. The builder cannot be used afterwards.
+         *
+         * @return a List of all elements added, in order
+         * @throws IllegalStateException if {@link #result()} has already been called
+         */
+        @SuppressWarnings("unchecked")
+        public List<T> result() {
+            checkOpen();
+            done = true;
+            List<T> result = tail;
+            for (int i = size - 1; i >= 0; i--) {
+                result = new Cons<>((T) buffer[i], result);
+            }
+            buffer = EMPTY;
+            size = 0;
+            tail = Nil.instance();
+            return result;
+        }
+
+        // the factories: the null check and message of the List cells, on an open builder
+        private void addChecked(T element) {
+            Objects.requireNonNull(element, "List: element is null");
+            append(element);
+        }
+
+        private void append(T element) {
+            if (!tail.isEmpty()) {
+                flushTail();
+            }
+            if (size == buffer.length) {
+                buffer = Arrays.copyOf(buffer, Math.max(16, size + (size >> 1)));
+            }
+            buffer[size++] = element;
+        }
+
+        private void setTail(List<T> list) {
+            if (list.isEmpty()) {
+                return;
+            }
+            if (!tail.isEmpty()) {
+                flushTail();
+            }
+            tail = list;
+            tailLength = -1;
+        }
+
+        // the kept List is followed by something: its elements join the buffer
+        private void flushTail() {
+            final List<T> list = tail;
+            tail = Nil.instance();
+            if (tailLength >= 0) {
+                reserve(tailLength);
+            }
+            for (List<T> rest = list; !rest.isEmpty(); rest = rest.tail()) {
+                append(rest.head());
+            }
+        }
+
+        private void reserve(int more) {
+            final int needed = size + more;
+            if (needed > buffer.length && needed > 0) {
+                buffer = Arrays.copyOf(buffer, Math.max(needed, 16));
+            }
+        }
+
+        private void checkOpen() {
+            if (done) {
+                throw new IllegalStateException("result() has already been called on this List.Builder");
+            }
+        }
     }
 
     /**

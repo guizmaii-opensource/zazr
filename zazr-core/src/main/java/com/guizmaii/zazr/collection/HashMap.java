@@ -998,6 +998,16 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     /**
+     * Narrows to a {@link NonEmptyMap}, whose operations that cannot empty it keep that type and whose {@code max},
+     * {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1).
+     *
+     * @return {@code Some(nonEmptyMap)} sharing this map's entries, or {@code None} if this map is empty
+     */
+    public Option<NonEmptyMap<K, V>> toNonEmptyMap() { return NonEmptyMap.fromMap(this); }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Complexity: O(n); with another HashMap, the two tries are compared node by node, which answers a different

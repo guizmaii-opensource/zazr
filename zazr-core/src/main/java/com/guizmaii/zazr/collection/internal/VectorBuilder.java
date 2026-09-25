@@ -190,7 +190,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
         };
     }
 
-    private void checkOpen() {
+    /** @throws IllegalStateException if {@link #result()} has been called */
+    public void checkOpen() {
         if (done) {
             throw new IllegalStateException("result() has already been called on this Vector.Builder");
         }

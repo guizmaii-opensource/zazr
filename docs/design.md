@@ -285,7 +285,7 @@ generated `ArrayType`) and `*Module` helper interfaces at the bottom of the publ
 collection internals go to `com.guizmaii.zazr.collection.internal`, everything else to `com.guizmaii.zazr.internal`
 (next to `Throwables`; `TryModule` is there). Each `*Module` helper has its own file (`VectorModule`, `ListModule`,
 `StreamModule`, `TraversableModule`, `IteratorModule`, `HashArrayMappedTrieModule`, `RedBlackTreeModule`,
-`TryModule`), and `BitMappedTrie`'s `LeafVisitor`, which `Vector` implements with lambdas, has its own file too.
+`TryModule`), and `BitMappedTrie`'s `LeafVisitor` got its own file too (both since deleted with the trie, 3.8).
 An internal type is `public` where the public packages call it, and so are the members they call; the packages are
 never exported (`module-info.java` exports exactly `com.guizmaii.zazr`, `com.guizmaii.zazr.collection` and
 `com.guizmaii.zazr.control`), the javadoc build excludes them (`excludePackageNames` `*.internal:*.internal.*` in the
@@ -659,8 +659,79 @@ now has every operation of `Vector`, each under the same contract, delegating to
   an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
   result.
 
-**Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
-motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
+**Decided.** No `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the motivating cases and
+`NonEmptyVector` covers them. `NonEmptySet`/`NonEmptyMap` were to come only on demand; the maintainer asked for them
+on 2026-09-25 (#110), below.
+
+#### 3.6.1 `NonEmptySet`, `NonEmptyMap` and their sorted variants (decided 2026-09-25, #110)
+
+From zio-prelude's `NonEmptySet`/`NonEmptyMap`/`NonEmptySortedSet`/`NonEmptySortedMap`, under `NonEmptyVector`'s
+contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the entries, `Tuple2<K, V>`, for the maps).
+
+- **Four types, the sorted ones included.** `NonEmptySet<A>` wraps a `HashSet`, `NonEmptySortedSet<A>` a `TreeSet`,
+  `NonEmptyMap<K, V>` a `HashMap`, `NonEmptySortedMap<K, V>` a `TreeMap`. The sorted variants are where the contract
+  pays most: `head` and `last` (O(log n)) become total, `tail`/`init` return the plain type with
+  `tailNonEmpty`/`initNonEmpty` as the narrowing, `grouped`, `sliding` and `slideBy` return a `Vector` of the
+  non-empty type, and `zipWithIndex` a `NonEmptyVector`. A `HashSet` or a `HashMap` has none of these (no order, so no
+  `head`, as decided in 3.7), so without the sorted variants a user wanting a total `head` would have to leave the
+  non-empty types. `LinkedHashSet`/`LinkedHashMap` get no wrapper: nothing asked for one.
+- **Same API as the plain type, minus the deliberate absences**, checked reflectively by each test class overload by
+  overload (name and parameter types), so a missing overload fails as a missing name does; the absences are listed by
+  signature: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
+  (`toNonEmptySet`, `toNonEmptySortedSet`, `toNonEmptyMap`, `toNonEmptySortedMap`); on the sorted ones also
+  `headOption`, `lastOption`, `tailOption`, `initOption`; on the maps also `removeKeys`/`removeValues`, deprecated on
+  `Map` in favour of `rejectKeys`/`rejectValues` (a new type does not start with deprecated methods; the deprecated
+  `removeAll(BiPredicate)` overload is left out for the same reason, `removeAll(Iterable)` keeps the name). Extra:
+  `reduceMap`, as on `NonEmptyVector`.
+- **Returns the non-empty type:** `add`, `addAll(Iterable)`, `union(Set)` (accept the possibly empty type), `map`
+  (equal results merge, never to zero), `as`, `replace`, `replaceAll`, `tap`; on the maps `put` ×4, `merge` ×2,
+  `computeIfAbsent`/`computeIfPresent` (as `Tuple2<V, NonEmptyMap>` / `Tuple2<Option<V>, NonEmptyMap>`: `Maps` only ever
+  puts), `map`, `mapBoth`, `mapKeys` ×2, `mapValues`, `replace` ×2, `replaceAll` ×2 (`replace(Tuple2, Tuple2)` onto a
+  present key shrinks the map by one, never below one), `replaceValue`; the `Comparator` overloads of `map`/`mapBoth`
+  on the sorted ones. `keySet()` returns a `NonEmptySet` (`NonEmptySortedSet` with the map's comparator on a sorted
+  map) and `values()` a `NonEmptyVector`. `groupBy` returns a `NonEmptyMap` of non-empty groups on all four, as on
+  `NonEmptyVector` (below).
+- **`flatMap` / `flatMapAll`**, as on `NonEmptyVector`: `flatMap` takes a function returning the non-empty type,
+  `flatMapAll` one returning any `Iterable` and returns the plain type.
+- **Returns the plain type:** `filter*`, `reject*`, `collect`, `remove`, `removeAll`, `retainAll`, `intersect`, `diff`,
+  `partition`, `partitionMap` (`HashSet` only, `TreeSet` has none), and on the sorted ones `tail`, `init`, `take*`,
+  `drop*`.
+- **Total:** `max()`, `min()`, `maxBy` ×2, `minBy` ×2, `reduce`, `reduceMap`, `fold`, `single` (throws on more than one),
+  `average` as a `double` on the sets, `head`/`last` on the sorted ones, all through the loops of
+  `collection.internal.NonEmptyModule` (no `Option` wrapped to be unwrapped). `max`/`min` stay in the natural order of
+  the elements on the sorted variants, as on `TreeSet`/`TreeMap`; the comparator's extremes are `head`/`last`.
+- **Unwrap and narrowing.** `toSet()`, `toSortedSet()`, `toMap()`, `toSortedMap()` without arguments return the
+  wrapped collection, O(1), next to the existing `to*` conversions with arguments (`TreeSet.toSortedSet()` already
+  returns the set itself, so the name keeps its meaning). Constructors: `of`, `single`, `fromIterable(head, tail)`,
+  `fromIterable(Iterable) : Option`, `fromSet`/`fromSortedSet`/`fromMap`/`fromSortedMap : Option` (wrap without
+  copying), `unsafeFrom…`, static `flatten` on the sets; the sorted ones take an optional leading `Comparator` (natural
+  order otherwise). On the plain types, `HashSet.toNonEmptySet()`, `TreeSet.toNonEmptySortedSet()`,
+  `HashMap.toNonEmptyMap()`, `TreeMap.toNonEmptySortedMap()` return an `Option`.
+- **Set algebra arguments.** `union`/`intersect`/`diff` keep the plain types' `Set` parameter; no overloads taking the
+  non-empty types (they would double the set algebra for each wrapper pair). A non-empty set is an `Iterable`, so
+  `addAll`/`retainAll`/`removeAll` take it directly.
+- **Nulls.** Where the wrapper receives an element, key, value or entry itself (constructors, `add`, `put`, `replace`,
+  `replaceValue`, `as`), it checks first with a message naming the type (`NonEmptyMap.put: key is null`). `addAll` of an
+  `Iterable` and the mapper results go through the plain type's own checks (`HashSet: element is null`): unlike
+  `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
+- **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
+  `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
+  the wrapped collection's `hashCode`, which is unordered. That holds, symmetric and hash-consistent, when the sorted
+  side's comparator is consistent with `equals`, as for the plain `HashSet`/`TreeSet`: with a case-insensitive order,
+  say, `equals` holds one way only (`Collections.equals` asks the argument's `contains`) and the hash codes differ.
+  Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
+- **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
+  `TreeSet`).
+- **Grouping and converting a non-empty collection gives a non-empty map** (maintainer decision, 2026-09-25). On
+  `NonEmptyVector` and the four wrappers, `groupBy` returns a `NonEmptyMap` whose values are the non-empty type
+  (`NonEmptyMap<K, NonEmptyVector<A>>`, `NonEmptyMap<K, NonEmptySet<A>>`, `NonEmptyMap<C, NonEmptySortedMap<K, V>>`…),
+  `toMap` ×2 a `NonEmptyMap` and `toSortedMap` ×4 a `NonEmptySortedMap`: there is at least one element, so at least
+  one entry, whatever the keys. `toLinkedMap` keeps returning a plain map, since there is no non-empty linked map.
+  `arrangeBy` stays an `Option` of a plain map, as it was not part of the decision. The maps are built by package-private
+  `NonEmptyMap.ofMapped`/`ofMappedEntries` (and their `NonEmptySortedMap` twins), one builder pass that puts keys and
+  values without an intermediate `Tuple2` and reports a null key, value or entry under the calling method's name
+  (`NonEmptySet.toMap: keyMapper returned null`), as `NonEmptyVector` already did. This changes 3.6's
+  `groupBy as HashMap<K, NonEmptyVector<A>>`.
 
 ### 3.7 Removing the `Seq` abstraction
 
@@ -1008,7 +1079,7 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   returned the receiver, old objects included, when nothing was new). They now insert only absent elements, through
   a package-private `LinkedHashMap.putIfAbsent`, and the javadoc of `addAll`/`union` states the rule instead of
   calling it unspecified.
-- **How the map factories build**: a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
+- **How the map factories build** (now `LinkedHashMap.Builder`, 3.8.1): a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
   slots in the `HashMap`, replacing the slot of a repeated key in place, and makes the insertion-order `Vector` once.
   It replaces the old path (a `HashMap` of entries, a `Vector` of every key, `reverse().distinct().reverse()`, then a
   second `HashMap` of slots), so it does less work, not more.
@@ -1034,9 +1105,10 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   extends L, ? extends R>>)`, `Try.flatten`, `Validation.flatten(Validation<? extends E, ? extends Validation<?
   extends E, ? extends A>>)` and `Lazy.flatten`.
 - **Implementation.** "`flatMap(identity)` over the builder" is how the result reads, not literally the code: only
-  `Vector` has a builder yet (3.8.1, #27), so each type accumulates as its own `partition` and `ofAll` do (a reversed
-  cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for `HashSet`/`LinkedHashSet`, `ofAll` over
-  the concatenation for `TreeSet`). Each reads its argument once, outer and inner iterables alike, so one-shot
+  `Vector` had a builder when this was written (3.8.1, #27), so each type accumulates as its own `partition` and
+  `ofAll` do (a reversed cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for
+  `HashSet`/`LinkedHashSet`, `ofAll` over the concatenation for `TreeSet`). `List.flatten` and `LinkedHashSet.flatten`
+  now use their builders (3.8.1). Each reads its argument once, outer and inner iterables alike, so one-shot
   iterables work. `partitionMap` switches on the `Either` records, one pass, no list of `Either`s, and rejects a null
   result naming the type (`List.partitionMap: f returned null`). `duplicatesBy` on `Queue` and `Stream` runs the
   `Vector` algorithm over the receiver itself (`Collections.duplicatesBy` in `collection.internal`, no `toList()`
@@ -1315,6 +1387,70 @@ split.
 Step 2 rebases `Vector` and `Vector.Builder` on `RadixVector` and `VectorBuilder`, with the coordinator's JMH table.
 Step 3 deletes `BitMappedTrie`, `ArrayType` and the differential test.
 
+**Step 2 (#74): `Vector` on the finger tree.** `Vector` holds a `RadixVector` and `Vector.Builder` a `VectorBuilder`;
+the public API does not change.
+- **Contract.** The exception types and messages are those of step 1. A probe of 1 615 edge calls (nulls, bad indices,
+  empty vectors, closed builders, identity results such as `drop(0) == this`, at sizes 0 to 40 000, built by `range` and
+  by `ofAll`) prints the same output on both, but for two messages, both now `Vector: element is null` like every other
+  path that rejects a null element: a `map` whose function returns null on a vector built by `range` or `ofAll(int[])`
+  said `Vector.map: element is null`, and `append(null)`/`prepend(null)` said `List: element is null`, a leftover of
+  the old path through `List.of` (decided with the maintainer, #163). One behaviour changes on purpose:
+  `Vector.of(array)` of 32 elements or fewer used the caller's array as its leaf, so writing into the array afterwards
+  changed the vector; the array is now copied, as it always was above 32 elements.
+- **Primitive leaves (decided): `Object[]` only**, as Scala does. `ofAll(int[])` and the other primitive `ofAll` add
+  each boxed value to the builder; `range` and its variants build from their `Iterator`. A rough probe (one JVM, best
+  of 15 batches after warm-up, not a benchmark; µs per operation at 100 000 elements, step 1 → step 2) shows what
+  primitive leaves bought and cost:
+  - they are cheaper to build and to keep: `ofAll(int[])` 27 → 410, and 4.6 → 20.6 retained bytes per element for
+    values outside the `Integer` cache;
+  - they box on every read: a `get` loop 1 970 → 290, iteration 670 → 130, `map` 1 300 → 540, `filter` 710 → 200.
+
+  Two more shapes lose in the same probe: `range(0, 100 000)` 330 → 570, since every value is now kept boxed (the
+  primitive path boxed it in the `Iterator` too, then unboxed it into an `int[]`), and `drop(1)` 0.02 → 0.05 to 0.12,
+  since a slice goes through `VectorSliceBuilder` (`tail` has its own path and does not).
+
+  A vector is read more often than it is built, and a primitive leaf also made the first write of another class convert
+  the whole vector. So no primitive path is kept; #29 (the `ClassCastException` fallbacks of primitive leaves) has
+  nothing left to fix in `Vector`.
+- **Size hint.** `newBuilder(sizeHint)` still rejects a negative hint but ignores the value: `VectorBuilder` always fills
+  32-wide leaves, and only the arrays cut at the end are trimmed by `result()`. The javadoc and `docs/builders.md` say so.
+- **Operations.** `appendAll`/`prependAll` hand a `Vector` (or the `java.util.List` view of one) to the tree as a tree,
+  so the two are concatenated by arrays; another iterable that can be traversed again is turned into a tree first, and a
+  one-shot one goes through the builder as before. `map` is `RadixVector.map` (the same shape, array by array); `filter`
+  finds the first rejected element and starts the builder from the kept prefix, whose arrays are shared; `flatMap` and
+  `collect` walk the tree with `forEach`; `head`, `last`, `tail`, `init` and `slice` are the tree's own.
+- **Complexity notes.** `head` and `last` are O(1); `append`, `prepend`, `tail` and `init` copy one leaf, amortised
+  O(1); `appendAll`/`prependAll` of a `Vector` are O(min(n, m)) plus O(log n) arrays: Scala's `appendedAll0` appends
+  a short argument element by element, prepends a much shorter receiver onto the argument (`LOG2_CONCAT_FASTER`),
+  aligns the builder on the longer side (`ALIGN_TO_FASTER`) so its arrays are reused whole, and otherwise starts the
+  builder from the receiver's arrays (`initFrom`) and copies the argument, which is then at most 64 elements longer.
+- **Tests.** `VectorTest`, `NonEmptyVectorTest`, the law tests and the docs examples pass unchanged. `VectorBuilderTest`
+  and `VectorPropertyTest` read the trie's leaves and depth, so they change: they read the tree's through a test-only
+  `RadixVectorShapes`, the depth replaces the root shift, and the sharing they assert is the finger tree's (a builder
+  started from a vector keeps all its leaves; an aligned builder shares the inner leaves of the vector it adds and copies
+  its first and last leaves; a builder whose current leaf is partly filled copies every leaf). The checks of primitive
+  leaf types and the package-private `addMapped` are gone. `ArbitraryShapesTest` in `zazr-test` looked for a trie
+  with an offset; it now looks for a tree whose first leaf is partly filled, the shape a dropped prefix leaves.
+  `VectorContractTest` pins the exception types and messages and the identity of the results at every boundary of the
+  tree, for six ways of building the same vector.
+- **The differential test** keeps its oracle independent: `TrieVector`, a test-only class, computes the operations the
+  test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
+  (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
+
+**Step 3 (#74): the trie deleted.** `BitMappedTrie` goes, with `LeafVisitor` and `NodeModifier`, and so does
+`TrieVector`. `ArrayType` goes with its generator (`genArrayTypes`); its last user outside `Vector`,
+`IterableWithSize.toArray` in `Collections`, copies the elements with a plain loop. `VectorPropertyTest` builds its
+primitive arrays itself, and `VectorTest` loses the test of `ArrayType.of(void.class)`.
+
+The differential test is not deleted with the trie: most of it never needed the old implementation. It holds the
+regression tests of step 1's reviews (a builder left unchanged by a rejected element, a length that never passes
+`Integer.MAX_VALUE`, updates at every slice boundary, `Vector6` reached by self-concatenation, the alignments of
+dimension 4 and 5), the shape invariants checked after every step and the persistence check at the end, none of which
+the tests of `Vector` reach. So it becomes `RadixVectorTest`, and its oracle becomes `VectorModel`: the contract of
+`Vector` on one flat array that every operation copies, too simple to share a bug with the finger tree. Every mutant
+of the reviews still fails it: U5 (4 tests), BI6 (4), L4 (2), the null check moved after `advance()` (1) and the
+`Integer.MAX_VALUE` guard of `Vector6.appended0` removed (1).
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same
@@ -1370,6 +1506,50 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+
+**Implemented for `LinkedHashMap`, `LinkedHashSet` and `List` (decided):**
+- `LinkedHashMap.Builder` is not the table's `HashMap.Builder` + `Vector.Builder` composite. A repeated key keeps the
+  position of its first occurrence and takes the key object and value of its last (the repeated-key decision, 3.7), so
+  a put must find the position already given to its key and overwrite the key object there: `HashMap.Builder` has no
+  lookup and `Vector.Builder` no update. A lookup on the transient trie would tie the linked builders to the trie's
+  node types, which the CHAMP port (3.8.2) replaced while this was written. The builder is therefore
+  `LinkedHashMap.Puts`, the helper of the repeated-key decision, made public: an `ArrayList` of the keys in insertion
+  order and a persistent `HashMap` from each key to its entry and position, made into the order `Vector` once, in
+  `result()`. The fixed-arity `of`,
+  `ofEntries`, `tabulate` and `fill` already built this way and now call the builder, a refactoring rather than a
+  reroute. Against successive `put`s it saves the intermediate maps and the order `Vector` appended to or updated at
+  each step; a builder-side lookup on the CHAMP nodes (3.8.2) is a follow-up.
+- `LinkedHashSet.Builder` is a `LinkedHashMap.Builder` of `element -> element` that keeps the first of equal elements
+  (`putIfAbsent`, package-private): a repeated element allocates nothing.
+- `putAll(LinkedHashMap)` / `addAll(LinkedHashSet)` on an empty builder keeps the source: `result()` returns it when
+  nothing else was put (for the set, when no new element was added). The first put that follows copies its insertion
+  order, markers, offset and marker count included, into the array list and starts from its hash map, so the builder
+  goes on exactly as successive puts on that map would.
+- `List.Builder` appends to an `Object[]` grown by half and makes the cells in `result()` from the last element to the
+  first: n cells and one array, against 2n cells for prepending then reversing. A `List` given to `addAll` becomes the
+  pending tail: `result()` prepends the buffered elements onto it and shares its cells (so an empty builder given a
+  `List` returns that `List`), and an addition after it copies it into the array first.
+- Every builder method checks that the builder is open before checking its argument for null; the null messages name
+  the builder (`List.Builder.add: element is null`), and the factories built on a builder keep their own messages
+  (`List: element is null`, `LinkedHashSet.of: element is null`, `LinkedHashMap: key is null`).
+- Rerouted after a rough same-JVM probe on the branch, the gate being "not slower" (1 fork, 3 iterations, a machine
+  running other benchmarks, microseconds per operation at 10 / 1 000 / 100 000 distinct elements, the old algorithm
+  written out with the public API against the new factory): `List.ofAll` of a collection that is not a
+  `java.util.List` 0.034 / 4.2 / 506 against 0.059 / 6.5 / 533 (prepend, then reverse); `List.ofAll(Stream)` 0.038 /
+  3.9 / 390 against 0.061 / 4.6 / 474; `LinkedHashSet.ofAll` 0.21 / 52 / 24 200 against 0.46 / 92 / 34 200 (successive
+  adds); `LinkedHashMap.ofAll(java.util.Map)` 0.28 / 52 / 19 200 against 0.41 / 153 / 70 800 (successive puts). The
+  error bars were wide (up to the size of the score at 100 000) and overlap at 10 everywhere. The collectors, which
+  now accumulate into the builder instead of an `ArrayList` handed to `ofAll`/`ofEntries`, do strictly less work but
+  were within the noise: `List` 0.094 / 9.7 / 874 against 0.42 / 35 / 830 (2 forks, 5 iterations), `LinkedHashMap`
+  0.30 / 103 / 48 000 against 0.33 / 78 / 27 600 in one run and 58 000 ± 48 000 against 64 500 ± 30 000 at 100 000 in
+  the next, while the same builder loop measured between 22 000 and 60 000 across runs. So `List.ofAll` (the branch
+  for anything but a `java.util.List` or a `NavigableSet`, which already build n cells back to front),
+  `List.ofAll(Stream)`, `List.flatten`, `LinkedHashSet.ofAll`, `of`, `flatten` (and `tabulate`/`fill` through `of`),
+  `LinkedHashMap.ofAll(java.util.Map)` and the three types' `collector()`s use the builders; the coordinator's 3-fork
+  run of `MapSetBuilderBenchmark` (new rows for the three types) is the reference. The collectors' accumulator type is
+  now the builder, as for the other four types. Unchanged: `LinkedHashMap.ofAll(Stream, ...)` (as on `HashMap` and
+  `TreeMap`), `map`, `flatMap` and `collect` on the linked maps, the instance `addAll`/`union`, and the operations of
+  `List` that prepend and reverse (`filter`, `map`, `take`, ...).
 
 #### 3.8.2 `HashMap` and `HashSet` on CHAMP (decided 2026-09-25)
 
@@ -1518,8 +1698,8 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - **Specialised `OptionInt`/`OptionLong`/`OptionDouble`** (sealed, `record SomeInt(int value)`), the
   JDK's `OptionalInt` design. Pattern-matchable (`case SomeInt(int i)`), but a parallel API with no
   boxing-free `flatMap` across the primitive/reference boundary, and nothing in Zazr produces them: the
-  collections store primitives unboxed (`BitMappedTrie` leaves via `ArrayType`) but box on `get(i)`, and
-  there is no `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
+  collections store every element boxed (`Vector`'s leaves are `Object[]` only, 3.8), and there is no
+  `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
   hot path shows the boxing, and then added together with the producing methods (`indexOfOption`,
   numeric `max`/`sum` folds).
 - **JIT escape analysis** already removes both allocations for the common inline pattern
@@ -1613,8 +1793,9 @@ any number of resources decided at run time, and Scala's rule for which throwabl
   Maven coordinates changed so the fork can never be confused with Vavr on a classpath. Do this in the
   first commit; every later diff is then unambiguous.
 - **Generator**: keep `Generator.scala` but shrink it to `Tuple0..8` (records), `Function3..8`,
-  `CheckedFunction1..8`, and the `zip`/`zipWith` arity-N statics for each control type. `API.java`,
-  `ArrayType`'s eight specialisations (keep, they are real), `CaseN`, `ForLazyN` go. Consider replacing the
+  `CheckedFunction1..8`, and the `zip`/`zipWith` arity-N statics for each control type. `API.java`, `CaseN`,
+  `ForLazyN` go, and so does `ArrayType` with its eight primitive specialisations, deleted with `BitMappedTrie` when
+  `Vector` moved to `Object[]` leaves (3.8, #74). Consider replacing the
   Scala script with a plain Java `main` (`java Generator.java`, single-file source launch) so the build
   needs no Scala toolchain; **Open**, cosmetic.
 - **Jargon guard**: a CI step that fails on `monad|functor|applicative|semigroup|monoid` anywhere under `src/`, `src-gen/`, `generator/`.
@@ -1728,6 +1909,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
 | #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
+| #110 | `NonEmptySet`, `NonEmptyMap`, `NonEmptySortedSet`, `NonEmptySortedMap` | 3.6.1 | #90, #27 |
 | #117 | `HashMap` and `HashSet` on CHAMP, ported from Scala | 3.8.2 | #27 |
 
 ---

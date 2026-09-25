@@ -10,6 +10,7 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 |---|---|---|
 | a sequence, by default | `Vector` | effectively O(1) `get`, `update`, `append`, `prepend`, `take`, `drop` |
 | a sequence with at least one element | `NonEmptyVector` | `head`, `max`, `reduce` cannot fail |
+| a set or map with at least one element | `NonEmptySet`, `NonEmptyMap` and their `Sorted` variants | `max`, `reduce` (and `head` when sorted) cannot fail |
 | to take a sequence apart from the front, a stack | `List` | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
 | first in, first out | `Queue` | amortised O(1) `enqueue` and `dequeue` |
 | a sequence computed on demand, maybe infinite | `Stream` | lazy and memoised |
@@ -45,7 +46,8 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 
 ## What every collection shares
 
-Every collection except `NonEmptyVector` implements `Traversable<T>`: iteration, `size()`, `isEmpty()`,
+Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their `Sorted` variants)
+implements `Traversable<T>`: iteration, `size()`, `isEmpty()`,
 `contains`, `exists`, `forAll`, `count`, `find` (an `Option`), `foldLeft`, `mkString`, `toVector`, `toList`,
 `toSet`, `stream()`, `toArray`, `asJava()`.
 
