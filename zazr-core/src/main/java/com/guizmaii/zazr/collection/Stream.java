@@ -2082,7 +2082,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default Stream<T> patch(int from, Iterable<? extends T> that, int replaced) {
         Objects.requireNonNull(that, "that is null");
-        // the replacement is read now, as appendAll reads its argument; this Stream only as the result reaches it
+        // Stream.ofAll takes the replacement's iterator now and reads its first element (a Stream is used as is); its
+        // other elements and the cells of this Stream are read as the result reaches them
         return patchFrom(this, Math.max(from, 0), Stream.ofAll(that), Math.max(replaced, 0));
     }
 
@@ -2687,16 +2688,20 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * reaches them. An empty range forces its first {@code beginIndex} elements too, to check that it is within this
      * Stream, and a reversed range its first {@code endIndex}.
      * <p>
-     * The bounds are those of {@link Vector#subSequence(int, int)}, but because {@code Stream} is lazy, if
-     * {@code beginIndex < endIndex} and {@code endIndex > length()}, the {@code IndexOutOfBoundsException} is only
-     * thrown once the returned Stream is traversed as far as the offending position, not when this method is called.
-     * Every other out-of-range call throws when it is made.
+     * The bounds are those of {@link Vector#subSequence(int, int)}: {@code IndexOutOfBoundsException} when
+     * {@code beginIndex < 0} or {@code endIndex > length()}, otherwise {@code IllegalArgumentException} when
+     * {@code beginIndex > endIndex}. Every such call throws when it is made, with one exception: because
+     * {@code Stream} is lazy, when {@code beginIndex < length() < endIndex} the {@code IndexOutOfBoundsException} is
+     * thrown once the returned Stream is traversed past its last element, not when this method is called.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
      * @return a new Stream
-     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative, or once the traversal passes the end
-     * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative; if {@code endIndex} is past the end and
+     *                                   {@code beginIndex} is not before the end, a reversed range included; or, when
+     *                                   {@code beginIndex < length() < endIndex}, once the traversal passes the end
+     * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex} and {@code endIndex} is
+     *                                   within this Stream
      */
     default Stream<T> subSequence(int beginIndex, int endIndex) {
         if (beginIndex < 0) {
