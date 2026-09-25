@@ -4,7 +4,7 @@ description: What Zazr changes from Vavr - removed types, renamed operations, an
 
 # Compared to Vavr
 
-Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr) `2.0.0-SNAPSHOT`, reshaped for Java 25 and for the API
+Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr) (its `main` branch, after the 1.0.1 release), reshaped for Java 25 and for the API
 design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: the package is
 `com.guizmaii.zazr`, and the changes below are deliberate. Each one, with its reason, is in [the design](design.md).
 
