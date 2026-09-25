@@ -1888,6 +1888,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Folds the elements from the left with {@code combine}, starting from {@code zero}, which must be its neutral
      * element.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#fold(Object, BiFunction)}.
      *
      * @param zero    The neutral element of {@code combine}
      * @param combine Combines two elements
@@ -1898,6 +1900,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The sum of the elements, which must be {@link Number}s, with the arithmetic of {@link Vector#sum()}.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#sum()}.
      *
      * @return the sum
      * @throws UnsupportedOperationException if an element is not a {@code Number}
@@ -1906,6 +1910,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The product of the elements, which must be {@link Number}s, with the arithmetic of {@link Vector#product()}.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#product()}.
      *
      * @return the product
      * @throws UnsupportedOperationException if an element is not a {@code Number}
@@ -1915,6 +1921,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The average of the elements, which must be {@link Number}s, summed as {@code double}s with Neumaier
      * compensation: the value {@link Vector#average()} holds.
+     * <p>
+     * Complexity: O(n), one compensated pass.
      *
      * @return the average
      * @throws UnsupportedOperationException if an element is not a {@code Number}
@@ -1930,6 +1938,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The only element.
+     * <p>
+     * Complexity: O(1).
      *
      * @return the element
      * @throws java.util.NoSuchElementException if there is more than one element
@@ -1938,6 +1948,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Arranges the elements by a key that must be unique.
+     * <p>
+     * Complexity: O(n), that of {@link Vector#arrangeBy(Function)}.
      *
      * @param getKey The key of an element
      * @param <K>    Key type
@@ -1951,6 +1963,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Runs {@code action} on each element with its position, from 0, without boxing the index.
+     * <p>
+     * Complexity: O(n).
      *
      * @param action A side effect
      * @throws NullPointerException if {@code action} is null
@@ -1958,6 +1972,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public void forEachWithIndex(ObjIntConsumer<? super A> action) { vector.forEachWithIndex(action); }
 
     /**
+     * Complexity: O(n), that of {@link Vector#collect(Collector)}.
+     *
      * @param collector A collector
      * @param <R>       Result type
      * @param <C>       The collector's accumulation type
@@ -1969,6 +1985,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * Complexity: O(n), that of {@link Vector#collect(Supplier, BiConsumer, BiConsumer)}.
+     *
      * @param supplier    Makes a new result container
      * @param accumulator Adds an element to a container
      * @param combiner    Merges two containers
@@ -2021,27 +2039,37 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public Set<A> toSet() { return vector.toSet(); }
 
     /**
+     * Complexity: O(n).
+     *
      * @return the elements as a {@link Queue}, in order
      */
     public Queue<A> toQueue() { return vector.toQueue(); }
 
     /**
+     * Complexity: O(n).
+     *
      * @return the elements as a {@link Stream}, in order
      */
     public Stream<A> toStream() { return vector.toStream(); }
 
     /**
+     * Complexity: O(n).
+     *
      * @return the distinct elements as a {@link LinkedHashSet}, in order
      */
     public Set<A> toLinkedSet() { return vector.toLinkedSet(); }
 
     /**
+     * Complexity: O(n log n).
+     *
      * @return the distinct elements as a {@link TreeSet} in their natural order
      * @throws ClassCastException if the elements are not {@link Comparable}
      */
     public SortedSet<A> toSortedSet() { return vector.toSortedSet(); }
 
     /**
+     * Complexity: O(n log n).
+     *
      * @param comparator The order
      * @return the distinct elements as a {@link TreeSet} ordered by {@code comparator}
      * @throws NullPointerException if {@code comparator} is null
@@ -2049,11 +2077,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public SortedSet<A> toSortedSet(Comparator<? super A> comparator) { return vector.toSortedSet(comparator); }
 
     /**
+     * Complexity: O(n).
+     *
      * @return a new array of the elements, in order
      */
     public Object[] toArray() { return vector.toArray(); }
 
     /**
+     * Complexity: O(n).
+     *
      * @param arrayFactory Makes an array of the given length
      * @return a new array of the elements, in order, of the type {@code arrayFactory} makes
      * @throws NullPointerException if {@code arrayFactory} is null
@@ -2062,6 +2094,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The elements as the entries of a new {@link HashMap}; of two entries with the same key, the later one wins.
+     * <p>
+     * Complexity: O(n), one entry built per element.
      *
      * @param keyMapper   The key of an element
      * @param valueMapper The value of an element
@@ -2076,6 +2110,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The elements as the entries of a new {@link HashMap}; of two entries with the same key, the later one wins.
+     * <p>
+     * Complexity: O(n), one entry built per element.
      *
      * @param f   The entry an element becomes
      * @param <K> Key type
@@ -2090,6 +2126,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The elements as the entries of a new {@link LinkedHashMap}, in order; of two entries with the same key, the
      * later one wins the value and the earlier one the position.
+     * <p>
+     * Complexity: O(n), one entry built per element.
      *
      * @param keyMapper   The key of an element
      * @param valueMapper The value of an element
@@ -2105,6 +2143,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The elements as the entries of a new {@link LinkedHashMap}, in order; of two entries with the same key, the
      * later one wins the value and the earlier one the position.
+     * <p>
+     * Complexity: O(n), one entry built per element.
      *
      * @param f   The entry an element becomes
      * @param <K> Key type
@@ -2119,6 +2159,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The elements as the entries of a new {@link TreeMap} in the natural order of the keys; of two entries with the
      * same key, the later one wins.
+     * <p>
+     * Complexity: O(n log n), one entry built per element.
      *
      * @param keyMapper   The key of an element
      * @param valueMapper The value of an element
@@ -2134,6 +2176,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The elements as the entries of a new {@link TreeMap} in the natural order of the keys; of two entries with the
      * same key, the later one wins.
+     * <p>
+     * Complexity: O(n log n), one entry built per element.
      *
      * @param f   The entry an element becomes
      * @param <K> Key type
@@ -2148,6 +2192,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}; of two entries with the
      * same key, the later one wins.
+     * <p>
+     * Complexity: O(n log n), one entry built per element.
      *
      * @param comparator  The order of the keys
      * @param keyMapper   The key of an element
@@ -2165,6 +2211,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}; of two entries with the
      * same key, the later one wins.
+     * <p>
+     * Complexity: O(n log n), one entry built per element.
      *
      * @param comparator The order of the keys
      * @param f          The entry an element becomes

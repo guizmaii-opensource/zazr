@@ -740,8 +740,32 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `maxBy(Comparator<? super A>)` | <abbr class="cx cx-linear" title="O(n), every element compared once, that of max(Comparator).">O(n)</abbr> | O(n), every element compared once, that of max(Comparator). |
 | `minBy(Comparator<? super A>)` | <abbr class="cx cx-linear" title="O(n), every element compared once, that of min(Comparator).">O(n)</abbr> | O(n), every element compared once, that of min(Comparator). |
+| `fold(A, BiFunction<? super A, ? super A, ? extends A>)` | <abbr class="cx cx-linear" title="O(n), that of Vector#fold(Object, BiFunction).">O(n)</abbr> | O(n), that of Vector#fold(Object, BiFunction). |
+| `sum()` | <abbr class="cx cx-linear" title="O(n), that of Vector#sum().">O(n)</abbr> | O(n), that of Vector#sum(). |
+| `product()` | <abbr class="cx cx-linear" title="O(n), that of Vector#product().">O(n)</abbr> | O(n), that of Vector#product(). |
+| `average()` | <abbr class="cx cx-linear" title="O(n), one compensated pass.">O(n)</abbr> | O(n), one compensated pass. |
+| `single()` | <abbr class="cx cx-constant" title="O(1).">O(1)</abbr> | O(1). |
+| `arrangeBy(Function<? super A, ? extends K>)` | <abbr class="cx cx-linear" title="O(n), that of Vector#arrangeBy(Function).">O(n)</abbr> | O(n), that of Vector#arrangeBy(Function). |
+| `forEachWithIndex(ObjIntConsumer<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `collect(Collector<? super A, C, R>)` | <abbr class="cx cx-linear" title="O(n), that of Vector#collect(Collector).">O(n)</abbr> | O(n), that of Vector#collect(Collector). |
+| `collect(Supplier<R>, BiConsumer<R, ? super A>, BiConsumer<R, R>)` | <abbr class="cx cx-linear" title="O(n), that of Vector#collect(Supplier, BiConsumer, BiConsumer).">O(n)</abbr> | O(n), that of Vector#collect(Supplier, BiConsumer, BiConsumer). |
 | `iterator()` | <abbr class="cx cx-constant" title="O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.">O(1)</abbr> | O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary. |
 | `asJava()` | <abbr class="cx cx-constant" title="O(1); get on the view is effectively O(1).">O(1)</abbr> | O(1); get on the view is effectively O(1). |
+| `toQueue()` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `toStream()` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `toLinkedSet()` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `toSortedSet()` | <abbr class="cx cx-linearithmic" title="O(n log n).">O(n log n)</abbr> | O(n log n). |
+| `toSortedSet(Comparator<? super A>)` | <abbr class="cx cx-linearithmic" title="O(n log n).">O(n log n)</abbr> | O(n log n). |
+| `toArray()` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `toArray(IntFunction<A[]>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `toMap(Function<? super A, ? extends K>, Function<? super A, ? extends V>)` | <abbr class="cx cx-linear" title="O(n), one entry built per element.">O(n)</abbr> | O(n), one entry built per element. |
+| `toMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>>)` | <abbr class="cx cx-linear" title="O(n), one entry built per element.">O(n)</abbr> | O(n), one entry built per element. |
+| `toLinkedMap(Function<? super A, ? extends K>, Function<? super A, ? extends V>)` | <abbr class="cx cx-linear" title="O(n), one entry built per element.">O(n)</abbr> | O(n), one entry built per element. |
+| `toLinkedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>>)` | <abbr class="cx cx-linear" title="O(n), one entry built per element.">O(n)</abbr> | O(n), one entry built per element. |
+| `toSortedMap(Function<? super A, ? extends K>, Function<? super A, ? extends V>)` | <abbr class="cx cx-linearithmic" title="O(n log n), one entry built per element.">O(n log n)</abbr> | O(n log n), one entry built per element. |
+| `toSortedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>>)` | <abbr class="cx cx-linearithmic" title="O(n log n), one entry built per element.">O(n log n)</abbr> | O(n log n), one entry built per element. |
+| `toSortedMap(Comparator<? super K>, Function<? super A, ? extends K>, Function<? super A, ? extends V>)` | <abbr class="cx cx-linearithmic" title="O(n log n), one entry built per element.">O(n log n)</abbr> | O(n log n), one entry built per element. |
+| `toSortedMap(Comparator<? super K>, Function<? super A, ? extends Tuple2<? extends K, ? extends V>>)` | <abbr class="cx cx-linearithmic" title="O(n log n), one entry built per element.">O(n log n)</abbr> | O(n log n), one entry built per element. |
 | `indexOfOption(A, int)` | <abbr class="cx cx-linear" title="O(n), that of Vector#indexOfOption(Object, int).">O(n)</abbr> | O(n), that of Vector#indexOfOption(Object, int). |
 | `indexWhereOption(Predicate<? super A>)` | <abbr class="cx cx-linear" title="O(n), that of Vector#indexWhereOption(Predicate).">O(n)</abbr> | O(n), that of Vector#indexWhereOption(Predicate). |
 | `indexWhereOption(Predicate<? super A>, int)` | <abbr class="cx cx-linear" title="O(n), that of Vector#indexWhereOption(Predicate, int).">O(n)</abbr> | O(n), that of Vector#indexWhereOption(Predicate, int). |
