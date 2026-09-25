@@ -851,7 +851,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code element} is null
      */
     public Vector<T> append(T element) {
-        return new Vector<>(trie.appended(Objects.requireNonNull(element, "List: element is null")));
+        return new Vector<>(trie.appended(Objects.requireNonNull(element, "Vector: element is null")));
     }
 
     /**
@@ -1893,7 +1893,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code element} is null
      */
     public Vector<T> prepend(T element) {
-        return new Vector<>(trie.prepended(Objects.requireNonNull(element, "List: element is null")));
+        return new Vector<>(trie.prepended(Objects.requireNonNull(element, "Vector: element is null")));
     }
 
     /**

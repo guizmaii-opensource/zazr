@@ -54,8 +54,8 @@ public class VectorContractTest {
                 throwsExactly(() -> v.get(Integer.MIN_VALUE), IndexOutOfBoundsException.class, "get(-2147483648)");
                 throwsExactly(() -> v.update(-1, (Integer) null), IndexOutOfBoundsException.class, "update(-1)");
                 throwsExactly(() -> v.update(n, 1), IndexOutOfBoundsException.class, "update(" + n + ")");
-                throwsExactly(() -> v.append(null), NullPointerException.class, "List: element is null");
-                throwsExactly(() -> v.prepend(null), NullPointerException.class, "List: element is null");
+                throwsExactly(() -> v.append(null), NullPointerException.class, "Vector: element is null");
+                throwsExactly(() -> v.prepend(null), NullPointerException.class, "Vector: element is null");
                 throwsExactly(() -> v.appendAll(null), NullPointerException.class, "iterable is null");
                 throwsExactly(() -> v.prependAll(null), NullPointerException.class, "iterable is null");
                 throwsExactly(() -> v.insert(-1, 1), IndexOutOfBoundsException.class, "insert(-1, e) on Vector of length " + n);
@@ -147,6 +147,15 @@ public class VectorContractTest {
                     assertThat(v.init()).isSameAs(empty);
                 }
             }
+        }
+    }
+
+    @Test
+    public void nonEmptyVectorNamesItselfWhenRejectingANullElement() {
+        for (int n : new int[] { 1, 32, 33, 1025 }) {
+            final NonEmptyVector<Integer> nev = NonEmptyVector.fromVector(Vector.range(0, n)).get();
+            throwsExactly(() -> nev.append(null), NullPointerException.class, "NonEmptyVector.append: element is null");
+            throwsExactly(() -> nev.prepend(null), NullPointerException.class, "NonEmptyVector.prepend: element is null");
         }
     }
 
