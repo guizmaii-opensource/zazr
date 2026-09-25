@@ -1299,7 +1299,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * All entries but the first {@code n} in insertion order: this map if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped entries when nothing has been removed, as {@link #take(int)}.
+     * Complexity: O(n); O(min(k, n - k)) for k dropped entries on a map with no earlier removals, as
+     * {@link #take(int)}.
      *
      * @param n the number of entries to drop
      * @return the entries after the {@code n} inserted first
@@ -1312,7 +1313,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * All entries but the last {@code n} in insertion order: this map if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped entries when nothing has been removed, as {@link #take(int)}.
+     * Complexity: O(n); O(min(k, n - k)) for k dropped entries on a map with no earlier removals, as
+     * {@link #take(int)}.
      *
      * @param n the number of entries to drop
      * @return the entries before the {@code n} inserted last
@@ -1324,8 +1326,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The entries from the first one, in insertion order, that does not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped entries when nothing has been removed: one walk, then one
-     * {@link #drop(int)}.
+     * Complexity: O(n); O(k) for k dropped entries on a map with no earlier removals: one walk, then
+     * one {@link #drop(int)}.
      *
      * @param predicate tested on the entries from the first inserted
      * @return the entries from the first one not satisfying {@code predicate}
@@ -1339,8 +1341,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The entries from the first one, in insertion order, that satisfies {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped entries when nothing has been removed: one walk, then one
-     * {@link #drop(int)}.
+     * Complexity: O(n); O(k) for k dropped entries on a map with no earlier removals: one walk, then
+     * one {@link #drop(int)}.
      *
      * @param predicate tested on the entries from the first inserted
      * @return the entries from the first one satisfying {@code predicate}

@@ -955,7 +955,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * <p>
      * See also {@link #addAll(Iterable)}.
      * <p>
-     * Complexity: O(m) for a set of m elements, each an effectively O(1) {@link #add(Object)}.
+     * Complexity: O(m) for a set of m elements, each an effectively O(1) {@link #add(Object)}; this set, or a
+     * LinkedHashSet argument, is returned as is when the other side is empty.
      *
      * @param elements The set to form the union with.
      * @return A set that contains all distinct elements of this and {@code elements} set.
@@ -1155,7 +1156,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * All elements but the first {@code n} in insertion order: this set if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped elements when nothing has been removed, as {@link #take(int)}.
+     * Complexity: O(n); O(min(k, n - k)) for k dropped elements on a set with no earlier removals, as
+     * {@link #take(int)}.
      *
      * @param n the number of elements to drop
      * @return the elements after the {@code n} inserted first
@@ -1168,7 +1170,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * All elements but the last {@code n} in insertion order: this set if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped elements when nothing has been removed, as {@link #take(int)}.
+     * Complexity: O(n); O(min(k, n - k)) for k dropped elements on a set with no earlier removals, as
+     * {@link #take(int)}.
      *
      * @param n the number of elements to drop
      * @return the elements before the {@code n} inserted last
@@ -1180,8 +1183,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The elements from the first one, in insertion order, that does not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped elements when nothing has been removed: one walk, then one
-     * {@link #drop(int)}.
+     * Complexity: O(n); O(k) for k dropped elements on a set with no earlier removals: one walk, then
+     * one {@link #drop(int)}.
      *
      * @param predicate tested on the elements from the first inserted
      * @return the elements from the first one not satisfying {@code predicate}
@@ -1195,8 +1198,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The elements from the first one, in insertion order, that satisfies {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped elements when nothing has been removed: one walk, then one
-     * {@link #drop(int)}.
+     * Complexity: O(n); O(k) for k dropped elements on a set with no earlier removals: one walk, then
+     * one {@link #drop(int)}.
      *
      * @param predicate tested on the elements from the first inserted
      * @return the elements from the first one satisfying {@code predicate}
