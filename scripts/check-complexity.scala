@@ -112,7 +112,37 @@ val vocabulary: Map[String, Cost] = Map(
   "O(2^n)" -> Cost.Combinatorial,
   "O(n!)" -> Cost.Combinatorial,
   "O(n! * n)" -> Cost.Combinatorial,
-  "O(C(n, k))" -> Cost.Combinatorial
+  "O(C(n, k))" -> Cost.Combinatorial,
+  // the plain-words vocabulary: i and j are index arguments, k a count the note defines
+  "O(i)" -> Cost.Linear,
+  "O(j)" -> Cost.Linear,
+  "O(i + m)" -> Cost.Linear,
+  "O(i + k)" -> Cost.Linear,
+  "O(k + m)" -> Cost.Linear,
+  "O(n - k)" -> Cost.Linear,
+  "O(min(k, n - k))" -> Cost.Linear,
+  "O(k log n)" -> Cost.Linearithmic,
+  "O(n + k log n)" -> Cost.Linearithmic,
+  "O(m log(n / m + 1))" -> Cost.Linearithmic,
+  "O(n + (n / step) * size)" -> Cost.Polynomial,
+  "O(power * n^power)" -> Cost.Polynomial,
+  "O(n! * n^2)" -> Cost.Combinatorial,
+  "O(k * C(n, k))" -> Cost.Combinatorial,
+  "O(n * 2^n)" -> Cost.Combinatorial,
+  // Vector and NonEmptyVector
+
+  // List
+
+  // Queue
+
+  // Stream
+
+  // HashSet, HashMap, LinkedHashSet, LinkedHashMap
+
+  // TreeSet, TreeMap
+
+  // the end of the vocabulary
+  "O(1)" -> Cost.Constant
 )
 
 final case class Decl(
