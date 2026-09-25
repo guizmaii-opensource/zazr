@@ -27,6 +27,16 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The insertion order is a {@link Vector} of keys beside a {@link HashMap} from each key to its entry and position.
  * <p>
+ * A key given more than once keeps the position of its first occurrence and takes the key object and the value of
+ * its last, whichever way the map is built: {@link #put(Object, Object)} on a key already present, and every factory,
+ * collector and bulk operation ({@code of}, {@code ofEntries}, {@code ofAll}, {@code collector()}, {@code tabulate},
+ * {@code fill}, {@code mapBoth}, {@code mapKeys}, {@code map}, and {@code merge(that)} on an empty map), which gives
+ * the map that putting the entries one by one into an empty map gives. For example,
+ * {@code ofEntries((1, a), (2, b), (1, c))} iterates as {@code (1, c), (2, b)}. The operations that combine the values
+ * of a repeated key, {@code merge(that, f)} and {@code mapKeys(keyMapper, valueMerge)}, keep its first position too
+ * and take its last key object, with the combined value. On a map that is not empty, {@code merge(that)} keeps the
+ * key object and the value of a key already present and adds only the keys it does not hold.
+ * <p>
  * Complexity: lookups and insertions are effectively O(1). Removing an entry makes a gap in the insertion order,
  * and the whole map is rebuilt in O(n) once the gaps outnumber the entries: averaged over a chain of removals, each
  * on the result of the previous one, a removal is effectively O(1), but removing again from an older version can pay
@@ -60,6 +70,44 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     private record Slot<K extends @Nullable Object, V extends @Nullable Object>(Tuple2<K, V> entry, int index) {}
+
+    /// Builds a map from entries given in order, with the result of putting them one by one into an empty map: a
+    /// repeated key keeps the position of its first occurrence and takes the key object and the value of its last.
+    /// The intermediate maps are not built: the keys go into an array list, the slots into a hash map, and the
+    /// insertion order is made from the array list once. Single use, not thread-safe.
+    private static final class Puts<K extends @Nullable Object, V extends @Nullable Object> {
+
+        private final ArrayList<K> keys;
+
+        private HashMap<K, Slot<K, V>> slots = HashMap.empty();
+
+        Puts(int expectedSize) {
+            this.keys = new ArrayList<>(expectedSize);
+        }
+
+        void put(K key, V value) {
+            put(Tuple.of(key, value));
+        }
+
+        @SuppressWarnings("NullAway")
+        void put(Tuple2<K, V> entry) {
+            final K key = entry._1();
+            Objects.requireNonNull(key, "LinkedHashMap: key is null");
+            Objects.requireNonNull(entry._2(), "LinkedHashMap: value is null");
+            final Slot<K, V> existing = slots.getOrElse(key, null);
+            if (existing == null) {
+                slots = slots.put(key, new Slot<>(entry, keys.size()));
+                keys.add(key);
+            } else {
+                slots = slots.put(key, new Slot<>(entry, existing.index()));
+                keys.set(existing.index(), key);
+            }
+        }
+
+        LinkedHashMap<K, V> result() {
+            return keys.isEmpty() ? empty() : new LinkedHashMap<>(Vector.ofAll(keys), slots, 0, 0);
+        }
+    }
 
     @SuppressWarnings("unchecked")
     private static <K extends @Nullable Object> K tombstone() {
@@ -156,9 +204,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(Tuple2<? extends K, ? extends V> entry) {
-        final HashMap<K, V> map = HashMap.of(entry);
-        final Vector<K> list = Vector.of(((Tuple2<K, V>) entry)._1());
-        return wrap(list, map);
+        Objects.requireNonNull(entry, "entry is null");
+        final Puts<K, V> puts = new Puts<>(1);
+        puts.put((Tuple2<K, V>) entry);
+        return puts.result();
     }
 
     /**
@@ -225,9 +274,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entry
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K key, V value) {
-        final HashMap<K, V> map = HashMap.of(key, value);
-        final Vector<K> list = Vector.of(key);
-        return wrap(list, map);
+        final Puts<K, V> puts = new Puts<>(1);
+        puts.put(key, value);
+        return puts.result();
     }
 
     /**
@@ -242,9 +291,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2);
-        final Vector<K> list = Vector.of(k1, k2);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(2);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        return puts.result();
     }
 
     /**
@@ -261,9 +311,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3);
-        final Vector<K> list = Vector.of(k1, k2, k3);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(3);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        return puts.result();
     }
 
     /**
@@ -282,9 +334,12 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(4);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        return puts.result();
     }
 
     /**
@@ -305,9 +360,13 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4, k5);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(5);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        puts.put(k5, v5);
+        return puts.result();
     }
 
     /**
@@ -330,9 +389,14 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4, k5, k6);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(6);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        puts.put(k5, v5);
+        puts.put(k6, v6);
+        return puts.result();
     }
 
     /**
@@ -357,9 +421,15 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4, k5, k6, k7);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(7);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        puts.put(k5, v5);
+        puts.put(k6, v6);
+        puts.put(k7, v7);
+        return puts.result();
     }
 
     /**
@@ -386,9 +456,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4, k5, k6, k7, k8);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(8);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        puts.put(k5, v5);
+        puts.put(k6, v6);
+        puts.put(k7, v7);
+        puts.put(k8, v8);
+        return puts.result();
     }
 
     /**
@@ -417,9 +494,17 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4, k5, k6, k7, k8, k9);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(9);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        puts.put(k5, v5);
+        puts.put(k6, v6);
+        puts.put(k7, v7);
+        puts.put(k8, v8);
+        puts.put(k9, v9);
+        return puts.result();
     }
 
     /**
@@ -450,9 +535,18 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entries
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
-        final HashMap<K, V> map = HashMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
-        final Vector<K> list = Vector.of(k1, k2, k3, k4, k5, k6, k7, k8, k9, k10);
-        return wrapNonUnique(list, map);
+        final Puts<K, V> puts = new Puts<>(10);
+        puts.put(k1, v1);
+        puts.put(k2, v2);
+        puts.put(k3, v3);
+        puts.put(k4, v4);
+        puts.put(k5, v5);
+        puts.put(k6, v6);
+        puts.put(k7, v7);
+        puts.put(k8, v8);
+        puts.put(k9, v9);
+        puts.put(k10, v10);
+        return puts.result();
     }
 
     /**
@@ -502,14 +596,13 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofEntries(java.util.Map.Entry<? extends K, ? extends V> ... entries) {
-        HashMap<K, V> map = HashMap.empty();
-        Vector<K> list = Vector.empty();
+        Objects.requireNonNull(entries, "entries is null");
+        final Puts<K, V> puts = new Puts<>(entries.length);
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
-            map = map.put(entry.getKey(), entry.getValue());
-            list = list.append(entry.getKey());
+            puts.put(entry.getKey(), entry.getValue());
         }
-        return wrapNonUnique(list, map);
+        return puts.result();
     }
 
     /**
@@ -523,15 +616,12 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofEntries(Tuple2<? extends K, ? extends V> ... entries) {
         Objects.requireNonNull(entries, "entries is null");
+        final Puts<K, V> puts = new Puts<>(entries.length);
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
+            puts.put((Tuple2<K, V>) entry);
         }
-        final HashMap<K, V> map = HashMap.ofEntries(entries);
-        Vector<K> list = Vector.empty();
-        for (Tuple2<? extends K, ? extends V> entry : entries) {
-            list = list.append(entry._1());
-        }
-        return wrapNonUnique(list, map);
+        return puts.result();
     }
 
     /**
@@ -551,14 +641,12 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         } else if (JavaConverters.underlying(entries) instanceof LinkedHashMap<?, ?> underlying) {
             return (LinkedHashMap<K, V>) underlying;
         } else {
-            HashMap<K, V> map = HashMap.empty();
-            Vector<K> list = Vector.empty();
+            final Puts<K, V> puts = new Puts<>(entries instanceof java.util.Collection<?> collection ? collection.size() : 10);
             for (Tuple2<? extends K, ? extends V> entry : entries) {
                 Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
-                map = map.put(entry);
-                list = list.append(entry._1());
+                puts.put((Tuple2<K, V>) entry);
             }
-            return wrapNonUnique(list, map);
+            return puts.result();
         }
     }
 
@@ -738,7 +826,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             @SuppressWarnings("NullAway")
             protected Tuple2<K, V> getNext() {
                 nextKeyDefined = false;
-                return map.get(nextKey).get().entry();
+                return entryAt(nextKey);
             }
         };
     }
@@ -897,8 +985,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for the key, both the key and
-     * the value are replaced by the specified ones, keeping the original
-     * insertion order.
+     * the value are replaced by the specified ones, and the key keeps its
+     * position in the insertion order.
      * <p>
      * Complexity: effectively O(1): one hash lookup and one insertion. An existing key keeps its position; a new key
      * is added at the end of the insertion order.
@@ -913,10 +1001,25 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Objects.requireNonNull(value, "LinkedHashMap: value is null");
         final Slot<K, V> existing = slotOrNull(key);
         if (existing != null) {
-            return new LinkedHashMap<>(list, map.put(key, new Slot<>(Tuple.of(key, value), existing.index())), offset, tombstones);
+            // the insertion order holds the key object of the entry, which the positional operations read
+            final Vector<K> newList = existing.entry()._1() == key ? list : list.update(existing.index() - offset, key);
+            return new LinkedHashMap<>(newList, map.put(key, new Slot<>(Tuple.of(key, value), existing.index())), offset, tombstones);
         } else {
             return new LinkedHashMap<>(list.append(key), map.put(key, new Slot<>(Tuple.of(key, value), offset + list.size())), offset, tombstones);
         }
+    }
+
+    /// This map with `key` mapped to `value` if `key` is absent, this map itself if it is present: the key and the
+    /// value already there are kept, which is what [LinkedHashSet#add] needs for an element already in the set.
+    ///
+    /// Complexity: effectively O(1), that of [#put(Object, Object)].
+    LinkedHashMap<K, V> putIfAbsent(K key, V value) {
+        Objects.requireNonNull(key, "LinkedHashMap: key is null");
+        Objects.requireNonNull(value, "LinkedHashMap: value is null");
+        if (map.containsKey(key)) {
+            return this;
+        }
+        return new LinkedHashMap<>(list.append(key), map.put(key, new Slot<>(Tuple.of(key, value), offset + list.size())), offset, tombstones);
     }
 
     /**
@@ -1123,7 +1226,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public Vector<V> values() {
-        return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        final Vector.Builder<V> builder = Vector.newBuilder(size());
+        for (K key : list) {
+            if (key != TOMBSTONE) {
+                builder.add(entryAt(key)._2());
+            }
+        }
+        return builder.result();
     }
 
     // -- Positional operations, in insertion order
@@ -1639,44 +1751,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public String toString() {
         return mkString("LinkedHashMap(", ", ", ")");
-    }
-
-    /**
-     * Construct Map with given values and key order.
-     *
-     * @param list The list of keys with unique entries.
-     * @param map  The map of key-value tuples.
-     * @param <K>  The key type
-     * @param <V>  The value type
-     * @return A new Map containing the given map with given key order
-     */
-    private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> wrap(Vector<K> list, HashMap<K, V> map) {
-        if (list.isEmpty()) {
-            return empty();
-        }
-        HashMap<K, Slot<K, V>> indexed = HashMap.empty();
-        int index = 0;
-        for (K key : list) {
-            indexed = indexed.put(key, new Slot<>(map.getEntry(key).get(), index++));
-        }
-        return new LinkedHashMap<>(list, indexed, 0, 0);
-    }
-
-    /**
-     * Construct Map with given values and key order.
-     *
-     * @param list The list of keys with possibly non-unique entries.
-     * @param map  The map of key-value tuples.
-     * @param <K>  The key type
-     * @param <V>  The value type
-     * @return A new Map containing the given map with given key order
-     */
-    private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> wrapNonUnique(Vector<K> list, HashMap<K, V> map) {
-        if (list.size() == map.size()) {
-            return wrap(list, map);
-        }
-        // Keep the last occurrence of every key, matching the value precedence in `map`.
-        return wrap(list.reverse().distinct().reverse().toVector(), map);
     }
 
     private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> normalized(Vector<K> list, HashMap<K, Slot<K, V>> map, int offset, int tombstones) {

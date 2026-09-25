@@ -4,7 +4,6 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Comparators;
-import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.collection.internal.RedBlackTree;
@@ -1106,7 +1105,12 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public SortedSet<K> keySet() {
-        return TreeSet.ofAll(comparator(), Iterator.ofAll(this).map(Tuple2::_1));
+        final Comparator<K> comparator = comparator();
+        if (isEmpty()) {
+            return TreeSet.empty(comparator);
+        }
+        // the keys are strictly increasing in entry order, so the entry tree's shape and colours hold for the keys
+        return new TreeSet<>(RedBlackTreeModule.Node.mapOrdered(entries, comparator, Tuple2::_1));
     }
 
     @Override
@@ -1144,10 +1148,15 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return Collections.mapKeys(this, TreeMap.<K2, V> empty(comparator), keyMapper, valueMerge);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), with no key comparison (a copy of the tree, with the same shape and the new values).
+     */
     @Override
     public <W extends @Nullable Object> TreeMap<K, W> mapValues(Function<? super V, ? extends W> valueMapper) {
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        return map(comparator(), (k, v) -> Tuple.of(k, valueMapper.apply(v)));
+        return withValues((k, v) -> valueMapper.apply(v));
     }
 
     @Override
@@ -1289,7 +1298,16 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        return map(comparator(), (k, v) -> Tuple.of(k, function.apply(k, v)));
+        return withValues(function);
+    }
+
+    // The same keys with the values `function` computes, called in key order. The keys do not change, so the tree
+    // keeps its shape and colours: a copy with no key comparison.
+    @SuppressWarnings("unchecked")
+    private <W extends @Nullable Object> TreeMap<K, W> withValues(BiFunction<? super K, ? super V, ? extends W> function) {
+        final EntryComparator<K, W> entryComparator = (EntryComparator<K, W>) (EntryComparator<K, ?>) entries.comparator();
+        return new TreeMap<>(RedBlackTreeModule.Node.mapOrdered(entries, entryComparator,
+                entry -> Tuple.of(entry._1(), requireValue(function.apply(entry._1(), entry._2())))));
     }
 
     @Override
@@ -1321,7 +1339,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public Vector<V> values() {
-        return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        final Vector.Builder<V> builder = Vector.newBuilder(size());
+        for (Tuple2<K, V> entry : entries) {
+            builder.add(entry._2());
+        }
+        return builder.result();
     }
 
     // -- Object

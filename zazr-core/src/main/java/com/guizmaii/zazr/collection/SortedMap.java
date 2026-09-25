@@ -499,7 +499,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the keys come in order, and the TreeSet is built from them in one pass.
+     * Complexity: O(n), with no comparison: the keys are copied from the tree of the entries, in the same shape.
      */
     @Override
     SortedSet<K> keySet();
@@ -673,7 +673,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the keys do not change, so the new tree is built from the entries, in order, in one pass.
+     * Complexity: O(n), with no comparison: the tree is copied in the same shape, with the new values.
      */
     @Override
     SortedMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function);

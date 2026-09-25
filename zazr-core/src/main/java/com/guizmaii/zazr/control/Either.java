@@ -129,25 +129,27 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
-     * Tests {@code value} with {@code predicate}: {@code Right(value)} if it holds, {@code Left(ifFalse.get())} if
-     * it does not. The supplier is called only when the predicate fails.
+     * Tests {@code value} with {@code predicate}: {@code Right(value)} if it holds, {@code Left(ifFalse.apply(value))}
+     * if it does not. {@code ifFalse} receives the rejected value, so the error can name it, and is called only when
+     * the predicate fails.
      * <pre>{@code
-     * Either.fromPredicate(age, a -> a >= 18, () -> "minor"); // = Right(age) or Left("minor")
+     * Either.fromPredicate(age, a -> a >= 18, a -> "minor: " + a); // = Right(age) or Left("minor: 12")
+     * Either.fromPredicate(name, n -> !n.isBlank(), _ -> "required");
      * }</pre>
      *
      * @param value     the value to test, must not be {@code null}
      * @param predicate the condition the value has to satisfy
-     * @param ifFalse   supplies the left value when the predicate fails; it must not return {@code null}
+     * @param ifFalse   gives the left value from the rejected value; it must not return {@code null}
      * @param <L>       the type of the left value
      * @param <R>       the type of the right value
-     * @return {@code Right(value)} if the predicate holds, otherwise {@code Left} of the supplied value
-     * @throws NullPointerException if any argument is null, or if {@code ifFalse} supplies null
+     * @return {@code Right(value)} if the predicate holds, otherwise {@code Left} of what {@code ifFalse} returned
+     * @throws NullPointerException if any argument is null, or if {@code ifFalse} returns null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> fromPredicate(R value, Predicate<? super R> predicate, Supplier<? extends L> ifFalse) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> fromPredicate(R value, Predicate<? super R> predicate, Function<? super R, ? extends L> ifFalse) {
         Objects.requireNonNull(value, "value is null");
         Objects.requireNonNull(predicate, "predicate is null");
         Objects.requireNonNull(ifFalse, "ifFalse is null");
-        return predicate.test(value) ? right(value) : left(ifFalse.get());
+        return predicate.test(value) ? right(value) : left(ifFalse.apply(value));
     }
 
     /**
