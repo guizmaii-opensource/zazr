@@ -1,4 +1,4 @@
-package com.guizmaii.zazr.test;
+package com.guizmaii.zazr.test.legacy;
 
 /**
  * The exceptions {@link Arbitrary#tryOf(Arbitrary)} fails with, shared so that equal failures can be drawn twice.

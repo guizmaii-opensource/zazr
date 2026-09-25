@@ -1,4 +1,4 @@
-package com.guizmaii.zazr.test;
+package com.guizmaii.zazr.test.legacy;
 
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.List;

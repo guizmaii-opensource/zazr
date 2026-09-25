@@ -29,11 +29,11 @@ def generateMainClasses(): Unit = {
   genPropertyChecks()
 
   /**
-   * Generator of com.guizmaii.zazr.test.Property
+   * Generator of com.guizmaii.zazr.test.legacy.Property
    */
   def genPropertyChecks(): Unit = {
 
-    genVavrFile("com.guizmaii.zazr.test", "Property")(genProperty)
+    genVavrFile("com.guizmaii.zazr.test.legacy", "Property")(genProperty)
 
     def genProperty(im: ImportManager, packageName: String, className: String): String = xs"""
       /**
@@ -370,6 +370,138 @@ def generateMainClasses(): Unit = {
       }
     """
   }
+
+  genCheck()
+
+  /**
+   * Generator of com.guizmaii.zazr.test.Check: check, checkN and checkAll for 1 to N generators.
+   */
+  def genCheck(): Unit = {
+
+    genVavrFile("com.guizmaii.zazr.test", "Check")((im: ImportManager, packageName: String, className: String) => {
+
+      val objects = im.getType("java.util.Objects")
+
+      def genArity(i: Int): String = {
+        val generics = (1 to i).gen(j => s"T$j")(using ", ")
+        val gens = (1 to i).gen(j => s"Gen<? extends T$j> g$j")(using ", ")
+        val gensArgs = (1 to i).gen(j => s"g$j")(using ", ")
+        val checked = im.getType(s"com.guizmaii.zazr.CheckedFunction$i")
+        val bodyType = s"$checked<${(1 to i).gen(j => s"? super T$j")(using ", ")}, Boolean>"
+        val tupleType = im.getType(s"com.guizmaii.zazr.Tuple$i")
+        val zipped = if (i == 1) s"g1.<$tupleType<T1>>map(${im.getType("com.guizmaii.zazr.Tuple")}::of)" else s"Gen.zip($gensArgs)"
+        val apply = s"sample -> body.apply(${(1 to i).gen(j => s"sample._$j()")(using ", ")})"
+        val genParams = (1 to i).gen(j => s"* @param g$j   the generator of the ${j.ordinal} value")(using "\n")
+        val typeParams = (1 to i).gen(j => s"* @param <T$j> the type of the ${j.ordinal} value")(using "\n")
+        val requireGens = (1 to i).gen(j => s"""$objects.requireNonNull(g$j, "g$j is null");""")(using "\n")
+        val bodyDoc = if (i == 1) "the property of a value: true when it holds" else s"the property of $i values: true when it holds"
+        xs"""
+          /$javadoc
+           * Checks {@code body} against {@link CheckConfig#defaults()}: 200 samples unless configured otherwise.
+           *
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult check($gens, $bodyType body) {
+              return check(CheckConfig.defaults(), $gensArgs, body);
+          }
+
+          /$javadoc
+           * Checks {@code body} against {@code config.samples()} samples drawn pass after pass from the generators,
+           * the size growing from 0 to {@code config.size()}. It stops at the first sample that fails.
+           *
+           * @param config the number of samples, the size and the seed
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult check(CheckConfig config, $gens, $bodyType body) {
+              $objects.requireNonNull(config, "config is null");
+              $requireGens
+              $objects.requireNonNull(body, "body is null");
+              return Runner.check(config, $zipped, $apply, false);
+          }
+
+          /$javadoc
+           * Checks {@code body} against {@code samples} samples, the rest of {@link CheckConfig#defaults()} unchanged.
+           *
+           * @param samples the number of samples
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException     if a generator or {@code body} is null
+           * @throws IllegalArgumentException if {@code samples} is negative
+           */
+          public static <$generics> CheckResult checkN(int samples, $gens, $bodyType body) {
+              return check(CheckConfig.defaults().withSamples(samples), $gensArgs, body);
+          }
+
+          /$javadoc
+           * Checks {@code body} against every value of one pass of the generators, with {@link CheckConfig#defaults()}.
+           *
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult checkAll($gens, $bodyType body) {
+              return checkAll(CheckConfig.defaults(), $gensArgs, body);
+          }
+
+          /$javadoc
+           * Checks {@code body} against every value of one pass of the generators, at the size {@code config.size()}:
+           * every combination of the values of finite generators, each checked once. A random generator gives one
+           * value per pass. The number of samples of {@code config} is not used. It stops at the first sample that
+           * fails.
+           *
+           * @param config the size and the seed
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult checkAll(CheckConfig config, $gens, $bodyType body) {
+              $objects.requireNonNull(config, "config is null");
+              $requireGens
+              $objects.requireNonNull(body, "body is null");
+              return Runner.check(config, $zipped, $apply, true);
+          }
+        """
+      }
+
+      xs"""
+        /$javadoc
+         * Checks a property against generated values, from 1 to $N generators.
+         * <p>
+         * The property is a function of the generated values that returns {@code true} when it holds. It may also
+         * throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies the sample
+         * like {@code false} and keeps its message; any other exception makes the check {@link CheckResult.Erroneous}.
+         * <p>
+         * {@code check} and {@code checkN} run {@link CheckConfig#samples()} samples, pass after pass of the
+         * generators, with a size that grows from 0 for the first sample to {@link CheckConfig#size()} for the last:
+         * the first failure found is usually a small one. {@code checkAll} runs one pass, so it checks every value of
+         * finite generators once. Each check stops at its first failure and returns a {@link CheckResult} that
+         * carries the sample, its number and the seed; {@link CheckResult#assertIsSatisfied()} turns it into a test
+         * failure.
+         */
+        public final class $className {
+
+            private $className() {
+            }
+
+            ${(1 to N).gen(genArity)(using "\n\n")}
+        }
+      """
+    })
+  }
 }
 
 /**
@@ -383,7 +515,7 @@ def generateTestClasses(): Unit = {
    * Generator of Property-check tests
    */
   def genPropertyCheckTests(): Unit = {
-    genVavrFile("com.guizmaii.zazr.test", "PropertyTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+    genVavrFile("com.guizmaii.zazr.test.legacy", "PropertyTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
       // main classes
       val list = im.getType("com.guizmaii.zazr.collection.List")
@@ -611,7 +743,7 @@ def generateTestClasses(): Unit = {
     })
 
     for (i <- 1 to N) {
-      genVavrFile("com.guizmaii.zazr.test", s"PropertyCheck${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+      genVavrFile("com.guizmaii.zazr.test.legacy", s"PropertyCheck${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
         val generics = (1 to i).gen(j => "Object")(", ")
         val arbitraries = (1 to i).gen(j => "OBJECTS")(", ")
@@ -853,6 +985,121 @@ def generateTestClasses(): Unit = {
               }
           }
          """
+      })
+    }
+  }
+
+  genCheckTests()
+
+  /**
+   * Generator of the tests of com.guizmaii.zazr.test.Check, one class per arity.
+   */
+  def genCheckTests(): Unit = {
+    for (i <- 1 to N) {
+      genVavrFile("com.guizmaii.zazr.test", s"Check${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName: String, className: String) => {
+
+        val test = im.getType("org.junit.jupiter.api.Test")
+        val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
+        val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
+        val tuple = im.getType("com.guizmaii.zazr.Tuple")
+        val option = im.getType("com.guizmaii.zazr.control.Option")
+        val arrayList = im.getType("java.util.ArrayList")
+        val jlist = im.getType("java.util.List")
+
+        val params = (1 to i).gen(j => s"v$j")(using ", ")
+        val constants = (1 to i).gen(j => s"Gen.constant($j)")(using ", ")
+        val ones = (1 to i).gen(j => s"$j")(using ", ")
+        val twos = (1 to i).gen(j => "TWO")(using ", ")
+        val sum = (1 to i).gen(j => s"v$j")(using " + ")
+        val tupleOfParams = s"$tuple.of($params)"
+        val combinations = 1 << i
+
+        def failingAt(k: Int): String = (1 to i).gen(j => if (j == k) "FAILING" else s"Gen.constant($j)")(using ", ")
+        def nullAt(k: Int): String = (1 to i).gen(j => if (j == k) "null" else s"Gen.constant($j)")(using ", ")
+
+        xs"""
+          class $className {
+
+              static final CheckConfig CONFIG = new CheckConfig(20, 10, 42L, 100);
+              static final Gen<Integer> TWO = Gen.fromIterable($jlist.of(0, 1));
+              static final IllegalStateException BOOM = new IllegalStateException("boom");
+              static final Gen<Integer> FAILING = Gen.fromRandom(random -> {
+                  throw BOOM;
+              });
+
+              @$test
+              void passesTheValuesInOrder() {
+                  final $arrayList<Object> seen = new $arrayList<>();
+                  final CheckResult result = Check.check(CONFIG, $constants, ($params) -> seen.add($tupleOfParams));
+                  $assertThat(result).isEqualTo(new CheckResult.Satisfied(20));
+                  $assertThat(seen).hasSize(20).containsOnly($tuple.of($ones));
+              }
+
+              @$test
+              void checkUsesTheDefaultConfiguration() {
+                  $assertThat(Check.check($constants, ($params) -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
+              }
+
+              @$test
+              void checkNRunsNSamples() {
+                  $assertThat(Check.checkN(3, $constants, ($params) -> true)).isEqualTo(new CheckResult.Satisfied(3));
+                  $assertThatThrownBy(() -> Check.checkN(-1, $constants, ($params) -> true)).isInstanceOf(IllegalArgumentException.class);
+              }
+
+              @$test
+              void checkAllRunsEveryCombinationOnce() {
+                  final $arrayList<Object> seen = new $arrayList<>();
+                  $assertThat(Check.checkAll($twos, ($params) -> seen.add($tupleOfParams))).isEqualTo(new CheckResult.Satisfied($combinations));
+                  $assertThat(seen).hasSize($combinations).doesNotHaveDuplicates();
+                  seen.clear();
+                  $assertThat(Check.checkAll(CONFIG, $twos, ($params) -> seen.add($tupleOfParams))).isEqualTo(new CheckResult.Satisfied($combinations));
+                  $assertThat(seen).hasSize($combinations).doesNotHaveDuplicates();
+              }
+
+              @$test
+              void falseFalsifiesTheCheck() {
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> false))
+                          .isEqualTo(new CheckResult.Falsified(1, 42L, $tuple.of($ones), $option.none()));
+                  $assertThat(Check.checkAll(CONFIG, $twos, ($params) -> $sum < ${i}))
+                          .isEqualTo(new CheckResult.Falsified($combinations, 42L, $tuple.of(${(1 to i).gen(j => "1")(using ", ")}), $option.none()));
+              }
+
+              @$test
+              void anAssertionErrorFalsifiesTheCheck() {
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> {
+                      throw new AssertionError("sum " + ($sum));
+                  })).isEqualTo(new CheckResult.Falsified(1, 42L, $tuple.of($ones), $option.some("sum ${(1 to i).sum}")));
+              }
+
+              @$test
+              void anExceptionMakesTheCheckErroneous() {
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> {
+                      throw BOOM;
+                  })).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, $option.some($tuple.of($ones))));
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> null).isErroneous()).isTrue();
+              }
+
+              @$test
+              void aFailingGeneratorMakesTheCheckErroneous() {
+                  ${(1 to i).gen(k => xs"""
+                    $assertThat(Check.check(CONFIG, ${failingAt(k)}, ($params) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, $option.none()));
+                    $assertThat(Check.checkAll(CONFIG, ${failingAt(k)}, ($params) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, $option.none()));
+                  """)(using "\n")}
+              }
+
+              @$test
+              void rejectsNulls() {
+                  $assertThatThrownBy(() -> Check.check((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.checkAll((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.check(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.checkAll(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
+                  ${(1 to i).gen(k => xs"""
+                    $assertThatThrownBy(() -> Check.check(CONFIG, ${nullAt(k)}, ($params) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g$k is null");
+                    $assertThatThrownBy(() -> Check.checkAll(CONFIG, ${nullAt(k)}, ($params) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g$k is null");
+                  """)(using "\n")}
+              }
+          }
+        """
       })
     }
   }

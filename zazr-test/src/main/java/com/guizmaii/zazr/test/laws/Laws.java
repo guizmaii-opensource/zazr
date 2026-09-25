@@ -1,8 +1,8 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.test.CheckResult;
-import com.guizmaii.zazr.test.Checkable;
+import com.guizmaii.zazr.test.legacy.CheckResult;
+import com.guizmaii.zazr.test.legacy.Checkable;
 
 import java.util.Objects;
 import java.util.Random;

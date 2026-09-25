@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.Arbitrary;
-import com.guizmaii.zazr.test.Gen;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Gen;
 
 import java.util.Objects;
 import java.util.Random;

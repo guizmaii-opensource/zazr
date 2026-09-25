@@ -1,4 +1,4 @@
-package com.guizmaii.zazr.test;
+package com.guizmaii.zazr.test.legacy;
 
 import java.util.Random;
 import org.junit.jupiter.api.Test;
