@@ -241,7 +241,7 @@ public class DocsTestingExamplesTest {
         var boxes = new MapSubject<Box>() {
             public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
             public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
-        };
+        }; // MapSubject<Box>
         MapLaws.<Box>all().assertSatisfied(boxes);
     }
 
@@ -254,13 +254,13 @@ public class DocsTestingExamplesTest {
         var boxes = new MapSubject<Box>() {
             public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
             public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
-        };
+        }; // MapSubject<Box>
 
         assertThatThrownBy(() -> {
             var broken = new MapSubject<Box>() {
                 public Gen<Box> values() { return boxes.values(); }
                 public Box map(Box box, Function<Object, Object> f) { return new Box(box.map(f).items().dropRight(1)); }
-            };
+            }; // MapSubject<Box>
             MapLaws.<Box>all().assertSatisfied(broken, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
         })
             .isInstanceOf(AssertionError.class)

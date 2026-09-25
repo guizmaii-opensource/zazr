@@ -228,10 +228,12 @@ System properties of the test JVM change the defaults for every check, without t
 
 ## Replaying a failure
 
-The same seed gives the same values. A failure prints its seed, such as `replay with -Dzazr.check.seed=42`: run the
-test again with that property and it fails at the same sample.
+The same seed gives the same values, so a failure replays from the seed it prints. Put that seed in the code with
+`CheckConfig.defaults().withSeed(42)`, and the check fails at the same sample again.
 
-A seed set in the code with `withSeed` takes precedence over the property.
+The failure also prints `-Dzazr.check.seed=42`: that system property replays it without touching the code, when the
+build passes it to the test JVM. Maven does; a Gradle build needs `systemProperty` in its `test` task. A seed set with
+`withSeed` takes precedence over the property.
 
 ## Generators for every Zazr type
 
@@ -295,7 +297,7 @@ record Box(Vector<Object> items) {
 var boxes = new MapSubject<Box>() {
     public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
     public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
-};
+}; // MapSubject<Box>
 MapLaws.<Box>all().assertSatisfied(boxes);
 ```
 
@@ -311,7 +313,7 @@ value that broke it, and the two sides of the rule that differed. Here, a `map` 
 var broken = new MapSubject<Box>() {
     public Gen<Box> values() { return boxes.values(); }
     public Box map(Box box, Function<Object, Object> f) { return new Box(box.map(f).items().dropRight(1)); }
-};
+}; // MapSubject<Box>
 MapLaws.<Box>all().assertSatisfied(broken, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
 ```
 
