@@ -179,8 +179,8 @@ static Validation<String, String> checkPassword(String password) {
 
 ### Every error, not only the first
 
-`Validation.zipWith` runs every check, and builds the `Person` only when all of them pass. Otherwise it returns all
-the errors, in the order of the fields.
+Every check runs, and `Validation.zipWith` builds the `Person` only when all of them passed; otherwise it returns
+all the errors, in the order of the fields.
 
 ```java
 Validation<String, Person> person = Validation.zipWith(
@@ -249,7 +249,7 @@ where the input arrives.
 ### `NonEmptyVector` instead of "is it empty?"
 
 The same idea works for collections. Instead of a `List` plus a check that it is not empty, parse it into a
-`NonEmptyVector`. From then on `head()`, `max` and `reduce` cannot fail.
+`NonEmptyVector`. From then on `head()`, `max(comparator)` and `reduce` cannot fail.
 
 ```java
 static Either<String, NonEmptyVector<String>> recipients(Vector<String> input) {

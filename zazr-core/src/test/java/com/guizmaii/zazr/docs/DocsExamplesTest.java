@@ -230,7 +230,9 @@ public class DocsExamplesTest {
             assertThat(reply).isEqualTo("quantity must be positive");
             assertThat(totalInCents).isEqualTo(Either.right(3750));
             assertThat(rejected).isEqualTo(Either.left("not a number: three"));
-            assertThat(deliveryDate.getCause()).isInstanceOf(DateTimeParseException.class);
+            assertThat(deliveryDate.isFailure()).isTrue();
+            assertThat(deliveryDate).isInstanceOfSatisfying(Failure.class,
+                failure -> assertThat(failure.cause()).isInstanceOf(DateTimeParseException.class));
         }
 
         @Test
