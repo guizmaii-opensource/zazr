@@ -83,7 +83,7 @@ Each type declares these itself, with the same names and argument order, the fai
 | `tap` | `tap`, `tapNone` | `tap`, `tapLeft` | `tap`, `tapError` |
 | `orElse(other)`, `orElse(Supplier)` | yes | yes | yes |
 | `zip`, `zipWith`, `zipLeft`, `zipRight` | yes | yes | yes |
-| static `collectAll`, `forEach` | yes | yes | yes |
+| static `collectAll`, `forEach`, `flatten` | yes | yes | yes |
 
 And the members only one of them has: `Option.filter`, `Option.collect`; `Either.mapLeft`, `Either.mapBoth`,
 `Either.flip`, `Either.filterOrElse`; `Try.catchAll`, `Try.catchSome`, `Try.catchAllWith`, `Try.catchSomeWith`,
@@ -111,6 +111,15 @@ Option<Vector<Integer>> all = Option.collectAll(Vector.of(Option.some(1), Option
 Either<String, Vector<Integer>> parsed = Either.forEach(Vector.of("1", "x", "3"),
     s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
 // Some(Vector(1, 2)), Left(bad: x)
+```
+
+`static flatten` removes one level of nesting; it is static because Java cannot require an instance's value to be
+itself an `Option`. `Validation` and `Lazy` have it too.
+
+```java
+Option<Integer> flat = Option.flatten(Option.some(Option.some(1)));
+Either<String, Integer> inner = Either.flatten(Either.right(Either.left("inner failure")));
+// Some(1), Left(inner failure)
 ```
 
 ## Conversions

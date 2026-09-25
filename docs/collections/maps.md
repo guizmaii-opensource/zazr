@@ -58,6 +58,6 @@ Every method: [complexity page](complexity.md#maps). Most `TreeMap` notes live o
 - Do not rely on the iteration order of a `HashMap`: it depends on the hashes and may change between versions.
 - `LinkedHashMap.remove` leaves a marker in the insertion order; the order is rebuilt, in O(n), when the markers
   outnumber the entries, so the cost is amortised.
-- `asJava()` on a map is a `java.util.Collection` of `Tuple2` entries, not a `java.util.Map`; `toJavaMap()` copies
-  into one ([Java interop](../java-interop.md)).
+- `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries, not a `java.util.Map`
+  ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`.

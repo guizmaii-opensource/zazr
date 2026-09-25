@@ -32,6 +32,17 @@ The one interface above them is `Traversable<T>`, and it declares only what cost
 `toVector`, `toList`, `toSet`, `toArray`, `stream()`, and the `asJava()` view ([Java interop](../java-interop.md)).
 Everything else, `map` and `filter` included, is declared by each type with its own return type.
 
+Two operations exist on almost every type under the same name: `partitionMap` splits in one pass by a function
+returning an `Either` (on the sequences and the hash sets, each side of the receiver's type), and the static
+`flatten` removes one level of nesting (every collection; `TreeSet.flatten` also takes a comparator).
+
+```java
+Tuple2<List<Integer>, List<String>> split = List.of(1, 2, 3, 4)
+    .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
+Vector<Integer> flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3)));
+// split is (List(2, 4), List(odd 1, odd 3)), flat is Vector(1, 2, 3)
+```
+
 ```java
 Vector<Integer> vector = Vector.of(3, 1, 2);
 List<Integer> sortedList = vector.toList().sorted();

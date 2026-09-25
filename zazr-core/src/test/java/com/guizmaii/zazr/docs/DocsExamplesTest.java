@@ -190,6 +190,12 @@ public class DocsExamplesTest {
                 s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
             // Some(Vector(1, 2)), Left(bad: x)
 
+            Option<Integer> flat = Option.flatten(Option.some(Option.some(1)));
+            Either<String, Integer> inner = Either.flatten(Either.right(Either.left("inner failure")));
+            // Some(1), Left(inner failure)
+
+            assertThat(flat).hasToString("Some(1)");
+            assertThat(inner).hasToString("Left(inner failure)");
             assertThat(port).hasToString("Success(8081)");
             assertThat(total).hasToString("Right(20)");
             assertThat(all).hasToString("Some(Vector(1, 2))");
@@ -390,6 +396,13 @@ public class DocsExamplesTest {
             boolean same = Vector.of(1, 2, 3).equals(sortedList);
             // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 
+            Tuple2<List<Integer>, List<String>> split = List.of(1, 2, 3, 4)
+                .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
+            Vector<Integer> flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3)));
+            // split is (List(2, 4), List(odd 1, odd 3)), flat is Vector(1, 2, 3)
+
+            assertThat(split).hasToString("(List(2, 4), List(odd 1, odd 3))");
+            assertThat(flat).hasToString("Vector(1, 2, 3)");
             assertThat(sortedList).hasToString("List(1, 2, 3)");
             assertThat(set).isEqualTo(HashSet.of(1, 2, 3));
             assertThat(same).isTrue();
@@ -605,13 +618,13 @@ public class DocsExamplesTest {
 
         @Test
         void copies() {
-            java.util.Map<String, Integer> copy = HashMap.of("a", 1).toJavaMap();
             java.util.ArrayList<Integer> mutable = new java.util.ArrayList<>(Vector.of(1, 2).asJava());
             mutable.add(3);
-            // copy is {a=1}, mutable is [1, 2, 3]
+            java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJava());
+            // mutable is [1, 2, 3], jdkSet holds a and b
 
-            assertThat(copy).hasToString("{a=1}");
             assertThat(mutable).hasToString("[1, 2, 3]");
+            assertThat(jdkSet).containsExactlyInAnyOrder("a", "b");
         }
 
         @Test

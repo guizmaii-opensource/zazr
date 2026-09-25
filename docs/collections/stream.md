@@ -44,5 +44,8 @@ Every method: [complexity page](complexity.md#stream).
   say so.
 - A `Stream` is head-strict: building one computes its first element, and `map`, `filter` and the others compute the
   first element of their result.
+- `partitionMap` is lazy too, but each side is forced to its first element when it is built, which walks the source
+  until an element of that side is found: on an infinite `Stream` whose elements all go to one side, it does not
+  return.
 - Memoisation keeps every computed element reachable as long as the head is: holding the head of a long `Stream`
   while walking it keeps all of it in memory.

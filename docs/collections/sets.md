@@ -5,7 +5,9 @@ description: HashSet, LinkedHashSet and TreeSet - the set algebra, iteration ord
 # Sets
 
 Three sets, one algebra: `add`, `addAll`, `remove`, `removeAll`, `contains`, `union`, `intersect`, `diff`,
-`retainAll`, plus `filter`, `reject`, `map`, `flatMap`, `partition`, `groupBy`, `fold`, `reduce`, `max` and `min`.
+`retainAll`, plus `filter`, `reject`, `map`, `flatMap`, `partition`, `groupBy`, `fold`, `reduce`, `max`, `min` and
+the static `flatten`. `HashSet` and `LinkedHashSet` also have `partitionMap`; `TreeSet` does not, since each side
+would need a comparator of its own.
 
 | Type | Representation | Iteration order | Positional methods |
 |---|---|---|---|

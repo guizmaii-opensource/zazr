@@ -29,14 +29,13 @@ A `java.util.List` view is a `SequencedCollection`, so `getFirst()`, `getLast()`
 
 ## Copies
 
-When a JDK API needs a mutable collection or a `java.util.Set` or `Map`, copy: `toJavaList()`, `toJavaSet()`,
-`toJavaMap()` on the maps, or a JDK constructor over the view.
+When a JDK API needs a collection it can modify, copy the view with the JDK constructor you need.
 
 ```java
-java.util.Map<String, Integer> copy = HashMap.of("a", 1).toJavaMap();
 java.util.ArrayList<Integer> mutable = new java.util.ArrayList<>(Vector.of(1, 2).asJava());
 mutable.add(3);
-// copy is {a=1}, mutable is [1, 2, 3]
+java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJava());
+// mutable is [1, 2, 3], jdkSet holds a and b
 ```
 
 ## The way back, and streams
@@ -55,5 +54,3 @@ Option<Integer> fromOptional = Option.ofOptional(java.util.Optional.of(4));
 
 `Option` converts to and from `java.util.Optional` with `toOptional()` and `Option.ofOptional`; `Try` to and from
 `CompletableFuture` with `toCompletableFuture()` and `Try.fromCompletableFuture`.
-
-The sequences still have Vavr's mutable views, `asJavaMutable()`; [the design](design.md) (section 3.1) removes them.

@@ -40,7 +40,6 @@ design of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: th
 | `Validation.cond`, `Either.cond` | `fromPredicate` |
 | `getOrElseGet(Function)` | a `getOrElse(Function)` overload |
 | `toJavaArray` | `toArray` |
-| `toJavaStream` | `stream()` |
 
 ## Behaviour that differs
 
