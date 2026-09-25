@@ -1023,7 +1023,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n); O(m) for m elements of {@code that} when all of them are compared before the elements held
      * at the back, which the comparison must otherwise put in order. On a Queue built by enqueue, most elements are
-     * held at the back, and even a one-element {@code that} costs O(n).
+     * held at the back, and even a one-element prefix costs O(n).
      *
      * @param that the prefix to test
      * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
@@ -1507,7 +1507,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The element at {@code index}.
      * <p>
      * Complexity: O(n); O(i) for an index i that falls before the elements held at the back. Every index does on a
-     * Queue built by ofAll, but after a run of enqueue calls only index 0 does.
+     * Queue built by ofAll; on a Queue built by enqueue, only index 0 does.
      *
      * @param index the position
      * @return the element at that position
