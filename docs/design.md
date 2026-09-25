@@ -367,7 +367,7 @@ duplication is cheaper than a god interface).
 | javadoc: "monadic container type", "behave like a monad", "applicative functor, not a Monad", "more like a Functor than a Monad", `// Monad implementation`, "For-comprehension" | rewritten in plain English: "a value that may be absent", "a computation that either fails with `L` or succeeds with `R`", "`Validation` keeps *all* errors: combining two invalid values with `zip` concatenates their errors, whereas `Either` stops at the first". No mention of Monad/Functor/Applicative anywhere in the repo, generator included (`monadicTypesFor` etc.). | Principle 1 applies to prose too; a grep for `monad\|functor\|applicative` in CI keeps it that way |
 | `Option.of(nullable)` / `Option.some` / `Option.when` | `Option.ofNullable`, `Option.some` (**rejects null**), `Option.when(boolean, Supplier)` | see 3.9 |
 | `Validation.valid/invalid`, `Either.right/left`, `Try.success/failure` | keep | already purpose-named |
-| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Supplier<L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. `Validation`'s takes the rejected value (3.5, #22) so the error can name it, the everyday case for a field check; `Either`'s keeps the supplier |
+| `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Function<A, L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. Both take the rejected value (3.5) so the error can name it, the everyday case for a field check |
 | `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. | |
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
@@ -535,7 +535,7 @@ Notes:
   accessor `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or
   `toEither()`.
 - **`fromPredicate(A, Predicate<A>, Function<A, E>)`**, as sketched, not the `Supplier<E>` of the 3.3 row: the
-  function receives the rejected value so the error can name it. `Either.fromPredicate` keeps its supplier.
+  function receives the rejected value so the error can name it. `Either.fromPredicate` takes the same `Function` (decided 2026-09-26: a supplier could not name the rejected value, and the two constructors now agree).
 - **`of(Callable, Function<Throwable, E>)` is `Try.of` followed by a conversion**, so it has exactly `Try.of`'s
   policy: a fatal throwable is rethrown, a `null` result is a `NullPointerException` handed to `onError`.
 - **`forEach(NonEmptyVector, f)` and `forEach(Iterable, f)` are overloads.** Unlike 3.6's `flatMap`/`flatMapAll`,
