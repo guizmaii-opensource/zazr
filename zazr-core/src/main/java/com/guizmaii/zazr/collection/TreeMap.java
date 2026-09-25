@@ -1284,7 +1284,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public Vector<V> values() {
-        return Vector.ofAll(Iterator.ofAll(this).map(Tuple2::_2));
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        final Vector.Builder<V> builder = Vector.newBuilder(size());
+        for (Tuple2<K, V> entry : entries) {
+            builder.add(entry._2());
+        }
+        return builder.result();
     }
 
     // -- Object
