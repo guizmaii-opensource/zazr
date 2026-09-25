@@ -119,6 +119,6 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
 
     @Override
     SetNode<T> addInPlace(Object owner, T element, int hash, int shift) {
-        return updated(element, hash, shift, true);
+        return updated(element, hash, shift, false);
     }
 }

@@ -38,9 +38,8 @@ public class HashBuilderTest {
     }
 
     // successive persistent puts, the reference the builders are compared with, since ofAll and ofEntries now use the
-    // builders themselves. A HashSet is a trie of element -> element; the persistent HashMap.put of each element on
-    // itself builds the same trie, keeping the last of equal elements (HashSet.add and addAll keep the first), and its
-    // entries in iteration order give the elements in the order of that trie.
+    // builders themselves. The persistent HashMap.put of each element on itself builds a trie of the same shape as the
+    // HashSet of the elements, so its entries in iteration order give the elements in the order of that trie.
     private static <T> java.util.List<T> addedSet(Iterable<T> elements) {
         HashMap<T, T> map = HashMap.empty();
         for (T element : elements) {
@@ -104,13 +103,51 @@ public class HashBuilderTest {
     }
 
     @Test
-    public void shouldKeepTheLastOfEqualElementsAsOfAllDoes() {
+    public void shouldKeepTheFirstOfEqualElementsEverywhere() {
         final String first = new String("e");
         final String last = new String("e");
-        final HashSet<String> built = HashSet.<String> newBuilder().add(first).add("x").add(last).result();
-        assertThat(built.find("e"::equals).get()).isSameAs(last);
-        assertThat(addedSet(java.util.List.of(first, "x", last)).stream().filter("e"::equals).findFirst().get()).isSameAs(last);
-        assertThat(HashSet.ofAll(java.util.List.of(first, "x", last)).find("e"::equals).get()).isSameAs(last);
+        final java.util.List<String> input = java.util.List.of(first, "x", last);
+        final java.util.function.Function<HashSet<String>, String> kept = set -> set.find("e"::equals).get();
+        assertThat(kept.apply(HashSet.<String> newBuilder().add(first).add("x").add(last).result())).isSameAs(first);
+        assertThat(kept.apply(HashSet.<String> newBuilder().addAll(HashSet.of("y")).addAll(input).result())).isSameAs(first);
+        assertThat(kept.apply(HashSet.<String> newBuilder().add(first).addAll(HashSet.of(last, "y")).result())).isSameAs(first);
+        assertThat(kept.apply(HashSet.ofAll(input))).isSameAs(first);
+        assertThat(kept.apply(HashSet.of(first, "x", last))).isSameAs(first);
+        assertThat(kept.apply(input.stream().collect(HashSet.collector()))).isSameAs(first);
+        assertThat(kept.apply(HashSet.flatten(java.util.List.of(java.util.List.of(first), java.util.List.of(last))))).isSameAs(first);
+        final HashSet<String> set = HashSet.of(first, "x");
+        assertThat(kept.apply(set.add(last))).isSameAs(first);
+        // with a new element or without, the element already there stays
+        assertThat(set.addAll(java.util.List.of(last))).isSameAs(set);
+        assertThat(kept.apply(set.addAll(java.util.List.of(last, "y")))).isSameAs(first);
+        assertThat(kept.apply(set.addAll(HashSet.of(last, "y")))).isSameAs(first);
+        assertThat(kept.apply(set.union(HashSet.of(last, "y")))).isSameAs(first);
+        assertThat(kept.apply(set.union(LinkedHashSet.of(last, "y")))).isSameAs(first);
+        assertThat(set.union(HashSet.of(last))).isSameAs(set);
+        assertThat(kept.apply(set.map(e -> e.equals("x") ? last : e))).isSameAs(first);
+        assertThat(kept.apply(set.flatMap(e -> java.util.List.of(e, last)))).isSameAs(first);
+        assertThat(kept.apply(set.collect(e -> com.guizmaii.zazr.control.Option.some(e.equals("x") ? last : e)))).isSameAs(first);
+        assertThat(kept.apply(set.partitionMap(e -> com.guizmaii.zazr.control.Either.<String, String> left(e.equals("x") ? last : e))._1()))
+                .isSameAs(first);
+        // the same answers on colliding hash codes, over every node boundary
+        for (int size : new int[] { 1, 2, 31, 32, 33, 1023, 1024, 1025 }) {
+            final java.util.List<Key> firsts = new ArrayList<>();
+            final java.util.List<Key> lasts = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                firsts.add(new Key(i % 40, i));
+                lasts.add(new Key(i % 40, i));
+            }
+            final java.util.List<Key> both = new ArrayList<>(firsts);
+            both.addAll(lasts);
+            final HashSet<Key> built = HashSet.<Key> newBuilder().addAll(both).result();
+            final HashSet<Key> unioned = HashSet.ofAll(firsts).union(HashSet.ofAll(lasts).add(new Key(-1, -1)));
+            final HashSet<Key> added = HashSet.ofAll(firsts).addAll(lasts);
+            for (HashSet<Key> result : java.util.List.of(built, HashSet.ofAll(both), unioned, added)) {
+                final java.util.Set<Key> identities = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+                result.forEach(identities::add);
+                assertThat(identities).containsAll(firsts);
+            }
+        }
     }
 
     @Test
