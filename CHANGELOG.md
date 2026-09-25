@@ -7,7 +7,7 @@ pre-1.0: the API can change between releases. From 1.0 it follows [Semantic Vers
 
 The first release.
 
-Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr), its `main` branch after 1.0.1, redesigned for
+Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr), its `main` branch as of September 2026 (later than the 1.0.1 release), redesigned for
 Java 25 and for the API style of ZIO, zio-prelude and modern Scala. It is not a drop-in replacement: the package is
 `com.guizmaii.zazr`, the Maven group is `com.guizmaii`, and much of the API changed on purpose. The entries below
 compare Zazr 0.1.0 with Vavr.
@@ -99,7 +99,8 @@ compare Zazr 0.1.0 with Vavr.
   `Function8` and `CheckedFunction1` to `CheckedFunction8` remain, since the JDK has nothing at those arities or with
   checked exceptions.
 - Names say what an operation does, following ZIO: `ap` becomes `zip`/`zipWith`, `sequence` becomes `collectAll`,
-  `traverse` becomes the static `forEach`, `bimap` becomes `mapBoth`, `peek` becomes `tap`, `mapTo` becomes `as`.
+  `traverse` becomes the static `forEach`, `bimap` becomes `mapBoth`, `peek` becomes `tap`, and on the sequences and sets
+  `mapTo` becomes `as`.
   The [Compared to Vavr](https://zazr.dev/vavr/) page has the full table.
 - The javadoc is written in Markdown.
 
@@ -120,8 +121,9 @@ compare Zazr 0.1.0 with Vavr.
 **Collections**
 
 - Each collection is a concrete type that declares its own API and returns its own type: `Vector.map` returns a
-  `Vector`, `List.filter` a `List`. The only shared interface is `Traversable`, holding what every collection does
-  at the same cost (`size`, `contains`, `exists`, `foldLeft`, `mkString`, `stream()`...).
+  `Vector`, `List.filter` a `List`. The sequences share only `Traversable`, which holds what every collection does
+  at the same cost (`size`, `contains`, `exists`, `foldLeft`, `mkString`, `stream()`...). The sets also share `Set`
+  (and `SortedSet` for `TreeSet`), the maps `Map` (and `SortedMap` for `TreeMap`).
 - `List` is a sealed interface of two records, `Cons` and `Nil`, so you can pattern match on its head and tail.
 - Tuples are records, so `case Tuple2(var a, var b)` works.
 - Sets and maps have no positional methods (`head`, `take`, `sliding`...), except the ordered ones listed above.
@@ -134,11 +136,13 @@ compare Zazr 0.1.0 with Vavr.
 - `Tuple.sequence1` to `sequence8` become `unzip1` to `unzip8`, and `Tuple.toSeq()` becomes `toVector()`.
 - Every method that takes an `Iterable` reads it once, so a one-shot `Iterable` works everywhere.
 - `Vector.takeRight` and `dropRight` no longer overflow at `Integer.MIN_VALUE`, and `rotateLeft` and `rotateRight`
-  on `List`, `Queue` and `Stream` no longer overflow the stack there.
+  on `Vector`, `List`, `Queue` and `Stream` no longer overflow the stack there.
 - `TreeSet` and `TreeMap` stay balanced after a difference or an intersection.
 - `Stream.slice` no longer overflows the stack on a long `Stream`.
-- `LinkedHashMap` and `LinkedHashSet`: a key given more than once keeps the position of its first occurrence in
-  every factory and collector, as `put` does.
+- `LinkedHashMap`: a key given more than once keeps the position of its first occurrence in every factory and
+  collector, as `put` does.
+- `LinkedHashSet`: an element given more than once keeps its first occurrence, the object as well as the position,
+  in every factory and collector, as `add` does.
 - Several operations walk only the elements they need: `List.take`, `drop`, `takeWhile`, `slice`, `subSequence`,
   `remove`, `leftPadTo` and `combinations(k)` no longer count the whole `List`, and `Queue.startsWith`, `zip`,
   `zipWith`, `prefixLength` and `segmentLength` reverse the rear of the `Queue` only when they reach it.
@@ -158,6 +162,7 @@ compare Zazr 0.1.0 with Vavr.
 - `Validation.Builder`, `combine` and `ap`. Use `zip` and `zipWith`.
 - `Try.withResources`. Use `Using`.
 - `Lazy.val` and `Lazy.filter`.
+- `mapTo` on `Option`, `Either`, `Try`, `Lazy` and the maps, and `mapToVoid` everywhere. Use `map(x -> value)`.
 - `PartialFunction` and `collect(PartialFunction)`. Use `collect(Function<A, Option<B>>)`, with pattern matching
   inside the lambda.
 
@@ -185,12 +190,14 @@ pending: open pull requests, to fold into 0.1.0 as they merge.
 
 - PR 128 (Scala's radix-balanced vector as an internal structure): no entry; nothing changes for users until Vector
   switches to it. That later change gets an entry (cheaper prepend, tail and init).
+  It also adds the radix-balanced Vector to the Scala paragraph of NOTICE.
 - PR 134 (coverage threshold), PR 135 (incremental generator): no entry; build only.
 
 Open 0.1.0 issues that change this file if they land before the release:
 - Stream renamed LazyList: Changed > Collections.
 - zazr-test with one Gen and no Arbitrary: rewrite the zazr-test entry under Added.
-- HashMap and HashSet on CHAMP: Changed > Collections, if the behaviour or the iteration order changes.
+- HashMap and HashSet on CHAMP: Changed > Collections, if the behaviour or the iteration order changes. Add CHAMP to
+  the Scala paragraph of NOTICE.
 - NonEmptySet and NonEmptyMap: Added.
 - zipWithPrevious, zipWithNext, mapAccum, foldWhile, collectWhile, splitWhere, dedupe: Added > Collections.
 - Builders for LinkedHashMap, LinkedHashSet and List: Added > Builders.

@@ -32,7 +32,7 @@ below are deliberate. [Design](principles.md) explains the ideas behind them, an
 | `traverse` | static `forEach` |
 | `bimap` | `mapBoth` |
 | `peek`, `peekLeft`, `onFailure`, `onSuccess`, `onEmpty` | `tap`, `tapLeft`, `tapError`, `tap`, `tapNone` |
-| `mapTo(value)` | `as(value)` |
+| `mapTo(value)` | `as(value)` on a sequence or a set; `map(x -> value)` on a control type or a map |
 | `swap` on `Either` | `flip` |
 | `recover`, `recoverWith` | `catchAll`, `catchSome`, `catchAllWith`, `catchSomeWith` |
 | `mapFailure(Case...)` | `mapError(Function)` |

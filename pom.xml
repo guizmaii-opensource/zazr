@@ -393,6 +393,10 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
+                            <!-- the release waits for validation, then someone presses Publish on
+                                 central.sonatype.com (CONTRIBUTING.md); explicit so a plugin upgrade cannot change it -->
+                            <autoPublish>false</autoPublish>
+                            <waitUntil>validated</waitUntil>
                             <centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots/
                             </centralSnapshotsUrl>
                         </configuration>
