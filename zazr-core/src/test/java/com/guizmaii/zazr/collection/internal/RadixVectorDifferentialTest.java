@@ -103,7 +103,7 @@ public class RadixVectorDifferentialTest {
 
     private static Pair step(Run run, Pair p, int maxLength) {
         final Random rnd = run.rnd;
-        final int n = p.v.length();
+        final int n = p.v.size();
         int op = rnd.nextInt(100);
         if (n > maxLength && op < 60) {
             op = 60 + rnd.nextInt(34);
@@ -204,7 +204,7 @@ public class RadixVectorDifferentialTest {
      * vector chunk (addVector), then a few new elements */
     private static Pair rebuild(Run run, Pair p) {
         final Random rnd = run.rnd;
-        final int n = p.v.length();
+        final int n = p.v.size();
         final int a = rnd.nextInt(n + 1);
         final int b = a + rnd.nextInt(n - a + 1);
         final int extra = rnd.nextInt(40);
@@ -288,7 +288,7 @@ public class RadixVectorDifferentialTest {
             });
         }
         for (Pair right : rights) {
-            final int k = right.v.length();
+            final int k = right.v.size();
             for (int delta : new int[] { -64, -33, -32, -1, 0, 1, 31, 32, 64, 1024, 1025, 32768, 32800 }) {
                 final int size = k + delta;
                 for (History history : new History[] { History.BUILDER, History.SLICED }) {
@@ -369,7 +369,7 @@ public class RadixVectorDifferentialTest {
             }
         }
         for (Pair p : fixtures) {
-            sliceSweep(run, p, p.v.length() > 2000 ? 16 : 30);
+            sliceSweep(run, p, p.v.size() > 2000 ? 16 : 30);
         }
         for (int size : LARGE_SIZES) {
             final Pair p = run.checked(() -> build(run, size, History.BUILDER));
@@ -382,7 +382,7 @@ public class RadixVectorDifferentialTest {
     }
 
     private static void sliceSweep(Run run, Pair p, int maxPoints) {
-        final int n = p.v.length();
+        final int n = p.v.size();
         final TreeSet<Integer> points = new TreeSet<>();
         points.add(0);
         points.add(n);
@@ -1498,7 +1498,7 @@ public class RadixVectorDifferentialTest {
 
     private static void checkContents(Pair p) {
         final RadixVector<Integer> r = p.r;
-        final int n = p.v.length();
+        final int n = p.v.size();
         if (r.length() != n) {
             throw new AssertionError("length " + r.length() + ", expected " + n);
         }
@@ -1704,7 +1704,7 @@ public class RadixVectorDifferentialTest {
     // ---------------------------------------------------------------------------------------------------------------
 
     private static List<Integer> javaList(Vector<Integer> v) {
-        final List<Integer> list = new ArrayList<>(v.length());
+        final List<Integer> list = new ArrayList<>(v.size());
         for (Integer x : v) {
             list.add(x);
         }
