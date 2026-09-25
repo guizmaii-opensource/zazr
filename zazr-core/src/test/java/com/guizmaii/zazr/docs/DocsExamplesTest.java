@@ -3,8 +3,6 @@ package com.guizmaii.zazr.docs;
 import com.guizmaii.zazr.Lazy;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
-import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.Tuple3;
 import com.guizmaii.zazr.collection.HashMap;
 import com.guizmaii.zazr.collection.HashSet;
 import com.guizmaii.zazr.collection.LinkedHashSet;
@@ -75,11 +73,11 @@ public class DocsExamplesTest {
         @Test
         void hero() {
             // one call per arity, never a Tuple2<Tuple2<A, B>, C>
-            Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-                (a, b, c) -> a + b + c);
+            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+                (a, b, c) -> a + b + c); // Option<Integer>
 
             // total on a collection that cannot be empty
-            int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
+            var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
             // sum is Some(6), best is 9
 
             assertThat(sum).isEqualTo(Option.some(6));
@@ -89,26 +87,27 @@ public class DocsExamplesTest {
         @Test
         void shortTour() {
             // Validation keeps every error, not the first one
-            Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
-            String message = switch (user) {
+            var user = Validation.zipWith(name(""), age(-1), email("jules"), User::new); // Validation<String, User>
+            var message = switch (user) {
                 case Valid(var u) -> "hello " + u.name();
                 case Invalid(var errors) -> errors.mkString(", ");
             };
             // "name is blank, age is negative, email has no @"
 
             // zip at any arity up to 8, no Tuple2<Tuple2<A, B>, C>
-            Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
+            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+                (a, b, c) -> a + b + c); // Option<Integer>
 
             // total operations on a collection that cannot be empty
-            NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-            int best = scores.max(Integer::compare);
+            var scores = NonEmptyVector.of(7, 3, 9);
+            var best = scores.max(Integer::compare); // Integer
 
             // a builder instead of repeated append
-            Vector.Builder<Integer> builder = Vector.newBuilder();
+            var builder = Vector.<Integer>newBuilder();
             for (int i = 0; i < 1_000; i++) {
                 builder.add(i);
             }
-            Vector<Integer> numbers = builder.result();
+            var numbers = builder.result();
 
             assertThat(message).isEqualTo("name is blank, age is negative, email has no @");
             assertThat(sum).isEqualTo(Option.some(6));
@@ -298,11 +297,11 @@ public class DocsExamplesTest {
 
         @Test
         void builders() {
-            Vector.Builder<Integer> squares = Vector.newBuilder();
+            var squares = Vector.<Integer>newBuilder();
             for (int i = 1; i <= 5; i++) {
                 squares.add(i * i);
             }
-            Vector<Integer> result = squares.result();  // Vector(1, 4, 9, 16, 25)
+            var result = squares.result();  // Vector(1, 4, 9, 16, 25)
 
             assertThat(result).isEqualTo(Vector.of(1, 4, 9, 16, 25));
             assertThatThrownBy(() -> squares.add(36)).isInstanceOf(IllegalStateException.class);
@@ -310,8 +309,8 @@ public class DocsExamplesTest {
 
         @Test
         void zipInsteadOfAp() {
-            Option<Integer> total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-                (a, b, c) -> a + b + c);
+            var total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+                (a, b, c) -> a + b + c); // Option<Integer>
             // Some(6), and None as soon as one of them is None
 
             assertThat(total).isEqualTo(Option.some(6));
@@ -320,9 +319,9 @@ public class DocsExamplesTest {
 
         @Test
         void validationKeepsEveryError() {
-            Validation<String, Integer> age = Validation.invalid("age is negative");
-            Validation<String, String> email = Validation.invalid("email has no @");
-            Validation<String, String> both = age.zipWith(email, (a, e) -> a + e);
+            var age = Validation.<String, Integer>invalid("age is negative");
+            var email = Validation.<String, String>invalid("email has no @");
+            var both = age.zipWith(email, (a, e) -> a + e); // Validation<String, String>
             // Invalid(age is negative, email has no @)
 
             assertThat(both.isInvalid()).isTrue();
@@ -331,9 +330,9 @@ public class DocsExamplesTest {
 
         @Test
         void nonEmptyTypes() {
-            NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-            int best = scores.max(Integer::compare);             // 9, nothing can go wrong
-            Vector<Integer> passed = scores.filter(s -> s > 5);  // may be empty, so a Vector
+            var scores = NonEmptyVector.of(7, 3, 9);
+            var best = scores.max(Integer::compare);    // Integer: 9, nothing can go wrong
+            var passed = scores.filter(s -> s > 5);     // Vector<Integer>: may be empty, so a Vector
 
             assertThat(best).isEqualTo(9);
             assertThat(passed).isEqualTo(Vector.of(7, 9));
@@ -341,7 +340,7 @@ public class DocsExamplesTest {
 
         @Test
         void noNullInside() {
-            Option<String> name = Option.ofNullable(System.getenv("NO_SUCH_VARIABLE"));
+            var name = Option.ofNullable(System.getenv("NO_SUCH_VARIABLE")); // Option<String>
             // None: Option.some(null) and Vector.of(1, null) throw instead
 
             assertThat(name).isEqualTo(Option.none());
@@ -355,23 +354,23 @@ public class DocsExamplesTest {
 
         @Test
         void fiveMinutes() {
-            Option<String> name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET"));
-            String greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
+            var name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET")); // Option<String>
+            var greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
             // "hello stranger"
 
-            Either<String, Integer> parsed = Either.right(42);
-            String text = switch (parsed) {
+            var parsed = Either.<String, Integer>right(42);
+            var text = switch (parsed) {
                 case Right(var n) -> "got " + n;
                 case Left(var error) -> "failed: " + error;
             };
 
-            Try<Integer> port = Try.of(() -> Integer.parseInt("80a"));
-            int value = port.catchAll(error -> 8080).get();
+            var port = Try.of(() -> Integer.parseInt("80a")); // Try<Integer>
+            var value = port.catchAll(error -> 8080).get();
             // 8080
 
-            Vector<Integer> numbers = Vector.of(1, 2, 3, 4);
-            Vector<Integer> doubled = numbers.map(n -> n * 2).append(10);
-            int third = doubled.get(2);
+            var numbers = Vector.of(1, 2, 3, 4);
+            var doubled = numbers.map(n -> n * 2).append(10); // Vector<Integer>
+            var third = doubled.get(2);
             // doubled is Vector(2, 4, 6, 8, 10), third is 6
 
             assertThat(greeting).isEqualTo("hello stranger");
@@ -387,13 +386,13 @@ public class DocsExamplesTest {
 
         @Test
         void membersTheyShare() {
-            Option<Vector<Integer>> all = Option.collectAll(Vector.of(Option.some(1), Option.some(2)));
-            Either<String, Vector<Integer>> parsed = Either.forEach(Vector.of("1", "x", "3"),
+            var all = Option.collectAll(Vector.of(Option.some(1), Option.some(2))); // Option<Vector<Integer>>
+            var parsed = Either.forEach(Vector.of("1", "x", "3"), // Either<String, Vector<Integer>>
                 s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
             // Some(Vector(1, 2)), Left(bad: x)
 
-            Option<Integer> flat = Option.flatten(Option.some(Option.some(1)));
-            Either<String, Integer> inner = Either.flatten(Either.right(Either.left("inner failure")));
+            var flat = Option.flatten(Option.some(Option.some(1))); // Option<Integer>
+            var inner = Either.flatten(Either.right(Either.<String, Integer>left("inner failure")));
             // Some(1), Left(inner failure)
 
             assertThat(all).hasToString("Some(Vector(1, 2))");
@@ -404,9 +403,9 @@ public class DocsExamplesTest {
 
         @Test
         void conversions() {
-            Either<String, Integer> fromOption = Option.<Integer>none().toEither(() -> "missing");
-            java.util.Optional<Integer> optional = Option.some(5).toOptional();
-            Option<Integer> fromTry = Try.of(() -> Integer.parseInt("7")).toOption();
+            var fromOption = Option.<Integer>none().toEither(() -> "missing"); // Either<String, Integer>
+            var optional = Option.some(5).toOptional(); // java.util.Optional<Integer>
+            var fromTry = Try.of(() -> Integer.parseInt("7")).toOption(); // Option<Integer>
             // Left(missing), Optional[5], Some(7)
 
             assertThat(fromOption).hasToString("Left(missing)");
@@ -416,9 +415,9 @@ public class DocsExamplesTest {
 
         @Test
         void nullPolicy() {
-            Option<String> absent = Option.ofNullable(null);
-            Try<String> nullResult = Try.of(() -> null);
-            boolean npe = nullResult.getCause() instanceof NullPointerException;
+            var absent = Option.<String>ofNullable(null); // Option<String>
+            var nullResult = Try.<String>of(() -> null); // Try<String>
+            var npe = nullResult.getCause() instanceof NullPointerException;
             // None, Failure(java.lang.NullPointerException: ...), true
 
             assertThat(absent).isEqualTo(Option.none());
@@ -439,10 +438,10 @@ public class DocsExamplesTest {
 
         @Test
         void construction() {
-            Option<Integer> some = Option.some(1);
-            Option<Integer> none = Option.none();
-            Option<String> fromNullable = Option.ofNullable(null);
-            Option<Integer> when = Option.when(3 > 2, () -> 3);
+            var some = Option.some(1); // Option<Integer>
+            var none = Option.<Integer>none(); // Option<Integer>
+            var fromNullable = Option.<String>ofNullable(null); // Option<String>
+            var when = Option.when(3 > 2, () -> 3); // Option<Integer>
             // Some(1), None, None, Some(3)
 
             assertThat(Vector.of(some, none, fromNullable, when)).hasToString("Vector(Some(1), None, None, Some(3))");
@@ -450,8 +449,8 @@ public class DocsExamplesTest {
 
         @Test
         void switchOverTheCases() {
-            Option<Integer> age = Option.some(17);
-            String label = switch (age) {
+            var age = Option.some(17); // Option<Integer>
+            var label = switch (age) {
                 case Some(var years) when years >= 18 -> "adult";
                 case Some(var years) -> "minor, " + years;
                 case None() -> "unknown";
@@ -463,15 +462,15 @@ public class DocsExamplesTest {
 
         @Test
         void operations() {
-            int port = Option.some("8080")
+            var port = Option.some("8080")
                 .filter(s -> s.chars().allMatch(Character::isDigit))
                 .map(Integer::parseInt)
-                .getOrElse(80);
-            String shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
+                .getOrElse(80); // Integer
+            var shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
             // 8080, "no value"
 
-            Try<Integer> parsed = Option.some("x").mapTry(Integer::parseInt);
-            Try<Integer> absent = Option.<String>none().mapTry(Integer::parseInt);
+            var parsed = Option.some("x").mapTry(Integer::parseInt); // Try<Integer>
+            var absent = Option.<String>none().mapTry(Integer::parseInt); // Try<Integer>
             // Failure(java.lang.NumberFormatException: For input string: "x"), Failure(java.util.NoSuchElementException: ...)
 
             assertThat(port).isEqualTo(8080);
@@ -482,10 +481,10 @@ public class DocsExamplesTest {
 
         @Test
         void conversions() {
-            Option<Integer> fromOptional = Option.ofOptional(java.util.Optional.of(3));
-            Either<String, Integer> either = fromOptional.toEither(() -> "missing");
-            Validation<String, Integer> validation = Option.<Integer>none().toValidation(() -> "missing");
-            java.util.Optional<Integer> back = fromOptional.toOptional();
+            var fromOptional = Option.ofOptional(java.util.Optional.of(3)); // Option<Integer>
+            var either = fromOptional.toEither(() -> "missing"); // Either<String, Integer>
+            var validation = Option.<Integer>none().toValidation(() -> "missing"); // Validation<String, Integer>
+            var back = fromOptional.toOptional(); // java.util.Optional<Integer>
             // Some(3), Right(3), Invalid(missing), Optional[3]
 
             assertThat(fromOptional).hasToString("Some(3)");
@@ -496,8 +495,8 @@ public class DocsExamplesTest {
 
         @Test
         void sharpEdges() {
-            java.util.Map<String, String> env = java.util.Map.of("HOME", "/home/ada");
-            Option<String> shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)));
+            var env = java.util.Map.of("HOME", "/home/ada"); // java.util.Map<String, String>
+            var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key))); // Option<String>
             // None, where map(env::get) would throw
 
             assertThat(shell).isEqualTo(Option.none());
@@ -511,9 +510,9 @@ public class DocsExamplesTest {
 
         @Test
         void construction() {
-            Either<String, Integer> right = Either.right(42);
-            Either<String, Integer> left = Either.left("not a number");
-            Either<String, Integer> checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative");
+            var right = Either.<String, Integer>right(42); // Either<String, Integer>
+            var left = Either.<String, Integer>left("not a number"); // Either<String, Integer>
+            var checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative"); // Either<String, Integer>
             // Right(42), Left(not a number), Left(negative)
 
             assertThat(Vector.of(right, left, checked)).hasToString("Vector(Right(42), Left(not a number), Left(negative))");
@@ -521,8 +520,8 @@ public class DocsExamplesTest {
 
         @Test
         void switchOverTheCases() {
-            Either<String, Integer> result = Either.right(42);
-            String text = switch (result) {
+            var result = Either.<String, Integer>right(42);
+            var text = switch (result) {
                 case Right(var value) -> "got " + value;
                 case Left(var error) -> "failed: " + error;
             };
@@ -533,15 +532,15 @@ public class DocsExamplesTest {
 
         @Test
         void operations() {
-            Either<String, Integer> total = Either.<String, Integer>right(2)
+            var total = Either.<String, Integer>right(2)
                 .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
-                .mapLeft(error -> "rejected: " + error);
+                .mapLeft(error -> "rejected: " + error); // Either<String, Integer>
             // Right(20)
 
-            Either<String, Integer> adult = Either.<String, Integer>right(15)
-                .filterOrElse(n -> n >= 18, n -> n + " is under 18");
-            String message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n);
-            Either<Integer, String> flipped = adult.flip();
+            var adult = Either.<String, Integer>right(15)
+                .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
+            var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n); // String
+            var flipped = adult.flip(); // Either<Integer, String>
             // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
 
             assertThat(total).hasToString("Right(20)");
@@ -552,10 +551,10 @@ public class DocsExamplesTest {
 
         @Test
         void conversions() {
-            Either<String, Integer> missing = Either.left("missing");
-            Option<Integer> option = missing.toOption();
-            Try<Integer> attempt = missing.toTry(IllegalArgumentException::new);
-            Validation<String, Integer> validation = missing.toValidation();
+            var missing = Either.<String, Integer>left("missing");
+            var option = missing.toOption(); // Option<Integer>
+            var attempt = missing.toTry(IllegalArgumentException::new); // Try<Integer>
+            var validation = missing.toValidation(); // Validation<String, Integer>
             // None, Failure(java.lang.IllegalArgumentException: missing), Invalid(missing)
 
             assertThat(option).hasToString("None");
@@ -576,9 +575,9 @@ public class DocsExamplesTest {
 
         @Test
         void construction() {
-            Try<Integer> parsed = Try.of(() -> Integer.parseInt("42"));
-            Try<Integer> failed = Try.of(() -> Integer.parseInt("forty-two"));
-            Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
+            var parsed = Try.of(() -> Integer.parseInt("42")); // Try<Integer>
+            var failed = Try.of(() -> Integer.parseInt("forty-two")); // Try<Integer>
+            var ran = Try.run(() -> Thread.sleep(1)); // Try<Tuple0>
             // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
 
             assertThat(parsed).hasToString("Success(42)");
@@ -592,8 +591,8 @@ public class DocsExamplesTest {
 
         @Test
         void switchOverTheCases() {
-            Try<Integer> result = Try.of(() -> Integer.parseInt("x"));
-            String report = switch (result) {
+            var result = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
+            var report = switch (result) {
                 case Success(var value) -> "parsed " + value;
                 case Failure(var cause) -> "failed: " + cause.getClass().getSimpleName();
             };
@@ -604,14 +603,14 @@ public class DocsExamplesTest {
 
         @Test
         void recovering() {
-            Try<Integer> port = Try.of(() -> Integer.parseInt("80a"))
+            var port = Try.of(() -> Integer.parseInt("80a"))
                 .catchSome(NumberFormatException.class, e -> 8080)
-                .map(p -> p + 1);
+                .map(p -> p + 1); // Try<Integer>
             // Success(8081)
 
-            Try<Integer> recovered = Try.of(() -> Integer.parseInt("x")).catchAll(e -> 0);
-            Try<Integer> wrapped = Try.<Integer>failure(new java.io.IOException("disk"))
-                .mapError(e -> new IllegalStateException("cannot read the configuration", e));
+            var recovered = Try.of(() -> Integer.parseInt("x")).catchAll(e -> 0); // Try<Integer>
+            var wrapped = Try.<Integer>failure(new java.io.IOException("disk"))
+                .mapError(e -> new IllegalStateException("cannot read the configuration", e)); // Try<Integer>
             // Success(0), Failure(java.lang.IllegalStateException: cannot read the configuration)
 
             assertThat(port).hasToString("Success(8081)");
@@ -622,13 +621,13 @@ public class DocsExamplesTest {
 
         @Test
         void chaining() {
-            Try<Integer> ratio = Try.of(() -> 10).map(n -> 100 / (n - 10));
-            Try<Integer> positive = Try.success(-1)
-                .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n));
+            var ratio = Try.of(() -> 10).map(n -> 100 / (n - 10)); // Try<Integer>
+            var positive = Try.success(-1)
+                .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n)); // Try<Integer>
             // Failure(java.lang.ArithmeticException: / by zero), Failure(java.lang.IllegalArgumentException: not positive: -1)
 
-            StringBuilder log = new StringBuilder();
-            Try<Integer> done = Try.of(() -> 1).ensuring(() -> log.append("closed"));
+            var log = new StringBuilder();
+            var done = Try.of(() -> 1).ensuring(() -> log.append("closed")); // Try<Integer>
             // Success(1), and log is "closed"
 
             assertThat(ratio).hasToString("Failure(java.lang.ArithmeticException: / by zero)");
@@ -639,9 +638,9 @@ public class DocsExamplesTest {
 
         @Test
         void conversions() {
-            Either<Throwable, Integer> either = Try.of(() -> Integer.parseInt("7")).toEither();
-            java.util.concurrent.CompletableFuture<Integer> future = Try.success(7).toCompletableFuture();
-            Try<Integer> back = Try.fromCompletableFuture(future);
+            var either = Try.of(() -> Integer.parseInt("7")).toEither(); // Either<Throwable, Integer>
+            var future = Try.success(7).toCompletableFuture(); // java.util.concurrent.CompletableFuture<Integer>
+            var back = Try.fromCompletableFuture(future); // Try<Integer>
             // Right(7), a completed future, Success(7)
 
             assertThat(either).hasToString("Right(7)");
@@ -651,10 +650,10 @@ public class DocsExamplesTest {
 
         @Test
         void sharpEdges() {
-            Try<Integer> first = Try.of(() -> Integer.parseInt("x"));
-            Try<Integer> second = Try.of(() -> Integer.parseInt("x"));
-            boolean same = first.equals(second);
-            boolean sameClass = first.getCause().getClass() == second.getCause().getClass();
+            var first = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
+            var second = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
+            var same = first.equals(second);
+            var sameClass = first.getCause().getClass() == second.getCause().getClass();
             // same is false, sameClass is true
 
             assertThat(same).isFalse();
@@ -789,10 +788,10 @@ public class DocsExamplesTest {
 
         @Test
         void construction() {
-            Lazy<Integer> answer = Lazy.of(() -> 6 * 7);
-            boolean before = answer.isEvaluated();
-            int value = answer.map(n -> n + 1).get();
-            boolean after = answer.isEvaluated();
+            var answer = Lazy.of(() -> 6 * 7); // Lazy<Integer>
+            var before = answer.isEvaluated();
+            var value = answer.map(n -> n + 1).get(); // Integer
+            var after = answer.isEvaluated();
             // before is false, value is 43, after is true
 
             assertThat(before).isFalse();
@@ -802,14 +801,14 @@ public class DocsExamplesTest {
 
         @Test
         void operations() {
-            Lazy<String> host = Lazy.of(() -> "localhost");
-            Lazy<Integer> port = Lazy.of(() -> 8080);
-            Lazy<String> address = host.zipWith(port, (h, p) -> h + ":" + p);
-            boolean evaluated = host.isEvaluated();
-            String value = address.get();
+            var host = Lazy.of(() -> "localhost"); // Lazy<String>
+            var port = Lazy.of(() -> 8080); // Lazy<Integer>
+            var address = host.zipWith(port, (h, p) -> h + ":" + p); // Lazy<String>
+            var evaluated = host.isEvaluated();
+            var value = address.get(); // String
             // evaluated is false, value is "localhost:8080"
 
-            Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2)));
+            var all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2))); // Lazy<Vector<Integer>>
             // all.get() is Vector(1, 2)
 
             assertThat(evaluated).isFalse();
@@ -820,13 +819,13 @@ public class DocsExamplesTest {
 
         @Test
         void conversions() {
-            int[] calls = {0};
-            Lazy<String> greeting = Lazy.of(() -> {
+            var calls = new int[] {0};
+            var greeting = Lazy.of(() -> {
                 calls[0]++;
                 return "hello";
-            });
-            java.util.function.Supplier<String> supplier = greeting.toSupplier();
-            String twice = supplier.get() + supplier.get();
+            }); // Lazy<String>
+            var supplier = greeting.toSupplier(); // java.util.function.Supplier<String>
+            var twice = supplier.get() + supplier.get();
             // twice is "hellohello", calls[0] is 1: computed once
 
             assertThat(twice).isEqualTo("hellohello");
@@ -837,21 +836,21 @@ public class DocsExamplesTest {
 
         @Test
         void sharpEdges() {
-            java.util.concurrent.atomic.AtomicInteger attempts = new java.util.concurrent.atomic.AtomicInteger();
-            Lazy<String> flaky = Lazy.of(() -> {
+            var attempts = new java.util.concurrent.atomic.AtomicInteger();
+            var flaky = Lazy.of(() -> {
                 if (attempts.incrementAndGet() == 1) {
                     throw new IllegalStateException("not yet");
                 }
                 return "ready";
-            });
-            Try<String> first = Try.of(flaky::get);
-            String second = flaky.get();
+            }); // Lazy<String>
+            var first = Try.of(flaky::get); // Try<String>
+            var second = flaky.get(); // String
             // first is Failure(java.lang.IllegalStateException: not yet), second is "ready", attempts is 2
 
-            Lazy<Integer> unread = Lazy.of(() -> 1);
-            Lazy<Integer> other = Lazy.of(() -> 1);
-            String shown = unread.toString();
-            boolean equal = unread.equals(other);
+            var unread = Lazy.of(() -> 1); // Lazy<Integer>
+            var other = Lazy.of(() -> 1); // Lazy<Integer>
+            var shown = unread.toString();
+            var equal = unread.equals(other);
             // shown is "Lazy(?)", equal is true, and both are now evaluated
 
             assertThat(first).hasToString("Failure(java.lang.IllegalStateException: not yet)");
@@ -871,11 +870,11 @@ public class DocsExamplesTest {
         void accumulation() {
             record User(String name, int age, String email) {}
 
-            Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
+            var user = Validation.zipWith(name(""), age(-1), email("jules"), User::new); // Validation<String, User>
             // Invalid(name is blank, age is negative, email has no @)
 
-            Validation<String, Tuple2<String, Integer>> pair = name("Ada").zip(age(36));
-            Validation<String, String> both = name("").zipWith(age(-1), (n, a) -> n + a);
+            var pair = name("Ada").zip(age(36)); // Validation<String, Tuple2<String, Integer>>
+            var both = name("").zipWith(age(-1), (n, a) -> n + a); // Validation<String, String>
             // Valid((Ada, 36)), Invalid(name is blank, age is negative)
 
             assertThat(user).hasToString("Invalid(name is blank, age is negative, email has no @)");
@@ -887,8 +886,8 @@ public class DocsExamplesTest {
 
         @Test
         void readingTheResult() {
-            Validation<String, Integer> checked = age(-5);
-            String message = switch (checked) {
+            var checked = age(-5); // Validation<String, Integer>
+            var message = switch (checked) {
                 case Valid(var years) -> "age " + years;
                 case Invalid(var errors) -> errors.size() + " error(s): " + errors.mkString("; ");
             };
@@ -899,16 +898,20 @@ public class DocsExamplesTest {
 
         @Test
         void manyValues() {
-            Validation<String, Vector<Integer>> ages = Validation.forEach(Vector.of(3, -1, 7, -2), n -> age(n));
+            var ages = Validation.forEach(Vector.of(3, -1, 7, -2),
+                n -> age(n)); // Validation<String, Vector<Integer>>
             // Invalid(age is negative, age is negative)
 
-            Validation<String, Vector<String>> names = Validation.collectAll(Vector.of(name("Ada"), name("Grace")));
+            var names = Validation.collectAll(
+                Vector.of(name("Ada"), name("Grace"))); // Validation<String, Vector<String>>
             // Valid(Vector(Ada, Grace))
 
-            Validation<String, NonEmptyVector<Integer>> scores = Validation.forEach(NonEmptyVector.of(1, 2), n -> age(n));
+            var scores = Validation.forEach(NonEmptyVector.of(1, 2),
+                n -> age(n)); // Validation<String, NonEmptyVector<Integer>>
             // Valid(NonEmptyVector(1, 2))
 
-            Tuple2<Vector<String>, Vector<Integer>> split = Validation.partition(Vector.of(4, -1, 9), n -> age(n));
+            var split = Validation.partition(Vector.of(4, -1, 9),
+                n -> age(n)); // Tuple2<Vector<String>, Vector<Integer>>
             // (Vector(age is negative), Vector(4, 9))
 
             assertThat(ages).hasToString("Invalid(age is negative, age is negative)");
@@ -919,7 +922,7 @@ public class DocsExamplesTest {
 
         @Test
         void shortCircuiting() {
-            Validation<String, User> adult = Validation.zipWith(name("Ada"), age(15), email("ada@example.com"), User::new)
+            var adult = Validation.zipWith(name("Ada"), age(15), email("ada@example.com"), User::new)
                 .flatMapEither(u -> u.age() >= 18 ? Either.right(u) : Either.left(u.name() + " is under 18"));
             // Invalid(Ada is under 18)
 
@@ -930,7 +933,8 @@ public class DocsExamplesTest {
 
         @Test
         void checks() {
-            Validation<String, Integer> port = Validation.of(() -> Integer.parseInt("80a"), e -> "port is not a number");
+            var port = Validation.of(() -> Integer.parseInt("80a"),
+                e -> "port is not a number"); // Validation<String, Integer>
             // Invalid(port is not a number)
 
             assertThat(port).hasToString("Invalid(port is not a number)");
@@ -938,9 +942,10 @@ public class DocsExamplesTest {
 
         @Test
         void conversions() {
-            Validation<String, Integer> negative = age(-3);
-            Either<String, Integer> joined = negative.toEitherWith(errors -> errors.mkString("; "));
-            Try<Integer> failure = negative.toTry(errors -> new IllegalArgumentException(errors.mkString("; ")));
+            var negative = age(-3); // Validation<String, Integer>
+            var joined = negative.toEitherWith(errors -> errors.mkString("; ")); // Either<String, Integer>
+            var failure = negative.toTry(
+                errors -> new IllegalArgumentException(errors.mkString("; "))); // Try<Integer>
             // Left(age is negative), Failure(java.lang.IllegalArgumentException: age is negative)
 
             assertThat(joined).hasToString("Left(age is negative)");
@@ -961,8 +966,10 @@ public class DocsExamplesTest {
 
         @Test
         void arity() {
-            Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
-            Option<Tuple3<Integer, String, Boolean>> triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true));
+            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+                (a, b, c) -> a + b + c); // Option<Integer>
+            var triple = Option.zip(Option.some(1), Option.some("a"),
+                Option.some(true)); // Option<Tuple3<Integer, String, Boolean>>
             // Some(6), Some((1, a, true))
 
             assertThat(sum).hasToString("Some(6)");
@@ -971,14 +978,15 @@ public class DocsExamplesTest {
 
         @Test
         void onFailure() {
-            Either<String, Integer> first = Either.zipWith(Either.left("no a"), Either.<String, Integer>right(2),
-                Either.<String, Integer>left("no c"), (a, b, c) -> 0);
-            Validation<String, Integer> all = Validation.zipWith(Validation.<String, Integer>invalid("no a"),
-                Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("no c"), (a, b, c) -> 0);
+            var first = Either.zipWith(Either.left("no a"), Either.<String, Integer>right(2),
+                Either.<String, Integer>left("no c"), (a, b, c) -> 0); // Either<String, Integer>
+            var all = Validation.zipWith(Validation.<String, Integer>invalid("no a"),
+                Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("no c"),
+                (a, b, c) -> 0); // Validation<String, Integer>
             // Left(no a), Invalid(no a, no c)
 
-            Option<Integer> left = Option.some(1).zipLeft(Option.none());
-            Option<String> right = Option.some(1).zipRight(Option.some("kept"));
+            var left = Option.some(1).zipLeft(Option.none()); // Option<Integer>
+            var right = Option.some(1).zipRight(Option.some("kept")); // Option<String>
             // None, Some(kept)
 
             assertThat(first).hasToString("Left(no a)");
@@ -993,10 +1001,10 @@ public class DocsExamplesTest {
 
         @Test
         void totalOperations() {
-            NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-            int best = scores.max(Integer::compare);
-            int total = scores.reduce(Integer::sum);
-            int first = scores.head();
+            var scores = NonEmptyVector.of(7, 3, 9);
+            var best = scores.max(Integer::compare); // Integer
+            var total = scores.reduce(Integer::sum); // Integer
+            var first = scores.head(); // Integer
             // 9, 19, 7
 
             assertThat(best).isEqualTo(9);
@@ -1006,9 +1014,9 @@ public class DocsExamplesTest {
 
         @Test
         void returnTypeContract() {
-            NonEmptyVector<Integer> grown = NonEmptyVector.of(1).appendAll(Vector.empty());
-            Vector<Integer> evens = NonEmptyVector.of(1, 2, 3).filter(n -> n % 2 == 0);
-            Option<NonEmptyVector<Integer>> rest = NonEmptyVector.of(1).tailNonEmpty();
+            var grown = NonEmptyVector.of(1).appendAll(Vector.empty()); // NonEmptyVector<Integer>
+            var evens = NonEmptyVector.of(1, 2, 3).filter(n -> n % 2 == 0); // Vector<Integer>
+            var rest = NonEmptyVector.of(1).tailNonEmpty(); // Option<NonEmptyVector<Integer>>
             // NonEmptyVector(1), Vector(2), None
 
             assertThat(grown).hasToString("NonEmptyVector(1)");
@@ -1031,8 +1039,8 @@ public class DocsExamplesTest {
 
         @Test
         void construction() {
-            Option<NonEmptyVector<String>> fromInput = Vector.of("a", "b").toNonEmptyVector();
-            Option<NonEmptyVector<String>> fromNothing = Vector.<String>empty().toNonEmptyVector();
+            var fromInput = Vector.of("a", "b").toNonEmptyVector(); // Option<NonEmptyVector<String>>
+            var fromNothing = Vector.<String>empty().toNonEmptyVector(); // Option<NonEmptyVector<String>>
             // Some(NonEmptyVector(a, b)), None
 
             assertThat(fromInput).hasToString("Some(NonEmptyVector(a, b))");
@@ -1088,15 +1096,15 @@ public class DocsExamplesTest {
 
         @Test
         void whatTheyShare() {
-            Vector<Integer> vector = Vector.of(3, 1, 2);
-            List<Integer> sortedList = vector.toList().sorted();
-            HashSet<Integer> set = HashSet.ofAll(vector);
-            boolean same = Vector.of(1, 2, 3).equals(sortedList);
+            var vector = Vector.of(3, 1, 2);
+            var sortedList = vector.toList().sorted(); // List<Integer>
+            var set = HashSet.ofAll(vector); // HashSet<Integer>
+            var same = Vector.of(1, 2, 3).equals(sortedList);
             // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 
-            Tuple2<List<Integer>, List<String>> split = List.of(1, 2, 3, 4)
+            var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
                 .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
-            Vector<Integer> flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3)));
+            var flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3))); // Vector<Integer>
             // split is (List(2, 4), List(odd 1, odd 3)), flat is Vector(1, 2, 3)
 
             assertThat(split).hasToString("(List(2, 4), List(odd 1, odd 3))");
@@ -1108,8 +1116,8 @@ public class DocsExamplesTest {
 
         @Test
         void nulls() {
-            Option<Integer> missing = HashMap.of("a", 1).get("b");
-            Option<Integer> firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);
+            var missing = HashMap.of("a", 1).get("b"); // Option<Integer>
+            var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0); // Option<Integer>
             // None, Some(4)
 
             assertThat(missing).hasToString("None");
@@ -1124,14 +1132,14 @@ public class DocsExamplesTest {
 
         @Test
         void whenToChooseIt() {
-            Vector<String> letters = Vector.of("a", "b", "c", "d");
-            Vector<String> changed = letters.update(1, "B").prepend("z").drop(2);
-            Tuple2<Vector<String>, Vector<String>> halves = letters.splitAt(2);
+            var letters = Vector.of("a", "b", "c", "d");
+            var changed = letters.update(1, "B").prepend("z").drop(2); // Vector<String>
+            var halves = letters.splitAt(2); // Tuple2<Vector<String>, Vector<String>>
             // changed is Vector(B, c, d), halves is (Vector(a, b), Vector(c, d))
 
-            Vector<Integer> numbers = Vector.range(0, 10);
-            Vector<Vector<Integer>> windows = numbers.sliding(3, 3);
-            Tuple2<Vector<Integer>, Vector<String>> parts = numbers.partitionMap(
+            var numbers = Vector.range(0, 10); // Vector<Integer>
+            var windows = numbers.sliding(3, 3); // Vector<Vector<Integer>>
+            var parts = numbers.partitionMap( // Tuple2<Vector<Integer>, Vector<String>>
                 n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
             // windows is Vector(Vector(0, 1, 2), Vector(3, 4, 5), Vector(6, 7, 8), Vector(9))
 
@@ -1148,16 +1156,16 @@ public class DocsExamplesTest {
 
         @Test
         void whenToChooseIt() {
-            List<Integer> list = List.of(1, 2, 3);
-            String first = switch (list) {
+            var list = List.of(1, 2, 3);
+            var first = switch (list) {
                 case Cons(var head, var tail) -> "head " + head + ", then " + tail.length() + " more";
                 case Nil() -> "empty";
             };
             // "head 1, then 2 more"
 
-            List<String> stack = List.<String>empty().push("a").push("b");
-            String top = stack.peek();
-            List<String> popped = stack.pop();
+            var stack = List.<String>empty().push("a").push("b"); // List<String>
+            var top = stack.peek(); // String
+            var popped = stack.pop(); // List<String>
             // top is "b", popped is List(a)
 
             assertThat(first).isEqualTo("head 1, then 2 more");
@@ -1171,14 +1179,14 @@ public class DocsExamplesTest {
 
         @Test
         void whenToChooseIt() {
-            Queue<String> queue = Queue.of("a", "b").enqueue("c");
-            Tuple2<String, Queue<String>> next = queue.dequeue();
+            var queue = Queue.of("a", "b").enqueue("c"); // Queue<String>
+            var next = queue.dequeue(); // Tuple2<String, Queue<String>>
             // next is (a, Queue(b, c))
 
-            Queue<Integer> work = Queue.of(1);
-            int visited = 0;
+            var work = Queue.of(1);
+            var visited = 0;
             while (!work.isEmpty() && visited < 5) {
-                Tuple2<Integer, Queue<Integer>> step = work.dequeue();
+                var step = work.dequeue(); // Tuple2<Integer, Queue<Integer>>
                 work = step._2().enqueue(step._1() * 2, step._1() * 2 + 1);
                 visited++;
             }
@@ -1197,12 +1205,12 @@ public class DocsExamplesTest {
 
         @Test
         void whenToChooseIt() {
-            Stream<Integer> naturals = Stream.from(1);
-            Vector<Integer> squares = naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
+            var naturals = Stream.from(1); // Stream<Integer>
+            var squares = naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
             // Vector(1, 9, 25, 49)
 
-            Stream<Long> fibonacci = Stream.of(0L, 1L).appendSelf(self -> self.zipWith(self.tail(), Long::sum));
-            Vector<Long> firstTen = fibonacci.take(10).toVector();
+            var fibonacci = Stream.of(0L, 1L).appendSelf(self -> self.zipWith(self.tail(), Long::sum));
+            var firstTen = fibonacci.take(10).toVector(); // Vector<Long>
             // Vector(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
 
             assertThat(squares).hasToString("Vector(1, 9, 25, 49)");
@@ -1215,15 +1223,15 @@ public class DocsExamplesTest {
 
         @Test
         void whenToChooseWhich() {
-            HashSet<String> tags = HashSet.of("java", "scala");
-            HashSet<String> more = tags.add("zio").remove("scala");
-            HashSet<String> common = tags.intersect(HashSet.of("scala", "kotlin"));
+            var tags = HashSet.of("java", "scala");
+            var more = tags.add("zio").remove("scala"); // HashSet<String>
+            var common = tags.intersect(HashSet.of("scala", "kotlin")); // HashSet<String>
             // more contains java and zio, common is HashSet(scala)
 
-            LinkedHashSet<String> seen = LinkedHashSet.of("b", "a").add("c").add("a");
-            TreeSet<Integer> sorted = TreeSet.of(5, 1, 4, 2);
-            Integer smallest = sorted.head();
-            TreeSet<Integer> firstTwo = sorted.take(2);
+            var seen = LinkedHashSet.of("b", "a").add("c").add("a"); // LinkedHashSet<String>
+            var sorted = TreeSet.of(5, 1, 4, 2);
+            var smallest = sorted.head(); // Integer
+            var firstTwo = sorted.take(2); // TreeSet<Integer>
             // seen is LinkedHashSet(b, a, c), smallest is 1, firstTwo is TreeSet(1, 2)
 
             assertThat(more).isEqualTo(HashSet.of("java", "zio"));
@@ -1243,15 +1251,15 @@ public class DocsExamplesTest {
 
         @Test
         void whenToChooseWhich() {
-            HashMap<String, Integer> stock = HashMap.of("apple", 3, "pear", 0);
-            HashMap<String, Integer> restocked = stock.put("pear", 5, Integer::sum).put("fig", 1);
-            Option<Integer> pears = restocked.get("pear");
-            int kiwis = restocked.getOrElse("kiwi", 0);
+            var stock = HashMap.of("apple", 3, "pear", 0);
+            var restocked = stock.put("pear", 5, Integer::sum).put("fig", 1); // HashMap<String, Integer>
+            var pears = restocked.get("pear"); // Option<Integer>
+            var kiwis = restocked.getOrElse("kiwi", 0); // Integer
             // pears is Some(5), kiwis is 0
 
-            TreeMap<String, Integer> byName = TreeMap.of("b", 2, "a", 1, "c", 3);
-            Vector<Integer> values = byName.values();
-            Tuple2<String, Integer> first = byName.head();
+            var byName = TreeMap.of("b", 2, "a", 1, "c", 3);
+            var values = byName.values(); // Vector<Integer>
+            var first = byName.head(); // Tuple2<String, Integer>
             // values is Vector(1, 2, 3), first is (a, 1)
 
             assertThat(pears).hasToString("Some(5)");
@@ -1266,17 +1274,17 @@ public class DocsExamplesTest {
 
         @Test
         void vectorBuilder() {
-            Vector.Builder<String> builder = Vector.newBuilder();
+            var builder = Vector.<String>newBuilder(); // Vector.Builder<String>
             for (String word : "the quick brown fox".split(" ")) {
                 builder.add(word.toUpperCase());
             }
-            Vector<String> words = builder.result();
+            var words = builder.result(); // Vector<String>
             // Vector(THE, QUICK, BROWN, FOX)
 
-            Vector.Builder<Integer> both = Vector.newBuilder(8);
+            var both = Vector.<Integer>newBuilder(8); // Vector.Builder<Integer>
             both.addAll(Vector.of(1, 2, 3)).add(4);
-            int added = both.size();
-            Vector<Integer> result = both.result();
+            var added = both.size();
+            var result = both.result(); // Vector<Integer>
             // added is 4, result is Vector(1, 2, 3, 4)
 
             assertThat(words).hasToString("Vector(THE, QUICK, BROWN, FOX)");
@@ -1309,8 +1317,9 @@ public class DocsExamplesTest {
 
         @Test
         void collectors() {
-            Vector<Integer> lengths = java.util.stream.Stream.of("a", "bb", "ccc").map(String::length).collect(Vector.collector());
-            TreeSet<String> sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector());
+            var lengths = java.util.stream.Stream.of("a", "bb", "ccc").map(String::length)
+                .collect(Vector.collector()); // Vector<Integer>
+            var sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector()); // TreeSet<String>
             // Vector(1, 2, 3), TreeSet(a, b)
 
             assertThat(lengths).hasToString("Vector(1, 2, 3)");
@@ -1323,10 +1332,10 @@ public class DocsExamplesTest {
 
         @Test
         void views() {
-            Vector<String> names = Vector.of("Ada", "Grace");
-            java.util.List<String> view = names.asJava();
-            String second = view.get(1);
-            boolean rejected = Try.run(() -> view.add("Linus")).getCause() instanceof UnsupportedOperationException;
+            var names = Vector.of("Ada", "Grace");
+            var view = names.asJava(); // java.util.List<String>
+            var second = view.get(1);
+            var rejected = Try.run(() -> view.add("Linus")).getCause() instanceof UnsupportedOperationException;
             // second is "Grace", rejected is true
 
             assertThat(second).isEqualTo("Grace");
@@ -1338,11 +1347,11 @@ public class DocsExamplesTest {
 
         @Test
         void sortedViews() {
-            java.util.NavigableSet<Integer> scores = TreeSet.of(10, 20, 30, 40).asJava();
-            Integer atLeast25 = scores.ceiling(25);
-            java.util.NavigableSet<Integer> top = scores.tailSet(20, true);
-            java.util.NavigableMap<String, Integer> ages = TreeMap.of("Ada", 36, "Grace", 85).asJavaMap();
-            Integer grace = ages.get("Grace");
+            var scores = TreeSet.of(10, 20, 30, 40).asJava(); // java.util.NavigableSet<Integer>
+            var atLeast25 = scores.ceiling(25); // Integer
+            var top = scores.tailSet(20, true); // java.util.NavigableSet<Integer>
+            var ages = TreeMap.of("Ada", 36, "Grace", 85).asJavaMap(); // java.util.NavigableMap<String, Integer>
+            var grace = ages.get("Grace"); // Integer
             // atLeast25 is 30, top is [20, 30, 40], grace is 85
 
             assertThat(atLeast25).isEqualTo(30);
@@ -1352,9 +1361,9 @@ public class DocsExamplesTest {
 
         @Test
         void copies() {
-            java.util.ArrayList<Integer> mutable = new java.util.ArrayList<>(Vector.of(1, 2).asJava());
+            var mutable = new java.util.ArrayList<>(Vector.of(1, 2).asJava()); // java.util.ArrayList<Integer>
             mutable.add(3);
-            java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJava());
+            var jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJava()); // java.util.HashSet<String>
             // mutable is [1, 2, 3], jdkSet holds a and b
 
             assertThat(mutable).hasToString("[1, 2, 3]");
@@ -1363,9 +1372,9 @@ public class DocsExamplesTest {
 
         @Test
         void theWayBack() {
-            Vector<Integer> fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));
-            int sum = fromJdk.stream().mapToInt(Integer::intValue).sum();
-            Option<Integer> fromOptional = Option.ofOptional(java.util.Optional.of(4));
+            var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2)); // Vector<Integer>
+            var sum = fromJdk.stream().mapToInt(Integer::intValue).sum();
+            var fromOptional = Option.ofOptional(java.util.Optional.of(4)); // Option<Integer>
             // Vector(3, 1, 2), 6, Some(4)
 
             assertThat(fromJdk).hasToString("Vector(3, 1, 2)");
@@ -1380,8 +1389,8 @@ public class DocsExamplesTest {
         @Test
         void movingCodeOver() {
             // Vavr: Match(option).of(Case($Some($()), v -> ...), Case($None(), () -> ...))
-            Option<String> maybe = Option.some("Zazr");
-            int length = switch (maybe) {
+            var maybe = Option.some("Zazr");
+            var length = switch (maybe) {
                 case Some(var value) -> value.length();
                 case None() -> 0;
             };

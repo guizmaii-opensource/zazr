@@ -43,17 +43,17 @@ Two more operations exist on most types:
 - The static `flatten` removes one level of nesting.
 
 ```java
-Tuple2<List<Integer>, List<String>> split = List.of(1, 2, 3, 4)
+var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
     .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
-Vector<Integer> flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3)));
+var flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3))); // Vector<Integer>
 // split is (List(2, 4), List(odd 1, odd 3)), flat is Vector(1, 2, 3)
 ```
 
 ```java
-Vector<Integer> vector = Vector.of(3, 1, 2);
-List<Integer> sortedList = vector.toList().sorted();
-HashSet<Integer> set = HashSet.ofAll(vector);
-boolean same = Vector.of(1, 2, 3).equals(sortedList);
+var vector = Vector.of(3, 1, 2);
+var sortedList = vector.toList().sorted(); // List<Integer>
+var set = HashSet.ofAll(vector); // HashSet<Integer>
+var same = Vector.of(1, 2, 3).equals(sortedList);
 // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 ```
 
@@ -67,8 +67,8 @@ No collection holds `null`: adding a `null` element, key or value throws a `Null
 `Option`, which is what `find`, `headOption` and `Map.get` return.
 
 ```java
-Option<Integer> missing = HashMap.of("a", 1).get("b");
-Option<Integer> firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);
+var missing = HashMap.of("a", 1).get("b"); // Option<Integer>
+var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0); // Option<Integer>
 // None, Some(4)
 ```
 
