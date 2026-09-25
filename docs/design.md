@@ -1108,6 +1108,66 @@ the builder always produces `Object[]` leaves, and `ofAll(int[])` is the only pr
 with much cheaper `tail`/`init`. Porting it is ~2,500 lines of dense code. The builder lands first over the
 existing `BitMappedTrie`, with JMH numbers; the finger tree is reconsidered only if those numbers say so.
 
+**Step 1 (#74): the finger tree ported as an internal structure.** #74 (decided 2026-09-25) lifts the deferral above:
+`Vector` moves to the finger tree, in stacked steps. Step 1 adds the port next to `BitMappedTrie` without switching
+`Vector` over. The source is `scala/collection/immutable/Vector.scala` from Scala 2.13.18. The Scala 3 standard library
+ships that file unchanged, so this is the Scala 3 `Vector`. The port is in `com.guizmaii.zazr.collection.internal`:
+- `RadixVector` is a sealed abstract class, with `Vector0`..`Vector6` as nested final classes. `BigVector` is the sealed
+  intermediate that carries `suffix1` and `length0`, as in Scala.
+- `VectorBuilder`, `VectorSliceBuilder` and `VectorStatics` keep their Scala names. `VectorStatics` also holds what
+  Scala keeps in `VectorInline`.
+- `VectorIterator` is Scala's `NewVectorIterator`.
+- The port covers `empty`, `of`, `ofAll` (from an array or an `Iterable`), `get`, `updated`, `appended`, `prepended`,
+  `appendedAll`, `prependedAll`, `slice`, `take`, `drop`, `takeRight`, `dropRight`, `tail`, `init`, `head`, `last`,
+  `length`, `iterator`, `reverseIterator`, `forEach`, `map`, and a builder with `add`, `addAll`, `addArray` and `result`.
+- It keeps Scala's append and prepend strategy as is: the tiny-append limit, `Log2ConcatFaster`, and `AlignToFaster` with
+  `alignTo`/`leftAlignPrefix`.
+
+Differences from Scala:
+- **Arrays.** Every level is a plain `Object[]`. Scala types them as `Array[Array[...]]`. With one runtime class for
+  every level, there is no reflective array creation in `copyPrepend`/`mapElemsRest`, and no `ArrayStoreException` risk
+  when arrays of different levels meet. `copyAppend1`/`copyAppend` and `copyPrepend1`/`copyPrepend` become one method
+  each. A caller's array is always copied into an `Object[]`, never adopted. `of("a", "b")` passes a `String[]`, which
+  would make a later `updated` with another subtype throw.
+- **Generics.** `RadixVector<T extends @Nullable Object>` has the bound of `Vector`, so that step 2 can hold one inside a
+  `Vector<T>`. Elements are cast to `T` when read.
+- **Nulls.** Elements are never null, as in `Vector` today. Every entry point rejects a null element with a
+  `NullPointerException`: `of`, `ofAll`, `appended`, `prepended`, `updated`, the builder's `add`/`addAll`/`addArray`,
+  the results of `map`, and the elements of an `appendedAll`/`prependedAll` argument.
+- **Single-shot builder.** `result()` hands the arrays over without copying them, and the builder is closed afterwards,
+  the same contract as `Vector.Builder`. Scala's builder is reusable instead. There is no `clear()`, and `initSparse`
+  (`fillSparse`) is left out.
+- **Known sizes.** A size is known without walking the elements only for a `RadixVector` and a `java.util.Collection`.
+  Every other `Iterable` takes the builder path, which is Scala's path for an unknown `knownSize`. The size of a zazr
+  `Traversable` may cost a walk (`List`) or never end (`Stream`).
+- **Exceptions.** The exception types match `Vector`: `IndexOutOfBoundsException` from `get`/`updated`,
+  `NoSuchElementException` from `head`/`last`, and `UnsupportedOperationException` from `tail`/`init` of an empty vector.
+  `take`, `drop` and `slice` clamp their arguments, as both do.
+- **Left out.** Steppers and the spliterator, `filterImpl`, the iterator's `drop`/`take`/`slice`/`copyToArray`/`split`,
+  and `equals`/`hashCode`. `reverseIterator` reads by index, one `get` per element, as Scala's `IndexedSeq` default does.
+
+Primitive leaves stay open for step 2. The port holds `Object[]` only, as Scala does and as #74 recommends. `BitMappedTrie`
+still has `int[]`/`char[]`/... leaves through `ArrayType`, and whether `ofAll(int[])` or `range` keep any primitive
+path is decided by step 2's JMH run.
+
+`RadixVectorDifferentialTest` applies the same operations to `RadixVector` and to today's `Vector`, from fixed seeds:
+- 2 400 random sequences of 200 steps, starting at the boundary sizes and at random sizes, built through seven histories
+  (builder, chunked builder, `ofAll`, appends, prepends, alternating, slice of a bigger vector).
+- 24 sequences around 32 768 and 6 around 2^20. The latter reach `Vector5`.
+- Deterministic sweeps: `appendedAll`/`prependedAll` between every pair of shapes; the same between big vectors of close
+  sizes, at every alignment of the builder, so that shared and split data of dimensions 3 and 4 are both reached; and
+  slices whose bounds land at every slice boundary. A separate test checks that `appendedAll`/`prependedAll` of a
+  small vector and a much bigger one, which aligns the builder on the bigger one, shares that vector's leaves.
+
+After every step it compares the contents and checks the shape invariants. Every value reached is compared again at the
+end, which catches a write into a shared array. `Vector6` needs 2^25 elements, too many for a differential run. It is
+reached by concatenating a 2^20-element vector with itself, so the leaves are shared, and it is checked against the
+known contents instead. The same test concatenates two such vectors out of alignment, which exercises the dimension-5
+split.
+
+Step 2 rebases `Vector` and `Vector.Builder` on `RadixVector` and `VectorBuilder`, with the coordinator's JMH table.
+Step 3 deletes `BitMappedTrie`, `ArrayType` and the differential test.
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same
