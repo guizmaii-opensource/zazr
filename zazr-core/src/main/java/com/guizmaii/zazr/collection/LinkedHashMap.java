@@ -35,9 +35,12 @@ import org.jspecify.annotations.Nullable;
  * A key given more than once keeps the position of its first occurrence and takes the key object and the value of
  * its last, whichever way the map is built: {@link #put(Object, Object)} on a key already present, and every factory,
  * collector and bulk operation ({@code of}, {@code ofEntries}, {@code ofAll}, {@code collector()}, {@code tabulate},
- * {@code fill}, {@code mapBoth}, {@code mapKeys}, {@code map}, {@code merge}), which gives the map that putting the
- * entries one by one into an empty map gives. For example, {@code ofEntries((1, a), (2, b), (1, c))} iterates as
- * {@code (1, c), (2, b)}.
+ * {@code fill}, {@code mapBoth}, {@code mapKeys}, {@code map}, and {@code merge(that)} on an empty map), which gives
+ * the map that putting the entries one by one into an empty map gives. For example,
+ * {@code ofEntries((1, a), (2, b), (1, c))} iterates as {@code (1, c), (2, b)}. The operations that combine the values
+ * of a repeated key, {@code merge(that, f)} and {@code mapKeys(keyMapper, valueMerge)}, keep its first position too
+ * and take its last key object, with the combined value. On a map that is not empty, {@code merge(that)} keeps the
+ * key object and the value of a key already present and adds only the keys it does not hold.
  *
  * @param <K> Key type
  * @param <V> Value type

@@ -990,8 +990,11 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
 
 - **`LinkedHashMap`**: a repeated key stays at the position of its first occurrence and takes the key object and the
   value of its last. Every factory, collector and bulk operation (`of` at every arity, `ofEntries` ×3, `ofAll`,
-  `collector()` ×3, `tabulate`, `fill`, `orElse`, `mapBoth`, `mapKeys` ×2, `map`, `flatMap`, `collect`, `merge` ×2)
-  gives the map that putting the entries one by one into an empty map gives. Scala's insertion-ordered maps do the
+  `collector()` ×3, `tabulate`, `fill`, `orElse`, `mapBoth`, `mapKeys(keyMapper)`, `map`, `flatMap`, `collect`, and
+  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives.
+  `merge(that, f)` and `mapKeys(keyMapper, valueMerge)` are successive `put`s of the combined value: first position,
+  last key object, combined value. `merge(that)` on a non-empty receiver is deliberately different: a key the receiver
+  already holds keeps the receiver's key object and value, and only absent keys are added. Scala's insertion-ordered maps do the
   same: `VectorMap.updated` and `ListMap.updated` keep an existing key where it is, and building one from a sequence
   is repeated `updated` (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its classes).
 - **`put` of an equal but distinct key object** also writes that object into the insertion-order `Vector`, not only
