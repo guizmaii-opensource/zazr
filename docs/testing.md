@@ -194,14 +194,18 @@ var sizes = Gen.size().runCollectN(5, CheckConfig.defaults().withSize(100)); // 
 
 `filter` keeps the values that satisfy a predicate. A random generator is run again until it gives one.
 
-Filtering has a budget: after more than 1,000 rejected values in a row, the check gives up and the result is `Erroneous`. A
-predicate that rejects most values is better written as a `map` that builds the wanted values.
+When no small value can pass, such as with a filter that rejects the empty list, the check tries the next size.
+
+Filtering has a budget of 1,000 rejected values in a row. Past it, the filter gives the sample up and the check tries
+the next size; after 1,000 such samples in a row, the result is `Erroneous`. A predicate that rejects most values is
+better written as a `map` that builds the wanted values.
 
 ```java
 var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
 var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
+var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
 var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
-// Erroneous: Gen.filter rejected 1001 values in a row, more than the discard budget of 1000
+// Erroneous: Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000, ...
 ```
 
 ## Configuration
@@ -252,7 +256,7 @@ var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers(
 Check.check(checks, checks, (a, b) -> a.zip(b).isValid() == (a.isValid() && b.isValid())).assertIsSatisfied();
 ```
 
-A collection has up to the current size elements. Half of the lengths are 0, 1, the size or the size minus one, so
+A collection has up to the current size elements (a non-empty vector has at least one). Half of the lengths are 0, 1, the size or the size minus one, so
 empty, single-element and full collections come up often.
 
 ## Unusual layouts included

@@ -178,18 +178,21 @@ public class DocsTestingExamplesTest {
     void filtering() {
         var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
         var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
+        var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
         var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
-        // Erroneous: Gen.filter rejected 1001 values in a row, more than the discard budget of 1000
+        // Erroneous: Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000, ...
 
         Gen<Integer> typedEvens = evens;
         Gen<Integer> typedAlsoEvens = alsoEvens;
+        Gen<List<Integer>> typedNonEmpty = nonEmpty;
         CheckResult typedImpossible = impossible;
+        Check.check(typedNonEmpty, list -> !list.isEmpty()).assertIsSatisfied();
         assertThat(typedEvens.runCollectN(200).forAll(n -> n % 2 == 0)).isTrue();
         assertThat(typedAlsoEvens.runCollectN(200).forAll(n -> n % 2 == 0)).isTrue();
         assertThat(typedImpossible).isInstanceOfSatisfying(CheckResult.Erroneous.class,
             erroneous -> assertThat(erroneous.cause())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageStartingWith("Gen.filter rejected 1001 values in a row, more than the discard budget of 1000"));
+                .hasMessageStartingWith("Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000, "));
     }
 
     @Test

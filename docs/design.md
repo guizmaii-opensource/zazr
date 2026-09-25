@@ -1466,7 +1466,7 @@ unreleased).
   keeps its message; any other throwable makes the result erroneous (a `VirtualMachineError` other than
   `StackOverflowError` is rethrown); a `null` answer is erroneous. `checkAll` runs one pass at the configured size.
 - **The size grows over a run**, linearly from 0 for the first sample to the configured size for the last
-  (`size * done / (samples - 1)`). zio-test runs every sample at the same size and shrinks afterwards; without
+  (`size * done / (samples - 1)`), plus one for each pass in a row that gave no value. zio-test runs every sample at the same size and shrinks afterwards; without
   shrinking, the growth is what makes the first failure a small one. `small` draws from an exponential distribution
   of mean size/25 and `large` uniformly, as in zio-test.
 - **`CheckConfig`**: zio-test's defaults (200 samples, size 100) plus a seed and a discard budget of 1,000 (the number
@@ -1495,8 +1495,12 @@ unreleased).
 - **Filter with a per-draw retry and a discard budget.** When a pass of a random generator produced only rejected
   values, `filter` runs the pass again, so a filtered random generator still gives one value per pass. A pass that
   drew no random value would give the same values again, so a finite generator is not rerun; it only loses the
-  rejected values. More rejected values in a row than `maxDiscards` throw an `IllegalStateException`, which the check
-  reports as `Erroneous`; so do more passes in a row without a value. Never an endless loop.
+  rejected values. After more rejected values in a row than `maxDiscards`, the filter gives its pass up, and a pass
+  without a value is followed by one at the next size (up to the configured size): the first samples run at size 0,
+  where no value may pass (a filter that rejects the empty list), and the size otherwise only grows with delivered
+  samples. More such passes in a row than `maxDiscards` make the check `Erroneous`, naming the filter; `checkAll`
+  reports a filter that gave its pass up at once. The counters are `long`s compared with the budget, so a budget of
+  `Integer.MAX_VALUE` does not wrap around. Never an endless loop.
 - **Edge-biased collection lengths, not zio-test's `small`.** zio-test's `listOf` draws its length with `small`, so
   most collections are short. Zazr draws the length as `integers(0, size)`: half of the lengths are 0, 1, the size or
   the size minus one. The laws then see collections past a 32-wide trie leaf at the default size, and the growing size
