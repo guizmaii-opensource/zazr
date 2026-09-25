@@ -535,7 +535,7 @@ Notes:
   accessor `errors()` (`case Invalid(var errors)` in a `switch`), by `fold`, `tapError`, `getOrElse(Function)` or
   `toEither()`.
 - **`fromPredicate(A, Predicate<A>, Function<A, E>)`**, as sketched, not the `Supplier<E>` of the 3.3 row: the
-  function receives the rejected value so the error can name it. `Either.fromPredicate` keeps its supplier.
+  function receives the rejected value so the error can name it. `Either.fromPredicate` takes the same `Function` (decided 2026-09-26: a supplier could not name the rejected value, and the two constructors now agree).
 - **`of(Callable, Function<Throwable, E>)` is `Try.of` followed by a conversion**, so it has exactly `Try.of`'s
   policy: a fatal throwable is rethrown, a `null` result is a `NullPointerException` handed to `onError`.
 - **`forEach(NonEmptyVector, f)` and `forEach(Iterable, f)` are overloads.** Unlike 3.6's `flatMap`/`flatMapAll`,
