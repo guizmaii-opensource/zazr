@@ -134,6 +134,8 @@ val vocabulary: Map[String, Cost] = Map(
   // List
 
   // Queue
+  "O(n * size)" -> Cost.Polynomial,
+  "O(n^power)" -> Cost.Polynomial,
 
   // Stream
 
