@@ -68,6 +68,7 @@ def javaFunctionType(i: Int, im: ImportManager): String = i match {
 def run(): Unit = {
   generateMainClasses()
   generateTestClasses()
+  deleteStaleFiles(s"${project.getBasedir()}/src-gen")
 }
 
 /**
@@ -2146,26 +2147,91 @@ object JavaGenerator {
 object Generator {
 
   import java.nio.charset.{Charset, StandardCharsets}
-  import java.nio.file.{Files, Paths, StandardOpenOption}
+  import java.nio.file.{Files, LinkOption, Path, Paths}
+  import scala.jdk.CollectionConverters._
+
+  // The files written by this run, as their base directory's real path followed by the requested case, so that
+  // `deleteStaleFiles` knows which ones it no longer produces.
+  private val generated = scala.collection.mutable.Set.empty[Path]
+  // Every generated file and directory by its lower-cased path: two names that differ only in case, the same entry on
+  // a case-insensitive file system, fail the build.
+  private val generatedIgnoringCase = scala.collection.mutable.Map.empty[String, Path]
 
   /**
-   * Generates a file by writing string contents to the file system.
+   * Generates a file by writing string contents to the file system. The file is written only when its content
+   * differs from what is on disk: an unchanged file keeps its modification time, so the compiler does not
+   * recompile the module.
    *
    * @param baseDir The base directory, e.g. src-gen
    * @param dirName The directory relative to baseDir, e.g. main/java
    * @param fileName The file name within baseDir/dirName
-   * @param createOption One of java.nio.file.{StandardOpenOption.CREATE_NEW, StandardOpenOption.CREATE}, default: CREATE_NEW
    * @param contents The string contents of the file
    * @param charset The charset, by default UTF-8
    */
-  def genFile(baseDir: String, dirName: String, fileName: String, createOption: StandardOpenOption = StandardOpenOption.CREATE_NEW)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
+  def genFile(baseDir: String, dirName: String, fileName: String)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
+    val base = Files.createDirectories(Paths.get(baseDir)).toRealPath()
+    val file = base.resolve(dirName).resolve(fileName).normalize
+    var current = base
+    base.relativize(file).iterator.asScala.foreach { segment =>
+      val next = current.resolve(segment.toString)
+      val previous = generatedIgnoringCase.getOrElseUpdate(next.toString.toLowerCase(java.util.Locale.ROOT), next)
+      if (previous != next || (next == file && generated.contains(file))) {
+        throw new IllegalStateException(s"$next is generated twice (names are compared ignoring case)")
+      }
+      matchCase(current, segment.toString)
+      current = next
+    }
+    generated.add(file)
+    if (Files.isSymbolicLink(file)) {
+      Files.delete(file)
+    }
+    val bytes = contents.getBytes(charset)
+    if (!Files.isRegularFile(file) || !java.util.Arrays.equals(Files.readAllBytes(file), bytes)) {
+      Files.createDirectories(file.getParent)
+      Files.write(file, bytes)
+    }
+  }
 
-    // println(s"Generating $dirName${File.separator}$fileName")
+  /**
+   * Renames the entry `name` of `dir` to that exact case when the file system finds it under another case, as a
+   * case-insensitive one does after a class or package is renamed by case only. The rename goes through a temporary
+   * name, since renaming to a name the file system considers the same does nothing.
+   */
+  private def matchCase(dir: Path, name: String): Unit = {
+    val path = dir.resolve(name)
+    if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+      val stream = Files.list(dir)
+      val names = try stream.iterator.asScala.map(_.getFileName.toString).toList finally stream.close()
+      if (!names.contains(name)) {
+        names.find(_.equalsIgnoreCase(name)).foreach { onDisk =>
+          val temporary = dir.resolve(s"$name.case-rename")
+          Files.move(dir.resolve(onDisk), temporary)
+          Files.move(temporary, path)
+        }
+      }
+    }
+  }
 
-    Files.write(
-      Files.createDirectories(Paths.get(baseDir, dirName)).resolve(fileName),
-      contents.getBytes(charset),
-      createOption, StandardOpenOption.WRITE)
+  /**
+   * Deletes the entries under `root` that this run did not generate, then the directories left empty.
+   * A symbolic link is judged by its own path and deleted as a link, never followed.
+   * Called once every file has been generated.
+   */
+  def deleteStaleFiles(root: String): Unit = {
+    val rootPath = Paths.get(root)
+    if (Files.isDirectory(rootPath)) {
+      val realRoot = rootPath.toRealPath()
+      val stream = Files.walk(realRoot)
+      val paths = try stream.iterator.asScala.toList finally stream.close()
+      paths.filter(p => !Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS) && !generated.contains(p)).foreach(Files.delete)
+      paths.filter(p => p != realRoot && Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)).sortBy(p => -p.getNameCount).foreach { dir =>
+        val entries = Files.list(dir)
+        val empty = try !entries.iterator.hasNext finally entries.close()
+        if (empty) {
+          Files.delete(dir)
+        }
+      }
+    }
   }
 
   implicit class IntExtensions(i: Int) {
