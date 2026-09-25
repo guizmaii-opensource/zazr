@@ -9,8 +9,10 @@
 // Every Markdown file under the `--docs` directory is read, except the `--exclude` ones (docs/design.md is the
 // design record, not the user guide) and those under a hidden directory (the generated tables of
 // docs/collections/.costs). A block is a fence opened by ```java (indented or not, as inside an admonition or a
-// content tab) and closed by the next fence. Its normalised text, each line trimmed and the blank
-// lines dropped, must occur as whole lines in the normalised text of one of the TEST_FILEs.
+// content tab) and closed by the next fence. Its normalised text, each line trimmed, every run of spaces inside a line
+// collapsed to one, and the blank lines dropped, must occur as whole lines in the normalised text of one of the
+// TEST_FILEs. Collapsing the runs of spaces lets the pages align their `=` signs and type comments in columns (make
+// docs-align) while the Java formatter lays out the test copies its own way.
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -19,7 +21,7 @@ import scala.jdk.CollectionConverters.*
 final case class Block(file: Path, line: Int, text: String)
 
 def normalise(lines: Seq[String]): String =
-  lines.map(_.trim).filter(_.nonEmpty).mkString("\n")
+  lines.map(_.trim.replaceAll("\\s+", " ")).filter(_.nonEmpty).mkString("\n")
 
 val opening = """^\s*```java(\s.*)?$""".r
 val closing = """^\s*```\s*$""".r

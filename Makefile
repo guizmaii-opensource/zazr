@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples site site-serve bench coverage coverage-summary javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples docs-align docs-align-check site site-serve bench coverage coverage-summary javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -46,6 +46,7 @@ verify: ## what CI runs: full build with tests, formatting, nullness, javadoc, v
 	$(MAKE) complexity
 	$(MAKE) docs-complexity-check
 	$(MAKE) docs-examples
+	$(MAKE) docs-align-check
 
 vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE.md: use the ZIO names)
 	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs ':!docs/design.md')"; \
@@ -81,6 +82,17 @@ DOCS_EXAMPLES_TESTS := \
 
 docs-examples: ## fail when a java block of the site is not in a docs example test (they compile and run every snippet)
 	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)
+
+# The pages whose java blocks have their `=` signs and type comments aligned in columns, and the width of a code block
+# on the site (110 characters at desktop width, measured on the rendered pages).
+DOCS_ALIGN_PATHS := docs README.md $(wildcard skills)
+DOCS_ALIGN_ARGS := --max 110 --exclude docs/design.md $(DOCS_ALIGN_PATHS)
+
+docs-align: ## align the `=` signs and the trailing type comments of consecutive declarations in the java blocks of the site
+	@scala-cli run scripts/align-docs-examples.scala -- $(DOCS_ALIGN_ARGS)
+
+docs-align-check: ## fail when a java block of the site, README.md or skills/ is not aligned (fix: make docs-align)
+	@scala-cli run scripts/align-docs-examples.scala -- --check $(DOCS_ALIGN_ARGS)
 
 # The site (MkDocs + Material), built in a local virtualenv pinned by requirements-docs.txt.
 DOCS_VENV := .venv-docs

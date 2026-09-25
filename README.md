@@ -109,7 +109,7 @@ var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
 
 // total operations on a collection that cannot be empty
 var scores = NonEmptyVector.of(7, 3, 9);
-var best = scores.max(Integer::compare); // Integer
+var best   = scores.max(Integer::compare); // Integer
 
 // a builder instead of repeated append
 var builder = Vector.<Integer>newBuilder();

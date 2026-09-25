@@ -70,9 +70,9 @@ There is no `ap`, no builder chain and no nested `Tuple2<Tuple2<A, B>, C>` to un
 form or a configuration:
 
 ```java
-var age = Validation.<String, Integer>invalid("age is negative");
+var age   = Validation.<String, Integer>invalid("age is negative");
 var email = Validation.<String, String>invalid("email has no @");
-var both = age.zipWith(email, (a, e) -> a + e); // Validation<String, String>
+var both  = age.zipWith(email, (a, e) -> a + e); // Validation<String, String>
 // Invalid(age is negative, email has no @)
 ```
 
@@ -86,7 +86,7 @@ tell you when that guarantee is lost:
 
 ```java
 var scores = NonEmptyVector.of(7, 3, 9);
-var best = scores.max(Integer::compare);    // Integer: 9, nothing can go wrong
+var best   = scores.max(Integer::compare);  // Integer: 9, nothing can go wrong
 var passed = scores.filter(s -> s > 5);     // Vector<Integer>: may be empty, so a Vector
 ```
 

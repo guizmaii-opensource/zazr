@@ -18,8 +18,8 @@ The examples in this section use a `record Customer(String name, String email)`.
 
 ```java
 var customers = java.util.Map.of("c-1", new Customer("Ada", "ada@example.com"));
-var customer = customers.get("c-2");        // Customer, yet it is null
-var greeting = "Hello " + customer.name();  // NullPointerException
+var customer  = customers.get("c-2");        // Customer, yet it is null
+var greeting  = "Hello " + customer.name();  // NullPointerException
 ```
 
 Here the crash is one line away from its cause. In real code the `null` travels through fields and method calls, and
@@ -34,8 +34,8 @@ Zazr's `HashMap.get` returns an `Option`:
 
 ```java
 var customers = HashMap.of("c-1", new Customer("Ada", "ada@example.com"));
-var customer = customers.get("c-2"); // Option<Customer>
-var greeting = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest");
+var customer  = customers.get("c-2"); // Option<Customer>
+var greeting  = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest");
 // "Hello, guest"
 ```
 
@@ -125,8 +125,8 @@ var reply = switch (parseQuantity("0")) {
 the happy path and the error arrives at the end on its own.
 
 ```java
-var totalInCents = parseQuantity("3").map(q -> q * 1_250);  // Either<String, Integer>
-var rejected = parseQuantity("three").map(q -> q * 1_250);  // Either<String, Integer>
+var totalInCents = parseQuantity("3").map(q -> q * 1_250);      // Either<String, Integer>
+var rejected     = parseQuantity("three").map(q -> q * 1_250);  // Either<String, Integer>
 // Right(3750), Left(not a number: three)
 ```
 
@@ -257,8 +257,8 @@ static Either<String, NonEmptyVector<String>> recipients(Vector<String> input) {
 ```
 
 ```java
-var none = recipients(Vector.empty());          // Either<String, NonEmptyVector<String>>
-var some = recipients(Vector.of("ada@shop.com")); // Either<String, NonEmptyVector<String>>
+var none  = recipients(Vector.empty());             // Either<String, NonEmptyVector<String>>
+var some  = recipients(Vector.of("ada@shop.com"));  // Either<String, NonEmptyVector<String>>
 var first = some.map(NonEmptyVector::head).getOrElse("nobody");
 // none is Left(at least one recipient is required)
 // some is Right(NonEmptyVector(ada@shop.com))
@@ -276,8 +276,8 @@ the usual way:
 ```java
 class ConnectionState {
     boolean connected;
-    String sessionId;   // set when connected, hopefully
-    String error;       // set when it failed, hopefully
+    String sessionId;  // set when connected, hopefully
+    String error;      // set when it failed, hopefully
 }
 ```
 

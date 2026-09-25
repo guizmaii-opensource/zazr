@@ -32,10 +32,10 @@ A builder is not thread-safe and not reusable: after `result()`, create a new on
 `newBuilder(sizeHint)` takes the expected size. It matters only for vectors of up to 32 elements: the builder then allocates exactly that many slots. Larger vectors are built from full blocks of 32, so the hint changes nothing for them.
 
 ```java
-var both = Vector.<Integer>newBuilder(8); // Vector.Builder<Integer>
+var both   = Vector.<Integer>newBuilder(8);  // Vector.Builder<Integer>
 both.addAll(Vector.of(1, 2, 3)).add(4);
-var added = both.size();
-var result = both.result(); // Vector<Integer>
+var added  = both.size();
+var result = both.result();                  // Vector<Integer>
 // added is 4, result is Vector(1, 2, 3, 4)
 ```
 

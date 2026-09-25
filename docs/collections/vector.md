@@ -25,14 +25,14 @@ Choose another sequence for a specific need:
 
 ```java
 var letters = Vector.of("a", "b", "c", "d");
-var changed = letters.update(1, "B").prepend("z").drop(2); // Vector<String>
-var halves = letters.splitAt(2); // Tuple2<Vector<String>, Vector<String>>
+var changed = letters.update(1, "B").prepend("z").drop(2);  // Vector<String>
+var halves  = letters.splitAt(2);                           // Tuple2<Vector<String>, Vector<String>>
 // changed is Vector(B, c, d), halves is (Vector(a, b), Vector(c, d))
 ```
 
 ```java
-var numbers = Vector.range(0, 10); // Vector<Integer>
-var windows = numbers.sliding(3, 3); // Vector<Vector<Integer>>
+var numbers = Vector.range(0, 10);    // Vector<Integer>
+var windows = numbers.sliding(3, 3);  // Vector<Vector<Integer>>
 var parts = numbers.partitionMap( // Tuple2<Vector<Integer>, Vector<String>>
     n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
 // windows is Vector(Vector(0, 1, 2), Vector(3, 4, 5), Vector(6, 7, 8), Vector(9))

@@ -132,7 +132,7 @@ var done = Using.manager(use -> { // Try<String>
     escaped.set(use);
     return "done";
 });
-var log = new StringBuilder();
+var log  = new StringBuilder();
 var late = Try.run(() -> escaped.get().acquire(() -> log.append("released at once")));
 // Failure(java.lang.IllegalStateException: ...), and log is "released at once"
 ```

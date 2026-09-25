@@ -16,10 +16,10 @@ Use `Option` when a value may be missing and there is nothing more to say about 
 ## Construction
 
 ```java
-var some = Option.some(1); // Option<Integer>
-var none = Option.<Integer>none(); // Option<Integer>
-var fromNullable = Option.<String>ofNullable(null); // Option<String>
-var when = Option.when(3 > 2, () -> 3); // Option<Integer>
+var some         = Option.some(1);                   // Option<Integer>
+var none         = Option.<Integer>none();           // Option<Integer>
+var fromNullable = Option.<String>ofNullable(null);  // Option<String>
+var when         = Option.when(3 > 2, () -> 3);      // Option<Integer>
 // Some(1), None, None, Some(3)
 ```
 
@@ -61,8 +61,8 @@ var shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
 `NoSuchElementException`.
 
 ```java
-var parsed = Option.some("x").mapTry(Integer::parseInt); // Try<Integer>
-var absent = Option.<String>none().mapTry(Integer::parseInt); // Try<Integer>
+var parsed = Option.some("x").mapTry(Integer::parseInt);       // Try<Integer>
+var absent = Option.<String>none().mapTry(Integer::parseInt);  // Try<Integer>
 // Failure(java.lang.NumberFormatException: For input string: "x"), Failure(java.util.NoSuchElementException: ...)
 ```
 
@@ -81,10 +81,10 @@ Other members:
 - `toOptional()` and `Option.ofOptional(Optional)` go to and from `java.util.Optional`.
 
 ```java
-var fromOptional = Option.ofOptional(java.util.Optional.of(3)); // Option<Integer>
-var either = fromOptional.toEither(() -> "missing"); // Either<String, Integer>
-var validation = Option.<Integer>none().toValidation(() -> "missing"); // Validation<String, Integer>
-var back = fromOptional.toOptional(); // java.util.Optional<Integer>
+var fromOptional = Option.ofOptional(java.util.Optional.of(3));           // Option<Integer>
+var either       = fromOptional.toEither(() -> "missing");                // Either<String, Integer>
+var validation   = Option.<Integer>none().toValidation(() -> "missing");  // Validation<String, Integer>
+var back         = fromOptional.toOptional();                             // java.util.Optional<Integer>
 // Some(3), Right(3), Invalid(missing), Optional[3]
 ```
 
@@ -98,7 +98,7 @@ instead, because `Some` cannot hold `null`.
 To map to a value that may be absent, use `flatMap` with `Option.ofNullable`:
 
 ```java
-var env = java.util.Map.of("HOME", "/home/ada"); // java.util.Map<String, String>
+var env   = java.util.Map.of("HOME", "/home/ada");
 var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key))); // Option<String>
 // None, where map(env::get) would throw
 ```

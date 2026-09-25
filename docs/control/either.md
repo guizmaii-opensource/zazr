@@ -21,9 +21,9 @@ Use `Either` for a step that can fail with an error you define, when the first e
 ## Construction
 
 ```java
-var right = Either.<String, Integer>right(42); // Either<String, Integer>
-var left = Either.<String, Integer>left("not a number"); // Either<String, Integer>
-var checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative"); // Either<String, Integer>
+var right   = Either.<String, Integer>right(42);                        // Either<String, Integer>
+var left    = Either.<String, Integer>left("not a number");             // Either<String, Integer>
+var checked = Either.fromPredicate(-1, n -> n >= 0, () -> "negative");  // Either<String, Integer>
 // Right(42), Left(not a number), Left(negative)
 ```
 
@@ -66,8 +66,8 @@ sides.
 ```java
 var adult = Either.<String, Integer>right(15)
     .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
-var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n); // String
-var flipped = adult.flip(); // Either<Integer, String>
+var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n);  // String
+var flipped = adult.flip();                                                      // Either<Integer, String>
 // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
 ```
 
@@ -87,10 +87,10 @@ var flipped = adult.flip(); // Either<Integer, String>
 - `toVector()` gives zero or one element.
 
 ```java
-var missing = Either.<String, Integer>left("missing");
-var option = missing.toOption(); // Option<Integer>
-var attempt = missing.toTry(IllegalArgumentException::new); // Try<Integer>
-var validation = missing.toValidation(); // Validation<String, Integer>
+var missing    = Either.<String, Integer>left("missing");
+var option     = missing.toOption();                            // Option<Integer>
+var attempt    = missing.toTry(IllegalArgumentException::new);  // Try<Integer>
+var validation = missing.toValidation();                        // Validation<String, Integer>
 // None, Failure(java.lang.IllegalArgumentException: missing), Invalid(missing)
 ```
 

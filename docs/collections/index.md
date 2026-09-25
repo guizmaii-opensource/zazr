@@ -48,10 +48,10 @@ var flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3))); // Vector<Int
 ```
 
 ```java
-var vector = Vector.of(3, 1, 2);
-var sortedList = vector.toList().sorted(); // List<Integer>
-var set = HashSet.ofAll(vector); // HashSet<Integer>
-var same = Vector.of(1, 2, 3).equals(sortedList);
+var vector     = Vector.of(3, 1, 2);
+var sortedList = vector.toList().sorted();  // List<Integer>
+var set        = HashSet.ofAll(vector);     // HashSet<Integer>
+var same       = Vector.of(1, 2, 3).equals(sortedList);
 // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 ```
 
@@ -64,8 +64,8 @@ No collection holds `null`: adding a `null` element, key or value throws a `Null
 `Option`, which is what `find`, `headOption` and `Map.get` return.
 
 ```java
-var missing = HashMap.of("a", 1).get("b"); // Option<Integer>
-var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0); // Option<Integer>
+var missing   = HashMap.of("a", 1).get("b");               // Option<Integer>
+var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);  // Option<Integer>
 // None, Some(4)
 ```
 

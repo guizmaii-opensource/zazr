@@ -21,17 +21,17 @@ Three sets with the same operations: `add`, `remove`, `contains`, `union`, `inte
 - `TreeSet` when you need the elements sorted, a range of them, or the least and the greatest.
 
 ```java
-var tags = HashSet.of("java", "scala");
-var more = tags.add("zio").remove("scala"); // HashSet<String>
-var common = tags.intersect(HashSet.of("scala", "kotlin")); // HashSet<String>
+var tags   = HashSet.of("java", "scala");
+var more   = tags.add("zio").remove("scala");                // HashSet<String>
+var common = tags.intersect(HashSet.of("scala", "kotlin"));  // HashSet<String>
 // more contains java and zio, common is HashSet(scala)
 ```
 
 ```java
-var seen = LinkedHashSet.of("b", "a").add("c").add("a"); // LinkedHashSet<String>
-var sorted = TreeSet.of(5, 1, 4, 2);
-var smallest = sorted.head(); // Integer
-var firstTwo = sorted.take(2); // TreeSet<Integer>
+var seen     = LinkedHashSet.of("b", "a").add("c").add("a");  // LinkedHashSet<String>
+var sorted   = TreeSet.of(5, 1, 4, 2);
+var smallest = sorted.head();                                 // Integer
+var firstTwo = sorted.take(2);                                // TreeSet<Integer>
 // seen is LinkedHashSet(b, a, c), smallest is 1, firstTwo is TreeSet(1, 2)
 ```
 

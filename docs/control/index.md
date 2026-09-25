@@ -71,7 +71,7 @@ var parsed = Either.forEach(Vector.of("1", "x", "3"), // Either<String, Vector<I
 The static `flatten` removes one level of nesting, on every type including `Validation` and `Lazy`.
 
 ```java
-var flat = Option.flatten(Option.some(Option.some(1))); // Option<Integer>
+var flat  = Option.flatten(Option.some(Option.some(1))); // Option<Integer>
 var inner = Either.flatten(Either.right(Either.<String, Integer>left("inner failure")));
 // Some(1), Left(inner failure)
 ```
@@ -89,9 +89,9 @@ The conversions are explicit and short; there is no `Iterable` to lean on.
 | `Lazy` | `get()`, `toSupplier()` |
 
 ```java
-var fromOption = Option.<Integer>none().toEither(() -> "missing"); // Either<String, Integer>
-var optional = Option.some(5).toOptional(); // java.util.Optional<Integer>
-var fromTry = Try.of(() -> Integer.parseInt("7")).toOption(); // Option<Integer>
+var fromOption = Option.<Integer>none().toEither(() -> "missing");  // Either<String, Integer>
+var optional   = Option.some(5).toOptional();                       // java.util.Optional<Integer>
+var fromTry    = Try.of(() -> Integer.parseInt("7")).toOption();    // Option<Integer>
 // Left(missing), Optional[5], Some(7)
 ```
 
@@ -104,9 +104,9 @@ var fromTry = Try.of(() -> Integer.parseInt("7")).toOption(); // Option<Integer>
 - A `Try` whose computation returns `null` is a `Failure` holding a `NullPointerException`.
 
 ```java
-var absent = Option.<String>ofNullable(null); // Option<String>
-var nullResult = Try.<String>of(() -> null); // Try<String>
-var npe = nullResult.getCause() instanceof NullPointerException;
+var absent     = Option.<String>ofNullable(null);  // Option<String>
+var nullResult = Try.<String>of(() -> null);       // Try<String>
+var npe        = nullResult.getCause() instanceof NullPointerException;
 // None, Failure(java.lang.NullPointerException: ...), true
 ```
 

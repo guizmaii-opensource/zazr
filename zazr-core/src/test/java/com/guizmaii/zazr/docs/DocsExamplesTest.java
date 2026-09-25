@@ -492,7 +492,7 @@ public class DocsExamplesTest {
 
         @Test
         void sharpEdges() {
-            var env = java.util.Map.of("HOME", "/home/ada"); // java.util.Map<String, String>
+            var env = java.util.Map.of("HOME", "/home/ada");
             var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key))); // Option<String>
             // None, where map(env::get) would throw
 
@@ -636,7 +636,7 @@ public class DocsExamplesTest {
         @Test
         void conversions() {
             var either = Try.of(() -> Integer.parseInt("7")).toEither(); // Either<Throwable, Integer>
-            var future = Try.success(7).toCompletableFuture(); // java.util.concurrent.CompletableFuture<Integer>
+            var future = Try.success(7).toCompletableFuture(); // CompletableFuture<Integer>
             var back = Try.fromCompletableFuture(future); // Try<Integer>
             // Right(7), a completed future, Success(7)
 
