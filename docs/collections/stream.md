@@ -40,8 +40,8 @@ Every method: [complexity page](complexity.md#stream).
 ## Sharp edges
 
 - Operations that need the whole sequence force it and never return on an infinite `Stream`: `length`, `size`,
-  `last`, `reverse`, `sorted`, `max`, `min`, `foldLeft`, `mkString`, `toVector`, `equals`, `hashCode`. Their notes
-  say so.
+  `last`, `reverse`, `sorted`, `max` and `min` (their notes say so), and anything that reads every element, such as
+  `foldLeft`, `mkString` or `toVector`.
 - A `Stream` is head-strict: building one computes its first element, and `map`, `filter` and the others compute the
   first element of their result.
 - `partitionMap` is lazy too, but each side is forced to its first element when it is built, which walks the source

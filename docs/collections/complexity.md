@@ -102,6 +102,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | Method | Cost | Note |
 |---|---|---|
 | `transpose(Vector<Vector<T>>)` | <abbr class="cx cx-polynomial" title="O(rows * columns); the matrix itself is returned when it has no or one element.">O(rows * columns)</abbr> | O(rows * columns); the matrix itself is returned when it has no or one element. |
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total, one builder append each.">O(n)</abbr> | O(n) for n inner elements in total, one builder append each. |
 | `append(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (a path copy; the last leaf is copied).">effectively O(1)</abbr> | effectively O(1) (a path copy; the last leaf is copied). |
 | `appendAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for m appended elements (one leaf copy per 32 elements plus a path copy); O(1) when this Vector is empty and iterable is a Vector, which is returned as is.">O(m)</abbr> | O(m) for m appended elements (one leaf copy per 32 elements plus a path copy); O(1) when this Vector is empty and iterable is a Vector, which is returned as is. |
 | `asJava()` | <abbr class="cx cx-constant" title="O(1); get on the view is effectively O(1).">O(1)</abbr> | O(1); get on the view is effectively O(1). |
@@ -125,6 +126,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `dropRightUntil(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for k dropped elements, then one effectively O(1) take.">O(k)</abbr> | O(k) for k dropped elements, then one effectively O(1) take. |
 | `dropRightWhile(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for k dropped elements, then one effectively O(1) take.">O(k)</abbr> | O(k) for k dropped elements, then one effectively O(1) take. |
 | `endsWith(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for m elements of that.">O(m)</abbr> | O(m) for m elements of that. |
+| `foldRight(U, BiFunction<? super T, ? super U, ? extends U>)` | <abbr class="cx cx-linear" title="O(n), walking the elements from the last to the first without copying.">O(n)</abbr> | O(n), walking the elements from the last to the first without copying. |
 | `get(int)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (O(log32 n) trie access).">effectively O(1)</abbr> | effectively O(1) (O(log32 n) trie access). |
 | `head()` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1).">effectively O(1)</abbr> | effectively O(1). |
 | `indexOf(T)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
@@ -150,6 +152,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `padTo(int, T)` | <abbr class="cx cx-linear" title="O(k) for the k elements appended.">O(k)</abbr> | O(k) for the k elements appended. |
 | `leftPadTo(int, T)` | <abbr class="cx cx-linear" title="O(k) for the k elements prepended.">O(k)</abbr> | O(k) for the k elements prepended. |
 | `patch(int, Iterable<? extends T>, int)` | <abbr class="cx cx-linear" title="O(n + m) for m elements of that.">O(n + m)</abbr> | O(n + m) for m elements of that. |
+| `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-linear" title="O(n), one builder append per element.">O(n)</abbr> | O(n), one builder append per element. |
 | `permutations()` | <abbr class="cx cx-combinatorial" title="O(n! * n) in the worst case (all elements distinct).">O(n! * n)</abbr> | O(n! * n) in the worst case (all elements distinct). |
 | `prefixLength(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for a prefix of k elements.">O(k)</abbr> | O(k) for a prefix of k elements. |
 | `prepend(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (a path copy; the first leaf is copied).">effectively O(1)</abbr> | effectively O(1) (a path copy; the first leaf is copied). |
@@ -195,6 +198,8 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `takeRight(int)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (the path to the new first leaf is trimmed).">effectively O(1)</abbr> | effectively O(1) (the path to the new first leaf is trimmed). |
 | `takeRightUntil(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for k taken elements, then one effectively O(1) drop.">O(k)</abbr> | O(k) for k taken elements, then one effectively O(1) drop. |
 | `takeRightWhile(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(k) for k taken elements, then one effectively O(1) drop.">O(k)</abbr> | O(k) for k taken elements, then one effectively O(1) drop. |
+| `unzip(Function<? super T, Tuple2<? extends T1, ? extends T2>>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `update(int, T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (a path copy; the leaf holding the element is copied).">effectively O(1)</abbr> | effectively O(1) (a path copy; the leaf holding the element is copied). |
 | `update(int, Function<? super T, ? extends T>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one access and one path copy).">effectively O(1)</abbr> | effectively O(1) (one access and one path copy). |
 | `zip(Iterable<? extends U>)` | <abbr class="cx cx-linear" title="O(min(n, m)) for m elements of that.">O(min(n, m))</abbr> | O(min(n, m)) for m elements of that. |
@@ -209,13 +214,21 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `crossProduct()` | <abbr class="cx cx-polynomial" title="O(n^2); the pairs are built now.">O(n^2)</abbr> | O(n^2); the pairs are built now. |
 | `crossProduct(int)` | <abbr class="cx cx-polynomial" title="O(n^power) Vectors of size power, built now.">O(n^power)</abbr> | O(n^power) Vectors of size power, built now. |
 | `crossProduct(Iterable<? extends U>)` | <abbr class="cx cx-polynomial" title="O(n * m) for m elements of that; the pairs are built now.">O(n * m)</abbr> | O(n * m) for m elements of that; the pairs are built now. |
+| `reduceRight(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n), walking the elements from the last to the first without copying.">O(n)</abbr> | O(n), walking the elements from the last to the first without copying. |
 | `max()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
+| `findLast(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n); every element is tested.">O(n)</abbr> | O(n); every element is tested. |
+| `headOption()` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of head().">effectively O(1)</abbr> | effectively O(1), that of head(). |
+| `lastOption()` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of last().">effectively O(1)</abbr> | effectively O(1), that of last(). |
+| `reduceLeft(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `size()` | <abbr class="cx cx-constant" title="O(1), that of length().">O(1)</abbr> | O(1), that of length(). |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 
 ### `List`
 
 | Method | Cost | Note |
 |---|---|---|
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total: one cell per element, built reversed and reversed once.">O(n)</abbr> | O(n) for n inner elements in total: one cell per element, built reversed and reversed once. |
 | `transpose(List<List<T>>)` | <abbr class="cx cx-polynomial" title="O(rows * columns).">O(rows * columns)</abbr> | O(rows * columns). |
 | `append(T)` | <abbr class="cx cx-linear" title="O(n); every cell of this List is rebuilt.">O(n)</abbr> | O(n); every cell of this List is rebuilt. |
 | `appendAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m appended elements; the elements are copied once and this List is rebuilt.">O(n + m)</abbr> | O(n + m) for m appended elements; the elements are copied once and this List is rebuilt. |
@@ -240,6 +253,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `duplicates()` | <abbr class="cx cx-linear" title="O(n), one hash lookup per element.">O(n)</abbr> | O(n), one hash lookup per element. |
 | `duplicatesBy(Function<? super T, ? extends U>)` | <abbr class="cx cx-linear" title="O(n), one key and one hash lookup per element.">O(n)</abbr> | O(n), one key and one hash lookup per element. |
 | `endsWith(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m elements of that: the suffix is reached by walking this List.">O(n + m)</abbr> | O(n + m) for m elements of that: the suffix is reached by walking this List. |
+| `filter(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `get(int)` | <abbr class="cx cx-linear" title="O(index); the cells are walked one by one.">O(index)</abbr> | O(index); the cells are walked one by one. |
 | `indexOf(T)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `indexOf(T, int)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
@@ -263,6 +277,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `padTo(int, T)` | <abbr class="cx cx-linear" title="O(n + k) for k added elements.">O(n + k)</abbr> | O(n + k) for k added elements. |
 | `leftPadTo(int, T)` | <abbr class="cx cx-linear" title="O(k) for k added elements; this List is shared, not copied.">O(k)</abbr> | O(k) for k added elements; this List is shared, not copied. |
 | `patch(int, Iterable<? extends T>, int)` | <abbr class="cx cx-linear" title="O(n + m) for m replacement elements.">O(n + m)</abbr> | O(n + m) for m replacement elements. |
+| `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-linear" title="O(n); each side is built reversed and reversed once.">O(n)</abbr> | O(n); each side is built reversed and reversed once. |
 | `peek()` | <abbr class="cx cx-constant" title="O(1); the head is a field of the cons cell.">O(1)</abbr> | O(1); the head is a field of the cons cell. |
 | `peekOption()` | <abbr class="cx cx-constant" title="O(1); the head is a field of the cons cell.">O(1)</abbr> | O(1); the head is a field of the cons cell. |
 | `permutations()` | <abbr class="cx cx-combinatorial" title="O(n!) permutations.">O(n!)</abbr> | O(n!) permutations. |
@@ -333,13 +348,21 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `crossProduct()` | <abbr class="cx cx-polynomial" title="O(n^2); the pairs are built now.">O(n^2)</abbr> | O(n^2); the pairs are built now. |
 | `crossProduct(int)` | <abbr class="cx cx-polynomial" title="O(n^power) Lists of size power, built now.">O(n^power)</abbr> | O(n^power) Lists of size power, built now. |
 | `crossProduct(Iterable<? extends U>)` | <abbr class="cx cx-polynomial" title="O(n * m) for m elements of that; the pairs are built now.">O(n * m)</abbr> | O(n * m) for m elements of that; the pairs are built now. |
+| `reduceRight(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n); the List is reversed first.">O(n)</abbr> | O(n); the List is reversed first. |
 | `max()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
+| `findLast(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n); every element is tested.">O(n)</abbr> | O(n); every element is tested. |
+| `headOption()` | <abbr class="cx cx-constant" title="O(1), that of head().">O(1)</abbr> | O(1), that of head(). |
+| `lastOption()` | <abbr class="cx cx-linear" title="O(n), that of last().">O(n)</abbr> | O(n), that of last(). |
+| `reduceLeft(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `size()` | <abbr class="cx cx-linear" title="O(n), that of length().">O(n)</abbr> | O(n), that of length(). |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 
 ### `Queue`
 
 | Method | Cost | Note |
 |---|---|---|
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total: they are collected into the front list of the result.">O(n)</abbr> | O(n) for n inner elements in total: they are collected into the front list of the result. |
 | `transpose(Queue<Queue<T>>)` | <abbr class="cx cx-polynomial" title="O(rows * columns).">O(rows * columns)</abbr> | O(rows * columns). |
 | `enqueue(T)` | <abbr class="cx cx-constant" title="O(1); the element is prepended to the rear list.">O(1)</abbr> | O(1); the element is prepended to the rear list. |
 | `enqueueAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for m enqueued elements.">O(m)</abbr> | O(m) for m enqueued elements. |
@@ -380,6 +403,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `dropRight(int)` | <abbr class="cx cx-linear" title="O(n); the front and the rear are both walked.">O(n)</abbr> | O(n); the front and the rear are both walked. |
 | `dropRightUntil(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `dropRightWhile(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `filter(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `get(int)` | <abbr class="cx cx-linear" title="O(index) while the index is in the front; O(n) once it falls in the rear, which is measured and indexed from its end.">O(index)</abbr> | O(index) while the index is in the front; O(n) once it falls in the rear, which is measured and indexed from its end. |
 | `head()` | <abbr class="cx cx-constant" title="O(1); the head of the front list.">O(1)</abbr> | O(1); the head of the front list. |
 | `indexOf(T, int)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
@@ -394,6 +418,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `padTo(int, T)` | <abbr class="cx cx-linear" title="O(n + k) for k added elements.">O(n + k)</abbr> | O(n + k) for k added elements. |
 | `leftPadTo(int, T)` | <abbr class="cx cx-linear" title="O(n + k) for k added elements.">O(n + k)</abbr> | O(n + k) for k added elements. |
 | `patch(int, Iterable<? extends T>, int)` | <abbr class="cx cx-linear" title="O(n + m) for m replacement elements.">O(n + m)</abbr> | O(n + m) for m replacement elements. |
+| `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-linear" title="O(n); each side is built reversed and becomes the front list of its Queue.">O(n)</abbr> | O(n); each side is built reversed and becomes the front list of its Queue. |
 | `permutations()` | <abbr class="cx cx-combinatorial" title="O(n!) permutations.">O(n!)</abbr> | O(n!) permutations. |
 | `prepend(T)` | <abbr class="cx cx-constant" title="O(1); the element is prepended to the front list.">O(1)</abbr> | O(1); the element is prepended to the front list. |
 | `prependAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for m prepended elements.">O(m)</abbr> | O(m) for m prepended elements. |
@@ -455,8 +480,15 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `crossProduct()` | <abbr class="cx cx-polynomial" title="O(n^2); the pairs are built now.">O(n^2)</abbr> | O(n^2); the pairs are built now. |
 | `crossProduct(int)` | <abbr class="cx cx-polynomial" title="O(n^power) Queues of size power, built now.">O(n^power)</abbr> | O(n^power) Queues of size power, built now. |
 | `crossProduct(Iterable<? extends U>)` | <abbr class="cx cx-polynomial" title="O(n * m) for m elements of that; the pairs are built now.">O(n * m)</abbr> | O(n * m) for m elements of that; the pairs are built now. |
+| `reduceRight(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n); the elements are walked once as a List, in reverse.">O(n)</abbr> | O(n); the elements are walked once as a List, in reverse. |
 | `max()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
+| `findLast(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n); every element is tested.">O(n)</abbr> | O(n); every element is tested. |
+| `headOption()` | <abbr class="cx cx-constant" title="O(1), that of head().">O(1)</abbr> | O(1), that of head(). |
+| `lastOption()` | <abbr class="cx cx-linear" title="O(n), that of last().">O(n)</abbr> | O(n), that of last(). |
+| `reduceLeft(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `size()` | <abbr class="cx cx-linear" title="O(n), that of length().">O(n)</abbr> | O(n), that of length(). |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 
 ### `Stream`
 
@@ -464,6 +496,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 |---|---|---|
 | `concat(Iterable<? extends T>[])` | <abbr class="cx cx-linear" title="O(k) for k iterables, whose iterators are obtained now; the elements are lazy.">O(k)</abbr> | O(k) for k iterables, whose iterators are obtained now; the elements are lazy. |
 | `concat(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(k) for k iterables, whose iterators are obtained now; the elements are lazy.">O(k)</abbr> | O(k) for k iterables, whose iterators are obtained now; the elements are lazy. |
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-lazy" title="lazy; the first element is found when this method is called (skipping the empty inner iterables before it), each further one when the result reaches it. An outer iterable with infinitely many empty inner ones and no element after them never yields, so the call does not return.">lazy</abbr> | lazy; the first element is found when this method is called (skipping the empty inner iterables before it), each further one when the result reaches it. An outer iterable with infinitely many empty inner ones and no element after them never yields, so the call does not return. |
 | `transpose(Stream<Stream<T>>)` | <abbr class="cx cx-polynomial" title="O(rows * columns); the whole matrix is forced.">O(rows * columns)</abbr> | O(rows * columns); the whole matrix is forced. |
 | `containsSlice(Iterable<? extends T>)` | <abbr class="cx cx-polynomial" title="O(n * m) for a slice of m elements; the elements are forced until the slice is found.">O(n * m)</abbr> | O(n * m) for a slice of m elements; the elements are forced until the slice is found. |
 | `endsWith(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m elements of that; the whole Stream is forced.">O(n + m)</abbr> | O(n + m) for m elements of that; the whole Stream is forced. |
@@ -507,6 +540,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `dropRight(int)` | <abbr class="cx cx-lazy" title="lazy; the result runs n elements behind this Stream, so it works on an infinite Stream.">lazy</abbr> | lazy; the result runs n elements behind this Stream, so it works on an infinite Stream. |
 | `dropRightUntil(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n); the whole Stream is forced, because the last matching element decides.">O(n)</abbr> | O(n); the whole Stream is forced, because the last matching element decides. |
 | `dropRightWhile(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n); the whole Stream is forced, because the last matching element decides.">O(n)</abbr> | O(n); the whole Stream is forced, because the last matching element decides. |
+| `filter(Predicate<? super T>)` | <abbr class="cx cx-lazy" title="lazy; the elements are forced until the first match, the rest on demand.">lazy</abbr> | lazy; the elements are forced until the first match, the rest on demand. |
 | `get(int)` | <abbr class="cx cx-linear" title="O(index); the first index + 1 elements are forced.">O(index)</abbr> | O(index); the first index + 1 elements are forced. |
 | `indexOf(T, int)` | <abbr class="cx cx-linear" title="O(n); the elements are forced until the element is found.">O(n)</abbr> | O(n); the elements are forced until the element is found. |
 | `init()` | <abbr class="cx cx-lazy" title="lazy; the result runs one element behind this Stream, so only the first two elements are forced.">lazy</abbr> | lazy; the result runs one element behind this Stream, so only the first two elements are forced. |
@@ -520,6 +554,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `padTo(int, T)` | <abbr class="cx cx-lazy" title="lazy; the padding is appended without forcing this Stream.">lazy</abbr> | lazy; the padding is appended without forcing this Stream. |
 | `leftPadTo(int, T)` | <abbr class="cx cx-linear" title="O(n); the whole Stream is forced, because its length decides how much padding is needed.">O(n)</abbr> | O(n); the whole Stream is forced, because its length decides how much padding is needed. |
 | `patch(int, Iterable<? extends T>, int)` | <abbr class="cx cx-lazy" title="lazy; the elements are forced as the result reaches them.">lazy</abbr> | lazy; the elements are forced as the result reaches them. |
+| `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-lazy" title="lazy; as every Stream is head-strict, each side is forced to its first element when this method is called, and each further element of a side is found when that side reaches it. The results of f that one side has passed stay memoised until the other side has passed them too. On an infinite Stream, a side that never receives an element is searched forever, so the call does not return (as with partition).">lazy</abbr> | lazy; as every Stream is head-strict, each side is forced to its first element when this method is called, and each further element of a side is found when that side reaches it. The results of f that one side has passed stay memoised until the other side has passed them too. On an infinite Stream, a side that never receives an element is searched forever, so the call does not return (as with partition). |
 | `permutations()` | <abbr class="cx cx-combinatorial" title="O(n!) permutations; the whole Stream is forced.">O(n!)</abbr> | O(n!) permutations; the whole Stream is forced. |
 | `prepend(T)` | <abbr class="cx cx-constant" title="O(1); nothing is forced.">O(1)</abbr> | O(1); nothing is forced. |
 | `prependAll(Iterable<? extends T>)` | <abbr class="cx cx-constant" title="O(1); the head of this Stream is forced, the rest stays deferred.">O(1)</abbr> | O(1); the head of this Stream is forced, the rest stays deferred. |
@@ -577,8 +612,15 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `crossProduct()` | <abbr class="cx cx-lazy" title="lazy; O(n^2) pairs when consumed.">lazy</abbr> | lazy; O(n^2) pairs when consumed. |
 | `crossProduct(int)` | <abbr class="cx cx-lazy" title="lazy; O(n^power) Streams of size power when consumed.">lazy</abbr> | lazy; O(n^power) Streams of size power when consumed. |
 | `crossProduct(Iterable<? extends U>)` | <abbr class="cx cx-lazy" title="lazy; O(n * m) pairs when consumed.">lazy</abbr> | lazy; O(n * m) pairs when consumed. |
+| `reduceRight(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n); the whole Stream is forced and reversed.">O(n)</abbr> | O(n); the whole Stream is forced and reversed. |
 | `max()` | <abbr class="cx cx-linear" title="O(n), every element compared once; the whole Stream is forced, so it does not terminate on an infinite Stream.">O(n)</abbr> | O(n), every element compared once; the whole Stream is forced, so it does not terminate on an infinite Stream. |
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once; the whole Stream is forced, so it does not terminate on an infinite Stream.">O(n)</abbr> | O(n), every element compared once; the whole Stream is forced, so it does not terminate on an infinite Stream. |
+| `findLast(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n); every element is tested.">O(n)</abbr> | O(n); every element is tested. |
+| `headOption()` | <abbr class="cx cx-constant" title="O(1), that of head().">O(1)</abbr> | O(1), that of head(). |
+| `lastOption()` | <abbr class="cx cx-linear" title="O(n), that of last().">O(n)</abbr> | O(n), that of last(). |
+| `reduceLeft(BiFunction<? super T, ? super T, ? extends T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `size()` | <abbr class="cx cx-linear" title="O(n), that of length().">O(n)</abbr> | O(n), that of length(). |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 
 ### `NonEmptyVector`
 
@@ -643,29 +685,35 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 
 | Method | Cost | Note |
 |---|---|---|
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total, one effectively O(1) insertion each.">O(n)</abbr> | O(n) for n inner elements in total, one effectively O(1) insertion each. |
 | `add(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup, then a path copy of the trie when the element is new).">effectively O(1)</abbr> | effectively O(1) (one hash lookup, then a path copy of the trie when the element is new). |
 | `addAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for m elements, each an effectively O(1) insertion; O(1) when this set is empty and elements is a HashSet, which is returned as is.">O(m)</abbr> | O(m) for m elements, each an effectively O(1) insertion; O(1) when this set is empty and elements is a HashSet, which is returned as is. |
 | `contains(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
 | `diff(Set<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements (a hash set of them, then one filter pass).">O(n + m)</abbr> | O(n + m) for a set of m elements (a hash set of them, then one filter pass). |
 | `intersect(Set<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements (the smaller set is filtered against a hash set of the larger one).">O(n + m)</abbr> | O(n + m) for a set of m elements (the smaller set is filtered against a hash set of the larger one). |
 | `iterator()` | <abbr class="cx cx-constant" title="O(1) to create; a whole walk is O(n).">O(1)</abbr> | O(1) to create; a whole walk is O(n). |
+| `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-linear" title="O(n), one effectively O(1) insertion per element.">O(n)</abbr> | O(n), one effectively O(1) insertion per element. |
 | `remove(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup and a path copy of the trie).">effectively O(1)</abbr> | effectively O(1) (one hash lookup and a path copy of the trie). |
 | `removeAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m given elements (a hash set of them, then one filter pass).">O(n + m)</abbr> | O(n + m) for m given elements (a hash set of them, then one filter pass). |
 | `replace(T, T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one lookup, one removal and one insertion).">effectively O(1)</abbr> | effectively O(1) (one lookup, one removal and one insertion). |
 | `replaceAll(T, T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of replace(Object,: a set holds an element once.">effectively O(1)</abbr> | effectively O(1), that of replace(Object,: a set holds an element once. |
 | `retainAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m given elements (a hash set of them, then one filter pass).">O(n + m)</abbr> | O(n + m) for m given elements (a hash set of them, then one filter pass). |
 | `union(Set<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for a set of m elements, each an effectively O(1) insertion; this set or a HashSet argument is returned as is when the other side is empty.">O(m)</abbr> | O(m) for a set of m elements, each an effectively O(1) insertion; this set or a HashSet argument is returned as is when the other side is empty. |
+| `max()` (from `Set`) | <abbr class="cx cx-linear" title="O(n), every element compared once in natural order; on a TreeSet the greatest element in the comparator's order is last(), O(log n).">O(n)</abbr> | O(n), every element compared once in natural order; on a TreeSet the greatest element in the comparator's order is last(), O(log n). |
+| `min()` (from `Set`) | <abbr class="cx cx-linear" title="O(n), every element compared once in natural order; on a TreeSet the least element in the comparator's order is head(), O(log n).">O(n)</abbr> | O(n), every element compared once in natural order; on a TreeSet the least element in the comparator's order is head(), O(log n). |
 
 ### `LinkedHashSet`
 
 | Method | Cost | Note |
 |---|---|---|
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total, one effectively O(1) insertion each.">O(n)</abbr> | O(n) for n inner elements in total, one effectively O(1) insertion each. |
 | `add(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup, then a hash insertion and an append to the insertion order when the element is new).">effectively O(1)</abbr> | effectively O(1) (one hash lookup, then a hash insertion and an append to the insertion order when the element is new). |
 | `addAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m) for m elements, each an effectively O(1) add(Object); O(1) when this set is empty and elements is a LinkedHashSet, which is returned as is.">O(m)</abbr> | O(m) for m elements, each an effectively O(1) add(Object); O(1) when this set is empty and elements is a LinkedHashSet, which is returned as is. |
 | `contains(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
 | `diff(Set<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements (a hash set of them, then the kept elements copied into a new set).">O(n + m)</abbr> | O(n + m) for a set of m elements (a hash set of them, then the kept elements copied into a new set). |
 | `intersect(Set<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements (a hash set of them, then the kept elements copied into a new set).">O(n + m)</abbr> | O(n + m) for a set of m elements (a hash set of them, then the kept elements copied into a new set). |
 | `iterator()` | <abbr class="cx cx-constant" title="O(1) to create; each step is effectively O(1) (one hash lookup), a whole walk O(n).">O(1)</abbr> | O(1) to create; each step is effectively O(1) (one hash lookup), a whole walk O(n). |
+| `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-linear" title="O(n), one effectively O(1) insertion per element.">O(n)</abbr> | O(n), one effectively O(1) insertion per element. |
 | `remove(T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the markers outnumber the elements, the insertion order is rebuilt in O(n).">effectively O(1)</abbr> | effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the markers outnumber the elements, the insertion order is rebuilt in O(n). |
 | `removeAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(m + n) for m given elements (a hash set of them, then the kept elements copied into a new set).">O(m + n)</abbr> | O(m + n) for m given elements (a hash set of them, then the kept elements copied into a new set). |
 | `replace(T, T)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) amortised, as remove(Object); the new element takes the position of the replaced one.">effectively O(1)</abbr> | effectively O(1) amortised, as remove(Object); the new element takes the position of the replaced one. |
@@ -691,11 +739,15 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `sliding(int)` | <abbr class="cx cx-polynomial" title="O(n * size), that of sliding(int, with a step of 1.">O(n * size)</abbr> | O(n * size), that of sliding(int, with a step of 1. |
 | `sliding(int, int)` | <abbr class="cx cx-polynomial" title="O(n + (n / step) * min(size, n - size)): O(n) to drop the removed elements' markers from the insertion order if there are any, then per window that of take(int) on a window of size elements, effectively O(min(size, n - size)).">O(n + (n / step) * min(size, n - size))</abbr> | O(n + (n / step) * min(size, n - size)): O(n) to drop the removed elements' markers from the insertion order if there are any, then per window that of take(int) on a window of size elements, effectively O(min(size, n - size)). |
 | `slideBy(Function<? super T, ?>)` | <abbr class="cx cx-linear" title="O(n) walk (plus O(n) to drop the removed elements' markers from the insertion order if there are any), then per run that of take(int) on the run.">O(n)</abbr> | O(n) walk (plus O(n) to drop the removed elements' markers from the insertion order if there are any), then per run that of take(int) on the run. |
+| `max()` (from `Set`) | <abbr class="cx cx-linear" title="O(n), every element compared once in natural order; on a TreeSet the greatest element in the comparator's order is last(), O(log n).">O(n)</abbr> | O(n), every element compared once in natural order; on a TreeSet the greatest element in the comparator's order is last(), O(log n). |
+| `min()` (from `Set`) | <abbr class="cx cx-linear" title="O(n), every element compared once in natural order; on a TreeSet the least element in the comparator's order is head(), O(log n).">O(n)</abbr> | O(n), every element compared once in natural order; on a TreeSet the least element in the comparator's order is head(), O(log n). |
 
 ### `TreeSet`
 
 | Method | Cost | Note |
 |---|---|---|
+| `flatten(Comparator<? super T>, Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons for n inner elements in total.">O(n log n)</abbr> | O(n log n) comparisons for n inner elements in total. |
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons for n inner elements in total.">O(n log n)</abbr> | O(n log n) comparisons for n inner elements in total. |
 | `add(T)` (from `SortedSet`) | <abbr class="cx cx-logarithmic" title="O(log n) (one lookup, then one insertion in the tree when the element is new).">O(log n)</abbr> | O(log n) (one lookup, then one insertion in the tree when the element is new). |
 | `addAll(Iterable<? extends T>)` (from `SortedSet`) | <abbr class="cx cx-linearithmic" title="O(m log(n + m)) for m elements (one lookup, and one insertion for a new element, each).">O(m log(n + m))</abbr> | O(m log(n + m)) for m elements (one lookup, and one insertion for a new element, each). |
 | `diff(Set<? extends T>)` (from `SortedSet`) | <abbr class="cx cx-linearithmic" title="O((n + m) log n) for a set of m elements: a split and a join per node of elements when it is a TreeSet with the same comparator, otherwise a hash set of elements and the kept elements built into a new tree.">O((n + m) log n)</abbr> | O((n + m) log n) for a set of m elements: a split and a join per node of elements when it is a TreeSet with the same comparator, otherwise a hash set of elements and the kept elements built into a new tree. |
@@ -727,6 +779,8 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `sliding(int)` (from `SortedSet`) | <abbr class="cx cx-linearithmic" title="O(n log n) (one rank slice of the tree per window, sharing its subtrees).">O(n log n)</abbr> | O(n log n) (one rank slice of the tree per window, sharing its subtrees). |
 | `sliding(int, int)` (from `SortedSet`) | <abbr class="cx cx-linearithmic" title="O((n / step) log n) (one rank slice of the tree per window, sharing its subtrees).">O((n / step) log n)</abbr> | O((n / step) log n) (one rank slice of the tree per window, sharing its subtrees). |
 | `slideBy(Function<? super T, ?>)` (from `SortedSet`) | <abbr class="cx cx-linearithmic" title="O(n + r log n) for r runs (one walk, then one rank slice of the tree per run).">O(n + r log n)</abbr> | O(n + r log n) for r runs (one walk, then one rank slice of the tree per run). |
+| `max()` (from `Set`) | <abbr class="cx cx-linear" title="O(n), every element compared once in natural order; on a TreeSet the greatest element in the comparator's order is last(), O(log n).">O(n)</abbr> | O(n), every element compared once in natural order; on a TreeSet the greatest element in the comparator's order is last(), O(log n). |
+| `min()` (from `Set`) | <abbr class="cx cx-linear" title="O(n), every element compared once in natural order; on a TreeSet the least element in the comparator's order is head(), O(log n).">O(n)</abbr> | O(n), every element compared once in natural order; on a TreeSet the least element in the comparator's order is head(), O(log n). |
 
 ### `HashMap`
 
@@ -749,6 +803,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `replaceAll(BiFunction<? super K, ? super V, ? extends V>)` | <abbr class="cx cx-linear" title="O(n) (every entry mapped into a new map).">O(n)</abbr> | O(n) (every entry mapped into a new map). |
 | `retainAll(Iterable<? extends Tuple2<K, V>>)` | <abbr class="cx cx-linear" title="O(m) for m given entries (one lookup, and one insertion into a new map, per entry).">O(m)</abbr> | O(m) for m given entries (one lookup, and one insertion into a new map, per entry). |
 | `values()` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 
 ### `LinkedHashMap`
 
@@ -790,6 +845,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `sliding(int)` | <abbr class="cx cx-polynomial" title="O(n * size), that of sliding(int, with a step of 1.">O(n * size)</abbr> | O(n * size), that of sliding(int, with a step of 1. |
 | `sliding(int, int)` | <abbr class="cx cx-polynomial" title="O(n + (n / step) * min(size, n - size)): O(n) to drop the removed keys' markers from the insertion order if there are any, then per window that of take(int) on a window of size entries, effectively O(min(size, n - size)).">O(n + (n / step) * min(size, n - size))</abbr> | O(n + (n / step) * min(size, n - size)): O(n) to drop the removed keys' markers from the insertion order if there are any, then per window that of take(int) on a window of size entries, effectively O(min(size, n - size)). |
 | `slideBy(Function<? super Tuple2<K, V>, ?>)` | <abbr class="cx cx-linear" title="O(n) walk (plus O(n) to drop the removed keys' markers from the insertion order if there are any), then per run that of take(int) on the run.">O(n)</abbr> | O(n) walk (plus O(n) to drop the removed keys' markers from the insertion order if there are any), then per run that of take(int) on the run. |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
 
 ### `TreeMap`
 
@@ -831,3 +887,4 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `sliding(int)` (from `SortedMap`) | <abbr class="cx cx-linearithmic" title="O(n log n) (one rank slice of the tree per window, sharing its subtrees).">O(n log n)</abbr> | O(n log n) (one rank slice of the tree per window, sharing its subtrees). |
 | `sliding(int, int)` (from `SortedMap`) | <abbr class="cx cx-linearithmic" title="O((n / step) log n) (one rank slice of the tree per window, sharing its subtrees).">O((n / step) log n)</abbr> | O((n / step) log n) (one rank slice of the tree per window, sharing its subtrees). |
 | `slideBy(Function<? super Tuple2<K, V>, ?>)` (from `SortedMap`) | <abbr class="cx cx-linearithmic" title="O(n + r log n) for r runs (one walk, then one rank slice of the tree per run).">O(n + r log n)</abbr> | O(n + r log n) for r runs (one walk, then one rank slice of the tree per run). |
+| `contains(T)` (from `Traversable`) | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |

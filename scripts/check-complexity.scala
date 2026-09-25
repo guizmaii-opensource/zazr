@@ -197,9 +197,11 @@ def parse(files: Seq[String], checked: Set[String]): List[TypeInfo] = {
         val flags = m.getModifiers.getFlags
         isInterface && !flags.contains(Modifier.PRIVATE) || flags.contains(Modifier.PUBLIC) || flags.contains(Modifier.PROTECTED)
       }
-      val decls = cls.getMembers.asScala.toList.collect { case m: MethodTree if documented(m.getName.toString) && isApi(m) =>
-        val path = new TreePath(new TreePath(new TreePath(unit), cls), m)
-        val doc = Option(docs.getDocComment(path))
+      def docOf(m: MethodTree): Option[String] =
+        Option(docs.getDocComment(new TreePath(new TreePath(new TreePath(unit), cls), m)))
+      val decls = cls.getMembers.asScala.toList.collect {
+        case m: MethodTree if isApi(m) && (documented(m.getName.toString) || docOf(m).exists(_.contains("Complexity:"))) =>
+        val doc = docOf(m)
         val params = m.getParameters.asScala.toList.map(p => erase(p.getType.toString))
         val line = unit.getLineMap.getLineNumber(docs.getSourcePositions.getStartPosition(unit, m)).toInt
         val signature = s"${m.getName}(${m.getParameters.asScala.map(p => simpleType(p.getType.toString)).mkString(", ")})"
@@ -249,13 +251,13 @@ def check(types: List[TypeInfo]): (Int, List[Problem]) = {
   val byName = types.map(t => t.name -> t).toMap
   val decls = types.filter(_.checked).flatMap(_.decls)
   val problems = decls.flatMap { d =>
-    resolve(byName, d) match {
-      case None =>
-        List(Problem(d.file, d.line, s"${d.name}() has no 'Complexity:' line in its javadoc"))
-      case Some(src) if (src == d) && classify(src.note.get).isEmpty =>
-        List(Problem(d.file, d.line,
-          s"${d.name}(): the 'Complexity:' note does not start with an expression of the vocabulary: ${d.note.get}"))
-      case _ => Nil
+    if (d.note.isEmpty && documented(d.name) && resolve(byName, d).isEmpty) {
+      List(Problem(d.file, d.line, s"${d.name}() has no 'Complexity:' line in its javadoc"))
+    } else if (d.note.exists(n => classify(n).isEmpty)) {
+      List(Problem(d.file, d.line,
+        s"${d.name}(): the 'Complexity:' note does not start with an expression of the vocabulary: ${d.note.get}"))
+    } else {
+      Nil
     }
   }
   (decls.size, problems)
@@ -386,9 +388,11 @@ def page(types: List[TypeInfo]): String = {
   detailed.foreach { t =>
     val info = byName(t)
     val own = info.decls
-    val inherited = info.supers.flatMap(s => byName.get(s).toList.flatMap(_.decls))
+    def ancestors(name: String): List[TypeInfo] =
+      byName.get(name).toList.flatMap(a => a :: a.supers.flatMap(ancestors))
+    val inherited = info.supers.flatMap(ancestors).distinctBy(_.name).flatMap(_.decls)
+      .filter(_.note.isDefined)
       .filterNot(d => own.exists(o => o.name == d.name && o.params == d.params))
-      .filter(d => byName.get(d.owner).exists(_.checked))
     out ++= s"\n### `$t`\n\n| Method | Cost | Note |\n|---|---|---|\n"
     (own ++ inherited).distinctBy(d => (d.name, d.params)).foreach { d =>
       val src = resolved(d)

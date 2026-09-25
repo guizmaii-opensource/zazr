@@ -171,7 +171,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: effectively O(n) for n inner elements in total, one insertion each.
+     * Complexity: O(n) for n inner elements in total, one effectively O(1) insertion each.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -803,7 +803,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * generalisation of {@link #partition(Predicate)}. One pass, {@code f} called once per element, no intermediate
      * collection of {@code Either}s. Values equal on one side are kept once.
      * <p>
-     * Complexity: effectively O(n), one insertion per element.
+     * Complexity: O(n), one effectively O(1) insertion per element.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side

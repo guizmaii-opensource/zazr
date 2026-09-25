@@ -894,7 +894,8 @@ and unable to drift:
   `O(log n)`, `lazy`, and the listed `O(...)` forms in n, m, k and the named arguments), each mapped to a class of the
   legend (constant, effectively constant, amortised constant, logarithmic, lazy, linear, n log n, polynomial,
   combinatorial); free text follows. `scripts/check-complexity.scala` owns the list and fails on a note outside it, so a
-  new expression is added there, with its class, before it is used. A note that referred to another method ("that of
+  new expression is added there, with its class, before it is used. Every note of an API method is checked this way,
+  whatever the method's name (`partitionMap`, the static `flatten`, the `*Option` wrappers), and appears on the page. A note that referred to another method ("that of
   `take(int)`") now states its class first and keeps the reference as the explanation.
 - **The guard covers every collection and the set and map core operations.** `NonEmptyVector`, `HashSet`, `HashMap`,
   `TreeSet` and `TreeMap` join `COMPLEXITY_FILES`, and the names grow with `contains`, `concat`, `add`, `addAll`, `put`,
