@@ -56,7 +56,7 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
     /// Appends one element. The caller has called [#checkOpen()] and checked that the element is not null.
     public void add(T element) {
         if (length == buffer.length) {
-            buffer = Arrays.copyOf(buffer, (length == 0) ? 16 : length + (length >> 1));
+            buffer = Arrays.copyOf(buffer, (length == 0) ? 16 : length + Math.max(1, length >> 1));
         }
         buffer[length++] = element;
     }

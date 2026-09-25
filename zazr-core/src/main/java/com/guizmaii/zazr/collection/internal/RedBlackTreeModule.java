@@ -320,9 +320,9 @@ public interface RedBlackTreeModule {
         /// of `t1` is less than `value` and every element of `t2` greater. The roots of `t1` and `t2` can be red.
         static <T extends @Nullable Object> RedBlackTree<T> join(RedBlackTree<T> t1, T value, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
-                return insertMin(t2, value, (Empty<T>) t1).color(BLACK);
+                return insertMin(t2, value, (Empty<T>) t2.emptyInstance()).color(BLACK);
             } else if (t2.isEmpty()) {
-                return insertMax(t1, value, (Empty<T>) t2).color(BLACK);
+                return insertMax(t1, value, (Empty<T>) t1.emptyInstance()).color(BLACK);
             } else {
                 // The stored blackHeight of a node counts the node as black whatever its colour, so a red root has one
                 // black node fewer on its paths than a black root with the same blackHeight. Colouring both roots black
