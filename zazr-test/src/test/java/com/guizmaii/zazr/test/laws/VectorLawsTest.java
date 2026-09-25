@@ -2,7 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
 import java.util.Random;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;

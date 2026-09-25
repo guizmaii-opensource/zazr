@@ -1,5 +1,5 @@
 
-package com.guizmaii.zazr.test;
+package com.guizmaii.zazr.test.legacy;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D

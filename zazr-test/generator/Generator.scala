@@ -29,11 +29,11 @@ def generateMainClasses(): Unit = {
   genPropertyChecks()
 
   /**
-   * Generator of com.guizmaii.zazr.test.Property
+   * Generator of com.guizmaii.zazr.test.legacy.Property
    */
   def genPropertyChecks(): Unit = {
 
-    genVavrFile("com.guizmaii.zazr.test", "Property")(genProperty)
+    genVavrFile("com.guizmaii.zazr.test.legacy", "Property")(genProperty)
 
     def genProperty(im: ImportManager, packageName: String, className: String): String = xs"""
       /**
@@ -370,6 +370,138 @@ def generateMainClasses(): Unit = {
       }
     """
   }
+
+  genCheck()
+
+  /**
+   * Generator of com.guizmaii.zazr.test.Check: check, checkN and checkAll for 1 to N generators.
+   */
+  def genCheck(): Unit = {
+
+    genVavrFile("com.guizmaii.zazr.test", "Check")((im: ImportManager, packageName: String, className: String) => {
+
+      val objects = im.getType("java.util.Objects")
+
+      def genArity(i: Int): String = {
+        val generics = (1 to i).gen(j => s"T$j")(using ", ")
+        val gens = (1 to i).gen(j => s"Gen<? extends T$j> g$j")(using ", ")
+        val gensArgs = (1 to i).gen(j => s"g$j")(using ", ")
+        val checked = im.getType(s"com.guizmaii.zazr.CheckedFunction$i")
+        val bodyType = s"$checked<${(1 to i).gen(j => s"? super T$j")(using ", ")}, Boolean>"
+        val tupleType = im.getType(s"com.guizmaii.zazr.Tuple$i")
+        val zipped = if (i == 1) s"g1.<$tupleType<T1>>map(${im.getType("com.guizmaii.zazr.Tuple")}::of)" else s"Gen.zip($gensArgs)"
+        val apply = s"sample -> body.apply(${(1 to i).gen(j => s"sample._$j()")(using ", ")})"
+        val genParams = (1 to i).gen(j => s"* @param g$j   the generator of the ${j.ordinal} value")(using "\n")
+        val typeParams = (1 to i).gen(j => s"* @param <T$j> the type of the ${j.ordinal} value")(using "\n")
+        val requireGens = (1 to i).gen(j => s"""$objects.requireNonNull(g$j, "g$j is null");""")(using "\n")
+        val bodyDoc = if (i == 1) "the property of a value: true when it holds" else s"the property of $i values: true when it holds"
+        xs"""
+          /$javadoc
+           * Checks {@code body} against {@link CheckConfig#defaults()}: 200 samples unless configured otherwise.
+           *
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult check($gens, $bodyType body) {
+              return check(CheckConfig.defaults(), $gensArgs, body);
+          }
+
+          /$javadoc
+           * Checks {@code body} against {@code config.samples()} samples drawn pass after pass from the generators,
+           * the size growing from 0 to {@code config.size()}. It stops at the first sample that fails.
+           *
+           * @param config the number of samples, the size and the seed
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult check(CheckConfig config, $gens, $bodyType body) {
+              $objects.requireNonNull(config, "config is null");
+              $requireGens
+              $objects.requireNonNull(body, "body is null");
+              return Runner.check(config, $zipped, $apply, false);
+          }
+
+          /$javadoc
+           * Checks {@code body} against {@code samples} samples, the rest of {@link CheckConfig#defaults()} unchanged.
+           *
+           * @param samples the number of samples
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException     if a generator or {@code body} is null
+           * @throws IllegalArgumentException if {@code samples} is negative
+           */
+          public static <$generics> CheckResult checkN(int samples, $gens, $bodyType body) {
+              return check(CheckConfig.defaults().withSamples(samples), $gensArgs, body);
+          }
+
+          /$javadoc
+           * Checks {@code body} against every value of one pass of the generators, with {@link CheckConfig#defaults()}.
+           *
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult checkAll($gens, $bodyType body) {
+              return checkAll(CheckConfig.defaults(), $gensArgs, body);
+          }
+
+          /$javadoc
+           * Checks {@code body} against every value of one pass of the generators, at the size {@code config.size()}:
+           * every combination of the values of finite generators, each checked once. A random generator gives one
+           * value per pass. The number of samples of {@code config} is not used. It stops at the first sample that
+           * fails.
+           *
+           * @param config the size and the seed
+           $genParams
+           * @param body $bodyDoc
+           $typeParams
+           * @return the result of the check
+           * @throws NullPointerException if an argument is null
+           */
+          public static <$generics> CheckResult checkAll(CheckConfig config, $gens, $bodyType body) {
+              $objects.requireNonNull(config, "config is null");
+              $requireGens
+              $objects.requireNonNull(body, "body is null");
+              return Runner.check(config, $zipped, $apply, true);
+          }
+        """
+      }
+
+      xs"""
+        /$javadoc
+         * Checks a property against generated values, from 1 to $N generators.
+         * <p>
+         * The property is a function of the generated values that returns {@code true} when it holds. It may also
+         * throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies the sample
+         * like {@code false} and keeps its message; any other exception makes the check {@link CheckResult.Erroneous}.
+         * <p>
+         * {@code check} and {@code checkN} run {@link CheckConfig#samples()} samples, pass after pass of the
+         * generators, with a size that grows from 0 for the first sample to {@link CheckConfig#size()} for the last:
+         * the first failure found is usually a small one. {@code checkAll} runs one pass, so it checks every value of
+         * finite generators once. Each check stops at its first failure and returns a {@link CheckResult} that
+         * carries the sample, its number and the seed; {@link CheckResult#assertIsSatisfied()} turns it into a test
+         * failure.
+         */
+        public final class $className {
+
+            private $className() {
+            }
+
+            ${(1 to N).gen(genArity)(using "\n\n")}
+        }
+      """
+    })
+  }
 }
 
 /**
@@ -383,7 +515,7 @@ def generateTestClasses(): Unit = {
    * Generator of Property-check tests
    */
   def genPropertyCheckTests(): Unit = {
-    genVavrFile("com.guizmaii.zazr.test", "PropertyTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+    genVavrFile("com.guizmaii.zazr.test.legacy", "PropertyTest", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
       // main classes
       val list = im.getType("com.guizmaii.zazr.collection.List")
@@ -611,7 +743,7 @@ def generateTestClasses(): Unit = {
     })
 
     for (i <- 1 to N) {
-      genVavrFile("com.guizmaii.zazr.test", s"PropertyCheck${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
+      genVavrFile("com.guizmaii.zazr.test.legacy", s"PropertyCheck${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName, className) => {
 
         val generics = (1 to i).gen(j => "Object")(", ")
         val arbitraries = (1 to i).gen(j => "OBJECTS")(", ")

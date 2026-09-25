@@ -1,6 +1,6 @@
-package com.guizmaii.zazr.test;
+package com.guizmaii.zazr.test.legacy;
 
-import com.guizmaii.zazr.test.Property.Condition;
+import com.guizmaii.zazr.test.legacy.Property.Condition;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

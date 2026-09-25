@@ -6,9 +6,9 @@ import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.TreeSet;
 import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.Arbitrary;
-import com.guizmaii.zazr.test.CheckResult;
-import com.guizmaii.zazr.test.Gen;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.legacy.CheckResult;
+import com.guizmaii.zazr.test.legacy.Gen;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
@@ -102,7 +102,7 @@ class LawsTest {
 
     @Test
     void erroneousLawIsReported() {
-        final Law<String> throwing = Law.of("throwing", subject -> com.guizmaii.zazr.test.Property.named("throwing")
+        final Law<String> throwing = Law.of("throwing", subject -> com.guizmaii.zazr.test.legacy.Property.named("throwing")
                 .forAll(Arbitrary.integer())
                 .suchThat(i -> {
                     throw new IllegalStateException("boom");

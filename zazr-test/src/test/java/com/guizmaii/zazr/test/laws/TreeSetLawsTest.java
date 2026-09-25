@@ -2,7 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.TreeSet;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
 
 
 import java.util.function.Function;

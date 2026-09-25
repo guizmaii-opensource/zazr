@@ -11,8 +11,8 @@ import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.TreeMap;
 import com.guizmaii.zazr.collection.TreeSet;
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.test.PredicateResult;
-import com.guizmaii.zazr.test.Property;
+import com.guizmaii.zazr.test.legacy.PredicateResult;
+import com.guizmaii.zazr.test.legacy.Property;
 
 import java.util.ArrayList;
 import java.util.Collections;

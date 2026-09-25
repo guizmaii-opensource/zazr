@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.control.Validation;
-import com.guizmaii.zazr.test.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 

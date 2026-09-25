@@ -8,7 +8,7 @@ import com.guizmaii.zazr.Tuple5;
 import com.guizmaii.zazr.Tuple6;
 import com.guizmaii.zazr.Tuple7;
 import com.guizmaii.zazr.Tuple8;
-import com.guizmaii.zazr.test.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
 import org.junit.jupiter.api.Test;
 
 /**

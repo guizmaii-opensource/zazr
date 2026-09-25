@@ -3,614 +3,581 @@ package com.guizmaii.zazr.test;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.List;
-import com.guizmaii.zazr.collection.Stream;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Random;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class GenTest {
+/**
+ * The generator mechanics: passes, finite and random generators, sizes, combinators and the discard budget.
+ */
+class GenTest {
 
-    // equally distributed random number generator
-    static final Random RANDOM = new Random();
-
-    // number of tries to assert a property
-    static final int TRIES = 1000;
-
-    // -- of
-
-    @Test
-    public void shouldIntersperseMultipleGeneratos() throws Exception {
-        Gen<Integer> gen = Gen.of(0).intersperse(Gen.of(1));
-        assertThat(gen.apply(RANDOM)).isEqualTo(0);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-        assertThat(gen.apply(RANDOM)).isEqualTo(0);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-    }
-    @Test
-    public void shouldCreateConstantGenOfElement() {
-        final Gen<Integer> gen = Gen.of(1);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-    }
-
-    @Test
-    public void shouldCreateGenOfSeedAndFunction() {
-        final Gen<Integer> gen = Gen.of(1, i -> i + 1);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-        assertThat(gen.apply(RANDOM)).isEqualTo(2);
-        assertThat(gen.apply(RANDOM)).isEqualTo(3);
-    }
-
-    @Test
-    public void shouldThrowWhenSeedOrFunctionIsNull() {
-        assertThrows(NullPointerException.class, () -> Gen.of(null, i -> 1));
-        assertThrows(NullPointerException.class, () -> Gen.<Integer>of(1, null));
-    }
-
-    @Test
-    public void shouldThrowWhenTheFunctionReturnsNull() {
-        final Gen<Integer> gen = Gen.of(1, i -> null);
-        assertThat(gen.apply(RANDOM)).isEqualTo(1);
-        assertThrows(NullPointerException.class, () -> gen.apply(RANDOM));
-    }
-
-    @Test
-    public void shouldThrowWhenInterspersedGenIsNull() {
-        assertThrows(NullPointerException.class, () -> Gen.of(0).intersperse(null));
-    }
-
-    // -- random number generator (rng)
-
-    @Test
-    public void shouldUseCustomRandomNumberGenerator() {
-        final Random rng = new Random() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public int nextInt(int bound) {
-                return 0;
-            }
-        };
-        final Gen<Integer> gen = Gen.choose(1, 2);
-        final Number actual = Stream.continually(() -> gen.apply(rng)).take(10).sum();
-        assertThat(actual).isEqualTo(10L);
-    }
-
-    // -- choose(int, int)
-
-    @Test
-    public void shouldChooseIntBetweenMinMax() {
-        assertForAll(() -> Gen.choose(-1, 1).apply(RANDOM), i -> i >= -1 && i <= 1);
-    }
-
-    @Test
-    public void shouldChooseIntWhenMinEqualsMax() {
-        assertForAll(() -> Gen.choose(0, 0).apply(RANDOM), i -> i == 0);
-    }
-
-    @Test
-    public void shouldChooseIntWhenRangeCrossesIntegerBoundary() {
-        assertForAll(() -> Gen.choose(Integer.MIN_VALUE, 0).apply(RANDOM), i -> i >= Integer.MIN_VALUE && i <= 0);
-    }
-
-    @Test
-    public void shouldChooseIntBetweenFullIntRange() {
-        assertForAllDiverse(() -> Gen.choose(Integer.MIN_VALUE, Integer.MAX_VALUE).apply(RANDOM),
-                i -> i >= Integer.MIN_VALUE && i <= Integer.MAX_VALUE);
-    }
-
-    @Test
-    public void shouldChooseIntWhenBoundsAreReversed() {
-        assertForAll(() -> Gen.choose(1, -1).apply(RANDOM), i -> i >= -1 && i <= 1);
-    }
-
-    @Test
-    public void shouldFavorIntEdgesWhileSamplingTheFullRange() {
-        assertEdgeCoverage(Gen.choose(-10000, 10000), List.of(-10000, -9999, -1, 0, 1, 9999, 10000));
+    static CheckConfig config(long seed) {
+        return new CheckConfig(200, 100, seed, 1000);
     }
 
-    @Test
-    public void shouldChooseAcrossWideIntRangesWithoutOverflow() {
-        final int[][] ranges = {
-                { Integer.MIN_VALUE, Integer.MAX_VALUE },
-                { Integer.MIN_VALUE, 0 },
-                { -1, Integer.MAX_VALUE },
-                { Integer.MIN_VALUE, Integer.MIN_VALUE + 10 },
-                { Integer.MAX_VALUE - 10, Integer.MAX_VALUE }
-        };
-        for (int[] range : ranges) {
-            final List<Integer> values = samples(Gen.choose(range[0], range[1]));
-            assertThat(values).allMatch(i -> i >= range[0] && i <= range[1]);
-            assertThat(values).contains(range[0], range[1]);
-            assertThat(samples(Gen.choose(range[1], range[0]))).isEqualTo(values);
-        }
-    }
-
-    // -- choose(long, long)
-
-    @Test
-    public void shouldChooseLongBetweenMinMax() {
-        assertForAll(() -> Gen.choose(-1L, 1L).apply(RANDOM), l -> l >= -1L && l <= 1L);
-    }
-
-    @Test
-    public void shouldChooseLongWhenMinEqualsMax() {
-        assertForAll(() -> Gen.choose(0L, 0L).apply(RANDOM), l -> l == 0L);
-    }
-
-    @Test
-    public void shouldChooseLongWhenRangeCrossesLongBoundary() {
-        assertForAll(() -> Gen.choose(Long.MIN_VALUE, 0L).apply(RANDOM), l -> l >= Long.MIN_VALUE && l <= 0L);
-    }
-
-    @Test
-    public void shouldChooseLongBetweenFullLongRange() {
-        assertForAllDiverse(() -> Gen.choose(Long.MIN_VALUE, Long.MAX_VALUE).apply(RANDOM),
-                l -> l >= Long.MIN_VALUE && l <= Long.MAX_VALUE);
-    }
-
-    @Test
-    public void shouldFavorLongEdgesWhileSamplingTheFullRange() {
-        assertEdgeCoverage(Gen.choose(Long.MIN_VALUE, Long.MAX_VALUE),
-                List.of(Long.MIN_VALUE, Long.MIN_VALUE + 1, -1L, 0L, 1L, Long.MAX_VALUE - 1, Long.MAX_VALUE));
-    }
-
-    @Test
-    public void shouldChooseAcrossWideLongRangesWithoutOverflow() {
-        final long[][] ranges = {
-                { Long.MIN_VALUE, Long.MAX_VALUE },
-                { Long.MIN_VALUE, 0 },
-                { -1, Long.MAX_VALUE },
-                { 0, Long.MAX_VALUE - 1 },
-                { Long.MIN_VALUE, Long.MIN_VALUE + 10 },
-                { Long.MAX_VALUE - 10, Long.MAX_VALUE }
-        };
-        for (long[] range : ranges) {
-            final List<Long> values = samples(Gen.choose(range[0], range[1]));
-            assertThat(values).allMatch(l -> l >= range[0] && l <= range[1]);
-            assertThat(values).contains(range[0], range[1]);
-            assertThat(samples(Gen.choose(range[1], range[0]))).isEqualTo(values);
-        }
+    static <A> List<A> values(Gen<A> gen, int n) {
+        return gen.runCollectN(n, config(1));
     }
 
-    @Test
-    public void shouldReachEveryLongInNarrowRangesBeyondDoublePrecision() {
-        for (long min : new long[] { Long.MIN_VALUE, 1L << 53, Long.MAX_VALUE - 10 }) {
-            assertThat(samples(Gen.choose(min, min + 10))).containsAll(List.rangeClosed(min, min + 10));
-        }
+    static <A> List<A> pass(Gen<A> gen) {
+        return gen.runCollect(config(1));
     }
 
-    // -- choose(double, double)
+    // -- replay
 
     @Test
-    public void shouldChooseDoubleBetweenMinMax() {
-        assertForAll(() -> Gen.choose(-1.0d, 1.0d).apply(RANDOM), d -> d >= -1.0d && d <= 1.0d);
+    void aSeedReplaysTheSameValues() {
+        final Gen<Tuple2<Integer, String>> gen = Gen.zip(Gen.intValue(), Gen.alphaNumericString());
+        assertThat(gen.runCollectN(300, config(7))).isEqualTo(gen.runCollectN(300, config(7)));
+        assertThat(gen.runCollect(config(7))).isEqualTo(gen.runCollect(config(7)));
     }
 
     @Test
-    public void shouldChooseDoubleWhenMinEqualsMax() {
-        assertForAll(() -> Gen.choose(0.0d, 0.0d).apply(RANDOM), d -> d == 0.0d);
+    void anotherSeedGivesOtherValues() {
+        assertThat(Gen.intValue().runCollectN(50, config(7))).isNotEqualTo(Gen.intValue().runCollectN(50, config(8)));
     }
 
     @Test
-    public void shouldFavorDoubleEdgesWhileSamplingTheFullRange() {
-        assertEdgeCoverage(Gen.choose(-10000.0, 10000.0), List.of(-10000.0, Math.nextUp(-10000.0),
-                -1.0, -Double.MIN_VALUE, -0.0, 0.0, Double.MIN_VALUE, 1.0, Math.nextDown(10000.0), 10000.0));
+    void aGeneratorHoldsNoState() {
+        final Gen<Integer> gen = Gen.intValue(0, 1_000_000).map(i -> i * 2);
+        final List<Integer> first = gen.runCollectN(100, config(3));
+        Gen.intValue().runCollectN(100, config(4));
+        assertThat(gen.runCollectN(100, config(3))).isEqualTo(first);
     }
 
     @Test
-    public void shouldChooseFiniteDoublesWithinExtremeAndNarrowRanges() {
-        final double[][] ranges = {
-                { -Double.MAX_VALUE, Double.MAX_VALUE },
-                { Math.nextDown(Double.MAX_VALUE), Double.MAX_VALUE },
-                { -Double.MAX_VALUE, Math.nextUp(-Double.MAX_VALUE) },
-                { Double.MIN_VALUE, 2 * Double.MIN_VALUE },
-                { -2 * Double.MIN_VALUE, -Double.MIN_VALUE },
-                { 0.0, 10000.0 },
-                { -10000.0, -0.0 }
-        };
-        for (double[] range : ranges) {
-            final List<Double> values = samples(Gen.choose(range[0], range[1]));
-            assertThat(values).allMatch(d -> Double.isFinite(d)
-                    && Double.compare(d, range[0]) >= 0 && Double.compare(d, range[1]) <= 0);
-            assertThat(values).contains(range[0], range[1]);
-            assertThat(samples(Gen.choose(range[1], range[0]))).isEqualTo(values);
-        }
+    void theDefaultConfigurationRuns() {
+        assertThat(Gen.intValue(0, 9).runCollectN(10)).hasSize(10).allMatch(i -> i >= 0 && i <= 9);
+        assertThat(Gen.constant(1).runCollect()).isEqualTo(List.of(1));
     }
 
-    @Test
-    public void shouldGenerateBothSignedZerosWhenTheyAreTheBounds() {
-        assertThat(samples(Gen.choose(-0.0, 0.0))).containsOnly(-0.0, 0.0).contains(-0.0, 0.0);
-        assertThat(samples(Gen.choose(0.0, -0.0))).isEqualTo(samples(Gen.choose(-0.0, 0.0)));
-        assertThat(samples(Gen.choose(-0.0, -0.0))).containsOnly(-0.0);
-        assertThat(samples(Gen.choose(0.0, 0.0))).containsOnly(0.0);
-    }
-
-    @Test
-    public void shouldThrowWhenChooseDoubleAndMinIsNegativeInfinite() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.choose(Double.NEGATIVE_INFINITY, 0.0d);
-    });
-    }
+    // -- constructors
 
     @Test
-    public void shouldThrowWhenChooseDoubleAndMinIsPositiveInfinite() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.choose(Double.POSITIVE_INFINITY, 0.0d);
-    });
+    void constantGivesItsValueOnce() {
+        assertThat(pass(Gen.constant("a"))).isEqualTo(List.of("a"));
+        assertThat(values(Gen.constant("a"), 3)).isEqualTo(List.of("a", "a", "a"));
     }
 
     @Test
-    public void shouldThrowWhenChooseDoubleAndMinIsNotANumber() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.choose(Double.NaN, 0.0d);
-    });
+    void aNullValueReachesTheCheckButNotAList() {
+        final java.util.List<Object> seen = new ArrayList<>();
+        Check.checkAll(Gen.fromIterable(Arrays.asList(1, null)), value -> seen.add(value)).assertIsSatisfied();
+        assertThat(seen).containsExactly(1, null);
+        assertThatThrownBy(() -> pass(Gen.constant(null))).isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldThrowWhenChooseDoubleAndMaxIsNegativeInfinite() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.choose(0.0d, Double.NEGATIVE_INFINITY);
-    });
+    void emptyGivesNothing() {
+        assertThat(pass(Gen.empty())).isEmpty();
     }
 
     @Test
-    public void shouldThrowWhenChooseDoubleAndMaxIsPositiveInfinite() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.choose(0.0d, Double.POSITIVE_INFINITY);
-    });
+    void anEmptyGeneratorExhaustsTheDiscardBudgetOfARepeatedRun() {
+        assertThatThrownBy(() -> Gen.empty().runCollectN(1, config(1)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("the generator produced no value in 1001 passes in a row, more than the discard budget of 1000");
+        assertThatThrownBy(() -> Gen.empty().runCollectN(1, config(1).withMaxDiscards(0)))
+                .hasMessage("the generator produced no value in 1 passes in a row, more than the discard budget of 0");
+        assertThat(Gen.empty().runCollectN(0, config(1))).isEmpty();
     }
 
     @Test
-    public void shouldThrowWhenChooseDoubleAndMaxIsNotANumber() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.choose(0.0d, Double.NaN);
-    });
+    void fromIterableGivesItsValuesInOrderInOnePass() {
+        assertThat(pass(Gen.fromIterable(Arrays.asList(3, 2, 1)))).isEqualTo(List.of(3, 2, 1));
+        assertThat(pass(Gen.fromIterable(java.util.List.of()))).isEmpty();
+        assertThat(values(Gen.fromIterable(java.util.List.of(1, 2, 3)), 7)).isEqualTo(List.of(1, 2, 3, 1, 2, 3, 1));
     }
 
-    // -- choose(char, char)
-
     @Test
-    public void shouldChooseCharBetweenMinMax() {
-        assertForAll(() -> Gen.choose('A', 'Z').apply(RANDOM), c -> c >= 'A' && c <= 'Z');
+    void fromIterableCopiesItsInput() {
+        final java.util.List<Integer> source = new ArrayList<>(java.util.List.of(1, 2));
+        final Gen<Integer> gen = Gen.fromIterable(source);
+        source.add(3);
+        assertThat(pass(gen)).isEqualTo(List.of(1, 2));
     }
 
     @Test
-    public void shouldChooseCharWhenMinEqualsMax() {
-        assertForAll(() -> Gen.choose('a', 'a').apply(RANDOM), c -> c == 'a');
+    void fromIterableAcceptsAOneShotIterable() {
+        final Iterator<Integer> iterator = java.util.List.of(1, 2).iterator();
+        final Gen<Integer> gen = Gen.fromIterable(() -> iterator);
+        assertThat(pass(gen)).isEqualTo(List.of(1, 2));
+        assertThat(pass(gen)).isEqualTo(List.of(1, 2));
+        assertThat(values(gen, 4)).isEqualTo(List.of(1, 2, 1, 2));
     }
 
     @Test
-    public void shouldChooseCharBetweenFullCharRange() {
-        assertForAll(() -> Gen.choose(Character.MIN_VALUE, Character.MAX_VALUE).apply(RANDOM),
-                c -> c >= Character.MIN_VALUE && c <= Character.MAX_VALUE);
+    void elementsChoosesEveryValue() {
+        assertThat(values(Gen.elements("a", "b", "c"), 200)).containsOnly("a", "b", "c").contains("a", "b", "c");
+        assertThat(pass(Gen.<String>elements())).isEmpty();
     }
 
     @Test
-    public void shouldFavorCharRangeBoundaries() {
-        assertEdgeCoverage(Gen.choose(Character.MIN_VALUE, Character.MAX_VALUE),
-                List.of(Character.MIN_VALUE, (char) 1, (char) (Character.MAX_VALUE - 1), Character.MAX_VALUE));
-        assertThat(samples(Gen.choose('z', 'a'))).isEqualTo(samples(Gen.choose('a', 'z')));
+    void elementsCopiesItsArray() {
+        final String[] array = { "a" };
+        final Gen<String> gen = Gen.elements(array);
+        array[0] = "b";
+        assertThat(values(gen, 5)).containsOnly("a");
     }
 
     @Test
-    public void shouldNotFavorPositionsInExplicitChoices() {
-        final List<Integer> values = List.range(0, 10);
-        final List<Gen<Integer>> generators = values.map(Gen::of);
-        assertUniformChoices(Gen.choose(values.toArray(Integer[]::new)));
-        assertUniformChoices(Gen.choose(values));
-        assertUniformChoices(Gen.choose("0123456789".toCharArray()).map(c -> c - '0'));
-        assertUniformChoices(Gen.oneOf(generators));
-        assertUniformChoices(Gen.oneOf(Gen.of(0), Gen.of(1), Gen.of(2), Gen.of(3), Gen.of(4),
-                Gen.of(5), Gen.of(6), Gen.of(7), Gen.of(8), Gen.of(9)));
+    void fromRandomDrawsFromTheSeededSource() {
+        final Gen<Long> gen = Gen.fromRandom(random -> random.nextLong());
+        final List<Long> drawn = gen.runCollectN(5, config(11));
+        final java.util.SplittableRandom random = new java.util.SplittableRandom(11);
+        assertThat(drawn).isEqualTo(List.of(random.nextLong(), random.nextLong(), random.nextLong(), random.nextLong(), random.nextLong()));
     }
 
     @Test
-    public void shouldPreserveGeneratorWeightsWithoutFavoringFirstOrLast() {
-        final List<Integer> values = samples(Gen.frequency(
-                Tuple.of(1, Gen.of(0)), Tuple.of(8, Gen.of(1)), Tuple.of(1, Gen.of(2))));
-        assertThat(values.count(i -> i == 0)).isBetween(70, 130);
-        assertThat(values.count(i -> i == 1)).isBetween(750, 850);
-        assertThat(values.count(i -> i == 2)).isBetween(70, 130);
+    void suspendBuildsTheGeneratorWhenItRuns() {
+        final AtomicInteger built = new AtomicInteger();
+        final Gen<Integer> gen = Gen.suspend(() -> {
+            built.incrementAndGet();
+            return Gen.constant(1);
+        });
+        assertThat(built).hasValue(0);
+        assertThat(values(gen, 3)).isEqualTo(List.of(1, 1, 1));
+        assertThat(built).hasValue(3);
     }
 
-    @Test
-    public void shouldReplayWithTheSameSeedWhenReusingAGenerator() {
-        final Gen<Integer> integers = Gen.choose(-10000, 10000);
-        final Gen<Long> longs = Gen.choose(Long.MIN_VALUE, Long.MAX_VALUE);
-        final Gen<Double> doubles = Gen.choose(-Double.MAX_VALUE, Double.MAX_VALUE);
-        assertThat(samples(integers)).isEqualTo(samples(integers));
-        assertThat(samples(longs)).isEqualTo(samples(longs));
-        assertThat(samples(doubles)).isEqualTo(samples(doubles));
+    /// A generator of nested lists that refers to itself.
+    private static Gen<List<Object>> tree(int depth) {
+        return depth == 0
+                ? Gen.constant(List.empty())
+                : Gen.oneOf(Gen.constant(List.empty()), Gen.suspend(() -> tree(depth - 1)).map(child -> List.<Object>of(child)));
     }
-
-    // -- choose(array)
 
     @Test
-    public void shouldChooseFromASingleArray() throws Exception {
-        Integer[] i = { 1 };
-        assertForAll(() -> Gen.choose(i).apply(RANDOM), c -> c == 1);
+    void suspendLetsAGeneratorReferToItself() {
+        assertThat(values(tree(5), 100)).allMatch(t -> t.size() <= 1).anyMatch(t -> !t.isEmpty());
     }
 
     @Test
-    public void shouldFailOnEmptyArray() throws Exception {
-        Integer[] i = {};
-        assertThrows(RuntimeException.class, () -> Gen.choose(i).apply(RANDOM));
-    }
-
-    // -- Choose(enum)
-
-    enum testEnum {
-        value1
+    void oneOfChoosesEveryGenerator() {
+        assertThat(values(Gen.oneOf(Gen.constant(1), Gen.constant(2), Gen.fromIterable(java.util.List.of(3, 4))), 300))
+                .containsOnly(1, 2, 3, 4).contains(1, 2, 3, 4);
+        assertThat(pass(Gen.<Integer>oneOf())).isEmpty();
     }
 
     @Test
-    public void shouldChooseFromEnum() throws Exception {
-        assertForAll(() -> Gen.choose(testEnum.class).apply(RANDOM), e -> Arrays.asList(testEnum.values()).contains(e));
+    void weightedFollowsTheWeights() {
+        final List<Boolean> drawn = values(Gen.weighted(Tuple.of(Gen.constant(true), 9.0), Tuple.of(Gen.constant(false), 1.0)), 10_000);
+        final long trues = drawn.count(b -> b);
+        assertThat(trues).isBetween(8_700L, 9_300L);
     }
 
-    // -- Choose(iterable)
     @Test
-    public void shouldChooseFromIterable() throws Exception {
-        List<Integer> i = List.of(1);
-        assertForAll(() -> Gen.choose(i).apply(RANDOM), c -> c == 1);
+    void weightedNeverChoosesAWeightOfZero() {
+        assertThat(values(Gen.weighted(Tuple.of(Gen.constant(0), 0.0), Tuple.of(Gen.constant(1), 1.0), Tuple.of(Gen.constant(2), 0.0),
+                Tuple.of(Gen.constant(3), 1.0), Tuple.of(Gen.constant(4), 0.0)), 2_000)).containsOnly(1, 3).contains(1, 3);
+        assertThat(values(Gen.weighted(Tuple.of(Gen.constant(1), 0.0), Tuple.of(Gen.constant(2), 5.0)), 100)).containsOnly(2);
+        assertThat(values(Gen.weighted(Tuple.of(Gen.constant(1), 5.0), Tuple.of(Gen.constant(2), 0.0)), 100)).containsOnly(1);
     }
 
     @Test
-    public void shouldChooseFromIterableWithInstancesOfGenericInterface() {
-        List<Supplier<String>> i = List.of(() -> "test", () -> "test");
-
-        Supplier<String> supplier = Gen.choose(i).apply(RANDOM);
-
-        assertThat(supplier.get()).isEqualTo("test");
+    void weightedWithoutGeneratorIsEmpty() {
+        assertThat(pass(Gen.<Integer>weighted())).isEmpty();
     }
 
     @Test
-    public void shouldFailOnEmptyIterable() throws Exception {
-        List<Integer> i = List.empty();
-        assertThrows(RuntimeException.class, () -> Gen.choose(i).apply(RANDOM));
+    void weightedRejectsInvalidWeights() {
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(Gen.constant(1), -1.0))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(Gen.constant(1), Double.NaN))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(Gen.constant(1), Double.POSITIVE_INFINITY))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(Gen.constant(1), 0.0), Tuple.of(Gen.constant(2), 0.0)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("the weights add up to 0.0");
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(Gen.constant(1), Double.MAX_VALUE), Tuple.of(Gen.constant(2), Double.MAX_VALUE)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("the weights add up to Infinity");
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(null, 1.0))).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.weighted(Tuple.of(Gen.constant(1), null))).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.weighted((Tuple2<Gen<Integer>, Double>) null)).isInstanceOf(NullPointerException.class);
     }
 
-    // -- fail
-
     @Test
-    public void shouldFailAlwaysWhenCallingFailingGen() {
-        assertThrows(RuntimeException.class, () -> {
-        Gen.fail().apply(RANDOM);
-    });
+    void unfoldGenNThreadsTheState() {
+        assertThat(pass(Gen.unfoldGenN(5, 0, s -> Gen.constant(Tuple.of(s + 1, "x" + s)))))
+                .isEqualTo(List.of(List.of("x0", "x1", "x2", "x3", "x4")));
+        assertThat(pass(Gen.unfoldGenN(0, 0, s -> Gen.constant(Tuple.of(s + 1, s))))).isEqualTo(List.of(List.empty()));
     }
 
-    // -- frequency(VarArgs)
-
     @Test
-    public void shouldThrowWhenCallingFrequencyOfVarArgsAndArgIsNull() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.frequency((Tuple2<Integer, Gen<Object>>) null);
-    });
+    void unfoldGenNDrawsOneValuePerStep() {
+        assertThat(pass(Gen.unfoldGenN(3, 0, s -> Gen.fromIterable(java.util.List.of(Tuple.of(s + 1, s), Tuple.of(s + 2, -s))))))
+                .isEqualTo(List.of(List.of(0, 1, 2)));
     }
 
     @Test
-    public void shouldThrowWhenCallingFrequencyOfVarArgsAndArgIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        @SuppressWarnings("unchecked")
-        final Tuple2<Integer, Gen<Object>>[] empty = (Tuple2<Integer, Gen<Object>>[]) new Tuple2<?, ?>[0];
-        Gen.frequency(empty);
-    });
+    void unfoldGenIsSmall() {
+        final List<List<Integer>> drawn = Gen.unfoldGen(0, s -> Gen.constant(Tuple.of(s + 1, s))).runCollect(config(1)).appendAll(
+                Gen.unfoldGen(0, s -> Gen.constant(Tuple.of(s + 1, s))).runCollectN(200, config(2)));
+        assertThat(drawn).allMatch(list -> list.size() <= 100);
+        assertThat(drawn.map(List::size).max().get()).isGreaterThan(0);
     }
 
     @Test
-    public void shouldThrowWhenCallingFrequencyOfVarArgsAndAllFrequenciesAreNonPositive() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        final Gen<Integer> gen = Gen.frequency(Tuple.of(-1, Gen.of(-1)), Tuple.of(0, Gen.of(0)));
-        gen.apply(RANDOM);
-    });
+    void unfoldGenRejectsInvalidArguments() {
+        assertThatThrownBy(() -> Gen.unfoldGenN(-1, 0, s -> Gen.constant(Tuple.of(s, s)))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.unfoldGenN(1, 0, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.unfoldGen(0, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.unfoldGenN(1, 0, s -> null))).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.unfoldGenN(1, 0, s -> Gen.constant((Tuple2<Integer, Integer>) null))))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldIgnoreGeneratorsWithNonPositiveFrequency() {
-        final Gen<Integer> gen = Gen.frequency(Tuple.of(-1, Gen.of(-1)), Tuple.of(0, Gen.of(0)), Tuple.of(1, Gen.of(1)));
-        assertForAll(() -> gen.apply(RANDOM), i -> i == 1);
+    void collectAllGivesEveryCombinationOfFiniteGenerators() {
+        assertThat(pass(Gen.collectAll(java.util.List.of(Gen.fromIterable(java.util.List.of(1, 2)), Gen.fromIterable(java.util.List.of(3, 4))))))
+                .isEqualTo(List.of(List.of(1, 3), List.of(1, 4), List.of(2, 3), List.of(2, 4)));
+        assertThat(pass(Gen.collectAll(java.util.List.<Gen<Integer>>of()))).isEqualTo(List.of(List.empty()));
+        assertThat(pass(Gen.collectAll(java.util.List.of(Gen.constant(1), Gen.<Integer>empty())))).isEmpty();
     }
 
     @Test
-    public void shouldGenerateElementsAccordingToFrequencyGivenVarArgs() {
-        final Gen<Integer> gen = Gen.frequency(Tuple.of(0, Gen.of(-1)), Tuple.of(1, Gen.of(1)));
-        assertForAll(() -> gen.apply(RANDOM), i -> i != -1);
+    void collectAllCopiesItsInput() {
+        final java.util.List<Gen<Integer>> gens = new ArrayList<>(java.util.List.of(Gen.constant(1)));
+        final Gen<List<Integer>> gen = Gen.collectAll(gens);
+        gens.add(Gen.constant(2));
+        assertThat(pass(gen)).isEqualTo(List.of(List.of(1)));
     }
-
-    // -- frequency(Iterable)
 
-    @Test
-    public void shouldThrowWhenCallingFrequencyOfIterableAndArgIsNull() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.frequency((Iterable<Tuple2<Integer, Gen<Object>>>) null);
-    });
-    }
+    // -- size
 
     @Test
-    public void shouldThrowWhenCallingFrequencyOfIterableAndArgIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.frequency(List.empty());
-    });
+    void sizeIsTheConfiguredSizeInOnePass() {
+        assertThat(Gen.size().runCollect(config(1).withSize(7))).isEqualTo(List.of(7));
     }
 
     @Test
-    public void shouldThrowWhenCallingFrequencyOfIterableAndAllFrequenciesAreNonPositive() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        final Gen<Integer> gen = Gen.frequency(List.of(Tuple.of(-1, Gen.of(-1)), Tuple.of(0, Gen.of(0))));
-        gen.apply(RANDOM);
-    });
+    void theSizeGrowsFromZeroToTheConfiguredSizeOverARun() {
+        assertThat(Gen.size().runCollectN(5, config(1))).isEqualTo(List.of(0, 25, 50, 75, 100));
+        assertThat(Gen.size().runCollectN(1, config(1))).isEqualTo(List.of(100));
+        assertThat(Gen.size().runCollectN(3, config(1).withSize(0))).isEqualTo(List.of(0, 0, 0));
+        final List<Integer> sizes = Gen.size().runCollectN(200, config(1));
+        assertThat(sizes.asJava()).isSorted().startsWith(0, 0, 1, 1, 2).endsWith(99, 100);
     }
 
     @Test
-    public void shouldGenerateElementsAccordingToFrequencyGivenAnIterable() {
-        final Gen<Integer> gen = Gen.frequency(List.of(Tuple.of(0, Gen.of(-1)), Tuple.of(1, Gen.of(1))));
-        assertForAll(() -> gen.apply(RANDOM), i -> i != -1);
+    void theSizeOfARunDoesNotOverflow() {
+        assertThat(Gen.size().runCollectN(3, config(1).withSize(Integer.MAX_VALUE)))
+                .isEqualTo(List.of(0, Integer.MAX_VALUE / 2, Integer.MAX_VALUE));
     }
-
-    // -- oneOf(VarArgs)
 
     @Test
-    public void shouldThrowWhenCallingOneOfAndVarArgsIsNull() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.oneOf((Gen<Object>[]) null);
-    });
+    void sizedReadsTheSize() {
+        assertThat(Gen.sized(n -> Gen.constant(n * 2)).runCollect(config(1).withSize(21))).isEqualTo(List.of(42));
+        assertThatThrownBy(() -> Gen.sized(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.sized(n -> null))).isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldThrowWhenCallingOneOfAndVarArgsIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        @SuppressWarnings("unchecked")
-        final Gen<Object>[] empty = (Gen<Object>[]) new Gen<?>[0];
-        Gen.oneOf(empty);
-    });
+    void smallFavoursSmallSizes() {
+        final List<Integer> sizes = Gen.small(Gen::constant).withSize(100).runCollectN(2_000, config(5));
+        assertThat(sizes).allMatch(n -> n >= 0 && n <= 100);
+        // an exponential distribution of mean 4
+        assertThat(sizes.count(n -> n <= 10)).isGreaterThan(1_800);
+        assertThat(sizes.count(n -> n == 0)).isGreaterThan(100);
+        assertThat(sizes.average().get()).isBetween(3.0, 5.0);
     }
 
     @Test
-    public void shouldReturnOneOfGivenVarArgs() {
-        final Gen<Integer> gen = Gen.oneOf(Gen.of(1), Gen.of(2));
-        assertForAll(() -> gen.apply(RANDOM), i -> i == 1 || i == 2);
+    void smallRespectsItsMinimum() {
+        assertThat(Gen.small(Gen::constant, 10).withSize(100).runCollectN(500, config(5))).allMatch(n -> n >= 10 && n <= 100);
+        assertThat(Gen.small(Gen::constant, 10).withSize(3).runCollectN(20, config(5))).containsOnly(10);
+        assertThat(Gen.small(Gen::constant).withSize(0).runCollectN(20, config(5))).containsOnly(0);
+        assertThatThrownBy(() -> Gen.small(Gen::constant, -1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.small(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.small(n -> null))).isInstanceOf(NullPointerException.class);
     }
 
-    // -- oneOf(Iterable)
-
     @Test
-    public void shouldThrowWhenCallingOneOfAndIterableIsNull() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.oneOf((Iterable<Gen<Object>>) null);
-    });
+    void largeIsUniformUpToTheSize() {
+        final List<Integer> sizes = Gen.large(Gen::constant).withSize(100).runCollectN(5_000, config(5));
+        assertThat(sizes).allMatch(n -> n >= 0 && n <= 100).contains(0, 100);
+        assertThat(sizes.average().get()).isBetween(45.0, 55.0);
+        assertThat(Gen.large(Gen::constant, 10).withSize(100).runCollectN(500, config(5))).allMatch(n -> n >= 10).contains(10, 100);
+        assertThat(Gen.large(Gen::constant, 10).withSize(3).runCollectN(20, config(5))).containsOnly(10);
+        assertThat(Gen.large(Gen::constant).withSize(Integer.MAX_VALUE).runCollectN(20, config(5))).allMatch(n -> n >= 0);
+        assertThatThrownBy(() -> Gen.large(Gen::constant, -1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.large(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.large(n -> null))).isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldThrowWhenCallingOneOfAndIterableIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> {
-        Gen.oneOf(List.empty());
-    });
+    void withSizeFixesTheSizeOfOneGenerator() {
+        assertThat(Gen.size().withSize(3).runCollectN(5, config(1))).containsOnly(3);
+        assertThat(Gen.size().withSize(3).withSize(4).runCollect(config(1))).isEqualTo(List.of(3));
+        assertThatThrownBy(() -> Gen.size().withSize(-1)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void shouldReturnOneOfGivenIterable() {
-        final Gen<Integer> gen = Gen.oneOf(List.of(Gen.of(1), Gen.of(2)));
-        assertForAll(() -> gen.apply(RANDOM), i -> i == 1 || i == 2);
+    void withSizeDoesNotLeakIntoTheNextGenerators() {
+        final Gen<Tuple2<Integer, Integer>> gen = Gen.size().withSize(3).flatMap(inner -> Gen.size().map(outer -> Tuple.of(inner, outer)));
+        assertThat(gen.runCollect(config(1).withSize(50))).isEqualTo(List.of(Tuple.of(3, 50)));
+        assertThat(Gen.zip(Gen.size().withSize(3), Gen.size()).runCollect(config(1).withSize(50))).isEqualTo(List.of(Tuple.of(3, 50)));
     }
 
-    // -- arbitrary
+    // -- combinators
 
     @Test
-    public void shouldConvertGenToArbitrary() {
-        assertThat(Gen.of(1).arbitrary()).isInstanceOf(Arbitrary.class);
+    void mapTransformsEveryValue() {
+        assertThat(pass(Gen.fromIterable(java.util.List.of(1, 2)).map(i -> i * 10))).isEqualTo(List.of(10, 20));
+        assertThatThrownBy(() -> Gen.constant(1).map(null)).isInstanceOf(NullPointerException.class);
     }
 
-    // -- map
-
     @Test
-    public void shouldThrowWhenCallingMapWithNullArg() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.of(1).map(null);
-    });
+    void flatMapRunsTheNextGeneratorForEveryValue() {
+        final Gen<String> gen = Gen.fromIterable(java.util.List.of(1, 2)).flatMap(i -> Gen.fromIterable(java.util.List.of(i + "a", i + "b")));
+        assertThat(pass(gen)).isEqualTo(List.of("1a", "1b", "2a", "2b"));
+        assertThat(values(gen, 3)).isEqualTo(List.of("1a", "1b", "2a"));
+        assertThat(pass(Gen.fromIterable(java.util.List.of(1, 2)).flatMap(i -> Gen.empty()))).isEmpty();
+        assertThatThrownBy(() -> Gen.constant(1).flatMap(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.constant(1).flatMap(i -> null))).isInstanceOf(NullPointerException.class)
+                .hasMessage("flatMap: f returned null");
     }
 
     @Test
-    public void shouldMapGen() {
-        final Gen<Integer> gen = Gen.of(1).map(i -> i * 2);
-        assertForAll(() -> gen.apply(RANDOM), i -> i % 2 == 0);
+    void flatMapOfARandomGeneratorGivesOneValuePerPass() {
+        assertThat(pass(Gen.intValue().flatMap(i -> Gen.constant(i)))).hasSize(1);
+        assertThat(pass(Gen.intValue(0, 9).flatMap(i -> Gen.fromIterable(java.util.List.of(i, i))))).hasSize(2);
     }
-
-    // -- flatMap
 
     @Test
-    public void shouldThrowWhenCallingFlatMapWithNullArg() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.of(1).flatMap(null);
-    });
+    void theRunStopsInTheMiddleOfAPass() {
+        final AtomicInteger generated = new AtomicInteger();
+        final Gen<Integer> gen = Gen.fromIterable(java.util.List.of(1, 2, 3, 4, 5)).map(i -> {
+            generated.incrementAndGet();
+            return i;
+        });
+        assertThat(values(gen, 2)).isEqualTo(List.of(1, 2));
+        assertThat(generated).hasValue(2);
     }
 
     @Test
-    public void shouldFlatMapGen() {
-        final Gen<Integer> gen = Gen.of(1).flatMap(i -> Gen.of(i * 2));
-        assertForAll(() -> gen.apply(RANDOM), i -> i % 2 == 0);
+    void concatGivesBothSequencesInOnePass() {
+        assertThat(pass(Gen.fromIterable(java.util.List.of(1, 2)).concat(Gen.constant(3)))).isEqualTo(List.of(1, 2, 3));
+        assertThat(values(Gen.fromIterable(java.util.List.of(1, 2)).concat(Gen.constant(3)), 2)).isEqualTo(List.of(1, 2));
+        assertThat(pass(Gen.<Integer>empty().concat(Gen.empty()))).isEmpty();
+        assertThatThrownBy(() -> Gen.constant(1).concat(null)).isInstanceOf(NullPointerException.class);
     }
 
     // -- filter
 
     @Test
-    public void shouldThrowWhenCallingFilterWithNullArg() {
-        assertThrows(NullPointerException.class, () -> {
-        Gen.of(1).filter(null);
-    });
+    void filterKeepsTheValuesThatSatisfyThePredicate() {
+        assertThat(pass(Gen.fromIterable(java.util.List.of(1, 2, 3, 4, 5, 6)).filter(i -> i % 2 == 0))).isEqualTo(List.of(2, 4, 6));
+        assertThat(pass(Gen.fromIterable(java.util.List.of(1, 2, 3, 4, 5, 6)).filterNot(i -> i % 2 == 0))).isEqualTo(List.of(1, 3, 5));
+        assertThatThrownBy(() -> Gen.constant(1).filter(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.constant(1).filterNot(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldFilterGenerator() {
-        final Gen<Integer> gen = Gen.choose(1, 2).filter(i -> i % 2 == 0);
-        assertForAll(() -> gen.apply(RANDOM), i -> i == 2);
+    void aFilteredRandomGeneratorStillGivesOneValuePerPass() {
+        final Gen<Integer> evens = Gen.intValue().filter(i -> i % 2 == 0);
+        assertThat(pass(evens)).hasSize(1);
+        assertThat(values(evens, 500)).hasSize(500).allMatch(i -> i % 2 == 0);
     }
 
     @Test
-    public void shouldDetectEmptyFilter() {
-        assertThrows(IllegalStateException.class, () -> {
-        Gen.of(1).filter(ignored -> false).apply(RANDOM);
-    });
+    void aFilteredElementGeneratorStillFillsAString() {
+        final List<String> strings = Gen.stringN(100, Gen.alphaNumericChar().filter(Character::isDigit)).runCollectN(50, config(1));
+        assertThat(strings).hasSize(50).allMatch(s -> s.length() == 100 && s.chars().allMatch(Character::isDigit));
     }
-
-    // -- tap
 
     @Test
-    public void shouldTapGen() {
-        final int[] actual = new int[] { -1 };
-        final int expected = Gen.of(1).tap(i -> actual[0] = i).apply(new Random());
-        assertThat(actual[0]).isEqualTo(expected);
+    void aFilteredFiniteGeneratorIsNotRunAgain() {
+        final AtomicInteger runs = new AtomicInteger();
+        final Gen<Integer> gen = Gen.suspend(() -> {
+            runs.incrementAndGet();
+            return Gen.fromIterable(java.util.List.of(1, 3));
+        }).filter(i -> i % 2 == 0);
+        assertThat(pass(gen)).isEmpty();
+        assertThat(runs).hasValue(1);
     }
 
-    // helpers
-
-    private static <T> List<T> samples(Gen<T> gen) {
-        final Random random = new Random(0L);
-        return List.fill(TRIES, () -> gen.apply(random));
+    @Test
+    void filterGivesUpAfterItsDiscardBudget() {
+        assertThatThrownBy(() -> Gen.intValue().filter(i -> false).runCollectN(1, config(1)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Gen.filter rejected 1001 values in a row, more than the discard budget of 1000:"
+                        + " generate the wanted values with map or flatMap instead of filtering them");
     }
 
-    private static <T> void assertEdgeCoverage(Gen<T> gen, List<T> edges) {
-        final List<T> values = samples(gen);
-        assertThat(values).containsAll(edges);
-        assertThat(values.count(edges::contains)).isBetween(400, 600);
-    }
+    @Test
+    void theDiscardBudgetCountsRejectionsInARow() {
+        // every fourth value passes: three rejections in a row fit a budget of 3, not of 2
+        final Gen<Integer> counter = Gen.fromRandom(new Function<java.util.random.RandomGenerator, Integer>() {
+            private int next;
 
-    private static void assertUniformChoices(Gen<Integer> gen) {
-        final List<Integer> values = samples(gen);
-        for (int i = 0; i < 10; i++) {
-            final int value = i;
-            assertThat(values.count(n -> n == value)).isBetween(70, 130);
-        }
-    }
-
-    <T> void assertForAll(Supplier<T> supplier, Predicate<T> property) {
-        for (int i = 0; i < TRIES; i++) {
-            final T element = supplier.get();
-            if (!property.test(element)) {
-                throw new AssertionError("predicate did not hold for " + element);
+            @Override
+            public Integer apply(java.util.random.RandomGenerator random) {
+                return next++;
             }
+        });
+        assertThat(counter.filter(i -> i % 4 == 3).runCollectN(10, config(1).withMaxDiscards(3))).hasSize(10);
+        assertThatThrownBy(() -> counter.filter(i -> i % 4 == 3).runCollectN(10, config(1).withMaxDiscards(2)))
+                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected 3 values in a row");
+    }
+
+    @Test
+    void aFilterThatRejectsEveryValueOfAFiniteGeneratorExhaustsTheRun() {
+        assertThatThrownBy(() -> Gen.fromIterable(java.util.List.of(1, 3)).filter(i -> i % 2 == 0).runCollectN(1, config(1)))
+                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("the generator produced no value in 1001 passes");
+    }
+
+    // -- zip
+
+    @Test
+    void zipGivesEveryPairOfFiniteGenerators() {
+        final Gen<Integer> ab = Gen.fromIterable(java.util.List.of(1, 2));
+        assertThat(pass(ab.zip(Gen.fromIterable(java.util.List.of("a", "b")))))
+                .isEqualTo(List.of(Tuple.of(1, "a"), Tuple.of(1, "b"), Tuple.of(2, "a"), Tuple.of(2, "b")));
+        assertThat(pass(ab.zipWith(Gen.constant(10), Integer::sum))).isEqualTo(List.of(11, 12));
+        assertThat(pass(Gen.zip(ab, Gen.empty()))).isEmpty();
+    }
+
+    @Test
+    void zipAtEveryArityGivesTheComponentsInOrder() {
+        final Gen<Integer> g1 = Gen.constant(1);
+        final Gen<Integer> g2 = Gen.constant(2);
+        final Gen<Integer> g3 = Gen.constant(3);
+        final Gen<Integer> g4 = Gen.constant(4);
+        final Gen<Integer> g5 = Gen.constant(5);
+        final Gen<Integer> g6 = Gen.constant(6);
+        final Gen<Integer> g7 = Gen.constant(7);
+        final Gen<Integer> g8 = Gen.constant(8);
+        assertThat(pass(Gen.zip(g1, g2))).isEqualTo(List.of(Tuple.of(1, 2)));
+        assertThat(pass(Gen.zip(g1, g2, g3))).isEqualTo(List.of(Tuple.of(1, 2, 3)));
+        assertThat(pass(Gen.zip(g1, g2, g3, g4))).isEqualTo(List.of(Tuple.of(1, 2, 3, 4)));
+        assertThat(pass(Gen.zip(g1, g2, g3, g4, g5))).isEqualTo(List.of(Tuple.of(1, 2, 3, 4, 5)));
+        assertThat(pass(Gen.zip(g1, g2, g3, g4, g5, g6))).isEqualTo(List.of(Tuple.of(1, 2, 3, 4, 5, 6)));
+        assertThat(pass(Gen.zip(g1, g2, g3, g4, g5, g6, g7))).isEqualTo(List.of(Tuple.of(1, 2, 3, 4, 5, 6, 7)));
+        assertThat(pass(Gen.zip(g1, g2, g3, g4, g5, g6, g7, g8))).isEqualTo(List.of(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8)));
+        assertThat(pass(Gen.zipWith(g1, g2, (a, b) -> "" + a + b))).isEqualTo(List.of("12"));
+        assertThat(pass(Gen.zipWith(g1, g2, g3, (a, b, c) -> "" + a + b + c))).isEqualTo(List.of("123"));
+        assertThat(pass(Gen.zipWith(g1, g2, g3, g4, (a, b, c, d) -> "" + a + b + c + d))).isEqualTo(List.of("1234"));
+        assertThat(pass(Gen.zipWith(g1, g2, g3, g4, g5, (a, b, c, d, e) -> "" + a + b + c + d + e))).isEqualTo(List.of("12345"));
+        assertThat(pass(Gen.zipWith(g1, g2, g3, g4, g5, g6, (a, b, c, d, e, f) -> "" + a + b + c + d + e + f))).isEqualTo(List.of("123456"));
+        assertThat(pass(Gen.zipWith(g1, g2, g3, g4, g5, g6, g7, (a, b, c, d, e, f, g) -> "" + a + b + c + d + e + f + g)))
+                .isEqualTo(List.of("1234567"));
+        assertThat(pass(Gen.zipWith(g1, g2, g3, g4, g5, g6, g7, g8, (a, b, c, d, e, f, g, h) -> "" + a + b + c + d + e + f + g + h)))
+                .isEqualTo(List.of("12345678"));
+    }
+
+    @Test
+    void zipAtEveryArityGivesEveryCombination() {
+        final Gen<Integer> two = Gen.fromIterable(java.util.List.of(0, 1));
+        assertThat(pass(Gen.zip(two, two, two))).hasSize(8).doesNotHaveDuplicates();
+        assertThat(pass(Gen.zip(two, two, two, two, two, two, two, two))).hasSize(256).doesNotHaveDuplicates();
+        assertThat(pass(Gen.zipWith(two, two, two, two, two, (a, b, c, d, e) -> a + 2 * b + 4 * c + 8 * d + 16 * e)))
+                .isEqualTo(List.rangeClosed(0, 31).map(i -> Integer.reverse(i) >>> 27));
+    }
+
+    @Test
+    void zipRejectsNulls() {
+        final Gen<Integer> g = Gen.constant(1);
+        assertThatThrownBy(() -> g.zip(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> g.zipWith(g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(null, g)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(g, g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(g, g, g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(g, g, g, g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(g, g, g, g, g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zip(g, g, g, g, g, g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zipWith(g, g, g, g, g, g, g, g, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.zipWith(null, g, g, g, g, g, g, g, (a, b, c, d, e, f, h, i) -> a)).isInstanceOf(NullPointerException.class);
+    }
+
+    // -- draw
+
+    @Test
+    void drawTakesTheFirstValueOfAPass() {
+        final Sampling sampling = new Sampling(1, 10);
+        assertThat(Gen.fromIterable(java.util.List.of(5, 6)).draw(sampling, 0)).isEqualTo(5);
+    }
+
+    @Test
+    void drawRunsARandomPassAgainUntilItGivesAValue() {
+        final Sampling sampling = new Sampling(1, 1000);
+        final Gen<Integer> sometimes = Gen.oneOf(Gen.empty(), Gen.constant(1));
+        for (int i = 0; i < 100; i++) {
+            assertThat(sometimes.draw(sampling, 0)).isEqualTo(1);
         }
     }
 
-    // like assertForAll, but also asserts the generator produces more than a couple of distinct
-    // values over TRIES draws, catching an overflow that silently narrows a wide range down to it
-    <T> void assertForAllDiverse(Supplier<T> supplier, Predicate<T> property) {
-        final java.util.Set<T> seen = new java.util.HashSet<>();
-        for (int i = 0; i < TRIES; i++) {
-            final T element = supplier.get();
-            if (!property.test(element)) {
-                throw new AssertionError("predicate did not hold for " + element);
+    @Test
+    void drawGivesUpOnAnEmptyGenerator() {
+        assertThatThrownBy(() -> Gen.empty().draw(new Sampling(1, 1000), 4))
+                .isInstanceOf(IllegalStateException.class).hasMessage("the generator produced no value at size 4");
+        assertThatThrownBy(() -> Gen.oneOf(Gen.empty(), Gen.empty()).draw(new Sampling(1, 3), 4))
+                .isInstanceOf(IllegalStateException.class).hasMessage("the generator produced no value in 4 passes in a row at size 4");
+    }
+
+    // -- runs
+
+    @Test
+    void runCollectNRejectsInvalidArguments() {
+        assertThatThrownBy(() -> Gen.constant(1).runCollectN(-1, config(1))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.constant(1).runCollectN(-1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Gen.constant(1).runCollectN(1, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.constant(1).runCollect(null)).isInstanceOf(NullPointerException.class);
+        assertThat(Gen.constant(1).runCollectN(0, config(1))).isEmpty();
+    }
+
+    @Test
+    void constructorsRejectNulls() {
+        assertThatThrownBy(() -> Gen.fromIterable(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.elements((Object[]) null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.fromRandom(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.suspend(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> pass(Gen.suspend(() -> null))).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.oneOf((Gen<Integer>[]) null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.oneOf(Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.weighted((Tuple2<Gen<Integer>, Double>[]) null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.collectAll(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Gen.collectAll(Arrays.asList(Gen.constant(1), null))).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void anIteratorThatEndsEarlyIsCopiedOnce() {
+        final Iterable<Integer> twice = () -> new Iterator<>() {
+            private int left = 2;
+
+            @Override
+            public boolean hasNext() {
+                return left > 0;
             }
-            seen.add(element);
-        }
-        if (seen.size() < 50) {
-            throw new AssertionError("expected a diverse spread of generated values but got only " + seen.size() + " distinct values: " + seen);
-        }
+
+            @Override
+            public Integer next() {
+                if (left == 0) {
+                    throw new NoSuchElementException();
+                }
+                return left--;
+            }
+        };
+        assertThat(pass(Gen.fromIterable(twice))).isEqualTo(List.of(2, 1));
+    }
+
+    @Test
+    void everyValueOfARandomGeneratorComesFromTheSameRun() {
+        // two draws in one pass differ: the source is shared, not reset
+        final Set<Tuple2<Long, Long>> pairs = new HashSet<>(Gen.zip(Gen.fromRandom(r -> r.nextLong()), Gen.fromRandom(r -> r.nextLong())).runCollectN(100, config(1)).asJava());
+        assertThat(pairs).hasSize(100).allMatch(pair -> !pair._1().equals(pair._2()));
+        final Map<Long, Integer> counts = new HashMap<>();
+        Gen.longValue(0, 1_000_000_000L).runCollectN(1_000, config(1)).forEach(l -> counts.merge(l, 1, Integer::sum));
+        assertThat(counts.size()).isGreaterThan(400);
     }
 }

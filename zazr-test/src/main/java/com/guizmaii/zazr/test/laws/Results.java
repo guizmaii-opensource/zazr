@@ -1,6 +1,6 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.PredicateResult;
+import com.guizmaii.zazr.test.legacy.PredicateResult;
 
 import java.util.Objects;
 

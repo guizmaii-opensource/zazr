@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.Arbitrary;
-import com.guizmaii.zazr.test.Property;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Property;
 
 import java.util.function.Function;
 
