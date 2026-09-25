@@ -115,7 +115,7 @@ compare Zazr 0.1.0 with Vavr.
 - Two `Try.Failure`s are equal when they hold the same `Throwable` instance, not when their stack traces match.
 - `Either`: `swap` becomes `flip`, `peekLeft` becomes `tapLeft`, and `Either.collectAll` stops at the first `Left`.
   To collect every error, use `Validation`.
-- `Validation.cond` and `Either.cond` become `fromPredicate`.
+- `Validation.cond` and `Either.cond` become `fromPredicate`, whose error function receives the rejected value.
 
 **Collections**
 
@@ -137,6 +137,12 @@ compare Zazr 0.1.0 with Vavr.
   on `List`, `Queue` and `Stream` no longer overflow the stack there.
 - `TreeSet` and `TreeMap` stay balanced after a difference or an intersection.
 - `Stream.slice` no longer overflows the stack on a long `Stream`.
+- `LinkedHashMap` and `LinkedHashSet`: a key given more than once keeps the position of its first occurrence in
+  every factory and collector, as `put` does.
+- Several operations walk only the elements they need: `List.take`, `drop`, `takeWhile`, `slice`, `subSequence`,
+  `remove`, `leftPadTo` and `combinations(k)` no longer count the whole `List`, and `Queue.startsWith`, `zip`,
+  `zipWith`, `prefixLength` and `segmentLength` reverse the rear of the `Queue` only when they reach it.
+- `TreeMap.keySet`, `mapValues` and `replaceAll` copy the tree instead of sorting the entries again.
 
 ### Removed
 
@@ -177,14 +183,9 @@ compare Zazr 0.1.0 with Vavr.
 <!--
 pending: open pull requests, to fold into 0.1.0 as they merge.
 
-- PR 124 (cost fixes found by the complexity review): user-visible. List `take`, `drop`, `takeWhile`, `slice`,
-  `subSequence`, `remove`, `leftPadTo` and `combinations(k)` no longer walk the whole List; Queue `startsWith`,
-  `zip`, `zipWith`, `prefixLength` and `segmentLength` no longer reverse the rear list first. One line under
-  Changed > Collections, such as "Several List and Queue operations walk only the elements they need".
 - PR 128 (Scala's radix-balanced vector as an internal structure): no entry; nothing changes for users until Vector
   switches to it. That later change gets an entry (cheaper prepend, tail and init).
-- PR 131 (docs examples with var), PR 134 (coverage threshold), PR 135 (incremental generator): no entry; docs and
-  build only.
+- PR 134 (coverage threshold), PR 135 (incremental generator): no entry; build only.
 
 Open 0.1.0 issues that change this file if they land before the release:
 - Stream renamed LazyList: Changed > Collections.
@@ -194,6 +195,5 @@ Open 0.1.0 issues that change this file if they land before the release:
 - zipWithPrevious, zipWithNext, mapAccum, foldWhile, collectWhile, splitWhere, dedupe: Added > Collections.
 - Builders for LinkedHashMap, LinkedHashSet and List: Added > Builders.
 - Functions returning null rejected everywhere: Changed > Whole library.
-- LinkedHashMap keeps a repeated key's first position in every factory: Changed > Collections.
 - length removed in favour of size on the sequences: Changed > Collections.
 -->

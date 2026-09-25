@@ -78,4 +78,7 @@ Zazr is pre-1.0: the API changes between snapshots, with no compatibility promis
 [Semantic Versioning](https://semver.org).
 
 Snapshots of `main` are published automatically. A release is made by publishing a GitHub release whose tag is the
-version prefixed with `v` (for example `v0.1.0`); the `release` workflow builds it and publishes it to Maven Central.
+version prefixed with `v` (for example `v0.1.0`). The `release` workflow builds and signs it, then uploads it to the
+Maven Central Portal, which validates it. The release is not public yet: the maintainer presses **Publish** on the
+deployment at [central.sonatype.com](https://central.sonatype.com/publishing/deployments) to release it to Maven
+Central.

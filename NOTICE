@@ -5,3 +5,6 @@ This product is a fork of Vavr (https://vavr.io), Copyright 2014-2026 Vavr,
 licensed under the Apache License, Version 2.0 (see LICENSE). The per-file
 copyright and license notices of the original Vavr sources have been
 consolidated into this NOTICE file.
+
+Vavr was created by Daniel Dietrich and is maintained by Grzegorz Piwowarek,
+with its contributors (https://github.com/vavr-io/vavr/graphs/contributors).
