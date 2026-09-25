@@ -22,7 +22,7 @@
 | `reverse` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `sorted` | <abbr class="cx cx-linearithmic" title="O(n log n) comparisons.">O(n log n)</abbr> | O(n log n) comparisons. |
 | `length` | <abbr class="cx cx-linear" title="O(n); the front and the rear are counted.">O(n)</abbr> | O(n); the front and the rear are counted. |
-| `contains` | <abbr class="cx cx-linear" title="O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup.">O(n)</abbr> | O(n) for this default, which walks the elements; the sets and the maps override it with their own lookup. |
+| `contains` | <abbr class="cx cx-linear" title="O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup.">O(n)</abbr> | O(n): the elements are compared one by one until an equal one is found. The sets and the maps override it with a lookup. |
 | `indexOf` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `zip` | <abbr class="cx cx-linear" title="O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.">O(min(n, m))</abbr> | O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most. |
 | `sliding(int)` | <abbr class="cx cx-polynomial" title="O(n * size); each window is copied into its own Queue.">O(n * size)</abbr> | O(n * size); each window is copied into its own Queue. |

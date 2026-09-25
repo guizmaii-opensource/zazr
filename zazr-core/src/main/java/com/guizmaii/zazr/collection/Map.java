@@ -125,7 +125,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Returns <code>true</code> if this map maps one or more keys to the
-     * specified value. This operation will require time linear in the map size.
+     * specified value.
+     * <p>
+     * Complexity: O(n): the entries are walked until the value is found; values are not indexed.
      *
      * @param value value whose presence in this map is to be tested
      * @return <code>true</code> if this map maps one or more keys to the
@@ -603,6 +605,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     /**
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     * <p>
+     * Complexity: O(n): every entry is compared in the natural order of its key, then of its value.
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -640,6 +644,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
+     * <p>
+     * Complexity: O(n): every entry is compared in the natural order of its key, then of its value.
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
