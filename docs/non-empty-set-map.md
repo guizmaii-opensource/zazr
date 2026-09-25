@@ -53,8 +53,15 @@ The return type tells you whether the result can be empty:
 set may merge equal results, and `map` on a map equal keys, but never down to nothing.
 
 On a map, `keySet()` returns a `NonEmptySet` (a `NonEmptySortedSet` on a `NonEmptySortedMap`) and `values()` a
-`NonEmptyVector`. `groupBy` returns a `HashMap` whose values are non-empty, and on the sorted variants `grouped`,
-`sliding` and `slideBy` return a `Vector` of them.
+`NonEmptyVector`. `groupBy` returns a `NonEmptyMap` whose values are non-empty, and on the sorted variants `grouped`,
+`sliding` and `slideBy` return a `Vector` of them. `toMap` returns a `NonEmptyMap` and `toSortedMap` a
+`NonEmptySortedMap`, on these types and on `NonEmptyVector`: a non-empty source gives at least one entry.
+
+```java
+var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length); // NonEmptyMap<Integer, NonEmptySet<String>>
+var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word); // NonEmptyMap<Integer, String>
+// byLength maps 1 to a set of a, and 2 to a set of bb and cc; index is NonEmptyMap((1, a), (2, bb))
+```
 
 ```java
 var prices = NonEmptySortedMap.of(Tuple.of("pear", 3), Tuple.of("apple", 2));

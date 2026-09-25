@@ -2,6 +2,7 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.NonEmptyModule;
 import com.guizmaii.zazr.control.Option;
 import java.util.Comparator;
@@ -27,7 +28,8 @@ import org.jspecify.annotations.Nullable;
  * <li>operations that cannot remove every entry return a {@code NonEmptyMap}: {@code put}, {@code merge},
  * {@code computeIfAbsent}, {@code computeIfPresent}, {@code map}, {@code mapBoth}, {@code mapKeys}, {@code mapValues},
  * {@code flatMap}, {@code replace}, {@code replaceAll}, {@code replaceValue}, {@code tap}; {@code keySet} returns a
- * {@link NonEmptySet}, {@code values} a {@link NonEmptyVector}, and {@code groupBy} non-empty groups;</li>
+ * {@link NonEmptySet}, {@code values} a {@link NonEmptyVector}, {@code groupBy} non-empty groups in a
+ * {@code NonEmptyMap}, {@code toMap} a {@code NonEmptyMap} and {@code toSortedMap} a {@link NonEmptySortedMap};</li>
  * <li>operations that can shrink return a {@link HashMap}: {@code filter}, {@code filterKeys}, {@code filterValues},
  * {@code reject}, {@code rejectKeys}, {@code rejectValues}, {@code collect}, {@code flatMapAll}, {@code remove},
  * {@code removeAll}, {@code retainAll}, {@code partition};</li>
@@ -190,6 +192,49 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
             put(builder, entry);
         }
         return builder;
+    }
+
+    /* the entries computed from the elements of a non-empty iterable, the later of two equal keys winning; a null
+       key or value is reported under the calling method's name */
+    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> ofMapped(Iterable<T> nonEmpty,
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper, String method) {
+        Objects.requireNonNull(keyMapper, "keyMapper is null");
+        Objects.requireNonNull(valueMapper, "valueMapper is null");
+        final HashMap.Builder<K, V> builder = HashMap.newBuilder();
+        for (T element : nonEmpty) {
+            final K key = keyMapper.apply(element);
+            if (key == null) {
+                throw new NullPointerException(method + ": keyMapper returned null");
+            }
+            final V value = valueMapper.apply(element);
+            if (value == null) {
+                throw new NullPointerException(method + ": valueMapper returned null");
+            }
+            builder.put(key, value);
+        }
+        return new NonEmptyMap<>(builder.result());
+    }
+
+    /* the entries f computes from the elements of a non-empty iterable, the later of two equal keys winning; a
+       null entry, key or value is reported under the calling method's name */
+    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> ofMappedEntries(Iterable<T> nonEmpty,
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f, String method) {
+        Objects.requireNonNull(f, "f is null");
+        final HashMap.Builder<K, V> builder = HashMap.newBuilder();
+        for (T element : nonEmpty) {
+            final Tuple2<? extends K, ? extends V> entry = f.apply(element);
+            if (entry == null) {
+                throw new NullPointerException(method + ": f returned null");
+            }
+            if (entry._1() == null) {
+                throw new NullPointerException(method + ": f returned an entry with a null key");
+            }
+            if (entry._2() == null) {
+                throw new NullPointerException(method + ": f returned an entry with a null value");
+            }
+            builder.put(entry._1(), entry._2());
+        }
+        return new NonEmptyMap<>(builder.result());
     }
 
     // -- returns NonEmptyMap: at least one entry is left
@@ -463,15 +508,15 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      *
      * @param classifier Computes the group of an entry
      * @param <C>        Group key type
-     * @return the groups, each non-empty
+     * @return the groups, each non-empty, in a non-empty map
      * @throws NullPointerException if {@code classifier} is null or returns null
      */
-    public <C extends @Nullable Object> HashMap<C, NonEmptyMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
+    public <C extends @Nullable Object> NonEmptyMap<C, NonEmptyMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
         final HashMap.Builder<C, NonEmptyMap<K, V>> groups = HashMap.newBuilder();
         for (Tuple2<C, HashMap<K, V>> group : map.<C> groupBy(classifier)) {
             groups.put(group._1(), new NonEmptyMap<>(group._2()));
         }
-        return groups.result();
+        return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
     /* the plain operations that cannot empty a non-empty map return the same instance when nothing changes */
@@ -932,22 +977,22 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * @param valueMapper The value of an entry
      * @param <K2>        Key type
      * @param <V2>        Value type
-     * @return the entries as the entries of a new {@link HashMap}; of two with the same key, the later wins
+     * @return the entries as the entries of a new {@link NonEmptyMap}; of two with the same key, the later wins
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
-        return map.toMap(keyMapper, valueMapper);
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return NonEmptyMap.ofMapped(map, keyMapper, valueMapper, "NonEmptyMap.toMap");
     }
 
     /**
      * @param f    The new entry of an entry
      * @param <K2> Key type
      * @param <V2> Value type
-     * @return the entries as the entries of a new {@link HashMap}; of two with the same key, the later wins
+     * @return the entries as the entries of a new {@link NonEmptyMap}; of two with the same key, the later wins
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return map.toMap(f);
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        return NonEmptyMap.ofMappedEntries(map, f, "NonEmptyMap.toMap");
     }
 
     /**
@@ -978,22 +1023,22 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * @param valueMapper The value of an entry
      * @param <K2>        Key type
      * @param <V2>        Value type
-     * @return the entries as the entries of a new {@link TreeMap} in the natural order of the keys
+     * @return the entries as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
-        return map.toSortedMap(keyMapper, valueMapper);
+    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return NonEmptySortedMap.ofMapped(Comparators.naturalComparator(), map, keyMapper, valueMapper, "NonEmptyMap.toSortedMap");
     }
 
     /**
      * @param f    The new entry of an entry
      * @param <K2> Key type
      * @param <V2> Value type
-     * @return the entries as the entries of a new {@link TreeMap} in the natural order of the keys
+     * @return the entries as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return map.toSortedMap(f);
+    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        return NonEmptySortedMap.ofMappedEntries(Comparators.naturalComparator(), map, f, "NonEmptyMap.toSortedMap");
     }
 
     /**
@@ -1002,11 +1047,11 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * @param valueMapper The value of an entry
      * @param <K2>        Key type
      * @param <V2>        Value type
-     * @return the entries as the entries of a new {@link TreeMap} ordered by {@code comparator}
+     * @return the entries as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}
      * @throws NullPointerException if an argument is null or a mapper returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
-        return map.toSortedMap(comparator, keyMapper, valueMapper);
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return NonEmptySortedMap.ofMapped(comparator, map, keyMapper, valueMapper, "NonEmptyMap.toSortedMap");
     }
 
     /**
@@ -1014,11 +1059,11 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * @param f          The new entry of an entry
      * @param <K2>       Key type
      * @param <V2>       Value type
-     * @return the entries as the entries of a new {@link TreeMap} ordered by {@code comparator}
+     * @return the entries as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}
      * @throws NullPointerException if an argument is null or {@code f} returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return map.toSortedMap(comparator, f);
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        return NonEmptySortedMap.ofMappedEntries(comparator, map, f, "NonEmptyMap.toSortedMap");
     }
 
     // -- returns Option

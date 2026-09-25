@@ -187,6 +187,13 @@ public class NonEmptySetTest {
             assertThatNullPointerException().isThrownBy(() -> nes.reduceMap(null, Integer::sum));
             assertThatNullPointerException().isThrownBy(() -> nes.reduceMap(i -> i, null));
             assertThatNullPointerException().isThrownBy(() -> nes.fold(0, null));
+            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> null, i -> i)).withMessage("NonEmptySet.toMap: keyMapper returned null");
+            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> i, i -> null)).withMessage("NonEmptySet.toMap: valueMapper returned null");
+            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> null)).withMessage("NonEmptySet.toMap: f returned null");
+            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> Tuple.of(null, i))).withMessage("NonEmptySet.toMap: f returned an entry with a null key");
+            assertThatNullPointerException().isThrownBy(() -> nes.toSortedMap(i -> Tuple.of(i, null))).withMessage("NonEmptySet.toSortedMap: f returned an entry with a null value");
+            assertThatNullPointerException().isThrownBy(() -> nes.toSortedMap(null, i -> i, i -> i)).withMessage("comparator is null");
+            assertThatNullPointerException().isThrownBy(() -> nes.toSortedMap(Comparator.<Integer> naturalOrder(), i -> i, null)).withMessage("valueMapper is null");
         }
     }
 
@@ -269,8 +276,8 @@ public class NonEmptySetTest {
         public void shouldGroupByIntoNonEmptyGroups(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
             for (Function<Integer, Integer> classifier : java.util.List.<Function<Integer, Integer>> of(i -> 0, i -> i % 3, i -> i)) {
-                final HashMap<Integer, NonEmptySet<Integer>> groups = nes.groupBy(classifier);
-                assertThat(groups.mapValues(NonEmptySet::toSet)).isEqualTo(set.groupBy(classifier));
+                final NonEmptyMap<Integer, NonEmptySet<Integer>> groups = nes.groupBy(classifier);
+                assertThat(groups.mapValues(NonEmptySet::toSet).toMap()).isEqualTo(set.groupBy(classifier));
                 assertThat(groups.values().forAll(group -> group.size() >= 1)).isTrue();
             }
         }
@@ -432,12 +439,12 @@ public class NonEmptySetTest {
             assertThat(nes.toLinkedSet()).isEqualTo(set.toLinkedSet());
             assertThat(nes.toSortedSet()).isEqualTo(set.toSortedSet());
             assertThat(nes.toSortedSet(Comparator.reverseOrder()).head()).isEqualTo(n - 1);
-            assertThat(nes.toMap(i -> i, i -> -i)).isEqualTo(set.toMap(i -> i, i -> -i));
-            assertThat(nes.toMap(i -> Tuple.of(i % 5, i))).isEqualTo(set.toMap(i -> Tuple.of(i % 5, i)));
+            assertThat(nes.toMap(i -> i, i -> -i).toMap()).isEqualTo(set.toMap(i -> i, i -> -i));
+            assertThat(nes.toMap(i -> Tuple.of(i % 5, i)).toMap()).isEqualTo(set.toMap(i -> Tuple.of(i % 5, i)));
             assertThat(nes.toLinkedMap(i -> i, i -> -i)).isEqualTo(set.toLinkedMap(i -> i, i -> -i));
             assertThat(nes.toLinkedMap(i -> Tuple.of(i, -i))).isEqualTo(set.toLinkedMap(i -> Tuple.of(i, -i)));
-            assertThat(nes.toSortedMap(i -> i, i -> -i)).isEqualTo(set.toSortedMap(i -> i, i -> -i));
-            assertThat(nes.toSortedMap(i -> Tuple.of(i, -i))).isEqualTo(set.toSortedMap(i -> Tuple.of(i, -i)));
+            assertThat(nes.toSortedMap(i -> i, i -> -i).toSortedMap()).isEqualTo(set.toSortedMap(i -> i, i -> -i));
+            assertThat(nes.toSortedMap(i -> Tuple.of(i, -i)).toSortedMap()).isEqualTo(set.toSortedMap(i -> Tuple.of(i, -i)));
             assertThat(nes.toSortedMap(Comparator.<Integer> reverseOrder(), i -> i, i -> -i).head()._1()).isEqualTo(n - 1);
             assertThat(nes.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(i, -i)).head()._1()).isEqualTo(n - 1);
         }
@@ -507,6 +514,13 @@ public class NonEmptySetTest {
             calls.put("tap(Consumer)", s -> java.util.List.of(s.tap(i -> { })));
             // non-empty sets inside another type
             calls.put("groupBy(Function)", s -> java.util.List.of(s.groupBy(i -> 0), s.groupBy(i -> i)));
+            // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
+            calls.put("toMap(Function, Function)", s -> java.util.List.of(s.toMap(i -> 0, i -> i)));
+            calls.put("toMap(Function)", s -> java.util.List.of(s.toMap(i -> Tuple.of(0, i))));
+            calls.put("toSortedMap(Function, Function)", s -> java.util.List.of(s.toSortedMap(i -> 0, i -> i)));
+            calls.put("toSortedMap(Function)", s -> java.util.List.of(s.toSortedMap(i -> Tuple.of(0, i))));
+            calls.put("toSortedMap(Comparator, Function, Function)", s -> java.util.List.of(s.toSortedMap(Comparator.<Integer> reverseOrder(), i -> 0, i -> i)));
+            calls.put("toSortedMap(Comparator, Function)", s -> java.util.List.of(s.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(0, i))));
             return calls;
         }
 

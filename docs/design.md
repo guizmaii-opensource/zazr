@@ -689,8 +689,8 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   puts), `map`, `mapBoth`, `mapKeys` ×2, `mapValues`, `replace` ×2, `replaceAll` ×2 (`replace(Tuple2, Tuple2)` onto a
   present key shrinks the map by one, never below one), `replaceValue`; the `Comparator` overloads of `map`/`mapBoth`
   on the sorted ones. `keySet()` returns a `NonEmptySet` (`NonEmptySortedSet` with the map's comparator on a sorted
-  map) and `values()` a `NonEmptyVector`. `groupBy` returns `HashMap<K, NonEmpty…>` on all four, as on
-  `NonEmptyVector`.
+  map) and `values()` a `NonEmptyVector`. `groupBy` returns a `NonEmptyMap` of non-empty groups on all four, as on
+  `NonEmptyVector` (below).
 - **`flatMap` / `flatMapAll`**, as on `NonEmptyVector`: `flatMap` takes a function returning the non-empty type,
   `flatMapAll` one returning any `Iterable` and returns the plain type.
 - **Returns the plain type:** `filter*`, `reject*`, `collect`, `remove`, `removeAll`, `retainAll`, `intersect`, `diff`,
@@ -722,9 +722,16 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
 - **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
   `TreeSet`).
-- **Not done here:** `NonEmptyVector.groupBy`/`toMap` and the non-empty sets' `toMap` still return a plain map, as 3.6
-  fixed before `NonEmptyMap` existed; whether a non-empty source should now give a `NonEmptyMap` is left to the
-  maintainer.
+- **Grouping and converting a non-empty collection gives a non-empty map** (maintainer decision, 2026-09-25). On
+  `NonEmptyVector` and the four wrappers, `groupBy` returns a `NonEmptyMap` whose values are the non-empty type
+  (`NonEmptyMap<K, NonEmptyVector<A>>`, `NonEmptyMap<K, NonEmptySet<A>>`, `NonEmptyMap<C, NonEmptySortedMap<K, V>>`…),
+  `toMap` ×2 a `NonEmptyMap` and `toSortedMap` ×4 a `NonEmptySortedMap`: there is at least one element, so at least
+  one entry, whatever the keys. `toLinkedMap` keeps returning a plain map, since there is no non-empty linked map.
+  `arrangeBy` stays an `Option` of a plain map, as it was not part of the decision. The maps are built by package-private
+  `NonEmptyMap.ofMapped`/`ofMappedEntries` (and their `NonEmptySortedMap` twins), one builder pass that puts keys and
+  values without an intermediate `Tuple2` and reports a null key, value or entry under the calling method's name
+  (`NonEmptySet.toMap: keyMapper returned null`), as `NonEmptyVector` already did. This changes 3.6's
+  `groupBy as HashMap<K, NonEmptyVector<A>>`.
 
 ### 3.7 Removing the `Seq` abstraction
 

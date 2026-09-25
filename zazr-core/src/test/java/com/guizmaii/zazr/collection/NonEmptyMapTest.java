@@ -224,8 +224,8 @@ public class NonEmptyMapTest {
             assertThat(nem.keySet().toSet()).isEqualTo(map.keySet());
             assertThat(nem.values().toVector()).isEqualTo(map.values());
             for (Function<Tuple2<Integer, String>, Integer> classifier : java.util.List.<Function<Tuple2<Integer, String>, Integer>> of(t -> 0, t -> t._1() % 3, Tuple2::_1)) {
-                final HashMap<Integer, NonEmptyMap<Integer, String>> groups = nem.groupBy(classifier);
-                assertThat(groups.mapValues(NonEmptyMap::toMap)).isEqualTo(map.groupBy(classifier));
+                final NonEmptyMap<Integer, NonEmptyMap<Integer, String>> groups = nem.groupBy(classifier);
+                assertThat(groups.mapValues(NonEmptyMap::toMap).toMap()).isEqualTo(map.groupBy(classifier));
             }
         }
     }
@@ -342,12 +342,12 @@ public class NonEmptyMapTest {
             assertThat(nem.toLinkedSet()).isEqualTo(map.toLinkedSet());
             assertThat(nem.toSortedSet()).isEqualTo(map.toSortedSet());
             assertThat(nem.toSortedSet(Comparator.comparing(Tuple2::_1)).head()).isEqualTo(Tuple.of(0, "v0"));
-            assertThat(nem.toMap(Tuple2::_2, Tuple2::_1)).isEqualTo(map.toMap(Tuple2::_2, Tuple2::_1));
-            assertThat(nem.toMap(Tuple2::swap)).isEqualTo(map.toMap(Tuple2::swap));
+            assertThat(nem.toMap(Tuple2::_2, Tuple2::_1).toMap()).isEqualTo(map.toMap(Tuple2::_2, Tuple2::_1));
+            assertThat(nem.toMap(Tuple2::swap).toMap()).isEqualTo(map.toMap(Tuple2::swap));
             assertThat(nem.toLinkedMap(Tuple2::_2, Tuple2::_1)).isEqualTo(map.toLinkedMap(Tuple2::_2, Tuple2::_1));
             assertThat(nem.toLinkedMap(Tuple2::swap)).isEqualTo(map.toLinkedMap(Tuple2::swap));
-            assertThat(nem.toSortedMap(Tuple2::_2, Tuple2::_1)).isEqualTo(map.toSortedMap(Tuple2::_2, Tuple2::_1));
-            assertThat(nem.toSortedMap(Tuple2::swap)).isEqualTo(map.toSortedMap(Tuple2::swap));
+            assertThat(nem.toSortedMap(Tuple2::_2, Tuple2::_1).toSortedMap()).isEqualTo(map.toSortedMap(Tuple2::_2, Tuple2::_1));
+            assertThat(nem.toSortedMap(Tuple2::swap).toSortedMap()).isEqualTo(map.toSortedMap(Tuple2::swap));
             assertThat(nem.toSortedMap(Comparator.<Integer> reverseOrder(), Tuple2::_1, Tuple2::_2).head()._1()).isEqualTo(n - 1);
             assertThat(nem.toSortedMap(Comparator.<Integer> reverseOrder(), t -> t).head()._1()).isEqualTo(n - 1);
         }
@@ -413,6 +413,13 @@ public class NonEmptyMapTest {
             calls.put("keySet()", m -> java.util.List.of(m.keySet()));
             calls.put("values()", m -> java.util.List.of(m.values()));
             calls.put("groupBy(Function)", m -> java.util.List.of(m.groupBy(t -> 0), m.groupBy(Tuple2::_1)));
+            // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
+            calls.put("toMap(Function, Function)", m -> java.util.List.of(m.toMap(t -> 0, t -> t)));
+            calls.put("toMap(Function)", m -> java.util.List.of(m.toMap(t -> Tuple.of(0, t))));
+            calls.put("toSortedMap(Function, Function)", m -> java.util.List.of(m.toSortedMap(t -> 0, t -> t)));
+            calls.put("toSortedMap(Function)", m -> java.util.List.of(m.toSortedMap(t -> Tuple.of(0, t))));
+            calls.put("toSortedMap(Comparator, Function, Function)", m -> java.util.List.of(m.toSortedMap(Comparator.<Integer> reverseOrder(), t -> 0, t -> t)));
+            calls.put("toSortedMap(Comparator, Function)", m -> java.util.List.of(m.toSortedMap(Comparator.<Integer> reverseOrder(), t -> Tuple.of(0, t))));
             return calls;
         }
 

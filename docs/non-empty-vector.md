@@ -41,8 +41,8 @@ The return type tells you whether the result can be empty:
 | a tuple of `Vector`s | a split, where either part may be empty | `splitAt`, `span`, `partition` |
 | `Option` | you ask for a part that may not exist | `find`, `indexWhereOption`, `tailNonEmpty()`, `initNonEmpty()` |
 
-`grouped`, `sliding` and `slideBy` return a `Vector` of `NonEmptyVector`s, and `groupBy` a `HashMap` whose values are
-`NonEmptyVector`s. `unzip` returns `NonEmptyVector`s, and the first part of `splitAtInclusive` is one.
+`grouped`, `sliding` and `slideBy` return a `Vector` of `NonEmptyVector`s, and `groupBy` a `NonEmptyMap` whose values
+are `NonEmptyVector`s. `toMap` returns a `NonEmptyMap` and `toSortedMap` a `NonEmptySortedMap`. `unzip` returns `NonEmptyVector`s, and the first part of `splitAtInclusive` is one.
 `appendAll`, `prependAll`, `insertAll` and `zipAll` accept an `Iterable` that may be empty and still return a
 `NonEmptyVector`. `zip` and `crossProduct` return a `NonEmptyVector` when given one, and a `Vector` when given any
 other `Iterable`.

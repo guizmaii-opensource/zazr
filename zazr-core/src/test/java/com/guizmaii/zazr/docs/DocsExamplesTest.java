@@ -1080,6 +1080,17 @@ public class DocsExamplesTest {
         }
 
         @Test
+        void groupingAndConverting() {
+            var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length); // NonEmptyMap<Integer, NonEmptySet<String>>
+            var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word); // NonEmptyMap<Integer, String>
+            // byLength maps 1 to a set of a, and 2 to a set of bb and cc; index is NonEmptyMap((1, a), (2, bb))
+
+            assertThat(byLength.get(1).map(NonEmptySet::toSet)).isEqualTo(Option.some(HashSet.of("a")));
+            assertThat(byLength.get(2).map(NonEmptySet::toSet)).isEqualTo(Option.some(HashSet.of("bb", "cc")));
+            assertThat(index).hasToString("NonEmptyMap((1, a), (2, bb))");
+        }
+
+        @Test
         void construction() {
             var fromInput = HashMap.of("a", 1).toNonEmptyMap(); // Option<NonEmptyMap<String, Integer>>
             var fromNothing = HashSet.<String>empty().toNonEmptySet(); // Option<NonEmptySet<String>>

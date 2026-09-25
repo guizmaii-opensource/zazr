@@ -193,8 +193,8 @@ public class NonEmptySortedSetTest {
             assertThat(ness.zipWithIndex().toVector()).isEqualTo(set.zipWithIndex());
             assertThat(ness.zipWithIndex().head()).isEqualTo(Tuple.of(set.head(), 0));
             for (Function<Integer, Integer> classifier : java.util.List.<Function<Integer, Integer>> of(i -> 0, i -> i % 3, i -> i)) {
-                final HashMap<Integer, NonEmptySortedSet<Integer>> groups = ness.groupBy(classifier);
-                assertThat(groups.mapValues(NonEmptySortedSet::toSortedSet)).isEqualTo(set.groupBy(classifier));
+                final NonEmptyMap<Integer, NonEmptySortedSet<Integer>> groups = ness.groupBy(classifier);
+                assertThat(groups.mapValues(NonEmptySortedSet::toSortedSet).toMap()).isEqualTo(set.groupBy(classifier));
                 assertThat(groups.values().forAll(group -> group.comparator() == set.comparator())).isTrue();
             }
             assertThatIllegalArgumentException().isThrownBy(() -> ness.grouped(0));
@@ -330,12 +330,12 @@ public class NonEmptySortedSetTest {
             assertThat(ness.toSet()).isEqualTo(set.toSet());
             assertThat(ness.toLinkedSet()).isEqualTo(set.toLinkedSet());
             assertThat(ness.toSortedSet(Comparator.naturalOrder()).head()).isEqualTo(0);
-            assertThat(ness.toMap(i -> i, i -> -i)).isEqualTo(set.toMap(i -> i, i -> -i));
-            assertThat(ness.toMap(i -> Tuple.of(i % 5, i))).isEqualTo(set.toMap(i -> Tuple.of(i % 5, i)));
+            assertThat(ness.toMap(i -> i, i -> -i).toMap()).isEqualTo(set.toMap(i -> i, i -> -i));
+            assertThat(ness.toMap(i -> Tuple.of(i % 5, i)).toMap()).isEqualTo(set.toMap(i -> Tuple.of(i % 5, i)));
             assertThat(ness.toLinkedMap(i -> i, i -> -i)).isEqualTo(set.toLinkedMap(i -> i, i -> -i));
             assertThat(ness.toLinkedMap(i -> Tuple.of(i, -i))).isEqualTo(set.toLinkedMap(i -> Tuple.of(i, -i)));
-            assertThat(ness.toSortedMap(i -> i, i -> -i)).isEqualTo(set.toSortedMap(i -> i, i -> -i));
-            assertThat(ness.toSortedMap(i -> Tuple.of(i, -i))).isEqualTo(set.toSortedMap(i -> Tuple.of(i, -i)));
+            assertThat(ness.toSortedMap(i -> i, i -> -i).toSortedMap()).isEqualTo(set.toSortedMap(i -> i, i -> -i));
+            assertThat(ness.toSortedMap(i -> Tuple.of(i, -i)).toSortedMap()).isEqualTo(set.toSortedMap(i -> Tuple.of(i, -i)));
             assertThat(ness.toSortedMap(Comparator.<Integer> reverseOrder(), i -> i, i -> -i).head()._1()).isEqualTo(n - 1);
             assertThat(ness.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(i, -i)).head()._1()).isEqualTo(n - 1);
         }
@@ -398,6 +398,13 @@ public class NonEmptySortedSetTest {
             calls.put("sliding(int, int)", s -> java.util.List.of(s.sliding(1, Integer.MAX_VALUE), s.sliding(Integer.MAX_VALUE, 1)));
             calls.put("slideBy(Function)", s -> java.util.List.of(s.slideBy(i -> 0), s.slideBy(i -> i)));
             calls.put("zipWithIndex()", s -> java.util.List.of(s.zipWithIndex()));
+            // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
+            calls.put("toMap(Function, Function)", s -> java.util.List.of(s.toMap(i -> 0, i -> i)));
+            calls.put("toMap(Function)", s -> java.util.List.of(s.toMap(i -> Tuple.of(0, i))));
+            calls.put("toSortedMap(Function, Function)", s -> java.util.List.of(s.toSortedMap(i -> 0, i -> i)));
+            calls.put("toSortedMap(Function)", s -> java.util.List.of(s.toSortedMap(i -> Tuple.of(0, i))));
+            calls.put("toSortedMap(Comparator, Function, Function)", s -> java.util.List.of(s.toSortedMap(Comparator.<Integer> reverseOrder(), i -> 0, i -> i)));
+            calls.put("toSortedMap(Comparator, Function)", s -> java.util.List.of(s.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(0, i))));
             return calls;
         }
 
