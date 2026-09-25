@@ -59,14 +59,21 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
         LawChecks.check(BuilderLaws.builderResultEqualsOfAll(), Arbitrary.list(Arbitrary.integer()));
     }
 
+    /// Sizes at the boundaries of a 32-wide trie: the arbitraries favour the size and the size minus one.
+    private static final int[] TRIE_BOUNDARIES = { 32, 33, 1024, 1025, 32_769 };
+
     @Test
-    void builderResultEqualsOfAllAcrossTrieLevels() {
-        Laws.of(BuilderLaws.builderResultEqualsOfAll())
-                .assertSatisfied(Arbitrary.list(Arbitrary.integer()), new Random(LawChecks.SEED), 2_000, 100);
+    void builderResultEqualsOfAllAtTrieBoundaries() {
+        for (int size : TRIE_BOUNDARIES) {
+            Laws.of(BuilderLaws.builderResultEqualsOfAll())
+                    .assertSatisfied(Arbitrary.list(Arbitrary.integer()), new Random(LawChecks.SEED + size), size, 40);
+        }
     }
 
     @Test
-    void sequenceLawsAcrossTrieLevels() {
-        CollectionLaws.<Integer, Vector<Integer>>sequence().assertSatisfied(collection(), new Random(LawChecks.SEED), 2_000, 100);
+    void sequenceLawsAtTrieBoundaries() {
+        for (int size : TRIE_BOUNDARIES) {
+            CollectionLaws.<Integer, Vector<Integer>>sequence().assertSatisfied(collection(), new Random(LawChecks.SEED + size), size, 40);
+        }
     }
 }
