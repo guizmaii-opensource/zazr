@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples site site-serve bench coverage coverage-summary javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples site site-serve bench coverage coverage-summary coverage-check javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -113,10 +113,23 @@ bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark mo
 # zazr-benchmark has no tests and stays out of the report.
 COVERAGE_REPORT := zazr-test/target/site/jacoco-aggregate
 
-coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in zazr-test/target/site/jacoco-aggregate
+coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in zazr-test/target/site/jacoco-aggregate, then coverage-check
 	$(MVN) -Pcoverage -pl zazr-core,zazr-test test
 	@$(MAKE) --no-print-directory coverage-summary
 	@echo "HTML report: $(COVERAGE_REPORT)/index.html"
+	@$(MAKE) --no-print-directory coverage-check
+
+# The check reads the execution data and the classes of the last make coverage. JaCoCo skips a merge whose data is
+# missing or empty and a check without data, and it passes a bundle of 0 classes (after a failed compile); so data
+# and at least one class file are required here, and the merged file of an earlier run is deleted first, so that a
+# skipped merge cannot leave it to be checked again.
+coverage-check: ## fail when zazr-core is below 95 % of lines or 95 % of branches in the last make coverage
+	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec; do \
+		test -s $$f || { echo "$$f is missing or empty: run make coverage first"; exit 1; }; done
+	@find zazr-core/target/classes -name '*.class' -print -quit 2>/dev/null | grep -q . \
+		|| { echo "no class file in zazr-core/target/classes: run make coverage first"; exit 1; }
+	@rm -f zazr-core/target/jacoco-merged.exec
+	$(MVN) -Pcoverage -pl zazr-core jacoco:merge@coverage-merge jacoco:check@coverage-check
 
 coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
 	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml

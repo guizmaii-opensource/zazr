@@ -7,6 +7,7 @@ package com.guizmaii.zazr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import java.lang.CharSequence;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,14 +30,45 @@ public class Function3Test {
 
     @Test
     public void shouldLiftPartialFunction() {
-        assertThat(Function3.lift((o1, o2, o3) -> { while(true); })).isNotNull();
+        final Function3<Integer, Integer, Integer, Option<Integer>> lifted = Function3.lift((i1, i2, i3) -> {
+            if (i1 == 0) {
+                return null;
+            }
+            if (i1 == 1) {
+                throw new IllegalStateException("non-fatal");
+            }
+            if (i1 == 2) {
+                throw new OutOfMemoryError("fatal");
+            }
+            return i1 + i2 + i3;
+        });
+        assertThat(lifted.apply(3, 1, 1)).isEqualTo(Option.some(5));
+        assertThat(lifted.apply(0, 1, 1)).isEqualTo(Option.none());
+        assertThat(lifted.apply(1, 1, 1)).isEqualTo(Option.none());
+        assertThrows(OutOfMemoryError.class, () -> lifted.apply(2, 1, 1));
+    }
+
+    @Test
+    public void shouldRethrowFatalThrowableFromLiftTry() {
+        final Function3<Integer, Integer, Integer, Try<Integer>> lifted =
+            Function3.liftTry((i1, i2, i3) -> { throw new OutOfMemoryError("fatal"); });
+        assertThrows(OutOfMemoryError.class, () -> lifted.apply(1, 1, 1));
+    }
+
+    @Test
+    public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
+        final Function3<Integer, Integer, Integer, Try<Integer>> lifted =
+            Function3.liftTry((i1, i2, i3) -> { throw new IllegalStateException("non-fatal"); });
+        final Try<Integer> result = lifted.apply(1, 1, 1);
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("non-fatal");
     }
 
     @Test
     public void shouldPartiallyApply() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        assertThat(f.apply(null)).isNotNull();
-        assertThat(f.apply(null, null)).isNotNull();
+        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
+        assertThat(f.apply(1).apply(2, 3)).isEqualTo("123");
+        assertThat(f.apply(1, 2).apply(3)).isEqualTo("123");
     }
 
     @Test
@@ -47,16 +79,16 @@ public class Function3Test {
 
     @Test
     public void shouldCurry() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
+        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
         final Function<Object, Function<Object, Function<Object, Object>>> curried = f.curried();
-        assertThat(curried).isNotNull();
+        assertThat(curried.apply(1).apply(2).apply(3)).isEqualTo("123");
     }
 
     @Test
     public void shouldTuple() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
+        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
         final Function<Tuple3<Object, Object, Object>, Object> tupled = f.tupled();
-        assertThat(tupled).isNotNull();
+        assertThat(tupled.apply(Tuple.of(1, 2, 3))).isEqualTo("123");
     }
 
     @Test
@@ -86,10 +118,10 @@ public class Function3Test {
 
     @Test
     public void shouldComposeWithAndThen() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> null;
-        final Function<Object, Object> after = o -> null;
+        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
+        final Function<Object, Object> after = o -> o + "!";
         final Function3<Object, Object, Object, Object> composed = f.andThen(after);
-        assertThat(composed).isNotNull();
+        assertThat(composed.apply(1, 2, 3)).isEqualTo("123!");
     }
 
     @Nested
