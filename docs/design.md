@@ -1690,6 +1690,9 @@ any number of resources decided at run time, and Scala's rule for which throwabl
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`
   (or by dispatching the `release` workflow with that tag): the workflow sets the Maven version from the
   tag with `versions:set`, signs with the imported PGP key and deploys with `-Pmaven-central-release`.
+  Fully automatic (decided 2026-09-26, by the maintainer): the Central publishing plugin runs with
+  `autoPublish=true` and `waitUntil=published` (`waitMaxTime` 7200 s), so the release is on Maven Central when the
+  workflow succeeds, and the workflow fails if Central rejects the deployment or does not publish it in time.
   Secrets, at the `guizmaii-opensource` organisation level: `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`,
   `PGP_SECRET` (armored private key, base64-encoded or plain), `PGP_PASSPHRASE`. The `vavr-match`
   artifacts stay `io.vavr:*:1.0.0` until PR 3 deletes them.

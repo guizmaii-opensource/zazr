@@ -399,10 +399,12 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
-                            <!-- the release waits for validation, then someone presses Publish on
-                                 central.sonatype.com (CONTRIBUTING.md); explicit so a plugin upgrade cannot change it -->
-                            <autoPublish>false</autoPublish>
-                            <waitUntil>validated</waitUntil>
+                            <!-- a release is published as soon as Central validates it, and the build waits until it
+                                 is published, so the release workflow fails if Central rejects it or does not publish it
+                                 within waitMaxTime (seconds); explicit so a plugin upgrade cannot change it -->
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                            <waitMaxTime>7200</waitMaxTime>
                             <centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots/
                             </centralSnapshotsUrl>
                         </configuration>
