@@ -194,7 +194,7 @@ var sizes = Gen.size().runCollectN(5, CheckConfig.defaults().withSize(100)); // 
 
 `filter` keeps the values that satisfy a predicate. A random generator is run again until it gives one.
 
-Filtering has a budget: after 1,000 rejected values in a row, the check gives up and the result is `Erroneous`. A
+Filtering has a budget: after more than 1,000 rejected values in a row, the check gives up and the result is `Erroneous`. A
 predicate that rejects most values is better written as a `map` that builds the wanted values.
 
 ```java

@@ -121,7 +121,7 @@ public class DocsTestingExamplesTest {
     }
 
     @Test
-    void finiteGeneratorsAndCheckAll() {
+    void finiteGenerators() {
         var sizes = Gen.fromIterable(Vector.of("S", "M")); // Gen<String>
         var colours = Gen.fromIterable(Vector.of("red", "blue")); // Gen<String>
         var variants = sizes.zip(colours).runCollect(); // List<Tuple2<String, String>>
@@ -133,7 +133,10 @@ public class DocsTestingExamplesTest {
         assertThat(typedSizes).isNotNull();
         assertThat(typedColours).isNotNull();
         assertThat(typedVariants).hasToString("List((S, red), (S, blue), (M, red), (M, blue))");
+    }
 
+    @Test
+    void checkAll() {
         var days = Gen.fromIterable(EnumSet.allOf(DayOfWeek.class)); // Gen<DayOfWeek>
         var result = Check.checkAll(days, day -> day.plus(7) == day); // CheckResult
         // Satisfied[samples=7]
@@ -148,7 +151,7 @@ public class DocsTestingExamplesTest {
     }
 
     @Test
-    void size() {
+    void sizedGenerators() {
         var depth = Gen.sized(size -> Gen.intValue(0, size)); // Gen<Integer>
         var words = Gen.small(size -> Gen.stringN(size, Gen.alphaChar())); // Gen<String>
         var shortLists = Gen.list(Gen.intValue()).withSize(3); // Gen<List<Integer>>, at most 3 elements
@@ -160,7 +163,10 @@ public class DocsTestingExamplesTest {
         assertThat(typedDepth.runCollectN(200, config).forAll(d -> d >= 0 && d <= 50)).isTrue();
         assertThat(typedWords.runCollectN(200, config).forAll(w -> w.length() <= 50)).isTrue();
         assertThat(typedShortLists.runCollectN(200, config).forAll(l -> l.size() <= 3)).isTrue();
+    }
 
+    @Test
+    void theSizeGrowsOverACheck() {
         var sizes = Gen.size().runCollectN(5, CheckConfig.defaults().withSize(100)); // List<Integer>
         // List(0, 25, 50, 75, 100)
 
@@ -228,7 +234,7 @@ public class DocsTestingExamplesTest {
     }
 
     @Test
-    void laws() {
+    void checkingYourOwnType() {
         record Box(Vector<Object> items) {
             Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
         }
@@ -237,6 +243,18 @@ public class DocsTestingExamplesTest {
             public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
         };
         MapLaws.<Box>all().assertSatisfied(boxes);
+    }
+
+    @Test
+    void whenALawFails() {
+        // the subject of the previous example, which the page's broken subject reuses
+        record Box(Vector<Object> items) {
+            Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
+        }
+        var boxes = new MapSubject<Box>() {
+            public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
+            public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
+        };
 
         assertThatThrownBy(() -> {
             var broken = new MapSubject<Box>() {
