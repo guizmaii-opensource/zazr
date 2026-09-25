@@ -48,7 +48,7 @@ API, not an afterthought. Its design comes from modern Scala's collections and f
 - **[Collections that cannot be empty.](https://zazr.dev/non-empty-vector/)** On a `NonEmptyVector`, `head`, `max`
   and `reduce` cannot fail, and the return types tell you when that guarantee is lost.
 - **[Pattern matching on results.](https://zazr.dev/control/)** `Option`, `Either`, `Try` and `Validation` are
-  sealed interfaces of records, so a `switch` over them is checked by the compiler.
+  sealed interfaces of records, so pattern matching on them is checked by the compiler.
 - **No `null` inside.** Values and collections reject it, and absence is an `Option`.
 - **[Java interop without copies.](https://zazr.dev/java-interop/)** `asJava()` gives a read-only `java.util` view in
   constant time, and the way back does not copy either.

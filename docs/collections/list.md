@@ -1,5 +1,5 @@
 ---
-description: List, the cons list - O(1) prepend, head and tail, and a sealed Cons/Nil pair to switch over.
+description: List, the cons list - O(1) prepend, head and tail, and a sealed Cons/Nil pair to pattern match on.
 ---
 
 # `List`
@@ -11,7 +11,7 @@ the whole list.
 
 ## When to choose it
 
-When you take a sequence apart from the front, recursively or with a `switch`, or need a stack (`push`, `pop`,
+When you take a sequence apart from the front, recursively or with pattern matching, or need a stack (`push`, `pop`,
 `peek`). For access by index, adding at the end or `length`, choose [`Vector`](vector.md).
 
 ```java

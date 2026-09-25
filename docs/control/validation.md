@@ -67,7 +67,7 @@ Validation<String, String> both = name("").zipWith(age(-1), (n, a) -> n + a);
 
 ## Reading the result
 
-`switch` over the records, or `fold` with the errors first:
+Pattern match on the records, or `fold` with the errors first:
 
 ```java
 Validation<String, Integer> checked = age(-5);

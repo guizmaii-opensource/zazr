@@ -86,8 +86,8 @@ its API, not an afterthought. Its design comes from modern Scala's collections a
 
     ---
 
-    `Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so a `switch` over them is checked
-    by the compiler.
+    `Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so pattern matching on them is
+    checked by the compiler.
 
     [:octicons-arrow-right-24: Control types](control/index.md)
 
