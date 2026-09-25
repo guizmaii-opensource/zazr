@@ -1065,7 +1065,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements; the elements up to {@code end} are forced.
+     * Complexity: O(n * m) for a slice of m elements; at most the first {@code end + m} elements are forced, so it
+     * works on an infinite Stream.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1724,7 +1725,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code Stream} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: lazy; the result runs {@code n} elements behind this Stream, so it works on an infinite Stream.
+     * Complexity: O(n); the first {@code n + 1} elements are forced now, which is what tells whether the result is
+     * empty. The result then runs {@code n} elements behind this Stream, so it works on an infinite Stream.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -2068,7 +2070,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * This Stream with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0.
      * <p>
-     * Complexity: lazy; the elements are forced as the result reaches them.
+     * Complexity: lazy; the elements are forced as the result reaches them, and the {@code replaced} elements
+     * skipped when it reaches them past the replacement. With {@code from} at 0 and an empty {@code that}, the head
+     * of the result is the element after the replaced ones, so the first {@code replaced + 1} elements are forced now.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -2077,12 +2081,28 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     default Stream<T> patch(int from, Iterable<? extends T> that, int replaced) {
-        from = Math.max(from, 0);
-        replaced = Math.max(replaced, 0);
-        Stream<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        Objects.requireNonNull(that, "that is null");
+        // the replacement is read now, as appendAll reads its argument; this Stream only as the result reaches it
+        return patchFrom(this, Math.max(from, 0), Stream.ofAll(that), Math.max(replaced, 0));
+    }
+
+    // The elements of stream before position `from`, then the replacement, then stream without the `replaced` elements
+    // from `from` on; each cell is built when the result reaches it.
+    private static <T extends @Nullable Object> Stream<T> patchFrom(Stream<T> stream, int from, Stream<T> replacement, int replaced) {
+        if (from > 0 && !stream.isEmpty()) {
+            return cons(stream.head(), () -> patchFrom(stream.tail(), from - 1, replacement, replaced));
+        } else {
+            return concatThen(replacement, () -> stream.drop(replaced));
+        }
+    }
+
+    // The elements of first, then those of the Stream the supplier gives, asked for only when first is exhausted.
+    private static <T extends @Nullable Object> Stream<T> concatThen(Stream<T> first, Supplier<Stream<T>> rest) {
+        if (first.isEmpty()) {
+            return rest.get();
+        } else {
+            return cons(first.head(), () -> concatThen(first.tail(), rest));
+        }
     }
 
     default Tuple2<Stream<T>, Stream<T>> partition(Predicate<? super T> predicate) {

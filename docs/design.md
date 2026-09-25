@@ -1032,6 +1032,12 @@ and unable to drift:
     removals, `tail`, `init`, `take` and `drop` find their cut by walking past the markers in the way, O(n) at worst.
     Removing both would need a different order structure (an order-statistics tree keyed by insertion stamp, as
     `TreeMap` gives), which is a follow-up if a workload needs it.
+  - `Stream`: `patch` dropped `from + replaced` elements at call time, and `lastIndexOfSlice(that, end)` measured the
+    whole Stream (it never returned on an infinite one). Fixed: `patch` builds each cell when the result reaches it
+    (only `patch(0, <empty>, r)` forces its r + 1 first elements now, for its head), and `lastIndexOfSlice` forces at
+    most the first `end + m` elements. `dropRight(k)` forcing its first k + 1 elements at call time is what tells
+    whether the result is empty, so its note says so rather than "lazy". `slice` and `subSequence` walk to their
+    start in a loop and stay lazy past it (#92).
 
 Which concrete collections survive (decided):
 

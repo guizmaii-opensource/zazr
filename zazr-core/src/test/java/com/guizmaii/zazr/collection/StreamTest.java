@@ -6570,4 +6570,102 @@ public class StreamTest extends AbstractTraversableTest {
             assertThatThrownBy(pastTheEnd::tail).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
         }
     }
+
+    @Nested
+    class ForcedCellsTests {
+
+        /** An infinite Stream 1, 2, 3, ... counting how many of its elements have been forced. */
+        private Stream<Integer> counted(AtomicInteger forced) {
+            return Stream.continually(forced::incrementAndGet);
+        }
+
+        private int[] indices(int n) {
+            return new int[] { Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE };
+        }
+
+        @Test
+        public void patchForcesTheElementsAsTheResultReachesThem() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> patched = counted(forced).patch(10, List.of(-1, -2, -3), 5);
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(patched.take(15).toList()).isEqualTo(List.range(1, 11).appendAll(List.of(-1, -2, -3, 16, 17)));
+            assertThat(forced.get()).isEqualTo(17);
+        }
+
+        @Test
+        public void patchAtTheStartWithNothingForcesTheReplacedElementsForItsHead() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> patched = counted(forced).patch(0, List.empty(), 5);
+            assertThat(forced.get()).isEqualTo(6);
+            assertThat(patched.head()).isEqualTo(6);
+            final AtomicInteger forcedToo = new AtomicInteger();
+            final Stream<Integer> replaced = counted(forcedToo).patch(0, List.of(-1), 5);
+            assertThat(forcedToo.get()).isEqualTo(1);
+            assertThat(replaced.take(2).toList()).isEqualTo(List.of(-1, 6));
+            assertThat(forcedToo.get()).isEqualTo(6);
+        }
+
+        @Test
+        public void patchAgreesWithVector() {
+            final List<List<Integer>> replacements = List.of(List.empty(), List.of(-1), List.of(-1, -2, -3));
+            for (int n : new int[] { 0, 1, 5 }) {
+                final Stream<Integer> stream = Stream.range(0, n);
+                final Vector<Integer> vector = Vector.range(0, n);
+                for (int from : indices(n)) {
+                    for (int replaced : indices(n)) {
+                        if ((long) Math.max(from, 0) + Math.max(replaced, 0) > Integer.MAX_VALUE) {
+                            continue; // Vector adds the two
+                        }
+                        for (List<Integer> that : replacements) {
+                            assertThat(stream.patch(from, that, replaced).toVector()).as("patch(%d, %s, %d) of %d", from, that, replaced, n).isEqualTo(vector.patch(from, that, replaced));
+                        }
+                    }
+                }
+            }
+            assertThat(Stream.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE)).isEqualTo(Stream.of(1, 2, 9));
+            assertThatNullPointerException().isThrownBy(() -> Stream.of(1).patch(0, null, 0)).withMessage("that is null");
+        }
+
+        @Test
+        public void dropRightForcesTheDroppedElementsAndOneMore() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> dropped = counted(forced).dropRight(10);
+            assertThat(forced.get()).isEqualTo(11);
+            assertThat(dropped.take(3).toList()).isEqualTo(List.of(1, 2, 3));
+            assertThat(forced.get()).isEqualTo(13);
+        }
+
+        @Test
+        public void lastIndexOfSliceForcesNoMoreThanEndPlusTheSliceLength() {
+            final AtomicInteger forced = new AtomicInteger();
+            assertThat(counted(forced).lastIndexOfSlice(List.of(11, 12), 20)).isEqualTo(10);
+            assertThat(forced.get()).isEqualTo(21);
+            forced.set(0);
+            assertThat(counted(forced).lastIndexOfSlice(List.of(21, 22), 20)).isEqualTo(20);
+            assertThat(forced.get()).isEqualTo(22);
+            forced.set(0);
+            assertThat(counted(forced).lastIndexOfSlice(List.empty(), 20)).isEqualTo(20);
+            assertThat(forced.get()).isEqualTo(20);
+            forced.set(0);
+            assertThat(counted(forced).lastIndexOfSlice(List.of(1), 0)).isEqualTo(0);
+            assertThat(forced.get()).isEqualTo(1);
+            forced.set(0);
+            assertThat(counted(forced).lastIndexOfSlice(List.of(1), -1)).isEqualTo(-1);
+            assertThat(forced.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void lastIndexOfSliceAgreesWithVector() {
+            final List<List<Integer>> slices = List.of(List.empty(), List.of(1), List.of(1, 2), List.of(2, 1, 2), List.of(3), List.of(1, 2, 1, 2, 1, 2));
+            for (Vector<Integer> vector : List.of(Vector.<Integer> empty(), Vector.of(1), Vector.of(1, 2, 1, 2, 1), Vector.of(2, 2, 2))) {
+                final Stream<Integer> stream = Stream.ofAll(vector);
+                for (List<Integer> slice : slices) {
+                    assertThat(stream.lastIndexOfSlice(slice)).as("lastIndexOfSlice(%s) of %s", slice, vector).isEqualTo(vector.lastIndexOfSlice(slice));
+                    for (int end : indices(vector.size())) {
+                        assertThat(stream.lastIndexOfSlice(slice, end)).as("lastIndexOfSlice(%s, %d) of %s", slice, end, vector).isEqualTo(vector.lastIndexOfSlice(slice, end));
+                    }
+                }
+            }
+        }
+    }
 }
