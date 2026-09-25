@@ -1,5 +1,5 @@
 ---
-description: Option, Either, Try, Validation and Lazy - which one to pick, the members they share, conversions and the null policy.
+description: Option, Either, Try, Using, Validation and Lazy - which one to pick, the members they share, conversions and the null policy.
 ---
 
 # Control types
@@ -10,6 +10,7 @@ later. Each one has its own page:
 - [`Option`](option.md): a value that may be absent.
 - [`Either`](either.md): a result or an error, stopping at the first error.
 - [`Try`](try.md): a computation that may have thrown.
+- [`Using`](using.md): resources released after use, with the outcome in a `Try`.
 - [`Validation`](validation.md): checks that keep every error.
 - [`Lazy`](lazy.md): a value computed on first access, then cached.
 
@@ -59,8 +60,8 @@ same after applying a function to each element.
 every error.
 
 ```java
-Option<Vector<Integer>> all = Option.collectAll(Vector.of(Option.some(1), Option.some(2)));
-Either<String, Vector<Integer>> parsed = Either.forEach(Vector.of("1", "x", "3"),
+var all = Option.collectAll(Vector.of(Option.some(1), Option.some(2))); // Option<Vector<Integer>>
+var parsed = Either.forEach(Vector.of("1", "x", "3"), // Either<String, Vector<Integer>>
     s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
 // Some(Vector(1, 2)), Left(bad: x)
 ```
@@ -70,8 +71,8 @@ Either<String, Vector<Integer>> parsed = Either.forEach(Vector.of("1", "x", "3")
 The static `flatten` removes one level of nesting, on every type including `Validation` and `Lazy`.
 
 ```java
-Option<Integer> flat = Option.flatten(Option.some(Option.some(1)));
-Either<String, Integer> inner = Either.flatten(Either.right(Either.left("inner failure")));
+var flat = Option.flatten(Option.some(Option.some(1))); // Option<Integer>
+var inner = Either.flatten(Either.right(Either.<String, Integer>left("inner failure")));
 // Some(1), Left(inner failure)
 ```
 
@@ -88,9 +89,9 @@ The conversions are explicit and short; there is no `Iterable` to lean on.
 | `Lazy` | `get()`, `toSupplier()` |
 
 ```java
-Either<String, Integer> fromOption = Option.<Integer>none().toEither(() -> "missing");
-java.util.Optional<Integer> optional = Option.some(5).toOptional();
-Option<Integer> fromTry = Try.of(() -> Integer.parseInt("7")).toOption();
+var fromOption = Option.<Integer>none().toEither(() -> "missing"); // Either<String, Integer>
+var optional = Option.some(5).toOptional(); // java.util.Optional<Integer>
+var fromTry = Try.of(() -> Integer.parseInt("7")).toOption(); // Option<Integer>
 // Left(missing), Optional[5], Some(7)
 ```
 
@@ -103,9 +104,9 @@ Option<Integer> fromTry = Try.of(() -> Integer.parseInt("7")).toOption();
 - A `Try` whose computation returns `null` is a `Failure` holding a `NullPointerException`.
 
 ```java
-Option<String> absent = Option.ofNullable(null);
-Try<String> nullResult = Try.of(() -> null);
-boolean npe = nullResult.getCause() instanceof NullPointerException;
+var absent = Option.<String>ofNullable(null); // Option<String>
+var nullResult = Try.<String>of(() -> null); // Try<String>
+var npe = nullResult.getCause() instanceof NullPointerException;
 // None, Failure(java.lang.NullPointerException: ...), true
 ```
 
