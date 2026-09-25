@@ -1335,7 +1335,11 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   - shrinking is absent from `vavr-test`; add it only if a falsified case is ever unreadable.
 - **JMH**: the `benchmark` profile exists; add `VectorBuilderBenchmark` (append ×N, `map`, `filter`,
   `flatMap`, `collector`) before and after 3.8 so the builder claim is measured, not asserted.
-- **JaCoCo**: either wire the plugin or delete the README line.
+- **JaCoCo (decided)**: wired in a `coverage` Maven profile, outside the default build so `make verify` and the test
+  loop keep their speed. `make coverage` runs the tests of `zazr-core` and `zazr-test` with the agent and writes one
+  aggregated HTML report (generated `src-gen` sources included, `zazr-benchmark` excluded); a CI job on JDK 25
+  uploads it as an artifact and puts the line and branch coverage per module and package in the job summary. No
+  threshold fails the build yet; one is chosen from the measured numbers.
 - **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `com.guizmaii:zazr-core`
   (parent `com.guizmaii:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`
