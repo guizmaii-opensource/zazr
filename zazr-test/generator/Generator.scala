@@ -988,6 +988,121 @@ def generateTestClasses(): Unit = {
       })
     }
   }
+
+  genCheckTests()
+
+  /**
+   * Generator of the tests of com.guizmaii.zazr.test.Check, one class per arity.
+   */
+  def genCheckTests(): Unit = {
+    for (i <- 1 to N) {
+      genVavrFile("com.guizmaii.zazr.test", s"Check${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName: String, className: String) => {
+
+        val test = im.getType("org.junit.jupiter.api.Test")
+        val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
+        val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
+        val tuple = im.getType("com.guizmaii.zazr.Tuple")
+        val option = im.getType("com.guizmaii.zazr.control.Option")
+        val arrayList = im.getType("java.util.ArrayList")
+        val jlist = im.getType("java.util.List")
+
+        val params = (1 to i).gen(j => s"v$j")(using ", ")
+        val constants = (1 to i).gen(j => s"Gen.constant($j)")(using ", ")
+        val ones = (1 to i).gen(j => s"$j")(using ", ")
+        val twos = (1 to i).gen(j => "TWO")(using ", ")
+        val sum = (1 to i).gen(j => s"v$j")(using " + ")
+        val tupleOfParams = s"$tuple.of($params)"
+        val combinations = 1 << i
+
+        def failingAt(k: Int): String = (1 to i).gen(j => if (j == k) "FAILING" else s"Gen.constant($j)")(using ", ")
+        def nullAt(k: Int): String = (1 to i).gen(j => if (j == k) "null" else s"Gen.constant($j)")(using ", ")
+
+        xs"""
+          class $className {
+
+              static final CheckConfig CONFIG = new CheckConfig(20, 10, 42L, 100);
+              static final Gen<Integer> TWO = Gen.fromIterable($jlist.of(0, 1));
+              static final IllegalStateException BOOM = new IllegalStateException("boom");
+              static final Gen<Integer> FAILING = Gen.fromRandom(random -> {
+                  throw BOOM;
+              });
+
+              @$test
+              void passesTheValuesInOrder() {
+                  final $arrayList<Object> seen = new $arrayList<>();
+                  final CheckResult result = Check.check(CONFIG, $constants, ($params) -> seen.add($tupleOfParams));
+                  $assertThat(result).isEqualTo(new CheckResult.Satisfied(20));
+                  $assertThat(seen).hasSize(20).containsOnly($tuple.of($ones));
+              }
+
+              @$test
+              void checkUsesTheDefaultConfiguration() {
+                  $assertThat(Check.check($constants, ($params) -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
+              }
+
+              @$test
+              void checkNRunsNSamples() {
+                  $assertThat(Check.checkN(3, $constants, ($params) -> true)).isEqualTo(new CheckResult.Satisfied(3));
+                  $assertThatThrownBy(() -> Check.checkN(-1, $constants, ($params) -> true)).isInstanceOf(IllegalArgumentException.class);
+              }
+
+              @$test
+              void checkAllRunsEveryCombinationOnce() {
+                  final $arrayList<Object> seen = new $arrayList<>();
+                  $assertThat(Check.checkAll($twos, ($params) -> seen.add($tupleOfParams))).isEqualTo(new CheckResult.Satisfied($combinations));
+                  $assertThat(seen).hasSize($combinations).doesNotHaveDuplicates();
+                  seen.clear();
+                  $assertThat(Check.checkAll(CONFIG, $twos, ($params) -> seen.add($tupleOfParams))).isEqualTo(new CheckResult.Satisfied($combinations));
+                  $assertThat(seen).hasSize($combinations).doesNotHaveDuplicates();
+              }
+
+              @$test
+              void falseFalsifiesTheCheck() {
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> false))
+                          .isEqualTo(new CheckResult.Falsified(1, 42L, $tuple.of($ones), $option.none()));
+                  $assertThat(Check.checkAll(CONFIG, $twos, ($params) -> $sum < ${i}))
+                          .isEqualTo(new CheckResult.Falsified($combinations, 42L, $tuple.of(${(1 to i).gen(j => "1")(using ", ")}), $option.none()));
+              }
+
+              @$test
+              void anAssertionErrorFalsifiesTheCheck() {
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> {
+                      throw new AssertionError("sum " + ($sum));
+                  })).isEqualTo(new CheckResult.Falsified(1, 42L, $tuple.of($ones), $option.some("sum ${(1 to i).sum}")));
+              }
+
+              @$test
+              void anExceptionMakesTheCheckErroneous() {
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> {
+                      throw BOOM;
+                  })).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, $option.some($tuple.of($ones))));
+                  $assertThat(Check.check(CONFIG, $constants, ($params) -> null).isErroneous()).isTrue();
+              }
+
+              @$test
+              void aFailingGeneratorMakesTheCheckErroneous() {
+                  ${(1 to i).gen(k => xs"""
+                    $assertThat(Check.check(CONFIG, ${failingAt(k)}, ($params) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, $option.none()));
+                    $assertThat(Check.checkAll(CONFIG, ${failingAt(k)}, ($params) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, $option.none()));
+                  """)(using "\n")}
+              }
+
+              @$test
+              void rejectsNulls() {
+                  $assertThatThrownBy(() -> Check.check((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.checkAll((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.check(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.checkAll(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
+                  ${(1 to i).gen(k => xs"""
+                    $assertThatThrownBy(() -> Check.check(CONFIG, ${nullAt(k)}, ($params) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g$k is null");
+                    $assertThatThrownBy(() -> Check.checkAll(CONFIG, ${nullAt(k)}, ($params) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g$k is null");
+                  """)(using "\n")}
+              }
+          }
+        """
+      })
+    }
+  }
 }
 
 /**

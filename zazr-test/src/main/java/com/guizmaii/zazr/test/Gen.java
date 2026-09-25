@@ -1237,9 +1237,9 @@ public final class Gen<A> {
     }
 
     /**
-     * A random {@link LocalDateTime} between {@code min} and {@code max}, both included. The second is drawn as
-     * {@link #longValue(long, long)}, favouring the first and last seconds of the range, and the nanosecond
-     * uniformly.
+     * A random {@link LocalDateTime} between {@code min} and {@code max}, both included. The epoch second and the
+     * nanosecond are drawn as {@link #longValue(long, long)} and {@link #intValue(int, int)}, so the bounds and the
+     * first and last nanoseconds of a second come up often; a date-time out of range is moved to the nearest bound.
      *
      * @param min the earliest date-time
      * @param max the latest date-time
@@ -1254,7 +1254,7 @@ public final class Gen<A> {
             throw new IllegalArgumentException("min " + min + " is after max " + max);
         }
         return zipWith(longValue(min.toEpochSecond(ZoneOffset.UTC), max.toEpochSecond(ZoneOffset.UTC)),
-                fromRandom(random -> random.nextInt(1_000_000_000)),
+                intValue(0, 999_999_999),
                 (second, nano) -> {
                     final LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
                     return dateTime.isBefore(min) ? min : dateTime.isAfter(max) ? max : dateTime;
