@@ -1299,7 +1299,7 @@ deleted. Attribution in `NOTICE`.
   removal of a model-based fuzz (a model of the kept key and value objects), the node boundaries (0/1/2/31/32/33
   entries in the root, 1023/1024/1025 over two levels, the deepest shift, collision nodes), and every scenario of the
   Vavr trie's builder test (shape against persistent puts, ownership, adoption, the pool fuzz of adopted tries that must
-  never change). `HashBuilderTest` passes unchanged.
+  never change). `HashBuilderTest` passes unchanged, apart from its header comment, which named the deleted test.
 
 ### 3.9 Null, equality, serialisation
 
