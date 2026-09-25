@@ -35,11 +35,11 @@ does: a builder collects the elements in place, where nobody else can see them, 
 the collection once.
 
 ```java
-Vector.Builder<Integer> squares = Vector.newBuilder();
+var squares = Vector.<Integer>newBuilder();
 for (int i = 1; i <= 5; i++) {
     squares.add(i * i);
 }
-Vector<Integer> result = squares.result();  // Vector(1, 4, 9, 16, 25)
+var result = squares.result();  // Vector(1, 4, 9, 16, 25)
 ```
 
 Each element is written once and nothing is copied. A builder is used once: after `result()` it refuses more
@@ -57,8 +57,8 @@ To combine several `Option`s, `Either`s, `Try`s or `Validation`s, call `zipWith`
 eight, and a function that receives their values:
 
 ```java
-Option<Integer> total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-    (a, b, c) -> a + b + c);
+var total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+    (a, b, c) -> a + b + c); // Option<Integer>
 // Some(6), and None as soon as one of them is None
 ```
 
@@ -70,9 +70,9 @@ There is no `ap`, no builder chain and no nested `Tuple2<Tuple2<A, B>, C>` to un
 form or a configuration:
 
 ```java
-Validation<String, Integer> age = Validation.invalid("age is negative");
-Validation<String, String> email = Validation.invalid("email has no @");
-Validation<String, String> both = age.zipWith(email, (a, e) -> a + e);
+var age = Validation.<String, Integer>invalid("age is negative");
+var email = Validation.<String, String>invalid("email has no @");
+var both = age.zipWith(email, (a, e) -> a + e); // Validation<String, String>
 // Invalid(age is negative, email has no @)
 ```
 
@@ -85,9 +85,9 @@ stops at the first error, because the next step needs the previous value.
 tell you when that guarantee is lost:
 
 ```java
-NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-int best = scores.max(Integer::compare);             // 9, nothing can go wrong
-Vector<Integer> passed = scores.filter(s -> s > 5);  // may be empty, so a Vector
+var scores = NonEmptyVector.of(7, 3, 9);
+var best = scores.max(Integer::compare);    // Integer: 9, nothing can go wrong
+var passed = scores.filter(s -> s > 5);     // Vector<Integer>: may be empty, so a Vector
 ```
 
 ## Every collection states its cost
@@ -109,7 +109,7 @@ order.
 nullable value with `ofNullable`:
 
 ```java
-Option<String> name = Option.ofNullable(System.getenv("NO_SUCH_VARIABLE"));
+var name = Option.ofNullable(System.getenv("NO_SUCH_VARIABLE")); // Option<String>
 // None: Option.some(null) and Vector.of(1, null) throw instead
 ```
 

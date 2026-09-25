@@ -20,17 +20,17 @@ new map.
 - `TreeMap` for keys in sorted order, or the least and the greatest key.
 
 ```java
-HashMap<String, Integer> stock = HashMap.of("apple", 3, "pear", 0);
-HashMap<String, Integer> restocked = stock.put("pear", 5, Integer::sum).put("fig", 1);
-Option<Integer> pears = restocked.get("pear");
-int kiwis = restocked.getOrElse("kiwi", 0);
+var stock = HashMap.of("apple", 3, "pear", 0);
+var restocked = stock.put("pear", 5, Integer::sum).put("fig", 1); // HashMap<String, Integer>
+var pears = restocked.get("pear"); // Option<Integer>
+var kiwis = restocked.getOrElse("kiwi", 0); // Integer
 // pears is Some(5), kiwis is 0
 ```
 
 ```java
-TreeMap<String, Integer> byName = TreeMap.of("b", 2, "a", 1, "c", 3);
-Vector<Integer> values = byName.values();
-Tuple2<String, Integer> first = byName.head();
+var byName = TreeMap.of("b", 2, "a", 1, "c", 3);
+var values = byName.values(); // Vector<Integer>
+var first = byName.head(); // Tuple2<String, Integer>
 // values is Vector(1, 2, 3), first is (a, 1)
 ```
 

@@ -16,10 +16,10 @@ Use `Option` when a value may be missing and there is nothing more to say about 
 ## Construction
 
 ```java
-Option<Integer> some = Option.some(1);
-Option<Integer> none = Option.none();
-Option<String> fromNullable = Option.ofNullable(null);
-Option<Integer> when = Option.when(3 > 2, () -> 3);
+var some = Option.some(1); // Option<Integer>
+var none = Option.<Integer>none(); // Option<Integer>
+var fromNullable = Option.<String>ofNullable(null); // Option<String>
+var when = Option.when(3 > 2, () -> 3); // Option<Integer>
 // Some(1), None, None, Some(3)
 ```
 
@@ -32,8 +32,8 @@ only when the condition holds.
 Pattern matching with a `switch` expression needs no `default`.
 
 ```java
-Option<Integer> age = Option.some(17);
-String label = switch (age) {
+var age = Option.some(17); // Option<Integer>
+var label = switch (age) {
     case Some(var years) when years >= 18 -> "adult";
     case Some(var years) -> "minor, " + years;
     case None() -> "unknown";
@@ -49,11 +49,11 @@ String label = switch (age) {
 or a default.
 
 ```java
-int port = Option.some("8080")
+var port = Option.some("8080")
     .filter(s -> s.chars().allMatch(Character::isDigit))
     .map(Integer::parseInt)
-    .getOrElse(80);
-String shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
+    .getOrElse(80); // Integer
+var shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
 // 8080, "no value"
 ```
 
@@ -61,8 +61,8 @@ String shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
 `NoSuchElementException`.
 
 ```java
-Try<Integer> parsed = Option.some("x").mapTry(Integer::parseInt);
-Try<Integer> absent = Option.<String>none().mapTry(Integer::parseInt);
+var parsed = Option.some("x").mapTry(Integer::parseInt); // Try<Integer>
+var absent = Option.<String>none().mapTry(Integer::parseInt); // Try<Integer>
 // Failure(java.lang.NumberFormatException: For input string: "x"), Failure(java.util.NoSuchElementException: ...)
 ```
 
@@ -81,10 +81,10 @@ Other members:
 - `toOptional()` and `Option.ofOptional(Optional)` go to and from `java.util.Optional`.
 
 ```java
-Option<Integer> fromOptional = Option.ofOptional(java.util.Optional.of(3));
-Either<String, Integer> either = fromOptional.toEither(() -> "missing");
-Validation<String, Integer> validation = Option.<Integer>none().toValidation(() -> "missing");
-java.util.Optional<Integer> back = fromOptional.toOptional();
+var fromOptional = Option.ofOptional(java.util.Optional.of(3)); // Option<Integer>
+var either = fromOptional.toEither(() -> "missing"); // Either<String, Integer>
+var validation = Option.<Integer>none().toValidation(() -> "missing"); // Validation<String, Integer>
+var back = fromOptional.toOptional(); // java.util.Optional<Integer>
 // Some(3), Right(3), Invalid(missing), Optional[3]
 ```
 
@@ -98,8 +98,8 @@ instead, because `Some` cannot hold `null`.
 To map to a value that may be absent, use `flatMap` with `Option.ofNullable`:
 
 ```java
-java.util.Map<String, String> env = java.util.Map.of("HOME", "/home/ada");
-Option<String> shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)));
+var env = java.util.Map.of("HOME", "/home/ada"); // java.util.Map<String, String>
+var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key))); // Option<String>
 // None, where map(env::get) would throw
 ```
 

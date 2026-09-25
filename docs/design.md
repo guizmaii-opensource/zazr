@@ -1253,6 +1253,37 @@ Order of implementation: `Vector.Builder` (3.8), then `TreeMap`/`TreeSet` (cheap
 the transient HAMT (the only one that touches a data-structure's node types), then the composites.
 Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
 
+**Implemented for `TreeMap`, `TreeSet`, `HashMap` and `HashSet` (decided):**
+- The tree builders share `RedBlackTreeBuilder` (internal): an array buffer, `Arrays.sort` (stable, and O(n)
+  comparisons on sorted input, so `ofAll`/`ofEntries` of sorted input needs no separate fast path), a pass that keeps
+  the last of equal elements, then `Node.fromOrdered`, a port of `fromOrderedKeys`: split around the middle, black
+  nodes, red one-element subtrees on the deepest level only. `size()` compacts the buffer (sort and dedupe) so that it
+  counts distinct keys, like the hash builders. A comparator that throws closes the builder, since the sort may have
+  left the buffer half merged.
+- The transient trie puts the owner token on `IndexedNode` and `ArrayNode` only. Leaves (`LeafSingleton`,
+  `LeafList`) stay immutable and are replaced; a collision list goes through the persistent `modify`, so the builder
+  produces the very trie successive persistent puts produce, node for node (the tests compare them). The cost is one
+  reference field per internal node (about 8 bytes with compressed oops). The mutable node fields lose their `final`
+  guarantee; every holder of a trie (`HashMap`, `HashSet`, the map view) keeps it in a final field, and
+  `result()` issues a release fence as Scala's `HashMapBuilder` does. `putAll(HashMap)`/`addAll(HashSet)` on an
+  empty builder adopts the source root; its nodes are copied on the first put through them.
+- Rerouted after a same-JVM measurement on the branch, the gate being "not slower" (1 fork, a busy machine,
+  microseconds per operation, builder `addAll`/`putAll` against the persistent path at 10 / 1 000 / 100 000 distinct
+  keys, ± the 99.9% error): `TreeSet.ofAll` shuffled 0.16 ± 0.08 / 43 ± 13 / 11 800 ± 2 800 against 0.26 ± 0.07 /
+  73 ± 48 / 85 000 ± 57 000, sorted 0.30 ± 0.29 / 12 ± 10 / 985 ± 167 against 0.38 ± 0.12 / 173 ± 438 /
+  79 000 ± 75 000; `TreeMap.ofEntries` shuffled 0.25 ± 0.09 / 61 ± 135 / 26 800 ± 17 000 against 0.40 ± 0.61 /
+  85 ± 43 / 58 600 ± 27 000; `HashSet.ofAll` 0.14 ± 0.03 / 31 ± 8 / 17 300 ± 11 900 against 0.66 ± 1.37 / 76 ± 65 /
+  29 500 ± 17 000; `HashMap.ofEntries` 0.14 ± 0.05 / 28 ± 2 / 7 500 ± 700 against 0.16 ± 0.05 / 42 ± 7 /
+  14 600 ± 3 200. The error bars overlap at 10 everywhere and for `HashSet` at 100 000; no row is slower. So `ofAll`,
+  `ofEntries`, `TreeMap.ofAll(java.util.Map)`, `HashMap.ofAll(java.util.Map)` and the `collector()`s of the four types
+  use the builders (the collectors were not measured on their own: they run the same `add`/`put` loop; their
+  accumulator type is now the builder). Every operation that ends in those factories follows without its own
+  measurement: `filter`, `reject`, `partition` and `groupBy`'s groups on all four, `map`, `flatMap` and `collect` on
+  `TreeSet` and `TreeMap`, `mapBoth` on both maps, `mapValues` on `TreeMap`. `HashSet` and `HashMap` `map`, `flatMap`
+  and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
+  factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
+  3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+
 ### 3.9 Null, equality, serialisation
 
 - **`Some(null)` is forbidden.** `Option.some(null)` throws; `Option.ofNullable(null)` is `None`. This is
