@@ -1048,6 +1048,10 @@ and unable to drift:
     answered). The `java.util.List` view of a `List`, `Queue` or `Stream` counts the size of the sequence the first
     time it is needed and keeps it, so an indexed loop over the view no longer counts it at every step; the Stream
     view still forces nothing before an operation that needs the size.
+  - `Vector` of primitive values (`range`, the primitive `ofAll`, `filter` of those): the first write of a value of
+    another class converts every element to objects once, O(n) (14 ms for one `append` at 1M). Documented, not fixed:
+    the trie has one `ArrayType` for all its leaves, which every read relies on, so converting only the touched leaf
+    path would break that invariant. The class javadoc and the notes of the ten write methods say so.
 
 Which concrete collections survive (decided):
 

@@ -28,6 +28,12 @@ import static com.guizmaii.zazr.collection.internal.Collections.withSize;
  * its whole API itself and implements only {@link Traversable}: every positional method carries a
  * {@code Complexity:} line in its javadoc, where "effectively O(1)" means O(log32 n), a trie access or a path copy
  * of at most six nodes.
+ * <p>
+ * A Vector built from primitive values ({@code range}, {@code ofAll(int[])} and the other primitive {@code ofAll},
+ * {@code filter} of those) keeps them in primitive arrays. All the leaves of a Vector share one array type, so the
+ * first write of a value of another class ({@code append}, {@code prepend}, {@code update}, {@code insert} and their
+ * bulk forms, through {@link #narrow(Vector)} for example) converts every element to objects once, O(n); the result
+ * holds objects, and later writes are effectively O(1) again.
  *
  * @param <T> Component type of the Vector.
  * @author Ruslan Sennov, Pap Lőrinc
@@ -791,7 +797,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends an element.
      * <p>
-     * Complexity: effectively O(1) (a path copy; the last leaf is copied).
+     * Complexity: effectively O(1) (a path copy; the last leaf is copied). On a Vector of primitive values, the first
+     * value of another class converts every element once, O(n) (see the class documentation).
      *
      * @param element the element to append
      * @return a new Vector ending with {@code element}
@@ -802,8 +809,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends all elements of the given iterable, in iteration order.
      * <p>
-     * Complexity: O(m) for m appended elements (one leaf copy per 32 elements plus a path copy); O(1) when this
-     * Vector is empty and {@code iterable} is a Vector, which is returned as is.
+     * Complexity: O(m) for m appended elements (one leaf copy per 32 elements plus a path copy); O(1) when this Vector
+     * is empty and {@code iterable} is a Vector, which is returned as is. On a Vector of primitive values, the first
+     * value of another class converts every element once, O(n) (see the class documentation).
      *
      * @param iterable the elements to append
      * @return a new Vector ending with the given elements, or this Vector if there are none
@@ -1396,7 +1404,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Inserts an element at {@code index}; the elements from that position on shift right by one.
      * <p>
-     * Complexity: O(min(i, n - i)): the shorter side is re-appended or re-prepended element by element.
+     * Complexity: O(min(i, n - i)): the shorter side is re-appended or re-prepended element by element. On a Vector of
+     * primitive values, the first value of another class converts every element once, O(n) (see the class
+     * documentation).
      *
      * @param index   a position, {@code 0 <= index <= length()}
      * @param element the element to insert
@@ -1410,7 +1420,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Inserts the given elements at {@code index}, in iteration order; the elements from that position on shift
      * right.
      * <p>
-     * Complexity: O(m + min(i, n - i)) for m inserted elements.
+     * Complexity: O(m + min(i, n - i)) for m inserted elements. On a Vector of primitive values, the first value of
+     * another class converts every element once, O(n) (see the class documentation).
      *
      * @param index    a position, {@code 0 <= index <= length()}
      * @param elements the elements to insert
@@ -1696,7 +1707,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends copies of {@code element} until the Vector has {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements appended.
+     * Complexity: O(k) for the k elements appended. On a Vector of primitive values, the first value of another class
+     * converts every element once, O(n) (see the class documentation).
      *
      * @param length  the target length
      * @param element the padding element
@@ -1714,7 +1726,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends copies of {@code element} until the Vector has {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements prepended.
+     * Complexity: O(k) for the k elements prepended. On a Vector of primitive values, the first value of another class
+     * converts every element once, O(n) (see the class documentation).
      *
      * @param length  the target length
      * @param element the padding element
@@ -1832,7 +1845,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends an element.
      * <p>
-     * Complexity: effectively O(1) (a path copy; the first leaf is copied).
+     * Complexity: effectively O(1) (a path copy; the first leaf is copied). On a Vector of primitive values, the first
+     * value of another class converts every element once, O(n) (see the class documentation).
      *
      * @param element the element to prepend
      * @return a new Vector starting with {@code element}
@@ -1843,8 +1857,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends all elements of the given iterable, keeping their order.
      * <p>
-     * Complexity: O(m) for m prepended elements (one leaf copy per 32 elements plus a path copy); O(1) when this
-     * Vector is empty and {@code iterable} is a Vector, which is returned as is.
+     * Complexity: O(m) for m prepended elements (one leaf copy per 32 elements plus a path copy); O(1) when this Vector
+     * is empty and {@code iterable} is a Vector, which is returned as is. On a Vector of primitive values, the first
+     * value of another class converts every element once, O(n) (see the class documentation).
      *
      * @param iterable the elements to prepend
      * @return a new Vector starting with the given elements, or this Vector if there are none
@@ -2641,7 +2656,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index}.
      * <p>
-     * Complexity: effectively O(1) (a path copy; the leaf holding the element is copied).
+     * Complexity: effectively O(1) (a path copy; the leaf holding the element is copied). On a Vector of primitive
+     * values, the first value of another class converts every element once, O(n) (see the class documentation).
      *
      * @param index   a position, {@code 0 <= index < length()}
      * @param element the new element
@@ -2660,7 +2676,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index} by {@code updater} applied to it.
      * <p>
-     * Complexity: effectively O(1) (one access and one path copy).
+     * Complexity: effectively O(1) (one access and one path copy). On a Vector of primitive values, the first value of
+     * another class converts every element once, O(n) (see the class documentation).
      *
      * @param index   a position, {@code 0 <= index < length()}
      * @param updater computes the new element from the current one
