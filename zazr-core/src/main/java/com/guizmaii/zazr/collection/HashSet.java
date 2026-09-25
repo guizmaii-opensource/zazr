@@ -727,18 +727,14 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return (result == tree && result.size() != 0) ? this : wrap(result);
     }
 
-    // the union with a HashSet, node by node: of equal elements, the one of `that` is kept, as successive additions of
-    // its elements keep it, unless no element is new, and then this set is returned as it is
+    // the union with a HashSet, node by node: of equal elements, the one of this set is kept, as additions keep it
+    // (this set is the right side of the concatenation, whose elements win); this set when no element is new
     private HashSet<T> concat(HashSet<T> that) {
         if (that.isEmpty()) {
             return this;
         }
-        final BitmapIndexedSetNode<T> result = tree.concat(that.tree, 0);
-        if (result.size() == tree.size()) {
-            return this;
-        } else {
-            return result == that.tree ? that : new HashSet<>(result);
-        }
+        final BitmapIndexedSetNode<T> result = that.tree.concat(tree, 0);
+        return result.size() == tree.size() ? this : new HashSet<>(result);
     }
 
     /**

@@ -59,14 +59,14 @@ public class HashBulkTest {
     // -- HashSet
 
     @Test
-    public void shouldUnionTwoHashSetsKeepingTheElementsOfTheArgument() {
+    public void shouldUnionTwoHashSetsKeepingTheElementsOfTheReceiver() {
         final HashSet<Key> left = set(0, 300, 1);
         final HashSet<Key> right = set(200, 500, 2);
         final HashSet<Key> union = left.union(right);
         assertThat(union.size()).isEqualTo(500);
-        tags(union).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 200 ? 1 : 2));
+        tags(union).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 300 ? 1 : 2));
         assertThat(left.addAll(right)).isEqualTo(union);
-        tags(left.addAll(right)).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 200 ? 1 : 2));
+        tags(left.addAll(right)).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 300 ? 1 : 2));
         // the same answers as with another kind of set
         assertThat(tags(left.union(LinkedHashSet.ofAll(right)))).isEqualTo(tags(union));
         // no new element: the receiver itself, its own elements kept
@@ -74,8 +74,11 @@ public class HashBulkTest {
         assertThat(left.addAll(set(0, 100, 3))).isSameAs(left);
         assertThat(left.union(HashSet.empty())).isSameAs(left);
         assertThat(HashSet.<Key> empty().union(right)).isSameAs(right);
-        // the argument holds everything: the argument itself
-        assertThat(set(0, 10, 4).union(right.addAll(set(0, 10, 5)))).hasSize(310);
+        // the argument holds everything: its elements, but the receiver's where they are equal
+        final HashSet<Key> small = set(0, 10, 4);
+        final HashSet<Key> all = small.union(right.addAll(set(0, 10, 5)));
+        assertThat(all).hasSize(310);
+        tags(all).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 10 ? 4 : 2));
     }
 
     @Test
