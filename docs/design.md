@@ -285,7 +285,7 @@ generated `ArrayType`) and `*Module` helper interfaces at the bottom of the publ
 collection internals go to `com.guizmaii.zazr.collection.internal`, everything else to `com.guizmaii.zazr.internal`
 (next to `Throwables`; `TryModule` is there). Each `*Module` helper has its own file (`VectorModule`, `ListModule`,
 `StreamModule`, `TraversableModule`, `IteratorModule`, `HashArrayMappedTrieModule`, `RedBlackTreeModule`,
-`TryModule`), and `BitMappedTrie`'s `LeafVisitor`, which `Vector` implements with lambdas, has its own file too.
+`TryModule`), and `BitMappedTrie`'s `LeafVisitor` got its own file too (both since deleted with the trie, 3.8).
 An internal type is `public` where the public packages call it, and so are the members they call; the packages are
 never exported (`module-info.java` exports exactly `com.guizmaii.zazr`, `com.guizmaii.zazr.collection` and
 `com.guizmaii.zazr.control`), the javadoc build excludes them (`excludePackageNames` `*.internal:*.internal.*` in the
@@ -1493,8 +1493,8 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - **Specialised `OptionInt`/`OptionLong`/`OptionDouble`** (sealed, `record SomeInt(int value)`), the
   JDK's `OptionalInt` design. Pattern-matchable (`case SomeInt(int i)`), but a parallel API with no
   boxing-free `flatMap` across the primitive/reference boundary, and nothing in Zazr produces them: the
-  collections store primitives unboxed (`BitMappedTrie` leaves via `ArrayType`) but box on `get(i)`, and
-  there is no `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
+  collections store every element boxed (`Vector`'s leaves are `Object[]` only, 3.8), and there is no
+  `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
   hot path shows the boxing, and then added together with the producing methods (`indexOfOption`,
   numeric `max`/`sum` folds).
 - **JIT escape analysis** already removes both allocations for the common inline pattern
@@ -1588,8 +1588,9 @@ any number of resources decided at run time, and Scala's rule for which throwabl
   Maven coordinates changed so the fork can never be confused with Vavr on a classpath. Do this in the
   first commit; every later diff is then unambiguous.
 - **Generator**: keep `Generator.scala` but shrink it to `Tuple0..8` (records), `Function3..8`,
-  `CheckedFunction1..8`, and the `zip`/`zipWith` arity-N statics for each control type. `API.java`,
-  `ArrayType`'s eight specialisations (keep, they are real), `CaseN`, `ForLazyN` go. Consider replacing the
+  `CheckedFunction1..8`, and the `zip`/`zipWith` arity-N statics for each control type. `API.java`, `CaseN`,
+  `ForLazyN` go, and so does `ArrayType` with its eight primitive specialisations, deleted with `BitMappedTrie` when
+  `Vector` moved to `Object[]` leaves (3.8, #74). Consider replacing the
   Scala script with a plain Java `main` (`java Generator.java`, single-file source launch) so the build
   needs no Scala toolchain; **Open**, cosmetic.
 - **Jargon guard**: a CI step that fails on `monad|functor|applicative|semigroup|monoid` anywhere under `src/`, `src-gen/`, `generator/`.
