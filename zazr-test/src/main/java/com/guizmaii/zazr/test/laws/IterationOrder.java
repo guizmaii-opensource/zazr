@@ -63,7 +63,8 @@ public interface IterationOrder<T> {
 
     /**
      * Keys in the order of their first occurrence, each with the value of its last occurrence: the
-     * insertion-ordered maps, where putting an existing key replaces its value in place.
+     * insertion-ordered maps, built by any factory, collector or successive puts, where putting an existing key
+     * replaces its value in place.
      *
      * @param <K> the key type
      * @param <V> the value type
@@ -74,28 +75,6 @@ public interface IterationOrder<T> {
             final LinkedHashMap<K, V> map = new LinkedHashMap<>();
             input.forEach(entry -> map.put(entry._1(), entry._2()));
             return map.entrySet().stream().map(entry -> com.guizmaii.zazr.Tuple.of(entry.getKey(), entry.getValue())).toList();
-        };
-    }
-
-    /**
-     * Keys in the order of their last occurrence, each with the value of its last occurrence: the insertion-ordered
-     * maps built at once from entries that repeat a key ({@code ofEntries}, the collector), where the last entry of
-     * a key decides both its value and its position.
-     *
-     * @param <K> the key type
-     * @param <V> the value type
-     * @return the order
-     */
-    static <K, V> IterationOrder<Tuple2<K, V>> keysByLastOccurrence() {
-        return input -> {
-            final LinkedHashMap<K, V> reversed = new LinkedHashMap<>();
-            for (int i = input.size() - 1; i >= 0; i--) {
-                reversed.putIfAbsent(input.get(i)._1(), input.get(i)._2());
-            }
-            final ArrayList<Tuple2<K, V>> entries = new ArrayList<>();
-            reversed.forEach((key, value) -> entries.add(com.guizmaii.zazr.Tuple.of(key, value)));
-            java.util.Collections.reverse(entries);
-            return entries;
         };
     }
 
