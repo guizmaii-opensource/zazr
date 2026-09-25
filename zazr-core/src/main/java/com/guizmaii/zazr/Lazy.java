@@ -15,6 +15,10 @@ import org.jspecify.annotations.Nullable;
  * performed again, ensuring referential transparency. If the computation throws, the exception propagates,
  * nothing is memoized, and the computation is retried on the next access.
  *
+ * <p>A {@code Lazy} is safe to share between threads: the computation runs under a lock, so it succeeds at most once
+ * even when several threads call {@link #get()} at the same time, and every caller sees that one value. A computation
+ * that throws is retried by the next caller, as above.</p>
+ *
  * <p>A {@code Lazy} is a value, not a container: it is never empty, is not iterable, and {@link #get()} is its
  * only conversion. It may hold {@code null}, unlike {@code Option}, {@code Either}, {@code Try} and
  * {@code Validation}, so wrapping its value in one of those is done explicitly, e.g.

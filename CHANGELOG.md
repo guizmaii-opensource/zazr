@@ -86,6 +86,10 @@ compare Zazr 0.1.0 with Vavr.
 - The website [zazr.dev](https://zazr.dev/): getting started, a page per control type and per collection, the
   complexity page, `zip`, builders, Java interop, testing, a page for readers new to functional programming, and the
   comparison with Vavr.
+- An Agent Skill for coding assistants, in the open [Agent Skills](https://agentskills.io/) format: copy
+  [`skills/zazr`](https://github.com/guizmaii-opensource/zazr/tree/main/skills/zazr) into your assistant and it writes
+  idiomatic Zazr code instead of Vavr or plain Java. The [AI assistant](https://zazr.dev/ai-assistant/) page says how
+  to install it. Its examples are compiled and run by the build, like the website's.
 
 ### Changed
 
@@ -147,6 +151,11 @@ compare Zazr 0.1.0 with Vavr.
   `remove`, `leftPadTo` and `combinations(k)` no longer count the whole `List`, and `Queue.startsWith`, `zip`,
   `zipWith`, `prefixLength` and `segmentLength` reverse the rear of the `Queue` only when they reach it.
 - `TreeMap.keySet`, `mapValues` and `replaceAll` copy the tree instead of sorting the entries again.
+- `HashMap` and `HashSet` are CHAMP tries, ported from Scala's collections: the entries sit inline in each node, and
+  a removal leaves the trie in the same shape as if the element had never been added. The iteration order differs
+  from Vavr's; neither ever promised one.
+- `HashSet` keeps the first of equal elements in every factory and operation (`of`, `ofAll`, the builder, the
+  collector, `map`, `addAll`, `union`...), as `add` does. Vavr's factories kept the last.
 
 ### Removed
 
@@ -188,14 +197,14 @@ compare Zazr 0.1.0 with Vavr.
 <!--
 pending: open pull requests, to fold into 0.1.0 as they merge.
 
-- PR 128 (Scala's radix-balanced vector as an internal structure): no entry; nothing changes for users until Vector
-  switches to it. That later change gets an entry (cheaper prepend, tail and init).
-- PR 134 (coverage threshold), PR 135 (incremental generator): no entry; build only.
+- PR 160 (Vector switched to the radix-balanced vector ported from Scala, merged earlier as an internal structure):
+  Changed > Collections, such as cheaper prepend, tail and init; no change in behaviour.
+
+Merged with no entry, since they concern contributors only: the coverage threshold, the incremental generator.
 
 Open 0.1.0 issues that change this file if they land before the release:
 - Stream renamed LazyList: Changed > Collections.
 - zazr-test with one Gen and no Arbitrary: rewrite the zazr-test entry under Added.
-- HashMap and HashSet on CHAMP: Changed > Collections, if the behaviour or the iteration order changes.
 - NonEmptySet and NonEmptyMap: Added.
 - zipWithPrevious, zipWithNext, mapAccum, foldWhile, collectWhile, splitWhere, dedupe: Added > Collections.
 - Builders for LinkedHashMap, LinkedHashSet and List: Added > Builders.

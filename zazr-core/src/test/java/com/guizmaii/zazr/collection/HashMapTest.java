@@ -703,6 +703,40 @@ public class HashMapTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void forEachByKeyValueVisitsTheEntriesInIterationOrder() {
+            // every node boundary, and keys of one hash in collision nodes
+            for (int size : new int[] { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 }) {
+                for (boolean colliding : new boolean[] { false, true }) {
+                    HashMap<Object, Integer> map = HashMap.empty();
+                    for (int i = 0; i < size; i++) {
+                        map = map.put(colliding ? new CollidingKey(i % 7, i) : Integer.valueOf(i), i);
+                    }
+                    final java.util.List<Object> walked = new java.util.ArrayList<>();
+                    map.forEach((k, v) -> {
+                        walked.add(k);
+                        walked.add(v);
+                    });
+                    final java.util.List<Object> iterated = new java.util.ArrayList<>();
+                    for (Tuple2<Object, Integer> entry : map) {
+                        iterated.add(entry._1());
+                        iterated.add(entry._2());
+                    }
+                    org.assertj.core.api.Assertions.assertThat(walked).isEqualTo(iterated).hasSize(2 * size);
+                }
+            }
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> HashMap.of(1, 2).forEach((BiConsumer<Integer, Integer>) null))
+                    .isInstanceOf(NullPointerException.class).hasMessage("action is null");
+        }
+
+        // equal when the id is, with one of a few hash codes
+        private record CollidingKey(int hash, int id) {
+            @Override
+            public int hashCode() {
+                return hash;
+            }
+        }
+
+        @Test
         public void forEachByTuple() {
             final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
             final int[] result = { 0 };

@@ -7,6 +7,7 @@ package com.guizmaii.zazr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import java.lang.CharSequence;
 import java.security.MessageDigest;
@@ -32,13 +33,44 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldLiftPartialFunction() {
-        assertThat(CheckedFunction2.lift((o1, o2) -> { while(true); })).isNotNull();
+        final BiFunction<Integer, Integer, Option<Integer>> lifted = CheckedFunction2.lift((i1, i2) -> {
+            if (i1 == 0) {
+                return null;
+            }
+            if (i1 == 1) {
+                throw new Exception("non-fatal");
+            }
+            if (i1 == 2) {
+                throw new OutOfMemoryError("fatal");
+            }
+            return i1 + i2;
+        });
+        assertThat(lifted.apply(3, 1)).isEqualTo(Option.some(4));
+        assertThat(lifted.apply(0, 1)).isEqualTo(Option.none());
+        assertThat(lifted.apply(1, 1)).isEqualTo(Option.none());
+        assertThrows(OutOfMemoryError.class, () -> lifted.apply(2, 1));
+    }
+
+    @Test
+    public void shouldRethrowFatalThrowableFromLiftTry() {
+        final BiFunction<Integer, Integer, Try<Integer>> lifted =
+            CheckedFunction2.liftTry((i1, i2) -> { throw new OutOfMemoryError("fatal"); });
+        assertThrows(OutOfMemoryError.class, () -> lifted.apply(1, 1));
+    }
+
+    @Test
+    public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
+        final BiFunction<Integer, Integer, Try<Integer>> lifted =
+            CheckedFunction2.liftTry((i1, i2) -> { throw new Exception("non-fatal"); });
+        final Try<Integer> result = lifted.apply(1, 1);
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getCause()).isInstanceOf(Exception.class).hasMessage("non-fatal");
     }
 
     @Test
     public void shouldPartiallyApply() throws Exception {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> null;
-        assertThat(f.apply(null)).isNotNull();
+        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
+        assertThat(f.apply(1).apply(2)).isEqualTo("12");
     }
 
     @Test
@@ -48,17 +80,17 @@ public class CheckedFunction2Test {
     }
 
     @Test
-    public void shouldCurry() {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> null;
+    public void shouldCurry() throws Exception {
+        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
         final Function<Object, CheckedFunction1<Object, Object>> curried = f.curried();
-        assertThat(curried).isNotNull();
+        assertThat(curried.apply(1).apply(2)).isEqualTo("12");
     }
 
     @Test
-    public void shouldTuple() {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> null;
+    public void shouldTuple() throws Exception {
+        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
         final CheckedFunction1<Tuple2<Object, Object>, Object> tupled = f.tupled();
-        assertThat(tupled).isNotNull();
+        assertThat(tupled.apply(Tuple.of(1, 2))).isEqualTo("12");
     }
 
     private static final CheckedFunction2<String, String, MessageDigest> digest = (s1, s2) -> MessageDigest.getInstance(s1 + s2);
@@ -85,6 +117,22 @@ public class CheckedFunction2Test {
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
         assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
+    }
+
+    @Test
+    public void shouldNotHandFatalThrowableToRecover() {
+        final CheckedFunction2<String, String, MessageDigest> fatal = (s1, s2) -> { throw new OutOfMemoryError("fatal"); };
+        final BiFunction<String, String, MessageDigest> recover =
+            fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+        assertThrows(OutOfMemoryError.class, () -> recover.apply("M", "D5"));
+    }
+
+    @Test
+    public void shouldHandNonFatalThrowableToRecover() {
+        final CheckedFunction2<String, String, MessageDigest> nonFatal = (s1, s2) -> { throw new IllegalStateException("non-fatal"); };
+        final BiFunction<String, String, MessageDigest> recover =
+            nonFatal.recover(throwable -> (s1, s2) -> null);
+        assertThat(recover.apply("M", "D5")).isNull();
     }
 
     @Test
@@ -127,11 +175,11 @@ public class CheckedFunction2Test {
     }
 
     @Test
-    public void shouldComposeWithAndThen() {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> null;
-        final CheckedFunction1<Object, Object> after = o -> null;
+    public void shouldComposeWithAndThen() throws Exception {
+        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
+        final CheckedFunction1<Object, Object> after = o -> o + "!";
         final CheckedFunction2<Object, Object, Object> composed = f.andThen(after);
-        assertThat(composed).isNotNull();
+        assertThat(composed.apply(1, 2)).isEqualTo("12!");
     }
 
     @Nested

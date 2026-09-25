@@ -7,6 +7,7 @@ package com.guizmaii.zazr;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import java.lang.CharSequence;
 import java.security.MessageDigest;
@@ -31,16 +32,47 @@ public class CheckedFunction5Test {
 
     @Test
     public void shouldLiftPartialFunction() {
-        assertThat(CheckedFunction5.lift((o1, o2, o3, o4, o5) -> { while(true); })).isNotNull();
+        final Function5<Integer, Integer, Integer, Integer, Integer, Option<Integer>> lifted = CheckedFunction5.lift((i1, i2, i3, i4, i5) -> {
+            if (i1 == 0) {
+                return null;
+            }
+            if (i1 == 1) {
+                throw new Exception("non-fatal");
+            }
+            if (i1 == 2) {
+                throw new OutOfMemoryError("fatal");
+            }
+            return i1 + i2 + i3 + i4 + i5;
+        });
+        assertThat(lifted.apply(3, 1, 1, 1, 1)).isEqualTo(Option.some(7));
+        assertThat(lifted.apply(0, 1, 1, 1, 1)).isEqualTo(Option.none());
+        assertThat(lifted.apply(1, 1, 1, 1, 1)).isEqualTo(Option.none());
+        assertThrows(OutOfMemoryError.class, () -> lifted.apply(2, 1, 1, 1, 1));
+    }
+
+    @Test
+    public void shouldRethrowFatalThrowableFromLiftTry() {
+        final Function5<Integer, Integer, Integer, Integer, Integer, Try<Integer>> lifted =
+            CheckedFunction5.liftTry((i1, i2, i3, i4, i5) -> { throw new OutOfMemoryError("fatal"); });
+        assertThrows(OutOfMemoryError.class, () -> lifted.apply(1, 1, 1, 1, 1));
+    }
+
+    @Test
+    public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
+        final Function5<Integer, Integer, Integer, Integer, Integer, Try<Integer>> lifted =
+            CheckedFunction5.liftTry((i1, i2, i3, i4, i5) -> { throw new Exception("non-fatal"); });
+        final Try<Integer> result = lifted.apply(1, 1, 1, 1, 1);
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getCause()).isInstanceOf(Exception.class).hasMessage("non-fatal");
     }
 
     @Test
     public void shouldPartiallyApply() throws Exception {
-        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> null;
-        assertThat(f.apply(null)).isNotNull();
-        assertThat(f.apply(null, null)).isNotNull();
-        assertThat(f.apply(null, null, null)).isNotNull();
-        assertThat(f.apply(null, null, null, null)).isNotNull();
+        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> "" + o1 + o2 + o3 + o4 + o5;
+        assertThat(f.apply(1).apply(2, 3, 4, 5)).isEqualTo("12345");
+        assertThat(f.apply(1, 2).apply(3, 4, 5)).isEqualTo("12345");
+        assertThat(f.apply(1, 2, 3).apply(4, 5)).isEqualTo("12345");
+        assertThat(f.apply(1, 2, 3, 4).apply(5)).isEqualTo("12345");
     }
 
     @Test
@@ -50,17 +82,17 @@ public class CheckedFunction5Test {
     }
 
     @Test
-    public void shouldCurry() {
-        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> null;
+    public void shouldCurry() throws Exception {
+        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> "" + o1 + o2 + o3 + o4 + o5;
         final Function<Object, Function<Object, Function<Object, Function<Object, CheckedFunction1<Object, Object>>>>> curried = f.curried();
-        assertThat(curried).isNotNull();
+        assertThat(curried.apply(1).apply(2).apply(3).apply(4).apply(5)).isEqualTo("12345");
     }
 
     @Test
-    public void shouldTuple() {
-        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> null;
+    public void shouldTuple() throws Exception {
+        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> "" + o1 + o2 + o3 + o4 + o5;
         final CheckedFunction1<Tuple5<Object, Object, Object, Object, Object>, Object> tupled = f.tupled();
-        assertThat(tupled).isNotNull();
+        assertThat(tupled.apply(Tuple.of(1, 2, 3, 4, 5))).isEqualTo("12345");
     }
 
     private static final CheckedFunction5<String, String, String, String, String, MessageDigest> digest = (s1, s2, s3, s4, s5) -> MessageDigest.getInstance(s1 + s2 + s3 + s4 + s5);
@@ -87,6 +119,22 @@ public class CheckedFunction5Test {
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
         assertThat(unknown.getCause().getMessage()).isNotEmpty().isEqualToIgnoringCase("recover return null for class java.security.NoSuchAlgorithmException: Unknown MessageDigest not available");
+    }
+
+    @Test
+    public void shouldNotHandFatalThrowableToRecover() {
+        final CheckedFunction5<String, String, String, String, String, MessageDigest> fatal = (s1, s2, s3, s4, s5) -> { throw new OutOfMemoryError("fatal"); };
+        final Function5<String, String, String, String, String, MessageDigest> recover =
+            fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+        assertThrows(OutOfMemoryError.class, () -> recover.apply("M", "D", "5", "", ""));
+    }
+
+    @Test
+    public void shouldHandNonFatalThrowableToRecover() {
+        final CheckedFunction5<String, String, String, String, String, MessageDigest> nonFatal = (s1, s2, s3, s4, s5) -> { throw new IllegalStateException("non-fatal"); };
+        final Function5<String, String, String, String, String, MessageDigest> recover =
+            nonFatal.recover(throwable -> (s1, s2, s3, s4, s5) -> null);
+        assertThat(recover.apply("M", "D", "5", "", "")).isNull();
     }
 
     @Test
@@ -129,11 +177,11 @@ public class CheckedFunction5Test {
     }
 
     @Test
-    public void shouldComposeWithAndThen() {
-        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> null;
-        final CheckedFunction1<Object, Object> after = o -> null;
+    public void shouldComposeWithAndThen() throws Exception {
+        final CheckedFunction5<Object, Object, Object, Object, Object, Object> f = (o1, o2, o3, o4, o5) -> "" + o1 + o2 + o3 + o4 + o5;
+        final CheckedFunction1<Object, Object> after = o -> o + "!";
         final CheckedFunction5<Object, Object, Object, Object, Object, Object> composed = f.andThen(after);
-        assertThat(composed).isNotNull();
+        assertThat(composed.apply(1, 2, 3, 4, 5)).isEqualTo("12345!");
     }
 
     @Nested
