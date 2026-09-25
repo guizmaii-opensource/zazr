@@ -55,8 +55,8 @@ var lengths = counts.result(); // HashMap<String, Integer>
 // HashMap((to, 2), (be, 2), (or, 2), (not, 3)), in some order
 ```
 
-When two entries have equal keys, the one put last wins, as with successive `put` calls. The same goes for equal
-elements of a set.
+When two entries have equal keys, the one put last wins, as with successive `put` calls. A `HashSet` does the
+opposite: of equal elements, it keeps the one added first, as `add` does.
 
 A `HashMap` or `HashSet` builder changes its own nodes in place. A persistent `put` would copy the path from the
 root each time. Give an empty builder an existing map with `putAll`, and it starts from that map without copying it.
