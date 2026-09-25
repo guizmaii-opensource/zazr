@@ -20,11 +20,12 @@ public class ChampBulkTest {
 
     private static final long SEED = 20260927L;
 
-    /** A key whose hash code is chosen by the test; two keys are equal when both the hash and the id are. */
+    /** A key placed by the test: `hash` is its mixed hash (the one whose 5-bit fragments pick its slots), and its hash
+     *  code the one that mixes to it. Two keys are equal when both the hash and the id are. */
     record Key(int hash, int id) {
         @Override
         public int hashCode() {
-            return hash;
+            return ChampValidity.hashCodeFor(hash);
         }
     }
 
@@ -129,25 +130,25 @@ public class ChampBulkTest {
         final int[] sizes = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 };
         for (int leftSize : sizes) {
             for (int rightSize : sizes) {
-                BitmapIndexedMapNode<Integer, String> left = MapNode.empty();
+                BitmapIndexedMapNode<Key, String> left = MapNode.empty();
                 for (int i = 0; i < leftSize; i++) {
-                    left = left.updated(i, "l" + i);
+                    left = left.updated(new Key(i, 0), "l" + i);
                 }
-                // the right side overlaps the upper half of the left one, and goes beyond it
-                BitmapIndexedMapNode<Integer, String> right = MapNode.empty();
+                // keys of mixed hashes 0, 1, 2...: the node boundaries; the right side overlaps the upper half of the left one, and goes beyond it
+                BitmapIndexedMapNode<Key, String> right = MapNode.empty();
                 for (int i = 0; i < rightSize; i++) {
-                    right = right.updated(leftSize / 2 + i, "r" + i);
+                    right = right.updated(new Key(leftSize / 2 + i, 0), "r" + i);
                 }
-                final BitmapIndexedMapNode<Integer, String> result = left.concat(right, 0);
+                final BitmapIndexedMapNode<Key, String> result = left.concat(right, 0);
                 assertValid(result);
-                final java.util.Map<Integer, String> expected = new java.util.HashMap<>();
+                final java.util.Map<Key, String> expected = new java.util.HashMap<>();
                 for (int i = 0; i < leftSize; i++) {
-                    expected.put(i, "l" + i);
+                    expected.put(new Key(i, 0), "l" + i);
                 }
                 for (int i = 0; i < rightSize; i++) {
-                    expected.put(leftSize / 2 + i, "r" + i);
+                    expected.put(new Key(leftSize / 2 + i, 0), "r" + i);
                 }
-                final java.util.Map<Integer, String> actual = new java.util.HashMap<>();
+                final java.util.Map<Key, String> actual = new java.util.HashMap<>();
                 result.forEach(actual::put);
                 assertThat(actual).isEqualTo(expected);
             }
@@ -378,25 +379,25 @@ public class ChampBulkTest {
     @Test
     public void shouldConcatAndDiffSetsAtTheNodeBoundaries() {
         final int[] sizes = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 };
-        final Function<int[], BitmapIndexedSetNode<Integer>> range = bounds -> {
-            BitmapIndexedSetNode<Integer> trie = SetNode.empty();
+        final Function<int[], BitmapIndexedSetNode<Key>> range = bounds -> {
+            BitmapIndexedSetNode<Key> trie = SetNode.empty();
             for (int i = bounds[0]; i < bounds[1]; i++) {
-                trie = trie.updated(i, true);
+                trie = trie.updated(new Key(i, 0), true);
             }
             return trie;
         };
         for (int leftSize : sizes) {
             for (int rightSize : sizes) {
-                final BitmapIndexedSetNode<Integer> left = range.apply(new int[] { 0, leftSize });
-                final BitmapIndexedSetNode<Integer> right = range.apply(new int[] { leftSize / 2, leftSize / 2 + rightSize });
-                final BitmapIndexedSetNode<Integer> union = left.concat(right, 0);
+                final BitmapIndexedSetNode<Key> left = range.apply(new int[] { 0, leftSize });
+                final BitmapIndexedSetNode<Key> right = range.apply(new int[] { leftSize / 2, leftSize / 2 + rightSize });
+                final BitmapIndexedSetNode<Key> union = left.concat(right, 0);
                 assertValid(union);
                 assertThat(union.size()).isEqualTo(Math.max(leftSize, leftSize / 2 + rightSize));
-                final BitmapIndexedSetNode<Integer> diff = left.diff(right, 0);
+                final BitmapIndexedSetNode<Key> diff = left.diff(right, 0);
                 assertValid(diff);
                 assertThat(diff.size()).isEqualTo(Math.min(leftSize, leftSize / 2) + Math.max(0, leftSize - (leftSize / 2 + rightSize)));
                 for (int i = 0; i < leftSize; i++) {
-                    assertThat(diff.contains(i)).isEqualTo(i < leftSize / 2 || i >= leftSize / 2 + rightSize);
+                    assertThat(diff.contains(new Key(i, 0))).isEqualTo(i < leftSize / 2 || i >= leftSize / 2 + rightSize);
                 }
                 assertThat(right.subsetOf(union, 0)).isTrue();
                 assertThat(left.subsetOf(union, 0)).isTrue();

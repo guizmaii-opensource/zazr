@@ -129,6 +129,13 @@ public class HashBuilderTest {
         assertThat(kept.apply(set.collect(e -> com.guizmaii.zazr.control.Option.some(e.equals("x") ? last : e)))).isSameAs(first);
         assertThat(kept.apply(set.partitionMap(e -> com.guizmaii.zazr.control.Either.<String, String> left(e.equals("x") ? last : e))._1()))
                 .isSameAs(first);
+        // intersect keeps the elements of the receiver, whichever side is smaller
+        final HashSet<String> big = HashSet.of(first, "x", "y", "z");
+        assertThat(kept.apply(big.intersect(HashSet.of(last)))).isSameAs(first);
+        assertThat(kept.apply(big.intersect(HashSet.of(last, "x", "y", "z", "w")))).isSameAs(first);
+        assertThat(kept.apply(big.intersect(LinkedHashSet.of(last)))).isSameAs(first);
+        assertThat(big.intersect(HashSet.of(new String("x"), last, "y", "z"))).isSameAs(big);
+        assertThat(kept.apply(HashSet.of(last).intersect(big))).isSameAs(last);
         // the same answers on colliding hash codes, over every node boundary
         for (int size : new int[] { 1, 2, 31, 32, 33, 1023, 1024, 1025 }) {
             final java.util.List<Key> firsts = new ArrayList<>();

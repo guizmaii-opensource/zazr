@@ -23,7 +23,8 @@ import org.jspecify.annotations.Nullable;
  * per element.
  * <p>
  * Of two equal elements, a HashSet keeps the one it received first: {@link #add(Object)}, {@link #addAll(Iterable)},
- * {@link #union(Set)}, the factories, the collector and the {@link Builder} never replace an element already there.
+ * {@link #union(Set)}, the factories, the collector and the {@link Builder} never replace an element already there,
+ * and {@link #intersect(Set)} keeps the elements of this set.
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -774,7 +775,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for a set of m elements (the smaller set is filtered against a hash set of the larger one).
+     * Complexity: O(n + m) for a set of m elements (this set filtered against a hash set of them, or, when they are
+     * fewer, each of them looked up in this set). The elements kept are those of this set, whichever side is smaller.
      */
     @Override
     public HashSet<T> intersect(Set<? extends T> elements) {
@@ -786,8 +788,16 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             if (size <= elements.size()) {
                 return retainAll(elements);
             } else {
-                final HashSet<T> results = HashSet.<T> ofAll(elements).retainAll(this);
-                return (size == results.size()) ? this : results;
+                // the smaller side is walked, and the element of this set kept for each of its elements
+                final HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
+                for (T element : elements) {
+                    final T kept = tree.find(element);
+                    if (kept != null) {
+                        builder.add(kept);
+                    }
+                }
+                final BitmapIndexedSetNode<T> result = builder.result();
+                return (size == result.size()) ? this : wrap(result);
             }
         }
     }

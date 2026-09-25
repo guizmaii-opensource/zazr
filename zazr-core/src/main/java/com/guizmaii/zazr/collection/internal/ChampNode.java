@@ -14,8 +14,9 @@ import static java.lang.Integer.bitCount;
 /// The shape is canonical: a slot holds a child only when at least two entries share that prefix, so removal compacts
 /// the path back to inline entries, and equal collections have the same tree, up to the order inside a collision node.
 ///
-/// The hash is `Objects.hashCode` of the key, unchanged: unlike Scala, which scrambles it first, Zazr keeps the
-/// distribution of the `hashCode` given, as its tries always did.
+/// The nodes store `Objects.hashCode` of each key, and place the key by [#improve], Scala's bit mixing of it
+/// (`scala.collection.Hashing.improve`), so that hash codes which differ only in their high bits still spread over the
+/// first levels. The mixing is a bijection, so two keys have equal stored hashes exactly when they have equal mixed ones.
 ///
 /// @param <N> the node type of the trie, map or set
 public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, SetNode {
@@ -38,8 +39,17 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
     ChampNode() {
     }
 
+    /// Scala's `Hashing.improve`: the bits of a hash code mixed, so that every bit of it counts in every fragment.
+    static int improve(int hashCode) {
+        int h = hashCode + ~(hashCode << 9);
+        h = h ^ (h >>> 14);
+        h = h + (h << 4);
+        return h ^ (h >>> 10);
+    }
+
+    /// The slot, at `shift`, of a key of hash code `hash`: the fragment of its mixed hash.
     static int maskFrom(int hash, int shift) {
-        return (hash >>> shift) & BIT_PARTITION_MASK;
+        return (improve(hash) >>> shift) & BIT_PARTITION_MASK;
     }
 
     static int bitposFrom(int mask) {
@@ -71,7 +81,8 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
     /// The number of entries in this subtree.
     public abstract int size();
 
-    /// The sum of the hashes of the keys in this subtree: the hash of a `java.util.Set` of them.
+    /// The sum of the hash codes of the keys in this subtree: the hash of a `java.util.Set` of them. (Scala caches the
+    /// sum of the mixed hashes; the sum of the hash codes serves the same comparisons and is also a set's hash.)
     abstract int keyHashSum();
 
     static int[] removeElement(int[] as, int ix) {

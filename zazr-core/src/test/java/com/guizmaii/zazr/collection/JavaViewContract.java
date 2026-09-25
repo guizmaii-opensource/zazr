@@ -171,16 +171,18 @@ final class JavaViewContract {
         same(path, "iterator().forEachRemaining", () -> {
             final java.util.List<E> seen = new ArrayList<>();
             final java.util.Iterator<E> iterator = view.iterator();
+            // the element taken by next() is kept: an unordered view need not start with the reference's first
             if (iterator.hasNext()) {
-                iterator.next();
+                seen.add(iterator.next());
             }
             iterator.forEachRemaining(seen::add);
             return seen;
         }, () -> {
             final java.util.List<E> seen = new ArrayList<>();
             final java.util.Iterator<E> iterator = reference.iterator();
+            // the element taken by next() is kept: an unordered view need not start with the reference's first
             if (iterator.hasNext()) {
-                iterator.next();
+                seen.add(iterator.next());
             }
             iterator.forEachRemaining(seen::add);
             return seen;

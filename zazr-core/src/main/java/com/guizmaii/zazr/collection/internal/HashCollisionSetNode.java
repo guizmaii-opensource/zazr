@@ -84,6 +84,12 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     }
 
     @Override
+    @Nullable T find(T element, int hash, int shift) {
+        final int index = (this.hash == hash) ? indexOf(element) : -1;
+        return index >= 0 ? getPayload(index) : null;
+    }
+
+    @Override
     SetNode<T> updated(T element, int hash, int shift, boolean replace) {
         final int index = indexOf(element);
         if (index >= 0) {
