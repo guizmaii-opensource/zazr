@@ -1,60 +1,112 @@
-# Vavr
+# zazr
 
-[![Build Status](https://github.com/vavr-io/vavr/actions/workflows/ci.yml/badge.svg)](https://github.com/vavr-io/vavr/actions/workflows/ci.yml)
-[![Maven Central Version](https://img.shields.io/maven-central/v/io.vavr/vavr?versionPrefix=1)](https://central.sonatype.com/artifact/io.vavr/vavr/versions)
-[![javadoc](https://javadoc.io/badge2/io.vavr/vavr/1.0.1/javadoc.svg)](https://javadoc.io/doc/io.vavr/vavr/1.0.1)
+[![CI](https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml/badge.svg)](https://github.com/guizmaii-opensource/zazr/actions/workflows/ci.yml)
 
-```text
- ____  ______________  ________________________  __________
- \   \/   /      \   \/   /   __/   /      \   \/   /      \
-  \______/___/\___\______/___/_____/___/\___\______/___/\___\
+Immutable collections and control types for Java 25+, with the API design of [ZIO](https://zio.dev) and
+[zio-prelude](https://zio.dev/zio-prelude/).
+
+zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its
+`Option`, `Either`, `Try`, `Validation` and `Lazy`, and reshapes them:
+
+- **Names say what an operation does**, not which algebra it comes from: `zip`, `zipWith`, `collectAll`,
+  `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`.
+- **`zip` at arity 2 to 8** replaces `ap` and builders, and never nests tuples.
+- **`Validation` accumulates every error** in a `NonEmptyVector`, so an invalid value always carries at least one.
+- **Non-empty types make partial operations total**: `NonEmptyVector.head()`, `max`, `reduce` cannot fail.
+- **Each collection declares its own API and states its cost.** There is no `Seq` promising `get(i)` on a
+  cons list; every positional method documents its complexity.
+- **Modern Java**: sealed interfaces and records you can `switch` over, JDK functional interfaces,
+  O(1) `java.util` views through `asJava()`.
+- **No `null` inside**: `Some`, `Right`, `Valid` and every collection reject it.
+
+## Status
+
+Pre-1.0 and changing fast. Nothing is released yet. Snapshots of `main` are published to Maven Central's
+snapshot repository; expect breaking changes between them.
+
+## Requirements
+
+JDK 25 or later. No runtime dependencies.
+
+## Installation
+
+Maven:
+
+```xml
+<repositories>
+    <repository>
+        <id>central-portal-snapshots</id>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        <snapshots><enabled>true</enabled></snapshots>
+        <releases><enabled>false</enabled></releases>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.guizmaii</groupId>
+    <artifactId>zazr-core</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
 ```
 
-Vavr is an **object-functional extension for Java that makes defensive programming easy by leveraging immutability and functional control structures**
+Gradle:
 
-Vavr seamlessly combines object-oriented programming with the elegance and robustness of functional programming. 
+```kotlin
+repositories {
+    maven("https://central.sonatype.com/repository/maven-snapshots/")
+}
 
-It provides:
-* persistent collections
-* functional abstractions for error handling, concurrent programming
-* pattern matching
-* ...and more
+dependencies {
+    implementation("com.guizmaii:zazr-core:0.1.0-SNAPSHOT")
+}
+```
 
-Since **Vavr has no dependencies** beyond the JVM, you can easily add it as a standalone .jar to your classpath.
+`com.guizmaii:zazr-test` adds property-based testing (`Arbitrary`, `Gen`, `Checkable`).
 
-Led and maintained by [@pivovarit](http://github.com/pivovarit)
+## A short tour
 
-### Stargazers over time
-[![Stargazers over time](https://starchart.cc/vavr-io/vavr.svg?variant=adaptive)](https://starchart.cc/vavr-io/vavr)
+```java
+// Validation keeps every error, not the first one
+Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
+String message = switch (user) {
+    case Valid(var u) -> "hello " + u.name();
+    case Invalid(var errors) -> errors.mkString(", ");
+};
+// "name is blank, age is negative, email has no @"
 
-### Maven Dependency
+// zip at any arity up to 8, no Tuple2<Tuple2<A, B>, C>
+Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
 
-    <dependency>
-        <groupId>io.vavr</groupId>
-        <artifactId>vavr</artifactId>
-        <version>1.0.1</version>
-    </dependency>
+// total operations on a collection that cannot be empty
+NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
+int best = scores.max(Integer::compare);
 
-### Gradle Dependency
+// a builder instead of repeated append
+Vector.Builder<Integer> builder = Vector.newBuilder();
+for (int i = 0; i < 1_000; i++) {
+    builder.add(i);
+}
+Vector<Integer> numbers = builder.result();
+```
 
-    implementation 'io.vavr:vavr:1.0.1'
+## Compared to Vavr
 
-## Using Vavr
+Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise` and `Task`, `Array`, `CharSeq`,
+`Tree`, `BitSet`, `PriorityQueue`, the `Multimap` family, `Seq`, `IndexedSeq`, `LinearSeq`, `Foldable`, `Value`,
+`Function0..2` (use `java.util.function`), `Serializable`, and the category-theory names. Control types are no
+longer `Iterable`; each has its own conversions. Sets and maps have no positional methods, except the ordered
+ones (`TreeSet`, `TreeMap`, `LinkedHashSet`, `LinkedHashMap`).
 
-See [User Guide](http://docs.vavr.io) and/or [Javadoc](http://www.javadoc.io/doc/io.vavr/vavr).
+Every decision and its reason is in [docs/design.md](docs/design.md).
 
-### Useful Maven Goals
+## Building
 
-* Executing tests: `mvn clean test`
-* Executing doclint: `mvn javadoc:javadoc`
-* Executing code coverage report: `mvn -P ci clean test jacoco:report`
-* Create -javadoc.jar: `mvn javadoc:jar`
-* Create -source.jar: `mvn source:jar`
+```bash
+make help      # list the targets
+make verify    # what CI runs: tests, formatting, nullness, vocabulary and complexity checks
+make test-one TEST=VectorTest MODULE=zazr-core
+```
 
-### Contributing
+## License
 
-Currently, there are two significant branches:
-- `main` (represents a stream of work leading to the release of a new major version)
-- `version/1.x` (historical work that went into `1.0.0-alpha-3`, treat it as read-only - will be kept around for cherry-picking)
-
-A small number of users have reported problems building Vavr. Read our [contribution guide](./CONTRIBUTING.md) for details.
+Apache License 2.0. zazr is derived from Vavr, copyright its authors; see [NOTICE](NOTICE).
