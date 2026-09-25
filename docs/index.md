@@ -8,13 +8,13 @@ hide:
 ---
 
 ```java
-// Validation keeps every error, not the first one
-Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
-String message = switch (user) {
-    case Valid(var u) -> "hello " + u.name();
-    case Invalid(var errors) -> errors.mkString(", ");
-};
-// "name is blank, age is negative, email has no @"
+// one call per arity, never a Tuple2<Tuple2<A, B>, C>
+Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+    (a, b, c) -> a + b + c);
+
+// total on a collection that cannot be empty
+int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
+// sum is Some(6), best is 9
 ```
 
 <!-- /hero -->
@@ -36,7 +36,7 @@ String message = switch (user) {
 zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its `Option`,
 `Either`, `Try`, `Validation` and `Lazy`, and reshapes them around a few rules.
 
-<div class="grid cards zz-cards" markdown>
+<div class="grid cards zz-cards zz-cards--features" markdown>
 
 -   :material-tag-text-outline:{ .lg } __Names say what an operation does__
 

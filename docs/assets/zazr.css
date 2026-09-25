@@ -176,7 +176,8 @@
   gap: 1rem;
 }
 .zz-hero__zaz {
-  width: 8rem;
+  width: 10.5rem;
+  margin: -1.2rem -0.6rem -1.2rem -1rem;
   height: auto;
   flex: none;
   filter: drop-shadow(0 14px 22px #00000066);
@@ -289,7 +290,7 @@
 }
 .zz-window pre > code {
   padding: 1.1rem 1.1rem 1.3rem;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   line-height: 1.75;
 }
 .zz-window .md-clipboard {
@@ -305,7 +306,7 @@
   display: none;
 }
 .zz-home {
-  max-width: 58rem;
+  max-width: 64rem;
   margin: 0 auto;
 }
 .zz-section {
@@ -338,6 +339,33 @@
   transform: translateY(-2px);
   border-color: var(--md-accent-fg-color);
   box-shadow: 0 12px 32px -18px var(--md-accent-fg-color);
+}
+/* the seven principles: 4 + 3 on wide screens, 2 + 2 + 2 + 1 full-width, then one column; never an orphan */
+.md-typeset .grid.cards.zz-cards--features {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+.md-typeset .zz-cards--features > ul > li {
+  grid-column: span 3;
+}
+.md-typeset .zz-cards--features > ul > li:nth-child(n + 5) {
+  grid-column: span 4;
+}
+@media screen and (max-width: 70em) {
+  .md-typeset .grid.cards.zz-cards--features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .md-typeset .zz-cards--features > ul > li,
+  .md-typeset .zz-cards--features > ul > li:nth-child(n + 5) {
+    grid-column: span 1;
+  }
+  .md-typeset .zz-cards--features > ul > li:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media screen and (max-width: 40em) {
+  .md-typeset .grid.cards.zz-cards--features {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .md-typeset .grid.cards.zz-cards--plain > ul > li:hover {
   transform: none;
@@ -378,6 +406,7 @@
     font-size: 3.2rem;
   }
   .zz-hero__zaz {
-    width: 5.5rem;
+    width: 8rem;
+    margin: -0.8rem -0.4rem -0.8rem -0.8rem;
   }
 }
