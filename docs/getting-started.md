@@ -6,7 +6,7 @@ description: Add Zazr to a build, then meet the control types and the collection
 
 ## Requirements
 
-JDK 25 or later. Zazr has no runtime dependency. `zazr-core` is the Java module `com.guizmaii.zazr`.
+JDK 25 or later. Zazr has no runtime dependency.
 
 ## Add the dependency
 
@@ -44,7 +44,8 @@ between them.
     }
     ```
 
-On the module path, add `requires com.guizmaii.zazr;` to your `module-info.java`.
+If your project uses Java modules (a `module-info.java`), add `requires com.guizmaii.zazr;` to it. Projects
+without a `module-info.java` need nothing more.
 
 ## Where things are
 
