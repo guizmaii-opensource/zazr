@@ -123,9 +123,9 @@ coverage-summary: ## print the line and branch coverage per module and package o
 
 # javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
 # so on a fresh checkout the plugin finds no module-info.class in zazr-core and refuses the named module.
-# Output: <module>/target/reports/apidocs.
+# Output: <module>/target/reports/apidocs, emptied first (clean-apidocs in pom.xml) so a dropped class loses its pages.
 javadoc: ## build the javadoc of zazr-core and zazr-test (doclint: fails on a broken reference or malformed tag)
-	$(MVN) compile javadoc:javadoc-no-fork
+	$(MVN) compile clean:clean@clean-apidocs javadoc:javadoc-no-fork
 
 deps-updates: ## list newer versions of dependencies and plugins
 	$(MVN) versions:display-dependency-updates versions:display-plugin-updates

@@ -15,6 +15,7 @@ val CHARSET = java.nio.charset.StandardCharsets.UTF_8
 def run(): Unit = {
   generateMainClasses()
   generateTestClasses()
+  deleteStaleFiles(s"${project.getBasedir()}/src-gen")
 }
 
 /**
@@ -967,26 +968,53 @@ object JavaGenerator {
 object Generator {
 
   import java.nio.charset.{Charset, StandardCharsets}
-  import java.nio.file.{Files, Paths, StandardOpenOption}
+  import java.nio.file.{Files, Path, Paths}
+  import scala.jdk.CollectionConverters._
+
+  // The files written by this run, so that `deleteStaleFiles` knows which ones it no longer produces.
+  private val generated = scala.collection.mutable.Set.empty[Path]
 
   /**
-   * Generates a file by writing string contents to the file system.
+   * Generates a file by writing string contents to the file system. The file is written only when its content
+   * differs from what is on disk: an unchanged file keeps its modification time, so the compiler does not
+   * recompile the module.
    *
    * @param baseDir The base directory, e.g. src-gen
    * @param dirName The directory relative to baseDir, e.g. main/java
    * @param fileName The file name within baseDir/dirName
-   * @param createOption One of java.nio.file.{StandardOpenOption.CREATE_NEW, StandardOpenOption.CREATE}, default: CREATE_NEW
    * @param contents The string contents of the file
    * @param charset The charset, by default UTF-8
    */
-  def genFile(baseDir: String, dirName: String, fileName: String, createOption: StandardOpenOption = StandardOpenOption.CREATE_NEW)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
+  def genFile(baseDir: String, dirName: String, fileName: String)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
+    val file = Paths.get(baseDir, dirName, fileName).toAbsolutePath.normalize
+    if (!generated.add(file)) {
+      throw new IllegalStateException(s"$file is generated twice")
+    }
+    val bytes = contents.getBytes(charset)
+    if (!Files.isRegularFile(file) || !java.util.Arrays.equals(Files.readAllBytes(file), bytes)) {
+      Files.createDirectories(file.getParent)
+      Files.write(file, bytes)
+    }
+  }
 
-    // println(s"Generating $dirName${File.separator}$fileName")
-
-    Files.write(
-      Files.createDirectories(Paths.get(baseDir, dirName)).resolve(fileName),
-      contents.getBytes(charset),
-      createOption, StandardOpenOption.WRITE)
+  /**
+   * Deletes the files under `root` that this run did not generate, then the directories left empty.
+   * Called once every file has been generated.
+   */
+  def deleteStaleFiles(root: String): Unit = {
+    val rootPath = Paths.get(root).toAbsolutePath.normalize
+    if (Files.isDirectory(rootPath)) {
+      val stream = Files.walk(rootPath)
+      val paths = try stream.iterator.asScala.toList finally stream.close()
+      paths.filter(p => Files.isRegularFile(p) && !generated.contains(p)).foreach(Files.delete)
+      paths.filter(Files.isDirectory(_)).sortBy(p => -p.getNameCount).foreach { dir =>
+        val entries = Files.list(dir)
+        val empty = try !entries.iterator.hasNext finally entries.close()
+        if (empty) {
+          Files.delete(dir)
+        }
+      }
+    }
   }
 
   implicit class IntExtensions(i: Int) {

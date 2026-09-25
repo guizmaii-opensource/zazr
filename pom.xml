@@ -132,23 +132,29 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>${maven.clean.version}</version>
+                    <configuration>
+                        <!-- `make clean` deletes the generated sources with target/. A build never does: the generator
+                             rewrites only the files whose content changed and deletes the ones it no longer produces,
+                             so an unchanged src-gen does not recompile the module. -->
+                        <filesets>
+                            <fileset>
+                                <directory>${project.basedir}/src-gen</directory>
+                            </fileset>
+                        </filesets>
+                    </configuration>
                     <executions>
                         <execution>
-                            <id>clean-generated-sources</id>
-                            <phase>generate-sources</phase>
+                            <!-- The javadoc plugin never deletes its output directory, so the page of a class the
+                                 generator no longer produces would stay in the javadoc jar. `make javadoc` runs this
+                                 execution too, by its id. -->
+                            <id>clean-apidocs</id>
+                            <phase>prepare-package</phase>
                             <goals>
                                 <goal>clean</goal>
                             </goals>
                             <configuration>
-                                <!-- src-gen and the javadoc output only; the rest of target/ is left to `make clean`.
-                                     The javadoc plugin never deletes its output directory, so a page of a class the
-                                     generator no longer produces would otherwise stay in the javadoc jar. The compiler
-                                     plugin removes the class files of a dropped source itself. -->
                                 <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                                <filesets>
-                                    <fileset>
-                                        <directory>${project.basedir}/src-gen</directory>
-                                    </fileset>
+                                <filesets combine.self="override">
                                     <fileset>
                                         <directory>${project.build.directory}/reports/apidocs</directory>
                                     </fileset>
