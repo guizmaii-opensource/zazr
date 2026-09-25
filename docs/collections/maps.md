@@ -17,7 +17,7 @@ new map.
 
 - `HashMap` by default.
 - `LinkedHashMap` when the order the keys were inserted in matters. Overwriting a key keeps its position.
-- `TreeMap` for keys in sorted order, ranges, or the least and the greatest key.
+- `TreeMap` for keys in sorted order, or the least and the greatest key.
 
 ```java
 HashMap<String, Integer> stock = HashMap.of("apple", 3, "pear", 0);

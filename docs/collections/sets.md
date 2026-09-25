@@ -18,7 +18,7 @@ Three sets with the same operations: `add`, `remove`, `contains`, `union`, `inte
 - `HashSet` by default.
 - `LinkedHashSet` when the order the elements arrived in matters, for example to remove duplicates from a sequence
   and keep its order.
-- `TreeSet` when you need the elements sorted, a range of them, or the least and the greatest.
+- `TreeSet` when you need the elements sorted, or the least and the greatest.
 
 ```java
 HashSet<String> tags = HashSet.of("java", "scala");
