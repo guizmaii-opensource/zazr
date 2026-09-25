@@ -2,8 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
-import com.guizmaii.zazr.test.legacy.Property;
+import com.guizmaii.zazr.test.Check;
 
 /**
  * The laws of {@code zip}, {@code zipLeft} and {@code zipRight}.
@@ -20,9 +19,8 @@ public final class ZipLaws {
      * @return the law
      */
     public static <F> Law<ZipSubject<F>> zipAssociativity() {
-        return Law.of("zipAssociativity", subject -> Property.named("zipAssociativity")
-                .forAll(subject.values(), subject.values(), subject.values())
-                .suchThatResult((fa, fb, fc) -> Results.equal(
+        return Law.of("zipAssociativity", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                subject.values(), (fa, fb, fc) -> Results.equal(
                         subject.map(subject.zip(subject.zip(fa, fb), fc), ZipLaws::flattenLeft),
                         subject.map(subject.zip(fa, subject.zip(fb, fc)), ZipLaws::flattenRight))));
     }
@@ -34,9 +32,8 @@ public final class ZipLaws {
      * @return the law
      */
     public static <F> Law<ZipSidesSubject<F>> zipLeftIdentity() {
-        return Law.of("zipLeftIdentity", subject -> Property.named("zipLeftIdentity")
-                .forAll(subject.values(), Arbitrary.integer())
-                .suchThatResult((fa, a) -> Results.equal(subject.zipLeft(fa, subject.succeed(a)), fa)));
+        return Law.of("zipLeftIdentity", (subject, config) -> Check.check(config, subject.values(), Values.integers(),
+                (fa, a) -> Results.equal(subject.zipLeft(fa, subject.succeed(a)), fa)));
     }
 
     /**
@@ -46,9 +43,8 @@ public final class ZipLaws {
      * @return the law
      */
     public static <F> Law<ZipSidesSubject<F>> zipRightIdentity() {
-        return Law.of("zipRightIdentity", subject -> Property.named("zipRightIdentity")
-                .forAll(subject.values(), Arbitrary.integer())
-                .suchThatResult((fa, a) -> Results.equal(subject.zipRight(subject.succeed(a), fa), fa)));
+        return Law.of("zipRightIdentity", (subject, config) -> Check.check(config, subject.values(), Values.integers(),
+                (fa, a) -> Results.equal(subject.zipRight(subject.succeed(a), fa), fa)));
     }
 
     /**
@@ -58,9 +54,8 @@ public final class ZipLaws {
      * @return the law
      */
     public static <F> Law<ZipSidesSubject<F>> zipLeftIsZipThenFirst() {
-        return Law.of("zipLeftIsZipThenFirst", subject -> Property.named("zipLeftIsZipThenFirst")
-                .forAll(subject.values(), subject.values())
-                .suchThatResult((fa, fb) -> Results.equal(subject.zipLeft(fa, fb),
+        return Law.of("zipLeftIsZipThenFirst", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                (fa, fb) -> Results.equal(subject.zipLeft(fa, fb),
                         subject.map(subject.zip(fa, fb), t -> ((Tuple2<?, ?>) t)._1()))));
     }
 
@@ -71,9 +66,8 @@ public final class ZipLaws {
      * @return the law
      */
     public static <F> Law<ZipSidesSubject<F>> zipRightIsZipThenSecond() {
-        return Law.of("zipRightIsZipThenSecond", subject -> Property.named("zipRightIsZipThenSecond")
-                .forAll(subject.values(), subject.values())
-                .suchThatResult((fa, fb) -> Results.equal(subject.zipRight(fa, fb),
+        return Law.of("zipRightIsZipThenSecond", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                (fa, fb) -> Results.equal(subject.zipRight(fa, fb),
                         subject.map(subject.zip(fa, fb), t -> ((Tuple2<?, ?>) t)._2()))));
     }
 

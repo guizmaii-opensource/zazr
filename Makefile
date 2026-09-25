@@ -80,7 +80,8 @@ DOCS_EXAMPLES_TESTS := \
 	zazr-core/src/test/java/com/guizmaii/zazr/docs/DocsExamplesTest.java \
 	zazr-core/src/test/java/com/guizmaii/zazr/docs/SkillExamplesTest.java \
 	zazr-core/src/test/java/com/guizmaii/zazr/docs/SkillFunctionalJavaExamplesTest.java \
-	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java
+	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java \
+	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsLawsExamplesTest.java
 
 docs-examples: ## fail when a java block of the site or the skill is not in a docs example test (they compile and run every snippet)
 	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --docs skills --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)

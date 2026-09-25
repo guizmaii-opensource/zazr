@@ -1,11 +1,11 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.function.Function;
 
 /**
- * A type checked by the {@link MapLaws}: its arbitrary values and its {@code map}.
+ * A type checked by the {@link MapLaws}: the generator of its values and its {@code map}.
  * <p>
  * The laws cannot name the element type of {@code F}, so they see the elements as {@code Object}. The values of
  * {@link #values()} hold {@link Integer} elements: the functions the laws generate are functions of integers.
@@ -15,11 +15,11 @@ import java.util.function.Function;
 public interface MapSubject<F> {
 
     /**
-     * Arbitrary values of the type under test, whose elements are integers.
+     * The generator of the values of the type under test, whose elements are integers.
      *
-     * @return an arbitrary
+     * @return a generator
      */
-    Arbitrary<F> values();
+    Gen<F> values();
 
     /**
      * Applies {@code f} to every element of {@code fa}.

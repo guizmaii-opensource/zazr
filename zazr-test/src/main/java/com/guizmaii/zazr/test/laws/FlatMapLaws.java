@@ -1,17 +1,17 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.legacy.Arbitrary;
-import com.guizmaii.zazr.test.legacy.Property;
+import com.guizmaii.zazr.test.Check;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.function.Function;
 
 /**
  * The laws of {@code flatMap} and {@code succeed}. The functions passed to {@code flatMap} return values drawn from
- * the subject's own arbitrary, at a size of at most {@value #FUNCTION_SIZE} so that nested collections stay small.
+ * the subject's own generator, at a size of at most {@value #FUNCTION_SIZE} so that nested collections stay small.
  */
 public final class FlatMapLaws {
 
-    /// The size hint of the values returned by the generated functions.
+    /// The largest size of the values returned by the generated functions.
     static final int FUNCTION_SIZE = 8;
 
     private FlatMapLaws() {
@@ -24,13 +24,11 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> flatMapAssociativity() {
-        return Law.of("flatMapAssociativity", subject -> {
-            final Arbitrary<Function<Object, F>> functions = functions(subject);
-            return Property.named("flatMapAssociativity")
-                    .forAll(subject.values(), functions, functions)
-                    .suchThatResult((fa, f, g) -> Results.equal(
-                            subject.flatMap(subject.flatMap(fa, f), g),
-                            subject.flatMap(fa, x -> subject.flatMap(f.apply(x), g))));
+        return Law.of("flatMapAssociativity", (subject, config) -> {
+            final Gen<Function<Object, F>> functions = functions(subject);
+            return Check.check(config, subject.values(), functions, functions, (fa, f, g) -> Results.equal(
+                    subject.flatMap(subject.flatMap(fa, f), g),
+                    subject.flatMap(fa, x -> subject.flatMap(f.apply(x), g))));
         });
     }
 
@@ -41,9 +39,8 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> flatMapLeftIdentity() {
-        return Law.of("flatMapLeftIdentity", subject -> Property.named("flatMapLeftIdentity")
-                .forAll(Arbitrary.integer(), functions(subject))
-                .suchThatResult((a, f) -> Results.equal(subject.flatMap(subject.succeed(a), f), f.apply(a))));
+        return Law.of("flatMapLeftIdentity", (subject, config) -> Check.check(config, Values.integers(), functions(subject),
+                (a, f) -> Results.equal(subject.flatMap(subject.succeed(a), f), f.apply(a))));
     }
 
     /**
@@ -53,9 +50,8 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> flatMapRightIdentity() {
-        return Law.of("flatMapRightIdentity", subject -> Property.named("flatMapRightIdentity")
-                .forAll(subject.values())
-                .suchThatResult(fa -> Results.equal(subject.flatMap(fa, subject::succeed), fa)));
+        return Law.of("flatMapRightIdentity", (subject, config) -> Check.check(config, subject.values(),
+                fa -> Results.equal(subject.flatMap(fa, subject::succeed), fa)));
     }
 
     /**
@@ -65,9 +61,8 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> mapIsFlatMapSucceed() {
-        return Law.of("mapIsFlatMapSucceed", subject -> Property.named("mapIsFlatMapSucceed")
-                .forAll(subject.values(), Functions.integers().arbitrary())
-                .suchThatResult((fa, f) -> Results.equal(subject.map(fa, f), subject.flatMap(fa, x -> subject.succeed(f.apply(x))))));
+        return Law.of("mapIsFlatMapSucceed", (subject, config) -> Check.check(config, subject.values(), Functions.integers(),
+                (fa, f) -> Results.equal(subject.map(fa, f), subject.flatMap(fa, x -> subject.succeed(f.apply(x))))));
     }
 
     /**
@@ -81,7 +76,7 @@ public final class FlatMapLaws {
         return Laws.of(flatMapAssociativity(), flatMapLeftIdentity(), flatMapRightIdentity(), mapIsFlatMapSucceed());
     }
 
-    private static <F> Arbitrary<Function<Object, F>> functions(FlatMapSubject<F> subject) {
-        return size -> Functions.to(subject.values(), Math.min(size, FUNCTION_SIZE));
+    private static <F> Gen<Function<Object, F>> functions(FlatMapSubject<F> subject) {
+        return Gen.sized(size -> Functions.to(subject.values(), Math.min(size, FUNCTION_SIZE)));
     }
 }

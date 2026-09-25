@@ -2,7 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 
 import java.util.function.Function;
@@ -15,8 +15,8 @@ class StreamLawsTest extends SequenceLawsSuite<Stream<?>, Stream<Integer>, Strea
     static final class Subject implements FlatMapSubject<Stream<?>>, ZipSubject<Stream<?>> {
 
         @Override
-        public Arbitrary<Stream<?>> values() {
-            return Arbitrary.stream(Arbitrary.integer()).map(value -> value);
+        public Gen<Stream<?>> values() {
+            return Gen.stream(Values.integers()).map(value -> value);
         }
 
         @Override
@@ -47,11 +47,11 @@ class StreamLawsTest extends SequenceLawsSuite<Stream<?>, Stream<Integer>, Strea
 
     @Override
     CollectionSubject<Integer, Stream<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.stream(Arbitrary.integer()), Stream::ofAll, Stream::size, Stream::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(Gen.stream(Values.integers()), Stream::ofAll, Stream::size, Stream::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Stream<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), Stream.collector(), Stream::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), Stream.collector(), Stream::ofAll, Option.some(IterationOrder.input()));
     }
 }
