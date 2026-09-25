@@ -65,4 +65,4 @@ Option<NonEmptyVector<String>> fromNothing = Vector.<String>empty().toNonEmptyVe
 - A `NonEmptyVector` is not a `Vector` and is not equal to one with the same elements; compare through `toVector()`.
 - It is `Iterable`, but not a `Traversable`: a method that takes a `Traversable` needs `toVector()`.
 - `Validation` uses it for its errors, and `Validation.forEach` over a `NonEmptyVector` returns one
-  ([Validation](validation.md)).
+  ([Validation](control/validation.md)).

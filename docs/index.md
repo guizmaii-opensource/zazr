@@ -63,7 +63,7 @@ its API, not an afterthought. Its design comes from modern Scala's collections a
 
     `Validation` collects every error instead of stopping at the first, in a list that is never empty.
 
-    [:octicons-arrow-right-24: Validation](validation.md)
+    [:octicons-arrow-right-24: Validation](control/validation.md)
 
 -   :material-numeric-8-box-multiple-outline:{ .lg } __Combine up to eight values in one call__
 
@@ -89,7 +89,7 @@ its API, not an afterthought. Its design comes from modern Scala's collections a
     `Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so a `switch` over them is checked
     by the compiler.
 
-    [:octicons-arrow-right-24: Control types](control-types.md)
+    [:octicons-arrow-right-24: Control types](control/index.md)
 
 -   :material-null:{ .lg } __No `null` inside__
 
@@ -143,7 +143,7 @@ for (int i = 0; i < 1_000; i++) {
 Vector<Integer> numbers = builder.result();
 ```
 
-`name`, `age` and `email` each return a `Validation<String, ...>`; [Validation](validation.md) shows them.
+`name`, `age` and `email` each return a `Validation<String, ...>`; [Validation](control/validation.md) shows them.
 
 </div>
 
