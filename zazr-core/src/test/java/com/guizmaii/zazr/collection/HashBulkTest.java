@@ -204,7 +204,8 @@ public class HashBulkTest {
         assertThat(map.replaceAll((k, v) -> k.id)).allMatch(t -> t._2() == t._1().id);
         assertThatThrownBy(() -> map.mapValues(v -> null)).isInstanceOf(NullPointerException.class).hasMessage("HashMap: value is null");
         assertThatThrownBy(() -> map.mapValues(null)).isInstanceOf(NullPointerException.class).hasMessage("valueMapper is null");
-        assertThat(HashMap.<Key, Integer> empty().replaceAll(null)).isSameAs(HashMap.empty());
+        assertThatThrownBy(() -> HashMap.<Key, Integer> empty().replaceAll(null)).isInstanceOf(NullPointerException.class)
+                .hasMessage("function is null");
     }
 
     @Test

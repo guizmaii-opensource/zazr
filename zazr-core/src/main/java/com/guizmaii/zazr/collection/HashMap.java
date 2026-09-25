@@ -938,7 +938,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        // no null check: an empty map never calls the function, so it accepts a null one
+        Objects.requireNonNull(function, "function is null");
         return transformed(function);
     }
 
