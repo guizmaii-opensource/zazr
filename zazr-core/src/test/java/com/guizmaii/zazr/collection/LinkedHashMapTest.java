@@ -2214,6 +2214,160 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         }
     }
 
+    /// The key set of a LinkedHashMap is a LinkedHashSet over the map itself, whose values are not the keys: every
+    /// operation on it matches a LinkedHashSet built from the same keys, order included.
+    @Nested
+    class KeySetAsLinkedHashSetTests {
+        // values that differ from the keys, so an operation that looks at them cannot pass by accident
+        private final LinkedHashMap<String, Integer> map = LinkedHashMap.of("a", 1, "b", 2, "c", 3, "d", 4);
+
+        private LinkedHashSet<String> keys(LinkedHashMap<String, Integer> source) {
+            return (LinkedHashSet<String>) source.keySet();
+        }
+
+        private LinkedHashSet<String> sameKeys(LinkedHashMap<String, Integer> source) {
+            return LinkedHashSet.ofAll(source.toList().map(Tuple2::_1));
+        }
+
+        private void assertSameOrder(Set<String> actual, Set<String> expected, List<String> literal) {
+            Assertions.assertThat(actual.toList()).isEqualTo(literal);
+            Assertions.assertThat(expected.toList()).isEqualTo(literal);
+        }
+
+        @Test
+        public void replacePresentElement() {
+            assertSameOrder(keys(map).replace("b", "z"), sameKeys(map).replace("b", "z"), List.of("a", "z", "c", "d"));
+        }
+
+        @Test
+        public void replaceAbsentElement() {
+            final LinkedHashSet<String> keys = keys(map);
+            Assertions.assertThat(keys.replace("x", "z")).isSameAs(keys);
+            assertSameOrder(keys.replace("x", "z"), sameKeys(map).replace("x", "z"), List.of("a", "b", "c", "d"));
+        }
+
+        @Test
+        public void replaceByItself() {
+            final LinkedHashSet<String> keys = keys(map);
+            Assertions.assertThat(keys.replace("b", "b")).isSameAs(keys);
+        }
+
+        @Test
+        public void replaceByAnElementAlreadyPresent() {
+            assertSameOrder(keys(map).replace("a", "c"), sameKeys(map).replace("a", "c"), List.of("c", "b", "d"));
+            assertSameOrder(keys(map).replace("c", "a"), sameKeys(map).replace("c", "a"), List.of("b", "a", "d"));
+        }
+
+        @Test
+        public void replaceFirstAndLast() {
+            assertSameOrder(keys(map).replace("a", "z"), sameKeys(map).replace("a", "z"), List.of("z", "b", "c", "d"));
+            assertSameOrder(keys(map).replace("d", "z"), sameKeys(map).replace("d", "z"), List.of("a", "b", "c", "z"));
+        }
+
+        @Test
+        public void replaceAfterRemovingTheHeadFromTheMap() {
+            final LinkedHashMap<String, Integer> removed = map.remove("a");
+            assertSameOrder(keys(removed).replace("b", "z"), sameKeys(removed).replace("b", "z"), List.of("z", "c", "d"));
+            assertSameOrder(keys(removed).replace("d", "b"), sameKeys(removed).replace("d", "b"), List.of("c", "b"));
+        }
+
+        @Test
+        public void replaceAfterRemovingAMiddleKeyFromTheMap() {
+            final LinkedHashMap<String, Integer> removed = map.remove("b");
+            assertSameOrder(keys(removed).replace("c", "z"), sameKeys(removed).replace("c", "z"), List.of("a", "z", "d"));
+            assertSameOrder(keys(removed).replace("d", "a"), sameKeys(removed).replace("d", "a"), List.of("c", "a"));
+        }
+
+        @Test
+        public void replaceAfterRemovingFromTheKeySet() {
+            assertSameOrder(keys(map).remove("a").replace("b", "z"), sameKeys(map).remove("a").replace("b", "z"),
+                    List.of("z", "c", "d"));
+            assertSameOrder(keys(map).remove("b").replace("c", "z"), sameKeys(map).remove("b").replace("c", "z"),
+                    List.of("a", "z", "d"));
+            assertSameOrder(keys(map).remove("b").replace("d", "a"), sameKeys(map).remove("b").replace("d", "a"),
+                    List.of("c", "a"));
+        }
+
+        @Test
+        public void replaceAfterOperationsThatKeepTheMapValues() {
+            assertSameOrder(keys(map).add("e").replace("b", "z"), sameKeys(map).add("e").replace("b", "z"),
+                    List.of("a", "z", "c", "d", "e"));
+            assertSameOrder(keys(map).filter(k -> true).replace("b", "z"), sameKeys(map).replace("b", "z"),
+                    List.of("a", "z", "c", "d"));
+            assertSameOrder(keys(map).tail().replace("b", "z"), sameKeys(map).tail().replace("b", "z"),
+                    List.of("z", "c", "d"));
+            assertSameOrder(keys(map).init().replace("b", "z"), sameKeys(map).init().replace("b", "z"),
+                    List.of("a", "z", "c"));
+            assertSameOrder(keys(map).drop(1).replace("d", "z"), sameKeys(map).drop(1).replace("d", "z"),
+                    List.of("b", "c", "z"));
+        }
+
+        @Test
+        public void replaceAllMatchesReplace() {
+            assertSameOrder(keys(map).replaceAll("b", "z"), sameKeys(map).replaceAll("b", "z"), List.of("a", "z", "c", "d"));
+        }
+
+        @Test
+        public void replaceByNullOnlyFailsWhenTheElementIsPresent() {
+            final LinkedHashSet<String> keys = keys(map);
+            Assertions.assertThat(keys.replace("x", null)).isSameAs(keys);
+            assertThatNullPointerException().isThrownBy(() -> keys.replace("b", null));
+            assertThatNullPointerException().isThrownBy(() -> sameKeys(map).replace("b", null));
+        }
+
+        @Test
+        public void replaceLeavesTheMapUnchanged() {
+            keys(map).replace("b", "z");
+            Assertions.assertThat(map.toList()).isEqualTo(List.of(Tuple.of("a", 1), Tuple.of("b", 2), Tuple.of("c", 3), Tuple.of("d", 4)));
+        }
+
+        @Test
+        public void everyOtherOperationMatchesALinkedHashSetOfTheSameKeys() {
+            final LinkedHashSet<String> keys = keys(map);
+            final LinkedHashSet<String> same = sameKeys(map);
+            final Set<String> other = LinkedHashSet.of("c", "x", "a");
+            assertSameOrder(keys.add("b"), same.add("b"), List.of("a", "b", "c", "d"));
+            assertSameOrder(keys.add("e"), same.add("e"), List.of("a", "b", "c", "d", "e"));
+            assertSameOrder(keys.addAll(List.of("e", "a", "f")), same.addAll(List.of("e", "a", "f")), List.of("a", "b", "c", "d", "e", "f"));
+            assertSameOrder(keys.remove("c"), same.remove("c"), List.of("a", "b", "d"));
+            assertSameOrder(keys.removeAll(List.of("a", "d")), same.removeAll(List.of("a", "d")), List.of("b", "c"));
+            assertSameOrder(keys.retainAll(List.of("d", "b")), same.retainAll(List.of("d", "b")), List.of("b", "d"));
+            assertSameOrder(keys.diff(other), same.diff(other), List.of("b", "d"));
+            assertSameOrder(keys.intersect(other), same.intersect(other), List.of("a", "c"));
+            assertSameOrder(keys.union(other), same.union(other), List.of("a", "b", "c", "d", "x"));
+            assertSameOrder(keys.filter(k -> !k.equals("b")), same.filter(k -> !k.equals("b")), List.of("a", "c", "d"));
+            assertSameOrder(keys.map(String::toUpperCase), same.map(String::toUpperCase), List.of("A", "B", "C", "D"));
+            assertSameOrder(keys.tail(), same.tail(), List.of("b", "c", "d"));
+            assertSameOrder(keys.init(), same.init(), List.of("a", "b", "c"));
+            assertSameOrder(keys.take(2), same.take(2), List.of("a", "b"));
+            assertSameOrder(keys.takeRight(2), same.takeRight(2), List.of("c", "d"));
+            assertSameOrder(keys.drop(2), same.drop(2), List.of("c", "d"));
+            assertSameOrder(keys.dropRight(2), same.dropRight(2), List.of("a", "b"));
+            assertSameOrder(keys.takeWhile(k -> k.compareTo("c") < 0), same.takeWhile(k -> k.compareTo("c") < 0), List.of("a", "b"));
+            assertSameOrder(keys.dropWhile(k -> k.compareTo("c") < 0), same.dropWhile(k -> k.compareTo("c") < 0), List.of("c", "d"));
+            Assertions.assertThat(keys.contains("c")).isTrue();
+            Assertions.assertThat(keys.contains("x")).isFalse();
+            Assertions.assertThat(keys.head()).isEqualTo(same.head());
+            Assertions.assertThat(keys.last()).isEqualTo(same.last());
+            Assertions.assertThat(keys.size()).isEqualTo(same.size());
+            Assertions.assertThat(keys.zipWithIndex().toList()).isEqualTo(same.zipWithIndex().toList());
+            // the windows of a key set are sets over slices of the same map, so they carry its values too
+            assertSameOrder(((LinkedHashSet<String>) keys.sliding(2).head()).replace("a", "z"),
+                    ((LinkedHashSet<String>) same.sliding(2).head()).replace("a", "z"), List.of("z", "b"));
+            assertSameOrder(((LinkedHashSet<String>) keys.grouped(3).last()).replace("d", "z"),
+                    ((LinkedHashSet<String>) same.grouped(3).last()).replace("d", "z"), List.of("z"));
+            assertSameOrder(keys.slideBy(k -> k.compareTo("c") < 0).head().replace("b", "z"),
+                    same.slideBy(k -> k.compareTo("c") < 0).head().replace("b", "z"), List.of("a", "z"));
+            Assertions.assertThat(keys.sliding(2).map(Traversable::toList).toList())
+                    .isEqualTo(same.sliding(2).map(Traversable::toList).toList());
+            Assertions.assertThat(List.ofAll(keys::iterator)).isEqualTo(List.ofAll(same::iterator));
+            Assertions.assertThat(new java.util.ArrayList<>(keys.asJava())).isEqualTo(new java.util.ArrayList<>(same.asJava()));
+            Assertions.assertThat(keys).isEqualTo(same);
+            Assertions.assertThat(keys.hashCode()).isEqualTo(same.hashCode());
+            Assertions.assertThat(keys.toString()).isEqualTo(same.toString());
+        }
+    }
+
     @Nested
     class MapTests {
         @Test

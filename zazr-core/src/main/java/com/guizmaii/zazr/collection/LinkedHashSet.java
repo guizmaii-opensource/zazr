@@ -887,10 +887,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public LinkedHashSet<T> replace(T currentElement, T newElement) {
         if (!Objects.equals(currentElement, newElement) && contains(currentElement)) {
-            final Tuple2<T, Object> currentPair = Tuple.of(currentElement, currentElement);
-            final Tuple2<T, Object> newPair = Tuple.of(newElement, newElement);
-            final LinkedHashMap<T, Object> newMap = map.replace(currentPair, newPair);
-            return new LinkedHashSet<>(newMap);
+            // by key: the map may be the one of a LinkedHashMap.keySet(), whose values are not the elements
+            Objects.requireNonNull(newElement, "LinkedHashSet: element is null");
+            return new LinkedHashSet<>(map.replaceKey(currentElement, Tuple.of(newElement, newElement)));
         } else {
             return this;
         }
