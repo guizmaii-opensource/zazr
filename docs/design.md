@@ -1311,7 +1311,10 @@ the public API does not change.
   `RadixVectorShapes`, the depth replaces the root shift, and the sharing they assert is the finger tree's (a builder
   started from a vector keeps all its leaves; an aligned builder shares the inner leaves of the vector it adds and copies
   its first and last leaves; a builder whose current leaf is partly filled copies every leaf). The checks of primitive
-  leaf types and the package-private `addMapped` are gone.
+  leaf types and the package-private `addMapped` are gone. `ArbitraryShapesTest` in `zazr-test` looked for a trie
+  with an offset; it now looks for a tree whose first leaf is partly filled, the shape a dropped prefix leaves.
+  `VectorContractTest` pins the exception types and messages and the identity of the results at every boundary of the
+  tree, for six ways of building the same vector.
 - **The differential test** keeps its oracle independent: `TrieVector`, a test-only class, computes the operations the
   test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
   (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
