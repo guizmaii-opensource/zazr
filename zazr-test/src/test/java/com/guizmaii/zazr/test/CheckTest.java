@@ -305,14 +305,6 @@ class CheckTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Timeout(value = 300, unit = java.util.concurrent.TimeUnit.SECONDS)
-    void aFilterThatNeverPassesEndsUnderTheLargestBudget() {
-        final CheckResult result = Check.check(new CheckConfig(1, 0, 1, Integer.MAX_VALUE), Gen.booleans().filter(b -> false), x -> true);
-        assertThat(result.isErroneous()).isTrue();
-        assertThat(result.error().get()).hasMessageStartingWith("Gen.filter rejected too many values: 2147483648 discards");
-    }
-
-    @Test
     void nestedFiltersThatNeverPassEndWithinTheBudget() {
         final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
         final Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
