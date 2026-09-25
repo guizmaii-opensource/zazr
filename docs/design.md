@@ -1,6 +1,6 @@
 # Zazr design: what changes from Vavr, and why
 
-Zazr is a fork of Vavr `2.0.0-SNAPSHOT` (Maven, single `vavr` module at fork time; now JDK 25+, becoming a mono-repo). Its goal is to bring the
+Zazr is a fork of the latest Vavr, its `main` branch after the 1.0.1 release (Maven, single `vavr` module at fork time; now JDK 25+, becoming a mono-repo). Its goal is to bring the
 API-design lessons of ZIO and zio-prelude to a Java FP library: plain-English names, one way to do each
 thing, non-empty types that make partial operations total, error accumulation that is the default rather
 than a bolt-on, and collections whose interfaces don't promise more than their implementations can deliver.
@@ -13,7 +13,7 @@ Sources analysed (local clones): `zazr/` (Vavr master), `zio/` (2.1.x), `zio-pre
 
 ---
 
-## 1. Where Vavr 2.0-SNAPSHOT actually stands
+## 1. Where Vavr stood when Zazr forked it
 
 Facts that shape every decision below (all verified in the fork):
 
