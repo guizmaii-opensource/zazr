@@ -138,6 +138,8 @@ val vocabulary: Map[String, Cost] = Map(
   // Stream
 
   // HashSet, HashMap, LinkedHashSet, LinkedHashMap
+  "O(n + n * min(size, n - size))" -> Cost.Polynomial,
+  "O(n + (n / step) * min(size, n - size))" -> Cost.Polynomial,
 
   // TreeSet, TreeMap
 
