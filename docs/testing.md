@@ -87,7 +87,8 @@ Build a `Gen` with `choose`, `map`, `flatMap` and the others, then turn it into 
 
 ```java
 var dice = Gen.choose(1, 6); // Gen<Integer>
-var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b))).arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
+var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b)))
+    .arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
 var sums = Property.named("two dice sum to 2..12")
     .forAll(pairs)
     .suchThat(p -> p._1() + p._2() >= 2 && p._1() + p._2() <= 12)
@@ -168,7 +169,7 @@ subject, such as a `MapSubject` for the map laws. The elements are integers; the
 record Box(Vector<Object> items) {
     Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
 }
-MapSubject<Box> boxes = new MapSubject<>() {
+var boxes = new MapSubject<Box>() {
     public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
     public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
 };

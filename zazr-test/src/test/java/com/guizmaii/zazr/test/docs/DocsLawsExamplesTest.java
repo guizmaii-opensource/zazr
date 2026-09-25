@@ -21,7 +21,7 @@ public class DocsLawsExamplesTest {
         record Box(Vector<Object> items) {
             Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
         }
-        MapSubject<Box> boxes = new MapSubject<>() {
+        var boxes = new MapSubject<Box>() {
             public Gen<Box> values() { return Gen.vector(Gen.intValue(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
             public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
         };

@@ -48,7 +48,8 @@ public class DocsTestingExamplesTest {
     @Test
     void generators() {
         var dice = Gen.choose(1, 6); // Gen<Integer>
-        var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b))).arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
+        var pairs = dice.flatMap(a -> dice.map(b -> Tuple.of(a, b)))
+            .arbitrary(); // Arbitrary<Tuple2<Integer, Integer>>
         var sums = Property.named("two dice sum to 2..12")
             .forAll(pairs)
             .suchThat(p -> p._1() + p._2() >= 2 && p._1() + p._2() <= 12)
