@@ -1584,8 +1584,8 @@ public final class Gen<A> {
     /**
      * A random vector of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size and
      * the size minus one. Each element is the first value of one pass of {@code gen}. The vector is built by
-     * {@code ofAll}, a builder, appends, prepends, as what is left after dropping a prefix (the trie keeps an
-     * offset), or as a slice of a longer vector, each as likely.
+     * {@code ofAll}, a builder, appends, prepends, as what is left after dropping a prefix (the first leaf is left
+     * partly filled), or as a slice of a longer vector, each as likely.
      *
      * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements

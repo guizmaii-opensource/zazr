@@ -9,8 +9,12 @@ The default sequence, like ZIO's `Chunk`. A `Vector` is a tree of arrays of 32 e
 Access by index, `update`, adding at either end, `take`, `drop` and `slice` are "effectively O(1)": their cost grows
 with the depth of the tree, which is never more than six levels.
 
-A `Vector` built from a primitive array, such as `Vector.ofAll(int...)` or `Vector.range`, stores the values
-unboxed.
+The first and the last leaves are kept apart from the rest of the tree. So `head` and `last` read one array, and
+`prepend` and `append` usually copy one leaf of at most 32 elements.
+
+Concatenating two vectors reuses the arrays of the longer one: only the shorter one is copied.
+
+Elements are always stored as objects: `Vector.ofAll(int...)` and `Vector.range` box every value.
 
 ## When to choose it
 

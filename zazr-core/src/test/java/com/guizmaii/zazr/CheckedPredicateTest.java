@@ -27,6 +27,16 @@ public class CheckedPredicateTest {
         return true;
     }
 
+    // -- negate
+
+    @Test
+    public void shouldNegate() throws Exception {
+        final CheckedPredicate<Integer> isPositive = i -> i > 0;
+        final CheckedPredicate<Integer> negated = isPositive.negate();
+        assertThat(negated.test(1)).isFalse();
+        assertThat(negated.test(-1)).isTrue();
+    }
+
     @Nested
     class UncheckedTests {
         @Test
