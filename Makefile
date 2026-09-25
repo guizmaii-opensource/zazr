@@ -56,7 +56,7 @@ vocabulary: ## fail on category-theory vocabulary outside docs/design.md (CLAUDE
 COMPLEXITY_DIR := zazr-core/src/main/java/com/guizmaii/zazr/collection
 COMPLEXITY_FILES := $(addprefix $(COMPLEXITY_DIR)/, \
 	Vector.java List.java Queue.java Stream.java NonEmptyVector.java \
-	HashSet.java LinkedHashSet.java TreeSet.java SortedSet.java \
+	HashSet.java LinkedHashSet.java TreeSet.java SortedSet.java NonEmptySet.java NonEmptySortedSet.java \
 	HashMap.java LinkedHashMap.java TreeMap.java SortedMap.java)
 COMPLEXITY_CONTEXT := $(addprefix --context $(COMPLEXITY_DIR)/, Traversable.java Set.java Map.java)
 COMPLEXITY_PAGE := docs/collections/complexity.md

@@ -947,6 +947,16 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * Narrows to a {@link NonEmptySet}, whose operations that cannot empty it keep that type and whose {@code max},
+     * {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1).
+     *
+     * @return {@code Some(nonEmptySet)} sharing this set's elements, or {@code None} if this set is empty
+     */
+    public Option<NonEmptySet<T>> toNonEmptySet() { return NonEmptySet.fromSet(this); }
+
     // -- Object
 
     @Override
