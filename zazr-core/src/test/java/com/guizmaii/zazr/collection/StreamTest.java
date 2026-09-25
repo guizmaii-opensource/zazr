@@ -6459,6 +6459,13 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void sliceStartsDeepInAnAppendedStreamWithoutOverflow() {
+            final Stream<Integer> appended = Stream.range(0, SIZE - 1).append(SIZE - 1);
+            assertThat(appended.slice(START, START + 2)).isEqualTo(Stream.of(START, START + 1));
+            assertThat(appended.subSequence(SIZE - 2, SIZE)).isEqualTo(Stream.of(SIZE - 2, SIZE - 1));
+        }
+
+        @Test
         public void subSequenceFromStartsDeepWithoutOverflow() {
             final Stream<Integer> actual = longStream().subSequence(START);
             assertThat(actual.length()).isEqualTo(SIZE - START);
@@ -6541,6 +6548,8 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(Stream.of(1, 2, 3).slice(1, 10)).isEqualTo(Stream.of(2, 3));
             assertThat(Stream.of(1, 2, 3).slice(3, 10)).isEmpty();
             assertThat(Stream.of(1, 2, 3).slice(10, 20)).isEmpty();
+            assertThat(Stream.empty().slice(0, 1)).isEmpty();
+            assertThat(Stream.empty().slice(-1, 1)).isEmpty();
         }
 
         @Test

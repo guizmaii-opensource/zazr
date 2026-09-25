@@ -2351,6 +2351,13 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             Assertions.assertThat(keys.last()).isEqualTo(same.last());
             Assertions.assertThat(keys.size()).isEqualTo(same.size());
             Assertions.assertThat(keys.zipWithIndex().toList()).isEqualTo(same.zipWithIndex().toList());
+            // the windows of a key set are sets over slices of the same map, so they carry its values too
+            assertSameOrder(((LinkedHashSet<String>) keys.sliding(2).head()).replace("a", "z"),
+                    ((LinkedHashSet<String>) same.sliding(2).head()).replace("a", "z"), List.of("z", "b"));
+            assertSameOrder(((LinkedHashSet<String>) keys.grouped(3).last()).replace("d", "z"),
+                    ((LinkedHashSet<String>) same.grouped(3).last()).replace("d", "z"), List.of("z"));
+            assertSameOrder(keys.slideBy(k -> k.compareTo("c") < 0).head().replace("b", "z"),
+                    same.slideBy(k -> k.compareTo("c") < 0).head().replace("b", "z"), List.of("a", "z"));
             Assertions.assertThat(keys.sliding(2).map(Traversable::toList).toList())
                     .isEqualTo(same.sliding(2).map(Traversable::toList).toList());
             Assertions.assertThat(List.ofAll(keys::iterator)).isEqualTo(List.ofAll(same::iterator));
