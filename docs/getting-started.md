@@ -54,7 +54,7 @@ without a `module-info.java` need nothing more.
 | Package | Types |
 |---|---|
 | `com.guizmaii.zazr.control` | `Option`, `Either`, `Try`, `Validation` |
-| `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `HashMap`, `LinkedHashMap`, `TreeMap` |
+| `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap` |
 | `com.guizmaii.zazr` | `Lazy`, `Tuple` and `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
 `List` and `Stream` share their names with `java.util.List` and `java.util.stream.Stream`: import the Zazr ones and

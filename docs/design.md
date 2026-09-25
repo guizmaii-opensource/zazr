@@ -659,8 +659,79 @@ now has every operation of `Vector`, each under the same contract, delegating to
   an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
   result.
 
-**Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
-motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
+**Decided.** No `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the motivating cases and
+`NonEmptyVector` covers them. `NonEmptySet`/`NonEmptyMap` were to come only on demand; the maintainer asked for them
+on 2026-09-25 (#110), below.
+
+#### 3.6.1 `NonEmptySet`, `NonEmptyMap` and their sorted variants (decided 2026-09-25, #110)
+
+From zio-prelude's `NonEmptySet`/`NonEmptyMap`/`NonEmptySortedSet`/`NonEmptySortedMap`, under `NonEmptyVector`'s
+contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the entries, `Tuple2<K, V>`, for the maps).
+
+- **Four types, the sorted ones included.** `NonEmptySet<A>` wraps a `HashSet`, `NonEmptySortedSet<A>` a `TreeSet`,
+  `NonEmptyMap<K, V>` a `HashMap`, `NonEmptySortedMap<K, V>` a `TreeMap`. The sorted variants are where the contract
+  pays most: `head` and `last` (O(log n)) become total, `tail`/`init` return the plain type with
+  `tailNonEmpty`/`initNonEmpty` as the narrowing, `grouped`, `sliding` and `slideBy` return a `Vector` of the
+  non-empty type, and `zipWithIndex` a `NonEmptyVector`. A `HashSet` or a `HashMap` has none of these (no order, so no
+  `head`, as decided in 3.7), so without the sorted variants a user wanting a total `head` would have to leave the
+  non-empty types. `LinkedHashSet`/`LinkedHashMap` get no wrapper: nothing asked for one.
+- **Same API as the plain type, minus the deliberate absences**, checked reflectively by each test class overload by
+  overload (name and parameter types), so a missing overload fails as a missing name does; the absences are listed by
+  signature: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
+  (`toNonEmptySet`, `toNonEmptySortedSet`, `toNonEmptyMap`, `toNonEmptySortedMap`); on the sorted ones also
+  `headOption`, `lastOption`, `tailOption`, `initOption`; on the maps also `removeKeys`/`removeValues`, deprecated on
+  `Map` in favour of `rejectKeys`/`rejectValues` (a new type does not start with deprecated methods; the deprecated
+  `removeAll(BiPredicate)` overload is left out for the same reason, `removeAll(Iterable)` keeps the name). Extra:
+  `reduceMap`, as on `NonEmptyVector`.
+- **Returns the non-empty type:** `add`, `addAll(Iterable)`, `union(Set)` (accept the possibly empty type), `map`
+  (equal results merge, never to zero), `as`, `replace`, `replaceAll`, `tap`; on the maps `put` ×4, `merge` ×2,
+  `computeIfAbsent`/`computeIfPresent` (as `Tuple2<V, NonEmptyMap>` / `Tuple2<Option<V>, NonEmptyMap>`: `Maps` only ever
+  puts), `map`, `mapBoth`, `mapKeys` ×2, `mapValues`, `replace` ×2, `replaceAll` ×2 (`replace(Tuple2, Tuple2)` onto a
+  present key shrinks the map by one, never below one), `replaceValue`; the `Comparator` overloads of `map`/`mapBoth`
+  on the sorted ones. `keySet()` returns a `NonEmptySet` (`NonEmptySortedSet` with the map's comparator on a sorted
+  map) and `values()` a `NonEmptyVector`. `groupBy` returns a `NonEmptyMap` of non-empty groups on all four, as on
+  `NonEmptyVector` (below).
+- **`flatMap` / `flatMapAll`**, as on `NonEmptyVector`: `flatMap` takes a function returning the non-empty type,
+  `flatMapAll` one returning any `Iterable` and returns the plain type.
+- **Returns the plain type:** `filter*`, `reject*`, `collect`, `remove`, `removeAll`, `retainAll`, `intersect`, `diff`,
+  `partition`, `partitionMap` (`HashSet` only, `TreeSet` has none), and on the sorted ones `tail`, `init`, `take*`,
+  `drop*`.
+- **Total:** `max()`, `min()`, `maxBy` ×2, `minBy` ×2, `reduce`, `reduceMap`, `fold`, `single` (throws on more than one),
+  `average` as a `double` on the sets, `head`/`last` on the sorted ones, all through the loops of
+  `collection.internal.NonEmptyModule` (no `Option` wrapped to be unwrapped). `max`/`min` stay in the natural order of
+  the elements on the sorted variants, as on `TreeSet`/`TreeMap`; the comparator's extremes are `head`/`last`.
+- **Unwrap and narrowing.** `toSet()`, `toSortedSet()`, `toMap()`, `toSortedMap()` without arguments return the
+  wrapped collection, O(1), next to the existing `to*` conversions with arguments (`TreeSet.toSortedSet()` already
+  returns the set itself, so the name keeps its meaning). Constructors: `of`, `single`, `fromIterable(head, tail)`,
+  `fromIterable(Iterable) : Option`, `fromSet`/`fromSortedSet`/`fromMap`/`fromSortedMap : Option` (wrap without
+  copying), `unsafeFrom…`, static `flatten` on the sets; the sorted ones take an optional leading `Comparator` (natural
+  order otherwise). On the plain types, `HashSet.toNonEmptySet()`, `TreeSet.toNonEmptySortedSet()`,
+  `HashMap.toNonEmptyMap()`, `TreeMap.toNonEmptySortedMap()` return an `Option`.
+- **Set algebra arguments.** `union`/`intersect`/`diff` keep the plain types' `Set` parameter; no overloads taking the
+  non-empty types (they would double the set algebra for each wrapper pair). A non-empty set is an `Iterable`, so
+  `addAll`/`retainAll`/`removeAll` take it directly.
+- **Nulls.** Where the wrapper receives an element, key, value or entry itself (constructors, `add`, `put`, `replace`,
+  `replaceValue`, `as`), it checks first with a message naming the type (`NonEmptyMap.put: key is null`). `addAll` of an
+  `Iterable` and the mapper results go through the plain type's own checks (`HashSet: element is null`): unlike
+  `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
+- **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
+  `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
+  the wrapped collection's `hashCode`, which is unordered. That holds, symmetric and hash-consistent, when the sorted
+  side's comparator is consistent with `equals`, as for the plain `HashSet`/`TreeSet`: with a case-insensitive order,
+  say, `equals` holds one way only (`Collections.equals` asks the argument's `contains`) and the hash codes differ.
+  Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
+- **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
+  `TreeSet`).
+- **Grouping and converting a non-empty collection gives a non-empty map** (maintainer decision, 2026-09-25). On
+  `NonEmptyVector` and the four wrappers, `groupBy` returns a `NonEmptyMap` whose values are the non-empty type
+  (`NonEmptyMap<K, NonEmptyVector<A>>`, `NonEmptyMap<K, NonEmptySet<A>>`, `NonEmptyMap<C, NonEmptySortedMap<K, V>>`…),
+  `toMap` ×2 a `NonEmptyMap` and `toSortedMap` ×4 a `NonEmptySortedMap`: there is at least one element, so at least
+  one entry, whatever the keys. `toLinkedMap` keeps returning a plain map, since there is no non-empty linked map.
+  `arrangeBy` stays an `Option` of a plain map, as it was not part of the decision. The maps are built by package-private
+  `NonEmptyMap.ofMapped`/`ofMappedEntries` (and their `NonEmptySortedMap` twins), one builder pass that puts keys and
+  values without an intermediate `Tuple2` and reports a null key, value or entry under the calling method's name
+  (`NonEmptySet.toMap: keyMapper returned null`), as `NonEmptyVector` already did. This changes 3.6's
+  `groupBy as HashMap<K, NonEmptyVector<A>>`.
 
 ### 3.7 Removing the `Seq` abstraction
 
@@ -1315,6 +1386,60 @@ split.
 Step 2 rebases `Vector` and `Vector.Builder` on `RadixVector` and `VectorBuilder`, with the coordinator's JMH table.
 Step 3 deletes `BitMappedTrie`, `ArrayType` and the differential test.
 
+**Step 2 (#74): `Vector` on the finger tree.** `Vector` holds a `RadixVector` and `Vector.Builder` a `VectorBuilder`;
+the public API does not change.
+- **Contract.** The exception types and messages are those of step 1. A probe of 1 615 edge calls (nulls, bad indices,
+  empty vectors, closed builders, identity results such as `drop(0) == this`, at sizes 0 to 40 000, built by `range` and
+  by `ofAll`) prints the same output on both, but for two messages, both now `Vector: element is null` like every other
+  path that rejects a null element: a `map` whose function returns null on a vector built by `range` or `ofAll(int[])`
+  said `Vector.map: element is null`, and `append(null)`/`prepend(null)` said `List: element is null`, a leftover of
+  the old path through `List.of` (decided with the maintainer, #163). One behaviour changes on purpose:
+  `Vector.of(array)` of 32 elements or fewer used the caller's array as its leaf, so writing into the array afterwards
+  changed the vector; the array is now copied, as it always was above 32 elements.
+- **Primitive leaves (decided): `Object[]` only**, as Scala does. `ofAll(int[])` and the other primitive `ofAll` add
+  each boxed value to the builder; `range` and its variants build from their `Iterator`. A rough probe (one JVM, best
+  of 15 batches after warm-up, not a benchmark; µs per operation at 100 000 elements, step 1 → step 2) shows what
+  primitive leaves bought and cost:
+  - they are cheaper to build and to keep: `ofAll(int[])` 27 → 410, and 4.6 → 20.6 retained bytes per element for
+    values outside the `Integer` cache;
+  - they box on every read: a `get` loop 1 970 → 290, iteration 670 → 130, `map` 1 300 → 540, `filter` 710 → 200.
+
+  Two more shapes lose in the same probe: `range(0, 100 000)` 330 → 570, since every value is now kept boxed (the
+  primitive path boxed it in the `Iterator` too, then unboxed it into an `int[]`), and `drop(1)` 0.02 → 0.05 to 0.12,
+  since a slice goes through `VectorSliceBuilder` (`tail` has its own path and does not).
+
+  A vector is read more often than it is built, and a primitive leaf also made the first write of another class convert
+  the whole vector. So no primitive path is kept; #29 (the `ClassCastException` fallbacks of primitive leaves) has
+  nothing left to fix in `Vector`.
+- **Size hint.** `newBuilder(sizeHint)` still rejects a negative hint but ignores the value: `VectorBuilder` always fills
+  32-wide leaves, and only the arrays cut at the end are trimmed by `result()`. The javadoc and `docs/builders.md` say so.
+- **Operations.** `appendAll`/`prependAll` hand a `Vector` (or the `java.util.List` view of one) to the tree as a tree,
+  so the two are concatenated by arrays; another iterable that can be traversed again is turned into a tree first, and a
+  one-shot one goes through the builder as before. `map` is `RadixVector.map` (the same shape, array by array); `filter`
+  finds the first rejected element and starts the builder from the kept prefix, whose arrays are shared; `flatMap` and
+  `collect` walk the tree with `forEach`; `head`, `last`, `tail`, `init` and `slice` are the tree's own.
+- **Complexity notes.** `head` and `last` are O(1); `append`, `prepend`, `tail` and `init` copy one leaf, amortised
+  O(1); `appendAll`/`prependAll` of a `Vector` are O(min(n, m)) plus O(log n) arrays: Scala's `appendedAll0` appends
+  a short argument element by element, prepends a much shorter receiver onto the argument (`LOG2_CONCAT_FASTER`),
+  aligns the builder on the longer side (`ALIGN_TO_FASTER`) so its arrays are reused whole, and otherwise starts the
+  builder from the receiver's arrays (`initFrom`) and copies the argument, which is then at most 64 elements longer.
+- **Tests.** `VectorTest`, `NonEmptyVectorTest`, the law tests and the docs examples pass unchanged. `VectorBuilderTest`
+  and `VectorPropertyTest` read the trie's leaves and depth, so they change: they read the tree's through a test-only
+  `RadixVectorShapes`, the depth replaces the root shift, and the sharing they assert is the finger tree's (a builder
+  started from a vector keeps all its leaves; an aligned builder shares the inner leaves of the vector it adds and copies
+  its first and last leaves; a builder whose current leaf is partly filled copies every leaf). The checks of primitive
+  leaf types and the package-private `addMapped` are gone. `ArbitraryShapesTest` in `zazr-test` looked for a trie
+  with an offset; it now looks for a tree whose first leaf is partly filled, the shape a dropped prefix leaves.
+  `VectorContractTest` pins the exception types and messages and the identity of the results at every boundary of the
+  tree, for six ways of building the same vector.
+- **The differential test** keeps its oracle independent: `TrieVector`, a test-only class, computes the operations the
+  test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
+  (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
+
+Step 3 then deletes `BitMappedTrie` with `LeafVisitor` and `NodeModifier`, `TrieVector` and the differential test,
+and `ArrayType` with its generator (`genArrayTypes`); `ArrayType`'s last user outside `Vector`,
+`IterableWithSize.toArray` in `Collections`, gets a plain loop.
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same
@@ -1724,6 +1849,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
 | #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
+| #110 | `NonEmptySet`, `NonEmptyMap`, `NonEmptySortedSet`, `NonEmptySortedMap` | 3.6.1 | #90, #27 |
 | #117 | `HashMap` and `HashSet` on CHAMP, ported from Scala | 3.8.2 | #27 |
 
 ---
