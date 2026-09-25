@@ -230,7 +230,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 
 | Method | Cost | Note |
 |---|---|---|
-| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total: one cell per element, built reversed and reversed once.">O(n)</abbr> | O(n) for n inner elements in total: one cell per element, built reversed and reversed once. |
+| `flatten(Iterable<? extends Iterable<? extends T>>)` | <abbr class="cx cx-linear" title="O(n) for n inner elements in total: the elements go into an array, then one cell per element is made from the last to the first.">O(n)</abbr> | O(n) for n inner elements in total: the elements go into an array, then one cell per element is made from the last to the first. |
 | `transpose(List<List<T>>)` | <abbr class="cx cx-polynomial" title="O(rows * columns).">O(rows * columns)</abbr> | O(rows * columns). |
 | `append(T)` | <abbr class="cx cx-linear" title="O(n); every cell of this List is rebuilt.">O(n)</abbr> | O(n); every cell of this List is rebuilt. |
 | `appendAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m appended elements; the elements are copied once and this List is rebuilt.">O(n + m)</abbr> | O(n + m) for m appended elements; the elements are copied once and this List is rebuilt. |

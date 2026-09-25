@@ -20,8 +20,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Bulk construction of TreeSet, TreeMap, HashSet and HashMap from distinct keys, in random and in sorted order.
- * Run on the branch before and after the builders to compare; the benchmark only uses the public API.
+ * Bulk construction of TreeSet, TreeMap, HashSet, HashMap, LinkedHashSet, LinkedHashMap and List from distinct keys,
+ * in random and in sorted order. Run on the branch before and after the builders to compare; the benchmark only uses
+ * the public API.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -38,6 +39,8 @@ public class MapSetBuilderBenchmark {
     private ArrayList<Integer> sorted;
     private ArrayList<Tuple2<Integer, Integer>> shuffledEntries;
     private ArrayList<Tuple2<Integer, Integer>> sortedEntries;
+    /* a collection that is neither a java.util.List nor a NavigableSet, the inputs List.ofAll does not walk backwards */
+    private java.util.ArrayDeque<Integer> deque;
 
     @Setup(Level.Trial)
     public void setup() {
@@ -55,6 +58,7 @@ public class MapSetBuilderBenchmark {
         for (Integer i : shuffled) {
             shuffledEntries.add(Tuple.of(i, i));
         }
+        deque = new java.util.ArrayDeque<>(shuffled);
     }
 
     @Benchmark
@@ -105,5 +109,35 @@ public class MapSetBuilderBenchmark {
     @Benchmark
     public HashMap<Integer, Integer> hashMap_collector() {
         return shuffledEntries.stream().collect(HashMap.collector());
+    }
+
+    @Benchmark
+    public LinkedHashSet<Integer> linkedHashSet_ofAll() {
+        return LinkedHashSet.ofAll(shuffled);
+    }
+
+    @Benchmark
+    public LinkedHashSet<Integer> linkedHashSet_collector() {
+        return shuffled.stream().collect(LinkedHashSet.collector());
+    }
+
+    @Benchmark
+    public LinkedHashMap<Integer, Integer> linkedHashMap_ofEntries() {
+        return LinkedHashMap.ofEntries(shuffledEntries);
+    }
+
+    @Benchmark
+    public LinkedHashMap<Integer, Integer> linkedHashMap_collector() {
+        return shuffledEntries.stream().collect(LinkedHashMap.collector());
+    }
+
+    @Benchmark
+    public List<Integer> list_ofAll() {
+        return List.ofAll(deque);
+    }
+
+    @Benchmark
+    public List<Integer> list_collector() {
+        return shuffled.stream().collect(List.collector());
     }
 }

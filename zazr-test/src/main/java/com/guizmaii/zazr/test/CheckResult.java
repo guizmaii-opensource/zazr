@@ -6,212 +6,157 @@ import com.guizmaii.zazr.control.Option;
 import java.util.Objects;
 
 /**
- * Represents the result of a property check which is
+ * The result of a check, one of three records:
  *
  * <ul>
- * <li>{@link Satisfied}, if all tests satisfied the given property</li>
- * <li>{@link Falsified}, if a counter-example could be discovered that falsified the given property</li>
- * <li>{@link Erroneous}, if an exception occurred executing the property check</li>
+ * <li>{@link Satisfied}: every sample passed;</li>
+ * <li>{@link Falsified}: a sample made the check return {@code false} or throw an {@link AssertionError};</li>
+ * <li>{@link Erroneous}: a generator threw, or the check threw something other than an {@link AssertionError}.</li>
  * </ul>
  *
- * Please note that a {@code Satisfied} property check may be {@code Exhausted}, if the property is an implication
- * and no sample could be found that satisfied the pre-condition. In this case the post-condition is satisfied by
- * definition (see <a href="http://en.wikipedia.org/wiki/Principle_of_explosion">ex falso quodlibet</a>).
+ * A failed result carries the seed of the run and the number of the failing sample: running the same check with
+ * the same seed ({@link CheckConfig#withSeed(long)}, or the system property {@value CheckConfig#SEED_PROPERTY})
+ * fails at the same sample again.
  */
 public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.Falsified, CheckResult.Erroneous {
 
     /**
-     * If this check result is satisfied as specified above.
+     * Whether every sample passed.
      *
-     * @return true, if this check result is satisfied, false otherwise
+     * @return true for a {@link Satisfied} result
      */
     default boolean isSatisfied() {
         return this instanceof Satisfied;
     }
 
     /**
-     * If this check result is falsified as specified above.
+     * Whether a sample falsified the check.
      *
-     * @return true, if this check result is falsified, false otherwise
+     * @return true for a {@link Falsified} result
      */
     default boolean isFalsified() {
         return this instanceof Falsified;
     }
 
     /**
-     * If this check result is erroneous as specified above.
+     * Whether a generator or the check threw.
      *
-     * @return true, if this check result is erroneous, false otherwise
+     * @return true for an {@link Erroneous} result
      */
     default boolean isErroneous() {
         return this instanceof Erroneous;
     }
 
     /**
-     * If this check result is exhausted as specified above.
+     * The values of the sample that failed, one component per generator of the check.
      *
-     * @return true, if this check result is exhausted, false otherwise
-     */
-    default boolean isExhausted() {
-        return this instanceof Satisfied satisfied && satisfied.exhausted();
-    }
-
-    /**
-     * The name of the checked property this result refers to.
-     *
-     * @return a property name
-     */
-    String propertyName();
-
-    /**
-     * The number of checks performed using random generated input data.
-     *
-     * @return the number of checks performed
-     */
-    int count();
-
-    /**
-     * An optional sample which falsified the property or which lead to an error.
-     *
-     * @return an optional sample
+     * @return the counterexample of a falsified result, the sample of an erroneous one when a generator did not
+     * throw, none otherwise
      */
     Option<Tuple> sample();
 
     /**
-     * An optional error.
+     * The error thrown by a generator or the check.
      *
-     * @return an optional error
+     * @return the cause of an erroneous result, none otherwise
      */
-    Option<Error> error();
+    default Option<Throwable> error() {
+        return Option.none();
+    }
 
     /**
-     * An optional explanation supplied by a predicate that falsified the property.
+     * The message of the {@link AssertionError} that falsified the check.
      *
-     * @return the predicate's failure message, or none when no message was supplied
+     * @return the message of a falsified result when the check threw one with a message, none otherwise
      */
     default Option<String> message() {
         return Option.none();
     }
 
     /**
-     * Asserts that this CheckResult is satisfied.
+     * Throws unless every sample passed.
      *
-     * @throws AssertionError if this CheckResult is not satisfied.
+     * @throws AssertionError with the counterexample or the error, the sample number and the seed; the error of an
+     *                        erroneous result is its cause
      */
     default void assertIsSatisfied() {
-        if (!isSatisfied()) {
-            throw new AssertionError("Expected satisfied check result but was " + this);
+        switch (this) {
+            case Satisfied ignored -> {
+            }
+            case Falsified falsified -> throw new AssertionError(falsified.describe());
+            case Erroneous erroneous -> throw new AssertionError(erroneous.describe(), erroneous.cause());
         }
     }
 
     /**
-     * Asserts that this CheckResult is satisfied with a given exhausted state.
+     * Throws unless a sample falsified the check.
      *
-     * @param exhausted The exhausted state to be checked in the case of a satisfied CheckResult.
-     * @throws AssertionError if this CheckResult is not satisfied or the exhausted state does not match.
-     */
-    default void assertIsSatisfiedWithExhaustion(boolean exhausted) {
-        if (!isSatisfied()) {
-            throw new AssertionError("Expected satisfied check result but was " + this);
-        } else if (isExhausted() != exhausted) {
-            throw new AssertionError("Expected satisfied check result to be " + (exhausted ? "" : "not ") + "exhausted but was: " + this);
-        }
-    }
-
-    /**
-     * Asserts that this CheckResult is falsified.
-     *
-     * @throws AssertionError if this CheckResult is not falsified.
+     * @throws AssertionError if this result is not falsified
      */
     default void assertIsFalsified() {
         if (!isFalsified()) {
-            throw new AssertionError("Expected falsified check result but was " + this);
+            throw new AssertionError("expected a falsified check, but it was " + this);
         }
     }
 
     /**
-     * Asserts that this CheckResult is erroneous.
+     * Throws unless a generator or the check threw.
      *
-     * @throws AssertionError if this CheckResult is not erroneous.
+     * @throws AssertionError if this result is not erroneous
      */
     default void assertIsErroneous() {
         if (!isErroneous()) {
-            throw new AssertionError("Expected erroneous check result but was " + this);
+            throw new AssertionError("expected an erroneous check, but it was " + this);
         }
     }
 
     /**
-     * A satisfied property check.
+     * Every sample passed.
      *
-     * @param propertyName the name of the checked property
-     * @param count        the number of checks performed
-     * @param exhausted    whether no sample satisfied the precondition of an implication
+     * @param samples the number of samples checked
      */
-    record Satisfied(String propertyName, int count, boolean exhausted) implements CheckResult {
+    record Satisfied(int samples) implements CheckResult {
 
         /**
          * Creates a satisfied result.
          *
-         * @param propertyName the name of the checked property
-         * @param count        the number of checks performed
-         * @param exhausted    whether no sample satisfied the precondition of an implication
-         * @throws NullPointerException if {@code propertyName} is null
+         * @param samples the number of samples checked
+         * @throws IllegalArgumentException if {@code samples} is negative
          */
         public Satisfied {
-            Objects.requireNonNull(propertyName, "propertyName is null");
+            Gen.requireNonNegative(samples, "samples");
         }
 
         @Override
         public Option<Tuple> sample() {
             return Option.none();
         }
-
-        @Override
-        public Option<Error> error() {
-            return Option.none();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Satisfied(propertyName = %s, count = %s, exhausted = %s)", propertyName, count, exhausted);
-        }
     }
 
     /**
-     * A falsified property check.
+     * A sample made the check return {@code false} or throw an {@link AssertionError}.
      *
-     * @param propertyName   the name of the checked property
-     * @param count          the number of the check that found the counterexample
-     * @param counterexample the generated values that falsified the property
-     * @param message        the explanation supplied by the predicate, if any
+     * @param sampleNumber   the number of the sample, from 1
+     * @param seed           the seed of the run
+     * @param counterexample the values of the sample
+     * @param message        the message of the {@link AssertionError}, if the check threw one with a message
      */
-    record Falsified(String propertyName, int count, Tuple counterexample, Option<String> message) implements CheckResult {
+    record Falsified(int sampleNumber, long seed, Tuple counterexample, Option<String> message) implements CheckResult {
 
         /**
          * Creates a falsified result.
          *
-         * @param propertyName   the name of the checked property
-         * @param count          the number of the check that found the counterexample
-         * @param counterexample the generated values that falsified the property
-         * @param message        the explanation supplied by the predicate, if any
-         * @throws NullPointerException if an argument is null
+         * @param sampleNumber   the number of the sample, from 1
+         * @param seed           the seed of the run
+         * @param counterexample the values of the sample
+         * @param message        the message of the {@link AssertionError}, if any
+         * @throws NullPointerException     if {@code counterexample} or {@code message} is null
+         * @throws IllegalArgumentException if {@code sampleNumber} is below 1
          */
         public Falsified {
-            Objects.requireNonNull(propertyName, "propertyName is null");
+            requirePositive(sampleNumber);
             Objects.requireNonNull(counterexample, "counterexample is null");
             Objects.requireNonNull(message, "message is null");
-        }
-
-        /**
-         * Creates a falsified result without an explanation.
-         *
-         * @param propertyName   the name of the checked property
-         * @param count          the number of the check that found the counterexample
-         * @param counterexample the generated values that falsified the property
-         * @throws NullPointerException if an argument is null
-         */
-        public Falsified(String propertyName, int count, Tuple counterexample) {
-            this(propertyName, count, counterexample, Option.none());
         }
 
         @Override
@@ -220,77 +165,96 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
         }
 
         @Override
-        public Option<Error> error() {
-            return Option.none();
+        public Option<String> message() {
+            return message;
         }
 
-        @Override
-        public String toString() {
-            return String.format("Falsified(propertyName = %s, count = %s, sample = %s%s)", propertyName, count, counterexample,
-                    message.map(m -> ", message = " + m).getOrElse(""));
+        String describe() {
+            return "falsified at sample " + sampleNumber + " by " + counterexample
+                    + message.map(m -> ": " + m).getOrElse("") + replay(seed);
         }
     }
 
     /**
-     * An erroneous property check. Two erroneous results are equal when their causes have the same messages along
-     * the whole cause chain.
+     * A generator threw, or the check threw something other than an {@link AssertionError}. Two erroneous results
+     * are equal when their causes have the same class and message along the whole cause chain.
      *
-     * @param propertyName the name of the checked property
-     * @param count        the number of the check that failed
-     * @param cause        the error thrown by an arbitrary, a generator or the predicate
-     * @param sample       the generated values, when the error was thrown by the predicate
+     * @param sampleNumber the number of the sample being generated or checked, from 1
+     * @param seed         the seed of the run
+     * @param cause        what was thrown
+     * @param sample       the values of the sample, when the check threw; none when a generator did
      */
-    record Erroneous(String propertyName, int count, Error cause, Option<Tuple> sample) implements CheckResult {
+    record Erroneous(int sampleNumber, long seed, Throwable cause, Option<Tuple> sample) implements CheckResult {
 
         /**
          * Creates an erroneous result.
          *
-         * @param propertyName the name of the checked property
-         * @param count        the number of the check that failed
-         * @param cause        the error thrown by an arbitrary, a generator or the predicate
-         * @param sample       the generated values, when the error was thrown by the predicate
-         * @throws NullPointerException if {@code propertyName} or {@code sample} is null
+         * @param sampleNumber the number of the sample, from 1
+         * @param seed         the seed of the run
+         * @param cause        what was thrown
+         * @param sample       the values of the sample, if any
+         * @throws NullPointerException     if {@code cause} or {@code sample} is null
+         * @throws IllegalArgumentException if {@code sampleNumber} is below 1
          */
         public Erroneous {
-            Objects.requireNonNull(propertyName, "propertyName is null");
+            requirePositive(sampleNumber);
+            Objects.requireNonNull(cause, "cause is null");
             Objects.requireNonNull(sample, "sample is null");
         }
 
         @Override
-        public Option<Error> error() {
-            return cause == null ? Option.none() : Option.some(cause);
+        public Option<Throwable> error() {
+            return Option.some(cause);
         }
 
         @Override
         public boolean equals(Object o) {
             return o == this || (o instanceof Erroneous that
-                    && Objects.equals(this.propertyName, that.propertyName)
-                    && this.count == that.count
-                    && deepEquals(this.cause, that.cause)
-                    && Objects.equals(this.sample, that.sample));
+                    && this.sampleNumber == that.sampleNumber
+                    && this.seed == that.seed
+                    && sameCauses(this.cause, that.cause)
+                    && this.sample.equals(that.sample));
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(propertyName, count, deepHashCode(cause), sample);
+            return Objects.hash(sampleNumber, seed, causesHashCode(cause), sample);
         }
 
-        @Override
-        public String toString() {
-            return String.format("Erroneous(propertyName = %s, count = %s, error = %s, sample = %s)", propertyName, count,
-                    cause == null ? null : cause.getMessage(), sample);
+        String describe() {
+            return "erroneous at sample " + sampleNumber
+                    + sample.map(values -> " with " + values).getOrElse(", while generating it")
+                    + ": " + cause + replay(seed);
         }
 
-        static boolean deepEquals(Throwable t1, Throwable t2) {
-            return (t1 == null && t2 == null) || (
-                    t1 != null && t2 != null
-                            && Objects.equals(t1.getMessage(), t2.getMessage())
-                            && deepEquals(t1.getCause(), t2.getCause())
-            );
+        private static boolean sameCauses(Throwable t1, Throwable t2) {
+            while (t1 != null && t2 != null) {
+                if (t1.getClass() != t2.getClass() || !Objects.equals(t1.getMessage(), t2.getMessage())) {
+                    return false;
+                }
+                t1 = t1.getCause();
+                t2 = t2.getCause();
+            }
+            return t1 == null && t2 == null;
         }
 
-        static int deepHashCode(Throwable t) {
-            return t == null ? 0 : Objects.hash(t.getMessage(), deepHashCode(t.getCause()));
+        private static int causesHashCode(Throwable t) {
+            int hash = 0;
+            while (t != null) {
+                hash = 31 * hash + Objects.hash(t.getClass(), t.getMessage());
+                t = t.getCause();
+            }
+            return hash;
         }
+    }
+
+    private static void requirePositive(int sampleNumber) {
+        if (sampleNumber < 1) {
+            throw new IllegalArgumentException("sampleNumber is below 1: " + sampleNumber);
+        }
+    }
+
+    private static String replay(long seed) {
+        return " (seed " + seed + ", replay with -D" + CheckConfig.SEED_PROPERTY + "=" + seed + ")";
     }
 }
