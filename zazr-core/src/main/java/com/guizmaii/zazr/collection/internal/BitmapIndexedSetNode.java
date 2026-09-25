@@ -48,6 +48,11 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         return contains(element, Objects.hashCode(element), 0);
     }
 
+    /// The element kept for `element`, or null when absent.
+    public @Nullable T find(T element) {
+        return find(element, Objects.hashCode(element), 0);
+    }
+
     /// The trie with `element`: an equal element present is replaced when `replace` is set, and kept (this trie
     /// returned) otherwise; this trie too when it is the same object.
     public BitmapIndexedSetNode<T> updated(T element, boolean replace) {
@@ -128,6 +133,19 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             return getNode(indexFrom(nodeMap, bitpos)).contains(element, hash, shift + BIT_PARTITION_SIZE);
         } else {
             return false;
+        }
+    }
+
+    @Override
+    @Nullable T find(T element, int hash, int shift) {
+        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        if ((dataMap & bitpos) != 0) {
+            final int index = indexFrom(dataMap, bitpos);
+            return (hashes[index] == hash && Objects.equals(element, getPayload(index))) ? getPayload(index) : null;
+        } else if ((nodeMap & bitpos) != 0) {
+            return getNode(indexFrom(nodeMap, bitpos)).find(element, hash, shift + BIT_PARTITION_SIZE);
+        } else {
+            return null;
         }
     }
 

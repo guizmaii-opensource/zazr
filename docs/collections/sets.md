@@ -14,7 +14,7 @@ Three sets with the same operations: `add`, `remove`, `contains`, `union`, `inte
 | `TreeSet` | a sorted, balanced tree | the comparator's | yes |
 
 `HashSet` is the structure of Scala's immutable `HashSet`: a tree of nodes with up to 32 slots each, where five bits
-of the element's hash pick the slot at each level. A node stores its elements inline, so an element costs no object
+of a mix of the element's hash code pick the slot at each level. A node stores its elements inline, so an element costs no object
 of its own. Removing an element folds the tree back, so equal sets have the same shape whatever order their elements
 came in.
 

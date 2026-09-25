@@ -1316,9 +1316,13 @@ deleted. Attribution in `NOTICE`.
   pairs). Removal pulls a child that is down to one entry back inline, so the shape is canonical: equal collections
   have equal trees, up to the order inside a collision node. Iteration yields a node's entries before its children's,
   so the order of a `HashMap` or `HashSet` differs from the Vavr trie's whenever a node has children.
-- **No hash scrambling.** Scala scrambles `hashCode` (`Hashing.improve`) and keeps both hashes in the nodes; Zazr uses
-  `Objects.hashCode(key)` as is, as the Vavr trie did. Same distribution as before (no new pathological inputs, no
-  lost ones), one hash per entry, and the cached per-node hash sum is then the `java.util.Set` hash of the keys.
+- **Hash mixing, as Scala (decided 2026-09-26, the rule being to copy what Scala does).** A key's slots come from
+  Scala's `Hashing.improve` of its `hashCode`, so hash codes that differ only in their high bits still spread over the
+  first levels; the nodes store the `hashCode` itself, as Scala stores the original hash. The mixing is a bijection, so
+  equal stored hashes mean equal mixed ones. One difference: Scala caches per node the sum of the mixed hashes; Zazr
+  caches the sum of the hash codes, which serves the same comparisons and is also the `java.util.Set` hash of the keys
+  (`HashSet.hashCode` reads it). Iteration orders changed accordingly; tests that placed keys by their hash code place
+  them by their mixed hash (`ChampValidity.hashCodeFor` undoes the mixing).
 - **Which of two equal keys is kept: `put`'s rule for maps, `add`'s for sets (decided 2026-09-25).** Scala's
   `updated` keeps the old key and replaces only the value (the key write is commented out in `copyAndSetValue`), and
   its collision node skips an update whose value is the same object whatever the key. Zazr's `HashMap.put` has always
@@ -1328,8 +1332,9 @@ deleted. Attribution in `NOTICE`.
   collector kept the last of equal elements, and `addAll`/`union` replaced the elements already there unless nothing
   was new (then the receiver, with its old elements, came back): the inconsistency #136 removed from `LinkedHashSet`.
   Every `HashSet` factory and bulk addition now keeps the first of equal elements, as `add` does: the set nodes take a
-  `replace` flag, which the public operations never set. (`replace(current, new)` still swaps in the new object, and
-  `intersect` still keeps the elements of the smaller side.)
+  `replace` flag, which the public operations never set. `intersect` keeps the receiver's elements whichever side is
+  smaller (on `main`, those of the smaller side), looking each element of a smaller argument up in the receiver.
+  `replace(current, equalNew)` swaps in the new object: it is an explicit replacement.
 - **Cross-version trace.** A trace of every public `HashMap`/`HashSet`/`LinkedHashMap`/`LinkedHashSet` operation over
   colliding and boundary hashes, with a tag on every key and value object, was run against the Vavr trie and the port
   before the set rule above: it kept the same keys and values everywhere, and the maps still do after it. The only

@@ -14,6 +14,29 @@ final class ChampValidity {
     private ChampValidity() {
     }
 
+    /// The hash code whose mixed hash ([ChampNode#improve]) is `mixed`: a key of that hash code sits in the slots the
+    /// fragments of `mixed` name. Each step of the mixing is undone in reverse order.
+    static int hashCodeFor(int mixed) {
+        int h = mixed;
+        // h ^ (h >>> 10)
+        h = h ^ (h >>> 10) ^ (h >>> 20) ^ (h >>> 30);
+        // h + (h << 4), a product by 17
+        h = h * inverse(17);
+        // h ^ (h >>> 14)
+        h = h ^ (h >>> 14) ^ (h >>> 28);
+        // hcode + ~(hcode << 9) == -511 * hcode - 1
+        return (h + 1) * inverse(-511);
+    }
+
+    // the inverse of an odd number modulo 2^32, by Newton's iteration
+    private static int inverse(int odd) {
+        int x = odd;
+        for (int i = 0; i < 5; i++) {
+            x *= 2 - odd * x;
+        }
+        return x;
+    }
+
     // -- maps
 
     /// Asserts every invariant of a map trie, the canonical form included, and returns its size:
@@ -49,7 +72,7 @@ final class ChampValidity {
                 assertThat(value).isNotNull().isNotInstanceOf(MapNode.class);
                 assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(key));
                 assertThat(ChampNode.maskFrom(n.hashes[i], shift)).as("entry in the slot of its fragment").isEqualTo(fragment);
-                assertThat(n.hashes[i] & pathMask).as("entry under its path").isEqualTo(path);
+                assertThat(ChampNode.improve(n.hashes[i]) & pathMask).as("entry under its path").isEqualTo(path);
                 size++;
                 hashSum += n.hashes[i];
             }
@@ -79,7 +102,7 @@ final class ChampValidity {
             assertThat(n.content.length % 2).isZero();
             final int size = n.content.length / 2;
             assertThat(size).isGreaterThanOrEqualTo(2);
-            assertThat(n.hash).as("collision node under its path").isEqualTo(path);
+            assertThat(ChampNode.improve(n.hash)).as("collision node under its path").isEqualTo(path);
             final java.util.Set<Object> keys = new java.util.HashSet<>();
             for (int i = 0; i < size; i++) {
                 assertThat(n.content[2 * i]).isNotNull();
@@ -216,7 +239,7 @@ final class ChampValidity {
                 assertThat(element).isNotNull().isNotInstanceOf(SetNode.class);
                 assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(element));
                 assertThat(ChampNode.maskFrom(n.hashes[i], shift)).as("element in the slot of its fragment").isEqualTo(fragment);
-                assertThat(n.hashes[i] & pathMask).as("element under its path").isEqualTo(path);
+                assertThat(ChampNode.improve(n.hashes[i]) & pathMask).as("element under its path").isEqualTo(path);
                 size++;
                 hashSum += n.hashes[i];
             }
@@ -244,7 +267,7 @@ final class ChampValidity {
         } else {
             final HashCollisionSetNode<?> n = (HashCollisionSetNode<?>) node;
             assertThat(n.content.length).isGreaterThanOrEqualTo(2);
-            assertThat(n.hash).as("collision node under its path").isEqualTo(path);
+            assertThat(ChampNode.improve(n.hash)).as("collision node under its path").isEqualTo(path);
             final java.util.Set<Object> elements = new java.util.HashSet<>();
             for (Object element : n.content) {
                 assertThat(element).isNotNull();

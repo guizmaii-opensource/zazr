@@ -24,6 +24,9 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
 
     abstract boolean contains(T element, int hash, int shift);
 
+    /// The element kept for `element`, or null when absent.
+    abstract @Nullable T find(T element, int hash, int shift);
+
     /// The node with `element`. When an equal element is present: with `replace`, it is replaced (and this node is
     /// returned if it is the same object); without, this node is returned unchanged.
     abstract SetNode<T> updated(T element, int hash, int shift, boolean replace);

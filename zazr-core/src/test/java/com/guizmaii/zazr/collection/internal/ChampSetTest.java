@@ -21,12 +21,22 @@ public class ChampSetTest {
     private static final long SEED = 20260926L;
     private static final int[] SIZES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32768, 100_000 };
 
-    /** An element whose hash code is chosen by the test; two elements are equal when both the hash and the id are. */
+    /** A key placed by the test: `hash` is its mixed hash (the one whose 5-bit fragments pick its slots), and its hash
+     *  code the one that mixes to it. Two keys are equal when both the hash and the id are. */
     record Key(int hash, int id) {
         @Override
         public int hashCode() {
-            return hash;
+            return ChampValidity.hashCodeFor(hash);
         }
+    }
+
+    // keys of mixed hashes 0 to size - 1: the first 32 fill the root, the first 1024 two levels
+    private static java.util.List<Key> keys(int size) {
+        final java.util.List<Key> result = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            result.add(new Key(i, 0));
+        }
+        return result;
     }
 
     private static final int[] HOT_HASHES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, -1, Integer.MIN_VALUE, Integer.MAX_VALUE,
@@ -118,7 +128,7 @@ public class ChampSetTest {
     @Test
     public void shouldHoldUpTo32ElementsInlineInTheRootAndPushTheThirtyThirdDown() {
         for (int size : new int[] { 0, 1, 2, 31, 32, 33 }) {
-            final BitmapIndexedSetNode<Integer> trie = persistent(ids(size));
+            final BitmapIndexedSetNode<Key> trie = persistent(keys(size));
             assertValid(trie);
             if (size <= 32) {
                 assertThat(trie.nodeMap).isZero();
@@ -130,10 +140,10 @@ public class ChampSetTest {
             }
         }
         for (int size : new int[] { 1023, 1024, 1025 }) {
-            final BitmapIndexedSetNode<Integer> trie = persistent(ids(size));
+            final BitmapIndexedSetNode<Key> trie = persistent(keys(size));
             assertValid(trie);
             assertThat(trie.nodeMap).isEqualTo(-1);
-            assertThat(((BitmapIndexedSetNode<Integer>) trie.getNode(0)).nodeMap).isEqualTo(size == 1025 ? 1 : 0);
+            assertThat(((BitmapIndexedSetNode<Key>) trie.getNode(0)).nodeMap).isEqualTo(size == 1025 ? 1 : 0);
         }
     }
 
@@ -238,7 +248,8 @@ public class ChampSetTest {
 
     @Test
     public void shouldIterateTheElementsOfANodeBeforeItsChildrenAndEachOnce() {
-        assertThat(elements(persistent(java.util.List.of(0, 32, 1, 2)))).containsExactly(1, 2, 0, 32);
+        assertThat(elements(persistent(java.util.List.of(new Key(0, 0), new Key(32, 0), new Key(1, 0), new Key(2, 0)))))
+                .containsExactly(new Key(1, 0), new Key(2, 0), new Key(0, 0), new Key(32, 0));
         for (int size : SIZES) {
             final java.util.Iterator<Integer> it = persistent(ids(size)).iterator();
             final java.util.Set<Integer> seen = new java.util.HashSet<>();
@@ -255,6 +266,8 @@ public class ChampSetTest {
     @Test
     public void shouldBuildTheTrieOfSuccessiveAdditionsAtEveryBoundaryAndOnRandomElements() {
         for (int size : SIZES) {
+            final java.util.List<Key> placed = keys(size);
+            assertSameShape(persistent(placed), built(placed), true);
             final java.util.List<Integer> elements = ids(size);
             final BitmapIndexedSetNode<Integer> built = built(elements);
             assertValid(built);
