@@ -107,3 +107,6 @@ Validation<String, User> adult = Validation.zipWith(name("Ada"), age(15), email(
 
 `flatMapEither` is the same for a step that returns an `Either`. If every step depends on the previous one, `Either`
 is the simpler type.
+
+`orElse` does not combine errors: when both sides are invalid, it returns the second one and drops the first one's
+errors.

@@ -6,8 +6,6 @@ description: NonEmptyVector makes head, max and reduce total; its return types s
 
 `NonEmptyVector<A>` is a sequence with at least one element. It holds a `Vector` and has the same costs.
 
-It is not a subtype of `Vector`. If it were, `filter` would return a `NonEmptyVector` that could be empty.
-
 ## Total operations
 
 On a `Vector`, `head`, `max` or `reduce` can fail or return an `Option`, because the `Vector` may be empty. On a

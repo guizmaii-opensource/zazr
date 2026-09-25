@@ -6,8 +6,8 @@ description: Vector, the default sequence - fast access by index, at both ends a
 
 The default sequence, like ZIO's `Chunk`. A `Vector` is a tree of arrays of 32 elements, at most six levels deep.
 
-Most operations are "effectively O(1)": their cost grows with the depth of the tree, which is never more than six
-steps at any size.
+Access by index, `update`, adding at either end, `take`, `drop` and `slice` are "effectively O(1)": their cost grows
+with the depth of the tree, which is never more than six levels.
 
 A `Vector` built from a primitive array, such as `Vector.ofAll(int...)` or `Vector.range`, stores the values
 unboxed.

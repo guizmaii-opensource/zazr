@@ -41,7 +41,7 @@ Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
 // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
 ```
 
-`Try` captures every exception except the fatal ones, which are rethrown: `InterruptedException`, `LinkageError`,
+`Try` captures every exception or error except the fatal ones, which are rethrown: `InterruptedException`, `LinkageError`,
 `ThreadDeath` and `VirtualMachineError` (so `OutOfMemoryError` and `StackOverflowError`).
 
 ## `switch` over the cases
