@@ -621,18 +621,19 @@ interface RedBlackTreeModule {
             }
         }
 
-        private static boolean isRed(RedBlackTree<?> tree) {
-            return !tree.isEmpty() && ((Node<?>) tree).color == RED;
-        }
-
+        /// Returns a valid tree holding the elements of `t1`, then `value`, then the elements of `t2`. Every element
+        /// of `t1` is less than `value` and every element of `t2` greater. The roots of `t1` and `t2` can be red.
         static <T extends @Nullable Object> RedBlackTree<T> join(RedBlackTree<T> t1, T value, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
                 return t2.insert(value);
             } else if (t2.isEmpty()) {
                 return t1.insert(value);
             } else {
-                final Node<T> n1 = (Node<T>) t1;
-                final Node<T> n2 = (Node<T>) t2;
+                // The stored blackHeight of a node counts the node as black whatever its colour, so a red root has one
+                // black node fewer on its paths than a black root with the same blackHeight. Colouring both roots black
+                // makes the stored values comparable and keeps them right.
+                final Node<T> n1 = ((Node<T>) t1).color(BLACK);
+                final Node<T> n2 = ((Node<T>) t2).color(BLACK);
                 final int comparison = n1.blackHeight - n2.blackHeight;
                 if (comparison < 0) {
                     return Node.joinLT(n1, value, n2, n1.blackHeight).color(BLACK);
@@ -662,64 +663,17 @@ interface RedBlackTreeModule {
             }
         }
 
+        /// Returns a valid tree holding the elements of `t1`, then the elements of `t2`. Every element of `t1` is less
+        /// than every element of `t2`. The roots of `t1` and `t2` can be red. The minimum of `t2` is taken out and
+        /// used as the middle value of [#join].
         static <T extends @Nullable Object> RedBlackTree<T> merge(RedBlackTree<T> t1, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
-                return t2;
+                return Node.color(t2, BLACK);
             } else if (t2.isEmpty()) {
-                return t1;
+                return Node.color(t1, BLACK);
             } else {
-                final Node<T> n1 = (Node<T>) t1;
-                final Node<T> n2 = (Node<T>) t2;
-                final int comparison = n1.blackHeight - n2.blackHeight;
-                if (comparison < 0) {
-                    final Node<T> node = Node.mergeLT(n1, n2, n1.blackHeight);
-                    return Node.color(node, BLACK);
-                } else if (comparison > 0) {
-                    final Node<T> node = Node.mergeGT(n1, n2, n2.blackHeight);
-                    return Node.color(node, BLACK);
-                } else {
-                    final Node<T> node = Node.mergeEQ(n1, n2);
-                    return Node.color(node, BLACK);
-                }
-            }
-        }
-
-        private static <T extends @Nullable Object> Node<T> mergeEQ(Node<T> n1, Node<T> n2) {
-            final T m = Node.minimum(n2);
-            final RedBlackTree<T> t2 = Node.deleteMin(n2)._1();
-            final int h2 = t2.isEmpty() ? 0 : ((Node<T>) t2).blackHeight;
-            if (n1.blackHeight == h2) {
-                return new Node<>(RED, n1.blackHeight + 1, n1, m, t2, n1.empty);
-            } else if (isRed(n1.left)) {
-                final Node<T> node = new Node<>(BLACK, n1.blackHeight, n1.right, m, t2, n1.empty);
-                return new Node<>(RED, n1.blackHeight + 1, Node.color(n1.left, BLACK), n1.value, node, n1.empty);
-            } else if (isRed(n1.right)) {
-                final RedBlackTree<T> rl = ((Node<T>) n1.right).left;
-                final T rx = ((Node<T>) n1.right).value;
-                final RedBlackTree<T> rr = ((Node<T>) n1.right).right;
-                final Node<T> left = new Node<>(RED, n1.blackHeight, n1.left, n1.value, rl, n1.empty);
-                final Node<T> right = new Node<>(RED, n1.blackHeight, rr, m, t2, n1.empty);
-                return new Node<>(BLACK, n1.blackHeight, left, rx, right, n1.empty);
-            } else {
-                return new Node<>(BLACK, n1.blackHeight, n1.color(RED), m, t2, n1.empty);
-            }
-        }
-
-        private static <T extends @Nullable Object> Node<T> mergeGT(Node<T> n1, Node<T> n2, int h2) {
-            if (n1.blackHeight == h2) {
-                return Node.mergeEQ(n1, n2);
-            } else {
-                final Node<T> node = Node.mergeGT((Node<T>) n1.right, n2, h2);
-                return Node.balanceRight(n1.color, n1.blackHeight, n1.left, n1.value, node, n1.empty);
-            }
-        }
-
-        private static <T extends @Nullable Object> Node<T> mergeLT(Node<T> n1, Node<T> n2, int h1) {
-            if (n2.blackHeight == h1) {
-                return Node.mergeEQ(n1, n2);
-            } else {
-                final Node<T> node = Node.mergeLT(n1, (Node<T>) n2.left, h1);
-                return Node.balanceLeft(n2.color, n2.blackHeight, node, n2.value, n2.right, n2.empty);
+                final Tuple3<? extends RedBlackTree<T>, Boolean, T> withoutMinimum = Node.deleteMin((Node<T>) t2);
+                return Node.join(t1, withoutMinimum._3(), withoutMinimum._1());
             }
         }
 
