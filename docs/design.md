@@ -1506,6 +1506,28 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+- **The tree filter family keeps the untouched subtrees (decided 2026-09-25).** `filter`, `reject` and `partition` on
+  `TreeSet`, and the whole filter family and `partition` on `TreeMap` (`filterKeys`, `rejectValues`, the deprecated
+  `remove*` too), walk the tree once with `Node.filter` / `Node.partition`, ports of `filterEntries` /
+  `partitionEntries` of the Scala 3 standard library (the Scala 2.13 collection library that Scala 3 ships unchanged):
+  a subtree whose elements are all kept is returned as it is, and the kept parts are rejoined with `join` (kept node)
+  or `join2` (removed node, the maximum of the left part as the middle value; no tuple per level). No comparator call,
+  the predicate once per element in order, and the receiver itself when nothing is removed (the conserving rule of
+  Scala's `filter`; `partition` returns the receiver as the side that gets everything). `TreeSet.removeAll` and
+  `retainAll` go through `filter` and follow. `join` with an empty side appends the value down the outer spine with
+  the same rebalancing as `insert`, without comparing. A rough same-JVM probe (thread CPU time, a loaded machine):
+  large wins when whole ranges are kept or dropped (keeping all but one of 100 000 elements about 4x faster, with no
+  copy); the worst shape, every other element dropped, costs the same time and about 1.8x the bytes of the rebuild.
+  `groupBy` stays on the builder: sharing would need one walk per group.
+- **The remaining unsorted one-at-a-time paths (decided 2026-09-25)**, each rerouted on a rough probe showing a win:
+  `RedBlackTree.of(varargs)` (so `TreeSet.of`, `tabulate`, `fill`), `TreeSet.flatten` and `TreeMap.retainAll` use the
+  builder, keeping the last of equal elements as the insertions did (for `retainAll`, the given entry objects).
+  `TreeSet.addAll` keeps the element already present, or else the first given, as its `contains`-then-`insert` loop
+  did: the builder has a keep-first mode, and the sorted tree of the given elements is united with the receiver's
+  (`union` lets the argument tree's elements win). It is used only when the receiver is empty or the argument is a
+  collection that knows its size and holds at least as many elements as the receiver; a few elements into a large
+  set stay one lookup and one insertion each (the builder lost there, up to 9x for one element). The fixed-arity
+  `TreeMap.of(k, v, ...)` stays on insertions: at 2 to 10 pairs the builder was not faster.
 
 **Implemented for `LinkedHashMap`, `LinkedHashSet` and `List` (decided):**
 - `LinkedHashMap.Builder` is not the table's `HashMap.Builder` + `Vector.Builder` composite. A repeated key keeps the

@@ -985,44 +985,126 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return entries.contains(lookupEntry(key));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when every entry is kept.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
-        return Maps.filter(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(entry -> predicate.test(entry._1(), entry._2()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when no entry is rejected.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> reject(BiPredicate<? super K, ? super V> predicate) {
-        return Maps.reject(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(entry -> !predicate.test(entry._1(), entry._2()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when every entry is kept.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.filter(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(predicate);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when no entry is rejected.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> reject(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.reject(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(predicate.negate());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when every entry is kept.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> filterKeys(Predicate<? super K> predicate) {
-        return Maps.filterKeys(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(entry -> predicate.test(entry._1()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when no entry is rejected.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> rejectKeys(Predicate<? super K> predicate) {
-        return Maps.rejectKeys(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(entry -> !predicate.test(entry._1()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when every entry is kept.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> filterValues(Predicate<? super V> predicate) {
-        return Maps.filterValues(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(entry -> predicate.test(entry._2()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per entry, in key order. The result shares with this map every subtree whose
+     * entries are all kept, and is this map itself when no entry is rejected.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeMap<K, V> rejectValues(Predicate<? super V> predicate) {
-        return Maps.rejectValues(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        return filterEntries(entry -> !predicate.test(entry._2()));
+    }
+
+    // the entries `predicate` keeps, sharing the untouched subtrees; this map when it keeps them all
+    private TreeMap<K, V> filterEntries(Predicate<? super Tuple2<K, V>> predicate) {
+        return withEntries(RedBlackTreeModule.Node.filter(entries, predicate));
+    }
+
+    // this map when `tree` is its own entry tree, otherwise a map of `tree`
+    private TreeMap<K, V> withEntries(RedBlackTree<Tuple2<K, V>> tree) {
+        return (tree == entries) ? this : new TreeMap<>(tree);
     }
 
     @Override
@@ -1165,9 +1247,20 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return isEmpty() ? ofEntries(comparator(), Objects.requireNonNull(supplier.get(), "TreeMap.orElse: supplier returned null")) : this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * One walk: {@code predicate} is called once per entry, in key order. Each side shares with this map every subtree
+     * whose entries all go to it, and is this map itself when it gets every entry.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.partition(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        final Tuple2<RedBlackTree<Tuple2<K, V>>, RedBlackTree<Tuple2<K, V>>> trees =
+                RedBlackTreeModule.Node.partition(entries, predicate);
+        return Tuple.of(withEntries(trees._1()), withEntries(trees._2()));
     }
 
     @Override
@@ -1283,13 +1376,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public TreeMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entries.comparator());
+        // of equal given entries, the last one is kept, as successive insertions would
+        final RedBlackTreeBuilder<Tuple2<K, V>> tree = new RedBlackTreeBuilder<>(entries.comparator(), "TreeMap.Builder");
         for (Tuple2<K, V> entry : elements) {
             if (contains(entry)) {
-                tree = tree.insert(entry);
+                tree.add(entry);
             }
         }
-        return new TreeMap<>(tree);
+        return new TreeMap<>(tree.result());
     }
 
     @Override
