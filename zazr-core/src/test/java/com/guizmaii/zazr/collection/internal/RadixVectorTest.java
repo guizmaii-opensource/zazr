@@ -933,6 +933,126 @@ public class RadixVectorTest {
         assertThatThrownBy(() -> y.appended(0).prependedAll(list)).isInstanceOf(IllegalArgumentException.class);
     }
 
+    /*
+     * Near the limit, a RadixVector, a list and a one-shot Iterable of the same elements give the same outcome, whatever
+     * their number: the paths that add elements one by one (the tiny branches, suffix1's room) give way to the builder.
+     */
+    @Test
+    public void nearTheLimitEveryArgumentKindAgrees() {
+        final RadixVector<Integer> half = sharedLeafVector(1 << 30);
+        final RadixVector<Integer> full = half.appendedAll(half.init());
+        for (int k : new int[] { 1, 14, 40 }) {
+            final List<Integer> elements = new ArrayList<>();
+            for (int i = 0; i < k; i++) {
+                elements.add(-1 - i);
+            }
+            // appended after a receiver with one free slot in front: Integer.MAX_VALUE - 1 elements at most
+            final RadixVector<Integer> freeFront = full.drop(k);
+            final RadixVector<Integer> freeBack = full.dropRight(k);
+            for (Iterable<Integer> suffix : kinds(elements)) {
+                assertThatThrownBy(() -> freeFront.appendedAll(suffix)).as("k = %d", k).isInstanceOf(IllegalArgumentException.class);
+            }
+            for (Iterable<Integer> suffix : kinds(elements)) {
+                final RadixVector<Integer> r = freeBack.appendedAll(suffix);
+                assertThat(r.length()).isEqualTo(Integer.MAX_VALUE);
+                assertThat(r.get(Integer.MAX_VALUE - k - 1)).isEqualTo(freeBack.last());
+                assertThat(r.last()).isEqualTo(-k);
+            }
+            // prepended before a receiver with 32 free slots in front: a known-size prefix aligns the builder on the
+            // receiver. (A one-shot prefix goes through the unaligned builder, which re-chunks every leaf of the
+            // receiver: correct, but too big here, where every leaf is one shared array.)
+            final RadixVector<Integer> front = full.drop(32);
+            if (k > 32) {
+                for (Iterable<Integer> prefix : kinds(elements)) {
+                    assertThatThrownBy(() -> front.prependedAll(prefix)).as("k = %d", k).isInstanceOf(IllegalArgumentException.class);
+                }
+                continue;
+            }
+            for (Iterable<Integer> prefix : kinds(elements).subList(0, 2)) {
+                final RadixVector<Integer> r = front.prependedAll(prefix);
+                assertThat(r.length()).isEqualTo(Integer.MAX_VALUE - 32 + k);
+                for (int i = 0; i < k; i++) {
+                    assertThat(r.get(i)).isEqualTo(-1 - i);
+                }
+                assertThat(r.get(k)).isEqualTo(front.head());
+                assertThat(r.last()).isEqualTo(front.last());
+                checkShape(r.take(1 << 16));
+            }
+        }
+    }
+
+    /* the same elements as a RadixVector, an ArrayList and a one-shot Iterable */
+    private static List<Iterable<Integer>> kinds(List<Integer> elements) {
+        return List.of(RadixVector.ofAll(elements.toArray()), new ArrayList<>(elements), oneShot(elements));
+    }
+
+    /*
+     * The thresholds of the near-limit rules, each at the value where an off-by-one or a looser bound changes the
+     * outcome: alignTo keeps a padding that fits exactly, a Vector6 argument's free slots are counted exactly, and the
+     * paths that add one by one to the argument stop at Integer.MAX_VALUE - 2^25 elements, not later.
+     */
+    @Test
+    public void nearTheLimitThresholds() {
+        final RadixVector<Integer> half = sharedLeafVector(1 << 30);
+        final RadixVector<Integer> full = half.appendedAll(half.init());
+
+        // alignTo: a padding of one slot beyond the limit is skipped, and the result is built without it. The receiver
+        // starts at element 2048 and ends 2^25 - 1 before the end; the prefix holds 2^25 + 1024 elements, so the padding
+        // that aligns the receiver is 1024 slots, and padding plus elements come to Integer.MAX_VALUE + 1. (Multiples of
+        // 1024 keep the leaves aligned without the padding, so that the builder shares them instead of copying.)
+        final RadixVector<Integer> receiver = full.slice(2048, Integer.MAX_VALUE - ((1 << 25) - 1));
+        final RadixVector<Integer> bigPrefix0 = sharedLeafVector(1 << 25).appendedAll(sharedLeafVector(1024));
+        final RadixVector<Integer> aligned = receiver.prependedAll(bigPrefix0);
+        assertThat(aligned.length()).isEqualTo(bigPrefix0.length() + receiver.length());
+        assertThat(aligned.get(bigPrefix0.length() - 1)).isEqualTo(bigPrefix0.last());
+        assertThat(aligned.get(bigPrefix0.length())).isEqualTo(receiver.head());
+        assertThat(aligned.last()).isEqualTo(receiver.last());
+        checkShape(aligned.take(1 << 16));
+        checkShape(aligned.takeRight(1 << 16));
+
+        // the free slots in front of a Vector6 prefix, counted exactly: 1024 here, so the builder may reuse its arrays
+        // up to a total of Integer.MAX_VALUE - 1024, and adds it without them from Integer.MAX_VALUE - 1023 on. The
+        // prefix is the longer operand, so that prependedAll takes its last branch (addAllFirst), not alignTo
+        final RadixVector<Integer> p = full.slice(1024, 1024 + (1 << 30) + 4096);
+        assertThat(p).isInstanceOf(RadixVector.Vector6.class);
+        assertThat(((RadixVector.Vector6<Integer>) p).len12345).isEqualTo((1 << 25) - 1024);
+        for (int total : new int[] { Integer.MAX_VALUE - 1024, Integer.MAX_VALUE - 1023 }) {
+            final RadixVector<Integer> x = full.take(total - p.length());
+            final RadixVector<Integer> r = x.prependedAll(p);
+            assertThat(r.length()).isEqualTo(total);
+            assertThat(r.get(p.length() - 1)).isEqualTo(p.last());
+            assertThat(r.get(p.length())).isEqualTo(x.head());
+            assertThat(r.last()).isEqualTo(x.last());
+            checkShape(r.take(1 << 16));
+            checkShape(r.takeRight(1 << 16));
+        }
+
+        // appending the receiver to the prefix: at Integer.MAX_VALUE - 2^23 elements, above Integer.MAX_VALUE - 2^25, the
+        // builder builds the result (appending 2^23 elements to a prefix with 2^24 free slots in front would not fit)
+        final Object[] many = new Object[1 << 23];
+        for (int i = 0; i < many.length; i++) {
+            many[i] = -(i & 127) - 1;
+        }
+        final RadixVector<Integer> manyVector = RadixVector.ofAll(many);
+        final RadixVector<Integer> bigPrefix = full.drop(1 << 24);
+        final RadixVector<Integer> onto = manyVector.prependedAll(bigPrefix);
+        assertThat(onto.length()).isEqualTo(Integer.MAX_VALUE - (1 << 23));
+        assertThat(onto.get(bigPrefix.length() - 1)).isEqualTo(bigPrefix.last());
+        assertThat(onto.get(bigPrefix.length())).isEqualTo(-1);
+        assertThat(onto.last()).isEqualTo(manyVector.last());
+        checkShape(onto.takeRight(1 << 16));
+
+        // its mirror, prepending the receiver to the suffix, whose prefix and data are full
+        final RadixVector<Integer> front = RadixVector.ofAll(sequence(-1024, 0));
+        final RadixVector<Integer> bigSuffix = full.dropRight(1 << 24);
+        final RadixVector<Integer> before = front.appendedAll(bigSuffix);
+        assertThat(before.length()).isEqualTo(Integer.MAX_VALUE - (1 << 24) + 1024);
+        assertThat(before.get(1023)).isEqualTo(-1);
+        assertThat(before.get(1024)).isEqualTo(bigSuffix.head());
+        assertThat(before.last()).isEqualTo(bigSuffix.last());
+        checkShape(before.take(1 << 16));
+    }
+
     /* a vector of n elements (a power of two, at least 32) made of one leaf 0..31, shared everywhere */
     private static RadixVector<Integer> sharedLeafVector(int n) {
         RadixVector<Integer> v = RadixVector.ofAll(sequence(0, WIDTH));
