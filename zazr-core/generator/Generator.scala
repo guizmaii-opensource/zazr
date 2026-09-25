@@ -68,6 +68,7 @@ def javaFunctionType(i: Int, im: ImportManager): String = i match {
 def run(): Unit = {
   generateMainClasses()
   generateTestClasses()
+  deleteStaleFiles(s"${project.getBasedir()}/src-gen")
 }
 
 /**
@@ -1137,6 +1138,20 @@ def generateTestClasses(): Unit = {
         val narrowGenericResult = im.getType("java.lang.CharSequence")
         val narrowArgs = (1 to i).gen(j => j.toString)(using ", ")
 
+        // Integer arguments for the lift tests: the first one selects the outcome, the others are 1.
+        val OptionType = im.getType("com.guizmaii.zazr.control.Option")
+        val TryType = im.getType("com.guizmaii.zazr.control.Try")
+        val nonFatalType = if (checked) "Exception" else "IllegalStateException"
+        val intArgTypes = (1 to i).gen(j => "Integer")(using ", ")
+        val intParams = (1 to i).gen(j => s"i$j")(using ", ")
+        val intSum = (1 to i).gen(j => s"i$j")(using " + ")
+        def intArgs(first: Int): String = (1 to i).gen(j => if (j == 1) first.toString else "1")(using ", ")
+
+        // The arguments 1..i and the concatenation the Object-typed test functions return for them.
+        val digitArgs = (1 to i).gen(j => j.toString)(using ", ")
+        val digitString = (1 to i).gen(j => j.toString)
+        val concatBody = "\"\" + " + (1 to i).gen(j => s"o$j")(using " + ")
+
         xs"""
           public class $className {
 
@@ -1153,7 +1168,38 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldLiftPartialFunction() {
-                  assertThat($name$i.lift(($functionArgs) -> { while(true); })).isNotNull();
+                  final $uncheckedSelfType<$intArgTypes, $OptionType<Integer>> lifted = $name$i.lift(($intParams) -> {
+                      if (i1 == 0) {
+                          return null;
+                      }
+                      if (i1 == 1) {
+                          throw new $nonFatalType("non-fatal");
+                      }
+                      if (i1 == 2) {
+                          throw new OutOfMemoryError("fatal");
+                      }
+                      return $intSum;
+                  });
+                  assertThat(lifted.apply(${intArgs(3)})).isEqualTo($OptionType.some(${3 + i - 1}));
+                  assertThat(lifted.apply(${intArgs(0)})).isEqualTo($OptionType.none());
+                  assertThat(lifted.apply(${intArgs(1)})).isEqualTo($OptionType.none());
+                  $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(2)}));
+              }
+
+              @$test
+              public void shouldRethrowFatalThrowableFromLiftTry() {
+                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                      $name$i.liftTry(($intParams) -> { throw new OutOfMemoryError("fatal"); });
+                  $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(1)}));
+              }
+
+              @$test
+              public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
+                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                      $name$i.liftTry(($intParams) -> { throw new $nonFatalType("non-fatal"); });
+                  final $TryType<Integer> result = lifted.apply(${intArgs(1)});
+                  assertThat(result.isFailure()).isTrue();
+                  assertThat(result.getCause()).isInstanceOf($nonFatalType.class).hasMessage("non-fatal");
               }
 
               ${(i == 1).gen(xs"""
@@ -1168,10 +1214,11 @@ def generateTestClasses(): Unit = {
               ${(i > 1).gen(xs"""
                 @$test
                 public void shouldPartiallyApply()${checked.gen(" throws Exception")} {
-                    final $name$i<$generics> f = ($functionArgs) -> null;
+                    final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                     ${(1 until i).gen(j => {
-                      val partialArgs = (1 to j).gen(k => "null")(using ", ")
-                      s"$assertThat(f.apply($partialArgs)).isNotNull();"
+                      val partialArgs = (1 to j).gen(k => k.toString)(using ", ")
+                      val remainingArgs = (j + 1 to i).gen(k => k.toString)(using ", ")
+                      s"$assertThat(f.apply($partialArgs).apply($remainingArgs)).isEqualTo(\"$digitString\");"
                     })(using "\n")}
                 }
               """)}
@@ -1183,17 +1230,17 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldCurry() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
+              public void shouldCurry()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                   final ${curriedType(i, name)} curried = f.curried();
-                  $assertThat(curried).isNotNull();
+                  $assertThat(curried${(1 to i).gen(j => s".apply($j)")}).isEqualTo("$digitString");
               }
 
               @$test
-              public void shouldTuple() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
+              public void shouldTuple()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
                   final ${if (checked) s"${name}1" else jdkFunction1}<Tuple$i<${(1 to i).gen(j => "Object")(using ", ")}>, Object> tupled = f.tupled();
-                  $assertThat(tupled).isNotNull();
+                  $assertThat(tupled.apply(Tuple.of($digitArgs))).isEqualTo("$digitString");
               }
 
               ${(!checked).gen(xs"""
@@ -1248,23 +1295,21 @@ def generateTestClasses(): Unit = {
                           assertThat(unknown.getCause().getCause()).isInstanceOf(java.security.NoSuchAlgorithmException.class).hasMessage("Unknown MessageDigest not available");
                       }
 
-                      ${(i == 1 || i == N).gen(xs"""
-                        @$test
-                        public void shouldNotHandFatalThrowableToRecover() {
-                            final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
-                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
-                                fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
-                            $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
-                        }
+                      @$test
+                      public void shouldNotHandFatalThrowableToRecover() {
+                          final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                              fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+                          $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
+                      }
 
-                        @$test
-                        public void shouldHandNonFatalThrowableToRecover() {
-                            final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
-                            final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
-                                nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
-                            assertThat(recover.apply(${toArgList("MD5")})).isNull();
-                        }
-                      """)}
+                      @$test
+                      public void shouldHandNonFatalThrowableToRecover() {
+                          final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
+                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                              nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
+                          assertThat(recover.apply(${toArgList("MD5")})).isNull();
+                      }
 
                       @$test
                       public void shouldUncheckedWork() {
@@ -1309,12 +1354,21 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              public void shouldComposeWithAndThen() {
-                  final $name$i<$generics> f = ($functionArgs) -> null;
-                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> null;
+              public void shouldComposeWithAndThen()${checked.gen(" throws Exception")} {
+                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> o + "!";
                   final $name$i<$generics> composed = f.andThen(after);
-                  $assertThat(composed).isNotNull();
+                  $assertThat(composed.apply($digitArgs)).isEqualTo("$digitString!");
               }
+
+              ${(checked && i == 1).gen(xs"""
+                @$test
+                public void shouldComposeWithBefore() throws Exception {
+                    final $name$i<String, Integer> length = String::length;
+                    final $name$i<Integer, String> repeat = n -> "x".repeat(n);
+                    assertThat(length.compose(repeat).apply(3)).isEqualTo(3);
+                }
+              """)}
 
               @Nested
               class ComposeTests {
@@ -2099,26 +2153,91 @@ object JavaGenerator {
 object Generator {
 
   import java.nio.charset.{Charset, StandardCharsets}
-  import java.nio.file.{Files, Paths, StandardOpenOption}
+  import java.nio.file.{Files, LinkOption, Path, Paths}
+  import scala.jdk.CollectionConverters._
+
+  // The files written by this run, as their base directory's real path followed by the requested case, so that
+  // `deleteStaleFiles` knows which ones it no longer produces.
+  private val generated = scala.collection.mutable.Set.empty[Path]
+  // Every generated file and directory by its lower-cased path: two names that differ only in case, the same entry on
+  // a case-insensitive file system, fail the build.
+  private val generatedIgnoringCase = scala.collection.mutable.Map.empty[String, Path]
 
   /**
-   * Generates a file by writing string contents to the file system.
+   * Generates a file by writing string contents to the file system. The file is written only when its content
+   * differs from what is on disk: an unchanged file keeps its modification time, so the compiler does not
+   * recompile the module.
    *
    * @param baseDir The base directory, e.g. src-gen
    * @param dirName The directory relative to baseDir, e.g. main/java
    * @param fileName The file name within baseDir/dirName
-   * @param createOption One of java.nio.file.{StandardOpenOption.CREATE_NEW, StandardOpenOption.CREATE}, default: CREATE_NEW
    * @param contents The string contents of the file
    * @param charset The charset, by default UTF-8
    */
-  def genFile(baseDir: String, dirName: String, fileName: String, createOption: StandardOpenOption = StandardOpenOption.CREATE_NEW)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
+  def genFile(baseDir: String, dirName: String, fileName: String)(contents: => String)(implicit charset: Charset = StandardCharsets.UTF_8): Unit = {
+    val base = Files.createDirectories(Paths.get(baseDir)).toRealPath()
+    val file = base.resolve(dirName).resolve(fileName).normalize
+    var current = base
+    base.relativize(file).iterator.asScala.foreach { segment =>
+      val next = current.resolve(segment.toString)
+      val previous = generatedIgnoringCase.getOrElseUpdate(next.toString.toLowerCase(java.util.Locale.ROOT), next)
+      if (previous != next || (next == file && generated.contains(file))) {
+        throw new IllegalStateException(s"$next is generated twice (names are compared ignoring case)")
+      }
+      matchCase(current, segment.toString)
+      current = next
+    }
+    generated.add(file)
+    if (Files.isSymbolicLink(file)) {
+      Files.delete(file)
+    }
+    val bytes = contents.getBytes(charset)
+    if (!Files.isRegularFile(file) || !java.util.Arrays.equals(Files.readAllBytes(file), bytes)) {
+      Files.createDirectories(file.getParent)
+      Files.write(file, bytes)
+    }
+  }
 
-    // println(s"Generating $dirName${File.separator}$fileName")
+  /**
+   * Renames the entry `name` of `dir` to that exact case when the file system finds it under another case, as a
+   * case-insensitive one does after a class or package is renamed by case only. The rename goes through a temporary
+   * name, since renaming to a name the file system considers the same does nothing.
+   */
+  private def matchCase(dir: Path, name: String): Unit = {
+    val path = dir.resolve(name)
+    if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+      val stream = Files.list(dir)
+      val names = try stream.iterator.asScala.map(_.getFileName.toString).toList finally stream.close()
+      if (!names.contains(name)) {
+        names.find(_.equalsIgnoreCase(name)).foreach { onDisk =>
+          val temporary = dir.resolve(s"$name.case-rename")
+          Files.move(dir.resolve(onDisk), temporary)
+          Files.move(temporary, path)
+        }
+      }
+    }
+  }
 
-    Files.write(
-      Files.createDirectories(Paths.get(baseDir, dirName)).resolve(fileName),
-      contents.getBytes(charset),
-      createOption, StandardOpenOption.WRITE)
+  /**
+   * Deletes the entries under `root` that this run did not generate, then the directories left empty.
+   * A symbolic link is judged by its own path and deleted as a link, never followed.
+   * Called once every file has been generated.
+   */
+  def deleteStaleFiles(root: String): Unit = {
+    val rootPath = Paths.get(root)
+    if (Files.isDirectory(rootPath)) {
+      val realRoot = rootPath.toRealPath()
+      val stream = Files.walk(realRoot)
+      val paths = try stream.iterator.asScala.toList finally stream.close()
+      paths.filter(p => !Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS) && !generated.contains(p)).foreach(Files.delete)
+      paths.filter(p => p != realRoot && Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)).sortBy(p => -p.getNameCount).foreach { dir =>
+        val entries = Files.list(dir)
+        val empty = try !entries.iterator.hasNext finally entries.close()
+        if (empty) {
+          Files.delete(dir)
+        }
+      }
+    }
   }
 
   implicit class IntExtensions(i: Int) {

@@ -31,7 +31,7 @@ below are deliberate. [Design](principles.md) explains the ideas behind them.
 | `traverse` | static `forEach` |
 | `bimap` | `mapBoth` |
 | `peek`, `peekLeft`, `onFailure`, `onSuccess`, `onEmpty` | `tap`, `tapLeft`, `tapError`, `tap`, `tapNone` |
-| `mapTo(value)` | `as(value)` |
+| `mapTo(value)` | `as(value)` on a collection; `map(x -> value)` on a control type |
 | `swap` on `Either` | `flip` |
 | `recover`, `recoverWith` | `catchAll`, `catchSome`, `catchAllWith`, `catchSomeWith` |
 | `mapFailure(Case...)` | `mapError(Function)` |
@@ -51,8 +51,9 @@ below are deliberate. [Design](principles.md) explains the ideas behind them.
   the type.
 - **Sets and maps have no positional methods** (`head`, `take`, `sliding`...), except the ordered ones:
   `LinkedHashSet`, `LinkedHashMap`, `TreeSet`, `TreeMap`.
-- **`grouped`, `sliding` and `crossProduct` return the receiver's type** (`Vector<Vector<T>>`...), not an
-  `Iterator`.
+- **`grouped`, `sliding` and `crossProduct` return a collection**, not an `Iterator`: of the receiver's type on
+  `Vector`, `List`, `Queue` and `Stream` (`Vector<Vector<T>>`...), and a `Vector` of the receiver's type for
+  `grouped` and `sliding` on the ordered sets and maps and on `NonEmptyVector`.
 - **`tap` on a collection runs on every element.** Vavr's `peek` ran on the first one.
 - **Two `Try.Failure`s are equal when they hold the same `Throwable` instance**, not when their stack traces match.
 - **Every positional method documents its cost** ([complexity](collections/complexity.md)).
