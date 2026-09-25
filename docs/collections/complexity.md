@@ -2,36 +2,61 @@
 
 # Complexity
 
-Every method of a collection whose cost depends on the size documents that cost in its javadoc. This page is generated from the javadoc, so it matches the code. Hover a cell to read the whole note.
+Every Zazr collection states the cost of its methods in their javadoc. This page gathers those notes, so it always matches the code.
 
-## Legend
+## How to read a cost
 
-n is the size of the receiver, m the size of the argument, k the number of elements taken, dropped or skipped, i an index. The Scala column gives the abbreviation Scala's collections documentation uses for the same class, where there is one.
+A cost is the worst case of one call, in big-O notation, unless its note says otherwise. The letters mean:
+
+- n: the number of elements of the collection you call the method on.
+- m: the number of elements of the argument.
+- k: a count the note names, such as the elements taken or dropped.
+- i and j: index arguments; a slice runs from i to j.
+- size and step: the window size and the step of `sliding` and `grouped`.
+
+In the tables, hover a cost to read its whole note.
+
+## Classes of cost
+
+Each cost falls in one of these classes, cheapest first. The Scala column gives the abbreviation of the same class in Scala's collections documentation, for readers who know it.
 
 | Class | Scala | Meaning | Expressions |
 |---|---|---|---|
-| <span class="cx cx-constant">constant</span> | `C` | a fixed number of steps, whatever the size | `O(1)` |
-| <span class="cx cx-effectivelyconstant">effectively constant</span> | `eC` | a walk down a tree of 32-wide nodes, a handful of levels deep at any size (Vector, HashSet, HashMap) | `effectively O(1)` |
-| <span class="cx cx-amortisedconstant">amortised constant</span> | `aC` | constant on average over a series of calls; now and then one call takes O(n) (Queue) | `amortised O(1)` |
-| <span class="cx cx-logarithmic">logarithmic</span> | `Log` | O(log n): one walk from the root of a balanced tree | `O(log n)` |
-| <span class="cx cx-lazy">lazy</span> |  | nothing is computed now; each element is computed when it is read (the note says what is computed at once) | `lazy` |
-| <span class="cx cx-linear">linear</span> | `L` | proportional to the number of elements named in the expression | `O(i)`, `O(j)`, `O(k)`, `O(m)`, `O(n)`, `O(i + k)`, `O(i + m)`, `O(index)`, `O(k + m)`, `O(m + n)`, `O(n + k)`, `O(n + m)`, `O(n - k)`, `O(endIndex)`, `O(from + k)`, `O(n / size)`, `O(n / step)`, `O(index + m)`, `O(k + log n)`, `O(max(n, m))`, `O(min(n, m))`, `O(beginIndex)`, `O(length - k)`, `O(offset + m)`, `O(min(i, n - i))`, `O(min(k, n - k))`, `O(m + min(i, n - i))`, `effectively O(min(n, size - n))` |
+| <span class="cx cx-constant">constant</span> | `C` | the same few steps, whatever the size | `O(1)` |
+| <span class="cx cx-effectivelyconstant">effectively constant</span> | `eC` | grows with the size, but so slowly that it stays a handful of steps | `effectively O(1)` |
+| <span class="cx cx-amortisedconstant">amortised constant</span> | `aC` | constant on average over a chain of calls; now and then one call costs O(n) | `amortised O(1)` |
+| <span class="cx cx-logarithmic">logarithmic</span> | `Log` | one walk down a balanced tree: a few dozen steps for a million elements | `O(log n)` |
+| <span class="cx cx-lazy">lazy</span> |  | almost nothing now: the elements are computed when the result is read | `lazy` |
+| <span class="cx cx-linear">linear</span> | `L` | proportional to the sizes in the expression | `O(i)`, `O(j)`, `O(k)`, `O(m)`, `O(n)`, `O(i + k)`, `O(i + m)`, `O(index)`, `O(k + m)`, `O(m + n)`, `O(n + k)`, `O(n + m)`, `O(n - k)`, `O(endIndex)`, `O(from + k)`, `O(n / size)`, `O(n / step)`, `O(index + m)`, `O(k + log n)`, `O(max(n, m))`, `O(min(n, m))`, `O(beginIndex)`, `O(length - k)`, `O(offset + m)`, `O(min(i, n - i))`, `O(min(k, n - k))`, `O(m + min(i, n - i))`, `effectively O(min(n, size - n))` |
 | <span class="cx cx-linearithmic">n log n</span> |  | a sort, or one tree operation per element | `O(k log n)`, `O(m log n)`, `O(n log n)`, `O(m + n log n)`, `O(n + k log n)`, `O(n + r log n)`, `O(m log(n + m))`, `O((n + m) log n)`, `O((n / size) log n)`, `O((n / step) log n)`, `O(m log(n / m + 1))` |
-| <span class="cx cx-polynomial">polynomial</span> |  | a product of sizes: a slice search, a matrix, a cartesian product | `O(n^2)`, `O(n * m)`, `O(n^power)`, `O(n * size)`, `O(rows * columns)`, `O(n * size / step)`, `O(power * n^power)`, `O(n + (n / step) * size)`, `O(n + (n / step) * min(size, n - size))` |
-| <span class="cx cx-combinatorial">combinatorial</span> |  | one result per permutation or combination | `O(n!)`, `O(2^n)`, `O(n! * n)`, `O(C(n, k))`, `O(n * 2^n)`, `O(n! * n^2)`, `O(k * C(n, k))` |
+| <span class="cx cx-polynomial">polynomial</span> |  | a product of sizes: searching for a slice, sliding windows, a cartesian product | `O(n^2)`, `O(n * m)`, `O(n^power)`, `O(n * size)`, `O(rows * columns)`, `O(n * size / step)`, `O(power * n^power)`, `O(n + (n / step) * size)`, `O(n + (n / step) * min(size, n - size))` |
+| <span class="cx cx-combinatorial">combinatorial</span> |  | one result per combination or permutation | `O(n!)`, `O(2^n)`, `O(n! * n)`, `O(C(n, k))`, `O(n * 2^n)`, `O(n! * n^2)`, `O(k * C(n, k))` |
 
-"Effectively" and "amortised" are not the same promise:
+## Effectively constant
 
-- Effectively constant is a worst case: it grows with the size, but so slowly that it stays a handful of steps.
-- Amortised constant is an average: most calls are constant, and an occasional call pays for the others.
+`Vector`, `HashSet` and `HashMap` keep their elements in wide, shallow trees of small arrays, 32 slots each. A lookup reads one array per level: four levels hold a million elements, seven hold the largest possible collection. An update copies those few arrays and shares the rest.
 
-A lazy note describes what the call itself does; reading the result costs more.
+This is a worst case, not an average: every call costs a handful of steps.
 
-`n/a` means the type does not have the operation: `HashSet` and `HashMap` have no positional methods, because their order is not defined.
+## Amortised constant
+
+An amortised cost is an average. Most calls are O(1), and now and then one call pays O(n) for the work the others skipped.
+
+The average holds over a chain of calls, each made on the result of the previous one. A Zazr collection never changes, so you can also call the method again on an older version: each such call may pay the O(n) step again. The note of each amortised method says when that happens.
+
+## Lazy
+
+A `Stream` computes its elements when they are read, and keeps each one once computed. A lazy call returns a `Stream` without walking this one: its note says what is computed now, and the rest is computed as you read the result.
+
+"Now" can still be more than one element. A call that keeps only some elements, such as `filter`, reads until its first kept element; on an infinite `Stream` where none is kept, it never returns.
+
+## Missing operations
+
+`n/a` in a table means that the type has no such method. `HashSet` and `HashMap` have no positional methods (`head`, `take`, `drop`), because their order is not defined.
 
 ## Sequences
 
-`NonEmptyVector` wraps a `Vector`, so its costs are `Vector`'s; `Stream` is lazy, so most of its operations are deferred until the result is read.
+`NonEmptyVector` wraps a `Vector`, so its costs are those of `Vector`. `Stream` is lazy: most of its operations compute their result as it is read.
 
 | Operation | `Vector` | `List` | `Queue` | `Stream` | `NonEmptyVector` |
 |---|---|---|---|---|---|
@@ -98,9 +123,9 @@ As for the sets, only the ordered maps have positional methods.
 | `take` | n/a | <abbr class="cx cx-linear" title="effectively O(min(n, size - n)) (the smaller of the kept and the removed keys is inserted into or removed from the hash map; the insertion order is sliced). After removals, up to O(n): finding the cut walks the insertion order from the nearer end past every marker of a removed one in the way, and the insertion order is rebuilt when the result holds more markers than entries.">effectively O(min(n, size - n))</abbr> | <abbr class="cx cx-logarithmic" title="O(log n) (one rank split of the tree).">O(log n)</abbr> |
 | `drop` | n/a | <abbr class="cx cx-linear" title="effectively O(min(n, size - n)), that of take.">effectively O(min(n, size - n))</abbr> | <abbr class="cx cx-logarithmic" title="O(log n) (one rank split of the tree).">O(log n)</abbr> |
 
-## Every documented method
+## Every method, per type
 
-The notes as the javadoc states them, per type, in declaration order. A type that inherits a note says so.
+Each type lists its methods that have a cost note, in the order of its source. A method inherited from an interface says so. The paragraph under each type covers its other methods.
 
 ### `Vector`
 
