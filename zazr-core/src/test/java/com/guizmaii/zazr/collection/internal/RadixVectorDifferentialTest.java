@@ -777,6 +777,12 @@ public class RadixVectorDifferentialTest {
         final List<Integer> oneList = List.of(1);
         assertThatThrownBy(() -> full.appended(1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> full.prepended(1)).isInstanceOf(IllegalArgumentException.class);
+        // Integer.MAX_VALUE elements with the free position in front: prepended reaches the length check, not a full tree
+        final RadixVector<Integer> freeInFront = full.tail().appended(-1);
+        assertThat(freeInFront.length()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(freeInFront.last()).isEqualTo(-1);
+        assertThatThrownBy(() -> freeInFront.prepended(-2)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> freeInFront.appended(-2)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> full.appendedAll(one)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> full.prependedAll(one)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> full.appendedAll(oneList)).isInstanceOf(IllegalArgumentException.class);
@@ -842,6 +848,158 @@ public class RadixVectorDifferentialTest {
         checkShape(prependedToMax.take(1 << 21));
         checkShape(prependedToMax.takeRight(1 << 21));
         assertThatThrownBy(() -> prependedToMax.prepended(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /*
+     * The free slots in front of an argument vector never limit appendedAll/prependedAll: a RadixVector whose front was
+     * dropped gives the same result as a list or a fresh vector of the same elements, up to exactly Integer.MAX_VALUE.
+     * Every branch of prependedAll0 is reached: appending the receiver to the prefix, alignTo, and the plain builder.
+     */
+    @Test
+    public void argumentsWithFreeSlotsInFrontFitUpToTheLimit() {
+        final RadixVector<Integer> half = sharedLeafVector(1 << 30);
+        final RadixVector<Integer> full = half.appendedAll(half.init());
+        assertThat(full.length()).isEqualTo(Integer.MAX_VALUE);
+
+        // the plain builder branch: a prefix of 2^30 - 32 elements, 32 free slots in front
+        final RadixVector<Integer> p = half.drop(32);
+        final RadixVector<Integer> x = full.take(Integer.MAX_VALUE - p.length());
+        final RadixVector<Integer> px = x.prependedAll(p);
+        assertThat(px.length()).isEqualTo(Integer.MAX_VALUE);
+        checkMaxLength(px, 0);
+        checkShape(px.take(1 << 16));
+        checkShape(px.takeRight(1 << 16));
+
+        // the alignTo branch, through every kind of prefix of the same elements
+        final Object[] elements = sequence(1_000_000, 1_000_000 + 5160);
+        final RadixVector<Integer> dropped = RadixVector.<Integer> ofAll(elements).drop(40);
+        final List<Integer> list = new ArrayList<>();
+        dropped.forEach(list::add);
+        final RadixVector<Integer> y = full.take(Integer.MAX_VALUE - dropped.length());
+        final List<Iterable<Integer>> prefixes = List.of(dropped, RadixVector.ofAll(list.toArray()), list, oneShot(list));
+        for (Iterable<Integer> prefix : prefixes) {
+            final RadixVector<Integer> r = y.prependedAll(prefix);
+            assertThat(r.length()).isEqualTo(Integer.MAX_VALUE);
+            for (int i = 0; i < list.size(); i++) {
+                if (!list.get(i).equals(r.get(i))) {
+                    throw new AssertionError("prefix " + prefix.getClass().getSimpleName() + ": get(" + i + ")");
+                }
+            }
+            final Iterator<Integer> it = r.iterator();
+            for (int i = 0; i < list.size() + 5000; i++) {
+                final Integer expected = (i < list.size()) ? list.get(i) : y.get(i - list.size());
+                if (!expected.equals(it.next())) {
+                    throw new AssertionError("prefix " + prefix.getClass().getSimpleName() + ": iterator at " + i);
+                }
+            }
+            for (long i = list.size(); i < Integer.MAX_VALUE; i += 9_999_991) {
+                assertThat(r.get((int) i)).isEqualTo(y.get((int) i - list.size()));
+            }
+            assertThat(r.last()).isEqualTo(y.last());
+            checkShape(r.take(1 << 16));
+            checkShape(r.takeRight(1 << 16));
+        }
+
+        // the branch that appends the receiver to the prefix: near the limit it goes to the builder instead
+        final RadixVector<Integer> twenty = RadixVector.ofAll(sequence(-20, 0));
+        final RadixVector<Integer> bigPrefix = full.drop(1024);
+        final RadixVector<Integer> onto = twenty.prependedAll(bigPrefix);
+        assertThat(onto.length()).isEqualTo(Integer.MAX_VALUE - 1024 + 20);
+        assertThat(onto.head()).isEqualTo(bigPrefix.head());
+        assertThat(onto.get(Integer.MAX_VALUE - 1024 - 1)).isEqualTo(bigPrefix.last());
+        for (int i = 0; i < 20; i++) {
+            assertThat(onto.get(Integer.MAX_VALUE - 1024 + i)).isEqualTo(-20 + i);
+        }
+        checkShape(onto.takeRight(1 << 16));
+        // and its mirror: prepending the receiver to the suffix
+        final RadixVector<Integer> ontoSuffix = twenty.appendedAll(bigPrefix);
+        assertThat(ontoSuffix.length()).isEqualTo(Integer.MAX_VALUE - 1024 + 20);
+        assertThat(ontoSuffix.get(19)).isEqualTo(-1);
+        assertThat(ontoSuffix.get(20)).isEqualTo(bigPrefix.head());
+        assertThat(ontoSuffix.last()).isEqualTo(bigPrefix.last());
+        checkShape(ontoSuffix.take(1 << 16));
+
+        // one element too many still throws, whatever the kind of argument
+        assertThatThrownBy(() -> x.appended(0).prependedAll(p)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> y.appended(0).prependedAll(list)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /* a vector of n elements (a power of two, at least 32) made of one leaf 0..31, shared everywhere */
+    private static RadixVector<Integer> sharedLeafVector(int n) {
+        RadixVector<Integer> v = RadixVector.ofAll(sequence(0, WIDTH));
+        while (v.length() < n) {
+            v = v.appendedAll(v);
+        }
+        return v;
+    }
+
+    /*
+     * A Vector6 of 63 blocks of 2^25 elements whose first elements differ (the leaves are shared within a block, so it
+     * fits in memory): a read or an update that picks the wrong top-level array shows up. Iterated to the end, updated
+     * in every entry of data6, and checked at every slice boundary.
+     */
+    @Test
+    public void vector6WithDistinctBlocksBeyondTopIndex32() {
+        final int blockSize = 1 << 25;
+        final int base = 1 << 20;
+        final VectorBuilder<Integer> builder = RadixVector.newBuilder();
+        for (int i = 0; i < base; i++) {
+            builder.add(i);
+        }
+        RadixVector<Integer> block = builder.result();
+        while (block.length() < blockSize) {
+            block = block.appendedAll(block);
+        }
+        final int blocks = 63;
+        RadixVector<Integer> big = block.updated(0, marker(0));
+        for (int j = 1; j < blocks; j++) {
+            big = big.appendedAll(block.updated(0, marker(j)));
+        }
+        final RadixVector<Integer> v = big;
+        assertThat(v).isInstanceOf(RadixVector.Vector6.class);
+        assertThat(v.length()).isEqualTo(blocks * blockSize);
+        final RadixVector.Vector6<Integer> v6 = (RadixVector.Vector6<Integer>) v;
+        assertThat(v6.data6.length).isGreaterThan(32);
+
+        int i = 0;
+        final Iterator<Integer> it = v.iterator();
+        while (it.hasNext()) {
+            final int x = it.next();
+            if (x != blockElement(i, blockSize, base)) {
+                throw new AssertionError("iterator at " + i + ": " + x);
+            }
+            i++;
+        }
+        assertThat(i).isEqualTo(v.length());
+        for (int j = 0; j < blocks; j++) {
+            for (int d = -1; d <= 1; d++) {
+                final long at = (long) j * blockSize + d;
+                if (at >= 0 && at < v.length()) {
+                    assertThat(v.get((int) at)).isEqualTo(blockElement((int) at, blockSize, base));
+                }
+            }
+        }
+        checkUpdatesAtSliceBoundaries(v);
+        for (int t = 0; t < v6.data6.length; t++) {
+            final int at = v6.len12345 + t * blockSize + 3;
+            final RadixVector<Integer> u = v.updated(at, -5);
+            assertThat(u.get(at)).as("updated at data6 entry %d", t).isEqualTo(-5);
+            assertThat(v.get(at)).isEqualTo(blockElement(at, blockSize, base));
+            for (int other = at % blockSize; other < v.length(); other += blockSize) {
+                if (other != at) {
+                    assertThat(u.get(other)).as("block of %d after updated(%d)", other, at).isEqualTo(blockElement(other, blockSize, base));
+                }
+            }
+        }
+    }
+
+    private static int marker(int block) {
+        return -1000 - block;
+    }
+
+    private static int blockElement(int i, int blockSize, int base) {
+        final int offset = i & (blockSize - 1);
+        return (offset == 0) ? marker(i / blockSize) : offset % base;
     }
 
     /* the element at index i of a vector made of the leaf 0..31 repeated, dropped by `dropped`, is (i + dropped) mod 32 */

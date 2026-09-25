@@ -101,11 +101,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
         Objects.requireNonNull(elements, "elements is null");
         if (elements instanceof RadixVector<?> v) {
             checkRoomFor(v.length());
-            if (len1 == 0 && lenRest == 0 && !prefixIsRightAligned && initFromFits(v)) {
-                initFrom(v);
-            } else {
-                addVector(v);
-            }
+            addVectorFirst(v, v.length());
         } else {
             for (T element : elements) {
                 add(element);
@@ -156,10 +152,42 @@ public final class VectorBuilder<T extends @Nullable Object> {
         return new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
     }
 
-    /* initFrom(v) pads the front with offset empty slots, which must fit in an int next to v's elements; they do not
-     * only for a Vector6 filled to its last position, which is then added by addVector, without padding */
-    private static boolean initFromFits(RadixVector<?> v) {
-        return !(v instanceof RadixVector.Vector6<?> v6) || (long) v6.length0 + (WIDTH5 - v6.len12345) <= Integer.MAX_VALUE;
+    /*
+     * Adds v, which becomes the front of a vector of `total` elements (total >= v.length()). On an empty builder, v's
+     * arrays are reused through initFrom, which keeps the free slots in front of v's prefix as padding; that padding
+     * counts against the 2^31 positions, so when it would not fit next to `total` elements, v is added by addVector
+     * instead, without padding (whole arrays are still shared where they align).
+     */
+    private void addVectorFirst(RadixVector<?> v, long total) {
+        if (len1 == 0 && lenRest == 0 && !prefixIsRightAligned && frontFree(v) + total <= Integer.MAX_VALUE) {
+            initFrom(v);
+        } else {
+            addVector(v);
+        }
+    }
+
+    /**
+     * Adds {@code v}, the first part of a vector of {@code total} elements: like {@link #addAll(Iterable)}, but the
+     * free slots in front of {@code v}'s prefix are not kept when the result would then not fit.
+     */
+    VectorBuilder<T> addAllFirst(RadixVector<? extends T> v, long total) {
+        checkOpen();
+        checkRoomFor(v.length());
+        addVectorFirst(v, total);
+        return this;
+    }
+
+    /* the free slots in front of v's prefix, which initFrom keeps as offset */
+    private static long frontFree(RadixVector<?> v) {
+        return switch (v) {
+            case RadixVector.Vector0<?> v0 -> 0;
+            case RadixVector.Vector1<?> v1 -> 0;
+            case RadixVector.Vector2<?> v2 -> WIDTH - v2.len1;
+            case RadixVector.Vector3<?> v3 -> WIDTH2 - v3.len12;
+            case RadixVector.Vector4<?> v4 -> WIDTH3 - v4.len123;
+            case RadixVector.Vector5<?> v5 -> WIDTH4 - v5.len1234;
+            case RadixVector.Vector6<?> v6 -> WIDTH5 - v6.len12345;
+        };
     }
 
     private void checkOpen() {
@@ -320,7 +348,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
         final int overallPrefixLength = (int) (((long) before + prefixLength) % maxPrefixLength);
         final int newOffset = (maxPrefixLength - overallPrefixLength) % maxPrefixLength;
         if ((long) newOffset + before + bigVector.length() > Integer.MAX_VALUE) {
-            // the padding would not fit next to the elements: build without it
+            // the padding would not fit next to the elements: build without it, and still as an aligned builder, so that
+            // the vectors added next are added by addVector, never by initFrom, whose padding would not fit either
+            prefixIsRightAligned = true;
             return this;
         }
         offset = newOffset;
