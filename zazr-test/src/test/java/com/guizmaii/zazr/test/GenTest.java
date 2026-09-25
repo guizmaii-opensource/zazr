@@ -88,9 +88,9 @@ class GenTest {
     void anEmptyGeneratorExhaustsTheDiscardBudgetOfARepeatedRun() {
         assertThatThrownBy(() -> Gen.empty().runCollectN(1, config(1)))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 1001 passes in a row at growing sizes, more than the discard budget of 1000");
+                .hasMessage("the generator produced no value: 1001 discards since the last sample, more than the discard budget of 1000");
         assertThatThrownBy(() -> Gen.empty().runCollectN(1, config(1).withMaxDiscards(0)))
-                .hasMessage("the generator produced no value in 1 passes in a row at growing sizes, more than the discard budget of 0");
+                .hasMessage("the generator produced no value: 1 discards since the last sample, more than the discard budget of 0");
         assertThat(Gen.empty().runCollectN(0, config(1))).isEmpty();
     }
 
@@ -410,11 +410,12 @@ class GenTest {
     void filterGivesUpAfterItsDiscardBudget() {
         assertThatThrownBy(() -> Gen.integers().filter(i -> false).runCollectN(1, config(1)))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000,"
-                        + " in 1001 passes in a row at growing sizes; generate the wanted values with map or flatMap instead of filtering them");
+                .hasMessage("Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000;"
+                        + " generate the wanted values with map or flatMap instead of filtering them");
+        // one pass: the filter gives its pass up after a sixteenth of the budget, so a value is missing
         assertThatThrownBy(() -> Gen.integers().filter(i -> false).runCollect(config(1)))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000;"
+                .hasMessage("Gen.filter gave a pass up after rejecting 62 values in a row;"
                         + " generate the wanted values with map or flatMap instead of filtering them");
     }
 
@@ -431,22 +432,72 @@ class GenTest {
     }
 
     @Test
-    void theDiscardBudgetCountsRejectionsInARow() {
-        // 0, 1 and 2 are rejected before 3 passes: three rejections in a row fit a budget of 3, not of 2
-        assertThat(counter().filter(i -> i % 4 == 3).runCollect(config(1).withMaxDiscards(3))).isEqualTo(List.of(3));
-        assertThatThrownBy(() -> counter().filter(i -> i % 4 == 3).runCollect(config(1).withMaxDiscards(2)))
-                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected every value it tried: 3 values in a row");
-        assertThat(counter().filter(i -> i % 4 == 3).runCollectN(10, config(1).withMaxDiscards(3)))
-                .isEqualTo(List.of(3, 7, 11, 15, 19, 23, 27, 31, 35, 39));
+    void aFilterGivesItsPassUpAfterASixteenthOfTheBudget() {
+        // 0, 1 and 2 are rejected before 3 passes: a budget of 64 lets a filter reject 3 in a row, 48 does not
+        assertThat(counter().filter(i -> i % 4 == 3).runCollect(config(1).withMaxDiscards(64))).isEqualTo(List.of(3));
+        assertThatThrownBy(() -> counter().filter(i -> i % 4 == 3).runCollect(config(1).withMaxDiscards(48)))
+                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter gave a pass up after rejecting 3 values in a row");
         assertThat(counter().filter(i -> true).runCollect(config(1).withMaxDiscards(0))).isEqualTo(List.of(0));
         assertThatThrownBy(() -> counter().filter(i -> i > 0).runCollect(config(1).withMaxDiscards(0)))
-                .hasMessageStartingWith("Gen.filter rejected every value it tried: 1 values in a row");
+                .hasMessageStartingWith("Gen.filter rejected too many values: 1 discards since the last sample");
     }
 
     @Test
     void aFilterThatGaveUpAPassIsRetriedAtTheNextPass() {
-        // a budget of 2: the pass of 0, 1, 2 is given up, the next pass starts at 3
-        assertThat(counter().filter(i -> i % 4 == 3).runCollectN(3, config(1).withMaxDiscards(2))).isEqualTo(List.of(3, 7, 11));
+        // a budget of 32: a filter gives its pass up after 2 rejections; the next pass goes on from the counter
+        assertThat(counter().filter(i -> i % 4 == 3).runCollectN(3, config(1).withMaxDiscards(32))).isEqualTo(List.of(3, 7, 11));
+    }
+
+    @Test
+    void theBudgetStartsAgainAtEachSample() {
+        // 3 discards per sample (2 rejections and an empty pass) fit a budget of 32 however many samples run
+        assertThat(counter().filter(i -> i % 4 == 3).runCollectN(100, config(1).withMaxDiscards(32))).hasSize(100);
+    }
+
+    /// A predicate that counts its calls.
+    private static <A> java.util.function.Predicate<A> counting(java.util.concurrent.atomic.AtomicLong calls, java.util.function.Predicate<A> predicate) {
+        return a -> {
+            calls.incrementAndGet();
+            return predicate.test(a);
+        };
+    }
+
+    @Test
+    void aFilterThatNeverPassesCallsItsPredicateAtMostOnceMoreThanTheBudget() {
+        for (int budget : new int[] { 0, 1, 2, 15, 16, 17, 100, 1000 }) {
+            final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
+            assertThatThrownBy(() -> Gen.integers().filter(counting(calls, i -> false)).runCollectN(10, config(1).withMaxDiscards(budget)))
+                    .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected too many values");
+            assertThat(calls.get()).as("budget " + budget).isPositive().isLessThanOrEqualTo(budget + 1L);
+        }
+    }
+
+    @Test
+    void nestedFiltersShareOneBudget() {
+        final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
+        final Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
+                .flatMap(i -> i == 1 ? Gen.integers().filter(counting(calls, x -> false)) : Gen.integers())
+                .filter(counting(calls, x -> false));
+        assertThatThrownBy(() -> nested.runCollectN(200, config(1))).isInstanceOf(IllegalStateException.class)
+                .hasMessageStartingWith("Gen.filter rejected too many values: 1001 discards");
+        assertThat(calls.get()).isLessThanOrEqualTo(1001L);
+
+        final java.util.concurrent.atomic.AtomicLong outer = new java.util.concurrent.atomic.AtomicLong();
+        final java.util.concurrent.atomic.AtomicLong inner = new java.util.concurrent.atomic.AtomicLong();
+        final Gen<Integer> threeLevels = Gen.integers().filter(counting(inner, x -> x % 2 == 0))
+                .filter(counting(inner, x -> x % 3 == 0)).filter(counting(outer, x -> false));
+        assertThatThrownBy(() -> threeLevels.runCollectN(200, config(1))).isInstanceOf(IllegalStateException.class);
+        assertThat(outer.get()).isLessThanOrEqualTo(1001L);
+        assertThat(inner.get()).isLessThanOrEqualTo(20_000L);
+    }
+
+    @Test
+    void anInnerFilterThatAcceptsDoesNotRefillTheBudgetOfAnOuterOne() {
+        final java.util.concurrent.atomic.AtomicLong outer = new java.util.concurrent.atomic.AtomicLong();
+        final Gen<Integer> gen = Gen.integers().filter(i -> i % 2 == 0).filter(counting(outer, i -> false));
+        assertThatThrownBy(() -> gen.runCollectN(10, config(1))).isInstanceOf(IllegalStateException.class)
+                .hasMessageStartingWith("Gen.filter rejected too many values");
+        assertThat(outer.get()).isLessThanOrEqualTo(1001L);
     }
 
     @Test
@@ -457,32 +508,51 @@ class GenTest {
         assertThat(Sampling.exceeds(0, 0)).isFalse();
         final CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
         assertThat(Gen.integers().filter(i -> i % 2 == 0).runCollectN(20, largest)).hasSize(20);
-        assertThat(Gen.sized(n -> n < 5 ? Gen.<Integer>empty() : Gen.constant(n)).runCollectN(2, largest.withSize(10))).isEqualTo(List.of(5, 10));
+        assertThat(Gen.sized(n -> n < 5 ? Gen.<Integer>empty() : Gen.constant(n)).runCollectN(2, largest.withSize(10))).isEqualTo(List.of(7, 10));
     }
 
     @Test
     void aFilterThatRejectsEveryValueOfAFiniteGeneratorExhaustsTheRun() {
         assertThatThrownBy(() -> Gen.fromIterable(java.util.List.of(1, 3)).filter(i -> i % 2 == 0).runCollectN(1, config(1)))
-                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("the generator produced no value in 1001 passes");
-        // a finite generator only loses the rejected values, however many in a row
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("the generator produced no value: 1001 discards since the last sample, more than the discard budget of 1000");
+        // a finite generator only loses the rejected values, however many in a row, and spends no budget on them
         assertThat(pass(Gen.fromIterable(List.range(0, 3_000)).filter(i -> i >= 2_500))).hasSize(500);
     }
 
     // -- the size after a pass without a value
 
     @Test
-    void anEmptyPassMovesTheNextOneToALargerSize() {
+    void anEmptyPassMovesTheNextOneToADoubledSize() {
         final Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
-        // the first sample runs at size 0, finds nothing at 0, 1 and 2, and is taken at size 3
+        // the first sample runs at size 0, finds nothing at 0 and 1, and is taken at size 3
         assertThat(fromSizeThree.runCollectN(5, config(1))).isEqualTo(List.of(3, 25, 50, 75, 100));
-        assertThat(Gen.sized(n -> Gen.constant(n)).filter(n -> n >= 100).runCollectN(2, config(1))).isEqualTo(List.of(100, 100));
+        // 0, 1, 3, 7, 15, 31, 63, then the configured size
+        assertThat(Gen.sized(n -> Gen.constant(n)).filter(n -> n >= 64).runCollectN(2, config(1))).isEqualTo(List.of(100, 100));
     }
 
     @Test
     void theSizeAfterEmptyPassesStopsAtTheConfiguredSize() {
         final Gen<Integer> never = Gen.sized(n -> n <= 5 ? Gen.<Integer>empty() : Gen.constant(n));
         assertThatThrownBy(() -> never.runCollectN(1, config(1).withSize(5).withMaxDiscards(50)))
-                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("the generator produced no value in 51 passes");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("the generator produced no value: 51 discards since the last sample, more than the discard budget of 50");
+    }
+
+    @Test
+    void theGrowthDoublesUpToTheLargestSize() {
+        final Sampling sampling = new Sampling(1, 10, 100);
+        assertThat(sampling.grow(0, 0)).isEqualTo(0);
+        assertThat(sampling.grow(0, 1)).isEqualTo(1);
+        assertThat(sampling.grow(0, 2)).isEqualTo(3);
+        assertThat(sampling.grow(0, 6)).isEqualTo(63);
+        assertThat(sampling.grow(0, 7)).isEqualTo(100);
+        assertThat(sampling.grow(50, 3)).isEqualTo(57);
+        assertThat(sampling.grow(0, 62)).isEqualTo(100);
+        assertThat(sampling.grow(0, Long.MAX_VALUE)).isEqualTo(100);
+        // a size set above the largest one by withSize is not lowered
+        assertThat(sampling.grow(300, 5)).isEqualTo(300);
+        assertThat(new Sampling(1, 10).grow(Integer.MAX_VALUE - 1, 5)).isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test
@@ -492,6 +562,8 @@ class GenTest {
             assertThat(Gen.alphaNumericStrings().filter(s -> !s.isEmpty()).runCollectN(200, config)).hasSize(200).noneMatch(String::isEmpty);
             assertThat(Gen.strings().filter(s -> !s.isEmpty()).runCollectN(200, config)).hasSize(200);
             assertThat(Gen.sized(n -> Gen.integers(0, n)).filter(x -> x > 0).runCollectN(200, config)).hasSize(200);
+            assertThat(Gen.sized(n -> Gen.integers(0, n)).filter(x -> x > 90).runCollectN(200, config)).hasSize(200).allMatch(x -> x > 90);
+            assertThat(Gen.sized(n -> Gen.integers(0, n)).filter(x -> x >= 100).runCollectN(200, config)).hasSize(200).allMatch(x -> x == 100);
         }
     }
 
@@ -580,27 +652,39 @@ class GenTest {
     void drawGivesUpOnAnEmptyGenerator() {
         assertThatThrownBy(() -> Gen.empty().draw(new Sampling(1, 1000), 4))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 1001 passes in a row at growing sizes, more than the discard budget of 1000");
+                .hasMessage("the generator produced no value: 1001 discards since the last sample, more than the discard budget of 1000");
         assertThatThrownBy(() -> Gen.oneOf(Gen.empty(), Gen.empty()).draw(new Sampling(1, 3), 4))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 4 passes in a row at growing sizes, more than the discard budget of 3");
+                .hasMessage("the generator produced no value: 4 discards since the last sample, more than the discard budget of 3");
         assertThatThrownBy(() -> Gen.integers().filter(i -> false).draw(new Sampling(1, 3), 4))
-                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected every value it tried: 4 values in a row");
+                .isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected too many values: 4 discards");
     }
 
     @Test
-    void drawRetriesAnEmptyPassAtTheNextSize() {
+    void drawRetriesAnEmptyPassAtALargerSize() {
         final Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
-        assertThat(fromSizeThree.draw(new Sampling(1, 10), 0)).isEqualTo(3);
-        assertThat(Gen.stringsN(5, Gen.strings(Gen.alphaChars()).filter(s -> !s.isEmpty()).map(s -> s.charAt(0)))
-                .runCollect(config(1).withSize(0))).hasSize(1);
+        assertThat(fromSizeThree.draw(new Sampling(1, 10, 10), 0)).isEqualTo(3);
+        final Gen<Character> firstLetters = Gen.strings(Gen.alphaChars()).filter(s -> !s.isEmpty()).map(s -> s.charAt(0));
+        assertThat(Gen.stringsN(5, firstLetters).withSize(0).runCollect(config(1).withSize(10))).hasSize(1).allMatch(s -> s.length() == 5);
+    }
+
+    @Test
+    void drawDoesNotGoAboveTheConfiguredSize() {
+        final Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
+        assertThatThrownBy(() -> fromSizeThree.draw(new Sampling(1, 10, 2), 0)).isInstanceOf(IllegalStateException.class)
+                .hasMessage("the generator produced no value: 11 discards since the last sample, more than the discard budget of 10");
+        final Gen<Character> firstLetters = Gen.strings(Gen.alphaChars()).filter(s -> !s.isEmpty()).map(s -> s.charAt(0));
+        assertThatThrownBy(() -> Gen.stringsN(5, firstLetters).runCollect(config(1).withSize(0))).isInstanceOf(IllegalStateException.class);
+        final CheckResult result = Check.check(config(1),
+                Gen.stringsN(1, Gen.sized(n -> Gen.constant((char) (int) n)).filter(c -> c > 150)).map(s -> (int) s.charAt(0)), x -> x <= 100);
+        assertThat(result.isErroneous()).as(result.toString()).isTrue();
     }
 
     @Test
     void aDrawThatSucceedsAfterAFilterGaveUpLosesNoValue() {
-        // the element filter gives its first pass up (budget 2), the draw runs it again, and the pass is complete
+        // the element filter gives its first pass up (budget 32: after 2 rejections), the draw runs it again
         final Gen<String> gen = Gen.stringsN(1, counter().filter(i -> i % 4 == 3).map(i -> (char) ('a' + i)));
-        assertThat(gen.runCollect(config(1).withMaxDiscards(2))).isEqualTo(List.of("d"));
+        assertThat(gen.runCollect(config(1).withMaxDiscards(32))).isEqualTo(List.of("d"));
     }
 
     // -- runs
