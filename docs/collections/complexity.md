@@ -274,7 +274,7 @@ The notes as the javadoc states them, per type, in declaration order. A type tha
 | `lastIndexWhere(Predicate<? super T>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `lastIndexWhere(Predicate<? super T>, int)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `padTo(int, T)` | <abbr class="cx cx-linear" title="O(n + k) for k added elements.">O(n + k)</abbr> | O(n + k) for k added elements. |
-| `leftPadTo(int, T)` | <abbr class="cx cx-linear" title="O(k) for k added elements; this List is shared, not copied.">O(k)</abbr> | O(k) for k added elements; this List is shared, not copied. |
+| `leftPadTo(int, T)` | <abbr class="cx cx-linear" title="O(n + k) for k added elements; this List is counted up to length only, so a longer one is returned after length steps, and it is shared, not copied.">O(n + k)</abbr> | O(n + k) for k added elements; this List is counted up to length only, so a longer one is returned after length steps, and it is shared, not copied. |
 | `patch(int, Iterable<? extends T>, int)` | <abbr class="cx cx-linear" title="O(n + m) for m replacement elements.">O(n + m)</abbr> | O(n + m) for m replacement elements. |
 | `partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>>)` | <abbr class="cx cx-linear" title="O(n); each side is built reversed and reversed once.">O(n)</abbr> | O(n); each side is built reversed and reversed once. |
 | `peek()` | <abbr class="cx cx-constant" title="O(1); the head is a field of the cons cell.">O(1)</abbr> | O(1); the head is a field of the cons cell. |

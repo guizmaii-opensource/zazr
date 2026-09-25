@@ -60,4 +60,35 @@ public class LengthComplexityTest {
         });
     }
 
+    @Test
+    public void shouldWalkOnlyThePrefixOfAList() {
+        // K calls on a List of N elements: milliseconds when each call walks a few cells, far past the bound when
+        // each call walks the whole List
+        final List<Integer> list = List.range(0, N);
+        assertTimeoutPreemptively(BOUND, () -> {
+            for (int i = 0; i < K; i++) {
+                assertThat(list.take(1).head()).isEqualTo(0);
+                assertThat(list.drop(1).head()).isEqualTo(1);
+                assertThat(list.takeWhile(x -> x < 1).head()).isEqualTo(0);
+                assertThat(list.takeUntil(x -> x >= 1).head()).isEqualTo(0);
+                assertThat(list.slice(0, 1).head()).isEqualTo(0);
+                assertThat(list.subSequence(1).head()).isEqualTo(1);
+                assertThat(list.subSequence(0, 1).head()).isEqualTo(0);
+                assertThat(list.remove(0).head()).isEqualTo(1);
+                assertThat(list.leftPadTo(2, -1)).isSameAs(list);
+                assertThat(list.segmentLength(x -> x < 2, 1)).isEqualTo(1);
+            }
+        });
+    }
+
+    @Test
+    public void shouldFindTheLastSliceAndTheCombinationsOfAListInLinearTime() {
+        assertTimeoutPreemptively(BOUND, () -> {
+            final List<Integer> ones = List.fill(2 * N, 1);
+            assertThat(ones.lastIndexOfSlice(List.of(1))).isEqualTo(2 * N - 1);
+            assertThat(ones.lastIndexOfSlice(List.of(1), N)).isEqualTo(N);
+            assertThat(List.range(0, N).combinations(1).length()).isEqualTo(N);
+        });
+    }
+
 }

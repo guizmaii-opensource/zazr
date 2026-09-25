@@ -1002,6 +1002,13 @@ and unable to drift:
 - Facts the page made visible, stated in the notes rather than changed here: `min()`/`max()` on the sets use the
   natural order of the elements and walk them all, including on a `TreeSet` (whose least and greatest elements in its
   own order are `head()` and `last()`, O(log n)).
+- Cost defects found by the review of the page (2026-09-25, #93), one decision each:
+  - `List`: `take`, `drop`, `takeWhile`/`takeUntil`, `slice`, `subSequence`, `remove`, `leftPadTo` and
+    `segmentLength` measured the whole List (`length()` walks it) before walking their prefix, so each was O(n) even
+    for one element. Fixed: they walk only the cells they need (`subSequence` counts the length only to build the
+    message of the exception it throws; `leftPadTo` counts up to the target). `lastIndexOfSlice` drops the found
+    prefix with the fixed `drop`, and `combinations(k)` walks the tails instead of dropping i + 1 elements per index,
+    so both lose their quadratic factor.
 
 Which concrete collections survive (decided):
 
