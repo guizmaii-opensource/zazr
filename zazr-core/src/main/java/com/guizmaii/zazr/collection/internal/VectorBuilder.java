@@ -61,14 +61,23 @@ public final class VectorBuilder<T extends @Nullable Object> {
      * Appends one element.
      *
      * @throws IllegalStateException if {@link #result()} has been called
-     * @throws NullPointerException if {@code element} is null
+     * @throws NullPointerException if {@code element} is null; the builder is left unchanged
+     * @throws IllegalArgumentException if the builder is full: it holds {@code Integer.MAX_VALUE} elements, or fewer
+     * when it started from a vector whose first leaves are not full (see {@link #addAll(Iterable)})
      */
     public VectorBuilder<T> add(T element) {
-        // once closed, len1 == WIDTH, so the check of advance() runs before anything is written
-        if (len1 == WIDTH) {
-            advance();
+        // every check runs before the state changes, so that a rejected element leaves the builder as it was
+        if (element == null) {
+            checkOpen();
+            throw new NullPointerException("Vector.Builder.add: element is null");
         }
-        a1[len1] = Objects.requireNonNull(element, "Vector.Builder.add: element is null");
+        if (len1 == WIDTH) {
+            // once closed, len1 == WIDTH: advance() checks that the builder is open before anything is written
+            advance();
+        } else if (len1 + lenRest == Integer.MAX_VALUE) {
+            throw tooManyElements();
+        }
+        a1[len1] = element;
         len1 += 1;
         return this;
     }
@@ -76,15 +85,23 @@ public final class VectorBuilder<T extends @Nullable Object> {
     /**
      * Appends every element of {@code elements}, in iteration order. A {@code RadixVector} is added by whole arrays.
      *
+     * A null element part-way through a plain {@code Iterable} is rejected when reached: the builder keeps the elements
+     * added before it, and is left as it was after the last of them.
+     *
      * @throws IllegalStateException if {@link #result()} has been called
      * @throws NullPointerException if {@code elements} is null or yields a null element
+     * @throws IllegalArgumentException if the builder would hold more than {@code Integer.MAX_VALUE} elements; when
+     * {@code elements} is a {@code RadixVector}, nothing is added then. A builder that starts empty with a vector whose
+     * first leaves are not full reuses its arrays, free slots in front included, and so holds that many fewer elements,
+     * as the vector itself does
      */
     @SuppressWarnings("unchecked")
     public VectorBuilder<T> addAll(Iterable<? extends T> elements) {
         checkOpen();
         Objects.requireNonNull(elements, "elements is null");
         if (elements instanceof RadixVector<?> v) {
-            if (len1 == 0 && lenRest == 0 && !prefixIsRightAligned) {
+            checkRoomFor(v.length());
+            if (len1 == 0 && lenRest == 0 && !prefixIsRightAligned && initFromFits(v)) {
                 initFrom(v);
             } else {
                 addVector(v);
@@ -101,13 +118,16 @@ public final class VectorBuilder<T extends @Nullable Object> {
      * Appends {@code elements[from, to)}, one whole-leaf copy at a time.
      *
      * @throws IllegalStateException if {@link #result()} has been called
-     * @throws NullPointerException if one of those elements is null
+     * @throws NullPointerException if one of those elements is null; nothing is added then
+     * @throws IllegalArgumentException if the builder would hold more than {@code Integer.MAX_VALUE} elements; nothing
+     * is added then
      */
     public VectorBuilder<T> addArray(@Nullable Object[] elements, int from, int to) {
         checkOpen();
         for (int i = from; i < to; i++) {
             Objects.requireNonNull(elements[i], "Vector: element is null");
         }
+        checkRoomFor(to - from);
         int i = from;
         while (i < to) {
             if (len1 == WIDTH) {
@@ -119,6 +139,27 @@ public final class VectorBuilder<T extends @Nullable Object> {
             i += count;
         }
         return this;
+    }
+
+    /*
+     * n more elements fit. The limit counts positions, len1 + lenRest, which include the offset slots in front: a finger
+     * tree has 2^31 positions, the free slots in front of a partial prefix included, so a builder started from a vector
+     * whose prefix is not full (initFrom) holds fewer than Integer.MAX_VALUE elements, as that vector itself does
+     */
+    private void checkRoomFor(int n) {
+        if ((long) len1 + lenRest + n > Integer.MAX_VALUE) {
+            throw tooManyElements();
+        }
+    }
+
+    private static IllegalArgumentException tooManyElements() {
+        return new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
+    }
+
+    /* initFrom(v) pads the front with offset empty slots, which must fit in an int next to v's elements; they do not
+     * only for a Vector6 filled to its last position, which is then added by addVector, without padding */
+    private static boolean initFromFits(RadixVector<?> v) {
+        return !(v instanceof RadixVector.Vector6<?> v6) || (long) v6.length0 + (WIDTH5 - v6.len12345) <= Integer.MAX_VALUE;
     }
 
     private void checkOpen() {
@@ -276,8 +317,13 @@ public final class VectorBuilder<T extends @Nullable Object> {
             // no alignment for a vector of at most 32 elements
             return this;
         }
-        final int overallPrefixLength = (before + prefixLength) % maxPrefixLength;
-        offset = (maxPrefixLength - overallPrefixLength) % maxPrefixLength;
+        final int overallPrefixLength = (int) (((long) before + prefixLength) % maxPrefixLength);
+        final int newOffset = (maxPrefixLength - overallPrefixLength) % maxPrefixLength;
+        if ((long) newOffset + before + bigVector.length() > Integer.MAX_VALUE) {
+            // the padding would not fit next to the elements: build without it
+            return this;
+        }
+        offset = newOffset;
         // pretend that offset elements were already added
         advanceN(offset & ~MASK);
         len1 = offset & MASK;
@@ -670,6 +716,13 @@ public final class VectorBuilder<T extends @Nullable Object> {
      */
     public RadixVector<T> result() {
         checkOpen();
+        final RadixVector<T> result = build();
+        close();
+        return result;
+    }
+
+    /* the vector of the elements added so far; the builder's arrays go to it, so the builder must not write them after */
+    private RadixVector<T> build() {
         if (prefixIsRightAligned) {
             leftAlignPrefix();
         }
@@ -764,7 +817,6 @@ public final class VectorBuilder<T extends @Nullable Object> {
             result = new RadixVector.Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data,
                 suffix5, suffix4, suffix3, suffix2, suffix1, realLen);
         }
-        close();
         return result;
     }
 

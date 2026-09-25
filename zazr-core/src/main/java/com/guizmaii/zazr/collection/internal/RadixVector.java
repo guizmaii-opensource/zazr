@@ -34,6 +34,10 @@ import static com.guizmaii.zazr.collection.internal.VectorStatics.*;
  * The depth is not always the minimal one for the length: a {@code Vector3} whose elements were dropped from both ends
  * may hold fewer than 1024 elements.
  * <p>
+ * Capacity: a {@code Vector6} has 2^31 positions, and the free slots in front of a prefix that is not full count
+ * among them. A vector holds at most {@code Integer.MAX_VALUE} elements, fewer once elements were dropped from its front;
+ * growing beyond that throws {@link IllegalArgumentException}, as Scala's vector does when every level is full.
+ * <p>
  * Every level is an {@code Object[]} (see {@link VectorStatics}). Elements are never null. Arrays are never written
  * after a vector holding them has been built: every operation copies the arrays it changes.
  *
@@ -145,14 +149,22 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     abstract RadixVector<T> updated0(int index, Object element);
 
-    /** @throws NullPointerException if {@code element} is null */
+    /**
+     * @throws NullPointerException if {@code element} is null
+     * @throws IllegalArgumentException if the result would hold more than {@code Integer.MAX_VALUE} elements, or more
+     * than this vector can hold (see the class documentation)
+     */
     public final RadixVector<T> appended(T element) {
         return appended0(Objects.requireNonNull(element, "Vector: element is null"));
     }
 
     abstract RadixVector<T> appended0(Object element);
 
-    /** @throws NullPointerException if {@code element} is null */
+    /**
+     * @throws NullPointerException if {@code element} is null
+     * @throws IllegalArgumentException if the result would hold more than {@code Integer.MAX_VALUE} elements, or more
+     * than this vector can hold (see the class documentation)
+     */
     public final RadixVector<T> prepended(T element) {
         return prepended0(Objects.requireNonNull(element, "Vector: element is null"));
     }
@@ -227,12 +239,16 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      * appended by whole arrays.
      *
      * @throws NullPointerException if {@code suffix} is null or yields a null element
+     * @throws IllegalArgumentException if the result would hold more than {@code Integer.MAX_VALUE} elements, or more
+     * than this vector can hold (see the class documentation)
      */
     public final RadixVector<T> appendedAll(Iterable<? extends T> suffix) {
         Objects.requireNonNull(suffix, "suffix is null");
         final int k = knownSize(suffix);
         if (k == 0) {
             return this;
+        } else if ((long) length() + k > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
         } else if (k < 0) {
             return new VectorBuilder<T>().addAll(this).addAll(suffix).result();
         } else {
@@ -245,12 +261,16 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      * prepended by whole arrays.
      *
      * @throws NullPointerException if {@code prefix} is null or yields a null element
+     * @throws IllegalArgumentException if the result would hold more than {@code Integer.MAX_VALUE} elements, or more
+     * than this vector can hold (see the class documentation)
      */
     public final RadixVector<T> prependedAll(Iterable<? extends T> prefix) {
         Objects.requireNonNull(prefix, "prefix is null");
         final int k = knownSize(prefix);
         if (k == 0) {
             return this;
+        } else if ((long) length() + k > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
         } else if (k < 0) {
             return new VectorBuilder<T>().addAll(prefix).addAll(this).result();
         } else {
@@ -1416,7 +1436,9 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> appended0(Object elem) {
-            if (suffix1.length < WIDTH) {
+            if (length0 == Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
+            } else if (suffix1.length < WIDTH) {
                 return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, copyAppend(suffix1, elem), length0 + 1);
             } else if (suffix2.length < WIDTH - 1) {
                 return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, copyAppend(suffix2, suffix1), wrap1(elem), length0 + 1);
@@ -1435,7 +1457,9 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prepended0(Object elem) {
-            if (len1 < WIDTH) {
+            if (length0 == Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
+            } else if (len1 < WIDTH) {
                 return new Vector6<>(copyPrepend(elem, prefix1), len1 + 1, prefix2, len12 + 1, prefix3, len123 + 1, prefix4, len1234 + 1, prefix5, len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
             } else if (len12 < WIDTH2) {
                 return new Vector6<>(wrap1(elem), 1, copyPrepend(prefix1, prefix2), len12 + 1, prefix3, len123 + 1, prefix4, len1234 + 1, prefix5, len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);

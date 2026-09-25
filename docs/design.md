@@ -1133,7 +1133,13 @@ Differences from Scala:
   `Vector<T>`. Elements are cast to `T` when read.
 - **Nulls.** Elements are never null, as in `Vector` today. Every entry point rejects a null element with a
   `NullPointerException`: `of`, `ofAll`, `appended`, `prepended`, `updated`, the builder's `add`/`addAll`/`addArray`,
-  the results of `map`, and the elements of an `appendedAll`/`prependedAll` argument.
+  the results of `map`, and the elements of an `appendedAll`/`prependedAll` argument. The builder validates an element before
+  changing any state, so a rejected `add` leaves it as it was: Scala's `addOne` has no check to order.
+- **Capacity.** Growing past `Integer.MAX_VALUE` elements throws `IllegalArgumentException`. Scala's `Vector6` lets
+  `length0` wrap to `Integer.MIN_VALUE` when the outer leaf still has room, and its builder fails with a negative size.
+  The tree has 2^31 positions, and the free slots in front of a prefix that is not full count among them. So a vector
+  whose front was dropped, and a builder started from it, hold that many fewer elements, and grow no further, as in
+  Scala. `alignTo` skips its padding when the padding would not fit.
 - **Single-shot builder.** `result()` hands the arrays over without copying them, and the builder is closed afterwards,
   the same contract as `Vector.Builder`. Scala's builder is reusable instead. There is no `clear()`, and `initSparse`
   (`fillSparse`) is left out.

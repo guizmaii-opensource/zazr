@@ -276,6 +276,17 @@ public class RadixVectorDifferentialTest {
                 return run.record(p.r.drop(37).prepended(-1), p.v.drop(37).prepend(-1));
             }));
         }
+        // a Vector5 right side: alignTo pads the prefix of dimension 4, and leftAlignPrefix shifts it back
+        final Pair vector5 = run.checked(() -> build(run, (1 << 20) + 1, History.BUILDER));
+        for (int size : new int[] { (1 << 20) - 32780, (1 << 20) - 1057, (1 << 20) - 100 }) {
+            final Pair left = run.checked(() -> build(run, size, History.BUILDER));
+            run.checked(() -> {
+                run.log("appendedAll " + left.label + " ++ " + vector5.label);
+                run.record(left.r.appendedAll(vector5.r), left.v.appendAll(vector5.v));
+                run.log("prependedAll " + left.label + " ++ " + vector5.label);
+                return run.record(vector5.r.prependedAll(left.r), vector5.v.prependAll(left.v));
+            });
+        }
         for (Pair right : rights) {
             final int k = right.v.length();
             for (int delta : new int[] { -64, -33, -32, -1, 0, 1, 31, 32, 64, 1024, 1025, 32768, 32800 }) {
@@ -490,6 +501,24 @@ public class RadixVectorDifferentialTest {
         assertThat(appended.last()).isEqualTo(-1);
         checkModulo(appended.init(), base, 0);
 
+        // a builder started from a Vector6 (initFrom): 40 elements do not fit in suffix1
+        final List<Integer> forty = new ArrayList<>();
+        for (int i = 0; i < 40; i++) {
+            forty.add(-100 - i);
+        }
+        for (int dropped : new int[] { 0, 1, 1057 }) {
+            final RadixVector<Integer> start = appended.drop(dropped);
+            final RadixVector<Integer> extended = start.appendedAll(forty);
+            assertThat(extended).isInstanceOf(RadixVector.Vector6.class);
+            checkShape(extended);
+            assertThat(extended.length()).isEqualTo(start.length() + 40);
+            checkModulo(extended.take(start.length() - 1), base, -dropped);
+            for (int i = 0; i < 40; i++) {
+                assertThat(extended.get(start.length() + i)).isEqualTo(-100 - i);
+            }
+            assertThat(extended.get(start.length() - 1)).isEqualTo(-1);
+        }
+
         final RadixVector<Integer> prepended = v.prepended(-2);
         assertThat(prepended).isInstanceOf(RadixVector.Vector6.class);
         checkShape(prepended);
@@ -678,6 +707,150 @@ public class RadixVectorDifferentialTest {
         assertThat(empty.size()).isZero();
         assertThat(empty.result()).isSameAs(RadixVector.empty());
         assertThatThrownBy(() -> empty.add(1)).isInstanceOf(IllegalStateException.class);
+    }
+
+    /* a rejected element leaves the builder as it was: it goes on, and its result holds exactly what was added */
+    @Test
+    public void builderIsUnchangedByARejectedElement() {
+        for (int n : new int[] { 0, 1, 31, 32, 33, 1023, 1024, 1025, 32768 }) {
+            for (int path = 0; path < 10; path++) {
+                // paths 0..4 build right after the rejection; 5..9 add more elements first
+                final VectorBuilder<Integer> builder = RadixVector.newBuilder();
+                final List<Integer> expected = new ArrayList<>();
+                for (int i = 0; i < n; i++) {
+                    builder.add(i);
+                    expected.add(i);
+                }
+                final List<Integer> withNull = new ArrayList<>(java.util.Arrays.asList(n, n + 1, null, n + 2));
+                final int p = path % 5;
+                assertThatThrownBy(() -> {
+                    switch (p) {
+                        case 0 -> builder.add(null);
+                        case 1 -> builder.addAll(withNull);
+                        case 2 -> builder.addAll(oneShot(withNull));
+                        case 3 -> builder.addArray(withNull.toArray(), 0, withNull.size());
+                        default -> builder.addAll(java.util.Collections.singletonList((Integer) null));
+                    }
+                }).as("n = %d, path %d", n, p).isInstanceOf(NullPointerException.class);
+                if (p == 1 || p == 2) {
+                    // a plain Iterable is added element by element: the elements before the null are kept
+                    expected.add(n);
+                    expected.add(n + 1);
+                }
+                assertThat(builder.size()).as("n = %d, path %d", n, path).isEqualTo(expected.size());
+                if (path >= 5) {
+                    for (int i = 0; i < 40; i++) {
+                        builder.add(-1 - i);
+                        expected.add(-1 - i);
+                    }
+                }
+                final RadixVector<Integer> result = builder.result();
+                checkShape(result);
+                checkContents(new Pair(result, Vector.ofAll(expected), "builder"));
+            }
+        }
+        final VectorBuilder<Integer> closed = RadixVector.newBuilder();
+        closed.result();
+        assertThatThrownBy(() -> closed.add(null)).isInstanceOf(IllegalStateException.class);
+    }
+
+    /*
+     * A Vector6 of Integer.MAX_VALUE elements, made of one shared leaf: every operation that would make it longer throws
+     * IllegalArgumentException, and a result of exactly Integer.MAX_VALUE elements is built even when the builder starts
+     * with padding in front (a builder started from a vector whose prefix is not full, or aligned on the other operand)
+     */
+    @Test
+    public void lengthNeverExceedsIntegerMaxValue() {
+        final Object[] leaf = sequence(0, WIDTH);
+        RadixVector<Integer> v = RadixVector.ofAll(leaf);
+        while (v.length() < (1 << 30)) {
+            v = v.appendedAll(v);
+        }
+        final RadixVector<Integer> half = v;
+        final RadixVector<Integer> full = v.appendedAll(v.init());
+        assertThat(full).isInstanceOf(RadixVector.Vector6.class);
+        assertThat(full.length()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(full.vectorSlicePrefixLength(full.vectorSliceCount() - 1)).isEqualTo(Integer.MAX_VALUE);
+        checkMaxLength(full, 0);
+
+        final RadixVector<Integer> one = RadixVector.of(1);
+        final List<Integer> oneList = List.of(1);
+        assertThatThrownBy(() -> full.appended(1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.prepended(1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.appendedAll(one)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.prependedAll(one)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.appendedAll(oneList)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.prependedAll(oneList)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.appendedAll(oneShot(oneList))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> full.prependedAll(oneShot(oneList))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> one.appendedAll(full)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> half.appendedAll(half)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> half.prependedAll(half)).isInstanceOf(IllegalArgumentException.class);
+
+        // the builder: full, it refuses more, and still builds what it holds
+        final VectorBuilder<Integer> builder = RadixVector.newBuilder();
+        builder.addAll(full);
+        assertThatThrownBy(() -> builder.add(1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> builder.addAll(one)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> builder.addAll(oneList)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> builder.addArray(new Object[] { 1 }, 0, 1)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(builder.size()).isEqualTo(Integer.MAX_VALUE);
+        checkMaxLength(builder.result(), 0);
+        final VectorBuilder<Integer> almost = RadixVector.newBuilder();
+        almost.addAll(full.init());
+        almost.add(-1);
+        assertThatThrownBy(() -> almost.add(-2)).isInstanceOf(IllegalArgumentException.class);
+        final RadixVector<Integer> almostFull = almost.result();
+        assertThat(almostFull.length()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(almostFull.last()).isEqualTo(-1);
+
+        // a vector whose front was dropped keeps the free slots in front of its prefix, which count among the 2^31
+        // positions of the tree: it holds k fewer elements, and so does a builder started from it
+        for (int k : new int[] { 1000, 1 << 20 }) {
+            final RadixVector<Integer> dropped = full.drop(k);
+            assertThat(dropped.length()).isEqualTo(Integer.MAX_VALUE - k);
+            final VectorBuilder<Integer> padded = RadixVector.newBuilder();
+            padded.addAll(dropped);
+            assertThatThrownBy(() -> padded.add(0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> padded.addArray(new Object[] { 0 }, 0, 1)).isInstanceOf(IllegalArgumentException.class);
+            assertThat(padded.size()).isEqualTo(Integer.MAX_VALUE - k);
+            final RadixVector<Integer> built = padded.result();
+            assertThat(built.length()).isEqualTo(Integer.MAX_VALUE - k);
+            assertThat(built.get(0)).isEqualTo(full.get(k));
+            assertThat(built.last()).isEqualTo(full.last());
+            final List<Integer> ks = new ArrayList<>();
+            for (int i = 0; i < k; i++) {
+                ks.add(-1 - i);
+            }
+            assertThatThrownBy(() -> dropped.appendedAll(ks)).isInstanceOf(IllegalArgumentException.class);
+        }
+
+        // prependedAll onto a vector 2^20 short of the limit: aligning the builder on it would pad the front beyond the
+        // limit, so the builder is not aligned, and the result holds exactly Integer.MAX_VALUE elements
+        final List<Integer> million = new ArrayList<>();
+        for (int i = 0; i < (1 << 20); i++) {
+            million.add(-1 - i);
+        }
+        final RadixVector<Integer> shortened = full.dropRight(1 << 20);
+        final RadixVector<Integer> prependedToMax = shortened.prependedAll(million);
+        assertThat(prependedToMax).isInstanceOf(RadixVector.Vector6.class);
+        assertThat(prependedToMax.length()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(prependedToMax.head()).isEqualTo(-1);
+        assertThat(prependedToMax.get((1 << 20) - 1)).isEqualTo(-(1 << 20));
+        assertThat(prependedToMax.get(1 << 20)).isEqualTo(full.head());
+        assertThat(prependedToMax.last()).isEqualTo(shortened.last());
+        checkShape(prependedToMax.take(1 << 21));
+        checkShape(prependedToMax.takeRight(1 << 21));
+        assertThatThrownBy(() -> prependedToMax.prepended(0)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /* the element at index i of a vector made of the leaf 0..31 repeated, dropped by `dropped`, is (i + dropped) mod 32 */
+    private static void checkMaxLength(RadixVector<Integer> r, int dropped) {
+        assertThat(r.length()).isEqualTo(Integer.MAX_VALUE);
+        for (long i = 0; i < Integer.MAX_VALUE; i += 7_654_321) {
+            assertThat(r.get((int) i)).isEqualTo((int) ((i + dropped) % WIDTH));
+        }
+        assertThat(r.last()).isEqualTo((int) (((long) Integer.MAX_VALUE - 1 + dropped) % WIDTH));
     }
 
     @Test
@@ -974,6 +1147,39 @@ public class RadixVectorDifferentialTest {
     private static void check(Pair p) {
         checkShape(p.r);
         checkContents(p);
+        checkUpdatesAtSliceBoundaries(p.r);
+    }
+
+    /*
+     * updated at the last index of every slice and the first index of the next (b - 1 and b for every
+     * vectorSlicePrefixLength b): the positions where an off-by-one in the choice of the slice, at len1, len12, ..,
+     * sends the index to the wrong array
+     */
+    private static void checkUpdatesAtSliceBoundaries(RadixVector<Integer> r) {
+        final int n = r.length();
+        final Integer marker = -7;
+        for (int s = 0; s < r.vectorSliceCount(); s++) {
+            final int boundary = r.vectorSlicePrefixLength(s);
+            for (int i = boundary - 1; i <= boundary; i++) {
+                if (i < 0 || i >= n) {
+                    continue;
+                }
+                final RadixVector<Integer> u = r.updated(i, marker);
+                if (u.getClass() != r.getClass() || u.length() != n || !marker.equals(u.get(i))) {
+                    throw new AssertionError(shapeOf(r) + "(" + n + "): updated(" + i + ") does not hold the element there");
+                }
+                for (int j = Math.max(0, i - 1); j <= Math.min(n - 1, i + 1); j++) {
+                    if (j != i && !r.get(j).equals(u.get(j))) {
+                        throw new AssertionError(shapeOf(r) + "(" + n + "): updated(" + i + ") changes index " + j);
+                    }
+                }
+                for (int t = 0; t < r.vectorSliceCount(); t++) {
+                    if (u.vectorSlicePrefixLength(t) != r.vectorSlicePrefixLength(t)) {
+                        throw new AssertionError(shapeOf(r) + "(" + n + "): updated(" + i + ") changes the slice lengths");
+                    }
+                }
+            }
+        }
     }
 
     private static void sameOutcome(Supplier<?> radix, Supplier<?> vector) {
