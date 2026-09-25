@@ -68,7 +68,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@code mapper}.
      *
      * <p>
-     * Complexity: O(n + k log k) for k elements produced by {@code mapper}: each one is inserted into a new tree.
+     * Complexity: O(n + k log k) for k elements produced by {@code mapper}: they are sorted, then the new tree is built
+     * in one pass; O(n + k) when they come out in order.
      *
      * @param comparator A comparator for values of type U
      * @param mapper     A function which maps values of type T to Iterables of values of type U
@@ -82,7 +83,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@code mapper}.
      *
      * <p>
-     * Complexity: O(n log n): every result is inserted into a new tree, even when {@code mapper} keeps the order.
+     * Complexity: O(n log n): the results are sorted, then the new tree is built in one pass; O(n) when {@code mapper}
+     * keeps the order.
      *
      * @param comparator A comparator for values of type U
      * @param mapper     A function which maps values of type T to values of type U
@@ -350,8 +352,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for a set of m elements: they are put in a hash set, then the kept elements are
-     * inserted one by one into a new tree.
+     * Complexity: O(n + m) for a set of m elements: they are put in a hash set, then the new tree is built from the
+     * kept elements, which come in order, in one pass.
      * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
      * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
@@ -361,7 +363,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept elements are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept elements, which come in order, in one pass.
      */
     @Override
     SortedSet<T> filter(Predicate<? super T> predicate);
@@ -369,7 +371,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept elements are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept elements, which come in order, in one pass.
      */
     @Override
     SortedSet<T> reject(Predicate<? super T> predicate);
@@ -377,7 +379,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + k log k) for k elements produced by {@code mapper}: each one is inserted into a new tree.
+     * Complexity: O(n + k log k) for k elements produced by {@code mapper}: they are sorted, then the new tree is built
+     * in one pass; O(n + k) when they come out in order.
      */
     @Override
     <U extends @Nullable Object> SortedSet<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper);
@@ -385,7 +388,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): each group is built by inserting its elements into a new tree.
+     * Complexity: O(n): each group gets its elements in order, and its tree is built from them in one pass.
      */
     @Override
     <C extends @Nullable Object> Map<C, ? extends SortedSet<T>> groupBy(Function<? super T, ? extends C> classifier);
@@ -393,8 +396,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for a set of m elements: they are put in a hash set, then the kept elements are
-     * inserted one by one into a new tree.
+     * Complexity: O(n + m) for a set of m elements: they are put in a hash set, then the new tree is built from the
+     * kept elements, which come in order, in one pass.
      * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
      * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
@@ -404,7 +407,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): every result is inserted into a new tree, even when {@code mapper} keeps the order.
+     * Complexity: O(n log n): the results are sorted, then the new tree is built in one pass; O(n) when {@code mapper}
+     * keeps the order.
      */
     @Override
     <U extends @Nullable Object> SortedSet<U> map(Function<? super T, ? extends U> mapper);
@@ -412,7 +416,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the collected elements are inserted one by one into a new tree.
+     * Complexity: O(n log n): the collected elements are sorted, then the new tree is built in one pass; O(n) when
+     * they come out in order.
      */
     @Override
     <U extends @Nullable Object> SortedSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper);
@@ -425,8 +430,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log m) for the m elements of {@code other} when this set is empty: they are inserted into a new
-     * tree; O(1) when this set is not empty.
+     * Complexity: O(m log m) for the m elements of {@code other} when this set is empty: they are sorted, then the new
+     * tree is built in one pass (O(m) when they come sorted); O(1) when this set is not empty.
      */
     @Override
     SortedSet<T> orElse(Iterable<? extends T> other);
@@ -434,8 +439,9 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log m) for the m supplied elements when this set is empty: they are inserted into a new tree;
-     * O(1) when this set is not empty, and the supplier is not called.
+     * Complexity: O(m log m) for the m supplied elements when this set is empty: they are sorted, then the new tree is
+     * built in one pass (O(m) when they come sorted); O(1) when this set is not empty, and the supplier is not
+     * called.
      */
     @Override
     SortedSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier);
@@ -443,7 +449,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the elements of both results are inserted one by one into new trees.
+     * Complexity: O(n): both results get their elements in order, and their trees are built from them in one pass.
      */
     @Override
     Tuple2<? extends SortedSet<T>, ? extends SortedSet<T>> partition(Predicate<? super T> predicate);
@@ -462,8 +468,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for m elements: they are put in a hash set, then the kept elements are inserted one by
-     * one into a new tree, even when a single element is removed.
+     * Complexity: O(n + m) for m elements: they are put in a hash set, then the new tree is built from the kept
+     * elements, which come in order, in one pass, even when a single element is removed.
      */
     @Override
     SortedSet<T> removeAll(Iterable<? extends T> elements);
@@ -487,8 +493,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m + n log n) for m elements: they are put in a hash set, then the kept elements are inserted one by
-     * one into a new tree.
+     * Complexity: O(n + m) for m elements: they are put in a hash set, then the new tree is built from the kept
+     * elements, which come in order, in one pass.
      */
     @Override
     SortedSet<T> retainAll(Iterable<? extends T> elements);
