@@ -92,7 +92,7 @@ public class CheckResultTest {
 
     @Test
     public void shouldComputeHashCodeOfSatisfied() {
-        assertThat(SATISFIED.hashCode()).isEqualTo(Objects.hash("test", 0, false));
+        assertThat(SATISFIED.hashCode()).isEqualTo(new CheckResult.Satisfied("test", 0, false).hashCode());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class CheckResultTest {
 
     @Test
     public void shouldComputeHashCodeOfFalsified() {
-        assertThat(FALSIFIED.hashCode()).isEqualTo(Objects.hash("test", 0, Tuple.of(1)));
+        assertThat(FALSIFIED.hashCode()).isEqualTo(new CheckResult.Falsified("test", 0, Tuple.of(1)).hashCode());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class CheckResultTest {
 
     @Test
     public void shouldIncludePredicateMessageInFailureAndAssertions() {
-        final CheckResult result = new CheckResult.Falsified("positive", 1, Tuple.of(-1), "expected a positive value");
+        final CheckResult result = new CheckResult.Falsified("positive", 1, Tuple.of(-1), Option.some("expected a positive value"));
         assertThat(result.message()).isEqualTo(Option.some("expected a positive value"));
         assertThat(result.toString()).isEqualTo("Falsified(propertyName = positive, count = 1, sample = (-1), message = expected a positive value)");
         Assertions.assertThatThrownBy(result::assertIsSatisfied)
@@ -204,11 +204,11 @@ public class CheckResultTest {
 
     @Test
     public void shouldIncludePredicateMessageInFalsifiedEqualityAndHashCode() {
-        final CheckResult result = new CheckResult.Falsified("test", 0, Tuple.of(1), "first reason");
-        final CheckResult equal = new CheckResult.Falsified("test", 0, Tuple.of(1), "first reason");
+        final CheckResult result = new CheckResult.Falsified("test", 0, Tuple.of(1), Option.some("first reason"));
+        final CheckResult equal = new CheckResult.Falsified("test", 0, Tuple.of(1), Option.some("first reason"));
         assertThat(result).isEqualTo(equal);
         assertThat(result.hashCode()).isEqualTo(equal.hashCode());
-        assertThat(result).isNotEqualTo(new CheckResult.Falsified("test", 0, Tuple.of(1), "second reason"));
+        assertThat(result).isNotEqualTo(new CheckResult.Falsified("test", 0, Tuple.of(1), Option.some("second reason")));
         assertThat(result).isNotEqualTo(FALSIFIED);
         assertThat(FALSIFIED).isNotEqualTo(result);
     }
@@ -304,7 +304,7 @@ public class CheckResultTest {
 
     @Test
     public void shouldComputeHashCodeOfErroneous() {
-        assertThat(ERRONEOUS.hashCode()).isEqualTo(Objects.hash("test", 0, ERRONEOUS.deepHashCode(new Error("test")), Option.none()));
+        assertThat(ERRONEOUS.hashCode()).isEqualTo(Objects.hash("test", 0, CheckResult.Erroneous.deepHashCode(new Error("test")), Option.none()));
     }
 
     @Test

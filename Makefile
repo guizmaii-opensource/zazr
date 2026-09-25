@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples site site-serve bench javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples site site-serve bench coverage coverage-summary javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -110,9 +110,20 @@ nullness: ## NullAway / JSpecify nullness check
 bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
+# zazr-benchmark has no tests and stays out of the report.
+COVERAGE_REPORT := zazr-test/target/site/jacoco-aggregate
+
+coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in zazr-test/target/site/jacoco-aggregate
+	$(MVN) -Pcoverage -pl zazr-core,zazr-test test
+	@$(MAKE) --no-print-directory coverage-summary
+	@echo "HTML report: $(COVERAGE_REPORT)/index.html"
+
+coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
+	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml
+
 # javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
-# where the src-gen clean also empties target/, so the plugin finds no module-info.class in zazr-core and refuses
-# the named module. Output: <module>/target/reports/apidocs.
+# so on a fresh checkout the plugin finds no module-info.class in zazr-core and refuses the named module.
+# Output: <module>/target/reports/apidocs.
 javadoc: ## build the javadoc of zazr-core and zazr-test (doclint: fails on a broken reference or malformed tag)
 	$(MVN) compile javadoc:javadoc-no-fork
 

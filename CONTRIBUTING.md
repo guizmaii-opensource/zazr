@@ -24,6 +24,7 @@ make verify                                   # what CI runs: tests, formatting,
 make test-one TEST=VectorTest MODULE=zazr-core
 make fmt                                      # format the sources
 make site-serve                               # preview the website at http://127.0.0.1:8000/
+make coverage                                 # test coverage report, in zazr-test/target/site/jacoco-aggregate
 ```
 
 `make verify` must pass before you open a pull request.

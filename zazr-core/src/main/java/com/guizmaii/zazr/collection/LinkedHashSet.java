@@ -16,6 +16,11 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable, hash-based {@link Set} implementation with predictable (insertion-order) iteration.
+ * <p>
+ * It is a {@link LinkedHashMap} of its elements and has the same costs: removing an element leaves a marker in the
+ * insertion order, rebuilt in O(n) once the markers outnumber the elements, amortised over a chain of removals. On
+ * an older version used again, removing or slicing can pay the rebuild each time, and after removals, finding a
+ * position by rank ({@code tail}, {@code init}, {@code take}, {@code drop}) walks past the markers in the way.
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -859,8 +864,10 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the
-     * markers outnumber the elements, the insertion order is rebuilt in O(n).
+     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised over a chain
+     * of removals, each on the result of the previous one: when the markers outnumber the elements, the insertion
+     * order is rebuilt in O(n). Removing again from the same older set that is about to be rebuilt pays that O(n)
+     * each time. Removing the first or the last element also walks past the markers of earlier removals next to it.
      */
     @Override
     public LinkedHashSet<T> remove(T element) {
@@ -881,7 +888,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) amortised, as {@link #remove(Object)}; the new element takes the position of the
+     * Complexity: effectively O(1) amortised, with the O(n) cases of {@link #remove(Object)}; the new element takes the position of the
      * replaced one.
      */
     @Override
@@ -1004,8 +1011,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the last in insertion order.
      * <p>
-     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced), plus a walk
-     * past the removed elements' markers next to the last element, if any.
+     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced) on a set with no
+     * removals. After removals, up to O(n): the markers of the removed elements next to the last element are walked
+     * past, and the insertion order is rebuilt when the result holds more markers than elements.
      *
      * @return this set without its last element
      * @throws UnsupportedOperationException if this set is empty
@@ -1031,8 +1039,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the first in insertion order.
      * <p>
-     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced), plus a walk
-     * past the removed elements' markers next to the first element, if any.
+     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced) on a set with no
+     * removals. After removals, up to O(n): the markers of the removed elements next to the first element are walked
+     * past, and the insertion order is rebuilt when the result holds more markers than elements.
      *
      * @return this set without its first element
      * @throws UnsupportedOperationException if this set is empty
@@ -1059,8 +1068,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * The first {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
      * <p>
      * Complexity: effectively O(min(n, size - n)) (the smaller of the kept and the removed elements is inserted into
-     * or removed from the hash map; the insertion order is sliced). After removals, finding the cut also walks the
-     * insertion order from the nearer end past the removed elements' markers.
+     * or removed from the hash map; the insertion order is sliced). After removals, up to
+     * O(n): finding the cut walks the insertion order from the nearer end past every marker of a removed one in the
+     * way, and the insertion order is rebuilt when the result holds more markers than elements.
      *
      * @param n the number of elements to keep
      * @return the {@code n} elements inserted first

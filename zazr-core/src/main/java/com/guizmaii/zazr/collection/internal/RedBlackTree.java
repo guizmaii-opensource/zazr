@@ -58,11 +58,12 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         if (values instanceof RedBlackTree && ((RedBlackTree<T>) values).comparator() == comparator) {
             return (RedBlackTree<T>) values;
         } else {
-            RedBlackTree<T> tree = empty(comparator);
+            // sort-then-build: one array and one node per distinct element, instead of a rebalancing insert per element
+            final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder");
             for (T value : values) {
-                tree = tree.insert(value);
+                builder.add(Objects.requireNonNull(value, "TreeSet: element is null"));
             }
-            return tree;
+            return builder.result();
         }
     }
 

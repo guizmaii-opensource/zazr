@@ -2,6 +2,7 @@ package com.guizmaii.zazr;
 
 import java.math.BigDecimal;
 import java.util.AbstractMap;
+import java.util.Objects;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -504,6 +505,69 @@ public class TupleTest {
             assertThat(narrowTuple._6()).isEqualTo((byte) 5);
             assertThat(narrowTuple._7()).isEqualTo((short) 6);
             assertThat(narrowTuple._8()).isEqualTo(new BigDecimal(7));
+        }
+    }
+
+    @Nested
+    class HashTests {
+        @Test
+        public void shouldHashOneValueLikeObjectsHashCode() {
+            assertThat(Tuple.hash("a")).isEqualTo(Objects.hashCode("a"));
+            assertThat(Tuple.hash(null)).isEqualTo(0);
+        }
+
+        @Test
+        public void shouldHashTwoValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2)).isEqualTo(Objects.hash("a", 2));
+            assertThat(Tuple.hash(null, null)).isEqualTo(Objects.hash(null, null));
+        }
+
+        @Test
+        public void shouldHashThreeValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2, 3.0)).isEqualTo(Objects.hash("a", 2, 3.0));
+            assertThat(Tuple.hash(null, 2, null)).isEqualTo(Objects.hash(null, 2, null));
+        }
+
+        @Test
+        public void shouldHashFourValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2, 3.0, 4L)).isEqualTo(Objects.hash("a", 2, 3.0, 4L));
+            assertThat(Tuple.hash(null, 2, null, 4L)).isEqualTo(Objects.hash(null, 2, null, 4L));
+        }
+
+        @Test
+        public void shouldHashFiveValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2, 3.0, 4L, '5')).isEqualTo(Objects.hash("a", 2, 3.0, 4L, '5'));
+            assertThat(Tuple.hash(null, 2, null, 4L, null)).isEqualTo(Objects.hash(null, 2, null, 4L, null));
+        }
+
+        @Test
+        public void shouldHashSixValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2, 3.0, 4L, '5', (byte) 6))
+                    .isEqualTo(Objects.hash("a", 2, 3.0, 4L, '5', (byte) 6));
+            assertThat(Tuple.hash(null, 2, null, 4L, null, (byte) 6))
+                    .isEqualTo(Objects.hash(null, 2, null, 4L, null, (byte) 6));
+        }
+
+        @Test
+        public void shouldHashSevenValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2, 3.0, 4L, '5', (byte) 6, (short) 7))
+                    .isEqualTo(Objects.hash("a", 2, 3.0, 4L, '5', (byte) 6, (short) 7));
+            assertThat(Tuple.hash(null, 2, null, 4L, null, (byte) 6, null))
+                    .isEqualTo(Objects.hash(null, 2, null, 4L, null, (byte) 6, null));
+        }
+
+        @Test
+        public void shouldHashEightValuesLikeObjectsHash() {
+            assertThat(Tuple.hash("a", 2, 3.0, 4L, '5', (byte) 6, (short) 7, 8.0f))
+                    .isEqualTo(Objects.hash("a", 2, 3.0, 4L, '5', (byte) 6, (short) 7, 8.0f));
+            assertThat(Tuple.hash(null, 2, null, 4L, null, (byte) 6, null, 8.0f))
+                    .isEqualTo(Objects.hash(null, 2, null, 4L, null, (byte) 6, null, 8.0f));
+        }
+
+        @Test
+        public void shouldHashDependOnTheOrderOfTheValues() {
+            assertThat(Tuple.hash(1, 2)).isNotEqualTo(Tuple.hash(2, 1));
+            assertThat(Tuple.hash(1, 2, 3, 4, 5, 6, 7, 8)).isNotEqualTo(Tuple.hash(8, 7, 6, 5, 4, 3, 2, 1));
         }
     }
 

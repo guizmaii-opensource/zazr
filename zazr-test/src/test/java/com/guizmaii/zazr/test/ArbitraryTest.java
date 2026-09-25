@@ -289,7 +289,7 @@ public class ArbitraryTest {
         final LocalDateTime median = LocalDateTime.now();
         final Arbitrary<LocalDateTime> arbitrary = Arbitrary.localDateTime(median, ChronoUnit.DAYS);
 
-        Property.def("With size of 100 days, dates should be in range of +/- 100 days")
+        Property.named("With size of 100 days, dates should be in range of +/- 100 days")
                 .forAll(arbitrary)
                 .suchThat(d -> !d.isBefore(median.minusDays(100)) && !d.isAfter(median.plusDays(100)))
                 .check(new Random(0L), 100, 1000).assertIsSatisfied();
@@ -300,7 +300,7 @@ public class ArbitraryTest {
         final LocalDateTime median = LocalDateTime.now();
         final Arbitrary<LocalDateTime> arbitrary = Arbitrary.localDateTime(median, ChronoUnit.DAYS);
 
-        Property.def("With negative size of -100 days, dates should be in range of +/- 100 days")
+        Property.named("With negative size of -100 days, dates should be in range of +/- 100 days")
                 .forAll(arbitrary)
                 .suchThat(d -> !d.isBefore(median.minusDays(100)) && !d.isAfter(median.plusDays(100)))
                 .check(new Random(0L), -100, 1000).assertIsSatisfied();

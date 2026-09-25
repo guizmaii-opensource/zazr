@@ -154,6 +154,11 @@ public interface HashArrayMappedTrieModule {
 
         abstract AbstractNode<K, V> modify(int shift, int keyHash, K key, @Nullable V value, Action action);
 
+        /// The put of a [HashArrayMappedTrieBuilder]: the same trie as [#modify] with `PUT` returns, but an internal
+        /// node whose owner is `owner` is updated in place instead of copied, and the internal nodes it creates are
+        /// owned by `owner`. Leaves are immutable and replaced, as by [#modify].
+        abstract AbstractNode<K, V> putInPlace(Object owner, int shift, int keyHash, K key, V value);
+
         Iterator<LeafNode<K, V>> nodes() {
             return new LeafNodeIterator<>(this);
         }
@@ -252,6 +257,11 @@ public interface HashArrayMappedTrieModule {
         }
 
         @Override
+        AbstractNode<K, V> putInPlace(Object owner, int shift, int keyHash, K key, V value) {
+            return new LeafSingleton<>(keyHash, key, value);
+        }
+
+        @Override
         public boolean isEmpty() {
             return true;
         }
@@ -283,6 +293,12 @@ public interface HashArrayMappedTrieModule {
         abstract int hash();
 
         static <K extends @Nullable Object, V extends @Nullable Object> AbstractNode<K, V> mergeLeaves(int shift, LeafNode<K, V> leaf1, LeafSingleton<K, V> leaf2) {
+            return mergeLeaves(null, shift, leaf1, leaf2);
+        }
+
+        // the internal nodes created are owned by `owner`, null outside a builder
+        static <K extends @Nullable Object, V extends @Nullable Object> AbstractNode<K, V> mergeLeaves(@Nullable Object owner, int shift,
+                LeafNode<K, V> leaf1, LeafSingleton<K, V> leaf2) {
             final int h1 = leaf1.hash();
             final int h2 = leaf2.hash();
             if (h1 == h2) {
@@ -292,10 +308,10 @@ public interface HashArrayMappedTrieModule {
             final int subH2 = hashFragment(shift, h2);
             final int newBitmap = toBitmap(subH1) | toBitmap(subH2);
             if (subH1 == subH2) {
-                final AbstractNode<K, V> newLeaves = mergeLeaves(shift + SIZE, leaf1, leaf2);
-                return new IndexedNode<>(newBitmap, newLeaves.size(), new Object[] { newLeaves });
+                final AbstractNode<K, V> newLeaves = mergeLeaves(owner, shift + SIZE, leaf1, leaf2);
+                return new IndexedNode<>(owner, newBitmap, newLeaves.size(), new Object[] { newLeaves });
             } else {
-                return new IndexedNode<>(newBitmap, leaf1.size() + leaf2.size(),
+                return new IndexedNode<>(owner, newBitmap, leaf1.size() + leaf2.size(),
                         subH1 < subH2 ? new Object[] { leaf1, leaf2 } : new Object[] { leaf2, leaf1 });
             }
         }
@@ -351,6 +367,15 @@ public interface HashArrayMappedTrieModule {
                 return (action == REMOVE) ? EmptyNode.instance() : new LeafSingleton<>(hash, key, value);
             } else {
                 return (action == REMOVE) ? this : mergeLeaves(shift, this, new LeafSingleton<>(keyHash, key, value));
+            }
+        }
+
+        @Override
+        AbstractNode<K, V> putInPlace(Object owner, int shift, int keyHash, K key, V value) {
+            if (keyHash == hash && Objects.equals(key, this.key)) {
+                return new LeafSingleton<>(hash, key, value);
+            } else {
+                return mergeLeaves(owner, shift, this, new LeafSingleton<>(keyHash, key, value));
             }
         }
 
@@ -451,6 +476,14 @@ public interface HashArrayMappedTrieModule {
             }
         }
 
+        @Override
+        AbstractNode<K, V> putInPlace(Object owner, int shift, int keyHash, K key, V value) {
+            // a key of the same hash goes into the collision list, which is immutable: the persistent put rebuilds it
+            return (keyHash == hash)
+                   ? modify(shift, keyHash, key, value, PUT)
+                   : mergeLeaves(owner, shift, this, new LeafSingleton<>(keyHash, key, value));
+        }
+
         private static <K extends @Nullable Object, V extends @Nullable Object> AbstractNode<K, V> mergeNodes(LeafNode<K, V> leaf1, @Nullable LeafNode<K, V> leaf2) {
             if (leaf2 == null) {
                 return leaf1;
@@ -543,11 +576,20 @@ public interface HashArrayMappedTrieModule {
      */
     final class IndexedNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> {
 
-        private final int bitmap;
-        private final int size;
-        private final Object[] subNodes;
+        // Not final: a node owned by a builder is updated in place until the builder's result() (see putInPlace).
+        // A trie is only reached through the final field of its HashMap, HashSet or view, whose freeze covers them.
+        int bitmap;
+        int size;
+        Object[] subNodes;
+        // the builder token that may update this node in place; null for a node of a persistent operation
+        final @Nullable Object owner;
 
         IndexedNode(int bitmap, int size, Object[] subNodes) {
+            this(null, bitmap, size, subNodes);
+        }
+
+        IndexedNode(@Nullable Object owner, int bitmap, int size, Object[] subNodes) {
+            this.owner = owner;
             this.bitmap = bitmap;
             this.size = size;
             this.subNodes = subNodes;
@@ -619,7 +661,7 @@ public interface HashArrayMappedTrieModule {
                 }
             } else if (added) {
                 if (subNodes.length >= MAX_INDEX_NODE) {
-                    return expand(frag, child, mask, subNodes);
+                    return expand(null, frag, child, mask, subNodes);
                 } else {
                     return new IndexedNode<>(newBitmap, size + child.size(), insert(subNodes, index, child));
                 }
@@ -632,7 +674,42 @@ public interface HashArrayMappedTrieModule {
             }
         }
 
-        private ArrayNode<K, V> expand(int frag, AbstractNode<K, V> child, int mask, Object[] subNodes) {
+        @SuppressWarnings("unchecked")
+        @Override
+        AbstractNode<K, V> putInPlace(Object owner, int shift, int keyHash, K key, V value) {
+            final int frag = hashFragment(shift, keyHash);
+            final int bit = toBitmap(frag);
+            final int index = fromBitmap(bitmap, bit);
+            if ((bitmap & bit) != 0) {
+                final AbstractNode<K, V> child = (AbstractNode<K, V>) subNodes[index];
+                // read before the put, which may update the child in place
+                final int childSize = child.size();
+                final AbstractNode<K, V> newChild = child.putInPlace(owner, shift + SIZE, keyHash, key, value);
+                final int newSize = size - childSize + newChild.size();
+                if (this.owner == owner) {
+                    subNodes[index] = newChild;
+                    size = newSize;
+                    return this;
+                } else {
+                    return new IndexedNode<>(owner, bitmap, newSize, update(subNodes, index, newChild));
+                }
+            } else {
+                final LeafSingleton<K, V> leaf = new LeafSingleton<>(keyHash, key, value);
+                if (subNodes.length >= MAX_INDEX_NODE) {
+                    return expand(owner, frag, leaf, bitmap, subNodes);
+                } else if (this.owner == owner) {
+                    // the array stays exactly as long as the number of children, which the other operations rely on
+                    subNodes = insert(subNodes, index, leaf);
+                    bitmap |= bit;
+                    size++;
+                    return this;
+                } else {
+                    return new IndexedNode<>(owner, bitmap | bit, size + 1, insert(subNodes, index, leaf));
+                }
+            }
+        }
+
+        private ArrayNode<K, V> expand(@Nullable Object owner, int frag, AbstractNode<K, V> child, int mask, Object[] subNodes) {
             int bit = mask;
             int count = 0;
             int ptr = 0;
@@ -649,7 +726,7 @@ public interface HashArrayMappedTrieModule {
                 }
                 bit = bit >>> 1;
             }
-            return new ArrayNode<>(count, size + child.size(), arr);
+            return new ArrayNode<>(owner, count, size + child.size(), arr);
         }
 
         @Override
@@ -671,11 +748,20 @@ public interface HashArrayMappedTrieModule {
      */
     final class ArrayNode<K extends @Nullable Object, V extends @Nullable Object> extends AbstractNode<K, V> {
 
-        private final Object[] subNodes;
-        private final int count;
-        private final int size;
+        // Not final: a node owned by a builder is updated in place until the builder's result() (see putInPlace).
+        // A trie is only reached through the final field of its HashMap, HashSet or view, whose freeze covers them.
+        final Object[] subNodes;
+        int count;
+        int size;
+        // the builder token that may update this node in place; null for a node of a persistent operation
+        final @Nullable Object owner;
 
         ArrayNode(int count, int size, Object[] subNodes) {
+            this(null, count, size, subNodes);
+        }
+
+        ArrayNode(@Nullable Object owner, int count, int size, Object[] subNodes) {
+            this.owner = owner;
             this.subNodes = subNodes;
             this.count = count;
             this.size = size;
@@ -721,6 +807,27 @@ public interface HashArrayMappedTrieModule {
                 }
             } else {
                 return new ArrayNode<>(count, size - child.size() + newChild.size(), update(subNodes, frag, newChild));
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        AbstractNode<K, V> putInPlace(Object owner, int shift, int keyHash, K key, V value) {
+            final int frag = hashFragment(shift, keyHash);
+            final AbstractNode<K, V> child = (AbstractNode<K, V>) subNodes[frag];
+            // read before the put, which may update the child in place
+            final boolean wasEmpty = child.isEmpty();
+            final int childSize = child.size();
+            final AbstractNode<K, V> newChild = child.putInPlace(owner, shift + SIZE, keyHash, key, value);
+            final int newCount = wasEmpty ? count + 1 : count;
+            final int newSize = size - childSize + newChild.size();
+            if (this.owner == owner) {
+                subNodes[frag] = newChild;
+                count = newCount;
+                size = newSize;
+                return this;
+            } else {
+                return new ArrayNode<>(owner, newCount, newSize, update(subNodes, frag, newChild));
             }
         }
 

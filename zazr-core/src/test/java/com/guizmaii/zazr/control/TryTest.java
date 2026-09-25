@@ -100,6 +100,52 @@ public class TryTest {
         }
 
         @Test
+        public void shouldKeepTheFailureUnchangedWhenTheFinalizerRethrowsTheCause() {
+            final IllegalStateException original = new IllegalStateException("original");
+            final Try<Object> failure = Try.failure(original);
+            final Try<Object> result = failure.ensuring(() -> { throw original; });
+            assertThat(result).isSameAs(failure);
+            assertThat(result.getCause()).isSameAs(original);
+            assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldKeepTheCheckedCauseUnchangedWhenTheFinalizerRethrowsIt() {
+            final IOException original = new IOException("original");
+            final Try<Object> failure = Try.failure(original);
+            final Try<Object> result = failure.ensuring(() -> { throw original; });
+            assertThat(result).isSameAs(failure);
+            assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldSuppressAnExceptionEqualToButNotTheSameAsTheCause() {
+            final IllegalStateException original = new IllegalStateException("same message");
+            final IllegalStateException other = new IllegalStateException("same message");
+            final Try<Object> failure = Try.failure(original);
+            final Try<Object> result = failure.ensuring(() -> { throw other; });
+            assertThat(result).isSameAs(failure);
+            assertThat(original.getSuppressed()).containsExactly(other);
+        }
+
+        @Test
+        public void shouldFailWithTheCauseItselfWhenTheFinalizerOfASuccessThrowsIt() {
+            final IllegalStateException thrown = new IllegalStateException(FAILURE);
+            final Try<String> result = success().ensuring(() -> { throw thrown; })
+              .ensuring(() -> { throw thrown; });
+            assertThat(result.getCause()).isSameAs(thrown);
+            assertThat(thrown.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldRethrowAFatalErrorFromTheFinalizerOfAFailure() {
+            final IllegalStateException original = new IllegalStateException("original");
+            final StackOverflowError fatal = new StackOverflowError();
+            assertThatThrownBy(() -> Try.<Object>failure(original).ensuring(() -> { throw fatal; })).isSameAs(fatal);
+            assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
         public void shouldRethrowFatalThrowableFromTheFinalizerOnSuccess() {
             assertThrows(InterruptedException.class, () ->
               Try.success(1).ensuring(() -> { throw new InterruptedException(); }));
@@ -313,18 +359,6 @@ public class TryTest {
         }
 
         @Test
-        public void shouldCaptureTheOriginalIOExceptionInstanceFromWithResourcesBody() {
-            final IOException cause = new IOException("boom");
-            final Closeable<Integer> closeable1 = Closeable.of(1);
-            final Try<?> result = Try.withResources(() -> closeable1, i -> {
-                throw cause;
-            });
-            assertThat(result.isFailure()).isTrue();
-            assertThat(result.getCause()).isSameAs(cause);
-            assertThat(closeable1.isClosed).isTrue();
-        }
-
-        @Test
         public void shouldCaptureTheOriginalIOExceptionInstanceFromLiftTry() {
             final IOException cause = new IOException("boom");
             final CheckedFunction1<Integer, String> throwing = i -> {
@@ -429,44 +463,6 @@ public class TryTest {
             assertThatThrownBy(() -> CheckedFunction1.lift(throwing).apply(1)).isSameAs(fatal);
         }
 
-    }
-
-    // -- Try.withResources
-
-    @SuppressWarnings("try")/* https://bugs.openjdk.java.net/browse/JDK-8155591 */
-    static class Closeable<T> implements AutoCloseable {
-
-        final T value;
-        boolean isClosed = false;
-
-        static <T> Closeable<T> of(T value) {
-            return new Closeable<>(value);
-        }
-
-        Closeable(T value) {
-            this.value = value;
-        }
-
-        @Override
-        public void close() {
-            isClosed = true;
-        }
-    }
-
-    @Test
-    public void shouldCreateSuccessTryWithResources() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Try<String> actual = Try.withResources(() -> closeable1, i1 -> "" + i1.value);
-        assertThat(actual).isEqualTo(Try.success("1"));
-        assertThat(closeable1.isClosed).isTrue();
-    }
-
-    @Test
-    public void shouldCreateFailureTryWithResources() {
-        final Closeable<Integer> closeable1 = Closeable.of(1);
-        final Try<?> actual = Try.withResources(() -> closeable1, i -> {throw new Error();});
-        assertThat(actual.isFailure()).isTrue();
-        assertThat(closeable1.isClosed).isTrue();
     }
 
     @Nested
@@ -1751,63 +1747,6 @@ public class TryTest {
             assertThrows(NullPointerException.class, () -> failure().tapError(null));
             assertThrows(NullPointerException.class, () -> failure().tapError(null, x -> {}));
             assertThrows(NullPointerException.class, () -> failure().tapError(RuntimeException.class, null));
-        }
-    }
-
-    @Nested
-    class WithResourcesTests {
-        @Test
-        public void shouldNestResources() {
-            final Closeable<Integer> outer = Closeable.of(1);
-            final Closeable<Integer> inner = Closeable.of(2);
-            final Try<String> actual = Try.withResources(() -> outer, o ->
-              Try.withResources(() -> inner, i -> "" + o.value + i.value).get());
-            assertThat(actual).isEqualTo(Try.success("12"));
-            assertThat(outer.isClosed).isTrue();
-            assertThat(inner.isClosed).isTrue();
-        }
-
-        @Test
-        public void shouldFailWhenTheResourceCannotBeAcquired() {
-            final IOException cause = new IOException("no resource");
-            final Try<String> actual = Try.withResources(() -> {
-                throw cause;
-            }, r -> "unreachable");
-            assertThat(actual.getCause()).isSameAs(cause);
-        }
-
-        @Test
-        public void shouldSuppressTheCloseFailureWhenTheBodyThrows() {
-            final IOException bodyFailure = new IOException("body");
-            final IllegalStateException closeFailure = new IllegalStateException("close");
-            final AutoCloseable resource = () -> {
-                throw closeFailure;
-            };
-            final Try<String> actual = Try.withResources(() -> resource, r -> {
-                throw bodyFailure;
-            });
-            assertThat(actual.getCause()).isSameAs(bodyFailure);
-            assertThat(bodyFailure.getSuppressed()).containsExactly(closeFailure);
-        }
-
-        @Test
-        public void shouldFailWithTheCloseFailureWhenOnlyCloseThrows() {
-            final IllegalStateException closeFailure = new IllegalStateException("close");
-            final AutoCloseable resource = () -> {
-                throw closeFailure;
-            };
-            assertThat(Try.withResources(() -> resource, r -> "ok").getCause()).isSameAs(closeFailure);
-        }
-
-        @Test
-        public void shouldCaptureANullResultAsFailure() {
-            assertThat(Try.withResources(() -> Closeable.of(1), r -> null).getCause()).isInstanceOf(NullPointerException.class);
-        }
-
-        @Test
-        public void shouldThrowOnNullArguments() {
-            assertThrows(NullPointerException.class, () -> Try.withResources(null, r -> "x"));
-            assertThrows(NullPointerException.class, () -> Try.withResources(() -> Closeable.of(1), null));
         }
     }
 

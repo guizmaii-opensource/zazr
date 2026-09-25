@@ -4,6 +4,8 @@ description: Add Zazr to a build, then meet the control types and the collection
 
 # Getting started
 
+New to functional programming? Start with [why Zazr is useful](new-to-fp.md).
+
 ## Requirements
 
 JDK 25 or later. Zazr has no runtime dependency.
@@ -64,17 +66,17 @@ A value that may be absent is an `Option`. It never holds `null`; use `ofNullabl
 `null`.
 
 ```java
-Option<String> name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET"));
-String greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
+var name = Option.ofNullable(System.getenv("ZAZR_DOCS_UNSET")); // Option<String>
+var greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
 // "hello stranger"
 ```
 
-`Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so a `switch` over them is exhaustive
-and can take the records apart.
+`Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so pattern matching on them with a
+`switch` is exhaustive, and record patterns take the records apart.
 
 ```java
-Either<String, Integer> parsed = Either.right(42);
-String text = switch (parsed) {
+var parsed = Either.<String, Integer>right(42);
+var text = switch (parsed) {
     case Right(var n) -> "got " + n;
     case Left(var error) -> "failed: " + error;
 };
@@ -83,8 +85,8 @@ String text = switch (parsed) {
 A computation that may throw is a `Try`; `catchAll` recovers.
 
 ```java
-Try<Integer> port = Try.of(() -> Integer.parseInt("80a"));
-int value = port.catchAll(error -> 8080).get();
+var port = Try.of(() -> Integer.parseInt("80a")); // Try<Integer>
+var value = port.catchAll(error -> 8080).get();
 // 8080
 ```
 
@@ -92,14 +94,14 @@ int value = port.catchAll(error -> 8080).get();
 at any size.
 
 ```java
-Vector<Integer> numbers = Vector.of(1, 2, 3, 4);
-Vector<Integer> doubled = numbers.map(n -> n * 2).append(10);
-int third = doubled.get(2);
+var numbers = Vector.of(1, 2, 3, 4);
+var doubled = numbers.map(n -> n * 2).append(10); // Vector<Integer>
+var third = doubled.get(2);
 // doubled is Vector(2, 4, 6, 8, 10), third is 6
 ```
 
 ## Next
 
-- [Control types](control-types.md): `Option`, `Either`, `Try` and `Lazy` in detail.
-- [Validation](validation.md): checks that report every error at once.
+- [Control types](control/index.md): `Option`, `Either`, `Try`, `Validation` and `Lazy`, and which one to pick.
+- [Validation](control/validation.md): checks that report every error at once.
 - [Collections](collections/index.md): which collection to choose, and what each operation costs.

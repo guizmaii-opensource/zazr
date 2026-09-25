@@ -95,7 +95,7 @@ public class HashSetTest extends AbstractTraversableTest {
     // -- construction
 
     @Override
-    protected <T> Collector<T, ArrayList<T>, HashSet<T>> collector() {
+    protected <T> Collector<T, HashSet.Builder<T>, HashSet<T>> collector() {
         return HashSet.collector();
     }
 

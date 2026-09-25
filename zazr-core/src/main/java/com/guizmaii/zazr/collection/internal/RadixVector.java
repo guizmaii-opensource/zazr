@@ -36,7 +36,9 @@ import static com.guizmaii.zazr.collection.internal.VectorStatics.*;
  * <p>
  * Capacity: a {@code Vector6} has 2^31 positions, and the free slots in front of a prefix that is not full count
  * among them. A vector holds at most {@code Integer.MAX_VALUE} elements, fewer once elements were dropped from its front;
- * growing beyond that throws {@link IllegalArgumentException}, as Scala's vector does when every level is full.
+ * growing beyond that throws {@link IllegalArgumentException}, as Scala's vector does when every level is full. Only
+ * the receiver's free slots count: the argument of {@code appendedAll}/{@code prependedAll} is never a limit, so a
+ * {@code RadixVector} argument gives the same result as a list of the same elements.
  * <p>
  * Every level is an {@code Object[]} (see {@link VectorStatics}). Elements are never null. Arrays are never written
  * after a vector holding them has been built: every operation copies the arrays it changes.
@@ -278,9 +280,17 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
     }
 
+    /*
+     * Near the limit, the free slots of an argument vector count too: appending to it (or prepending to it) is safe while
+     * the result stays within Integer.MAX_VALUE - WIDTH5 elements, since a vector has fewer than WIDTH5 free slots in
+     * front; beyond that, the builder adds the argument without keeping them.
+     */
+    private static final long FAR_FROM_THE_LIMIT = Integer.MAX_VALUE - WIDTH5;
+
     /* k = knownSize(prefix) > 0; the shapes first try to fit prefix in prefix1 */
     @SuppressWarnings("unchecked")
     RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
+        final long total = (long) length() + k;
         final int tinyAppendLimit = 4 + vectorSliceCount();
         if (k < tinyAppendLimit) {
             final Object[] elements = new Object[k];
@@ -290,7 +300,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                 v = v.prepended0(elements[i]);
             }
             return v;
-        } else if (length() < (k >>> LOG2_CONCAT_FASTER) && prefix instanceof RadixVector<?> pv) {
+        } else if (length() < (k >>> LOG2_CONCAT_FASTER) && total <= FAR_FROM_THE_LIMIT && prefix instanceof RadixVector<?> pv) {
             RadixVector<T> v = (RadixVector<T>) pv;
             final int len = length();
             for (int i = 0; i < len; i++) {
@@ -299,6 +309,8 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
             return v;
         } else if (k < length() - ALIGN_TO_FASTER) {
             return new VectorBuilder<T>().alignTo(k, this).addAll(prefix).addAll(this).result();
+        } else if (prefix instanceof RadixVector<?> pv) {
+            return new VectorBuilder<T>().addAllFirst((RadixVector<? extends T>) pv, total).addAll(this).result();
         } else {
             return new VectorBuilder<T>().addAll(prefix).addAll(this).result();
         }
@@ -314,7 +326,8 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                 v = v.appended(element);
             }
             return v;
-        } else if (length() < (k >>> LOG2_CONCAT_FASTER) && suffix instanceof RadixVector<?> sv) {
+        } else if (length() < (k >>> LOG2_CONCAT_FASTER) && (long) length() + k <= FAR_FROM_THE_LIMIT
+                   && suffix instanceof RadixVector<?> sv) {
             RadixVector<T> v = (RadixVector<T>) sv;
             for (int i = length() - 1; i >= 0; i--) {
                 v = v.prepended0(get(i));

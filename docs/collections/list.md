@@ -1,5 +1,5 @@
 ---
-description: List, the cons list - O(1) prepend, head and tail, and a sealed Cons/Nil pair to switch over.
+description: List, the cons list - O(1) prepend, head and tail, and a sealed Cons/Nil pair to pattern match on.
 ---
 
 # `List`
@@ -11,12 +11,12 @@ the whole list.
 
 ## When to choose it
 
-When you take a sequence apart from the front, recursively or with a `switch`, or need a stack (`push`, `pop`,
+When you take a sequence apart from the front, recursively or with pattern matching, or need a stack (`push`, `pop`,
 `peek`). For access by index, adding at the end or `length`, choose [`Vector`](vector.md).
 
 ```java
-List<Integer> list = List.of(1, 2, 3);
-String first = switch (list) {
+var list = List.of(1, 2, 3);
+var first = switch (list) {
     case Cons(var head, var tail) -> "head " + head + ", then " + tail.length() + " more";
     case Nil() -> "empty";
 };
@@ -24,9 +24,9 @@ String first = switch (list) {
 ```
 
 ```java
-List<String> stack = List.<String>empty().push("a").push("b");
-String top = stack.peek();
-List<String> popped = stack.pop();
+var stack = List.<String>empty().push("a").push("b"); // List<String>
+var top = stack.peek(); // String
+var popped = stack.pop(); // List<String>
 // top is "b", popped is List(a)
 ```
 

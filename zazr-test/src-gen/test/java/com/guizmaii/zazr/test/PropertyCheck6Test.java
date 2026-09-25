@@ -19,13 +19,13 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldApplyForAllOfArity6() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(null, null, null, null, null, null);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(null, null, null, null, null, null);
         assertThat(forAll).isNotNull();
     }
 
     @Test
     public void shouldApplySuchThatOfArity6() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> predicate = (o1, o2, o3, o4, o5, o6) -> true;
         final Property.Property6<Object, Object, Object, Object, Object, Object> suchThat = forAll.suchThat(predicate);
         assertThat(suchThat).isNotNull();
@@ -33,7 +33,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldCheckTrueProperty6() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> predicate = (o1, o2, o3, o4, o5, o6) -> true;
         final CheckResult result = forAll.suchThat(predicate).check();
         assertThat(result.isSatisfied()).isTrue();
@@ -42,7 +42,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldCheckFalseProperty6() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> predicate = (o1, o2, o3, o4, o5, o6) -> false;
         final CheckResult result = forAll.suchThat(predicate).check();
         assertThat(result.isFalsified()).isTrue();
@@ -51,7 +51,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldCheckSuccessfulPredicateResult6() {
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.success()).check(0, 3);
         assertThat(result.isSatisfied()).isTrue();
         assertThat(result.isExhausted()).isFalse();
@@ -61,7 +61,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldReportPredicateFailureMessage6() {
-        final CheckResult result = Property.def("test")
+        final CheckResult result = Property.named("test")
                 .forAll(Gen.of(1).arbitrary(), Gen.of(2).arbitrary(), Gen.of(3).arbitrary(), Gen.of(4).arbitrary(), Gen.of(5).arbitrary(), Gen.of(6).arbitrary())
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.failure("failed: " + Tuple.of(o1, o2, o3, o4, o5, o6)))
                 .check(0, 3);
@@ -79,7 +79,7 @@ public class PropertyCheck6Test {
     @Test
     public void shouldCheckErroneousPredicateResult6() {
         final Exception cause = new Exception("yay! (this is a negative test)");
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> { throw cause; }).check(0, 3);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).hasCause(cause);
@@ -89,7 +89,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldReportNullPredicateResultAsErroneous6() {
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> null).check(0, 3);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).hasCauseInstanceOf(NullPointerException.class);
@@ -98,12 +98,12 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldRejectNullResultPredicate6() {
-        assertThrows(NullPointerException.class, () -> Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS).suchThatResult(null));
+        assertThrows(NullPointerException.class, () -> Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS).suchThatResult(null));
     }
 
     @Test
     public void shouldReportPostconditionFailureMessage6() {
-        final CheckResult result = Property.def("test")
+        final CheckResult result = Property.named("test")
                 .forAll(Gen.of(1).arbitrary(), Gen.of(2).arbitrary(), Gen.of(3).arbitrary(), Gen.of(4).arbitrary(), Gen.of(5).arbitrary(), Gen.of(6).arbitrary())
                 .suchThat((o1, o2, o3, o4, o5, o6) -> true)
                 .impliesResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.failure("postcondition: " + Tuple.of(o1, o2, o3, o4, o5, o6)))
@@ -115,7 +115,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldCheckSuccessfulResultImplication6() {
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.success())
                 .impliesResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.success()).check(0, 3);
         assertThat(result.isSatisfied()).isTrue();
@@ -125,7 +125,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldSkipResultPostconditionForFalseBooleanPrecondition6() {
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThat((o1, o2, o3, o4, o5, o6) -> false)
                 .impliesResult((o1, o2, o3, o4, o5, o6) -> { throw new AssertionError("must not run"); }).check(0, 3);
         assertThat(result.isSatisfied()).isTrue();
@@ -135,7 +135,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldDiscardRejectedPreconditionMessage6() {
-        final Property.Property6<Object, Object, Object, Object, Object, Object> property = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final Property.Property6<Object, Object, Object, Object, Object, Object> property = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.failure("rejected input"));
         final CheckResult booleanResult = property
                 .implies((o1, o2, o3, o4, o5, o6) -> { throw new AssertionError("must not run"); }).check(0, 3);
@@ -151,7 +151,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldAllowBooleanPostconditionAfterPredicateResult6() {
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThatResult((o1, o2, o3, o4, o5, o6) -> PredicateResult.success())
                 .implies((o1, o2, o3, o4, o5, o6) -> false).check(0, 3);
         assertThat(result.isFalsified()).isTrue();
@@ -160,7 +160,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldReportNullPostconditionResultAsErroneous6() {
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThat((o1, o2, o3, o4, o5, o6) -> true).impliesResult((o1, o2, o3, o4, o5, o6) -> null).check(0, 3);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).hasCauseInstanceOf(NullPointerException.class);
@@ -170,7 +170,7 @@ public class PropertyCheck6Test {
     @Test
     public void shouldCheckErroneousPostconditionResult6() {
         final Exception cause = new Exception("yay! (this is a negative test)");
-        final CheckResult result = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
+        final CheckResult result = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
                 .suchThat((o1, o2, o3, o4, o5, o6) -> true).impliesResult((o1, o2, o3, o4, o5, o6) -> { throw cause; }).check(0, 3);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).hasCause(cause);
@@ -179,12 +179,12 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldRejectNullResultPostcondition6() {
-        assertThrows(NullPointerException.class, () -> Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS).suchThat((o1, o2, o3, o4, o5, o6) -> true).impliesResult(null));
+        assertThrows(NullPointerException.class, () -> Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS).suchThat((o1, o2, o3, o4, o5, o6) -> true).impliesResult(null));
     }
 
     @Test
     public void shouldCheckErroneousProperty6() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> predicate = (o1, o2, o3, o4, o5, o6) -> { throw new RuntimeException("yay! (this is a negative test)"); };
         final CheckResult result = forAll.suchThat(predicate).check();
         assertThat(result.isErroneous()).isTrue();
@@ -192,7 +192,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldCheckProperty6ImplicationWithTruePrecondition() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> p1 = (o1, o2, o3, o4, o5, o6) -> true;
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> p2 = (o1, o2, o3, o4, o5, o6) -> true;
         final CheckResult result = forAll.suchThat(p1).implies(p2).check();
@@ -202,7 +202,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldCheckProperty6ImplicationWithFalsePrecondition() {
-        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.def("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
+        final Property.ForAll6<Object, Object, Object, Object, Object, Object> forAll = Property.named("test").forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS);
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> p1 = (o1, o2, o3, o4, o5, o6) -> false;
         final CheckedFunction6<Object, Object, Object, Object, Object, Object, Boolean> p2 = (o1, o2, o3, o4, o5, o6) -> true;
         final CheckResult result = forAll.suchThat(p1).implies(p2).check();
@@ -212,7 +212,7 @@ public class PropertyCheck6Test {
 
     @Test
     public void shouldThrowOnProperty6CheckGivenNegativeTries() {
-        assertThrows(IllegalArgumentException.class, () -> Property.def("test")
+        assertThrows(IllegalArgumentException.class, () -> Property.named("test")
             .forAll(OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
             .suchThat((o1, o2, o3, o4, o5, o6) -> true)
             .check(Checkable.RNG.get(), 0, -1));
@@ -221,7 +221,7 @@ public class PropertyCheck6Test {
     @Test
     public void shouldReturnErroneousProperty6CheckResultIfGenFails() {
         final Arbitrary<Object> failingGen = Gen.fail("yay! (this is a negative test)").arbitrary();
-        final CheckResult result = Property.def("test")
+        final CheckResult result = Property.named("test")
             .forAll(failingGen, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
             .suchThat((o1, o2, o3, o4, o5, o6) -> true)
             .check();
@@ -231,7 +231,7 @@ public class PropertyCheck6Test {
     @Test
     public void shouldReturnErroneousProperty6CheckResultIfArbitraryFails() {
         final Arbitrary<Object> failingArbitrary = size -> { throw new RuntimeException("yay! (this is a negative test)"); };
-        final CheckResult result = Property.def("test")
+        final CheckResult result = Property.named("test")
             .forAll(failingArbitrary, OBJECTS, OBJECTS, OBJECTS, OBJECTS, OBJECTS)
             .suchThat((o1, o2, o3, o4, o5, o6) -> true)
             .check();

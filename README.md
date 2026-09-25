@@ -41,14 +41,14 @@ API, not an afterthought. Its design comes from modern Scala's collections and f
   with it, not by guessing.
 - **[Persistent collections you can build fast.](https://zazr.dev/builders/)** A builder fills a collection in place
   and hands it over once, so building one in a loop copies nothing.
-- **[Errors you do not lose.](https://zazr.dev/validation/)** `Validation` collects every error instead of stopping
+- **[Errors you do not lose.](https://zazr.dev/control/validation/)** `Validation` collects every error instead of stopping
   at the first, in a list that is never empty.
 - **[Combine up to eight values in one call.](https://zazr.dev/zip/)** `zipWith` takes all of them and a function of
   their values, with no nested tuples to unpack.
 - **[Collections that cannot be empty.](https://zazr.dev/non-empty-vector/)** On a `NonEmptyVector`, `head`, `max`
   and `reduce` cannot fail, and the return types tell you when that guarantee is lost.
-- **[Pattern matching on results.](https://zazr.dev/control-types/)** `Option`, `Either`, `Try` and `Validation` are
-  sealed interfaces of records, so a `switch` over them is checked by the compiler.
+- **[Pattern matching on results.](https://zazr.dev/control/)** `Option`, `Either`, `Try` and `Validation` are
+  sealed interfaces of records, so pattern matching on them is checked by the compiler.
 - **No `null` inside.** Values and collections reject it, and absence is an `Option`.
 - **[Java interop without copies.](https://zazr.dev/java-interop/)** `asJava()` gives a read-only `java.util` view in
   constant time, and the way back does not copy either.
@@ -96,26 +96,27 @@ dependencies {
 
 ```java
 // Validation keeps every error, not the first one
-Validation<String, User> user = Validation.zipWith(name(""), age(-1), email("jules"), User::new);
-String message = switch (user) {
+var user = Validation.zipWith(name(""), age(-1), email("jules"), User::new); // Validation<String, User>
+var message = switch (user) {
     case Valid(var u) -> "hello " + u.name();
     case Invalid(var errors) -> errors.mkString(", ");
 };
 // "name is blank, age is negative, email has no @"
 
 // zip at any arity up to 8, no Tuple2<Tuple2<A, B>, C>
-Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
+var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+    (a, b, c) -> a + b + c); // Option<Integer>
 
 // total operations on a collection that cannot be empty
-NonEmptyVector<Integer> scores = NonEmptyVector.of(7, 3, 9);
-int best = scores.max(Integer::compare);
+var scores = NonEmptyVector.of(7, 3, 9);
+var best = scores.max(Integer::compare); // Integer
 
 // a builder instead of repeated append
-Vector.Builder<Integer> builder = Vector.newBuilder();
+var builder = Vector.<Integer>newBuilder();
 for (int i = 0; i < 1_000; i++) {
     builder.add(i);
 }
-Vector<Integer> numbers = builder.result();
+var numbers = builder.result();
 ```
 
 More in the [guide](https://zazr.dev/getting-started/), and the ideas behind the API on the [Design](https://zazr.dev/principles/) page.

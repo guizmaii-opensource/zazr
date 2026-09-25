@@ -9,44 +9,52 @@ import java.util.Objects;
  * Represents the result of a property check which is
  *
  * <ul>
- * <li>{@code Satisfied}, if all tests satisfied the given property</li>
- * <li>{@code Falsified}, if a counter-example could be discovered that falsified the given property</li>
- * <li>{@code Erroneous}, if an exception occurred executing the property check</li>
+ * <li>{@link Satisfied}, if all tests satisfied the given property</li>
+ * <li>{@link Falsified}, if a counter-example could be discovered that falsified the given property</li>
+ * <li>{@link Erroneous}, if an exception occurred executing the property check</li>
  * </ul>
  *
  * Please note that a {@code Satisfied} property check may be {@code Exhausted}, if the property is an implication
  * and no sample could be found that satisfied the pre-condition. In this case the post-condition is satisfied by
  * definition (see <a href="http://en.wikipedia.org/wiki/Principle_of_explosion">ex falso quodlibet</a>).
  */
-public interface CheckResult {
+public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.Falsified, CheckResult.Erroneous {
 
     /**
      * If this check result is satisfied as specified above.
      *
      * @return true, if this check result is satisfied, false otherwise
      */
-    boolean isSatisfied();
+    default boolean isSatisfied() {
+        return this instanceof Satisfied;
+    }
 
     /**
      * If this check result is falsified as specified above.
      *
      * @return true, if this check result is falsified, false otherwise
      */
-    boolean isFalsified();
+    default boolean isFalsified() {
+        return this instanceof Falsified;
+    }
 
     /**
      * If this check result is erroneous as specified above.
      *
      * @return true, if this check result is erroneous, false otherwise
      */
-    boolean isErroneous();
+    default boolean isErroneous() {
+        return this instanceof Erroneous;
+    }
 
     /**
      * If this check result is exhausted as specified above.
      *
      * @return true, if this check result is exhausted, false otherwise
      */
-    boolean isExhausted();
+    default boolean isExhausted() {
+        return this instanceof Satisfied satisfied && satisfied.exhausted();
+    }
 
     /**
      * The name of the checked property this result refers to.
@@ -133,48 +141,24 @@ public interface CheckResult {
     }
 
     /**
-     * Represents a satisfied property check.
+     * A satisfied property check.
+     *
+     * @param propertyName the name of the checked property
+     * @param count        the number of checks performed
+     * @param exhausted    whether no sample satisfied the precondition of an implication
      */
-    class Satisfied implements CheckResult {
+    record Satisfied(String propertyName, int count, boolean exhausted) implements CheckResult {
 
-        private final String propertyName;
-        private final int count;
-        private final boolean exhausted;
-
-        Satisfied(String propertyName, int count, boolean exhausted) {
-            this.propertyName = propertyName;
-            this.count = count;
-            this.exhausted = exhausted;
-        }
-
-        @Override
-        public boolean isSatisfied() {
-            return true;
-        }
-
-        @Override
-        public boolean isFalsified() {
-            return false;
-        }
-
-        @Override
-        public boolean isErroneous() {
-            return false;
-        }
-
-        @Override
-        public boolean isExhausted() {
-            return exhausted;
-        }
-
-        @Override
-        public String propertyName() {
-            return propertyName;
-        }
-
-        @Override
-        public int count() {
-            return count;
+        /**
+         * Creates a satisfied result.
+         *
+         * @param propertyName the name of the checked property
+         * @param count        the number of checks performed
+         * @param exhausted    whether no sample satisfied the precondition of an implication
+         * @throws NullPointerException if {@code propertyName} is null
+         */
+        public Satisfied {
+            Objects.requireNonNull(propertyName, "propertyName is null");
         }
 
         @Override
@@ -185,87 +169,54 @@ public interface CheckResult {
         @Override
         public Option<Error> error() {
             return Option.none();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) {
-                return true;
-            } else if (o instanceof Satisfied) {
-                final Satisfied that = (Satisfied) o;
-                return Objects.equals(this.propertyName, that.propertyName)
-                        && this.count == that.count
-                        && this.exhausted == that.exhausted;
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(propertyName, count, exhausted);
         }
 
         @Override
         public String toString() {
-            return String.format("%s(propertyName = %s, count = %s, exhausted = %s)", getClass().getSimpleName(), propertyName, count, exhausted);
+            return String.format("Satisfied(propertyName = %s, count = %s, exhausted = %s)", propertyName, count, exhausted);
         }
     }
 
     /**
-     * Represents a falsified property check.
+     * A falsified property check.
+     *
+     * @param propertyName   the name of the checked property
+     * @param count          the number of the check that found the counterexample
+     * @param counterexample the generated values that falsified the property
+     * @param message        the explanation supplied by the predicate, if any
      */
-    class Falsified implements CheckResult {
+    record Falsified(String propertyName, int count, Tuple counterexample, Option<String> message) implements CheckResult {
 
-        private final String propertyName;
-        private final int count;
-        private final Tuple sample;
-        private final String message;
-
-        Falsified(String propertyName, int count, Tuple sample) {
-            this(propertyName, count, sample, null);
+        /**
+         * Creates a falsified result.
+         *
+         * @param propertyName   the name of the checked property
+         * @param count          the number of the check that found the counterexample
+         * @param counterexample the generated values that falsified the property
+         * @param message        the explanation supplied by the predicate, if any
+         * @throws NullPointerException if an argument is null
+         */
+        public Falsified {
+            Objects.requireNonNull(propertyName, "propertyName is null");
+            Objects.requireNonNull(counterexample, "counterexample is null");
+            Objects.requireNonNull(message, "message is null");
         }
 
-        Falsified(String propertyName, int count, Tuple sample, String message) {
-            this.propertyName = propertyName;
-            this.count = count;
-            this.sample = sample;
-            this.message = message;
-        }
-
-        @Override
-        public boolean isSatisfied() {
-            return false;
-        }
-
-        @Override
-        public boolean isFalsified() {
-            return true;
-        }
-
-        @Override
-        public boolean isErroneous() {
-            return false;
-        }
-
-        @Override
-        public boolean isExhausted() {
-            return false;
-        }
-
-        @Override
-        public String propertyName() {
-            return propertyName;
-        }
-
-        @Override
-        public int count() {
-            return count;
+        /**
+         * Creates a falsified result without an explanation.
+         *
+         * @param propertyName   the name of the checked property
+         * @param count          the number of the check that found the counterexample
+         * @param counterexample the generated values that falsified the property
+         * @throws NullPointerException if an argument is null
+         */
+        public Falsified(String propertyName, int count, Tuple counterexample) {
+            this(propertyName, count, counterexample, Option.none());
         }
 
         @Override
         public Option<Tuple> sample() {
-            return Option.some(sample);
+            return Option.some(counterexample);
         }
 
         @Override
@@ -274,110 +225,63 @@ public interface CheckResult {
         }
 
         @Override
-        public Option<String> message() {
-            return Option.ofNullable(message);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) {
-                return true;
-            } else if (o instanceof Falsified) {
-                final Falsified that = (Falsified) o;
-                return Objects.equals(this.propertyName, that.propertyName)
-                        && this.count == that.count
-                        && Objects.equals(this.sample, that.sample)
-                        && Objects.equals(this.message, that.message);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return message == null ? Objects.hash(propertyName, count, sample) : Objects.hash(propertyName, count, sample, message);
-        }
-
-        @Override
         public String toString() {
-            return String.format("%s(propertyName = %s, count = %s, sample = %s%s)", getClass().getSimpleName(), propertyName, count, sample,
-                    message == null ? "" : ", message = " + message);
+            return String.format("Falsified(propertyName = %s, count = %s, sample = %s%s)", propertyName, count, counterexample,
+                    message.map(m -> ", message = " + m).getOrElse(""));
         }
     }
 
     /**
-     * Represents an erroneous property check.
+     * An erroneous property check. Two erroneous results are equal when their causes have the same messages along
+     * the whole cause chain.
+     *
+     * @param propertyName the name of the checked property
+     * @param count        the number of the check that failed
+     * @param cause        the error thrown by an arbitrary, a generator or the predicate
+     * @param sample       the generated values, when the error was thrown by the predicate
      */
-    class Erroneous implements CheckResult {
+    record Erroneous(String propertyName, int count, Error cause, Option<Tuple> sample) implements CheckResult {
 
-        private final String propertyName;
-        private final int count;
-        private final Error error;
-        private final Option<Tuple> sample;
-
-        Erroneous(String propertyName, int count, Error error, Option<Tuple> sample) {
-            this.propertyName = propertyName;
-            this.count = count;
-            this.error = error;
-            this.sample = sample;
-        }
-
-        @Override
-        public boolean isSatisfied() {
-            return false;
-        }
-
-        @Override
-        public boolean isFalsified() {
-            return false;
-        }
-
-        @Override
-        public boolean isErroneous() {
-            return true;
-        }
-
-        @Override
-        public boolean isExhausted() {
-            return false;
-        }
-
-        @Override
-        public String propertyName() {
-            return propertyName;
-        }
-
-        @Override
-        public int count() {
-            return count;
-        }
-
-        @Override
-        public Option<Tuple> sample() {
-            return sample;
+        /**
+         * Creates an erroneous result.
+         *
+         * @param propertyName the name of the checked property
+         * @param count        the number of the check that failed
+         * @param cause        the error thrown by an arbitrary, a generator or the predicate
+         * @param sample       the generated values, when the error was thrown by the predicate
+         * @throws NullPointerException if {@code propertyName} or {@code sample} is null
+         */
+        public Erroneous {
+            Objects.requireNonNull(propertyName, "propertyName is null");
+            Objects.requireNonNull(sample, "sample is null");
         }
 
         @Override
         public Option<Error> error() {
-            return Option.some(error);
+            return cause == null ? Option.none() : Option.some(cause);
         }
 
         @Override
         public boolean equals(Object o) {
-            if (o == this) {
-                return true;
-            } else if (o instanceof Erroneous) {
-                final Erroneous that = (Erroneous) o;
-                return Objects.equals(this.propertyName, that.propertyName)
-                        && this.count == that.count
-                        && deepEquals(this.error, that.error)
-                        && Objects.equals(this.sample, that.sample);
-            } else {
-                return false;
-            }
+            return o == this || (o instanceof Erroneous that
+                    && Objects.equals(this.propertyName, that.propertyName)
+                    && this.count == that.count
+                    && deepEquals(this.cause, that.cause)
+                    && Objects.equals(this.sample, that.sample));
         }
 
-        boolean deepEquals(Throwable t1, Throwable t2) {
+        @Override
+        public int hashCode() {
+            return Objects.hash(propertyName, count, deepHashCode(cause), sample);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Erroneous(propertyName = %s, count = %s, error = %s, sample = %s)", propertyName, count,
+                    cause == null ? null : cause.getMessage(), sample);
+        }
+
+        static boolean deepEquals(Throwable t1, Throwable t2) {
             return (t1 == null && t2 == null) || (
                     t1 != null && t2 != null
                             && Objects.equals(t1.getMessage(), t2.getMessage())
@@ -385,22 +289,8 @@ public interface CheckResult {
             );
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(propertyName, count, deepHashCode(error), sample);
-        }
-
-        int deepHashCode(Throwable t) {
-            if (t == null) {
-                return 0;
-            } else {
-                return Objects.hash(t.getMessage(), deepHashCode(t.getCause()));
-            }
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s(propertyName = %s, count = %s, error = %s, sample = %s)", getClass().getSimpleName(), propertyName, count, error.getMessage(), sample);
+        static int deepHashCode(Throwable t) {
+            return t == null ? 0 : Objects.hash(t.getMessage(), deepHashCode(t.getCause()));
         }
     }
 }

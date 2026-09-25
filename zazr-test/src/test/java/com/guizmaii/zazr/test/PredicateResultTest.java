@@ -29,7 +29,7 @@ public class PredicateResultTest {
         final PredicateResult result = PredicateResult.failure("");
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.message()).isEqualTo(Option.some(""));
-        assertThat(Property.def("test").forAll(Gen.of(0).arbitrary())
+        assertThat(Property.named("test").forAll(Gen.of(0).arbitrary())
                 .suchThatResult(n -> result).check(0, 1).isFalsified()).isTrue();
     }
 
@@ -43,7 +43,7 @@ public class PredicateResultTest {
     public void shouldStopAtFirstFailureAndKeepItsSampleAndMessage() {
         final AtomicInteger evaluations = new AtomicInteger();
         final Arbitrary<Integer> inputs = size -> random -> evaluations.incrementAndGet();
-        final CheckResult result = Property.def("less than three").forAll(inputs)
+        final CheckResult result = Property.named("less than three").forAll(inputs)
                 .suchThatResult(n -> n < 3 ? PredicateResult.success() : PredicateResult.failure("too large: " + n))
                 .check(0, 10);
         assertThat(result.isFalsified()).isTrue();
@@ -58,7 +58,7 @@ public class PredicateResultTest {
         final AtomicInteger inputs = new AtomicInteger();
         final AtomicInteger postconditions = new AtomicInteger();
         final Arbitrary<Integer> values = size -> random -> inputs.incrementAndGet();
-        final CheckResult result = Property.def("test").forAll(values)
+        final CheckResult result = Property.named("test").forAll(values)
                 .suchThatResult(n -> n < 3 ? PredicateResult.failure("skip: " + n) : PredicateResult.success())
                 .impliesResult(n -> {
                     postconditions.incrementAndGet();
@@ -75,7 +75,7 @@ public class PredicateResultTest {
     public void shouldNotRetainMessageBetweenChecks() {
         final AtomicInteger inputs = new AtomicInteger();
         final Arbitrary<Integer> values = size -> random -> inputs.incrementAndGet();
-        final Checkable property = Property.def("test").forAll(values)
+        final Checkable property = Property.named("test").forAll(values)
                 .suchThatResult(n -> n == 1 ? PredicateResult.failure("first check") : PredicateResult.success());
         assertThat(property.check(0, 1).message()).isEqualTo(Option.some("first check"));
         final CheckResult second = property.check(0, 1);
@@ -85,9 +85,9 @@ public class PredicateResultTest {
 
     @Test
     public void shouldPreserveMessagesWhenComposingProperties() {
-        final Checkable first = Property.def("first").forAll(Gen.of(1).arbitrary())
+        final Checkable first = Property.named("first").forAll(Gen.of(1).arbitrary())
                 .suchThatResult(n -> PredicateResult.failure("first failure"));
-        final Checkable second = Property.def("second").forAll(Gen.of(2).arbitrary())
+        final Checkable second = Property.named("second").forAll(Gen.of(2).arbitrary())
                 .suchThatResult(n -> PredicateResult.failure("second failure"));
         final CheckResult conjunction = first.and(second).check(0, 1);
         assertThat(conjunction.propertyName()).isEqualTo("first");
@@ -101,7 +101,7 @@ public class PredicateResultTest {
 
     @Test
     public void shouldNotEvaluateResultPredicateWithZeroTries() {
-        final CheckResult result = Property.def("test").forAll(Gen.of(1).arbitrary())
+        final CheckResult result = Property.named("test").forAll(Gen.of(1).arbitrary())
                 .suchThatResult(n -> { throw new AssertionError("must not run"); }).check(0, 0);
         assertThat(result.isSatisfied()).isTrue();
         assertThat(result.isExhausted()).isTrue();

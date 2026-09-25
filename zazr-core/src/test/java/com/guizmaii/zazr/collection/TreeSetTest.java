@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TreeSetTest extends AbstractTraversableTest {
 
     @Override
-    protected <T> Collector<T, ArrayList<T>, ? extends TreeSet<T>> collector() {
+    protected <T> Collector<T, ?, ? extends TreeSet<T>> collector() {
         return TreeSet.collector(Comparators.naturalComparator());
     }
 

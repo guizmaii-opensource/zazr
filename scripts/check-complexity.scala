@@ -292,11 +292,11 @@ val families: List[Family] = List(
   )
 )
 
-/** Javadoc inline tags to Markdown-free text: `{@code x}` and `{@link #m(int)}` become `x` and `m(int)`. */
+/** Javadoc inline tags to Markdown-free text: `{@code x}`, `{@link #m(int)}` and `{@link T#m(int, Object)}` become `x`, `m(int)` and `T#m(int, Object)`. */
 def plain(note: String): String =
   note
     .replaceAll("\\{@(?:code|literal) ([^{}]*)\\}", "$1")
-    .replaceAll("\\{@link(?:plain)? #?([^{} ]*)(?: ([^{}]*))?\\}", "$1")
+    .replaceAll("\\{@link(?:plain)? #?([^{}\\s(]*(?:\\([^)]*\\))?)(?:\\s+([^{}]*))?\\}", "$1")
     .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
 
 def html(s: String): String =

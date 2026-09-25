@@ -19,8 +19,10 @@ There is one static method per number of arguments, so combining three values gi
 `Tuple2<Tuple2<A, B>, C>`. `zipWith` passes the values straight to `f`, without building a tuple.
 
 ```java
-Option<Integer> sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c);
-Option<Tuple3<Integer, String, Boolean>> triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true));
+var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
+    (a, b, c) -> a + b + c); // Option<Integer>
+var triple = Option.zip(Option.some(1), Option.some("a"),
+    Option.some(true)); // Option<Tuple3<Integer, String, Boolean>>
 // Some(6), Some((1, a, true))
 ```
 
@@ -33,18 +35,19 @@ Option<Tuple3<Integer, String, Boolean>> triple = Option.zip(Option.some(1), Opt
 | `Lazy` | nothing fails: the result is an unevaluated `Lazy` that forces the arguments in order on first `get()` |
 
 ```java
-Either<String, Integer> first = Either.zipWith(Either.left("no a"), Either.<String, Integer>right(2),
-    Either.<String, Integer>left("no c"), (a, b, c) -> 0);
-Validation<String, Integer> all = Validation.zipWith(Validation.<String, Integer>invalid("no a"),
-    Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("no c"), (a, b, c) -> 0);
+var first = Either.zipWith(Either.left("no a"), Either.<String, Integer>right(2),
+    Either.<String, Integer>left("no c"), (a, b, c) -> 0); // Either<String, Integer>
+var all = Validation.zipWith(Validation.<String, Integer>invalid("no a"),
+    Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("no c"),
+    (a, b, c) -> 0); // Validation<String, Integer>
 // Left(no a), Invalid(no a, no c)
 ```
 
 `zipLeft` and `zipRight` keep one value, but still fail when either side fails. They are not `orElse`.
 
 ```java
-Option<Integer> left = Option.some(1).zipLeft(Option.none());
-Option<String> right = Option.some(1).zipRight(Option.some("kept"));
+var left = Option.some(1).zipLeft(Option.none()); // Option<Integer>
+var right = Option.some(1).zipRight(Option.some("kept")); // Option<String>
 // None, Some(kept)
 ```
 
