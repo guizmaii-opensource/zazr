@@ -116,6 +116,7 @@ validation:
 nav:
   - Home: index.md
   - Guide:
+      - "New to functional programming?": new-to-fp.md
       - Getting started: getting-started.md
       - zip at arity N: zip.md
       - NonEmptyVector: non-empty-vector.md

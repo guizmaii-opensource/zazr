@@ -4,6 +4,8 @@ description: Add Zazr to a build, then meet the control types and the collection
 
 # Getting started
 
+New to functional programming? Start with [why Zazr is useful](new-to-fp.md).
+
 ## Requirements
 
 JDK 25 or later. Zazr has no runtime dependency.
