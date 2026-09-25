@@ -20,10 +20,10 @@ has no failure case and is never empty.
 tells whether that has happened.
 
 ```java
-Lazy<Integer> answer = Lazy.of(() -> 6 * 7);
-boolean before = answer.isEvaluated();
-int value = answer.map(n -> n + 1).get();
-boolean after = answer.isEvaluated();
+var answer = Lazy.of(() -> 6 * 7); // Lazy<Integer>
+var before = answer.isEvaluated();
+var value = answer.map(n -> n + 1).get(); // Integer
+var after = answer.isEvaluated();
 // before is false, value is 43, after is true
 ```
 
@@ -35,11 +35,11 @@ boolean after = answer.isEvaluated();
 values they depend on are computed when the result is.
 
 ```java
-Lazy<String> host = Lazy.of(() -> "localhost");
-Lazy<Integer> port = Lazy.of(() -> 8080);
-Lazy<String> address = host.zipWith(port, (h, p) -> h + ":" + p);
-boolean evaluated = host.isEvaluated();
-String value = address.get();
+var host = Lazy.of(() -> "localhost"); // Lazy<String>
+var port = Lazy.of(() -> 8080); // Lazy<Integer>
+var address = host.zipWith(port, (h, p) -> h + ":" + p); // Lazy<String>
+var evaluated = host.isEvaluated();
+var value = address.get(); // String
 // evaluated is false, value is "localhost:8080"
 ```
 
@@ -47,7 +47,7 @@ The static `collectAll` turns many `Lazy` values into one `Lazy` of a `Vector`, 
 nesting. Both compute nothing until the result is read.
 
 ```java
-Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2)));
+var all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2))); // Lazy<Vector<Integer>>
 // all.get() is Vector(1, 2)
 ```
 
@@ -57,13 +57,13 @@ Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(
 cache, so the value is still computed once.
 
 ```java
-int[] calls = {0};
-Lazy<String> greeting = Lazy.of(() -> {
+var calls = new int[] {0};
+var greeting = Lazy.of(() -> {
     calls[0]++;
     return "hello";
-});
-java.util.function.Supplier<String> supplier = greeting.toSupplier();
-String twice = supplier.get() + supplier.get();
+}); // Lazy<String>
+var supplier = greeting.toSupplier(); // java.util.function.Supplier<String>
+var twice = supplier.get() + supplier.get();
 // twice is "hellohello", calls[0] is 1: computed once
 ```
 
@@ -77,15 +77,15 @@ If the computation throws, the exception reaches the caller of `get()` and nothi
 the computation again.
 
 ```java
-java.util.concurrent.atomic.AtomicInteger attempts = new java.util.concurrent.atomic.AtomicInteger();
-Lazy<String> flaky = Lazy.of(() -> {
+var attempts = new java.util.concurrent.atomic.AtomicInteger();
+var flaky = Lazy.of(() -> {
     if (attempts.incrementAndGet() == 1) {
         throw new IllegalStateException("not yet");
     }
     return "ready";
-});
-Try<String> first = Try.of(flaky::get);
-String second = flaky.get();
+}); // Lazy<String>
+var first = Try.of(flaky::get); // Try<String>
+var second = flaky.get(); // String
 // first is Failure(java.lang.IllegalStateException: not yet), second is "ready", attempts is 2
 ```
 
@@ -95,10 +95,10 @@ Two `Lazy` values are equal when their values are, so `equals` and `hashCode` co
 prints `Lazy(?)` until the value is computed.
 
 ```java
-Lazy<Integer> unread = Lazy.of(() -> 1);
-Lazy<Integer> other = Lazy.of(() -> 1);
-String shown = unread.toString();
-boolean equal = unread.equals(other);
+var unread = Lazy.of(() -> 1); // Lazy<Integer>
+var other = Lazy.of(() -> 1); // Lazy<Integer>
+var shown = unread.toString();
+var equal = unread.equals(other);
 // shown is "Lazy(?)", equal is true, and both are now evaluated
 ```
 

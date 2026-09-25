@@ -108,4 +108,48 @@ class JavaSetViewTest {
     static String name(Comparator<Integer> comparator) {
         return comparator == Comparator.<Integer> naturalOrder() ? "natural order" : "reversed order";
     }
+
+    @Test
+    void shouldLookElementsUpInsteadOfWalkingThem() {
+        final int n = 1_000;
+        final int[] calls = new int[1];
+        final Comparator<Integer> counting = (a, b) -> {
+            calls[0]++;
+            return Integer.compare(a, b);
+        };
+        final java.util.List<Integer> elements = new java.util.ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            elements.add(i);
+        }
+        final java.util.Collection<Integer> tree = TreeSet.ofAll(counting, elements).asJava();
+        for (int i : new int[] { 0, n / 2, n - 1, n, -1 }) {
+            calls[0] = 0;
+            assertThat(tree.contains(i)).isEqualTo(i >= 0 && i < n);
+            assertThat(calls[0]).as("comparisons for " + i).isLessThanOrEqualTo(22);
+        }
+        // a hash lookup reads the element's hashCode once and compares it with equals only on a hash match
+        final int[] equalsCalls = new int[1];
+        record Counted(int value, int[] calls) {
+            @Override
+            public boolean equals(Object o) {
+                calls[0]++;
+                return o instanceof Counted c && c.value == value;
+            }
+
+            @Override
+            public int hashCode() {
+                return value;
+            }
+        }
+        final java.util.List<Counted> counted = new java.util.ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            counted.add(new Counted(i, equalsCalls));
+        }
+        for (java.util.Collection<Counted> view : java.util.List.of(HashSet.ofAll(counted).asJava(), LinkedHashSet.ofAll(counted).asJava())) {
+            equalsCalls[0] = 0;
+            assertThat(view.contains(new Counted(n / 2, equalsCalls))).isTrue();
+            assertThat(view.contains(new Counted(n, equalsCalls))).isFalse();
+            assertThat(equalsCalls[0]).isLessThanOrEqualTo(2);
+        }
+    }
 }

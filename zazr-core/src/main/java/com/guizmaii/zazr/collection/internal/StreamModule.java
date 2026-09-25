@@ -24,30 +24,55 @@ public interface StreamModule {
             if (end < 0) {
                 return -1;
             }
-            // the slice is read once, whatever its shape; its emptiness is answered by the copy
+            // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
             final Stream<T> _slice = toStream(slice);
-            if (source.isEmpty()) {
-                return _slice.isEmpty() ? 0 : -1;
-            } else if (_slice.isEmpty()) {
-                final int len = source.length();
-                return len < end ? len : end;
+            _slice.length();
+            if (_slice.isEmpty()) {
+                // the last position at or before end: the length when this Stream is shorter; no cell past end - 1 is
+                // forced
+                int length = 0;
+                while (length < end && !source.isEmpty()) {
+                    length++;
+                    if (length < end) {
+                        source = source.tail();
+                    }
+                }
+                return length;
             }
-            int index = 0;
+            // every start position up to end, each compared with the slice for as long as it matches: at most the
+            // first end + m elements are forced, and the walk stops once the rest is shorter than the slice
             int result = -1;
-            // lengths once, then counted down: Stream.length() walks and forces the whole Stream
-            final int sliceLength = _slice.length();
-            int remaining = source.length();
-            while (remaining >= sliceLength) {
-                final int found = findNextSlice(source, _slice, remaining, sliceLength);
-                if (found < 0 || index + found > end) {
+            for (int index = 0; !source.isEmpty(); index++) {
+                final int match = matchAt(source, _slice);
+                if (match > 0) {
+                    result = index;
+                } else if (match < 0) {
                     return result;
                 }
-                result = index + found;
-                index += found + 1;
-                remaining -= found + 1;
-                source = source.drop(found + 1);
+                if (index == end) {
+                    return result;
+                }
+                source = source.tail();
             }
             return result;
+        }
+
+        // 1 if the non-empty source starts with the non-empty slice, 0 if an element differs, -1 if source ends first;
+        // the cells of source are forced only as far as the comparison goes
+        private static <T extends @Nullable Object> int matchAt(Stream<T> source, Stream<T> slice) {
+            while (true) {
+                if (!java.util.Objects.equals(source.head(), slice.head())) {
+                    return 0;
+                }
+                slice = slice.tail();
+                if (slice.isEmpty()) {
+                    return 1;
+                }
+                source = source.tail();
+                if (source.isEmpty()) {
+                    return -1;
+                }
+            }
         }
 
         private static <T extends @Nullable Object> int findFirstSlice(Stream<T> source, Stream<T> slice, int from) {
@@ -59,20 +84,6 @@ public interface StreamModule {
                     return index;
                 }
                 index++;
-                source = source.tail();
-            }
-            return -1;
-        }
-
-        // the offset of the next occurrence of the slice in source, or -1
-        private static <T extends @Nullable Object> int findNextSlice(Stream<T> source, Stream<T> slice, int remaining, int sliceLength) {
-            int index = 0;
-            while (remaining >= sliceLength) {
-                if (source.startsWith(slice)) {
-                    return index;
-                }
-                index++;
-                remaining--;
                 source = source.tail();
             }
             return -1;
