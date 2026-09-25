@@ -1357,13 +1357,19 @@ the public API does not change.
   test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
   (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
 
-**Step 3 (#74): the trie deleted.** `BitMappedTrie` goes, with `LeafVisitor` and `NodeModifier`, and so do
-`TrieVector` and the differential test, which had no other oracle. `ArrayType` goes with its generator
-(`genArrayTypes`); its last user outside `Vector`, `IterableWithSize.toArray` in `Collections`, copies the elements
-with a plain loop. `VectorPropertyTest` builds its primitive arrays itself, and `VectorTest` loses the test of
-`ArrayType.of(void.class)`. What the differential test checked beyond contents stays covered: the shapes and the
-sharing of the builder by `VectorBuilderTest` through `RadixVectorShapes`, and every boundary of the tree through
-the public API by `VectorContractTest`, `VectorPropertyTest` and `VectorTest`.
+**Step 3 (#74): the trie deleted.** `BitMappedTrie` goes, with `LeafVisitor` and `NodeModifier`, and so does
+`TrieVector`. `ArrayType` goes with its generator (`genArrayTypes`); its last user outside `Vector`,
+`IterableWithSize.toArray` in `Collections`, copies the elements with a plain loop. `VectorPropertyTest` builds its
+primitive arrays itself, and `VectorTest` loses the test of `ArrayType.of(void.class)`.
+
+The differential test is not deleted with the trie: most of it never needed the old implementation. It holds the
+regression tests of step 1's reviews (a builder left unchanged by a rejected element, a length that never passes
+`Integer.MAX_VALUE`, updates at every slice boundary, `Vector6` reached by self-concatenation, the alignments of
+dimension 4 and 5), the shape invariants checked after every step and the persistence check at the end, none of which
+the tests of `Vector` reach. So it becomes `RadixVectorTest`, and its oracle becomes `VectorModel`: the contract of
+`Vector` on one flat array that every operation copies, too simple to share a bug with the finger tree. Every mutant
+of the reviews still fails it: U5 (4 tests), BI6 (4), L4 (2), the null check moved after `advance()` (1) and the
+`Integer.MAX_VALUE` guard of `Vector6.appended0` removed (1).
 
 #### 3.8.1 Builders for the other collections
 
