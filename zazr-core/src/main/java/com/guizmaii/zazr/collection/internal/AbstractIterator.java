@@ -1,4 +1,4 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * @param <T> Component type
  * @author Daniel Dietrich
  */
-abstract class AbstractIterator<T extends @Nullable Object> implements Iterator<T> {
+public abstract class AbstractIterator<T extends @Nullable Object> implements Iterator<T> {
 
     @Override
     public String toString() {

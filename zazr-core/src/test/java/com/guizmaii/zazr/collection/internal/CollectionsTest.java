@@ -1,6 +1,17 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import com.guizmaii.zazr.Tuple;
+import com.guizmaii.zazr.collection.HashMap;
+import com.guizmaii.zazr.collection.HashSet;
+import com.guizmaii.zazr.collection.LinkedHashMap;
+import com.guizmaii.zazr.collection.LinkedHashSet;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Traversable;
+import com.guizmaii.zazr.collection.TreeMap;
+import com.guizmaii.zazr.collection.TreeSet;
+import com.guizmaii.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

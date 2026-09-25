@@ -1,5 +1,7 @@
 package com.guizmaii.zazr.collection;
 
+import com.guizmaii.zazr.collection.internal.Collections;
+
 import java.util.Spliterator;
 import java.util.function.Consumer;
 

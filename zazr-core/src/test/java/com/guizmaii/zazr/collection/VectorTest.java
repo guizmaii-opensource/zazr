@@ -3,8 +3,12 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.Tuple3;
-import com.guizmaii.zazr.collection.JavaConverters.ChangePolicy;
-import com.guizmaii.zazr.collection.JavaConverters.ListView;
+import com.guizmaii.zazr.collection.internal.ArrayType;
+import com.guizmaii.zazr.collection.internal.Comparators;
+import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy;
+import com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
@@ -1649,6 +1653,15 @@ public class VectorTest extends AbstractTraversableTest {
 
         final Vector<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
         assertThat(actualSecondPartLarger).isEqualTo(expected);
+    }
+
+    @Test
+    public void shouldPrependAllAQueueWithFrontAndRear() {
+        // appended elements land in the rear list, so both halves of the queue are read in reverse
+        final Queue<Integer> queue = Queue.of(0, 1, 2).appendAll(Queue.range(3, 40));
+        final Vector<Integer> expected = range(0, 50);
+        assertThat(range(40, 50).prependAll(queue)).isEqualTo(expected);
+        assertThat(this.<Integer> empty().prependAll(queue)).isEqualTo(range(0, 40));
     }
 
     @Test

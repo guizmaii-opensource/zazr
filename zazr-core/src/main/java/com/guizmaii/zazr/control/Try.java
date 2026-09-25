@@ -2,6 +2,7 @@ package com.guizmaii.zazr.control;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.Vector;
+import com.guizmaii.zazr.internal.TryModule;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -1804,18 +1805,5 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
                 return f.apply(r);
             }
         });
-    }
-}
-
-interface TryModule {
-
-    /** The Failure a capturing constructor returns when the computation yields null, which Success cannot hold. */
-    static <T extends @Nullable Object> Try<T> nullResult(String constructor) {
-        return new Try.Failure<>(new NullPointerException(constructor + ": the computation returned null"));
-    }
-
-    /** The Failure {@code zipWith} returns when {@code f} yields null, which Success cannot hold. */
-    static <T extends @Nullable Object> Try<T> nullZipResult() {
-        return new Try.Failure<>(new NullPointerException("Try.zipWith: f returned null"));
     }
 }

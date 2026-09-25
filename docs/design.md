@@ -188,6 +188,41 @@ documented as a return type only. `Option` stays, with `toOptional()`/`fromOptio
 **Javadoc in Markdown** (`///`, JEP 467). Every class comment is rewritten while it is being converted,
 which is also when the category-theory prose is scrubbed (3.3).
 
+**Internal types live in `.internal` packages (decided, #73).** The API packages hold the API and nothing else:
+`com.guizmaii.zazr.collection` had ten package-private top-level types (`Iterator`, `AbstractIterator`,
+`BitMappedTrie`, `HashArrayMappedTrie`, `RedBlackTree`, `Collections`, `Maps`, `Comparators`, `JavaConverters`, the
+generated `ArrayType`) and `*Module` helper interfaces at the bottom of the public files. The convention:
+collection internals go to `com.guizmaii.zazr.collection.internal`, everything else to `com.guizmaii.zazr.internal`
+(next to `Throwables`; `TryModule` is there). Each `*Module` helper has its own file (`VectorModule`, `ListModule`,
+`StreamModule`, `TraversableModule`, `IteratorModule`, `HashArrayMappedTrieModule`, `RedBlackTreeModule`,
+`TryModule`), and `BitMappedTrie`'s `LeafVisitor`, which `Vector` implements with lambdas, has its own file too.
+An internal type is `public` where the public packages call it, and so are the members they call; the packages are
+never exported (`module-info.java` exports exactly `com.guizmaii.zazr`, `com.guizmaii.zazr.collection` and
+`com.guizmaii.zazr.control`), the javadoc build excludes them (`excludePackageNames` `*.internal:*.internal.*` in the
+root `pom.xml`), each has a `package-info.java` saying it is not API and may change without notice, and both are
+`@NullMarked` like the API packages (NullAway's `AnnotatedPackages=com.guizmaii.zazr` already covers them). No public
+or protected signature of an exported type names an internal type: checked on the compiled classes (`javap
+-protected` over the three exported packages, public types only, has no `.internal.`), since a source grep would
+miss simple-name imports. The tests of internal types (`IteratorTest`, `RedBlackTreeTest`, `HashArrayMappedTrieTest`,
+`ComparatorsTest`, `CollectionsTest`, `JavaConvertersTest`) live in `collection.internal` with them.
+The other direction, internal code needing a package-private member of a public class, is met through the public
+API first, and the member is never widened, since a public member of an exported class is API:
+- `Collections.reverseIterator` used the package-private `reverseIterator()` of `Vector` and `Queue`. It gets the same
+  results at the same cost from the public API: on a `Vector` an index walk from `length() - 1` down to 0 over
+  `get(i)` (O(1) to create, effectively O(1) per step), on a `Queue` `reverse().iterator()` (O(n) to create, as the
+  old `reverseIterator` was, which reversed the front). `Queue.reverseIterator` is deleted; `Vector.reverseIterator`
+  is private, used by `Vector.reverse`.
+- `Stream.Cons` is a public class whose constructors and `head`/`tail` fields are package-private; its two
+  implementations (`ConsImpl`, `AppendElements`) extend it and read `tail` on each other, which a subclass in another
+  package cannot do without `protected` members, and `protected` on a public non-final class is API. They are
+  private nested classes of `Stream.Cons` instead (a member of the interface `Stream` would be implicitly public),
+  reachable from the rest of `Stream`'s body; the other `StreamModule` classes use only public members of `Cons`
+  and moved.
+
+Trade-off: package-private hides on the classpath and on the module path; a `public` type in an unexported package
+hides on the module path only, and on the classpath the package name is the warning. Accepted for an API package that
+lists only the API and for shorter public files.
+
 **Open.** Whether `List` keeps `Cons`/`Nil` as public record cases (nice for `switch`) or stays opaque.
 Recommendation: public, since head/tail pattern matching is the one reason to keep a cons list at all.
 
@@ -671,7 +706,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   reflectively, so no member can come back unnoticed. Everything else `Traversable` declared is declared by the
   concrete types with the same names and semantics: the sequences take all of it, the sets and maps what is
   order-agnostic (below). The bodies live once in `TraversableModule` (a package-private helper next to the
-  interface), each type declaring a one-line delegation with its own javadoc; the `toJava*` copies and the `to*`
+  interface; an unexported `collection.internal` type since #73, 3.1), each type declaring a one-line delegation with its own javadoc; the `toJava*` copies and the `to*`
   conversions move with the rest and are deleted by #26, as 3.1 says.
 - **`toArray`, not `toJavaArray`** (decided): the JDK's own name (`Collection.toArray`, `java.util.stream.Stream.toArray`),
   with the same two overloads as the JDK stream (`toArray()` to `Object[]`, `toArray(IntFunction<T[]>)` to a typed
@@ -686,7 +721,8 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `Collection`, so it cannot be the override), and the `java.util.Map` views of 3.1 take the name `asJavaMap()` in
   #26; the set views stay `asJava()` (a `java.util.Set` is a `Collection`).
 - **The zazr `Iterator` leaves the public API** (decided): `interface Iterator<T> extends java.util.Iterator<T>,
-  Iterable<T>` is package-private in `com.guizmaii.zazr.collection`, no longer a `Traversable`, and keeps only what
+  Iterable<T>` is package-private in `com.guizmaii.zazr.collection` (an unexported `collection.internal` type since
+  #73, 3.1), no longer a `Traversable`, and keeps only what
   the internals compose: the `range*`/`from`/`continually`/`iterate`/`unfold*`/`tabulate`/`fill`/`concat`/`of`/`ofAll`
   factories, the lazy `map`, `filter`, `collect`, `flatMap`, `take*`, `drop*`, `zip*`, `intersperse`,
   `distinctBy`/`distinctByKeepLast`, `scanLeft`, `sliding`, `slideBy` (its runs are `Vector`s now), `span`, and the
@@ -694,7 +730,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `AbstractIterator.next()` funnel still rejects a null element. `Iterator.ofAll(x)` returns `x` itself when it
   already is one, so `Iterator.ofAll(this).map(...)` inside a collection allocates no wrapper: every public
   `iterator()` returns a `java.util.Iterator` and the internals re-enter the helper through `ofAll`. `IteratorTest` is
-  a package-private test of the helper. The control types, `Lazy`, `zazr-test` (`Gen`: a stateful lambda for
+  a package-private test of the helper (in `collection.internal` with it since #73). The control types, `Lazy`, `zazr-test` (`Gen`: a stateful lambda for
   `of(seed, next)`, a toggle for `intersperse`, `Vector` for `choose`/`frequency`) and `zazr-benchmark` no longer
   import it.
 - **Own-type results for the windows and the products** (decided): `grouped`, `sliding` ×2 and `slideBy` return
@@ -708,7 +744,8 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   elements all belong to the previous one is not produced). The sets and maps lose them. `reverseIterator()` and
   `iterator(int)` are deleted everywhere (`reverse().iterator()`, `drop(n).iterator()`); `Vector` and `Queue` keep
   a package-private `reverseIterator()` for `Collections.reverseIterator`, which `prependAll` and `scanRight` use,
-  because it is O(1) to create on both.
+  because it is O(1) to create on both (since #73, 3.1, `Collections.reverseIterator` uses the public API instead:
+  `Queue.reverseIterator` is deleted and `Vector.reverseIterator` is private).
 - **Cross-type sequence equality stays** (decided, final): `Vector`, `List`, `Queue` and `Stream` equal each other
   element by element in order with the ordered `hashCode` (`Collections.isSequence`); sets equal sets, maps equal
   maps, and no kind equals another.
@@ -923,7 +960,7 @@ What each one replaces, and how (Scala 2.13 is the reference for all of them):
 
 | Collection | Today (Vavr) | zazr builder |
 |---|---|---|
-| `HashMap`, `HashSet` | `ofEntries`/`ofAll` do one persistent `put` per entry (`HashMap.java:511-514`, `HashSet.java:170`): each put path-copies 1..7 `IndexedNode`/`ArrayNode` arrays via `arraycopy`. | **Transient HAMT**, the Clojure/Scala-CHAMP pattern (`HashMapBuilder`, `HashMap.scala:2218`): nodes created by the builder carry an owner token and are mutated in place; foreign nodes are copied on first touch; after `result()` the root is handed to the immutable map and the builder is marked `aliased`, so any further `add` copies first. Needs an owner field on `IndexedNode`/`ArrayNode`/`LeafList` in `HashArrayMappedTrie` (package-private, so contained). Biggest win after `Vector`: `groupBy`, `distinct`, `HashMap.collector()`, `map`/`filter` on maps all go from O(n log32 n) allocations to O(n / 32). |
+| `HashMap`, `HashSet` | `ofEntries`/`ofAll` do one persistent `put` per entry (`HashMap.java:511-514`, `HashSet.java:170`): each put path-copies 1..7 `IndexedNode`/`ArrayNode` arrays via `arraycopy`. | **Transient HAMT**, the Clojure/Scala-CHAMP pattern (`HashMapBuilder`, `HashMap.scala:2218`): nodes created by the builder carry an owner token and are mutated in place; foreign nodes are copied on first touch; after `result()` the root is handed to the immutable map and the builder is marked `aliased`, so any further `add` copies first. Needs an owner field on `IndexedNode`/`ArrayNode`/`LeafList` in `HashArrayMappedTrie` (internal, so contained). Biggest win after `Vector`: `groupBy`, `distinct`, `HashMap.collector()`, `map`/`filter` on maps all go from O(n log32 n) allocations to O(n / 32). |
 | `TreeMap`, `TreeSet` | `createTreeMap` does one persistent `insert` per entry (`TreeMap.java:1512-1515`), each allocating O(log n) nodes plus rebalancing. | **Sort-then-build**: buffer entries into an array, on `result()` stable-sort with the comparator, drop adjacent duplicate keys keeping the last, then build the balanced tree bottom-up in O(n) (port of `RedBlackTree.fromOrderedEntries`, `RedBlackTree.scala:956`, ~20 lines: recursive split, black nodes, red leaves only at the deepest level). Total O(n log n) compares, one array plus exactly n nodes. Scala's alternative, in-place `mutableUpd` on builder-owned nodes, is more code for the same result; not needed. Also gives the `ofEntries(alreadySorted)` O(n) fast path. |
 | `LinkedHashMap`, `LinkedHashSet` | HashMap plus a `Vector` of insertion order with tombstone slots (recent commits `37e4fc110`, `dc152270a`). | Composite: `HashMap.Builder` + `Vector.Builder`. |
 | `List` | `ofAll` prepends back-to-front over a `java.util.List` (`List.java:259-264`), optimal; other iterables reverse first (2n cells). | Array buffer, then build back-to-front: n cells + one array. Scala's `ListBuffer` trick (mutating the last cell's `tail`, `ListBuffer.scala:118`) is unavailable because `Cons` is a record. |
@@ -1142,6 +1179,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #23 | Generated `zip`/`zipWith` at arities 2..8 | 3.4 | #22 |
 | #24 | Remove `Seq`; concrete collection APIs; complexity notes. Done in three stacked steps: #66 (`Vector` declares its own API, `IndexedSeq` deleted; PR #69), #67 (`List`, `Queue`, `Stream`; `Seq`, `LinearSeq` deleted; PR #70), #68 (`Traversable` slimmed to the 3.7 list, `Foldable`/`Ordered` deleted, `Map`/`Set` lose the sequence methods, `Iterator` leaves the public API, own-type `grouped`/`sliding`/`crossProduct`) | 3.7 | #20 |
 | #72 | Positional subset on the ordered sets and maps: `SortedSet`/`SortedMap` (rank split of the red-black tree), `LinkedHashSet`/`LinkedHashMap` (slice of the insertion order) | 3.7 | #24 |
+| #73 | Internal types move to `.internal` packages: `collection.internal` for the collection internals, `com.guizmaii.zazr.internal` for the rest | 3.1 | #72 |
 | #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
 | #26 | `asJava` views for sets and maps | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |

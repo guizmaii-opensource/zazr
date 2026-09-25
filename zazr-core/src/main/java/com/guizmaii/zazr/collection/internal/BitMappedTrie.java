@@ -1,14 +1,14 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.collection.ArrayType.obj;
-import static com.guizmaii.zazr.collection.Collections.withSize;
-import static com.guizmaii.zazr.collection.NodeModifier.COPY_NODE;
-import static com.guizmaii.zazr.collection.NodeModifier.IDENTITY;
+import static com.guizmaii.zazr.collection.internal.ArrayType.obj;
+import static com.guizmaii.zazr.collection.internal.Collections.withSize;
+import static com.guizmaii.zazr.collection.internal.NodeModifier.COPY_NODE;
+import static com.guizmaii.zazr.collection.internal.NodeModifier.IDENTITY;
 import static java.util.function.Function.identity;
 
 /**
@@ -23,10 +23,10 @@ import static java.util.function.Function.identity;
  *
  * @author Pap Lőrinc
  */
-final class BitMappedTrie<T extends @Nullable Object> {
+public final class BitMappedTrie<T extends @Nullable Object> {
 
-    static final int BRANCHING_BASE = 5;
-    static final int BRANCHING_FACTOR = 1 << BRANCHING_BASE;
+    public static final int BRANCHING_BASE = 5;
+    public static final int BRANCHING_FACTOR = 1 << BRANCHING_BASE;
     static final int BRANCHING_MASK = -1 >>> -BRANCHING_BASE;
 
     static int firstDigit(int num, int depthShift) { return num >> depthShift; }
@@ -36,9 +36,9 @@ final class BitMappedTrie<T extends @Nullable Object> {
     private static final BitMappedTrie<?> EMPTY = new BitMappedTrie<>(obj(), obj().empty(), 0, 0, 0);
 
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> BitMappedTrie<T> empty() { return (BitMappedTrie<T>) EMPTY; }
+    public static <T extends @Nullable Object> BitMappedTrie<T> empty() { return (BitMappedTrie<T>) EMPTY; }
 
-    final ArrayType<T> type;
+    public final ArrayType<T> type;
     private final Object array;
     private final int offset, length;
     private final int depthShift;
@@ -56,7 +56,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         return branchCount * fullBranchSize;
     }
 
-    static <T extends @Nullable Object> BitMappedTrie<T> ofAll(Object array) {
+    public static <T extends @Nullable Object> BitMappedTrie<T> ofAll(Object array) {
         if (array instanceof Object[] objects) {
             for (Object element : objects) {
                 java.util.Objects.requireNonNull(element, "Vector: element is null");
@@ -80,13 +80,13 @@ final class BitMappedTrie<T extends @Nullable Object> {
      * {@code Object[]} nodes whose children are left-aligned and truncated to their content, exactly the shape
      * {@link #ofAll(Object)} produces. The arrays are owned by the returned trie and must not be mutated afterwards.
      */
-    static <T extends @Nullable Object> BitMappedTrie<T> ofBuilt(Object root, int length, int depthShift) {
+    public static <T extends @Nullable Object> BitMappedTrie<T> ofBuilt(Object root, int length, int depthShift) {
         return new BitMappedTrie<>(obj(), root, 0, length, depthShift);
     }
 
     private BitMappedTrie<T> boxed() { return map(identity()); }
 
-    BitMappedTrie<T> prependAll(Iterable<? extends T> iterable) {
+    public BitMappedTrie<T> prependAll(Iterable<? extends T> iterable) {
         final Collections.IterableWithSize<? extends T> iter = withSize(iterable);
         try {
             return prepend(iter.reverseIterator(), iter.size());
@@ -125,7 +125,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         };
     }
 
-    BitMappedTrie<T> appendAll(Iterable<? extends T> iterable) {
+    public BitMappedTrie<T> appendAll(Iterable<? extends T> iterable) {
         final Collections.IterableWithSize<? extends T> iter = withSize(iterable);
         try {
             return append(iter.iterator(), iter.size());
@@ -165,7 +165,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         };
     }
 
-    BitMappedTrie<T> update(int index, T element) {
+    public BitMappedTrie<T> update(int index, T element) {
         java.util.Objects.requireNonNull(element, "Vector.update: element is null");
         try {
             final Object root = modify(array, depthShift, offset + index, COPY_NODE, updateLeafWith(type, element));
@@ -176,7 +176,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
     }
     private NodeModifier updateLeafWith(ArrayType<T> type, T element) { return (a, i) -> type.copyUpdate(a, i, element); }
 
-    BitMappedTrie<T> drop(int n) {
+    public BitMappedTrie<T> drop(int n) {
         if (n <= 0) {
             return this;
         } else if (n >= length) {
@@ -190,7 +190,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         }
     }
 
-    BitMappedTrie<T> take(int n) {
+    public BitMappedTrie<T> take(int n) {
         if (n >= length) {
             return this;
         } else if (n <= 0) {
@@ -249,7 +249,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         return newNode;
     }
 
-    T get(int index) {
+    public T get(int index) {
         final Object leaf = getLeaf(index);
         final int leafIndex = lastDigit(offset + index);
         return type.getAt(leaf, leafIndex);
@@ -261,7 +261,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
      * Also, the returned array is mutable, but should not be mutated!
      */
     @SuppressWarnings("WeakerAccess")
-    Object getLeaf(int index) {
+    public Object getLeaf(int index) {
         if (depthShift == 0) {
             return array;
         } else {
@@ -277,7 +277,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
         return leaf;
     }
 
-    Iterator<T> iterator() {
+    public Iterator<T> iterator() {
         return new Iterator<T>() {
             private final int globalLength = BitMappedTrie.this.length;
             private int globalIndex = 0;
@@ -313,7 +313,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
     }
 
     @SuppressWarnings("unchecked")
-    <T2 extends @Nullable Object> int visit(LeafVisitor<T2> visitor) {
+    public <T2 extends @Nullable Object> int visit(LeafVisitor<T2> visitor) {
         int globalIndex = 0, start = lastDigit(offset);
         for (int index = 0; index < length; ) {
             final T2 leaf = (T2) getLeaf(index);
@@ -328,7 +328,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
     }
     private int getMin(int start, int index, Object leaf) { return Math.min(type.lengthOf(leaf), start + length - index); }
 
-    <U extends @Nullable Object> BitMappedTrie<U> map(Function<? super T, ? extends U> mapper) {
+    public <U extends @Nullable Object> BitMappedTrie<U> map(Function<? super T, ? extends U> mapper) {
         final Object results = obj().newInstance(length);
         this.<T> visit((index, leaf, start, end) -> map(mapper, results, index, leaf, start, end));
         return BitMappedTrie.ofAll(results);
@@ -342,7 +342,7 @@ final class BitMappedTrie<T extends @Nullable Object> {
 
     /* keeps the receiver's leaf type: a primitive-backed trie is filtered into primitive leaves, without boxing.
      * Vector.filter deliberately uses this rather than the builder: see the comment there. */
-    BitMappedTrie<T> filter(Predicate<? super T> predicate) {
+    public BitMappedTrie<T> filter(Predicate<? super T> predicate) {
         final Object results = type.newInstance(length());
         final int length = this.<T> visit((index, leaf, start, end) -> filter(predicate, results, index, leaf, start, end));
         return (this.length == length)
@@ -359,13 +359,13 @@ final class BitMappedTrie<T extends @Nullable Object> {
         return index;
     }
 
-    int length() { return length; }
+    public int length() { return length; }
 
     @SuppressWarnings("ObjectEquality")
-    boolean hasObjectLeaves() { return type == obj(); }
+    public boolean hasObjectLeaves() { return type == obj(); }
 
     /* for tests: the shift of the root level, 0 for a single leaf */
-    int depthShift() { return depthShift; }
+    public int depthShift() { return depthShift; }
 }
 
 @FunctionalInterface
@@ -374,9 +374,4 @@ interface NodeModifier {
 
     NodeModifier COPY_NODE = (o, i) -> obj().copy(o, i + 1);
     NodeModifier IDENTITY = (o, i) -> o;
-}
-
-@FunctionalInterface
-interface LeafVisitor<T extends @Nullable Object> {
-    int visit(int index, T leaf, int start, int end);
 }

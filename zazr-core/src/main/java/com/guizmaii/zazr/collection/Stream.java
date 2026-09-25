@@ -3,7 +3,13 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.Stream.Cons;
 import com.guizmaii.zazr.collection.Stream.Empty;
-import com.guizmaii.zazr.collection.StreamModule.*;
+import com.guizmaii.zazr.collection.internal.AbstractIterator;
+import com.guizmaii.zazr.collection.internal.Collections;
+import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.StreamModule;
+import com.guizmaii.zazr.collection.internal.StreamModule.*;
+import com.guizmaii.zazr.collection.internal.TraversableModule;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.*;
@@ -12,9 +18,9 @@ import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ListView;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
 
 /**
  * An immutable {@code Stream} is lazy sequence of elements which may be infinitely long.
@@ -250,7 +256,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     static <T extends @Nullable Object> Stream<T> cons(T head, Supplier<? extends Stream<? extends T>> tailSupplier) {
         Objects.requireNonNull(head, "Stream: element is null");
         Objects.requireNonNull(tailSupplier, "tailSupplier is null");
-        return new ConsImpl<>(head, (Supplier<Stream<T>>) tailSupplier);
+        return new Cons.ConsImpl<>(head, (Supplier<Stream<T>>) tailSupplier);
     }
 
     /**
@@ -335,7 +341,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> Stream<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return Stream.ofAll(com.guizmaii.zazr.collection.Collections.tabulate(n, f));
+        return Stream.ofAll(com.guizmaii.zazr.collection.internal.Collections.tabulate(n, f));
     }
 
     /**
@@ -349,7 +355,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> Stream<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return Stream.ofAll(com.guizmaii.zazr.collection.Collections.fill(n, s));
+        return Stream.ofAll(com.guizmaii.zazr.collection.internal.Collections.fill(n, s));
     }
 
     /**
@@ -361,7 +367,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return A Stream of size {@code n}, where each element is the given {@code element}.
      */
     static <T extends @Nullable Object> Stream<T> fill(int n, T element) {
-        return Stream.ofAll(com.guizmaii.zazr.collection.Collections.fillObject(n, element));
+        return Stream.ofAll(com.guizmaii.zazr.collection.internal.Collections.fillObject(n, element));
     }
 
     /**
@@ -791,7 +797,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * }
      */
     static <T extends @Nullable Object> Stream<Stream<T>> transpose(Stream<Stream<T>> matrix) {
-        return com.guizmaii.zazr.collection.Collections.transpose(matrix, Stream::ofAll, Stream::of);
+        return com.guizmaii.zazr.collection.internal.Collections.transpose(matrix, Stream::ofAll, Stream::of);
     }
 
     /**
@@ -1361,7 +1367,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new Stream ending with the given element
      */
     default Stream<T> append(T element) {
-        return isEmpty() ? Stream.of(element) : new AppendElements<>(head(), com.guizmaii.zazr.collection.Queue.of(element), this::tail);
+        return isEmpty() ? Stream.of(element) : new Cons.AppendElements<>(head(), com.guizmaii.zazr.collection.Queue.of(element), this::tail);
     }
 
     /**
@@ -1806,7 +1812,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     default <C extends @Nullable Object> Map<C, Stream<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Stream::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Stream::ofAll);
     }
 
     /**
@@ -2228,7 +2234,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new Stream
      */
     default Stream<T> removeAll(T element) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, element, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.removeAll(this, element, kept -> filter(kept));
     }
 
     /**
@@ -2241,7 +2247,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code elements} is null
      */
     default Stream<T> removeAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, elements, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2311,7 +2317,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code elements} is null
      */
     default Stream<T> retainAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2396,7 +2402,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default <U extends @Nullable Object> Stream<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         // lazily streams the elements of an iterator
-        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toStream);
+        return com.guizmaii.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toStream);
     }
 
     // not lazy!
@@ -2414,7 +2420,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code operation} is null
      */
     default <U extends @Nullable Object> Stream<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toStream);
+        return com.guizmaii.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toStream);
     }
 
     /**
@@ -2425,7 +2431,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new Stream, or this Stream if it has fewer than two elements
      */
     default Stream<T> shuffle() {
-        return com.guizmaii.zazr.collection.Collections.shuffle(this, Stream::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.shuffle(this, Stream::ofAll);
     }
 
     /**
@@ -3029,12 +3035,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         @Override
         public boolean equals(@Nullable Object o) {
-            return com.guizmaii.zazr.collection.Collections.equals(this, o);
+            return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
         }
 
         @Override
         public int hashCode() {
-            return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
+            return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
         }
 
         @Override
@@ -3081,12 +3087,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         @Override
         public boolean equals(@Nullable Object o) {
-            return com.guizmaii.zazr.collection.Collections.equals(this, o);
+            return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
         }
 
         @Override
         public int hashCode() {
-            return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
+            return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
         }
 
         @Override
@@ -3107,6 +3113,61 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
                 }
             }
             return builder.append(")").toString();
+        }
+
+        private static final class ConsImpl<T extends @Nullable Object> extends Cons<T> {
+
+            ConsImpl(T head, Supplier<Stream<T>> tail) {
+                super(head, tail);
+            }
+
+            @Override
+            public Stream<T> tail() {
+                return tail.get();
+            }
+
+        }
+
+        private static final class AppendElements<T extends @Nullable Object> extends Cons<T> {
+
+            private final com.guizmaii.zazr.collection.Queue<T> queue;
+
+            AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Supplier<Stream<T>> tail) {
+                this(head, queue, Lazy.of(tail));
+            }
+
+            AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Lazy<Stream<T>> tail) {
+                super(head, tail);
+                this.queue = queue;
+            }
+
+            @Override
+            public Stream<T> append(T element) {
+                return new AppendElements<>(head, queue.append(element), tail);
+            }
+
+            @Override
+            public Stream<T> appendAll(Iterable<? extends T> elements) {
+                Objects.requireNonNull(elements, "elements is null");
+                return isEmpty() ? Stream.ofAll(queue) : new AppendElements<>(head, queue.appendAll(elements), tail);
+            }
+
+            @Override
+            public Stream<T> tail() {
+                final Stream<T> t = tail.get();
+                if (t.isEmpty()) {
+                    return Stream.ofAll(queue);
+                } else {
+                    if (t instanceof ConsImpl) {
+                        final ConsImpl<T> c = (ConsImpl<T>) t;
+                        return new AppendElements<>(c.head(), queue, c.tail);
+                    } else {
+                        final AppendElements<T> a = (AppendElements<T>) t;
+                        return new AppendElements<>(a.head(), a.queue.appendAll(queue), a.tail);
+                    }
+                }
+            }
+
         }
     }
 
@@ -3174,7 +3235,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
      */
     default Stream<Stream<T>> sliding(int size, int step) {
-        com.guizmaii.zazr.collection.Collections.checkWindow(size, step);
+        com.guizmaii.zazr.collection.internal.Collections.checkWindow(size, step);
         return isEmpty() ? empty() : Windows.apply(this, size, step);
     }
 
@@ -3869,269 +3930,4 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
     }
 
-}
-
-interface StreamModule {
-
-    /** Slice searches over a lazy cons stream: the candidate start positions are the successive tails. */
-    interface Slice {
-
-        static <T extends @Nullable Object> int indexOfSlice(Stream<T> source, Iterable<? extends T> slice, int from) {
-            if (source.isEmpty()) {
-                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
-            }
-            return findFirstSlice(source, toStream(slice), Math.max(from, 0));
-        }
-
-        static <T extends @Nullable Object> int lastIndexOfSlice(Stream<T> source, Iterable<? extends T> slice, int end) {
-            if (end < 0) {
-                return -1;
-            }
-            // the slice is read once, whatever its shape; its emptiness is answered by the copy
-            final Stream<T> _slice = toStream(slice);
-            if (source.isEmpty()) {
-                return _slice.isEmpty() ? 0 : -1;
-            } else if (_slice.isEmpty()) {
-                final int len = source.length();
-                return len < end ? len : end;
-            }
-            int index = 0;
-            int result = -1;
-            // lengths once, then counted down: Stream.length() walks and forces the whole Stream
-            final int sliceLength = _slice.length();
-            int remaining = source.length();
-            while (remaining >= sliceLength) {
-                final int found = findNextSlice(source, _slice, remaining, sliceLength);
-                if (found < 0 || index + found > end) {
-                    return result;
-                }
-                result = index + found;
-                index += found + 1;
-                remaining -= found + 1;
-                source = source.drop(found + 1);
-            }
-            return result;
-        }
-
-        private static <T extends @Nullable Object> int findFirstSlice(Stream<T> source, Stream<T> slice, int from) {
-            int index = 0;
-            // a Stream may be infinite, so its length is never computed here: only the elements the search reaches
-            // are forced
-            while (source.nonEmpty()) {
-                if (index >= from && source.startsWith(slice)) {
-                    return index;
-                }
-                index++;
-                source = source.tail();
-            }
-            return -1;
-        }
-
-        // the offset of the next occurrence of the slice in source, or -1
-        private static <T extends @Nullable Object> int findNextSlice(Stream<T> source, Stream<T> slice, int remaining, int sliceLength) {
-            int index = 0;
-            while (remaining >= sliceLength) {
-                if (source.startsWith(slice)) {
-                    return index;
-                }
-                index++;
-                remaining--;
-                source = source.tail();
-            }
-            return -1;
-        }
-
-        @SuppressWarnings("unchecked")
-        private static <T extends @Nullable Object> Stream<T> toStream(Iterable<? extends T> iterable) {
-            return (iterable instanceof Stream) ? (Stream<T>) iterable : Stream.ofAll(iterable);
-        }
-    }
-
-    interface Search {
-
-        static <T extends @Nullable Object> int linearSearch(Stream<T> stream, ToIntFunction<T> comparison) {
-            int idx = 0;
-            for (T current : stream) {
-                final int cmp = comparison.applyAsInt(current);
-                if (cmp == 0) {
-                    return idx;
-                } else if (cmp < 0) {
-                    return -(idx + 1);
-                }
-                idx += 1;
-            }
-            return -(idx + 1);
-        }
-    }
-
-
-    final class ConsImpl<T extends @Nullable Object> extends Cons<T> {
-
-        ConsImpl(T head, Supplier<Stream<T>> tail) {
-            super(head, tail);
-        }
-
-        @Override
-        public Stream<T> tail() {
-            return tail.get();
-        }
-
-    }
-
-    final class AppendElements<T extends @Nullable Object> extends Cons<T> {
-
-        private final com.guizmaii.zazr.collection.Queue<T> queue;
-
-        AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Supplier<Stream<T>> tail) {
-            this(head, queue, Lazy.of(tail));
-        }
-
-        AppendElements(T head, com.guizmaii.zazr.collection.Queue<T> queue, Lazy<Stream<T>> tail) {
-            super(head, tail);
-            this.queue = queue;
-        }
-
-        @Override
-        public Stream<T> append(T element) {
-            return new AppendElements<>(head, queue.append(element), tail);
-        }
-
-        @Override
-        public Stream<T> appendAll(Iterable<? extends T> elements) {
-            Objects.requireNonNull(elements, "elements is null");
-            return isEmpty() ? Stream.ofAll(queue) : new AppendElements<>(head, queue.appendAll(elements), tail);
-        }
-
-        @Override
-        public Stream<T> tail() {
-            final Stream<T> t = tail.get();
-            if (t.isEmpty()) {
-                return Stream.ofAll(queue);
-            } else {
-                if (t instanceof ConsImpl) {
-                    final ConsImpl<T> c = (ConsImpl<T>) t;
-                    return new AppendElements<>(c.head(), queue, c.tail);
-                } else {
-                    final AppendElements<T> a = (AppendElements<T>) t;
-                    return new AppendElements<>(a.head(), a.queue.appendAll(queue), a.tail);
-                }
-            }
-        }
-
-    }
-
-    final class AppendSelf<T extends @Nullable Object> {
-
-        private final Cons<T> self;
-
-        AppendSelf(Cons<T> self, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
-            this.self = appendAll(self, mapper);
-        }
-
-        private Cons<T> appendAll(Cons<T> stream, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
-            return (Cons<T>) Stream.cons(stream.head(), () -> {
-                final Stream<T> tail = stream.tail();
-                return tail.isEmpty() ? mapper.apply(self) : appendAll((Cons<T>) tail, mapper);
-            });
-        }
-
-        Cons<T> stream() {
-            return self;
-        }
-    }
-
-    interface Combinations {
-
-        static <T extends @Nullable Object> Stream<Stream<T>> apply(Stream<T> elements, int k) {
-            if (k == 0) {
-                return Stream.of(Stream.empty());
-            } else {
-                return elements.zipWithIndex().flatMap(
-                        t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Stream<T> c) -> c.prepend(t._1()))
-                );
-            }
-        }
-    }
-
-    interface Windows {
-
-        // `source` is non-empty and starts a window; the next window starts `step` elements further on, and is produced
-        // only when this window is full and followed by at least one element, so that no window repeats the previous one
-        static <T extends @Nullable Object> Stream<Stream<T>> apply(Stream<T> source, int size, int step) {
-            return Stream.cons(source.take(size), () -> {
-                final Stream<T> next = source.drop(step);
-                return next.isEmpty() || source.drop(size).isEmpty() ? Stream.empty() : apply(next, size, step);
-            });
-        }
-    }
-
-    interface DropRight {
-
-        // works with infinite streams by buffering elements
-        static <T extends @Nullable Object> Stream<T> apply(com.guizmaii.zazr.collection.List<T> front, com.guizmaii.zazr.collection.List<T> rear, Stream<T> remaining) {
-            if (remaining.isEmpty()) {
-                return remaining;
-            } else if (front.isEmpty()) {
-                return apply(rear.reverse(), com.guizmaii.zazr.collection.List.empty(), remaining);
-            } else {
-                return Stream.cons(front.head(),
-                        () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));
-            }
-        }
-    }
-
-    interface StreamFactory {
-
-        static <T extends @Nullable Object> Stream<T> create(java.util.Iterator<? extends T> iterator) {
-            return iterator.hasNext() ? Stream.cons(iterator.next(), () -> create(iterator)) : Empty.instance();
-        }
-    }
-
-    final class StreamIterator<T extends @Nullable Object> extends AbstractIterator<T> {
-
-        private Supplier<Stream<T>> current;
-
-        StreamIterator(Cons<T> stream) {
-            this.current = () -> stream;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return !current.get().isEmpty();
-        }
-
-        @Override
-        public T getNext() {
-            final Stream<T> stream = current.get();
-            // DEV-NOTE: we make the stream even more lazy because the next head must not be evaluated on hasNext()
-            current = stream::tail;
-            return stream.head();
-        }
-    }
-
-    final class FlatMapIterator<T extends @Nullable Object, U extends @Nullable Object> implements Iterator<U> {
-
-        final Function<? super T, ? extends Iterable<? extends U>> mapper;
-        final Iterator<? extends T> inputs;
-        java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
-
-        FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
-            this.inputs = inputs;
-            this.mapper = mapper;
-        }
-
-        @Override
-        public boolean hasNext() {
-            boolean currentHasNext;
-            while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
-                current = mapper.apply(inputs.next()).iterator();
-            }
-            return currentHasNext;
-        }
-
-        @Override
-        public U next() {
-            return current.next();
-        }
-    }
 }

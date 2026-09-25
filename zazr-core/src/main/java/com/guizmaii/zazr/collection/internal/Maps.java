@@ -1,7 +1,9 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.Map;
+import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.control.Option;
 import java.util.Objects;
 import java.util.function.*;
@@ -12,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Ruslan Sennov, Daniel Dietrich
  */
-final class Maps {
+public final class Maps {
 
     /**
      * Marker for "no value stored under this key", compared by identity only. It exists purely to
@@ -24,10 +26,10 @@ final class Maps {
      * reachable outside this package (design 3.9 forbids a stored {@code null}, which is the only
      * thing this sentinel used to have to be told apart from).
      */
-    static final Object ABSENT = new Object();
+    public static final Object ABSENT = new Object();
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object> V getOrAbsent(Map<K, V> map, K key) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> V getOrAbsent(Map<K, V> map, K key) {
         return map.getOrElse(key, (V) ABSENT);
     }
 
@@ -35,7 +37,7 @@ final class Maps {
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<V, M> computeIfAbsent(M map, K key, Function<? super K, ? extends V> mappingFunction) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<V, M> computeIfAbsent(M map, K key, Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction, "mappingFunction is null");
         final V value = getOrAbsent(map, key);
         if (value != ABSENT) {
@@ -48,7 +50,7 @@ final class Maps {
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<Option<V>, M> computeIfPresent(M map, K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<Option<V>, M> computeIfPresent(M map, K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         final V value = getOrAbsent(map, key);
         if (value != ABSENT) {
             final V newValue = remappingFunction.apply(key, value);
@@ -59,36 +61,36 @@ final class Maps {
         }
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
             BiPredicate<? super K, ? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(map, ofEntries, t -> predicate.test(t._1(), t._2()));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return ofEntries.apply(Iterator.ofAll(map).filter(predicate));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super K> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(map, ofEntries, t -> predicate.test(t._1()));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterValues(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterValues(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(map, ofEntries, t -> predicate.test(t._2()));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, C extends @Nullable Object, M extends Map<K, V>> Map<C, M> groupBy(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, C extends @Nullable Object, M extends Map<K, V>> Map<C, M> groupBy(M map, OfEntries<K, V, M> ofEntries,
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
         return Collections.groupBy(map, classifier, ofEntries);
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M merge(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M merge(M map, OfEntries<K, V, M> ofEntries,
             Map<? extends K, ? extends V> that) {
         Objects.requireNonNull(that, "that is null");
         if (map.isEmpty()) {
@@ -101,7 +103,7 @@ final class Maps {
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M merge(
+    public static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M merge(
             M map, OfEntries<K, V, M> ofEntries,
             Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
         Objects.requireNonNull(that, "that is null");
@@ -122,7 +124,7 @@ final class Maps {
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M ofStream(M map, java.util.stream.Stream<? extends T> stream,
+    public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M ofStream(M map, java.util.stream.Stream<? extends T> stream,
             Function<? super T, ? extends K> keyMapper,
             Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(stream, "stream is null");
@@ -132,14 +134,14 @@ final class Maps {
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M ofStream(M map, java.util.stream.Stream<? extends T> stream,
+    public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M ofStream(M map, java.util.stream.Stream<? extends T> stream,
             Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
         Objects.requireNonNull(stream, "stream is null");
         Objects.requireNonNull(entryMapper, "entryMapper is null");
         return Stream.ofAll(stream).foldLeft(map, (m, el) -> (M) m.put(entryMapper.apply(el)));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> partition(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> partition(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final java.util.List<Tuple2<K, V>> left = new java.util.ArrayList<>();
@@ -150,14 +152,14 @@ final class Maps {
         return Tuple.of(ofEntries.apply(left), ofEntries.apply(right));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M tap(M map, Consumer<? super Tuple2<K, V>> action) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M tap(M map, Consumer<? super Tuple2<K, V>> action) {
         Objects.requireNonNull(action, "action is null");
         map.forEach(action);
         return map;
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, K key, U value,
+    public static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, K key, U value,
             BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
         final V currentValue = getOrAbsent(map, key);
@@ -169,12 +171,12 @@ final class Maps {
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M put(M map, Tuple2<? extends K, ? extends V> entry) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M put(M map, Tuple2<? extends K, ? extends V> entry) {
         Objects.requireNonNull(entry, "entry is null");
         return (M) map.put(entry._1(), entry._2());
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, Tuple2<? extends K, U> entry,
+    public static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(M map, Tuple2<? extends K, U> entry,
             BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
         final V currentValue = getOrAbsent(map, entry._1());
@@ -185,57 +187,57 @@ final class Maps {
         }
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M reject(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M reject(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(map, ofEntries, predicate.negate());
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M reject(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M reject(M map, OfEntries<K, V, M> ofEntries,
             BiPredicate<? super K, ? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(map, ofEntries, predicate.negate());
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M rejectKeys(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M rejectKeys(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super K> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filterKeys(map, ofEntries, predicate.negate());
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M rejectValues(M map, OfEntries<K, V, M> ofEntries,
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M rejectValues(M map, OfEntries<K, V, M> ofEntries,
             Predicate<? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filterValues(map, ofEntries, predicate.negate());
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replace(M map, K key, V oldValue, V newValue) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replace(M map, K key, V oldValue, V newValue) {
         return map.contains(Tuple.of(key, oldValue)) ? (M) map.put(key, newValue) : map;
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replace(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replace(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         Objects.requireNonNull(currentElement, "currentElement is null");
         Objects.requireNonNull(newElement, "newElement is null");
         return (M) (map.contains(currentElement) ? map.remove(currentElement._1()).put(newElement) : map);
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, BiFunction<? super K, ? super V, ? extends V> function) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, BiFunction<? super K, ? super V, ? extends V> function) {
         return (M) map.map((k, v) -> Tuple.of(k, function.apply(k, v)));
     }
 
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         return replace(map, currentElement, newElement);
     }
 
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceValue(M map, K key, V value) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceValue(M map, K key, V value) {
         return map.containsKey(key) ? (M) map.put(key, value) : map;
     }
 
     @FunctionalInterface
-    interface OfEntries<K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> extends Function<Iterable<Tuple2<K, V>>, M> {
+    public interface OfEntries<K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> extends Function<Iterable<Tuple2<K, V>>, M> {
     }
 }

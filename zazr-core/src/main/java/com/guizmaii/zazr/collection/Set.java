@@ -1,6 +1,7 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.internal.TraversableModule;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Comparator;

@@ -1,10 +1,10 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import java.util.Comparator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static com.guizmaii.zazr.collection.Comparators.naturalComparator;
+import static com.guizmaii.zazr.collection.internal.Comparators.naturalComparator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
