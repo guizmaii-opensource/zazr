@@ -23,6 +23,28 @@ When Zazr has a choice to make about a collection, it starts from what Scala 2.1
 - Sorted sets combine with `union`, `intersect` and `diff` using Scala's red-black tree algorithms.
 - Java interop goes through views, like `scala.jdk.CollectionConverters`, instead of copies.
 
+## Build a collection once, not once per element
+
+A persistent collection never changes: `append` returns a new collection that shares most of the old one. That
+is what makes it safe to pass around, but it has a cost when you build a collection in a loop. Each `append`
+copies part of the structure, so a loop of a million `append`s creates a million intermediate collections that
+are thrown away at once.
+
+Java code builds collections in loops all the time, and Vavr offered no better way. Zazr has builders, as Scala
+does: a builder collects the elements in place, where nobody else can see them, and `result()` turns them into
+the collection once.
+
+```java
+Vector.Builder<Integer> squares = Vector.newBuilder();
+for (int i = 1; i <= 5; i++) {
+    squares.add(i * i);
+}
+Vector<Integer> result = squares.result();  // Vector(1, 4, 9, 16, 25)
+```
+
+Each element is written once and nothing is copied. A builder is used once: after `result()` it refuses more
+elements, so the collection it returned can never change behind your back.
+
 ## Names say what happens
 
 An operation is named after its result, not after the theory it comes from. Combining two values is `zip`.
