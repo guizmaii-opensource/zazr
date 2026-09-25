@@ -118,7 +118,6 @@ nav:
       - NonEmptyVector: non-empty-vector.md
       - Builders: builders.md
       - Java interop: java-interop.md
-      - Testing with zazr-test: testing.md
   - Collections:
       - Overview: collections/index.md
       - Vector: collections/vector.md
@@ -128,5 +127,6 @@ nav:
       - Sets: collections/sets.md
       - Maps: collections/maps.md
       - Complexity: collections/complexity.md
+  - Testing: testing.md
   - Compared to Vavr: vavr.md
   - Design: principles.md
