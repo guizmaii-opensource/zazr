@@ -2,12 +2,12 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `get` | <abbr class="cx cx-logarithmic" title="O(log n) comparisons.">O(log n)</abbr> | O(log n) comparisons. |
-| `containsKey` | <abbr class="cx cx-logarithmic" title="O(log n) comparisons.">O(log n)</abbr> | O(log n) comparisons. |
-| `put` | <abbr class="cx cx-logarithmic" title="O(log n) (one lookup and one insertion in the tree).">O(log n)</abbr> | O(log n) (one lookup and one insertion in the tree). |
-| `remove` | <abbr class="cx cx-logarithmic" title="O(log n) (one lookup and one deletion in the tree).">O(log n)</abbr> | O(log n) (one lookup and one deletion in the tree). |
-| `keySet` | <abbr class="cx cx-linearithmic" title="O(n log n) (the keys are built into a new TreeSet).">O(n log n)</abbr> | O(n log n) (the keys are built into a new TreeSet). |
-| `values` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
-| `head` | <abbr class="cx cx-logarithmic" title="O(log n) (the leftmost path of the tree).">O(log n)</abbr> | O(log n) (the leftmost path of the tree). |
-| `take` | <abbr class="cx cx-logarithmic" title="O(log n) (one rank split of the tree).">O(log n)</abbr> | O(log n) (one rank split of the tree). |
-| `drop` | <abbr class="cx cx-logarithmic" title="O(log n) (one rank split of the tree).">O(log n)</abbr> | O(log n) (one rank split of the tree). |
+| `get` | <abbr class="cx cx-logarithmic" title="O(log n): one walk down the tree, comparing keys with the comparator.">O(log n)</abbr> | O(log n): one walk down the tree, comparing keys with the comparator. |
+| `containsKey` | <abbr class="cx cx-logarithmic" title="O(log n): one walk down the tree, comparing keys with the comparator.">O(log n)</abbr> | O(log n): one walk down the tree, comparing keys with the comparator. |
+| `put` | <abbr class="cx cx-logarithmic" title="O(log n): one lookup, then one insertion.">O(log n)</abbr> | O(log n): one lookup, then one insertion. |
+| `remove` | <abbr class="cx cx-logarithmic" title="O(log n): one lookup, then one deletion when the key is present.">O(log n)</abbr> | O(log n): one lookup, then one deletion when the key is present. |
+| `keySet` | <abbr class="cx cx-linearithmic" title="O(n log n): the keys are inserted one by one into a new TreeSet.">O(n log n)</abbr> | O(n log n): the keys are inserted one by one into a new TreeSet. |
+| `values` | <abbr class="cx cx-linear" title="O(n): one walk in key order, the values copied into a Vector.">O(n)</abbr> | O(n): one walk in key order, the values copied into a Vector. |
+| `head` | <abbr class="cx cx-logarithmic" title="O(log n): the entry with the smallest key is found by walking down the tree, with no comparison.">O(log n)</abbr> | O(log n): the entry with the smallest key is found by walking down the tree, with no comparison. |
+| `take` | <abbr class="cx cx-logarithmic" title="O(log n): the tree is cut at that position without visiting the entries, and the result shares the rest of the tree.">O(log n)</abbr> | O(log n): the tree is cut at that position without visiting the entries, and the result shares the rest of the tree. |
+| `drop` | <abbr class="cx cx-logarithmic" title="O(log n): the tree is cut at that position without visiting the entries, and the result shares the rest of the tree.">O(log n)</abbr> | O(log n): the tree is cut at that position without visiting the entries, and the result shares the rest of the tree. |

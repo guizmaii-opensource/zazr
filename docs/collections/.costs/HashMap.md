@@ -2,9 +2,9 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
-| `containsKey` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
-| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one lookup and one put).">effectively O(1)</abbr> | effectively O(1) (one lookup and one put). |
-| `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (a path copy of the trie).">effectively O(1)</abbr> | effectively O(1) (a path copy of the trie). |
-| `keySet` | <abbr class="cx cx-linear" title="O(n) (the keys are copied into a new HashSet).">O(n)</abbr> | O(n) (the keys are copied into a new HashSet). |
-| `values` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
+| `containsKey` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
+| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup and one put.">effectively O(1)</abbr> | effectively O(1): one lookup and one put. |
+| `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup, then a copy of a few small arrays; the rest is shared with this map.">effectively O(1)</abbr> | effectively O(1): one hash lookup, then a copy of a few small arrays; the rest is shared with this map. |
+| `keySet` | <abbr class="cx cx-linear" title="O(n): the keys are copied into a new HashSet.">O(n)</abbr> | O(n): the keys are copied into a new HashSet. |
+| `values` | <abbr class="cx cx-linear" title="O(n): the values are copied into a new Vector.">O(n)</abbr> | O(n): the values are copied into a new Vector. |
