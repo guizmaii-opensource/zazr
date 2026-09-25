@@ -30,69 +30,86 @@ int best = NonEmptyVector.of(7, 3, 9).max(Integer::compare);
 
 <div class="zz-section" markdown>
 
-## What it is { .zz-kicker }
+## What Zazr is { .zz-kicker }
 
-Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persistent collections and its `Option`,
-`Either`, `Try`, `Validation` and `Lazy`, and reshapes them around a few rules.
+Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`,
+`Try`, `Validation` and `Lazy`. It is built for Java 25: sealed interfaces, records and pattern matching are part of
+its API, not an afterthought. Its design comes from modern Scala's collections and from ZIO.
+
+## What it brings { .zz-kicker }
 
 <div class="grid cards zz-cards zz-cards--features" markdown>
 
--   :material-tag-text-outline:{ .lg } __Names say what an operation does__
+-   :material-timer-sand:{ .lg } __Collections that state their cost__
 
     ---
 
-    `zip`, `zipWith`, `collectAll`, `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`: the name tells you what you get
-    back.
-
--   :material-numeric-8-box-multiple-outline:{ .lg } __`zip` at arity 2 to 8__
-
-    ---
-
-    Combine up to eight values in one call, with a function that receives them all. No nested tuples.
-
-    [:octicons-arrow-right-24: zip at arity N](zip.md)
-
--   :material-format-list-checks:{ .lg } __`Validation` keeps every error__
-
-    ---
-
-    The errors accumulate in a `NonEmptyVector`, so an invalid value always carries at least one.
-
-    [:octicons-arrow-right-24: Validation](validation.md)
-
--   :material-shield-check-outline:{ .lg } __Non-empty types make partial operations total__
-
-    ---
-
-    `head()`, `max`, `reduce` on a `NonEmptyVector` cannot fail, and the return types say what can become empty.
-
-    [:octicons-arrow-right-24: NonEmptyVector](non-empty-vector.md)
-
--   :material-timer-sand:{ .lg } __Each collection states its cost__
-
-    ---
-
-    No shared interface hides a slow `get(i)`. Every positional method documents its cost, and one page lists them
-    all.
+    Every operation whose cost depends on the size documents it, and one page lists them all. You choose a
+    collection for what you do with it, not by guessing.
 
     [:octicons-arrow-right-24: Complexity](collections/complexity.md)
 
--   :material-language-java:{ .lg } __Modern Java__
+-   :material-hammer-wrench:{ .lg } __Persistent collections you can build fast__
 
     ---
 
-    Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, and `java.util` views
-    without copying.
+    A builder fills a collection in place and hands it over once, so building one in a loop copies nothing.
 
-    [:octicons-arrow-right-24: Java interop](java-interop.md)
+    [:octicons-arrow-right-24: Builders](builders.md)
+
+-   :material-format-list-checks:{ .lg } __Errors you do not lose__
+
+    ---
+
+    `Validation` collects every error instead of stopping at the first, in a list that is never empty.
+
+    [:octicons-arrow-right-24: Validation](validation.md)
+
+-   :material-numeric-8-box-multiple-outline:{ .lg } __Combine up to eight values in one call__
+
+    ---
+
+    `zipWith` takes all of them and a function of their values, with no nested tuples to unpack.
+
+    [:octicons-arrow-right-24: zip at arity N](zip.md)
+
+-   :material-shield-check-outline:{ .lg } __Collections that cannot be empty__
+
+    ---
+
+    On a `NonEmptyVector`, `head`, `max` and `reduce` cannot fail, and the return types tell you when that
+    guarantee is lost.
+
+    [:octicons-arrow-right-24: NonEmptyVector](non-empty-vector.md)
+
+-   :material-source-branch:{ .lg } __Pattern matching on results__
+
+    ---
+
+    `Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so a `switch` over them is checked
+    by the compiler.
+
+    [:octicons-arrow-right-24: Control types](control-types.md)
 
 -   :material-null:{ .lg } __No `null` inside__
 
     ---
 
-    `Some`, `Right`, `Success`, `Valid` and every collection reject it. Absence is an `Option`.
+    Values and collections reject it, and absence is an `Option`.
 
-    [:octicons-arrow-right-24: Control types](control-types.md)
+-   :material-language-java:{ .lg } __Java interop without copies__
+
+    ---
+
+    `asJava()` gives a read-only `java.util` view in constant time, and the way back does not copy either.
+
+    [:octicons-arrow-right-24: Java interop](java-interop.md)
+
+-   :material-tag-text-outline:{ .lg } __Names that say what happens__
+
+    ---
+
+    `zip`, `collectAll`, `catchAll`, `mapBoth`: the vocabulary of ZIO, with no theory to learn first.
 
 </div>
 
@@ -136,6 +153,14 @@ Vector<Integer> numbers = builder.result();
 
 <div class="grid cards zz-cards zz-cards--plain" markdown>
 
+-   __Modern Scala__
+
+    ---
+
+    The Scala 3 collections: the `Vector` builder, fast set operations on sorted sets, `grouped` and `sliding` that
+    return collections, and a table of what each operation costs. Sealed interfaces, records and `switch` bring
+    Scala's pattern matching to Java.
+
 -   __ZIO__
 
     ---
@@ -150,31 +175,10 @@ Vector<Integer> numbers = builder.result();
     `Validation` with its errors in a non-empty collection, `zip` to combine independent values, and a non-empty
     collection whose return types say when it may become empty.
 
--   __Modern Scala__
-
-    ---
-
-    The Scala 3 collections: the `Vector` builder, fast set operations on sorted sets, `grouped` and `sliding` that
-    return collections, and a table of what each operation costs. Sealed interfaces, records and `switch` bring
-    Scala's pattern matching to Java.
-
 </div>
 
-</div>
-
-<div class="zz-section" markdown>
-
-## Compared to Vavr { .zz-kicker }
-
-Zazr is not a drop-in replacement for Vavr. The main differences:
-
-- The `Match` API is gone: use `switch` with record patterns.
-- `Future` and `Promise` are gone, as are the less used collections (`Array`, `CharSeq`, `Tree`, `Multimap`...).
-- `Function0` to `Function2` are gone: use `java.util.function`.
-- `Option`, `Either`, `Try` and `Validation` are no longer `Iterable`; each has explicit conversions.
-- Sets and maps without a defined order have no positional methods such as `head` or `take`.
-
-[:octicons-arrow-right-24: The full comparison](vavr.md){ .md-button }
+Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr). Coming from Vavr?
+[This page](vavr.md) lists what changed.
 
 </div>
 
