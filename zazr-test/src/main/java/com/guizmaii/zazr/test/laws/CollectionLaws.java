@@ -11,8 +11,7 @@ import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.TreeMap;
 import com.guizmaii.zazr.collection.TreeSet;
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.test.legacy.PredicateResult;
-import com.guizmaii.zazr.test.legacy.Property;
+import com.guizmaii.zazr.test.Check;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,9 +33,8 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sizeEqualsIterationCount() {
-        return Law.of("sizeEqualsIterationCount", subject -> Property.named("sizeEqualsIterationCount")
-                .forAll(subject.values())
-                .suchThatResult(fa -> Results.equal(subject.size().applyAsInt(fa), elements(fa).size())));
+        return Law.of("sizeEqualsIterationCount", (subject, config) -> Check.check(config, subject.values(),
+                fa -> Results.equal(subject.size().applyAsInt(fa), elements(fa).size())));
     }
 
     /**
@@ -47,13 +45,10 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> toListRoundTrip() {
-        return Law.of("toListRoundTrip", subject -> Property.named("toListRoundTrip")
-                .forAll(subject.values())
-                .suchThatResult(fa -> {
-                    final List<T> list = subject.toList().apply(fa);
-                    return Results.both(Results.equal(elements(list), elements(fa)),
-                            Results.equal(subject.ofAll().apply(list), fa));
-                }));
+        return Law.of("toListRoundTrip", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final List<T> list = subject.toList().apply(fa);
+            return Results.equal(elements(list), elements(fa)) && Results.equal(subject.ofAll().apply(list), fa);
+        }));
     }
 
     /**
@@ -66,17 +61,16 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> equalsAgreesWithElements() {
-        return Law.of("equalsAgreesWithElements", subject -> Property.named("equalsAgreesWithElements")
-                .forAll(subject.values(), subject.values())
-                .suchThatResult((a, b) -> {
+        return Law.of("equalsAgreesWithElements", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                (a, b) -> {
                     final ArrayList<T> reversed = elements(a);
                     Collections.reverse(reversed);
                     final ArrayList<T> dropped = elements(a);
                     if (!dropped.isEmpty()) {
                         dropped.removeFirst();
                     }
-                    return Results.both(agrees(subject, a, b), Results.both(agrees(subject, a, subject.ofAll().apply(reversed)),
-                            agrees(subject, a, subject.ofAll().apply(dropped))));
+                    return agrees(subject, a, b) && agrees(subject, a, subject.ofAll().apply(reversed))
+                            && agrees(subject, a, subject.ofAll().apply(dropped));
                 }));
     }
 
@@ -91,16 +85,15 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> iterationOrder() {
-        return Law.of("iterationOrder", subject -> Property.named("iterationOrder")
-                .forAll(subject.values(), subject.values())
-                .suchThatResult((a, b) -> {
+        return Law.of("iterationOrder", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                (a, b) -> {
                     final ArrayList<T> input = elements(a);
                     final ArrayList<T> second = elements(b);
                     Collections.reverse(second);
                     input.addAll(second);
                     return subject.order()
                             .map(order -> Results.equal(elements(subject.ofAll().apply(input)), order.of(input)))
-                            .getOrElse(PredicateResult.success());
+                            .getOrElse(true);
                 }));
     }
 
@@ -113,14 +106,11 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sequenceEqualsAcrossTypes() {
-        return Law.of("sequenceEqualsAcrossTypes", subject -> Property.named("sequenceEqualsAcrossTypes")
-                .forAll(subject.values())
-                .suchThatResult(fa -> {
-                    final ArrayList<T> xs = elements(fa);
-                    return Results.both(
-                            allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), Stream.ofAll(xs)),
-                            noneEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs)));
-                }));
+        return Law.of("sequenceEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final ArrayList<T> xs = elements(fa);
+            return allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), Stream.ofAll(xs))
+                    && noneEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs));
+        }));
     }
 
     /**
@@ -132,14 +122,12 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> setEqualsAcrossTypes() {
-        return Law.of("setEqualsAcrossTypes", subject -> Property.named("setEqualsAcrossTypes")
-                .forAll(subject.values())
-                .suchThatResult(fa -> {
-                    final ArrayList<T> xs = elements(fa);
-                    final PredicateResult hashed = allEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs));
-                    final PredicateResult sorted = comparable(xs) ? allEqual(fa, treeSet(xs)) : PredicateResult.success();
-                    return Results.both(hashed, Results.both(sorted, noneEqual(fa, Vector.ofAll(xs), List.ofAll(xs))));
-                }));
+        return Law.of("setEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final ArrayList<T> xs = elements(fa);
+            return allEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs))
+                    && (!comparable(xs) || allEqual(fa, treeSet(xs)))
+                    && noneEqual(fa, Vector.ofAll(xs), List.ofAll(xs));
+        }));
     }
 
     /**
@@ -151,16 +139,12 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T extends Tuple2<?, ?>, F extends Iterable<T>> Law<CollectionSubject<T, F>> mapEqualsAcrossTypes() {
-        return Law.of("mapEqualsAcrossTypes", subject -> Property.named("mapEqualsAcrossTypes")
-                .forAll(subject.values())
-                .suchThatResult(fa -> {
-                    final ArrayList<T> entries = elements(fa);
-                    final PredicateResult hashed = allEqual(fa, HashMap.ofEntries(entries), LinkedHashMap.ofEntries(entries));
-                    final PredicateResult sorted = comparable(entries.stream().map(Tuple2::_1).toList())
-                            ? allEqual(fa, treeMap(entries))
-                            : PredicateResult.success();
-                    return Results.both(hashed, Results.both(sorted, noneEqual(fa, Vector.ofAll(entries))));
-                }));
+        return Law.of("mapEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final ArrayList<T> entries = elements(fa);
+            return allEqual(fa, HashMap.ofEntries(entries), LinkedHashMap.ofEntries(entries))
+                    && (!comparable(entries.stream().map(Tuple2::_1).toList()) || allEqual(fa, treeMap(entries)))
+                    && noneEqual(fa, Vector.ofAll(entries));
+        }));
     }
 
     /**
@@ -216,32 +200,28 @@ public final class CollectionLaws {
         return elements;
     }
 
-    private static <T, F extends Iterable<T>> PredicateResult agrees(CollectionSubject<T, F> subject, F a, F b) {
+    private static <T, F extends Iterable<T>> boolean agrees(CollectionSubject<T, F> subject, F a, F b) {
         final boolean expected = subject.ordered()
                 ? elements(a).equals(elements(b))
                 : new java.util.HashSet<>(elements(a)).equals(new java.util.HashSet<>(elements(b)));
-        return Results.both(
-                Results.check(a.equals(b) == expected, a + (expected ? " differs from " : " equals ") + b),
-                EqualityLaws.consistent(a, b));
+        return Results.check(a.equals(b) == expected, () -> a + (expected ? " differs from " : " equals ") + b)
+                && EqualityLaws.consistent(a, b);
     }
 
-    private static PredicateResult allEqual(Object fa, Object... others) {
-        PredicateResult result = PredicateResult.success();
+    private static boolean allEqual(Object fa, Object... others) {
         for (Object other : others) {
-            result = Results.both(result, Results.both(
-                    Results.check(fa.equals(other) && other.equals(fa), fa + " differs from " + other + " of the same elements"),
-                    EqualityLaws.consistent(fa, other)));
+            Results.check(fa.equals(other) && other.equals(fa), () -> fa + " differs from " + other + " of the same elements");
+            EqualityLaws.consistent(fa, other);
         }
-        return result;
+        return true;
     }
 
-    private static PredicateResult noneEqual(Object fa, Object... others) {
-        PredicateResult result = PredicateResult.success();
+    private static boolean noneEqual(Object fa, Object... others) {
         for (Object other : others) {
-            result = Results.both(result, Results.check(!fa.equals(other) && !other.equals(fa),
-                    fa + " equals " + other.getClass().getSimpleName() + " " + other));
+            Results.check(!fa.equals(other) && !other.equals(fa),
+                    () -> fa + " equals " + other.getClass().getSimpleName() + " " + other);
         }
-        return result;
+        return true;
     }
 
     private static boolean comparable(java.util.List<?> xs) {

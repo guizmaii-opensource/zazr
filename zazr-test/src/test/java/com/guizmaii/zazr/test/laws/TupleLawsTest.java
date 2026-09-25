@@ -8,7 +8,7 @@ import com.guizmaii.zazr.Tuple5;
 import com.guizmaii.zazr.Tuple6;
 import com.guizmaii.zazr.Tuple7;
 import com.guizmaii.zazr.Tuple8;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -17,10 +17,10 @@ import org.junit.jupiter.api.Test;
  */
 class TupleLawsTest {
 
-    private static final Arbitrary<Integer> INTS = Arbitrary.integer();
+    private static final Gen<Integer> INTS = Values.integers();
 
     private static EqualitySubject<Tuple2<Integer, Integer>> tuple2() {
-        return new EqualitySubject<>(Arbitrary.tuple2(INTS, INTS), t -> Tuple.of(t._1(), t._2()), t -> java.util.List.of(t._1(), t._2()));
+        return new EqualitySubject<>(Gen.tuple2(INTS, INTS), t -> Tuple.of(t._1(), t._2()), t -> java.util.List.of(t._1(), t._2()));
     }
 
     @Test
@@ -34,7 +34,7 @@ class TupleLawsTest {
     }
 
     private static EqualitySubject<Tuple3<Integer, Integer, Integer>> tuple3() {
-        return new EqualitySubject<>(Arbitrary.tuple3(INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3()), t -> java.util.List.of(t._1(), t._2(), t._3()));
+        return new EqualitySubject<>(Gen.tuple3(INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3()), t -> java.util.List.of(t._1(), t._2(), t._3()));
     }
 
     @Test
@@ -48,7 +48,7 @@ class TupleLawsTest {
     }
 
     private static EqualitySubject<Tuple4<Integer, Integer, Integer, Integer>> tuple4() {
-        return new EqualitySubject<>(Arbitrary.tuple4(INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4()));
+        return new EqualitySubject<>(Gen.tuple4(INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4()));
     }
 
     @Test
@@ -62,7 +62,7 @@ class TupleLawsTest {
     }
 
     private static EqualitySubject<Tuple5<Integer, Integer, Integer, Integer, Integer>> tuple5() {
-        return new EqualitySubject<>(Arbitrary.tuple5(INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5()));
+        return new EqualitySubject<>(Gen.tuple5(INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5()));
     }
 
     @Test
@@ -76,7 +76,7 @@ class TupleLawsTest {
     }
 
     private static EqualitySubject<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> tuple6() {
-        return new EqualitySubject<>(Arbitrary.tuple6(INTS, INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6()));
+        return new EqualitySubject<>(Gen.tuple6(INTS, INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6()));
     }
 
     @Test
@@ -90,7 +90,7 @@ class TupleLawsTest {
     }
 
     private static EqualitySubject<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> tuple7() {
-        return new EqualitySubject<>(Arbitrary.tuple7(INTS, INTS, INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7()));
+        return new EqualitySubject<>(Gen.tuple7(INTS, INTS, INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7()));
     }
 
     @Test
@@ -104,7 +104,7 @@ class TupleLawsTest {
     }
 
     private static EqualitySubject<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> tuple8() {
-        return new EqualitySubject<>(Arbitrary.tuple8(INTS, INTS, INTS, INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()));
+        return new EqualitySubject<>(Gen.tuple8(INTS, INTS, INTS, INTS, INTS, INTS, INTS, INTS), t -> Tuple.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()), t -> java.util.List.of(t._1(), t._2(), t._3(), t._4(), t._5(), t._6(), t._7(), t._8()));
     }
 
     @Test

@@ -1,99 +1,84 @@
 package com.guizmaii.zazr.test.laws;
 
-import com.guizmaii.zazr.test.legacy.CheckResult;
-import com.guizmaii.zazr.test.legacy.Checkable;
-import com.guizmaii.zazr.test.legacy.Property;
+import com.guizmaii.zazr.test.Check;
+import com.guizmaii.zazr.test.CheckConfig;
+import com.guizmaii.zazr.test.CheckResult;
 
 import java.util.Objects;
-import java.util.Random;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * A named rule that every value of a type must satisfy, stated once and checked against any subject that provides
  * the operations it needs.
  * <p>
- * The subject {@code S} is what the law is checked against: the arbitrary values of the type under test and the
- * operations the law calls on them (see {@link MapSubject}, {@link FlatMapSubject}, {@link ZipSubject},
- * {@link CollectionSubject}). A law builds its property with {@link Property#named(String)} under its own name, so a
- * falsified {@link CheckResult} carries the law's name and the counterexample.
+ * The subject {@code S} is what the law is checked against: the generator of the values of the type under test and
+ * the operations the law calls on them (see {@link MapSubject}, {@link FlatMapSubject}, {@link ZipSubject},
+ * {@link CollectionSubject}). A law runs one {@link Check#check} with the configuration it is given; its body fails
+ * a sample by throwing an {@link AssertionError} that explains what differed.
  *
  * @param <S> the subject the law is checked against
  */
 public final class Law<S> {
 
     private final String name;
-    private final Function<? super S, ? extends Checkable> property;
+    private final BiFunction<? super S, ? super CheckConfig, ? extends CheckResult> check;
 
-    private Law(String name, Function<? super S, ? extends Checkable> property) {
+    private Law(String name, BiFunction<? super S, ? super CheckConfig, ? extends CheckResult> check) {
         this.name = name;
-        this.property = property;
+        this.check = check;
     }
 
     /**
      * Creates a law.
      *
-     * @param name     the law's name, reported when it fails
-     * @param property builds the property of the law for a subject; it should name the property with {@code name}
-     * @param <S>      the subject the law is checked against
+     * @param name  the law's name, reported when it fails
+     * @param check checks the law for a subject with a configuration, usually through {@link Check#check}
+     * @param <S>   the subject the law is checked against
      * @return a new law
      * @throws NullPointerException     if an argument is null
      * @throws IllegalArgumentException if {@code name} is blank
      */
-    public static <S> Law<S> of(String name, Function<? super S, ? extends Checkable> property) {
+    public static <S> Law<S> of(String name, BiFunction<? super S, ? super CheckConfig, ? extends CheckResult> check) {
         Objects.requireNonNull(name, "name is null");
-        Objects.requireNonNull(property, "property is null");
+        Objects.requireNonNull(check, "check is null");
         if (name.isBlank()) {
             throw new IllegalArgumentException("name is blank");
         }
-        return new Law<>(name, property);
+        return new Law<>(name, check);
     }
 
     /**
      * The law's name.
      *
-     * @return the name given to {@link #of(String, Function)}
+     * @return the name given to {@link #of(String, BiFunction)}
      */
     public String name() {
         return name;
     }
 
     /**
-     * The property of this law for one subject.
-     *
-     * @param subject what the law is checked against
-     * @return a checkable property
-     * @throws NullPointerException if {@code subject} is null
-     */
-    public Checkable property(S subject) {
-        Objects.requireNonNull(subject, "subject is null");
-        return property.apply(subject);
-    }
-
-    /**
      * Checks this law against a subject.
      *
      * @param subject what the law is checked against
-     * @param random  the source of randomness
-     * @param size    the size hint given to the arbitraries
-     * @param tries   the number of samples
-     * @return the result of the check, named after this law
-     * @throws NullPointerException if {@code subject} or {@code random} is null
+     * @param config  the number of samples, the size and the seed
+     * @return the result of the check
+     * @throws NullPointerException if an argument is null, or the law's check returned null
      */
-    public CheckResult check(S subject, Random random, int size, int tries) {
-        Objects.requireNonNull(random, "random is null");
-        return property(subject).check(random, size, tries);
+    public CheckResult check(S subject, CheckConfig config) {
+        Objects.requireNonNull(subject, "subject is null");
+        Objects.requireNonNull(config, "config is null");
+        return Objects.requireNonNull(check.apply(subject, config), () -> "the check of " + name + " returned null");
     }
 
     /**
-     * Checks this law against a subject with {@link Checkable#DEFAULT_SIZE} and {@link Checkable#DEFAULT_TRIES}.
+     * Checks this law against a subject with {@link CheckConfig#defaults()}.
      *
      * @param subject what the law is checked against
-     * @param random  the source of randomness
-     * @return the result of the check, named after this law
-     * @throws NullPointerException if an argument is null
+     * @return the result of the check
+     * @throws NullPointerException if {@code subject} is null
      */
-    public CheckResult check(S subject, Random random) {
-        return check(subject, random, Checkable.DEFAULT_SIZE, Checkable.DEFAULT_TRIES);
+    public CheckResult check(S subject) {
+        return check(subject, CheckConfig.defaults());
     }
 
     /**

@@ -2,7 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Vector;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
@@ -14,8 +14,8 @@ class NonEmptyVectorLawsTest {
     static final class Subject implements FlatMapSubject<NonEmptyVector<?>>, ZipSubject<NonEmptyVector<?>> {
 
         @Override
-        public Arbitrary<NonEmptyVector<?>> values() {
-            return Arbitrary.nonEmptyVector(Arbitrary.integer()).map(value -> value);
+        public Gen<NonEmptyVector<?>> values() {
+            return Gen.nonEmptyVector(Values.integers()).map(value -> value);
         }
 
         @Override

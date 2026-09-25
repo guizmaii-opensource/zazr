@@ -2,7 +2,7 @@ package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.control.Option;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 
 import java.util.function.Function;
@@ -15,8 +15,8 @@ class ListLawsTest extends SequenceLawsSuite<List<?>, List<Integer>, ListLawsTes
     static final class Subject implements FlatMapSubject<List<?>>, ZipSubject<List<?>> {
 
         @Override
-        public Arbitrary<List<?>> values() {
-            return Arbitrary.list(Arbitrary.integer()).map(value -> value);
+        public Gen<List<?>> values() {
+            return Gen.list(Values.integers()).map(value -> value);
         }
 
         @Override
@@ -47,11 +47,11 @@ class ListLawsTest extends SequenceLawsSuite<List<?>, List<Integer>, ListLawsTes
 
     @Override
     CollectionSubject<Integer, List<Integer>> collection() {
-        return new CollectionSubject<>(Arbitrary.list(Arbitrary.integer()), List::ofAll, List::size, List::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(Gen.list(Values.integers()), List::ofAll, List::size, List::toList, true, Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, List<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Arbitrary.list(Arbitrary.integer()), List.collector(), List::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), List.collector(), List::ofAll, Option.some(IterationOrder.input()));
     }
 }

@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.Lazy;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.function.Function;
 
@@ -13,8 +13,8 @@ class LazyLawsTest extends ControlLawsSuite<Lazy<?>, LazyLawsTest.Subject> {
     static final class Subject implements FlatMapSubject<Lazy<?>>, ZipSidesSubject<Lazy<?>> {
 
         @Override
-        public Arbitrary<Lazy<?>> values() {
-            return Arbitrary.lazy(Arbitrary.integer()).map(value -> value);
+        public Gen<Lazy<?>> values() {
+            return Gen.lazy(Values.integers()).map(value -> value);
         }
 
         @Override

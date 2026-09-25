@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.control.Either;
-import com.guizmaii.zazr.test.legacy.Arbitrary;
+import com.guizmaii.zazr.test.Gen;
 
 import java.util.function.Function;
 
@@ -13,8 +13,8 @@ class EitherLawsTest extends ControlLawsSuite<Either<?, ?>, EitherLawsTest.Subje
     static final class Subject implements FlatMapSubject<Either<?, ?>>, ZipSidesSubject<Either<?, ?>> {
 
         @Override
-        public Arbitrary<Either<?, ?>> values() {
-            return Arbitrary.either(Arbitrary.integer(), Arbitrary.integer()).map(value -> value);
+        public Gen<Either<?, ?>> values() {
+            return Gen.either(Values.integers(), Values.integers()).map(value -> value);
         }
 
         @Override
