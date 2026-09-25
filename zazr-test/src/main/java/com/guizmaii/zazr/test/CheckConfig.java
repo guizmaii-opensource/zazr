@@ -16,8 +16,9 @@ import java.util.function.UnaryOperator;
  * @param size        the largest size, at least 0: the size grows from 0 to this value over a check, and
  *                    {@link Check#checkAll} runs at this size
  * @param seed        the seed of the random source; the same seed gives the same values
- * @param maxDiscards the number of values {@link Gen#filter} may reject in a row, and of passes without a value a
- *                    check may run in a row, before it gives up; at least 0
+ * @param maxDiscards the number of values {@link Gen#filter} may reject in a row before it gives a pass up, and of
+ *                    passes without a value a check may run in a row, each at a larger size, before it reports an
+ *                    error; at least 0
  */
 public record CheckConfig(int samples, int size, long seed, int maxDiscards) {
 

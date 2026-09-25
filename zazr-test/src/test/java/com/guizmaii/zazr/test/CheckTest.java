@@ -259,7 +259,7 @@ class CheckTest {
         final CheckResult result = Check.check(config(4), Gen.<Integer>empty(), i -> true);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get()).isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 1001 passes in a row, more than the discard budget of 1000");
+                .hasMessage("the generator produced no value in 1001 passes in a row at growing sizes, more than the discard budget of 1000");
         assertThat(((CheckResult.Erroneous) result).sampleNumber()).isEqualTo(1);
     }
 
@@ -267,7 +267,7 @@ class CheckTest {
     void aFilterBeyondItsBudgetMakesTheCheckErroneous() {
         final CheckResult result = Check.check(config(4), Gen.integers(), Gen.integers().filter(i -> false), (a, b) -> true);
         assertThat(result.isErroneous()).isTrue();
-        assertThat(result.error().get()).isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected 1001 values in a row");
+        assertThat(result.error().get()).isInstanceOf(IllegalStateException.class).hasMessageStartingWith("Gen.filter rejected every value it tried: 1001 values in a row");
         assertThat(result.sample()).isEqualTo(Option.none());
     }
 
@@ -278,7 +278,30 @@ class CheckTest {
         assertThat(Check.check(config(1), sometimes, i -> true)).isEqualTo(new CheckResult.Satisfied(200));
         final CheckResult result = Check.check(config(1).withMaxDiscards(0), sometimes, i -> true);
         assertThat(result.error().get()).isInstanceOf(IllegalStateException.class)
-                .hasMessage("the generator produced no value in 1 passes in a row, more than the discard budget of 0");
+                .hasMessage("the generator produced no value in 1 passes in a row at growing sizes, more than the discard budget of 0");
+    }
+
+    @Test
+    void aFilterThatRejectsTheEmptyValueWorksWithTheDefaultConfiguration() {
+        Check.check(Gen.alphaNumericStrings().filter(s -> !s.isEmpty()), s -> !s.isEmpty()).assertIsSatisfied();
+        Check.check(Gen.strings().filter(s -> !s.isEmpty()), s -> !s.isEmpty()).assertIsSatisfied();
+        Check.check(Gen.sized(n -> Gen.integers(0, n)).filter(x -> x > 0), x -> x > 0).assertIsSatisfied();
+        Check.check(Gen.sized(n -> n == 0 ? Gen.<Integer>empty() : Gen.integers(0, n)), x -> true).assertIsSatisfied();
+    }
+
+    @Test
+    void checkAllReportsAFilterThatGaveAPassUp() {
+        final CheckResult result = Check.checkAll(config(1), Gen.fromIterable(java.util.List.of(1, 2)), Gen.integers().filter(i -> false), (a, b) -> true);
+        assertThat(result.isErroneous()).isTrue();
+        assertThat(result.error().get()).hasMessageStartingWith("Gen.filter rejected every value it tried: 1001 values in a row");
+        // a failure found before the end of the pass wins
+        assertThat(Check.checkAll(config(1), Gen.fromIterable(java.util.List.of(1, 2)), Gen.integers().filter(i -> i != 0), (a, b) -> false).isFalsified()).isTrue();
+    }
+
+    @Test
+    void aDiscardBudgetOfTheLargestIntStillEnds() {
+        final CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
+        assertThat(Check.check(largest, Gen.integers().filter(i -> i % 2 == 0), i -> i % 2 == 0)).isEqualTo(new CheckResult.Satisfied(200));
     }
 
     @Test
