@@ -41,7 +41,7 @@ Every method: [complexity page](complexity.md#stream).
 
 ## Sharp edges
 
-- Operations that need the whole sequence compute it and never return on an infinite `Stream`: `length`, `size`,
+- Operations that need the whole sequence compute it and never return on an infinite `Stream`: `size`,
   `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `lastIndexOfSlice(that)`, `equals` and
   `hashCode`, and anything else that reads every element, such as `foldLeft`, `mkString` or `toVector`.
 - `filter` and the calls like it (`reject`, `retainAll`, `removeAll`, `collect`, `flatMap`, `distinct`) compute

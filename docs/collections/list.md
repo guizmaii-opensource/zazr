@@ -12,12 +12,12 @@ the whole list.
 ## When to choose it
 
 When you take a sequence apart from the front, recursively or with pattern matching, or need a stack (`push`, `pop`,
-`peek`). For access by index, adding at the end or `length`, choose [`Vector`](vector.md).
+`peek`). For access by index, adding at the end or `size`, choose [`Vector`](vector.md).
 
 ```java
 var list = List.of(1, 2, 3);
 var first = switch (list) {
-    case Cons(var head, var tail) -> "head " + head + ", then " + tail.length() + " more";
+    case Cons(var head, var tail) -> "head " + head + ", then " + tail.size() + " more";
     case Nil() -> "empty";
 };
 // "head 1, then 2 more"
@@ -38,7 +38,7 @@ Every method: [complexity page](complexity.md#list).
 
 ## Sharp edges
 
-- `length()` and `size()` are O(n): the list does not store its length. `equals`, `toArray()` and `stream()` count
+- `size()` is O(n): the list does not store its size. `equals`, `toArray()` and `stream()` count
   the elements first too.
 - `append`, `appendAll`, `last`, `init`, `takeRight` and `dropRight` walk the whole list, and all but `last` copy it.
 - `get(i)` walks the list up to position i; `update`, `insert` and `removeAt` also copy the elements before it.

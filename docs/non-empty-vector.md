@@ -12,8 +12,7 @@ It has every operation of `Vector`, under the same names, except those that mean
 - the `Option` forms of what is total here: `headOption`, `lastOption`, `reduceOption`, `reduceLeftOption`,
   `reduceRightOption`, `singleOption`;
 - `tailOption` and `initOption`: `tail` and `init` already return a `Vector`, and `tailNonEmpty()` and
-  `initNonEmpty()` narrow back;
-- `length`: the size is `size()`.
+  `initNonEmpty()` narrow back.
 
 ## Total operations
 
