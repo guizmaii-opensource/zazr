@@ -6,7 +6,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Zazr Parent</name>
-    <description>zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
+    <description>Zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
     <modules>
         <module>zazr-core</module>
         <module>zazr-test</module>
@@ -20,7 +20,10 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <scm>
+    <!-- the child modules inherit these as they are; by default Maven appends the artifactId to each URL -->
+    <scm child.scm.connection.inherit.append.path="false"
+         child.scm.developerConnection.inherit.append.path="false"
+         child.scm.url.inherit.append.path="false">
         <connection>scm:git:git@github.com:guizmaii-opensource/zazr.git</connection>
         <developerConnection>scm:git:git@github.com:guizmaii-opensource/zazr.git</developerConnection>
         <url>https://github.com/guizmaii-opensource/zazr</url>
@@ -108,7 +111,7 @@
                             <rules>
                                 <requireMavenVersion>
                                     <version>3.9.9</version>
-                                    <message>Minimum required Maven version to build vavr is 3.9.9</message>
+                                    <message>Minimum required Maven version to build Zazr is 3.9.9</message>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>

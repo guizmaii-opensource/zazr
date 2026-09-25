@@ -21,7 +21,8 @@
   <a href="https://zazr.dev/"><b>Website</b></a> ·
   <a href="https://zazr.dev/getting-started/">Getting started</a> ·
   <a href="https://zazr.dev/collections/complexity/">Complexity</a> ·
-  <a href="https://zazr.dev/principles/">Design</a>
+  <a href="https://zazr.dev/principles/">Design</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 > [!WARNING]
@@ -131,4 +132,5 @@ make test-one TEST=VectorTest MODULE=zazr-core
 ## License
 
 Apache License 2.0. Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr), copyright its authors; see
-[NOTICE](NOTICE). Coming from Vavr? [This page](https://zazr.dev/vavr/) lists what changed.
+[NOTICE](NOTICE). Coming from Vavr? [This page](https://zazr.dev/vavr/) lists what changed, and the
+[changelog](CHANGELOG.md) lists every release.

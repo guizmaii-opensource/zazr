@@ -9,7 +9,7 @@
     <artifactId>zazr-core</artifactId>
     <packaging>jar</packaging>
     <name>Zazr core</name>
-    <description>zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
+    <description>Zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
     <url>https://github.com/guizmaii-opensource/zazr</url>
     <licenses>
         <license>
