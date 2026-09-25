@@ -41,13 +41,13 @@ API, not an afterthought. Its design comes from modern Scala's collections and f
   with it, not by guessing.
 - **[Persistent collections you can build fast.](https://zazr.dev/builders/)** A builder fills a collection in place
   and hands it over once, so building one in a loop copies nothing.
-- **[Errors you do not lose.](https://zazr.dev/validation/)** `Validation` collects every error instead of stopping
+- **[Errors you do not lose.](https://zazr.dev/control/validation/)** `Validation` collects every error instead of stopping
   at the first, in a list that is never empty.
 - **[Combine up to eight values in one call.](https://zazr.dev/zip/)** `zipWith` takes all of them and a function of
   their values, with no nested tuples to unpack.
 - **[Collections that cannot be empty.](https://zazr.dev/non-empty-vector/)** On a `NonEmptyVector`, `head`, `max`
   and `reduce` cannot fail, and the return types tell you when that guarantee is lost.
-- **[Pattern matching on results.](https://zazr.dev/control-types/)** `Option`, `Either`, `Try` and `Validation` are
+- **[Pattern matching on results.](https://zazr.dev/control/)** `Option`, `Either`, `Try` and `Validation` are
   sealed interfaces of records, so a `switch` over them is checked by the compiler.
 - **No `null` inside.** Values and collections reject it, and absence is an `Option`.
 - **[Java interop without copies.](https://zazr.dev/java-interop/)** `asJava()` gives a read-only `java.util` view in
