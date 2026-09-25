@@ -2,11 +2,15 @@ package com.guizmaii.zazr.test.docs;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.test.Arbitrary;
 import com.guizmaii.zazr.test.CheckResult;
 import com.guizmaii.zazr.test.Checkable;
 import com.guizmaii.zazr.test.Gen;
 import com.guizmaii.zazr.test.Property;
+import com.guizmaii.zazr.test.laws.EqualityLaws;
+import com.guizmaii.zazr.test.laws.EqualitySubject;
+import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,5 +64,12 @@ public class DocsTestingExamplesTest {
         halving.check().assertIsSatisfied();
 
         assertThat(halving.check().isSatisfied()).isTrue();
+    }
+
+    @Test
+    void laws() {
+        EqualityLaws.<Vector<Integer>>all().assertSatisfied(
+            new EqualitySubject<>(Arbitrary.vector(Arbitrary.integer()), v -> Vector.ofAll(v.toList())),
+            new Random(42));
     }
 }

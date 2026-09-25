@@ -1252,7 +1252,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   | module | artifact | content |
   |---|---|---|
   | `zazr-core` | `com.guizmaii:zazr-core` | everything in this document |
-  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing + law suites (below); depends on `zazr-core`; used by `zazr-core`'s own tests (test scope, no cycle: Maven allows a module's tests to depend on a sibling as long as the sibling's *main* code does not depend back) |
+  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing + law suites (below); depends on `zazr-core`. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
 
   Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
@@ -1272,7 +1272,8 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
     (`Laws.zipAssociativity`, `mapIdentity`, `mapComposition`, `flatMapAssociativity`,
     `zipLeftIdentity`, `validationZipAccumulatesBothSides`, `nonEmptyVectorHeadIsTotal`,
     `builderResultEqualsOfAll`), law sets compose (`Laws.zip = zipAssociativity + zipLeftIdentity + ...`),
-    and a failing law reports its name. One `*LawsTest` per type in `zazr-core` runs the relevant sets.
+    and a failing law reports its name. One `*LawsTest` per type runs the relevant sets; they live in
+    `zazr-test`'s test sources, not `zazr-core`'s, because of the reactor cycle noted in the module table.
     This is the "runnable check" for the whole refactor.
   - shrinking is absent from `vavr-test`; add it only if a falsified case is ever unreadable.
 - **JMH**: the `benchmark` profile exists; add `VectorBuilderBenchmark` (append ×N, `map`, `filter`,

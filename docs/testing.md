@@ -33,7 +33,7 @@ The types are in `com.guizmaii.zazr.test`:
 | Type | Role |
 |---|---|
 | `Gen<T>` | a generator: a function from a `java.util.Random` to a `T`, with `map`, `flatMap`, `filter`, `choose`, `oneOf`, `frequency` |
-| `Arbitrary<T>` | a generator whose values grow with a size: `Arbitrary.integer()`, `string(Gen<Character>)`, `list(Arbitrary)`, `of(values...)` |
+| `Arbitrary<T>` | a generator whose values grow with a size: `Arbitrary.integer()`, `string(Gen<Character>)`, `of(values...)`, and one per Zazr type (`option`, `either`, `tryOf`, `validation`, `lazy`, `tuple2` to `tuple8`, `vector`, `nonEmptyVector`, `list`, `queue`, `stream`, `hashSet`, `linkedHashSet`, `treeSet`, `hashMap`, `linkedHashMap`, `treeMap`) |
 | `Property` | the builder: `Property.named(name).forAll(arbitraries...).suchThat(predicate)`, from 1 to 8 arbitraries |
 | `CheckResult` | the outcome: satisfied, falsified (with the sample) or erroneous; `assertIsSatisfied()` throws an `AssertionError` otherwise |
 
@@ -88,3 +88,21 @@ halving.check().assertIsSatisfied();
 ```
 
 Properties combine with `and` and `or`.
+
+## Laws
+
+The package `com.guizmaii.zazr.test.laws` holds laws: named rules such as `mapIdentity`, `zipAssociativity` or
+`equalsHashCodeConsistency`, stated once and checked against any type that provides the operations they need.
+
+```java
+EqualityLaws.<Vector<Integer>>all().assertSatisfied(
+    new EqualitySubject<>(Arbitrary.vector(Arbitrary.integer()), v -> Vector.ofAll(v.toList())),
+    new Random(42));
+```
+
+Law sets combine with `and`. A failing law throws an `AssertionError` that gives the law's name and the value
+that broke it.
+
+The collection arbitraries build each value in several ways, so a property also meets the less common internal
+shapes: a `Vector` built by dropping a prefix, a `Queue` whose elements sit in both of its internal lists, a set
+after removals.
