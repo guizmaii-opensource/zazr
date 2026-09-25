@@ -95,11 +95,11 @@ final class VectorModel<T> implements Iterable<T> {
     }
 
     VectorModel<T> append(T element) {
-        return of(concat(elements, new Object[] { Objects.requireNonNull(element, "List: element is null") }));
+        return of(concat(elements, new Object[] { Objects.requireNonNull(element, "Vector: element is null") }));
     }
 
     VectorModel<T> prepend(T element) {
-        return of(concat(new Object[] { Objects.requireNonNull(element, "List: element is null") }, elements));
+        return of(concat(new Object[] { Objects.requireNonNull(element, "Vector: element is null") }, elements));
     }
 
     VectorModel<T> appendAll(Iterable<? extends T> iterable) {

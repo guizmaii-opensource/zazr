@@ -1317,10 +1317,10 @@ Step 3 deletes `BitMappedTrie`, `ArrayType` and the differential test.
 the public API does not change.
 - **Contract.** The exception types and messages are those of step 1. A probe of 1 615 edge calls (nulls, bad indices,
   empty vectors, closed builders, identity results such as `drop(0) == this`, at sizes 0 to 40 000, built by `range` and
-  by `ofAll`) prints the same output on both, but for one message: a `map` whose function returns null on a vector built
-  by `range` or `ofAll(int[])` said `Vector.map: element is null`, and now says `Vector: element is null`, the message
-  `map` already gave on any other vector. `append(null)` and `prepend(null)` keep `List: element is null`, which comes
-  from the old path through `List.of`. One behaviour changes on purpose: `Vector.of(array)` of 32 elements or fewer
+  by `ofAll`) prints the same output on both, but for two messages, both now `Vector: element is null` like every other
+  path that rejects a null element: a `map` whose function returns null on a vector built by `range` or `ofAll(int[])`
+  said `Vector.map: element is null`, and `append(null)`/`prepend(null)` said `List: element is null`, a leftover of
+  the old path through `List.of` (decided with the maintainer, #163). One behaviour changes on purpose: `Vector.of(array)` of 32 elements or fewer
   used the caller's array as its leaf, so writing into the array afterwards changed the vector; the array is now
   copied, as it always was above 32 elements.
 - **Primitive leaves (decided): `Object[]` only**, as Scala does. `ofAll(int[])` and the other primitive `ofAll` add
