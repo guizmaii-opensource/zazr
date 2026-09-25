@@ -10,8 +10,12 @@ Access by index, `update`, adding at either end, `take`, `drop` and `slice` are 
 a few small arrays whatever the size, because the tree is never more than six levels deep. A result shares every other
 element with the original.
 
-A `Vector` built from a primitive array, such as `Vector.ofAll(int...)` or `Vector.range`, stores the values
-unboxed.
+The first and the last leaves are kept apart from the rest of the tree. So `head` and `last` read one array, and
+`prepend` and `append` usually copy one leaf of at most 32 elements.
+
+Concatenating two vectors reuses the arrays of the longer one: only the shorter one is copied.
+
+Elements are always stored as objects: `Vector.ofAll(int...)` and `Vector.range` box every value.
 
 ## When to choose it
 
@@ -50,9 +54,5 @@ Every method: [complexity page](complexity.md#vector).
 - `sliding`, `grouped` and `crossProduct` return a `Vector`, built at once, not an iterator. Each window shares its
   elements with the original `Vector`.
 - `insert` and `removeAt` in the middle cost O(min(i, n - i)): the elements on the shorter side are copied.
-- `rotateLeft(k)` copies k elements, but `rotateRight(k)` copies the n - k others: `rotateRight(1)` is O(n).
-- On a `Vector` of primitive values, writing a value of another class (`append`, `update`, `insert`, ...) first
-  converts every element, which is O(n). The result holds objects and is cheap to write to again. Writing to the
-  original primitive `Vector` pays the O(n) again each time.
 - Building element by element is cheapest through [`Vector.Builder`](../builders.md), or `Vector.collector()` from a
   `java.util.stream.Stream`.

@@ -2,12 +2,12 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.AbstractIterator;
-import com.guizmaii.zazr.collection.internal.ArrayType;
-import com.guizmaii.zazr.collection.internal.BitMappedTrie;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.RadixVector;
 import com.guizmaii.zazr.collection.internal.TraversableModule;
+import com.guizmaii.zazr.collection.internal.VectorBuilder;
 import com.guizmaii.zazr.collection.internal.VectorModule;
 import com.guizmaii.zazr.collection.internal.VectorModule.Combinations;
 import com.guizmaii.zazr.control.Either;
@@ -24,44 +24,57 @@ import static com.guizmaii.zazr.collection.internal.Collections.withSize;
  * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
  * {@code slice}) are effectively constant too.
  * <p>
- * The elements are kept in a very wide and shallow tree of arrays of 32 elements, at most six levels deep. Vector
- * declares its whole API itself and implements only {@link Traversable}: every positional method carries a
- * {@code Complexity:} line in its javadoc, where "effectively O(1)" means at most six array lookups, or a copy of at
+ * The elements are kept in a wide, shallow tree of arrays of 32 elements, at most six levels deep, whose first and
+ * last arrays are kept apart, so that {@code head}, {@code last}, {@code prepend} and {@code append} work on those
+ * only. Vector declares its whole API itself and implements only {@link Traversable}: every positional method carries
+ * a {@code Complexity:} line in its javadoc, where "effectively O(1)" means at most six array reads, or a copy of at
  * most six small arrays of 32 elements, whatever the size: the result shares every other element with this Vector.
  * <p>
  * Complexity: the methods without a note of their own ({@code map}, {@code filter}, {@code flatMap}, the folds,
  * {@code groupBy}, the conversions, and the factories such as {@code ofAll} and {@code range}) walk the elements once:
  * O(n), where n is the size of the result for a factory and {@code flatMap}. {@code containsAll} is O(n * m): one
  * {@code contains} per element of its argument.
- * <p>
- * A Vector built from primitive values ({@code range}, {@code ofAll(int[])} and the other primitive {@code ofAll},
- * {@code filter} of those) keeps them in primitive arrays. All the arrays of a Vector have one element type, so the
- * first write of a value of another class ({@code append}, {@code prepend}, {@code update}, {@code insert} and their
- * bulk forms, through {@link #narrow(Vector)} for example) converts every element to objects: O(n). The result holds
- * objects, and later writes on it are effectively O(1) again; a write on the original primitive Vector pays the O(n)
- * again each time.
  *
  * @param <T> Component type of the Vector.
  * @author Ruslan Sennov, Pap Lőrinc
  */
 public final class Vector<T extends @Nullable Object> implements Traversable<T> {
 
-    private static final Vector<?> EMPTY = new Vector<>(BitMappedTrie.empty());
+    private static final Vector<?> EMPTY = new Vector<>(RadixVector.empty());
 
-    final BitMappedTrie<T> trie;
-    private Vector(BitMappedTrie<T> trie) { this.trie = trie; }
+    final RadixVector<T> trie;
+    private Vector(RadixVector<T> trie) { this.trie = trie; }
 
     @SuppressWarnings("ObjectEquality")
-    private Vector<T> wrap(BitMappedTrie<T> trie) {
+    private Vector<T> wrap(RadixVector<T> trie) {
         return (trie == this.trie)
                ? this
                : ofAll(trie);
     }
 
-    private static <T extends @Nullable Object> Vector<T> ofAll(BitMappedTrie<T> trie) {
+    private static <T extends @Nullable Object> Vector<T> ofAll(RadixVector<T> trie) {
         return (trie.length() == 0)
                ? empty()
                : new Vector<>(trie);
+    }
+
+    /* the elements of an iterable that can be traversed again, as a tree: a Vector's own, or a new one. Concatenating
+     * two trees works by whole arrays, which an iterable of any other kind would not allow */
+    private static <T extends @Nullable Object> RadixVector<T> sizedTree(Iterable<? extends T> iterable) {
+        final RadixVector<T> tree = treeOf(iterable);
+        return (tree != null) ? tree : Vector.<T> ofAll(iterable).trie;
+    }
+
+    /* the tree of a Vector, or of the Vector behind a java.util.List view; null for any other iterable */
+    @SuppressWarnings("unchecked")
+    private static <T extends @Nullable Object> @Nullable RadixVector<T> treeOf(Iterable<? extends T> iterable) {
+        if (iterable instanceof Vector<?> vector) {
+            return (RadixVector<T>) vector.trie;
+        } else if (JavaConverters.underlying(iterable) instanceof Vector<?> vector) {
+            return (RadixVector<T>) vector.trie;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -91,20 +104,18 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns a new {@link Builder}: the cheapest way to build a Vector element by element or from a source of unknown
      * size. There is no full-size intermediate buffer: elements go into 32-wide leaf arrays that the resulting Vector
-     * uses as they are, and only a partial final leaf is trimmed once.
+     * uses as they are, and only the arrays cut at the end are trimmed, once.
      *
      * @param <T> Component type of the Vector.
      * @return an empty builder
      */
     public static <T extends @Nullable Object> Builder<T> newBuilder() {
-        return new Builder<>(BitMappedTrie.BRANCHING_FACTOR);
+        return new Builder<>();
     }
 
     /**
-     * Returns a new {@link Builder} for a Vector of about {@code sizeHint} elements. The hint is not a limit. A hint of
-     * {@code 32} or fewer pre-sizes the first leaf, so a Vector of exactly that many elements is built without any
-     * array copy (a smaller result still trims the leaf once); a larger hint currently changes nothing and the builder
-     * costs the same as with {@link #newBuilder()}.
+     * Returns a new {@link Builder} for a Vector of about {@code sizeHint} elements. The hint is not a limit, and it
+     * currently changes nothing: the builder costs the same as with {@link #newBuilder()}.
      *
      * @param sizeHint the expected number of elements, {@code >= 0}
      * @param <T>      Component type of the Vector.
@@ -115,7 +126,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (sizeHint < 0) {
             throw new IllegalArgumentException("sizeHint must not be negative: " + sizeHint);
         }
-        return new Builder<>(Math.max(1, Math.min(sizeHint, BitMappedTrie.BRANCHING_FACTOR)));
+        return new Builder<>();
     }
 
     /**
@@ -138,7 +149,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return A new Vector instance containing the given element
      */
     public static <T extends @Nullable Object> Vector<T> of(T element) {
-        return ofAll(BitMappedTrie.ofAll(new Object[]{element}));
+        return new Vector<>(RadixVector.of(element));
     }
 
     /**
@@ -153,7 +164,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     @SuppressWarnings("varargs")
     public static <T extends @Nullable Object> Vector<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        return ofAll(RadixVector.<T> ofAll(elements));
     }
 
     /**
@@ -227,9 +238,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return (Vector<T>) underlying;
         }
         if (com.guizmaii.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
-            // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then grouped into
-            // leaves, is cheaper than element-wise adds; the builder pays off for one-shot and unsized sources only
-            return ofAll(BitMappedTrie.ofAll(withSize(iterable).toArray()));
+            // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then whole-leaf
+            // copies into the tree, is cheaper than element-wise adds; the builder pays off for one-shot and unsized
+            // sources only
+            return ofAll(RadixVector.<T> ofAll(withSize(iterable).toArray()));
         }
         return Vector.<T> newBuilder().addAll(iterable).result();
     }
@@ -257,7 +269,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Boolean> ofAll(boolean ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Boolean> builder = newBuilder();
+        for (boolean element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -269,7 +285,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Byte> ofAll(byte ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Byte> builder = newBuilder();
+        for (byte element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -281,7 +301,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Character> ofAll(char ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Character> builder = newBuilder();
+        for (char element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -293,7 +317,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Double> ofAll(double ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Double> builder = newBuilder();
+        for (double element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -305,7 +333,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Float> ofAll(float ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Float> builder = newBuilder();
+        for (float element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -317,7 +349,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Integer> ofAll(int ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Integer> builder = newBuilder();
+        for (int element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -329,7 +365,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Long> ofAll(long ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Long> builder = newBuilder();
+        for (long element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -341,7 +381,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Short> ofAll(short ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(BitMappedTrie.ofAll(elements));
+        final Builder<Short> builder = newBuilder();
+        for (short element : elements) {
+            builder.add(element);
+        }
+        return builder.result();
     }
 
     /**
@@ -361,7 +405,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of char values as specified or the empty range if {@code from >= toExclusive}
      */
     public static Vector<Character> range(char from, char toExclusive) {
-        return ofAll(ArrayType.<char[]> asPrimitives(char.class, Iterator.range(from, toExclusive)));
+        return ofAll(Iterator.range(from, toExclusive));
     }
 
     /**
@@ -387,7 +431,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Character> rangeBy(char from, char toExclusive, int step) {
-        return ofAll(ArrayType.<char[]> asPrimitives(char.class, Iterator.rangeBy(from, toExclusive, step)));
+        return ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
@@ -413,7 +457,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Double> rangeBy(double from, double toExclusive, double step) {
-        return ofAll(ArrayType.<double[]> asPrimitives(double.class, Iterator.rangeBy(from, toExclusive, step)));
+        return ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
@@ -433,7 +477,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of int values as specified or the empty range if {@code from >= toExclusive}
      */
     public static Vector<Integer> range(int from, int toExclusive) {
-        return ofAll(ArrayType.<int[]> asPrimitives(int.class, Iterator.range(from, toExclusive)));
+        return ofAll(Iterator.range(from, toExclusive));
     }
 
     /**
@@ -459,7 +503,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Integer> rangeBy(int from, int toExclusive, int step) {
-        return ofAll(ArrayType.<int[]> asPrimitives(int.class, Iterator.rangeBy(from, toExclusive, step)));
+        return ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
@@ -479,7 +523,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of long values as specified or the empty range if {@code from >= toExclusive}
      */
     public static Vector<Long> range(long from, long toExclusive) {
-        return ofAll(ArrayType.<long[]> asPrimitives(long.class, Iterator.range(from, toExclusive)));
+        return ofAll(Iterator.range(from, toExclusive));
     }
 
     /**
@@ -505,7 +549,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Long> rangeBy(long from, long toExclusive, long step) {
-        return ofAll(ArrayType.<long[]> asPrimitives(long.class, Iterator.rangeBy(from, toExclusive, step)));
+        return ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
@@ -525,7 +569,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of char values as specified or the empty range if {@code from > toInclusive}
      */
     public static Vector<Character> rangeClosed(char from, char toInclusive) {
-        return ofAll(ArrayType.<char[]> asPrimitives(char.class, Iterator.rangeClosed(from, toInclusive)));
+        return ofAll(Iterator.rangeClosed(from, toInclusive));
     }
 
     /**
@@ -551,7 +595,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Character> rangeClosedBy(char from, char toInclusive, int step) {
-        return ofAll(ArrayType.<char[]> asPrimitives(char.class, Iterator.rangeClosedBy(from, toInclusive, step)));
+        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
@@ -577,7 +621,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Double> rangeClosedBy(double from, double toInclusive, double step) {
-        return ofAll(ArrayType.<double[]> asPrimitives(double.class, Iterator.rangeClosedBy(from, toInclusive, step)));
+        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
@@ -597,7 +641,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of int values as specified or the empty range if {@code from > toInclusive}
      */
     public static Vector<Integer> rangeClosed(int from, int toInclusive) {
-        return ofAll(ArrayType.<int[]> asPrimitives(int.class, Iterator.rangeClosed(from, toInclusive)));
+        return ofAll(Iterator.rangeClosed(from, toInclusive));
     }
 
     /**
@@ -623,7 +667,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Integer> rangeClosedBy(int from, int toInclusive, int step) {
-        return ofAll(ArrayType.<int[]> asPrimitives(int.class, Iterator.rangeClosedBy(from, toInclusive, step)));
+        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
@@ -643,7 +687,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of long values as specified or the empty range if {@code from > toInclusive}
      */
     public static Vector<Long> rangeClosed(long from, long toInclusive) {
-        return ofAll(ArrayType.<long[]> asPrimitives(long.class, Iterator.rangeClosed(from, toInclusive)));
+        return ofAll(Iterator.rangeClosed(from, toInclusive));
     }
 
     /**
@@ -669,7 +713,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Long> rangeClosedBy(long from, long toInclusive, long step) {
-        return ofAll(ArrayType.<long[]> asPrimitives(long.class, Iterator.rangeClosedBy(from, toInclusive, step)));
+        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
@@ -798,28 +842,28 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     // -- the sequence API. Vector implements only Traversable and declares every sequence method itself,
     // with Vector return types; every positional method states its cost.
-    // "Effectively O(1)" means O(log32 n): a trie access or a path copy of at most six nodes.
+    // "Effectively O(1)" means O(log32 n): at most six array reads, or a copy of at most six arrays of 32 entries.
 
     /**
      * Appends an element.
      * <p>
-     * Complexity: effectively O(1): copies a few small arrays of 32 elements, not the Vector. On a Vector of primitive
-     * values, a value of another class first converts every element: O(n), paid again at each such write on the same
-     * Vector (see the class documentation).
+     * Complexity: effectively O(1): the last array, at most 32 elements, is copied; once every 32 appends, a few
+     * arrays above it are copied too.
      *
      * @param element the element to append
      * @return a new Vector ending with {@code element}
      * @throws NullPointerException if {@code element} is null
      */
-    public Vector<T> append(T element) { return appendAll(com.guizmaii.zazr.collection.List.of(element)); }
+    public Vector<T> append(T element) {
+        return new Vector<>(trie.appended(Objects.requireNonNull(element, "Vector: element is null")));
+    }
 
     /**
      * Appends all elements of the given iterable, in iteration order.
      * <p>
-     * Complexity: O(m) for m appended elements, even when this Vector is much shorter than the argument; the elements
-     * of this Vector are shared, not copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which is
-     * returned as is. On a Vector of primitive values, a value of another class first converts every element: O(n),
-     * paid again at each such write on the same Vector (see the class documentation).
+     * Complexity: O(m) for m appended elements; O(min(n, m)) when {@code iterable} is a Vector: the longer side is
+     * shared and only the shorter one is copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which
+     * is returned as is.
      *
      * @param iterable the elements to append
      * @return a new Vector ending with the given elements, or this Vector if there are none
@@ -832,14 +876,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
         if (!com.guizmaii.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
             // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with the
-            // builder, which also answers whether there is anything to append, then appended by path copy
+            // builder, which also answers whether there is anything to append, then appended array by array
             final Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : appendAll(elements);
         }
-        if (com.guizmaii.zazr.collection.internal.Collections.isEmpty(iterable)) {
-            return this;
-        }
-        return new Vector<>(trie.appendAll(iterable));
+        final RadixVector<T> suffix = sizedTree(iterable);
+        return suffix.isEmpty() ? this : new Vector<>(trie.appendedAll(suffix));
     }
 
     /**
@@ -1018,8 +1060,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Returns a new {@code Vector} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1071,8 +1113,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Returns a new {@code Vector} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1143,9 +1185,23 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     public Vector<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        // stays on the trie, not the builder: the flat-array filter keeps primitive leaves unboxed and, measured, is
-        // 2x faster than the builder at 1 000 elements and equal at 100 000 (the JIT likes the branch-free bulk copies)
-        return wrap(trie.filter(predicate));
+        final java.util.Iterator<T> elements = trie.iterator();
+        int kept = 0;
+        while (elements.hasNext() && predicate.test(elements.next())) {
+            kept++;
+        }
+        if (kept == size()) {
+            return this;
+        }
+        // the elements before the first rejected one are a prefix of this Vector: the builder starts from its arrays
+        final VectorBuilder<T> builder = RadixVector.<T> newBuilder().addAll(trie.take(kept));
+        while (elements.hasNext()) {
+            final T element = elements.next();
+            if (predicate.test(element)) {
+                builder.add(element);
+            }
+        }
+        return ofAll(builder.result());
     }
 
     public Vector<T> reject(Predicate<? super T> predicate) {
@@ -1156,12 +1212,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <U extends @Nullable Object> Vector<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         final Builder<U> builder = newBuilder();
-        trie.<Object> visit((index, leaf, start, end) -> {
-            for (int i = start; i < end; i++) {
-                builder.addAll(mapper.apply(trie.type.getAt(leaf, i)));
-            }
-            return index + end - start;
-        });
+        trie.forEach(element -> builder.addAll(mapper.apply(element)));
         return builder.result();
     }
 
@@ -1193,7 +1244,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: effectively O(1): at most six array lookups, whatever the size.
+     * Complexity: effectively O(1): at most six array reads, whatever the size; one for the first and the last 32
+     * elements.
      *
      * @param index a position, {@code 0 <= index < size()}
      * @return the element at that position
@@ -1211,14 +1263,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns the first element of this non-empty {@code Vector}.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: O(1): the first elements are kept apart, in their own array.
      *
      * @return the first element
      * @throws NoSuchElementException if this {@code Vector} is empty
      */
     public T head() {
         if (nonEmpty()) {
-            return get(0);
+            return trie.head();
         } else {
             throw new NoSuchElementException("head of empty Vector");
         }
@@ -1404,15 +1456,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the last array, at most 32 elements, is copied without its last element; the few
+     * arrays above it change only when it held one element.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this Vector is empty
      */
     public Vector<T> init() {
         if (nonEmpty()) {
-            return dropRight(1);
+            return wrap(trie.init());
         } else {
             throw new UnsupportedOperationException("init of empty Vector");
         }
@@ -1433,8 +1485,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Inserts an element at {@code index}; the elements from that position on shift right by one.
      * <p>
      * Complexity: O(min(i, n - i)): the elements on the shorter side of i are copied, those on the longer side are
-     * shared. On a Vector of primitive values, a value of another class first converts every element: O(n), paid
-     * again at each such write on the same Vector (see the class documentation).
+     * shared.
      *
      * @param index   a position, {@code 0 <= index <= size()}
      * @param element the element to insert
@@ -1449,8 +1500,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * right.
      * <p>
      * Complexity: O(m + min(i, n - i)) for m inserted elements: the elements on the shorter side of i are copied,
-     * those on the longer side are shared. On a Vector of primitive values, a value of another class first converts
-     * every element: O(n), paid again at each such write on the same Vector (see the class documentation).
+     * those on the longer side are shared.
      *
      * @param index    a position, {@code 0 <= index <= size()}
      * @param elements the elements to insert
@@ -1515,7 +1565,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns the last element of this Vector.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: O(1): the last elements are kept apart, in their own array.
      *
      * @return the last element
      * @throws NoSuchElementException if this Vector is empty
@@ -1524,7 +1574,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             throw new NoSuchElementException("last of empty Vector");
         }
-        return get(size() - 1);
+        return trie.last();
     }
 
     /**
@@ -1702,32 +1752,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     public <U extends @Nullable Object> Vector<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        if (trie.hasObjectLeaves()) {
-            // measured (3 forks, two independent runs): on Object[] receivers the flat-array map is on par with the
-            // builder at 100 000 elements and 1.2x faster at 1 000, so it keeps the trie's path
-            return ofAll(trie.map(mapper));
-        }
-        // a primitive-backed receiver (Vector.range, ofAll(int[])): the builder is 1.5x faster at 100 000 (351 -> 227 µs)
-        final Builder<U> builder = newBuilder(size());
-        trie.<Object> visit((index, leaf, start, end) -> {
-            builder.addMapped(trie.type, leaf, start, end, mapper);
-            return index + end - start;
-        });
-        return builder.result();
+        // the same shape, array by array: no builder
+        return ofAll(trie.map(mapper));
     }
 
     public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // one pass over the leaves straight into the builder, like flatMap: no intermediate collection
         final Builder<U> builder = newBuilder();
-        trie.<Object> visit((index, leaf, start, end) -> {
-            for (int i = start; i < end; i++) {
-                final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(trie.type.getAt(leaf, i)), "Vector.collect: mapper returned null");
-                if (collected.isDefined()) {
-                    builder.add(collected.get());
-                }
+        trie.forEach(element -> {
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(element), "Vector.collect: mapper returned null");
+            if (collected.isDefined()) {
+                builder.add(collected.get());
             }
-            return index + end - start;
         });
         return builder.result();
     }
@@ -1767,8 +1804,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends copies of {@code element} until the Vector has {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements appended. On a Vector of primitive values, a value of another class first
-     * converts every element: O(n), paid again at each such write on the same Vector (see the class documentation).
+     * Complexity: O(k) for the k elements appended.
      *
      * @param length  the target length
      * @param element the padding element
@@ -1786,8 +1822,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends copies of {@code element} until the Vector has {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements prepended. On a Vector of primitive values, a value of another class first
-     * converts every element: O(n), paid again at each such write on the same Vector (see the class documentation).
+     * Complexity: O(k) for the k elements prepended.
      *
      * @param length  the target length
      * @param element the padding element
@@ -1807,8 +1842,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Replaces the {@code replaced} elements from {@code from} on by the elements of {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0; a {@code from} beyond the end appends.
      * <p>
-     * Complexity: O(n + m) for m elements of {@code that}: the elements before {@code from} are shared, and only
-     * {@code that} and the elements after the replaced ones are copied, so a patch near the end is O(m).
+     * Complexity: O(n + m) for m elements of {@code that}: {@code that} is copied, and the rest is joined as
+     * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter side. A patch near either end is O(m) plus
+     * a few small arrays.
      *
      * @param from     the first position to replace
      * @param that     the replacement elements
@@ -1917,23 +1953,23 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends an element.
      * <p>
-     * Complexity: effectively O(1): copies a few small arrays of 32 elements, not the Vector. On a Vector of primitive
-     * values, a value of another class first converts every element: O(n), paid again at each such write on the same
-     * Vector (see the class documentation).
+     * Complexity: effectively O(1): the first array, at most 32 elements, is copied; once every 32 prepends, a few
+     * arrays above it are copied too.
      *
      * @param element the element to prepend
      * @return a new Vector starting with {@code element}
      * @throws NullPointerException if {@code element} is null
      */
-    public Vector<T> prepend(T element) { return prependAll(com.guizmaii.zazr.collection.List.of(element)); }
+    public Vector<T> prepend(T element) {
+        return new Vector<>(trie.prepended(Objects.requireNonNull(element, "Vector: element is null")));
+    }
 
     /**
      * Prepends all elements of the given iterable, keeping their order.
      * <p>
-     * Complexity: O(m) for m prepended elements, even when this Vector is much shorter than the argument; the elements
-     * of this Vector are shared, not copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which is
-     * returned as is. On a Vector of primitive values, a value of another class first converts every element: O(n),
-     * paid again at each such write on the same Vector (see the class documentation).
+     * Complexity: O(m) for m prepended elements; O(min(n, m)) when {@code iterable} is a Vector: the longer side is
+     * shared and only the shorter one is copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which
+     * is returned as is.
      *
      * @param iterable the elements to prepend
      * @return a new Vector starting with the given elements, or this Vector if there are none
@@ -1949,10 +1985,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             final Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : prependAll(elements);
         }
-        if (com.guizmaii.zazr.collection.internal.Collections.isEmpty(iterable)) {
-            return this;
-        }
-        return new Vector<>(trie.prependAll(iterable));
+        final RadixVector<T> prefix = sizedTree(iterable);
+        return prefix.isEmpty() ? this : new Vector<>(trie.prependedAll(prefix));
     }
 
     /**
@@ -2160,8 +2194,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Rotates the elements {@code n} positions to the left: {@code Vector(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code Vector(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(k), where k is the distance modulo the size: the first k elements are copied to the end, the
-     * others are shared. A negative distance can cost O(n): {@code rotateLeft(-1)} copies all the elements but one.
+     * Complexity: O(min(k, n - k)), where k is the distance modulo the size: the two parts are joined as
+     * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter one.
      *
      * @param n the distance
      * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
@@ -2178,8 +2212,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Rotates the elements {@code n} positions to the right: {@code Vector(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Vector(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n - k), where k is the distance modulo the size: the last k elements are shared and the n - k
-     * elements before them are copied after them, so {@code rotateRight(1)} is O(n).
+     * Complexity: O(min(k, n - k)), where k is the distance modulo the size: the two parts are joined as
+     * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter one.
      *
      * @param n the distance
      * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
@@ -2311,21 +2345,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * clamped, and an empty or reversed range gives the empty Vector: {@code Vector(1, 2).slice(-10, 10)} is the
      * whole Vector, {@code slice(1, 0)} is empty. {@link #subSequence(int, int)} throws instead of clamping.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param beginIndex the first position (inclusive)
      * @param endIndex   the last position (exclusive)
      * @return the slice; this Vector when it covers everything
      */
     public Vector<T> slice(int beginIndex, int endIndex) {
-        if ((beginIndex >= endIndex) || (beginIndex >= size()) || isEmpty()) {
-            return empty();
-        } else if ((beginIndex <= 0) && (endIndex >= size())) {
-            return this;
-        } else {
-            return take(endIndex).drop(beginIndex);
-        }
+        return wrap(trie.slice(beginIndex, endIndex));
     }
 
     /**
@@ -2561,15 +2589,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns a new {@code Vector} without its first element.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the first array, at most 32 elements, is copied without its first element; the
+     * few arrays above it change only when it held one element.
      *
      * @return a new {@code Vector} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Vector} is empty
      */
     public Vector<T> tail() {
         if (nonEmpty()) {
-            return drop(1);
+            return wrap(trie.tail());
         } else {
             throw new UnsupportedOperationException("tail of empty Vector");
         }
@@ -2589,8 +2617,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to take
      * @return a new {@code Vector} containing the first {@code n} elements
@@ -2642,8 +2670,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
-     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
-     * cut are copied.
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code Vector} containing the last {@code n} elements
@@ -2738,9 +2766,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index}.
      * <p>
-     * Complexity: effectively O(1): copies a few small arrays of 32 elements, not the Vector. On a Vector of primitive
-     * values, a value of another class first converts every element: O(n), paid again at each such write on the same
-     * Vector (see the class documentation).
+     * Complexity: effectively O(1): the array of 32 elements that holds it is copied, with at most five arrays above
+     * it; the rest is shared.
      *
      * @param index   a position, {@code 0 <= index < size()}
      * @param element the new element
@@ -2750,7 +2777,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> update(int index, T element) {
         if (isValid(index)) {
-            return wrap(trie.update(index, element));
+            return wrap(trie.updated(index, Objects.requireNonNull(element, "Vector.update: element is null")));
         } else {
             throw new IndexOutOfBoundsException("update(" + index + ")");
         }
@@ -2759,9 +2786,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index} by {@code updater} applied to it.
      * <p>
-     * Complexity: effectively O(1): one {@link #get(int)} and one {@link #update(int, Object)}. On a Vector of
-     * primitive values, a value of another class first converts every element: O(n), paid again at each such write on
-     * the same Vector (see the class documentation).
+     * Complexity: effectively O(1): one {@link #get(int)} and one {@link #update(int, Object)}.
      *
      * @param index   a position, {@code 0 <= index < size()}
      * @param updater computes the new element from the current one
@@ -2901,9 +2926,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * A mutable, single-use accumulator that builds a {@link Vector} element by element. Its invariant is that there is
      * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is handed
-     * to the Vector as it is (or, when the elements come from another Vector through {@link #addAll(Iterable)}, its
-     * aligned full leaves are shared instead of copied), and {@link #result()} copies only the final leaf, once, when it
-     * is partially filled. The internal nodes above the leaves are allocated as leaves complete.
+     * to the Vector as it is (or, when the elements come from another Vector through {@link #addAll(Iterable)}, that
+     * Vector's arrays are shared or copied whole instead of element by element), and {@link #result()} copies only the
+     * arrays cut at the end, once. The arrays above the leaves are allocated as leaves complete.
      * <p>
      * Not thread-safe. After {@link #result()} has been called, every method throws {@link IllegalStateException};
      * create a new builder instead.
@@ -2912,30 +2937,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static final class Builder<T extends @Nullable Object> {
 
-        private static final int WIDTH = BitMappedTrie.BRANCHING_FACTOR;
-        /* levels 1..6 above the leaves: 32^7 slots, more than any array can hold */
-        private static final int LEVELS = 7;
+        /* the width of a leaf of the tree */
+        private static final int WIDTH = 32;
 
-        /* after result(): a zero-length leaf, so that add() falls into growOrCloseLeaf(), which throws; a live leaf is never empty */
-        private static final Object[] DONE = new Object[0];
+        private final VectorBuilder<T> builder = RadixVector.newBuilder();
 
-        /* the leaf currently being filled; its capacity is WIDTH, or the size hint when that is smaller */
-        private Object[] leaf;
-        private int leafLength;
-        /* the number of elements in completed leaves (pushed or shared); size is lenRest + leafLength, as in Scala's VectorBuilder */
-        private int lenRest;
-        /* nodes[level] is the partially filled node at that level (children of nodes[level] live at level - 1);
-         * allocated on the first completed leaf, so a Vector that fits in one leaf costs one array */
-        private Object[] @Nullable [] nodes = EMPTY_NODES;
-        private int[] nodeLengths = EMPTY_NODE_LENGTHS;
-        private static final Object[] @Nullable [] EMPTY_NODES = new Object[0][];
-        private static final int[] EMPTY_NODE_LENGTHS = new int[0];
-        /* the highest level in use; 0 while everything still fits in one leaf */
-        private int depth;
-        private boolean done;
-
-        Builder(int leafCapacity) {
-            this.leaf = new Object[leafCapacity];
+        Builder() {
         }
 
         /**
@@ -2947,21 +2954,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
          * @throws NullPointerException if {@code element} is null
          */
         public Builder<T> add(T element) {
-            // the hot path is one branch and one array store: the open check lives in growOrCloseLeaf(), reached
-            // through the zero-length DONE leaf, and the size is derived, not counted. It runs before the null
-            // check so that add() on a closed builder always throws IllegalStateException, null argument or not.
-            if (leafLength == leaf.length) {
-                growOrCloseLeaf();
-            }
-            Objects.requireNonNull(element, "Vector.Builder.add: element is null");
-            leaf[leafLength++] = element;
+            builder.add(element);
             return this;
         }
 
         /**
-         * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} with {@code Object[]}
-         * leaves copies whole leaf arrays and shares aligned full ones instead of iterating; a primitive-backed Vector
-         * ({@code Vector.range}, {@code ofAll(int[])}) is boxed one element at a time.
+         * Appends all elements of the given iterable, in iteration order. Appending a {@link Vector} copies or shares
+         * its arrays whole instead of iterating.
          * <p>
          * If {@code elements} is not itself a {@code Vector} (which cannot contain a null element), it is consumed
          * one element at a time, and a null element part-way through is rejected only when reached: the builder keeps
@@ -2973,17 +2972,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
          * @throws IllegalStateException if {@link #result()} has already been called
          * @throws NullPointerException if {@code elements} is null, or if it yields a null element
          */
-        @SuppressWarnings("unchecked")
         public Builder<T> addAll(Iterable<? extends T> elements) {
-            checkOpen();
+            builder.checkOpen();
             Objects.requireNonNull(elements, "elements is null");
-            if (elements instanceof Vector<?> vector) {
-                addVector((Vector<? extends T>) vector);
-            } else {
-                for (T element : elements) {
-                    add(element);
-                }
-            }
+            final RadixVector<T> tree = treeOf(elements);
+            builder.addAll((tree == null) ? elements : tree);
             return this;
         }
 
@@ -2992,8 +2985,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public int size() {
-            checkOpen();
-            return lenRest + leafLength;
+            return builder.size();
         }
 
         /**
@@ -3003,182 +2995,26 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public Vector<T> result() {
-            checkOpen();
-            final int size = lenRest + leafLength;
-            if (size == 0) {
-                finish();
-                return empty();
-            }
-            // the current leaf is empty after a shared push (addAll of a Vector ending on a full leaf): it must not be appended
-            @Nullable Object current = (leafLength == 0)
-                                       ? null
-                                       : (leafLength == leaf.length) ? leaf : Arrays.copyOf(leaf, leafLength);
-            for (int level = 1; level <= depth; level++) {
-                Object[] node = nodes[level];
-                int nodeLength = nodeLengths[level];
-                if (node != null && nodeLength == WIDTH) {
-                    push(node, level + 1);
-                    nodes[level] = null;
-                    node = null;
-                    nodeLength = 0;
-                }
-                if (node == null) {
-                    current = (current == null) ? null : new Object[] { current };
-                } else {
-                    final Object[] combined = Arrays.copyOf(node, (current == null) ? nodeLength : nodeLength + 1);
-                    if (current != null) {
-                        combined[nodeLength] = current;
-                    }
-                    current = combined;
-                }
-            }
-            Objects.requireNonNull(current); // size > 0, so at least one leaf reached the root
-            // a root with a single child adds a level for nothing: drop it, as ofAll never produces one
-            while (depth > 0 && ((Object[]) current).length == 1) {
-                current = ((Object[]) current)[0];
-                depth--;
-            }
-            final BitMappedTrie<T> trie = BitMappedTrie.ofBuilt(current, size, depth * BitMappedTrie.BRANCHING_BASE);
-            finish();
-            return new Vector<>(trie);
-        }
-
-        private void finish() {
-            done = true;
-            leaf = DONE;
-            leafLength = 0;
-            Arrays.fill(nodes, null);
-        }
-
-        private void checkOpen() {
-            if (done) {
-                throw new IllegalStateException("result() has already been called on this Vector.Builder");
-            }
-        }
-
-        private void growOrCloseLeaf() {
-            checkOpen();
-            if (leaf.length < WIDTH) {
-                leaf = Arrays.copyOf(leaf, WIDTH);
-            } else {
-                push(leaf, 1);
-                lenRest += WIDTH;
-                leaf = new Object[WIDTH];
-                leafLength = 0;
-            }
-        }
-
-        /* appends a completed child (a full leaf or a full node) to the node at the given level, opening it if needed */
-        private void push(Object[] child, int level) {
-            if (nodes.length == 0) {
-                nodes = new Object[LEVELS][];
-                nodeLengths = new int[LEVELS];
-            }
-            Object[] node = nodes[level];
-            if (node == null) {
-                node = new Object[WIDTH];
-                nodes[level] = node;
-                depth = Math.max(depth, level);
-            } else if (nodeLengths[level] == WIDTH) {
-                push(node, level + 1);
-                node = new Object[WIDTH];
-                nodes[level] = node;
-                nodeLengths[level] = 0;
-            }
-            node[nodeLengths[level]++] = child;
-        }
-
-        /*
-         * The bulk loops below keep the leaf state in locals: a per-element add() pays for field writes and the
-         * open-check on every element, which is what separates it from writing into a flat array.
-         */
-
-        /* appends mapper(source[i]) for i in [start, end); source is a leaf read through its ArrayType (one boxing per element for a primitive leaf) */
-        <S extends @Nullable Object> void addMapped(ArrayType<S> type, Object source, int start, int end, Function<? super S, ? extends T> mapper) {
-            checkOpen();
-            Object[] leaf = this.leaf;
-            int leafLength = this.leafLength;
-            for (int i = start; i < end; i++) {
-                if (leafLength == leaf.length) {
-                    this.leafLength = leafLength;
-                    growOrCloseLeaf();
-                    leaf = this.leaf;
-                    leafLength = this.leafLength;
-                }
-                leaf[leafLength++] = Objects.requireNonNull(mapper.apply(type.getAt(source, i)), "Vector.map: element is null");
-            }
-            this.leafLength = leafLength;
+            return ofAll(builder.result());
         }
 
         /* appends n elements f(0) .. f(n - 1) */
         void addTabulated(int n, Function<? super Integer, ? extends T> f) {
-            checkOpen();
-            Object[] leaf = this.leaf;
-            int leafLength = this.leafLength;
+            builder.checkOpen();
             for (int i = 0; i < n; i++) {
-                if (leafLength == leaf.length) {
-                    this.leafLength = leafLength;
-                    growOrCloseLeaf();
-                    leaf = this.leaf;
-                    leafLength = this.leafLength;
-                }
-                leaf[leafLength++] = Objects.requireNonNull(f.apply(i), "Vector: element is null");
+                builder.add(Objects.requireNonNull(f.apply(i), "Vector: element is null"));
             }
-            this.leafLength = leafLength;
         }
 
-        /* appends the same element n times, one Arrays.fill per leaf */
+        /* appends the same element n times, one whole-leaf copy of a filled leaf at a time */
         void addRepeated(int n, T element) {
-            checkOpen();
+            builder.checkOpen();
             Objects.requireNonNull(element, "Vector.fill: element is null");
-            int remaining = n;
-            while (remaining > 0) {
-                if (leafLength == leaf.length) {
-                    growOrCloseLeaf();
-                }
-                final int count = Math.min(leaf.length - leafLength, remaining);
-                Arrays.fill(leaf, leafLength, leafLength + count, element);
-                leafLength += count;
-                remaining -= count;
-            }
-        }
-
-        private void addVector(Vector<? extends T> vector) {
-            final BitMappedTrie<? extends T> trie = vector.trie;
-            trie.<Object> visit((index, sourceLeaf, start, end) -> {
-                addLeafRange(trie.type, sourceLeaf, start, end);
-                return index + end - start;
-            });
-        }
-
-        @SuppressWarnings("unchecked")
-        private void addLeafRange(ArrayType<?> type, Object sourceLeaf, int start, int end) {
-            if (sourceLeaf instanceof Object[] source) {
-                if (leafLength == leaf.length) {
-                    // an exactly full current leaf is pushed lazily on the next write; close it now so a full source leaf can be shared
-                    growOrCloseLeaf();
-                }
-                if (leafLength == 0 && start == 0 && end == WIDTH && source.length == WIDTH) {
-                    // a full, untrimmed leaf of the source: share it, nobody mutates leaves
-                    push(source, 1);
-                    lenRest += WIDTH;
-                    return;
-                }
-                int from = start, remaining = end - start;
-                while (remaining > 0) {
-                    if (leafLength == leaf.length) {
-                        growOrCloseLeaf();
-                    }
-                    final int count = Math.min(leaf.length - leafLength, remaining);
-                    System.arraycopy(source, from, leaf, leafLength, count);
-                    leafLength += count;
-                    from += count;
-                    remaining -= count;
-                }
-            } else {
-                // a primitive leaf (int[], ...): elements are boxed one by one
-                for (int i = start; i < end; i++) {
-                    add((T) type.getAt(sourceLeaf, i));
+            if (n > 0) {
+                final Object[] leaf = new Object[Math.min(n, WIDTH)];
+                Arrays.fill(leaf, element);
+                for (int remaining = n; remaining > 0; remaining -= leaf.length) {
+                    builder.addArray(leaf, 0, Math.min(remaining, leaf.length));
                 }
             }
         }
@@ -3580,7 +3416,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: effectively O(1), as {@link #head()}.
+     * Complexity: O(1), as {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this Vector is empty
      */
@@ -3591,7 +3427,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: effectively O(1), as {@link #last()}.
+     * Complexity: O(1), as {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this Vector is empty
      */

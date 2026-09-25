@@ -207,7 +207,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         return new NonEmptyVector<>(Vector.transpose(rows).map(NonEmptyVector::new));
     }
 
-    /* a Vector cannot hold a null, so it is appended by leaf copies; anything else is checked element by element, naming this type */
+    /* a Vector cannot hold a null, so it is appended array by array; anything else is checked element by element, naming this type */
     private static <A extends @Nullable Object> Vector.Builder<A> addAll(Vector.Builder<A> builder, Iterable<? extends A> elements) {
         if (elements instanceof Vector) {
             return builder.addAll(elements);
@@ -251,7 +251,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: effectively O(1), as {@link Vector#append(Object)}, including its O(n) case on primitive values.
+     * Complexity: effectively O(1), as {@link Vector#append(Object)}.
      *
      * @param element An element
      * @return this vector followed by {@code element}
@@ -265,8 +265,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Accepts the possibly empty type and returns the non-empty one.
      * <p>
-     * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)}.
      *
      * @param elements Elements to append, possibly none
      * @return this vector followed by {@code elements}
@@ -277,8 +276,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)}.
      *
      * @param elements Elements to append
      * @return this vector followed by {@code elements}
@@ -290,8 +288,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: O(m) for m appended elements, as {@link #appendAll(NonEmptyVector)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m appended elements, as {@link #appendAll(NonEmptyVector)}.
      *
      * @param that A non-empty vector
      * @return this vector followed by {@code that}; the same as {@link #appendAll(NonEmptyVector)}
@@ -300,7 +297,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public NonEmptyVector<A> concat(NonEmptyVector<? extends A> that) { return appendAll(that); }
 
     /**
-     * Complexity: effectively O(1), as {@link Vector#prepend(Object)}, including its O(n) case on primitive values.
+     * Complexity: effectively O(1), as {@link Vector#prepend(Object)}.
      *
      * @param element An element
      * @return {@code element} followed by this vector
@@ -314,8 +311,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Accepts the possibly empty type and returns the non-empty one.
      * <p>
-     * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)}.
      *
      * @param elements Elements to prepend, possibly none
      * @return {@code elements} followed by this vector
@@ -326,8 +322,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)}.
      *
      * @param elements Elements to prepend
      * @return {@code elements} followed by this vector
@@ -486,7 +481,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: effectively O(1), as {@link Vector#update(int, Object)}, including its O(n) case on primitive values.
+     * Complexity: effectively O(1), as {@link Vector#update(int, Object)}.
      *
      * @param index   A position
      * @param element The new element
@@ -500,8 +495,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: effectively O(1), as {@link Vector#update(int, Function)},
-     * including its O(n) case on primitive values.
+     * Complexity: effectively O(1), as {@link Vector#update(int, Function)}.
      *
      * @param index   A position
      * @param updater Computes the new element from the current one
@@ -572,8 +566,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Accepts any iterable, possibly empty, and returns the non-empty type. The elements are read once.
      * <p>
-     * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)}.
      *
      * @param elements Elements to append, possibly none
      * @return this vector followed by {@code elements}
@@ -587,8 +580,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Accepts any iterable, possibly empty, and returns the non-empty type. The elements are read once.
      * <p>
-     * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)}.
      *
      * @param elements Elements to prepend, possibly none
      * @return {@code elements} followed by this vector
@@ -602,7 +594,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Inserts an element at {@code index}; the elements from that position on shift right by one.
      * <p>
-     * Complexity: O(min(i, n - i)), as {@link Vector#insert(int, Object)}, including its O(n) case on primitive values.
+     * Complexity: O(min(i, n - i)), as {@link Vector#insert(int, Object)}.
      *
      * @param index   A position, {@code 0 <= index <= size()}
      * @param element The element to insert
@@ -619,8 +611,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Inserts the elements, possibly none, at {@code index}, in iteration order; the elements from that position on
      * shift right. The elements are read once.
      * <p>
-     * Complexity: O(m + min(i, n - i)) for m inserted elements, as {@link Vector#insertAll(int, Iterable)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(m + min(i, n - i)) for m inserted elements, as {@link Vector#insertAll(int, Iterable)}.
      *
      * @param index    A position, {@code 0 <= index <= size()}
      * @param elements The elements to insert
@@ -650,8 +641,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Appends copies of {@code element} until there are {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements appended, as {@link Vector#padTo(int, Object)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(k) for the k elements appended, as {@link Vector#padTo(int, Object)}.
      *
      * @param length  The target size
      * @param element The padding element
@@ -666,8 +656,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Prepends copies of {@code element} until there are {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements prepended, as {@link Vector#leftPadTo(int, Object)},
-     * including its O(n) case on primitive values.
+     * Complexity: O(k) for the k elements prepended, as {@link Vector#leftPadTo(int, Object)}.
      *
      * @param length  The target size
      * @param element The padding element
@@ -683,8 +672,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Rotates the elements {@code n} positions to the left: {@code (1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code (3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the size.
      * <p>
-     * Complexity: O(k), where k is the distance modulo the size, as {@link Vector#rotateLeft(int)}: a negative
-     * distance can cost O(n).
+     * Complexity: O(min(k, n - k)), where k is the distance modulo the size, as {@link Vector#rotateLeft(int)}.
      *
      * @param n The distance
      * @return the rotated elements
@@ -695,8 +683,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Rotates the elements {@code n} positions to the right: {@code (1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code (4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the size.
      * <p>
-     * Complexity: O(n - k), where k is the distance modulo the size, as {@link Vector#rotateRight(int)}:
-     * {@code rotateRight(1)} is O(n).
+     * Complexity: O(min(k, n - k)), where k is the distance modulo the size, as {@link Vector#rotateRight(int)}.
      *
      * @param n The distance
      * @return the rotated elements
@@ -1419,18 +1406,18 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     // -- total: what is partial on a Vector
 
     /**
-     * Complexity: effectively O(1), as {@link Vector#head()}.
+     * Complexity: O(1), as {@link Vector#head()}.
      *
      * @return the first element
      */
-    public A head() { return vector.get(0); }
+    public A head() { return vector.head(); }
 
     /**
-     * Complexity: effectively O(1), as {@link Vector#last()}.
+     * Complexity: O(1), as {@link Vector#last()}.
      *
      * @return the last element
      */
-    public A last() { return vector.get(vector.size() - 1); }
+    public A last() { return vector.last(); }
 
     /**
      * Complexity: O(n), every element compared once.

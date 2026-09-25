@@ -90,7 +90,7 @@ val vocabulary: Map[String, Cost] = Map(
   "O(j)" -> Cost.Linear,
   "O(i + m)" -> Cost.Linear,
   "O(i + k)" -> Cost.Linear,
-  "O(n - k)" -> Cost.Linear,
+  "O(min(k, n - k))" -> Cost.Linear,
   "O(n log n)" -> Cost.Linearithmic,
   "O(m log(n + m))" -> Cost.Linearithmic,
   "O(m log n)" -> Cost.Linearithmic,

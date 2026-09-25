@@ -75,7 +75,7 @@ A loop of `append` or `put` copies part of the structure on every call. Build on
 - `Vector.newBuilder()`, and the builders of `HashMap`, `HashSet`, `TreeMap` and `TreeSet` (maps use `put` and
   `putAll`). A builder is mutable, single-use and not thread-safe: after `result()` it throws.
 - `collector()` on every collection, for `java.util.stream.Stream.collect`.
-- `ofAll(iterable)` or `ofAll(javaStream)`; `Vector.range`, `Vector.ofAll(int...)` store primitives unboxed.
+- `ofAll(iterable)` or `ofAll(javaStream)`; `Vector.range` and `Vector.ofAll(int...)` box their elements, like every other factory.
 - `map`, `flatMap`, `collect`, `filter` on an existing collection.
 
 ```java

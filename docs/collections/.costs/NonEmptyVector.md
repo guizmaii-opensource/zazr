@@ -2,17 +2,17 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `head` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.head.">effectively O(1)</abbr> | effectively O(1), as Vector.head. |
+| `head` | <abbr class="cx cx-constant" title="O(1), as Vector.head.">O(1)</abbr> | O(1), as Vector.head. |
 | `tail` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.tail.">effectively O(1)</abbr> | effectively O(1), as Vector.tail. |
-| `last` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.last.">effectively O(1)</abbr> | effectively O(1), as Vector.last. |
+| `last` | <abbr class="cx cx-constant" title="O(1), as Vector.last.">O(1)</abbr> | O(1), as Vector.last. |
 | `init` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.init.">effectively O(1)</abbr> | effectively O(1), as Vector.init. |
 | `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.get.">effectively O(1)</abbr> | effectively O(1), as Vector.get. |
-| `update` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.update, including its O(n) case on primitive values.">effectively O(1)</abbr> | effectively O(1), as Vector.update, including its O(n) case on primitive values. |
-| `prepend` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.prepend, including its O(n) case on primitive values.">effectively O(1)</abbr> | effectively O(1), as Vector.prepend, including its O(n) case on primitive values. |
-| `append` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.append, including its O(n) case on primitive values.">effectively O(1)</abbr> | effectively O(1), as Vector.append, including its O(n) case on primitive values. |
-| `prependAll` | <abbr class="cx cx-linear" title="O(m) for m prepended elements, as Vector.prependAll, including its O(n) case on primitive values.">O(m)</abbr> | O(m) for m prepended elements, as Vector.prependAll, including its O(n) case on primitive values. |
-| `appendAll` | <abbr class="cx cx-linear" title="O(m) for m appended elements, as Vector.appendAll, including its O(n) case on primitive values.">O(m)</abbr> | O(m) for m appended elements, as Vector.appendAll, including its O(n) case on primitive values. |
-| `insert` | <abbr class="cx cx-linear" title="O(min(i, n - i)), as Vector.insert, including its O(n) case on primitive values.">O(min(i, n - i))</abbr> | O(min(i, n - i)), as Vector.insert, including its O(n) case on primitive values. |
+| `update` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.update.">effectively O(1)</abbr> | effectively O(1), as Vector.update. |
+| `prepend` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.prepend.">effectively O(1)</abbr> | effectively O(1), as Vector.prepend. |
+| `append` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.append.">effectively O(1)</abbr> | effectively O(1), as Vector.append. |
+| `prependAll` | <abbr class="cx cx-linear" title="O(m) for m prepended elements, as Vector.prependAll.">O(m)</abbr> | O(m) for m prepended elements, as Vector.prependAll. |
+| `appendAll` | <abbr class="cx cx-linear" title="O(m) for m appended elements, as Vector.appendAll.">O(m)</abbr> | O(m) for m appended elements, as Vector.appendAll. |
+| `insert` | <abbr class="cx cx-linear" title="O(min(i, n - i)), as Vector.insert.">O(min(i, n - i))</abbr> | O(min(i, n - i)), as Vector.insert. |
 | `removeAt` | <abbr class="cx cx-linear" title="O(min(i, n - i)), as Vector.removeAt.">O(min(i, n - i))</abbr> | O(min(i, n - i)), as Vector.removeAt. |
 | `take` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.take.">effectively O(1)</abbr> | effectively O(1), as Vector.take. |
 | `drop` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as Vector.drop.">effectively O(1)</abbr> | effectively O(1), as Vector.drop. |
@@ -29,4 +29,4 @@
 | `sliding(int, int)` | <abbr class="cx cx-linear" title="O(n / step), as Vector.sliding: each window shares its elements with this vector.">O(n / step)</abbr> | O(n / step), as Vector.sliding: each window shares its elements with this vector. |
 | `grouped` | <abbr class="cx cx-linear" title="O(n / size), as Vector.grouped: each block shares its elements with this vector.">O(n / size)</abbr> | O(n / size), as Vector.grouped: each block shares its elements with this vector. |
 | `distinct` | <abbr class="cx cx-linear" title="O(n), as Vector.distinct.">O(n)</abbr> | O(n), as Vector.distinct. |
-| `concat` | <abbr class="cx cx-linear" title="O(m) for m appended elements, as appendAll, including its O(n) case on primitive values.">O(m)</abbr> | O(m) for m appended elements, as appendAll, including its O(n) case on primitive values. |
+| `concat` | <abbr class="cx cx-linear" title="O(m) for m appended elements, as appendAll.">O(m)</abbr> | O(m) for m appended elements, as appendAll. |
