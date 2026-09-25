@@ -33,6 +33,8 @@ make coverage                                 # test coverage report, in zazr-te
 and `zazr-test` together. `make coverage` fails below either figure, and so does the CI `coverage` job. The threshold
 is on the module as a whole, not per file: JaCoCo never marks a line covered when the method it calls throws, such
 as `return sneakyThrow(t);`, so a small class with such a line can stay below 95 % however well it is tested.
+On a pull request, the `coverage` job posts the summary of `make coverage-summary` as a comment and edits that
+same comment on every push.
 
 Sources under `src-gen` are generated from `generator/Generator.scala` on every build. Change the generator, never
 the generated files.

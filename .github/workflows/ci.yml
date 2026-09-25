@@ -94,6 +94,10 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     name: Test coverage (JaCoCo)
+    # contents: read for the checkout; pull-requests: write for the coverage comment on the pull request
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
       - name: Setup scala-cli
@@ -110,7 +114,33 @@ jobs:
       # also when the threshold check fails, to show which figure is below it
       - name: Coverage summary
         if: success() || failure()
-        run: make -s coverage-summary >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          make -s coverage-summary > coverage-summary.md
+          cat coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
+      # One comment per pull request, found by its marker and edited in place on every push. With gh, which the runner
+      # already has, rather than a third-party action. Skipped for a pull request from a fork or from Dependabot, whose
+      # token cannot write.
+      - name: Coverage comment on the pull request
+        if: >-
+          (success() || failure())
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && github.actor != 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          marker='<!-- zazr-coverage -->'
+          body="$(printf '%s\n' "$marker"; cat coverage-summary.md; printf '\n_Commit %s._\n' "$SHA")"
+          id="$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)"
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -f body="$body" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$body" > /dev/null
+          fi
       - name: Upload the HTML report
         if: success() || failure()
         uses: actions/upload-artifact@v7
