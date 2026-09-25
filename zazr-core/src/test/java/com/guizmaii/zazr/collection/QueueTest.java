@@ -6078,4 +6078,69 @@ public class QueueTest extends AbstractTraversableTest {
             assertThatNullPointerException().isThrownBy(() -> Queue.of(1).zipWith(List.of(1), null)).withMessage("mapper is null");
         }
     }
+
+    // -- rebalancing between the front and the rear
+
+    @Nested
+    class RebalancingTests {
+
+        @Test
+        public void shouldTakeInitFromEitherEnd() {
+            for (int n = 1; n <= 9; n++) {
+                Queue<Integer> queue = Queue.ofAll(List.range(0, n));
+                for (int size = n; size > 0; size--) {
+                    assertThat(queue.toList()).isEqualTo(List.range(0, size));
+                    assertThat(queue.last()).isEqualTo(size - 1);
+                    queue = queue.init();
+                }
+                assertThat(queue).isSameAs(Queue.empty());
+            }
+            // a front of one element and a rear
+            assertThat(Queue.of(0).enqueue(1, 2).init().toList()).isEqualTo(List.of(0, 1));
+            assertThatThrownBy(() -> Queue.empty().init()).isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        public void shouldAgreeWithVectorOverRandomOperations() {
+            final java.util.Random random = new java.util.Random(93);
+            for (int run = 0; run < 200; run++) {
+                Queue<Integer> queue = Queue.empty();
+                Vector<Integer> model = Vector.empty();
+                // an older version kept and used again later
+                Queue<Integer> older = queue;
+                Vector<Integer> olderModel = model;
+                for (int step = 0; step < 60; step++) {
+                    final int element = random.nextInt(1000);
+                    switch (random.nextInt(9)) {
+                        case 0 -> { queue = queue.enqueue(element); model = model.append(element); }
+                        case 1 -> { queue = queue.append(element); model = model.append(element); }
+                        case 2 -> { queue = queue.prepend(element); model = model.prepend(element); }
+                        case 3 -> { queue = queue.enqueueAll(List.of(element, element + 1)); model = model.appendAll(List.of(element, element + 1)); }
+                        case 4 -> { if (!model.isEmpty()) { queue = queue.tail(); model = model.tail(); } }
+                        case 5 -> { if (!model.isEmpty()) { queue = queue.init(); model = model.init(); } }
+                        case 6 -> {
+                            if (!model.isEmpty()) {
+                                final Tuple2<Integer, Queue<Integer>> dequeued = queue.dequeue();
+                                assertThat(dequeued._1()).isEqualTo(model.head());
+                                queue = dequeued._2();
+                                model = model.tail();
+                            }
+                        }
+                        case 7 -> { older = queue; olderModel = model; }
+                        default -> { queue = older; model = olderModel; }
+                    }
+                    assertThat(queue.toList().toVector()).isEqualTo(model);
+                    assertThat(queue.size()).isEqualTo(model.size());
+                    assertThat(queue).isEqualTo(Queue.ofAll(model));
+                    assertThat(queue.hashCode()).isEqualTo(Queue.ofAll(model).hashCode());
+                    if (!model.isEmpty()) {
+                        assertThat(queue.head()).isEqualTo(model.head());
+                        assertThat(queue.last()).isEqualTo(model.last());
+                        final int index = random.nextInt(model.size());
+                        assertThat(queue.get(index)).isEqualTo(model.get(index));
+                    }
+                }
+            }
+        }
+    }
 }

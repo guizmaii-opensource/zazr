@@ -109,4 +109,18 @@ public class LengthComplexityTest {
         });
     }
 
+    @Test
+    public void shouldTakeChainedInitsOfAQueueFromTheRear() {
+        // K chained init() calls on a Queue whose rear is empty: one split of the front, then O(1) each; far past the
+        // bound when each call copies the front
+        assertTimeoutPreemptively(BOUND, () -> {
+            Queue<Integer> queue = Queue.ofAll(List.range(0, N));
+            for (int i = 0; i < K; i++) {
+                queue = queue.init();
+            }
+            assertThat(queue.length()).isEqualTo(N - K);
+            assertThat(queue.last()).isEqualTo(N - K - 1);
+        });
+    }
+
 }

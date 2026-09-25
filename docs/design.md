@@ -1012,6 +1012,18 @@ and unable to drift:
   - `Queue`: `startsWith`, `zip`/`zipWith`, `prefixLength` and `segmentLength` copied the whole Queue into a `List`
     first. Fixed: they walk the front, then the rear, reversed only when the walk reaches it; their notes say that a
     walk reaching the elements added at the back since the last rebalancing pays O(n) for that reversal.
+  - `Queue.init()` copied the whole front (`front.init()`) on every call once the rear was empty, and the result
+    still had an empty rear, so a chain of k calls cost O(k * n). Fixed without changing the structure: when the rear
+    is empty, `init()` splits the front in two in O(n), the second half without its last element becoming the rear,
+    so the next calls take from the rear in O(1) (the mirror of `tail()` reversing the rear onto an empty front).
+  - Documented, not fixed: the banker's queue is amortised over a chain of calls, each on the result of the previous
+    one. A Queue is persistent, so an older version can be used again, and `tail()`/`dequeue()` on a Queue whose
+    front holds one element, or `init()` on one whose rear is empty, pays the O(n) rebalancing again on every call on
+    that same version. The class javadoc and the notes of the three methods say so. A structure without that caveat
+    exists: Okasaki's real-time queue (*Purely Functional Data Structures*, 7.2) spreads the reversal over the
+    following operations with a lazy, memoised rotation, so every operation is O(1) in the worst case, older versions
+    included, at the cost of a lazy list and a schedule per Queue. It is a follow-up if a workload needs it; this
+    change keeps the two-list representation.
 
 Which concrete collections survive (decided):
 
