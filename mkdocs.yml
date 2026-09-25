@@ -3,7 +3,7 @@ exclude_docs: |
   design.md
 
 site_name: Zazr
-site_url: https://guizmaii-opensource.github.io/zazr/
+site_url: https://zazr.dev/
 site_description: >-
   Modern Functional Programming for Java 25+. Inspired by modern Scala, ZIO, and zio-prelude.
 repo_url: https://github.com/guizmaii-opensource/zazr

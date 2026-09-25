@@ -94,7 +94,7 @@ $(DOCS_VENV)/.installed: requirements-docs.txt
 site: $(DOCS_VENV)/.installed ## build the website into site/ (mkdocs build --strict: fails on a broken link)
 	$(DOCS_VENV)/bin/mkdocs build --strict
 
-site-serve: $(DOCS_VENV)/.installed ## preview the website at http://127.0.0.1:8000/zazr/ with live reload
+site-serve: $(DOCS_VENV)/.installed ## preview the website at http://127.0.0.1:8000/ with live reload
 	$(DOCS_VENV)/bin/mkdocs serve --dev-addr 127.0.0.1:8000
 
 fmt: ## format the sources (spotless apply)

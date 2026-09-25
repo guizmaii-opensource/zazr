@@ -18,10 +18,10 @@
 </p>
 
 <p align="center">
-  <a href="https://guizmaii-opensource.github.io/zazr/"><b>Website</b></a> ·
-  <a href="https://guizmaii-opensource.github.io/zazr/getting-started/">Getting started</a> ·
-  <a href="https://guizmaii-opensource.github.io/zazr/collections/complexity/">Complexity</a> ·
-  <a href="https://guizmaii-opensource.github.io/zazr/principles/">Design</a>
+  <a href="https://zazr.dev/"><b>Website</b></a> ·
+  <a href="https://zazr.dev/getting-started/">Getting started</a> ·
+  <a href="https://zazr.dev/collections/complexity/">Complexity</a> ·
+  <a href="https://zazr.dev/principles/">Design</a>
 </p>
 
 > [!WARNING]
@@ -36,12 +36,12 @@ Zazr is a fork of [Vavr](https://github.com/vavr-io/vavr). It keeps Vavr's persi
 | | |
 |---|---|
 | **Names say what an operation does** | `zip`, `zipWith`, `collectAll`, `forEach`, `mapBoth`, `tap`, `catchAll`, `flip`: the name tells you the result, not which algebra it comes from. |
-| **[`zip` at arity 2 to 8](https://guizmaii-opensource.github.io/zazr/zip/)** | One static call per arity replaces `ap` and the builder ladders, and never nests a tuple inside a tuple. |
-| **[`Validation` keeps every error](https://guizmaii-opensource.github.io/zazr/validation/)** | The errors accumulate in a `NonEmptyVector`, so an invalid value always carries at least one. |
-| **[Non-empty types make partial operations total](https://guizmaii-opensource.github.io/zazr/non-empty-vector/)** | `head()`, `max`, `reduce` on a `NonEmptyVector` cannot fail, and the return types say what can become empty. |
-| **[Each collection states its cost](https://guizmaii-opensource.github.io/zazr/collections/complexity/)** | There is no `Seq` promising `get(i)` on a cons list. Every positional method documents its complexity. |
-| **[Modern Java](https://guizmaii-opensource.github.io/zazr/java-interop/)** | Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, O(1) `java.util` views through `asJava()`. |
-| **[No `null` inside](https://guizmaii-opensource.github.io/zazr/control-types/)** | `Some`, `Right`, `Success`, `Valid` and every collection reject it. Absence is an `Option`. |
+| **[`zip` at arity 2 to 8](https://zazr.dev/zip/)** | One static call per arity replaces `ap` and the builder ladders, and never nests a tuple inside a tuple. |
+| **[`Validation` keeps every error](https://zazr.dev/validation/)** | The errors accumulate in a `NonEmptyVector`, so an invalid value always carries at least one. |
+| **[Non-empty types make partial operations total](https://zazr.dev/non-empty-vector/)** | `head()`, `max`, `reduce` on a `NonEmptyVector` cannot fail, and the return types say what can become empty. |
+| **[Each collection states its cost](https://zazr.dev/collections/complexity/)** | There is no `Seq` promising `get(i)` on a cons list. Every positional method documents its complexity. |
+| **[Modern Java](https://zazr.dev/java-interop/)** | Sealed interfaces and records you can `switch` over, the JDK's functional interfaces, O(1) `java.util` views through `asJava()`. |
+| **[No `null` inside](https://zazr.dev/control-types/)** | `Some`, `Right`, `Success`, `Valid` and every collection reject it. Absence is an `Option`. |
 
 ## Installation
 
@@ -106,7 +106,7 @@ for (int i = 0; i < 1_000; i++) {
 Vector<Integer> numbers = builder.result();
 ```
 
-More in the [guide](https://guizmaii-opensource.github.io/zazr/getting-started/).
+More in the [guide](https://zazr.dev/getting-started/).
 
 ## Compared to Vavr
 
@@ -116,7 +116,7 @@ Removed: the `Match` API (use `switch` and record patterns), `Future`, `Promise`
 longer `Iterable`; each has its own conversions. Sets and maps have no positional methods, except the ordered
 ones (`TreeSet`, `TreeMap`, `LinkedHashSet`, `LinkedHashMap`).
 
-[Design](https://guizmaii-opensource.github.io/zazr/principles/) explains the ideas behind them, and the [decision log](docs/design.md) records every decision with its reasons; the [comparison page](https://guizmaii-opensource.github.io/zazr/vavr/) has the details.
+[Design](https://zazr.dev/principles/) explains the ideas behind them, and the [decision log](docs/design.md) records every decision with its reasons; the [comparison page](https://zazr.dev/vavr/) has the details.
 
 ## Building
 
