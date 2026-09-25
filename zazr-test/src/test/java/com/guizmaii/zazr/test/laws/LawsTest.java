@@ -374,7 +374,7 @@ class LawsTest {
     @Test
     void iterationOrderLawCatchesARepeatedKeyMovedToItsLastOccurrence() {
         final CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> lastOccurrence = new CollectionSubject<>(
-                Arbitrary.linkedHashMap(Arbitrary.integer(), Arbitrary.integer()), entries -> {
+                Gen.linkedHashMap(Values.integers(), Values.integers()), entries -> {
                     LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
                     for (Tuple2<Integer, Integer> entry : entries) {
                         map = map.remove(entry._1()).put(entry._1(), entry._2());
