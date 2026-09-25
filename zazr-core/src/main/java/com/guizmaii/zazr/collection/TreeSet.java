@@ -698,6 +698,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> add(T element) {
+        Objects.requireNonNull(element, "TreeSet: element is null");
         return contains(element) ? this : new TreeSet<>(tree.insert(element));
     }
 
@@ -706,6 +707,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Objects.requireNonNull(elements, "elements is null");
         RedBlackTree<T> that = tree;
         for (T element : elements) {
+            Objects.requireNonNull(element, "TreeSet: element is null");
             if (!that.contains(element)) {
                 that = that.insert(element);
             }
@@ -964,6 +966,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> replace(T currentElement, T newElement) {
+        Objects.requireNonNull(newElement, "TreeSet: element is null");
         if (tree.contains(currentElement)) {
             return new TreeSet<>(tree.delete(currentElement).insert(newElement));
         } else {
