@@ -25,11 +25,17 @@ import com.guizmaii.zazr.control.Option.Some;
 import com.guizmaii.zazr.control.Try;
 import com.guizmaii.zazr.control.Try.Failure;
 import com.guizmaii.zazr.control.Try.Success;
+import com.guizmaii.zazr.control.Using;
 import com.guizmaii.zazr.control.Validation;
 import com.guizmaii.zazr.control.Validation.Invalid;
 import com.guizmaii.zazr.control.Validation.Valid;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -572,14 +578,9 @@ public class DocsExamplesTest {
             Try<Tuple0> ran = Try.run(() -> Thread.sleep(1));
             // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
 
-            Try<String> firstLine = Try.withResources(() -> new java.io.BufferedReader(new java.io.StringReader("a\nb")),
-                java.io.BufferedReader::readLine);
-            // Success(a)
-
             assertThat(parsed).hasToString("Success(42)");
             assertThat(failed).hasToString("Failure(java.lang.NumberFormatException: For input string: \"forty-two\")");
             assertThat(ran).hasToString("Success(())");
-            assertThat(firstLine).hasToString("Success(a)");
             assertThat(Try.success(1)).hasToString("Success(1)");
             assertThatThrownBy(() -> Try.of(() -> {
                 throw new StackOverflowError();
@@ -674,6 +675,108 @@ public class DocsExamplesTest {
             assertThatThrownBy(first::get).isSameAs(first.getCause());
             // a future completed with null is a Failure of a NullPointerException
             assertThat(Try.fromCompletableFuture(java.util.concurrent.CompletableFuture.completedFuture(null)).getCause())
+                .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class UsingPage {
+
+        @Test
+        void oneResource() {
+            var firstLine = Using.of(() -> new BufferedReader(new StringReader("a\nb")), BufferedReader::readLine); // Try<String>
+            // Success(a)
+
+            Try<String> typed = firstLine;
+            assertThat(typed).hasToString("Success(a)");
+        }
+
+        @Test
+        void manyResources() {
+            var sources = Vector.of("alpha", "beta", "gamma");
+            var length = Using.manager(use -> { // Try<Integer>
+                var total = 0;
+                for (var source : sources) {
+                    var reader = use.acquire(new BufferedReader(new StringReader(source)));
+                    total += reader.readLine().length();
+                }
+                return total;
+            });
+            // Success(14), and the three readers are closed
+
+            Try<Integer> typed = length;
+            assertThat(typed).isEqualTo(Try.success(14));
+        }
+
+        @Test
+        void aValueThatIsNotAutoCloseable() {
+            var lock = new ReentrantLock();
+            var held = Using.manager(use -> { // Try<Boolean>
+                lock.lock();
+                use.acquire(lock, ReentrantLock::unlock);
+                return lock.isHeldByCurrentThread();
+            });
+            // Success(true), and the lock is released
+
+            Try<Boolean> typed = held;
+            assertThat(typed).isEqualTo(Try.success(true));
+            assertThat(lock.isLocked()).isFalse();
+        }
+
+        @Test
+        void releaseOrder() {
+            var log = new StringBuilder();
+            var result = Using.manager(use -> { // Try<String>
+                use.acquire(() -> log.append("connection closed; "));
+                use.acquire(() -> log.append("statement closed; "));
+                return "done";
+            });
+            // Success(done), and log is "statement closed; connection closed; "
+
+            Try<String> typed = result;
+            assertThat(typed).hasToString("Success(done)");
+            assertThat(log).hasToString("statement closed; connection closed; ");
+        }
+
+        @Test
+        void whichExceptionSurfaces() {
+            AutoCloseable resource = () -> {
+                throw new IllegalStateException("close failed");
+            };
+            var result = Using.<AutoCloseable, String>of(() -> resource, r -> { // Try<String>
+                throw new IOException("read failed");
+            });
+            var suppressed = result.getCause().getSuppressed(); // Throwable[]
+            // Failure(java.io.IOException: read failed), and suppressed holds the IllegalStateException
+
+            Try<String> typed = result;
+            Throwable[] typedSuppressed = suppressed;
+            assertThat(typed).hasToString("Failure(java.io.IOException: read failed)");
+            assertThat(typedSuppressed).singleElement().isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        void theManagerWorksOnlyInsideYourCode() {
+            var escaped = new AtomicReference<Using.Manager>();
+            var done = Using.manager(use -> { // Try<String>
+                escaped.set(use);
+                return "done";
+            });
+            var log = new StringBuilder();
+            var late = Try.run(() -> escaped.get().acquire(() -> log.append("released at once")));
+            // Failure(java.lang.IllegalStateException: ...), and log is "released at once"
+
+            Try<String> typedDone = done;
+            Try<Tuple0> typedLate = late;
+            assertThat(typedDone).isEqualTo(Try.success("done"));
+            assertThat(typedLate.getCause()).isInstanceOf(IllegalStateException.class);
+            assertThat(log).hasToString("released at once");
+        }
+
+        @Test
+        void nullIsAFailure() {
+            assertThat(Using.manager(use -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(Using.<AutoCloseable, String>of(() -> null, r -> "x").getCause())
                 .isInstanceOf(NullPointerException.class);
         }
     }
