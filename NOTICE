@@ -9,11 +9,11 @@ consolidated into this NOTICE file.
 Vavr was created by Daniel Dietrich and is maintained by Grzegorz Piwowarek,
 with its contributors (https://github.com/vavr-io/vavr/graphs/contributors).
 
-Parts of this product are derived from the Scala standard library
-(https://github.com/scala/scala), licensed under the Apache License,
-Version 2.0: `Using` is a port of scala.util.Using, and the red-black tree
-bulk build is a port of scala.collection.immutable.RedBlackTree. The Scala
-NOTICE reads:
+Portions of this software are derived from the Scala standard library
+(https://github.com/scala/scala), Copyright (c) 2002-2026 EPFL and
+Copyright (c) 2011-2026 Lightbend, Inc. dba Akka, licensed under the Apache
+License 2.0. Each ported class cites its Scala source in its documentation.
+The Scala NOTICE reads:
 
     Scala
     Copyright (c) 2002-2026 EPFL

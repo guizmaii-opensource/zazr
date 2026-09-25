@@ -190,14 +190,12 @@ pending: open pull requests, to fold into 0.1.0 as they merge.
 
 - PR 128 (Scala's radix-balanced vector as an internal structure): no entry; nothing changes for users until Vector
   switches to it. That later change gets an entry (cheaper prepend, tail and init).
-  It also adds the radix-balanced Vector to the Scala paragraph of NOTICE.
 - PR 134 (coverage threshold), PR 135 (incremental generator): no entry; build only.
 
 Open 0.1.0 issues that change this file if they land before the release:
 - Stream renamed LazyList: Changed > Collections.
 - zazr-test with one Gen and no Arbitrary: rewrite the zazr-test entry under Added.
-- HashMap and HashSet on CHAMP: Changed > Collections, if the behaviour or the iteration order changes. Add CHAMP to
-  the Scala paragraph of NOTICE.
+- HashMap and HashSet on CHAMP: Changed > Collections, if the behaviour or the iteration order changes.
 - NonEmptySet and NonEmptyMap: Added.
 - zipWithPrevious, zipWithNext, mapAccum, foldWhile, collectWhile, splitWhere, dedupe: Added > Collections.
 - Builders for LinkedHashMap, LinkedHashSet and List: Added > Builders.
