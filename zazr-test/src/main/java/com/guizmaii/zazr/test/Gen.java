@@ -1566,7 +1566,7 @@ public final class Gen<A> {
     // -- the Zazr collections
     //
     // Each collection generator gives one collection per pass. Its length is drawn between 0 and the current size,
-    // favouring the edges as intValue(0, size): half of the lengths are 0, 1, the size or the size minus one, so the
+    // favouring the edges as integers(0, size): half of the lengths are 0, 1, the size or the size minus one, so the
     // laws see collections as long as the size allows, not only short ones. Each element is the first value of one
     // pass of the element generator, at the current size; a filtered element generator is run again until it gives
     // one. The collection is then built along one of several paths, each reaching another internal representation.
