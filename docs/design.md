@@ -1024,6 +1024,14 @@ and unable to drift:
     following operations with a lazy, memoised rotation, so every operation is O(1) in the worst case, older versions
     included, at the cost of a lazy list and a schedule per Queue. It is a follow-up if a workload needs it; this
     change keeps the two-list representation.
+  - `LinkedHashMap`/`LinkedHashSet`: cutting the removed keys' markers off the ends of the insertion order took one
+    `tail()`/`init()` of the `Vector` per marker. Fixed: the run is found by reading and cut with one slice. Documented,
+    not fixed (the class javadoc of both types and the notes of `remove`, `replace`, `tail`, `init` and `take`): the
+    rebuild of the insertion order once the markers outnumber the entries is amortised over a chain of removals, so
+    `remove`/`replace` or a slice on an older version that is about to be rebuilt pays O(n) each time; after
+    removals, `tail`, `init`, `take` and `drop` find their cut by walking past the markers in the way, O(n) at worst.
+    Removing both would need a different order structure (an order-statistics tree keyed by insertion stamp, as
+    `TreeMap` gives), which is a follow-up if a workload needs it.
 
 Which concrete collections survive (decided):
 
