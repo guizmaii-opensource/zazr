@@ -1466,8 +1466,9 @@ unreleased).
   keeps its message; any other throwable makes the result erroneous (a `VirtualMachineError` other than
   `StackOverflowError` is rethrown); a `null` answer is erroneous. `checkAll` runs one pass at the configured size.
 - **The size grows over a run**, linearly from 0 for the first sample to the configured size for the last
-  (`size * done / (samples - 1)`), plus one for each pass in a row that gave no value. zio-test runs every sample at the same size and shrinks afterwards; without
-  shrinking, the growth is what makes the first failure a small one. `small` draws from an exponential distribution
+  (`size * done / (samples - 1)`), and doubles after each pass in a row that gave no value. zio-test runs every
+  sample at the same size and shrinks afterwards; without shrinking, the growth is what makes the first failure a
+  small one. `small` draws from an exponential distribution
   of mean size/25 and `large` uniformly, as in zio-test.
 - **`CheckConfig`**: zio-test's defaults (200 samples, size 100) plus a seed and a discard budget of 1,000 (the number
   zio-test uses for its shrink budget). The system properties `zazr.check.samples`, `zazr.check.size`,
@@ -1492,15 +1493,22 @@ unreleased).
   is the first value of one pass of the element generator, so a collection generator gives one collection per pass
   even when the element generator is finite. `zip`, `zipWith` and `flatMap` run the second generator for every value
   of the first, so two finite generators give every combination and `checkAll` checks each once.
-- **Filter with a per-draw retry and a discard budget.** When a pass of a random generator produced only rejected
-  values, `filter` runs the pass again, so a filtered random generator still gives one value per pass. A pass that
-  drew no random value would give the same values again, so a finite generator is not rerun; it only loses the
-  rejected values. After more rejected values in a row than `maxDiscards`, the filter gives its pass up, and a pass
-  without a value is followed by one at the next size (up to the configured size): the first samples run at size 0,
-  where no value may pass (a filter that rejects the empty list), and the size otherwise only grows with delivered
-  samples. More such passes in a row than `maxDiscards` make the check `Erroneous`, naming the filter; `checkAll`
-  reports a filter that gave its pass up at once. The counters are `long`s compared with the budget, so a budget of
-  `Integer.MAX_VALUE` does not wrap around. Never an endless loop.
+- **Filter with a per-draw retry and one discard budget per sample** (#163). When a pass of a random generator
+  produced only rejected values, `filter` runs the pass again, so a filtered random generator still gives one value
+  per pass. A pass that drew no random value would give the same values again, so a finite generator is not rerun; it
+  only loses the rejected values, which cost nothing. Every discard of a run spends one counter, shared by every
+  filter at every nesting level: a value rejected in a random pass, a pass without a value, an element draw without a
+  value. Past `maxDiscards`, the check ends `Erroneous`, naming the filter when the last discard was a rejection. A
+  filter gives its pass up after a sixteenth of the budget in a row, so that the run can try a larger size: the first
+  samples run at size 0, where no value may pass (a filter that rejects the empty list), and after a pass without a
+  value the next one runs at a doubled size, up to the configured size (element draws too). `checkAll` reports a
+  filter that gave its pass up at once. The counter is a `long` compared with the budget, so a budget of
+  `Integer.MAX_VALUE` does not wrap around.
+  - #163 decided one budget for the whole run. The counter starts again when the run delivers a sample instead: a
+    strict run-wide total fails filtered elements of a collection (`stringsN(100, alphaNumericChars().filter(isDigit))`
+    rejects about 500 values per string) and filters that only larger sizes pass (`integers(0, size)` filtered to
+    `x > 90`), whose samples each climb the sizes. A run makes at most `maxDiscards + 1` discards per sample, however
+    the generators nest, so at most `samples × (maxDiscards + 1)`. Never an endless loop.
 - **Edge-biased collection lengths, not zio-test's `small`.** zio-test's `listOf` draws its length with `small`, so
   most collections are short. Zazr draws the length as `integers(0, size)`: half of the lengths are 0, 1, the size or
   the size minus one. The laws then see collections past a 32-wide trie leaf at the default size, and the growing size

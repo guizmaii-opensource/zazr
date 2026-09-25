@@ -194,18 +194,18 @@ var sizes = Gen.size().runCollectN(5, CheckConfig.defaults().withSize(100)); // 
 
 `filter` keeps the values that satisfy a predicate. A random generator is run again until it gives one.
 
-When no small value can pass, such as with a filter that rejects the empty list, the check tries the next size.
+When no small value can pass, such as with a filter that rejects the empty list, the check tries a larger size.
 
-Filtering has a budget of 1,000 rejected values in a row. Past it, the filter gives the sample up and the check tries
-the next size; after 1,000 such samples in a row, the result is `Erroneous`. A predicate that rejects most values is
-better written as a `map` that builds the wanted values.
+Filtering has a budget: 1,000 discards per sample, shared by every filter of the check. A rejected value is a discard,
+and so is a try that gave no value. Past the budget, the result is `Erroneous`. A predicate that rejects most values
+is better written as a `map` that builds the wanted values.
 
 ```java
 var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
 var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
 var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
 var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
-// Erroneous: Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000, ...
+// Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
 ```
 
 ## Configuration

@@ -180,7 +180,7 @@ public class DocsTestingExamplesTest {
         var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
         var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
         var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
-        // Erroneous: Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000, ...
+        // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
 
         Gen<Integer> typedEvens = evens;
         Gen<Integer> typedAlsoEvens = alsoEvens;
@@ -192,7 +192,7 @@ public class DocsTestingExamplesTest {
         assertThat(typedImpossible).isInstanceOfSatisfying(CheckResult.Erroneous.class,
             erroneous -> assertThat(erroneous.cause())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageStartingWith("Gen.filter rejected every value it tried: 1001 values in a row, more than the discard budget of 1000, "));
+                .hasMessageStartingWith("Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; "));
     }
 
     @Test
