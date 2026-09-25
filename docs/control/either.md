@@ -1,5 +1,5 @@
 ---
-description: Either - a result or an error, right-biased. Construction, switch over Left and Right, operations, conversions and sharp edges.
+description: Either - a result or an error, right-biased. Construction, pattern matching on Left and Right, operations, conversions and sharp edges.
 ---
 
 # Either
@@ -30,9 +30,9 @@ Either<String, Integer> checked = Either.fromPredicate(-1, n -> n >= 0, () -> "n
 `fromPredicate` keeps the value as a `Right` when the test holds, and otherwise takes the `Left` from the
 `Supplier`.
 
-## `switch` over the cases
+## Pattern matching over the cases
 
-`Left` and `Right` are records, so a `switch` over them needs no `default`:
+`Left` and `Right` are records, so pattern matching with a `switch` expression needs no `default`:
 
 ```java
 Either<String, Integer> result = Either.right(42);
@@ -97,7 +97,7 @@ Validation<String, Integer> validation = missing.toValidation();
 ## Sharp edges
 
 - Neither side holds `null`: `Either.left(null)` and `Either.right(null)` throw a `NullPointerException`.
-- `get()` on a `Left` throws a `NoSuchElementException`. Prefer a `switch`, `fold` or `getOrElse`.
+- `get()` on a `Left` throws a `NoSuchElementException`. Prefer pattern matching, `fold` or `getOrElse`.
 - There is no `filter`: a rejected value needs a left value, so the method is `filterOrElse`.
 - `toTry` always takes a function, even when the left side is already a `Throwable`; pass `t -> t`.
 - `Either` stops at the first `Left`. To report every error, use [`Validation`](validation.md).

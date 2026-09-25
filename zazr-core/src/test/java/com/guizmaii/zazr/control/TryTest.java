@@ -100,6 +100,52 @@ public class TryTest {
         }
 
         @Test
+        public void shouldKeepTheFailureUnchangedWhenTheFinalizerRethrowsTheCause() {
+            final IllegalStateException original = new IllegalStateException("original");
+            final Try<Object> failure = Try.failure(original);
+            final Try<Object> result = failure.ensuring(() -> { throw original; });
+            assertThat(result).isSameAs(failure);
+            assertThat(result.getCause()).isSameAs(original);
+            assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldKeepTheCheckedCauseUnchangedWhenTheFinalizerRethrowsIt() {
+            final IOException original = new IOException("original");
+            final Try<Object> failure = Try.failure(original);
+            final Try<Object> result = failure.ensuring(() -> { throw original; });
+            assertThat(result).isSameAs(failure);
+            assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldSuppressAnExceptionEqualToButNotTheSameAsTheCause() {
+            final IllegalStateException original = new IllegalStateException("same message");
+            final IllegalStateException other = new IllegalStateException("same message");
+            final Try<Object> failure = Try.failure(original);
+            final Try<Object> result = failure.ensuring(() -> { throw other; });
+            assertThat(result).isSameAs(failure);
+            assertThat(original.getSuppressed()).containsExactly(other);
+        }
+
+        @Test
+        public void shouldFailWithTheCauseItselfWhenTheFinalizerOfASuccessThrowsIt() {
+            final IllegalStateException thrown = new IllegalStateException(FAILURE);
+            final Try<String> result = success().ensuring(() -> { throw thrown; })
+              .ensuring(() -> { throw thrown; });
+            assertThat(result.getCause()).isSameAs(thrown);
+            assertThat(thrown.getSuppressed()).isEmpty();
+        }
+
+        @Test
+        public void shouldRethrowAFatalErrorFromTheFinalizerOfAFailure() {
+            final IllegalStateException original = new IllegalStateException("original");
+            final StackOverflowError fatal = new StackOverflowError();
+            assertThatThrownBy(() -> Try.<Object>failure(original).ensuring(() -> { throw fatal; })).isSameAs(fatal);
+            assertThat(original.getSuppressed()).isEmpty();
+        }
+
+        @Test
         public void shouldRethrowFatalThrowableFromTheFinalizerOnSuccess() {
             assertThrows(InterruptedException.class, () ->
               Try.success(1).ensuring(() -> { throw new InterruptedException(); }));

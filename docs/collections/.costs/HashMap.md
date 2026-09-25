@@ -4,7 +4,7 @@
 |---|---|---|
 | `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
 | `containsKey` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one hash lookup).">effectively O(1)</abbr> | effectively O(1) (one hash lookup). |
-| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one lookup and one put(Object,).">effectively O(1)</abbr> | effectively O(1) (one lookup and one put(Object,). |
+| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (one lookup and one put(Object, Object)).">effectively O(1)</abbr> | effectively O(1) (one lookup and one put(Object, Object)). |
 | `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1) (a path copy of the trie).">effectively O(1)</abbr> | effectively O(1) (a path copy of the trie). |
 | `keySet` | <abbr class="cx cx-linear" title="O(n) (the keys are copied into a new HashSet).">O(n)</abbr> | O(n) (the keys are copied into a new HashSet). |
 | `values` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |

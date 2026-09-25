@@ -1,5 +1,5 @@
 ---
-description: Try - a computation that may have thrown. Construction, switch over Success and Failure, recovery, conversions and sharp edges.
+description: Try - a computation that may have thrown. Construction, pattern matching on Success and Failure, recovery, conversions and sharp edges.
 ---
 
 # Try
@@ -36,9 +36,9 @@ To open resources, use them and close them with the outcome in a `Try`, see [`Us
 `Try` captures every exception or error except the fatal ones, which are rethrown: `InterruptedException`,
 `LinkageError`, `ThreadDeath` and `VirtualMachineError` (so `OutOfMemoryError` and `StackOverflowError`).
 
-## `switch` over the cases
+## Pattern matching over the cases
 
-`Success` and `Failure` are records, so a `switch` over them needs no `default`:
+`Success` and `Failure` are records, so pattern matching with a `switch` expression needs no `default`:
 
 ```java
 Try<Integer> result = Try.of(() -> Integer.parseInt("x"));
@@ -134,8 +134,8 @@ boolean sameClass = first.getCause().getClass() == second.getCause().getClass();
 
 ### `get()` rethrows the cause
 
-`get()` on a `Failure` throws the cause itself, even a checked exception that the method does not declare. Prefer a
-`switch`, `fold` or `getOrElse`.
+`get()` on a `Failure` throws the cause itself, even a checked exception that the method does not declare. Prefer
+pattern matching, `fold` or `getOrElse`.
 
 ### `null` is a failure
 

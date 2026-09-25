@@ -116,12 +116,12 @@ validation:
 nav:
   - Home: index.md
   - Guide:
+      - "New to functional programming?": new-to-fp.md
       - Getting started: getting-started.md
       - zip at arity N: zip.md
       - NonEmptyVector: non-empty-vector.md
       - Builders: builders.md
       - Java interop: java-interop.md
-      - Testing with zazr-test: testing.md
   - Control types:
       - Overview: control/index.md
       - Option: control/option.md
@@ -139,5 +139,6 @@ nav:
       - Sets: collections/sets.md
       - Maps: collections/maps.md
       - Complexity: collections/complexity.md
+  - Testing: testing.md
   - Compared to Vavr: vavr.md
   - Design: principles.md

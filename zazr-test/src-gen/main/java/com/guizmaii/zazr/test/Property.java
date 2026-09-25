@@ -29,7 +29,7 @@ public class Property {
      * @throws NullPointerException if name is null.
      * @throws IllegalArgumentException if name is empty or consists of whitespace only
      */
-    public static Property def(String name) {
+    public static Property named(String name) {
         Objects.requireNonNull(name, "name is null");
         if (name.trim().isEmpty()) {
             throw new IllegalArgumentException("name is empty");
@@ -746,7 +746,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -871,7 +871,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1010,7 +1010,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1163,7 +1163,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1330,7 +1330,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1511,7 +1511,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5, val6), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5, val6), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1706,7 +1706,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5, val6, val7), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5, val6, val7), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1915,7 +1915,7 @@ public class Property {
                                 exhausted = false;
                                 if (!condition.postcondition) {
                                     logFalsified(name, i, System.currentTimeMillis() - startTime, condition.message);
-                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5, val6, val7, val8), condition.message);
+                                    return new CheckResult.Falsified(name, i, Tuple.of(val1, val2, val3, val4, val5, val6, val7, val8), Option.ofNullable(condition.message));
                                 }
                             }
                         } catch(CheckError err) {
@@ -1971,8 +1971,6 @@ public class Property {
      * Internally used to provide more specific error messages.
      */
     static class CheckError extends Error {
-
-        private static final long serialVersionUID = 1L;
 
         CheckError(String message, Throwable cause) {
             super(message, cause);

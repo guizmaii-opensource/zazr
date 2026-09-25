@@ -19,7 +19,7 @@ Whenever you need a sequence and have no reason to pick another one. Access by i
 
 Choose another sequence for a specific need:
 
-- [`List`](list.md) to take a sequence apart from the front with a `switch`;
+- [`List`](list.md) to take a sequence apart from the front with pattern matching;
 - [`Queue`](queue.md) for first in, first out;
 - [`Stream`](stream.md) for a lazy or infinite sequence.
 
