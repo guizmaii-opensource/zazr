@@ -10,6 +10,7 @@ repo_url: https://github.com/guizmaii-opensource/zazr
 repo_name: guizmaii-opensource/zazr
 edit_uri: edit/main/docs/
 copyright: >-
+  Made by <a href="https://github.com/guizmaii" target="_blank" rel="noopener">Jules Ivanic</a>.
   Zazr is released under the Apache License 2.0. It is a fork of
   <a href="https://github.com/vavr-io/vavr">Vavr</a>, copyright its authors, under the same license;
   see <a href="https://github.com/guizmaii-opensource/zazr/blob/main/NOTICE">NOTICE</a>.

@@ -896,7 +896,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * A mutable copy is {@code new java.util.ArrayList<>(list.asJava())}; {@code List.ofAll} given the view
      * returns this List without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(1).
+     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(n) the first time, then O(1): the
+     * view keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -1030,14 +1031,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new instance excluding the first {@code n} elements
      */
     default List<T> drop(int n) {
-        if (n <= 0) {
-            return this;
-        }
-        if (n >= size()) {
-            return empty();
-        }
         List<T> list = this;
-        for (long i = n; i > 0 && !list.isEmpty(); i--) {
+        for (int i = n; i > 0 && !list.isEmpty(); i--) {
             list = list.tail();
         }
         return list;
@@ -1805,14 +1800,19 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * This List padded on the left with {@code element} until it is {@code length} long.
      * <p>
-     * Complexity: O(k) for k added elements; this List is shared, not copied.
+     * Complexity: O(n + k) for k added elements; this List is counted up to {@code length} only, so a longer one is
+     * returned after {@code length} steps, and it is shared, not copied.
      *
      * @param length  the target length
      * @param element the padding element
      * @return a new List, or this List if it is already at least {@code length} long
      */
     default List<T> leftPadTo(int length, T element) {
-        final int actualLength = length();
+        // counted up to the target only: a longer List is returned as is without being walked to its end
+        int actualLength = 0;
+        for (List<T> list = this; actualLength < length && !list.isEmpty(); list = list.tail()) {
+            actualLength++;
+        }
         if (length <= actualLength) {
             return this;
         } else {
@@ -1835,10 +1835,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default List<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
-        List<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        // the end of the replaced range, saturated: from + replaced can overflow an int
+        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        return take(from).appendAll(that).appendAll(drop(end));
     }
 
     default Tuple2<List<T>, List<T>> partition(Predicate<? super T> predicate) {
@@ -2095,23 +2094,19 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new List, or this List if the element is absent
      */
     default List<T> remove(T element) {
-        final Deque<T> preceding = new ArrayDeque<>(size());
-        List<T> result = this;
-        boolean found = false;
-        while (!found && !result.isEmpty()) {
-            final T head = result.head();
-            if (Objects.equals(head, element)) {
-                found = true;
-            } else {
-                preceding.addFirst(head);
-            }
-            result = result.tail();
+        // the elements before the removed one, most recent first, so that prepending them in order rebuilds them
+        List<T> preceding = Nil.instance();
+        List<T> rest = this;
+        while (!rest.isEmpty() && !Objects.equals(rest.head(), element)) {
+            preceding = preceding.prepend(rest.head());
+            rest = rest.tail();
         }
-        if (!found) {
+        if (rest.isEmpty()) {
             return this;
         }
-        for (T next : preceding) {
-            result = result.prepend(next);
+        List<T> result = rest.tail();
+        for (; !preceding.isEmpty(); preceding = preceding.tail()) {
+            result = result.prepend(preceding.head());
         }
         return result;
     }
@@ -2463,20 +2458,12 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new List, empty if the range is empty
      */
     default List<T> slice(int beginIndex, int endIndex) {
-        if (beginIndex >= endIndex || beginIndex >= length() || isEmpty()) {
+        final int lowerBound = Math.max(beginIndex, 0);
+        if (lowerBound >= endIndex) {
             return empty();
         } else {
-            List<T> result = Nil.instance();
-            List<T> list = this;
-            final long lowerBound = Math.max(beginIndex, 0);
-            final long upperBound = Math.min(endIndex, length());
-            for (int i = 0; i < upperBound; i++) {
-                if (i >= lowerBound) {
-                    result = result.prepend(list.head());
-                }
-                list = list.tail();
-            }
-            return result.reverse();
+            // drop and take walk only as far as they need and clamp at the end of this List
+            return drop(lowerBound).take(endIndex - lowerBound);
         }
     }
 
@@ -2672,11 +2659,16 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code length()}
      */
     default List<T> subSequence(int beginIndex) {
-        if (beginIndex < 0 || beginIndex > length()) {
+        if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
-        } else {
-            return drop(beginIndex);
         }
+        List<T> result = this;
+        for (int i = 0; i < beginIndex; i++, result = result.tail()) {
+            if (result.isEmpty()) {
+                throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
+            }
+        }
+        return result;
     }
 
     /**
@@ -2691,20 +2683,25 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
      */
     default List<T> subSequence(int beginIndex, int endIndex) {
-        Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+        // the checks walk the first endIndex cells, not the whole List; the length is counted only to throw
+        if (beginIndex < 0) {
+            Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+        }
+        List<T> rest = this;
+        for (int i = 0; i < endIndex; i++, rest = rest.tail()) {
+            if (rest.isEmpty()) {
+                Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+            }
+        }
+        if (beginIndex > endIndex) {
+            Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+        }
         if (beginIndex == endIndex) {
             return empty();
-        } else if (beginIndex == 0 && endIndex == length()) {
+        } else if (beginIndex == 0 && rest.isEmpty()) {
             return this;
         } else {
-            List<T> result = Nil.instance();
-            List<T> list = this;
-            for (int i = 0; i < endIndex; i++, list = list.tail()) {
-                if (i >= beginIndex) {
-                    result = result.prepend(list.head());
-                }
-            }
-            return result.reverse();
+            return drop(beginIndex).take(endIndex - beginIndex);
         }
     }
 
@@ -2743,7 +2740,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n <= 0) {
             return empty();
         }
-        if (n >= length()) {
+        // n cells walked before copying: a List of at most n elements is returned as is, without a copy
+        List<T> cursor = this;
+        for (int i = 0; i < n; i++, cursor = cursor.tail()) {
+            if (cursor.isEmpty()) {
+                return this;
+            }
+        }
+        if (cursor.isEmpty()) {
             return this;
         }
         List<T> result = Nil.instance();
@@ -2784,10 +2788,12 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default List<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         List<T> result = Nil.instance();
-        for (List<T> list = this; !list.isEmpty() && predicate.test(list.head()); list = list.tail()) {
+        List<T> list = this;
+        for (; !list.isEmpty() && predicate.test(list.head()); list = list.tail()) {
             result = result.prepend(list.head());
         }
-        return result.length() == length() ? this : result.reverse();
+        // every element taken: this List itself, without walking it again
+        return list.isEmpty() ? this : result.reverse();
     }
 
     /**

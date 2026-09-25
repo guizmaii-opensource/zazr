@@ -32,7 +32,12 @@ import org.jspecify.annotations.Nullable;
  * rear List containing the rear elements of the Queue in reverse order.
  * <p>
  * When the front list is empty, front and rear are swapped and rear is reversed. This implies the following queue
- * invariant: {@code front.isEmpty() => rear.isEmpty()}.
+ * invariant: {@code front.isEmpty() => rear.isEmpty()}. Symmetrically, {@link #init()} on a Queue whose rear is empty
+ * moves the second half of the front to the rear.
+ * <p>
+ * The O(1) costs of {@link #tail()}, {@link #dequeue()} and {@link #init()} are amortised over a chain of calls, each
+ * on the result of the previous one. A Queue is persistent, so an older version can be used again: calling one of them
+ * repeatedly on a Queue that is about to be rebalanced pays the O(n) rebalancing each time.
  * <p>
  * See Okasaki, Chris: <em>Purely Functional Data Structures</em> (p. 42 ff.). Cambridge, 2003.
  *
@@ -941,7 +946,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The length of the longest prefix whose elements all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(k) for the k elements of that prefix.
+     * Complexity: O(k) for the k elements of that prefix, as long as they are in the front; the elements added at the
+     * back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param predicate the condition
      * @return the length of the prefix
@@ -985,7 +991,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * The length of the longest run of elements satisfying {@code predicate} starting at {@code from}.
      * <p>
-     * Complexity: O(from + k) for the k elements of that run.
+     * Complexity: O(from + k) for the k elements of that run, as long as they are in the front; the elements added at
+     * the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -993,13 +1000,23 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public int segmentLength(Predicate<? super T> predicate, int from) {
-        return toList().segmentLength(predicate, from);
+        Objects.requireNonNull(predicate, "predicate is null");
+        final InOrder<T> elements = new InOrder<>(front, rear);
+        for (int i = from; i > 0 && elements.hasNext(); i--) {
+            elements.next();
+        }
+        int length = 0;
+        while (elements.hasNext() && predicate.test(elements.next())) {
+            length++;
+        }
+        return length;
     }
 
     /**
      * Whether this Queue starts with {@code that}: {@code startsWith(that, 0)}.
      * <p>
-     * Complexity: O(m) for m elements of {@code that}.
+     * Complexity: O(m) for m elements of {@code that}, as long as they are compared with the front; the elements added
+     * at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param that the prefix to test
      * @return true if the first {@code m} elements equal {@code that} (an empty {@code that} is always a prefix)
@@ -1197,7 +1214,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * A mutable copy is {@code new java.util.ArrayList<>(queue.asJava())}; {@code Queue.ofAll} given the view
      * returns this Queue without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(1).
+     * Complexity: O(1); {@code get(i)} on the view is that of {@link #get(int)}, {@code size()} is O(n) the first
+     * time, then O(1): the view keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -1534,7 +1552,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: amortised O(1); the last element is the head of the rear list, unless the rear is empty and the front is walked.
+     * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one: the last element is
+     * the head of the rear list. When the rear is empty, the front is split in two in O(n), its second half becoming
+     * the rear, so that the next calls take from it. Calling {@code init()} again on the same older Queue pays that
+     * O(n) again each time.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this Queue is empty
@@ -1543,10 +1564,30 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty Queue");
         } else if (rear.isEmpty()) {
-            return new Queue<>(front.init(), rear);
+            return initOfFront();
         } else {
             return new Queue<>(front, rear.tail());
         }
+    }
+
+    // init() of a Queue whose rear is empty: the first half of the front stays the front, the second half without its
+    // last element becomes the rear (reversed), so that the next init() calls take from the rear in O(1)
+    private Queue<T> initOfFront() {
+        final int length = front.length();
+        if (length == 1) {
+            return empty();
+        }
+        final int kept = length / 2;
+        com.guizmaii.zazr.collection.List<T> reversedFront = com.guizmaii.zazr.collection.List.empty();
+        com.guizmaii.zazr.collection.List<T> rest = front;
+        for (int i = 0; i < kept; i++, rest = rest.tail()) {
+            reversedFront = reversedFront.prepend(rest.head());
+        }
+        com.guizmaii.zazr.collection.List<T> newRear = com.guizmaii.zazr.collection.List.empty();
+        for (; !rest.tail().isEmpty(); rest = rest.tail()) {
+            newRear = newRear.prepend(rest.head());
+        }
+        return new Queue<>(reversedFront.reverse(), newRear);
     }
 
     /**
@@ -1763,10 +1804,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> patch(int from, Iterable<? extends T> that, int replaced) {
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
-        Queue<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        // the end of the replaced range, saturated: from + replaced can overflow an int
+        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        return take(from).appendAll(that).appendAll(drop(end));
     }
 
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
@@ -2184,7 +2224,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Whether the elements from {@code offset} on start with {@code that}. {@code that} is walked once, so a
      * one-shot iterator is accepted.
      * <p>
-     * Complexity: O(offset + m) for m elements of {@code that}.
+     * Complexity: O(offset + m) for m elements of {@code that}, as long as they are compared with the front; the
+     * elements added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param that   the prefix to test
      * @param offset the position in this Queue at which the prefix should start
@@ -2193,7 +2234,21 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public boolean startsWith(Iterable<? extends T> that, int offset) {
-        return toList().startsWith(that, offset);
+        Objects.requireNonNull(that, "that is null");
+        if (offset < 0) {
+            return false;
+        }
+        final InOrder<T> elements = new InOrder<>(front, rear);
+        for (int i = offset; i > 0 && elements.hasNext(); i--) {
+            elements.next();
+        }
+        final java.util.Iterator<? extends T> prefix = that.iterator();
+        while (elements.hasNext() && prefix.hasNext()) {
+            if (!Objects.equals(elements.next(), prefix.next())) {
+                return false;
+            }
+        }
+        return !prefix.hasNext();
     }
 
     /**
@@ -2238,7 +2293,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns a new {@code Queue} without its first element.
      * <p>
-     * Complexity: amortised O(1); the front loses its head, and the rear is reversed onto it only when the front runs out.
+     * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one: the front loses its
+     * head, and the rear is reversed onto it in O(n) only when the front runs out. Calling {@code tail()} again on the
+     * same older Queue whose front holds one element pays that O(n) again each time.
      *
      * @return a new {@code Queue} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Queue} is empty
@@ -2401,7 +2458,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
      * {@code that}.
      * <p>
-     * Complexity: O(min(n, m)) for an argument of m elements.
+     * Complexity: O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements
+     * added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param <U>  the type of elements in the second half of each pair
      * @param that an {@code Iterable} providing the second element of each pair
@@ -2419,7 +2477,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The length of the resulting {@code Queue} is the minimum of the lengths of this {@code Queue} and
      * {@code that}.
      * <p>
-     * Complexity: O(min(n, m)) for an argument of m elements.
+     * Complexity: O(min(n, m)) for an argument of m elements, as long as they are paired with the front; the elements
+     * added at the back since the last rebalancing are reversed once the walk reaches them, O(n) at most.
      *
      * @param <U>    the type of elements in the second parameter of the mapper
      * @param <R>    the type of elements in the resulting {@code Queue}
@@ -2432,7 +2491,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <U extends @Nullable Object, R extends @Nullable Object> Queue<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(toList().zipWith(that, mapper));
+        final com.guizmaii.zazr.collection.List<R> zipped = com.guizmaii.zazr.collection.List.ofAll(Iterator.ofAll(new InOrder<>(front, rear)).zipWith(that, mapper));
+        return zipped.isEmpty() ? empty() : new Queue<>(zipped, com.guizmaii.zazr.collection.List.empty());
     }
 
     /**
@@ -2498,7 +2558,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Removes an element from this Queue.
      * <p>
-     * Complexity: amortised O(1); see {@link #tail()}.
+     * Complexity: amortised O(1) over a chain of calls; O(n) when the rear is reversed, again on each call on the same
+     * older Queue, see {@link #tail()}.
      *
      * @return a tuple containing the first element and the remaining elements of this Queue
      * @throws NoSuchElementException if this Queue is empty
@@ -2514,7 +2575,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Removes an element from this Queue.
      * <p>
-     * Complexity: amortised O(1); see {@link #dequeue()}.
+     * Complexity: amortised O(1) over a chain of calls; O(n) when the rear is reversed, see {@link #tail()}.
      *
      * @return {@code None} if this Queue is empty, otherwise {@code Some} {@code Tuple} containing the first element and the remaining elements of this Queue
      */
@@ -2585,7 +2646,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Dual of {@linkplain #tailOption()}, returning all elements except the last as {@code Option}.
      * <p>
-     * Complexity: amortised O(1); see {@link #init()}.
+     * Complexity: amortised O(1) over a chain of calls; O(n) when the front is split, see {@link #init()}.
      *
      * @return {@code Some(Queue)} or {@code None} if this is empty.
      */
@@ -2596,7 +2657,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns a new {@code Queue} without its first element as an {@code Option}.
      * <p>
-     * Complexity: amortised O(1); see {@link #tail()}.
+     * Complexity: amortised O(1) over a chain of calls; O(n) when the rear is reversed, see {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -3302,6 +3363,40 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Stream<T> toStream() {
         return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    }
+
+    /**
+     * The elements of a Queue in order: the front, then the rear, which is reversed only once the front is exhausted,
+     * so that a walk that stops in the front never pays for the rear.
+     */
+    private static final class InOrder<T extends @Nullable Object> implements java.util.Iterator<T> {
+
+        private com.guizmaii.zazr.collection.List<T> current;
+        private com.guizmaii.zazr.collection.List<T> rear;
+
+        InOrder(com.guizmaii.zazr.collection.List<T> front, com.guizmaii.zazr.collection.List<T> rear) {
+            this.current = front;
+            this.rear = rear;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (current.isEmpty() && !rear.isEmpty()) {
+                current = rear.reverse();
+                rear = com.guizmaii.zazr.collection.List.empty();
+            }
+            return !current.isEmpty();
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            final T head = current.head();
+            current = current.tail();
+            return head;
+        }
     }
 
 }

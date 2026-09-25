@@ -13,16 +13,16 @@ For first in, first out: a work list, a breadth-first walk. It also has the othe
 index walks the queue; choose [`Vector`](vector.md) for that.
 
 ```java
-Queue<String> queue = Queue.of("a", "b").enqueue("c");
-Tuple2<String, Queue<String>> next = queue.dequeue();
+var queue = Queue.of("a", "b").enqueue("c"); // Queue<String>
+var next = queue.dequeue(); // Tuple2<String, Queue<String>>
 // next is (a, Queue(b, c))
 ```
 
 ```java
-Queue<Integer> work = Queue.of(1);
-int visited = 0;
+var work = Queue.of(1);
+var visited = 0;
 while (!work.isEmpty() && visited < 5) {
-    Tuple2<Integer, Queue<Integer>> step = work.dequeue();
+    var step = work.dequeue(); // Tuple2<Integer, Queue<Integer>>
     work = step._2().enqueue(step._1() * 2, step._1() * 2 + 1);
     visited++;
 }

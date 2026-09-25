@@ -1065,7 +1065,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements; the elements up to {@code end} are forced.
+     * Complexity: O(n * m) for a slice of m elements; at most the first {@code end + m} elements are forced, so it
+     * works on an infinite Stream.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1454,7 +1455,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(1); the view forces no element ahead of the read that needs it: {@code get(i)} forces
      * the first {@code i + 1} elements, the iterator one element per step, and {@code size()}, {@code lastIndexOf},
      * {@code hashCode}, {@code getLast} and every read of {@code reversed()} force the whole Stream (they do not
-     * terminate on an infinite Stream).
+     * terminate on an infinite Stream). The view counts the size once and keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -1724,7 +1725,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code Stream} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: lazy; the result runs {@code n} elements behind this Stream, so it works on an infinite Stream.
+     * Complexity: O(n); the first {@code n + 1} elements are forced now, which is what tells whether the result is
+     * empty. The result then runs {@code n} elements behind this Stream, so it works on an infinite Stream.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -2068,7 +2070,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * This Stream with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0.
      * <p>
-     * Complexity: lazy; the elements are forced as the result reaches them.
+     * Complexity: lazy; the elements are forced as the result reaches them, and the {@code replaced} elements
+     * skipped when it reaches them past the replacement. With {@code from} at 0 and an empty {@code that}, the head
+     * of the result is the element after the replaced ones, so the first {@code replaced + 1} elements are forced now.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -2077,12 +2081,29 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     default Stream<T> patch(int from, Iterable<? extends T> that, int replaced) {
-        from = Math.max(from, 0);
-        replaced = Math.max(replaced, 0);
-        Stream<T> result = take(from).appendAll(that);
-        from += replaced;
-        result = result.appendAll(drop(from));
-        return result;
+        Objects.requireNonNull(that, "that is null");
+        // Stream.ofAll takes the replacement's iterator now and reads its first element (a Stream is used as is); its
+        // other elements and the cells of this Stream are read as the result reaches them
+        return patchFrom(this, Math.max(from, 0), Stream.ofAll(that), Math.max(replaced, 0));
+    }
+
+    // The elements of stream before position `from`, then the replacement, then stream without the `replaced` elements
+    // from `from` on; each cell is built when the result reaches it.
+    private static <T extends @Nullable Object> Stream<T> patchFrom(Stream<T> stream, int from, Stream<T> replacement, int replaced) {
+        if (from > 0 && !stream.isEmpty()) {
+            return cons(stream.head(), () -> patchFrom(stream.tail(), from - 1, replacement, replaced));
+        } else {
+            return concatThen(replacement, () -> stream.drop(replaced));
+        }
+    }
+
+    // The elements of first, then those of the Stream the supplier gives, asked for only when first is exhausted.
+    private static <T extends @Nullable Object> Stream<T> concatThen(Stream<T> first, Supplier<Stream<T>> rest) {
+        if (first.isEmpty()) {
+            return rest.get();
+        } else {
+            return cons(first.head(), () -> concatThen(first.tail(), rest));
+        }
     }
 
     default Tuple2<Stream<T>, Stream<T>> partition(Predicate<? super T> predicate) {
@@ -2664,26 +2685,39 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
      * Complexity: O(beginIndex); the elements before {@code beginIndex} are forced, the rest when the result
-     * reaches them.
+     * reaches them. An empty range forces its first {@code beginIndex} elements too, to check that it is within this
+     * Stream, and a reversed range its first {@code endIndex}.
      * <p>
-     * Because {@code Stream} is lazy, {@code beginIndex} is validated eagerly, but if
-     * {@code endIndex > length()} the {@code IndexOutOfBoundsException} is only thrown once the
-     * returned Stream is traversed as far as the offending position, not when this method is called.
+     * The bounds are those of {@link Vector#subSequence(int, int)}: {@code IndexOutOfBoundsException} when
+     * {@code beginIndex < 0} or {@code endIndex > length()}, otherwise {@code IllegalArgumentException} when
+     * {@code beginIndex > endIndex}. Every such call throws when it is made, with one exception: because
+     * {@code Stream} is lazy, when {@code beginIndex < length() < endIndex} the {@code IndexOutOfBoundsException} is
+     * thrown once the returned Stream is traversed past its last element, not when this method is called.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
      * @return a new Stream
-     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative, or once the traversal passes the end
-     * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex}
+     * @throws IndexOutOfBoundsException if {@code beginIndex} is negative; if {@code endIndex} is past the end and
+     *                                   {@code beginIndex} is not before the end, a reversed range included; or, when
+     *                                   {@code beginIndex < length() < endIndex}, once the traversal passes the end
+     * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex} and {@code endIndex} is
+     *                                   within this Stream
      */
     default Stream<T> subSequence(int beginIndex, int endIndex) {
         if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ", " + endIndex + ")");
         }
         if (beginIndex > endIndex) {
+            // as in Vector, an end past the end of this Stream is reported before the reversed range
+            if (!hasAtLeast(this, endIndex)) {
+                throw new IndexOutOfBoundsException("subSequence of Nil");
+            }
             throw new IllegalArgumentException("subSequence(" + beginIndex + ", " + endIndex + ")");
         }
         if (beginIndex == endIndex) {
+            if (!hasAtLeast(this, beginIndex)) {
+                throw new IndexOutOfBoundsException("subSequence of Nil");
+            }
             return Empty.instance();
         }
         Stream<T> start = this;
@@ -2694,6 +2728,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             throw new IndexOutOfBoundsException("subSequence of Nil");
         }
         return takeExactly(start, endIndex - beginIndex);
+    }
+
+    // Whether stream has at least n elements; forces at most its first n.
+    private static <T extends @Nullable Object> boolean hasAtLeast(Stream<T> stream, int n) {
+        return n <= 0 || !stream.drop(n - 1).isEmpty();
     }
 
     // The first n > 0 elements of a non-empty stream, lazily; throws once the traversal passes the end of the stream.

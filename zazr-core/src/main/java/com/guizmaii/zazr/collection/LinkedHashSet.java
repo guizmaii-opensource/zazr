@@ -16,6 +16,17 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable, hash-based {@link Set} implementation with predictable (insertion-order) iteration.
+ * <p>
+ * It is a {@link LinkedHashMap} of its elements and has the same costs: removing an element leaves a marker in the
+ * insertion order, rebuilt in O(n) once the markers outnumber the elements, amortised over a chain of removals. On
+ * an older version used again, removing or slicing can pay the rebuild each time, and after removals, finding a
+ * position by rank ({@code tail}, {@code init}, {@code take}, {@code drop}) walks past the markers in the way.
+ * <p>
+ * An element given more than once keeps the position and the object of its first occurrence, whichever way the set
+ * is built: {@link #add(Object)} of an element already present returns the set unchanged, and every factory,
+ * collector and bulk operation ({@code of}, {@code ofAll}, {@code collector()}, {@code tabulate}, {@code fill},
+ * {@code flatten}, {@code addAll}, {@code union}, {@code map}, {@code flatMap}) gives the set that adding the elements
+ * one by one gives.
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -104,7 +115,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         LinkedHashMap<T, Object> map = LinkedHashMap.empty();
         for (T element : elements) {
             Objects.requireNonNull(element, "LinkedHashSet.of: element is null");
-            map = map.put(element, element);
+            map = map.putIfAbsent(element, element);
         }
         return map.isEmpty() ? LinkedHashSet.empty() : new LinkedHashSet<>(map);
     }
@@ -632,15 +643,16 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public LinkedHashSet<T> add(T element) {
         Objects.requireNonNull(element, "LinkedHashSet.add: element is null");
-        return contains(element) ? this : new LinkedHashSet<>(map.put(element, element));
+        final LinkedHashMap<T, Object> that = map.putIfAbsent(element, element);
+        return that == map ? this : new LinkedHashSet<>(that);
     }
 
     /**
      * Adds all of the given elements that are not already contained in this set, in encounter order.
      * If no new element is added, this instance is returned unchanged (or, if this set is empty and
-     * {@code elements} is a {@code LinkedHashSet}, the given {@code elements} instance). Whether an
-     * already-contained element is retained or replaced by its equal counterpart from {@code elements}
-     * is unspecified.
+     * {@code elements} is a {@code LinkedHashSet}, the given {@code elements} instance). An element
+     * already in this set keeps its position and its object, as with {@link #add(Object)}; an element repeated
+     * in {@code elements} is added at its first occurrence.
      * <p>
      * Complexity: O(m) for m elements, each an effectively O(1) {@link #add(Object)}; O(1) when this set is empty and
      * {@code elements} is a LinkedHashSet, which is returned as is.
@@ -780,7 +792,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         } else {
             final LinkedHashMap<U, Object> that = foldLeft(LinkedHashMap.empty(), (tree, t) -> {
                 final U u = mapper.apply(t);
-                return tree.put(u, u);
+                return tree.putIfAbsent(u, u);
             });
             return new LinkedHashSet<>(that);
         }
@@ -797,7 +809,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
             final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.collect: mapper returned null");
             if (collected.isDefined()) {
                 final U u = collected.get();
-                that = that.put(u, u);
+                that = that.putIfAbsent(u, u);
             }
         }
         return new LinkedHashSet<>(that);
@@ -842,8 +854,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         LinkedHashMap<R, Object> rights = LinkedHashMap.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "LinkedHashSet.partitionMap: f returned null")) {
-                case Either.Left(var left) -> lefts = lefts.put(left, left);
-                case Either.Right(var right) -> rights = rights.put(right, right);
+                case Either.Left(var left) -> lefts = lefts.putIfAbsent(left, left);
+                case Either.Right(var right) -> rights = rights.putIfAbsent(right, right);
             }
         }
         return Tuple.of(lefts.isEmpty() ? empty() : new LinkedHashSet<>(lefts), rights.isEmpty() ? empty() : new LinkedHashSet<>(rights));
@@ -859,8 +871,10 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised: when the
-     * markers outnumber the elements, the insertion order is rebuilt in O(n).
+     * Complexity: effectively O(1) (one hash removal and one marker in the insertion order), amortised over a chain
+     * of removals, each on the result of the previous one: when the markers outnumber the elements, the insertion
+     * order is rebuilt in O(n). Removing again from the same older set that is about to be rebuilt pays that O(n)
+     * each time. Removing the first or the last element also walks past the markers of earlier removals next to it.
      */
     @Override
     public LinkedHashSet<T> remove(T element) {
@@ -881,7 +895,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) amortised, as {@link #remove(Object)}; the new element takes the position of the
+     * Complexity: effectively O(1) amortised, with the O(n) cases of {@link #remove(Object)}; the new element takes the position of the
      * replaced one.
      */
     @Override
@@ -918,9 +932,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * Adds all of the elements of {@code elements} that are not already contained in this set, forming the union.
      * If no new element is added, this instance is returned unchanged (or, if this set is empty and
-     * {@code elements} is a {@code LinkedHashSet}, the given {@code elements} instance). Whether an
-     * already-contained element is retained or replaced by its equal counterpart from {@code elements}
-     * is unspecified.
+     * {@code elements} is a {@code LinkedHashSet}, the given {@code elements} instance). An element
+     * already in this set keeps its position and its object, as with {@link #add(Object)}; an element repeated
+     * in {@code elements} is added at its first occurrence.
      * <p>
      * See also {@link #addAll(Iterable)}.
      * <p>
@@ -1004,8 +1018,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the last in insertion order.
      * <p>
-     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced), plus a walk
-     * past the removed elements' markers next to the last element, if any.
+     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced) on a set with no
+     * removals. After removals, up to O(n): the markers of the removed elements next to the last element are walked
+     * past, and the insertion order is rebuilt when the result holds more markers than elements.
      *
      * @return this set without its last element
      * @throws UnsupportedOperationException if this set is empty
@@ -1031,8 +1046,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the first in insertion order.
      * <p>
-     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced), plus a walk
-     * past the removed elements' markers next to the first element, if any.
+     * Complexity: effectively O(1) (one element removed from the hash map, the insertion order sliced) on a set with no
+     * removals. After removals, up to O(n): the markers of the removed elements next to the first element are walked
+     * past, and the insertion order is rebuilt when the result holds more markers than elements.
      *
      * @return this set without its first element
      * @throws UnsupportedOperationException if this set is empty
@@ -1059,8 +1075,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * The first {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
      * <p>
      * Complexity: effectively O(min(n, size - n)) (the smaller of the kept and the removed elements is inserted into
-     * or removed from the hash map; the insertion order is sliced). After removals, finding the cut also walks the
-     * insertion order from the nearer end past the removed elements' markers.
+     * or removed from the hash map; the insertion order is sliced). After removals, up to
+     * O(n): finding the cut walks the insertion order from the nearer end past every marker of a removed one in the
+     * way, and the insertion order is rebuilt when the result holds more markers than elements.
      *
      * @param n the number of elements to keep
      * @return the {@code n} elements inserted first
@@ -1263,7 +1280,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         LinkedHashMap<T, Object> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "LinkedHashSet: element is null");
-            that = that.put(t, t);
+            that = that.putIfAbsent(t, t);
         }
         return that;
     }
