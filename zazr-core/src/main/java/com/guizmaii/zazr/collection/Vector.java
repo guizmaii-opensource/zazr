@@ -1093,7 +1093,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new instance excluding the last {@code n} elements
      */
     public Vector<T> dropRight(int n) {
-        return take(length() - n);
+        // n <= 0 first: length() - n overflows for Integer.MIN_VALUE
+        return n <= 0 ? this : take(length() - n);
     }
 
     /**
@@ -2587,7 +2588,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new {@code Vector} containing the last {@code n} elements
      */
     public Vector<T> takeRight(int n) {
-        return drop(length() - n);
+        // n <= 0 first: length() - n overflows for Integer.MIN_VALUE
+        return n <= 0 ? empty() : drop(length() - n);
     }
 
     /**
