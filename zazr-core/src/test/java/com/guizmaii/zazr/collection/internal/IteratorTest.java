@@ -1,7 +1,11 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import com.guizmaii.zazr.control.Option;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -17,12 +21,12 @@ import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static com.guizmaii.zazr.collection.Iterator.concat;
-import static com.guizmaii.zazr.collection.Iterator.continually;
-import static com.guizmaii.zazr.collection.Iterator.from;
-import static com.guizmaii.zazr.collection.Iterator.iterate;
-import static com.guizmaii.zazr.collection.Iterator.rangeBy;
-import static com.guizmaii.zazr.collection.Iterator.rangeClosedBy;
+import static com.guizmaii.zazr.collection.internal.Iterator.concat;
+import static com.guizmaii.zazr.collection.internal.Iterator.continually;
+import static com.guizmaii.zazr.collection.internal.Iterator.from;
+import static com.guizmaii.zazr.collection.internal.Iterator.iterate;
+import static com.guizmaii.zazr.collection.internal.Iterator.rangeBy;
+import static com.guizmaii.zazr.collection.internal.Iterator.rangeClosedBy;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -1827,8 +1831,8 @@ class IteratorTest {
     public void shouldNotDeadlockOnConcurrentClassInitialization() {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
             final ExecutorService executorService = Executors.newFixedThreadPool(2);
-            executorService.execute(new ClassInitializer("com.guizmaii.zazr.collection.Iterator"));
-            executorService.execute(new ClassInitializer("com.guizmaii.zazr.collection.AbstractIterator"));
+            executorService.execute(new ClassInitializer("com.guizmaii.zazr.collection.internal.Iterator"));
+            executorService.execute(new ClassInitializer("com.guizmaii.zazr.collection.internal.AbstractIterator"));
             executorService.shutdown();
             // a cycle between the two class initialisations would hang here
             Iterator.empty().iterator();

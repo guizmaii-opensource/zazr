@@ -1,6 +1,9 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.internal.Collections;
+import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
+import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.ArrayList;

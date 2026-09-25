@@ -885,7 +885,7 @@ def generateMainClasses(): Unit = {
   }
 
   /**
-   * Generator of com.guizmaii.zazr.collection.*ArrayType
+   * Generator of com.guizmaii.zazr.collection.internal.*ArrayType
    */
   def genArrayTypes(): Unit = {
 
@@ -901,7 +901,7 @@ def generateMainClasses(): Unit = {
       "Object" -> "Object" // fallback
     ) // note: there is no void[] in Java
 
-    genVavrFile("com.guizmaii.zazr.collection", "ArrayType")((im: ImportManager, packageName: String, className: String) => xs"""
+    genVavrFile("com.guizmaii.zazr.collection.internal", "ArrayType")((im: ImportManager, packageName: String, className: String) => xs"""
       import java.util.Collection;
 
       /**
@@ -909,7 +909,7 @@ def generateMainClasses(): Unit = {
        *
        * @author Pap Lőrinc
        */
-      interface ArrayType<T $nullableBound> {
+      public interface ArrayType<T $nullableBound> {
 
           @SuppressWarnings("unchecked")
           static <T $nullableBound> ArrayType<T> obj() { return (ArrayType<T>) ObjectArrayType.INSTANCE; }
@@ -1355,7 +1355,7 @@ def generateTestClasses(): Unit = {
       val test = im.getType("org.junit.jupiter.api.Test")
       val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
       val assertThrows = im.getStatic("org.junit.jupiter.api.Assertions.assertThrows")
-      val naturalComparator = if (builderComparator || keyComparator) im.getStatic(s"com.guizmaii.zazr.collection.Comparators.naturalComparator") else null
+      val naturalComparator = if (builderComparator || keyComparator) im.getStatic(s"com.guizmaii.zazr.collection.internal.Comparators.naturalComparator") else null
       val map = im.getType(s"com.guizmaii.zazr.collection.$mapName")
       (1 to VARARGS).gen(arity => xs"""
         @$test

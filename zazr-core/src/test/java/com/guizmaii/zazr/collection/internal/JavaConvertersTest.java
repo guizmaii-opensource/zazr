@@ -1,5 +1,9 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -12,11 +16,11 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
-import static com.guizmaii.zazr.collection.JavaConvertersTest.ChangePolicy.IMMUTABLE;
-import static com.guizmaii.zazr.collection.JavaConvertersTest.ChangePolicy.MUTABLE;
-import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementNullability.NON_NULLABLE;
-import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementNullability.NULLABLE;
-import static com.guizmaii.zazr.collection.JavaConvertersTest.ElementType.GENERIC;
+import static com.guizmaii.zazr.collection.internal.JavaConvertersTest.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConvertersTest.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConvertersTest.ElementNullability.NON_NULLABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConvertersTest.ElementNullability.NULLABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConvertersTest.ElementType.GENERIC;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

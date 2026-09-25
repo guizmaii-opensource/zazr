@@ -2,6 +2,9 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.internal.ArrayType;
+import com.guizmaii.zazr.collection.internal.BitMappedTrie;
+import com.guizmaii.zazr.collection.internal.Iterator;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;

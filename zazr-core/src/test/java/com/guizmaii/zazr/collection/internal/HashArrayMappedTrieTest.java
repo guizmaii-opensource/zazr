@@ -1,7 +1,10 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.HashMap;
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Map;
 import com.guizmaii.zazr.control.Option;
 import java.util.Random;
 import java.util.function.Function;

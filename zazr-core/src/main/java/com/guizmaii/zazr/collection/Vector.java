@@ -1,8 +1,17 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
-import com.guizmaii.zazr.collection.JavaConverters.ListView;
-import com.guizmaii.zazr.collection.VectorModule.Combinations;
+import com.guizmaii.zazr.collection.internal.AbstractIterator;
+import com.guizmaii.zazr.collection.internal.Access;
+import com.guizmaii.zazr.collection.internal.ArrayType;
+import com.guizmaii.zazr.collection.internal.BitMappedTrie;
+import com.guizmaii.zazr.collection.internal.Collections;
+import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
+import com.guizmaii.zazr.collection.internal.TraversableModule;
+import com.guizmaii.zazr.collection.internal.VectorModule;
+import com.guizmaii.zazr.collection.internal.VectorModule.Combinations;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.util.*;
@@ -11,9 +20,9 @@ import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.collection.Collections.withSize;
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.internal.Collections.withSize;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.MUTABLE;
 
 /**
  * The default sequence: an immutable, indexed sequence with effectively constant time access to any element.
@@ -29,6 +38,10 @@ import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
  * @author Ruslan Sennov, Pap Lőrinc
  */
 public final class Vector<T extends @Nullable Object> implements Traversable<T> {
+
+    static {
+        Access.setVectorAccess(Vector::reverseIterator);
+    }
 
     private static final Vector<?> EMPTY = new Vector<>(BitMappedTrie.empty());
 
@@ -201,7 +214,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> Vector<T> ofAll(Iterable<? extends T> iterable) {
         Objects.requireNonNull(iterable, "iterable is null");
-        if (iterable instanceof Traversable && com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
+        if (iterable instanceof Traversable && com.guizmaii.zazr.collection.internal.Collections.isEmpty(iterable)) {
             return empty();
         }
         if (iterable instanceof Vector) {
@@ -211,7 +224,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
                 && ((ListView<T, ?>) iterable).getDelegate() instanceof Vector) {
             return (Vector<T>) ((ListView<T, ?>) iterable).getDelegate();
         }
-        if (com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
+        if (com.guizmaii.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
             // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then grouped into
             // leaves, is cheaper than element-wise adds; the builder pays off for one-shot and unsized sources only
             return ofAll(BitMappedTrie.ofAll(withSize(iterable).toArray()));
@@ -672,7 +685,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Complexity: O(rows * columns); the matrix itself is returned when it has no or one element.
      */
     public static <T extends @Nullable Object> Vector<Vector<T>> transpose(Vector<Vector<T>> matrix) {
-        return com.guizmaii.zazr.collection.Collections.transpose(matrix, Vector::ofAll, Vector::of);
+        return com.guizmaii.zazr.collection.internal.Collections.transpose(matrix, Vector::ofAll, Vector::of);
     }
 
     /**
@@ -809,13 +822,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
+        if (!com.guizmaii.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
             // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with the
             // builder, which also answers whether there is anything to append, then appended by path copy
             final Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : appendAll(elements);
         }
-        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
+        if (com.guizmaii.zazr.collection.internal.Collections.isEmpty(iterable)) {
             return this;
         }
         return new Vector<>(trie.appendAll(iterable));
@@ -1239,7 +1252,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
     }
 
-    public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Vector::ofAll); }
+    public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Vector::ofAll); }
 
     /**
      * The index of the first occurrence of {@code element}, or -1.
@@ -1279,7 +1292,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return {@code Some(index)} of its first occurrence, or {@code None}
      */
     public Option<Integer> indexOfOption(T element) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOf(element));
     }
 
     /**
@@ -1290,7 +1303,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
      */
     public Option<Integer> indexOfOption(T element, int from) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element, from));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOf(element, from));
     }
 
     /**
@@ -1329,7 +1342,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that));
     }
 
     /**
@@ -1341,7 +1354,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that, from));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that, from));
     }
 
     /**
@@ -1387,7 +1400,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> indexWhereOption(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexWhere(predicate));
     }
 
     /**
@@ -1399,7 +1412,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> indexWhereOption(Predicate<? super T> predicate, int from) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate, from));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexWhere(predicate, from));
     }
 
     /**
@@ -1555,7 +1568,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return {@code Some(index)} of its last occurrence, or {@code None}
      */
     public Option<Integer> lastIndexOfOption(T element) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOf(element));
     }
 
     /**
@@ -1566,7 +1579,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
      */
     public Option<Integer> lastIndexOfOption(T element, int end) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element, end));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOf(element, end));
     }
 
     /**
@@ -1605,7 +1618,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOfSlice(that));
     }
 
     /**
@@ -1617,7 +1630,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that, int end) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that, end));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOfSlice(that, end));
     }
 
     /**
@@ -1661,7 +1674,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexWhere(predicate));
     }
 
     /**
@@ -1673,7 +1686,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate, int end) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate, end));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
     /**
@@ -1891,12 +1904,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return ofAll(iterable);
         }
-        if (!com.guizmaii.zazr.collection.Collections.isTraversableAgain(iterable)) {
+        if (!com.guizmaii.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
             // a one-shot source is read exactly once: built first, which also answers whether there is anything to prepend
             final Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : prependAll(elements);
         }
-        if (com.guizmaii.zazr.collection.Collections.isEmpty(iterable)) {
+        if (com.guizmaii.zazr.collection.internal.Collections.isEmpty(iterable)) {
             return this;
         }
         return new Vector<>(trie.prependAll(iterable));
@@ -1987,7 +2000,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector without it, or this Vector if it is absent
      */
     public Vector<T> removeAll(T element) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, element, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.removeAll(this, element, kept -> filter(kept));
     }
 
     /**
@@ -2000,7 +2013,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code elements} is null
      */
     public Vector<T> removeAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, elements, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2065,7 +2078,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code elements} is null
      */
     public Vector<T> retainAll(Iterable<? extends T> elements) {
-        return com.guizmaii.zazr.collection.Collections.retainAll(this, elements, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     /**
@@ -2164,7 +2177,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code operation} is null
      */
     public <U extends @Nullable Object> Vector<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toVector);
+        return com.guizmaii.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toVector);
     }
 
     /**
@@ -2181,7 +2194,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code operation} is null
      */
     public <U extends @Nullable Object> Vector<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toVector);
+        return com.guizmaii.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toVector);
     }
 
     /**
@@ -2247,7 +2260,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector, or this Vector if it has fewer than two elements
      */
     public Vector<T> shuffle() {
-        return com.guizmaii.zazr.collection.Collections.shuffle(this, Vector::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.shuffle(this, Vector::ofAll);
     }
 
     /**
@@ -2809,12 +2822,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     @Override
     public boolean equals(@Nullable Object o) {
-        return com.guizmaii.zazr.collection.Collections.equals(this, o);
+        return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
+        return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
     }
 
     @Override
@@ -3154,7 +3167,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
      */
     public Vector<Vector<T>> sliding(int size, int step) {
-        com.guizmaii.zazr.collection.Collections.checkWindow(size, step);
+        com.guizmaii.zazr.collection.internal.Collections.checkWindow(size, step);
         final int length = length();
         if (length == 0) {
             return empty();
@@ -3877,89 +3890,4 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
     }
 
-}
-
-interface VectorModule {
-    final class Combinations {
-        static <T extends @Nullable Object> Vector<Vector<T>> apply(Vector<T> elements, int k) {
-            return (k == 0)
-                   ? Vector.of(Vector.empty())
-                   : elements.zipWithIndex().flatMap(
-                    t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1())));
-        }
-    }
-
-    /* contiguous-slice search by index; the slice is materialised once, first thing (O(1) when it already is a
-     * Vector), so that a one-shot argument is iterated only once */
-    final class Slice {
-
-        static <T extends @Nullable Object> int indexOfSlice(Vector<T> source, Iterable<? extends T> slice, int from) {
-            final Vector<? extends T> _slice = Vector.ofAll(slice);
-            if (source.isEmpty()) {
-                return from == 0 && _slice.isEmpty() ? 0 : -1;
-            }
-            final int maxIndex = source.length() - _slice.length();
-            return findSlice(source, _slice, Math.max(from, 0), maxIndex);
-        }
-
-        static <T extends @Nullable Object> int lastIndexOfSlice(Vector<T> source, Iterable<? extends T> slice, int end) {
-            if (end < 0) {
-                return -1;
-            }
-            final Vector<? extends T> _slice = Vector.ofAll(slice);
-            if (source.isEmpty()) {
-                return _slice.isEmpty() ? 0 : -1;
-            } else if (_slice.isEmpty()) {
-                final int len = source.length();
-                return len < end ? len : end;
-            }
-            int index = 0;
-            int result = -1;
-            final int maxIndex = source.length() - _slice.length();
-            while (index <= maxIndex) {
-                int indexOfSlice = findSlice(source, _slice, index, maxIndex);
-                if (indexOfSlice < 0) {
-                    return result;
-                }
-                if (indexOfSlice <= end) {
-                    result = indexOfSlice;
-                    index = indexOfSlice + 1;
-                } else {
-                    return result;
-                }
-            }
-            return result;
-        }
-
-        private static <T extends @Nullable Object> int findSlice(Vector<T> source, Vector<? extends T> slice, int index, int maxIndex) {
-            while (index <= maxIndex) {
-                if (source.startsWith(slice, index)) {
-                    return index;
-                }
-                index++;
-            }
-            return -1;
-        }
-    }
-
-    /* binary search over the indices; `comparison` compares the element at an index with the searched element */
-    final class Search {
-
-        static int binarySearch(Vector<?> vector, IntUnaryOperator comparison) {
-            int low = 0;
-            int high = vector.length() - 1;
-            while (low <= high) {
-                final int mid = (low + high) >>> 1;
-                final int cmp = comparison.applyAsInt(mid);
-                if (cmp < 0) {
-                    low = mid + 1;
-                } else if (cmp > 0) {
-                    high = mid - 1;
-                } else {
-                    return mid;
-                }
-            }
-            return -(low + 1);
-        }
-    }
 }

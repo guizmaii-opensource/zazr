@@ -1,4 +1,4 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
@@ -13,7 +13,7 @@ import java.util.Collection;
  *
  * @author Pap Lőrinc
  */
-interface ArrayType<T extends @Nullable Object> {
+public interface ArrayType<T extends @Nullable Object> {
 
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> ArrayType<T> obj() { return (ArrayType<T>) ObjectArrayType.INSTANCE; }

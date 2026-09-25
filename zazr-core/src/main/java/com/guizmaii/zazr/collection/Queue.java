@@ -1,6 +1,11 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.internal.Access;
+import com.guizmaii.zazr.collection.internal.Collections;
+import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.TraversableModule;
 import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
@@ -8,9 +13,9 @@ import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ListView;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
 
 /**
  * An immutable {@code Queue} stores elements allowing a first-in-first-out (FIFO) retrieval.
@@ -39,6 +44,10 @@ import static com.guizmaii.zazr.collection.JavaConverters.ListView;
  * @author Daniel Dietrich
  */
 public final class Queue<T extends @Nullable Object> implements Traversable<T> {
+
+    static {
+        Access.setQueueAccess(Queue::reverseIterator);
+    }
 
     private static final Queue<?> EMPTY = new Queue<>(com.guizmaii.zazr.collection.List.empty(), com.guizmaii.zazr.collection.List.empty());
 
@@ -273,7 +282,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public static <T extends @Nullable Object> Queue<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return com.guizmaii.zazr.collection.Collections.tabulate(n, f, empty(), Queue::of);
+        return com.guizmaii.zazr.collection.internal.Collections.tabulate(n, f, empty(), Queue::of);
     }
 
     /**
@@ -287,7 +296,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public static <T extends @Nullable Object> Queue<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return com.guizmaii.zazr.collection.Collections.fill(n, s, empty(), Queue::of);
+        return com.guizmaii.zazr.collection.internal.Collections.fill(n, s, empty(), Queue::of);
     }
 
     /**
@@ -299,7 +308,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return An Queue of size {@code n}, where each element is the given {@code element}.
      */
     public static <T extends @Nullable Object> Queue<T> fill(int n, T element) {
-        return com.guizmaii.zazr.collection.Collections.fillObject(n, element, empty(), Queue::of);
+        return com.guizmaii.zazr.collection.internal.Collections.fillObject(n, element, empty(), Queue::of);
     }
 
     /**
@@ -603,7 +612,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * }
      */
     public static <T extends @Nullable Object> Queue<Queue<T>> transpose(Queue<Queue<T>> matrix) {
-        return com.guizmaii.zazr.collection.Collections.transpose(matrix, Queue::ofAll, Queue::of);
+        return com.guizmaii.zazr.collection.internal.Collections.transpose(matrix, Queue::ofAll, Queue::of);
     }
 
     /**
@@ -1003,7 +1012,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return {@code Some(index)} of its first occurrence, or {@code None}
      */
     public Option<Integer> indexOfOption(T element) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOf(element));
     }
 
     /**
@@ -1014,7 +1023,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
      */
     public Option<Integer> indexOfOption(T element, int from) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOf(element, from));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOf(element, from));
     }
 
     /**
@@ -1025,7 +1034,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that));
     }
 
     /**
@@ -1037,7 +1046,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexOfSlice(that, from));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that, from));
     }
 
     /**
@@ -1048,7 +1057,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> indexWhereOption(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexWhere(predicate));
     }
 
     /**
@@ -1060,7 +1069,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> indexWhereOption(Predicate<? super T> predicate, int from) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(indexWhere(predicate, from));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexWhere(predicate, from));
     }
 
     /**
@@ -1070,7 +1079,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return {@code Some(index)} of its last occurrence, or {@code None}
      */
     public Option<Integer> lastIndexOfOption(T element) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOf(element));
     }
 
     /**
@@ -1081,7 +1090,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return {@code Some(index)} of its last occurrence at or before {@code end}, or {@code None}
      */
     public Option<Integer> lastIndexOfOption(T element, int end) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOf(element, end));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOf(element, end));
     }
 
     /**
@@ -1092,7 +1101,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOfSlice(that));
     }
 
     /**
@@ -1104,7 +1113,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public Option<Integer> lastIndexOfSliceOption(Iterable<? extends T> that, int end) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexOfSlice(that, end));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexOfSlice(that, end));
     }
 
     /**
@@ -1115,7 +1124,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexWhere(predicate));
     }
 
     /**
@@ -1127,7 +1136,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public Option<Integer> lastIndexWhereOption(Predicate<? super T> predicate, int end) {
-        return com.guizmaii.zazr.collection.Collections.indexOption(lastIndexWhere(predicate, end));
+        return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
     /**
@@ -1488,7 +1497,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     public <C extends @Nullable Object> Map<C, Queue<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return com.guizmaii.zazr.collection.Collections.groupBy(this, classifier, Queue::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Queue::ofAll);
     }
 
     /**
@@ -1880,7 +1889,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if the element is absent
      */
     public Queue<T> removeAll(T element) {
-        return com.guizmaii.zazr.collection.Collections.removeAll(this, element, kept -> filter(kept));
+        return com.guizmaii.zazr.collection.internal.Collections.removeAll(this, element, kept -> filter(kept));
     }
 
     /**
@@ -1997,7 +2006,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code operation} is null
      */
     public <U extends @Nullable Object> Queue<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
+        return com.guizmaii.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
     }
 
     /**
@@ -2014,7 +2023,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code operation} is null
      */
     public <U extends @Nullable Object> Queue<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return com.guizmaii.zazr.collection.Collections.scanRight(this, zero, operation, Iterator::toQueue);
+        return com.guizmaii.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toQueue);
     }
 
     /**
@@ -2025,7 +2034,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if it has fewer than two elements
      */
     public Queue<T> shuffle() {
-        return com.guizmaii.zazr.collection.Collections.shuffle(this, Queue::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.shuffle(this, Queue::ofAll);
     }
 
     /**
@@ -2461,12 +2470,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     @Override
     public boolean equals(@Nullable Object o) {
-        return com.guizmaii.zazr.collection.Collections.equals(this, o);
+        return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return com.guizmaii.zazr.collection.Collections.hashOrdered(this);
+        return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
     }
 
     /**

@@ -3,6 +3,8 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
+import com.guizmaii.zazr.collection.internal.Comparators;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
 import java.math.BigDecimal;

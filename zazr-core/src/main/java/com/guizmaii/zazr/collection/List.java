@@ -4,8 +4,14 @@ import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.Tuple3;
 import com.guizmaii.zazr.collection.List.Nil;
-import com.guizmaii.zazr.collection.ListModule.Combinations;
-import com.guizmaii.zazr.collection.ListModule.SplitAt;
+import com.guizmaii.zazr.collection.internal.AbstractIterator;
+import com.guizmaii.zazr.collection.internal.Collections;
+import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.ListModule;
+import com.guizmaii.zazr.collection.internal.ListModule.Combinations;
+import com.guizmaii.zazr.collection.internal.ListModule.SplitAt;
+import com.guizmaii.zazr.collection.internal.TraversableModule;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
 import java.util.*;
@@ -14,9 +20,9 @@ import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.IMMUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ChangePolicy.MUTABLE;
-import static com.guizmaii.zazr.collection.JavaConverters.ListView;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.IMMUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.MUTABLE;
+import static com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
 
 /**
  * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent programming.
@@ -3892,134 +3898,4 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
     }
 
-}
-
-interface ListModule {
-
-    interface Combinations {
-
-        static <T extends @Nullable Object> List<List<T>> apply(List<T> elements, int k) {
-            if (k == 0) {
-                return List.of(List.empty());
-            } else {
-                return elements.zipWithIndex().flatMap(
-                        t -> apply(elements.drop(t._2() + 1), (k - 1)).map(c -> c.prepend(t._1()))
-                );
-            }
-        }
-    }
-
-    interface SplitAt {
-
-        static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(List<T> source, Predicate<? super T> predicate) {
-            Objects.requireNonNull(predicate, "predicate is null");
-            List<T> init = Nil.instance();
-            List<T> tail = source;
-            while (!tail.isEmpty() && !predicate.test(tail.head())) {
-                init = init.prepend(tail.head());
-                tail = tail.tail();
-            }
-            return Tuple.of(init, tail);
-        }
-    }
-
-    /** Slice searches over a cons list: the candidate start positions are the successive tails. */
-    interface Slice {
-
-        static <T extends @Nullable Object> int indexOfSlice(List<T> source, Iterable<? extends T> slice, int from) {
-            if (source.isEmpty()) {
-                return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
-            }
-            return findFirstSlice(source, toList(slice), Math.max(from, 0));
-        }
-
-        static <T extends @Nullable Object> int lastIndexOfSlice(List<T> source, Iterable<? extends T> slice, int end) {
-            if (end < 0) {
-                return -1;
-            }
-            // the slice is read once, whatever its shape; its emptiness is answered by the copy
-            final List<T> _slice = toList(slice);
-            if (source.isEmpty()) {
-                return _slice.isEmpty() ? 0 : -1;
-            } else if (_slice.isEmpty()) {
-                final int len = source.length();
-                return len < end ? len : end;
-            }
-            int index = 0;
-            int result = -1;
-            // lengths once, then counted down: List.length() walks the list
-            final int sliceLength = _slice.length();
-            int remaining = source.length();
-            while (remaining >= sliceLength) {
-                final int found = findNextSlice(source, _slice, remaining, sliceLength);
-                if (found < 0) {
-                    return result;
-                }
-                if (index + found > end) {
-                    return result;
-                }
-                result = index + found;
-                index += found + 1;
-                remaining -= found + 1;
-                source = source.drop(found + 1);
-            }
-            return result;
-        }
-
-        private static <T extends @Nullable Object> int findFirstSlice(List<T> source, List<T> slice, int from) {
-            int index = 0;
-            final int sliceLength = slice.length();
-            // length once, then counted down: List.length() walks the list
-            int remaining = source.length();
-            while (remaining >= sliceLength) {
-                if (index >= from && source.startsWith(slice)) {
-                    return index;
-                }
-                if (source.isEmpty()) {
-                    // only reachable for an empty slice with from > length()
-                    return -1;
-                }
-                index++;
-                remaining--;
-                source = source.tail();
-            }
-            return -1;
-        }
-
-        // the offset of the next occurrence of the slice in source, or -1
-        private static <T extends @Nullable Object> int findNextSlice(List<T> source, List<T> slice, int remaining, int sliceLength) {
-            int index = 0;
-            while (remaining >= sliceLength) {
-                if (source.startsWith(slice)) {
-                    return index;
-                }
-                index++;
-                remaining--;
-                source = source.tail();
-            }
-            return -1;
-        }
-
-        @SuppressWarnings("unchecked")
-        private static <T extends @Nullable Object> List<T> toList(Iterable<? extends T> iterable) {
-            return (iterable instanceof List) ? (List<T>) iterable : List.ofAll(iterable);
-        }
-    }
-
-    interface Search {
-
-        static <T extends @Nullable Object> int linearSearch(List<T> list, ToIntFunction<T> comparison) {
-            int idx = 0;
-            for (T current : list) {
-                final int cmp = comparison.applyAsInt(current);
-                if (cmp == 0) {
-                    return idx;
-                } else if (cmp < 0) {
-                    return -(idx + 1);
-                }
-                idx += 1;
-            }
-            return -(idx + 1);
-        }
-    }
 }

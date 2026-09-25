@@ -1,5 +1,6 @@
 package com.guizmaii.zazr.collection;
 
+import com.guizmaii.zazr.collection.internal.Iterator;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 

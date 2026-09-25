@@ -1,5 +1,7 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.TreeSet;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 

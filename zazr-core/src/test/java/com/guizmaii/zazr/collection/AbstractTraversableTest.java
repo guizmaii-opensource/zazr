@@ -952,7 +952,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldViewWithoutCopying() {
         final java.util.Collection<Integer> view = of(1, 2, 3).asJava();
-        assertThat(view.getClass().getName()).startsWith("com.guizmaii.zazr.collection.JavaConverters$");
+        assertThat(view.getClass().getName()).startsWith("com.guizmaii.zazr.collection.internal.JavaConverters$");
     }
 
     // helpers

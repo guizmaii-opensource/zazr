@@ -1,5 +1,10 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
+import com.guizmaii.zazr.collection.List;
+import com.guizmaii.zazr.collection.Queue;
+import com.guizmaii.zazr.collection.Stream;
+import com.guizmaii.zazr.collection.Traversable;
+import com.guizmaii.zazr.collection.Vector;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -13,28 +18,28 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich
  */
-class JavaConverters {
+public class JavaConverters {
 
     private JavaConverters() {
     }
 
-    static <T extends @Nullable Object> ListView<T, Vector<T>> asJava(Vector<T> vector, ChangePolicy changePolicy) {
+    public static <T extends @Nullable Object> ListView<T, Vector<T>> asJava(Vector<T> vector, ChangePolicy changePolicy) {
         return new VectorListView<>(vector, changePolicy.isMutable());
     }
 
-    static <T extends @Nullable Object> ListView<T, List<T>> asJava(List<T> list, ChangePolicy changePolicy) {
+    public static <T extends @Nullable Object> ListView<T, List<T>> asJava(List<T> list, ChangePolicy changePolicy) {
         return new ListListView<>(list, changePolicy.isMutable());
     }
 
-    static <T extends @Nullable Object> ListView<T, Queue<T>> asJava(Queue<T> queue, ChangePolicy changePolicy) {
+    public static <T extends @Nullable Object> ListView<T, Queue<T>> asJava(Queue<T> queue, ChangePolicy changePolicy) {
         return new QueueListView<>(queue, changePolicy.isMutable());
     }
 
-    static <T extends @Nullable Object> ListView<T, Stream<T>> asJava(Stream<T> stream, ChangePolicy changePolicy) {
+    public static <T extends @Nullable Object> ListView<T, Stream<T>> asJava(Stream<T> stream, ChangePolicy changePolicy) {
         return new StreamListView<>(stream, changePolicy.isMutable());
     }
 
-    enum ChangePolicy {
+    public enum ChangePolicy {
 
         IMMUTABLE, MUTABLE;
 
@@ -52,15 +57,15 @@ class JavaConverters {
      *
      * @param <T> the element type
      */
-    static final class CollectionView<T extends @Nullable Object> extends AbstractCollection<T> {
+    public static final class CollectionView<T extends @Nullable Object> extends AbstractCollection<T> {
 
         private final Traversable<T> delegate;
 
-        CollectionView(Traversable<T> delegate) {
+        public CollectionView(Traversable<T> delegate) {
             this.delegate = delegate;
         }
 
-        Traversable<T> getDelegate() {
+        public Traversable<T> getDelegate() {
             return delegate;
         }
 
@@ -144,7 +149,7 @@ class JavaConverters {
             return mutable;
         }
 
-        C getDelegate() {
+        public C getDelegate() {
             return delegate;
         }
 
@@ -180,7 +185,7 @@ class JavaConverters {
      * @param <T> the element type
      * @param <C> the delegate type
      */
-    static abstract class ListView<T extends @Nullable Object, C extends Traversable<T>> extends HasDelegate<C> implements java.util.List<T> {
+    public static abstract class ListView<T extends @Nullable Object, C extends Traversable<T>> extends HasDelegate<C> implements java.util.List<T> {
 
         ListView(C delegate, boolean mutable) {
             super(delegate, mutable);

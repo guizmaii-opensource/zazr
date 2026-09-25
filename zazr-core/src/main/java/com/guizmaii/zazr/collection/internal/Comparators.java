@@ -1,4 +1,4 @@
-package com.guizmaii.zazr.collection;
+package com.guizmaii.zazr.collection.internal;
 
 import java.util.Comparator;
 import org.jspecify.annotations.Nullable;
@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich
  */
-final class Comparators {
+public final class Comparators {
 
     private Comparators() {
     }
@@ -22,7 +22,7 @@ final class Comparators {
      * @return The natural Comparator of type U
      */
     @SuppressWarnings("unchecked")
-    static <U extends @Nullable Object> Comparator<U> naturalComparator() {
+    public static <U extends @Nullable Object> Comparator<U> naturalComparator() {
         return NaturalComparator.instance();
     }
 }
