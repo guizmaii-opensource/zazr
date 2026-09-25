@@ -1408,8 +1408,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
      * <p>
-     * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)), as {@link Vector#combinations(int)}: up to O(2^n) for
-     * a k above n / 2, even though few combinations are returned.
+     * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)), as {@link Vector#combinations(int)}: as k approaches n,
+     * the work approaches O(2^n) while the result shrinks.
      *
      * @param k The size of each combination; {@code k <= 0} gives one empty combination
      * @return the k-combinations, in position order; none when {@code k > size()}

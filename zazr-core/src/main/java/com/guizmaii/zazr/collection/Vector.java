@@ -874,8 +874,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)): the C(n, k) combinations of k elements are built, and
      * every choice of fewer than k elements is visited on the way, even one that cannot be completed. That is
-     * O(k * C(n, k)) for k up to n / 2, and up to O(2^n) above: {@code combinations(n)} does O(2^n) work to return
-     * one combination.
+     * O(k * C(n, k)) for k up to n / 2; as k approaches n, the visited choices approach 2^n while the result shrinks:
+     * {@code combinations(n)} does O(2^n) work to return one combination.
      *
      * @param k the size of each combination; {@code k <= 0} gives one empty combination
      * @return the k-combinations, in position order
@@ -1749,8 +1749,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * This Vector if it is not empty, otherwise the elements of {@code other}.
      * <p>
-     * Complexity: O(1) when this Vector is not empty or {@code other} is a Vector; otherwise O(m) for m elements of
-     * {@code other}, which are copied.
+     * Complexity: O(m) for m elements of {@code other} when this Vector is empty and {@code other} is not a Vector:
+     * they are copied. O(1) otherwise.
      *
      * @param other the elements to use when this Vector is empty
      * @return this Vector, or a Vector of the elements of {@code other}
@@ -1763,8 +1763,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * This Vector if it is not empty, otherwise the elements {@code supplier} gives, which is called only then.
      * <p>
-     * Complexity: O(1) when this Vector is not empty or the supplied iterable is a Vector; otherwise O(m) for the m
-     * supplied elements, which are copied.
+     * Complexity: O(m) for m supplied elements when this Vector is empty and they are not a Vector: they are copied.
+     * O(1) otherwise.
      *
      * @param supplier gives the elements to use when this Vector is empty
      * @return this Vector, or a Vector of the supplied elements
@@ -1891,7 +1891,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * All distinct permutations of the elements, in the order the distinct elements first occur.
      * <p>
      * Complexity: O(n! * n^2) in the worst case (all elements distinct): there are n! permutations of n elements, and
-     * each is rebuilt once per element, at every level of the recursion.
+     * every partial permutation is copied into a new Vector at each of the n levels of the recursion.
      *
      * @return the permutations; none for the empty Vector
      */
@@ -2880,8 +2880,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * ordered sequence types.
      * <p>
      * Complexity: O(n + m) for a sequence of m elements: the sizes are compared first (a {@link List}, a
-     * {@link Queue} or a {@link Stream} counts its elements to answer), then the elements in order, up to the first difference. O(1)
-     * for an object that is not a sequence.
+     * {@link Queue} or a {@link Stream} counts its elements to answer), then the elements in order, up to the first
+     * difference. So it does not terminate when compared with an infinite {@link Stream}. O(1) for an object that is
+     * not a sequence.
      *
      * @param o any object
      * @return true if {@code o} is an ordered sequence of the same elements
