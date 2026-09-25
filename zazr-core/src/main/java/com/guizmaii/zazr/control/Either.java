@@ -45,7 +45,7 @@ import org.jspecify.annotations.Nullable;
  * }</pre>
  * Neither case holds {@code null}: {@link #left(Object)} and {@link #right(Object)} throw.
  * <p>
- * An {@code Either} is not a collection and not {@link Iterable} (design 3.2): to iterate its right value, convert
+ * An {@code Either} is not a collection and not {@link Iterable}: to iterate its right value, convert
  * it explicitly with {@link #toVector()} or {@link #toOption()}.
  *
  * <h2>Example</h2>
@@ -110,7 +110,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
 
     /**
      * Removes one level of nesting on the right: {@code Right(Right(r))} is {@code Right(r)}, {@code Right(Left(l))}
-     * is {@code Left(l)}, and an outer {@code Left} is returned as it is. Static, like every {@code flatten} in zazr,
+     * is {@code Left(l)}, and an outer {@code Left} is returned as it is. Static, like every {@code flatten} in Zazr,
      * because Java cannot demand of an instance method that the right value be an {@code Either} itself.
      *
      * @param nested an {@code Either} whose right value is an {@code Either} with the same left type
@@ -176,7 +176,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Maps both sides at once: {@code leftMapper} is applied to a {@code Left}, {@code rightMapper} to a
      * {@code Right}; only one of them runs. The same as {@code mapLeft(leftMapper).map(rightMapper)}.
      * <p>
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null}.
      *
      * @param leftMapper  the function for a left value
      * @param rightMapper the function for a right value
@@ -470,7 +470,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * If this {@code Either} is a {@link Either.Left}, it is returned unchanged.
      * Otherwise, the {@code mapper} function is applied to the right value, and its result is returned.
      * <p>
-     * The mapper must return an {@code Either}, never {@code null}; the {@code Either} it builds rejects {@code null} on both sides (design 3.9).
+     * The mapper must return an {@code Either}, never {@code null}; the {@code Either} it builds rejects {@code null} on both sides.
      *
      * @param mapper a function that maps the right value to another {@code Either<L, U>}
      * @param <U>    the type of the right value in the resulting {@code Either}
@@ -502,7 +502,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * left.map(String::toUpperCase);
      * }</pre>
      * <p>
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null}.
      *
      * @param mapper a function to transform the right value
      * @param <U>    the type of the right value in the resulting {@code Either}
@@ -534,7 +534,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * right.mapLeft(i -> i + 1);
      * }</pre>
      * <p>
-     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null} (design 3.9).
+     * A mapper that returns {@code null} makes this throw {@link NullPointerException}: neither {@code Left} nor {@code Right} holds {@code null}.
      *
      * @param leftMapper a function to transform the left value
      * @param <U>        the type of the left value in the resulting {@code Either}
@@ -617,7 +617,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         return this;
     }
 
-    // -- zip (design 3.4)
+    // -- zip
 
     /**
      * Pairs this right value with {@code that}'s, failing fast: {@code Right} of the pair when both are
@@ -642,7 +642,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines this right value with {@code that}'s through {@code f}, failing fast: {@code Right} of the result when
      * both are {@code Right}, otherwise the first {@code Left} of the two (this one, then {@code that}), as is.
      * {@code f} is called only when both are {@code Right}; it must not return {@code null}, since {@code Right}
-     * cannot hold {@code null} (design 3.9).
+     * cannot hold {@code null}.
      *
      * @param that the other side
      * @param f    combines the two right values; it must not return {@code null}
@@ -717,7 +717,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of two {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -766,7 +766,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of three {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -823,7 +823,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of four {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -888,7 +888,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of five {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -961,7 +961,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of six {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -1042,7 +1042,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of seven {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -1131,7 +1131,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * Combines the right values of eight {@code Either}s through {@code f}, failing fast: {@code Right} of the result
      * when every argument is a {@code Right}, otherwise the first {@code Left} in argument order, as is. {@code f} is
      * called only when every argument is a {@code Right}, with the values in argument order; it must not return
-     * {@code null}, since {@code Right} cannot hold {@code null} (design 3.9).
+     * {@code null}, since {@code Right} cannot hold {@code null}.
      *
      * @param e1  the first {@code Either}
      * @param e2  the second {@code Either}
@@ -1193,7 +1193,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get(), e8.get()), "Either.zipWith: f returned null"));
     }
 
-    // -- conversions (design 3.2)
+    // -- conversions
 
     /**
      * Converts this {@code Either} to an {@link Option} of its right value: {@code Some(value)} for a {@code Right},

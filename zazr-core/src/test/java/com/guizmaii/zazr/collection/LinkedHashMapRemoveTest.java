@@ -97,7 +97,7 @@ public class LinkedHashMapRemoveTest {
         LinkedHashMap<String, Integer> map = LinkedHashMap.of("a", 1, "b", 2, "c", 3)
                 .remove("b")
                 .put("b", 4);
-        assertThat(map.keySet().toJavaList()).containsExactly("a", "c", "b");
+        assertThat(new java.util.ArrayList<>(map.keySet().asJava())).containsExactly("a", "c", "b");
     }
 
     @Test
@@ -109,9 +109,9 @@ public class LinkedHashMapRemoveTest {
         for (int i = 10; i < 90; i += 3) {
             map = map.remove(i);
         }
-        final java.util.List<Integer> keys = map.keySet().toJavaList();
-        assertThat(map.remove(keys.get(0)).keySet().toJavaList()).isEqualTo(keys.subList(1, keys.size()));
-        assertThat(map.remove(keys.get(keys.size() - 1)).keySet().toJavaList()).isEqualTo(keys.subList(0, keys.size() - 1));
+        final java.util.List<Integer> keys = new java.util.ArrayList<>(map.keySet().asJava());
+        assertThat(new java.util.ArrayList<>(map.remove(keys.get(0)).keySet().asJava())).isEqualTo(keys.subList(1, keys.size()));
+        assertThat(new java.util.ArrayList<>(map.remove(keys.get(keys.size() - 1)).keySet().asJava())).isEqualTo(keys.subList(0, keys.size() - 1));
     }
 
 }

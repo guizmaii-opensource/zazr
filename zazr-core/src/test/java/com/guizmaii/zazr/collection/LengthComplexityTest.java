@@ -3,6 +3,7 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -10,8 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 /**
  * {@code List.Cons.length()} walks the list (a record has no field for a cached length), so every caller
  * must measure a length once, never per element. Each case below is milliseconds when linear and times out
- * when quadratic.
+ * when quadratic. The class runs alone, so that the time bound does not measure the other test classes running in
+ * parallel.
  */
+@Isolated
 public class LengthComplexityTest {
 
     private static final int N = 100_000;

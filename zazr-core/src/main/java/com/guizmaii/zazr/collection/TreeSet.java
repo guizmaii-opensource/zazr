@@ -4,8 +4,10 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.collection.internal.RedBlackTree;
 import com.guizmaii.zazr.collection.internal.RedBlackTreeModule;
+import com.guizmaii.zazr.collection.internal.TreeViews;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -188,6 +190,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Objects.requireNonNull(values, "values is null");
         if (values instanceof TreeSet && ((TreeSet<?>) values).comparator() == comparator) {
             return (TreeSet<T>) values;
+        } else if (JavaConverters.underlying(values) instanceof TreeSet<?> underlying && underlying.comparator() == comparator) {
+            return (TreeSet<T>) underlying;
         } else {
             // one read of the argument, which may be a one-shot Iterable: the emptiness is answered by the tree
             final RedBlackTree<T> tree = RedBlackTree.ofAll(comparator, values);
@@ -206,7 +210,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     /**
-     * The union of nested iterables, ordered by {@code comparator}. Static, like every {@code flatten} in zazr, because
+     * The union of nested iterables, ordered by {@code comparator}. Static, like every {@code flatten} in Zazr, because
      * Java cannot demand of an instance method that the receiver's element type be a collection. The outer iterable
      * and each inner one are iterated once, so one-shot iterables are accepted.
      * <p>
@@ -691,6 +695,27 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
     }
 
+    /**
+     * An unmodifiable {@link java.util.NavigableSet} view of this TreeSet, in the comparator's order: nothing is
+     * copied, reads go through to this set, which never changes, and every mutator of the view (including those of
+     * its iterators and sub-views) throws {@link UnsupportedOperationException}, {@code pollFirst} and
+     * {@code pollLast} included. {@code subSet}, {@code headSet}, {@code tailSet} and {@code descendingSet} are views
+     * too, with the bounds rules of {@link java.util.TreeSet}; {@code comparator()} is {@code null} when this set uses
+     * the natural order. The view equals any {@code java.util.Set} with the same elements. A mutable copy is
+     * {@code new java.util.TreeSet<>(set.asJava())}; {@code TreeSet.ofAll} given the view and this set's comparator
+     * returns this set without copying.
+     * <p>
+     * Complexity: O(1); {@code contains}, {@code size}, {@code first}, {@code last}, {@code ceiling}, {@code floor},
+     * {@code higher} and {@code lower} on the view and on its sub-views are O(log n), an iterator is O(log n) to create
+     * and amortized O(1) per step.
+     *
+     * @return an unmodifiable {@code java.util.NavigableSet} view
+     */
+    @Override
+    public java.util.NavigableSet<T> asJava() {
+        return TreeViews.asJava(this, tree);
+    }
+
     @Override
     public Comparator<T> comparator() {
         return tree.comparator();
@@ -932,11 +957,6 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public TreeSet<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements, kept -> filter(kept));
-    }
-
-    @Override
-    public java.util.TreeSet<T> toJavaSet() {
-        return toJavaSet(ignore -> new java.util.TreeSet<>(comparator()));
     }
 
     @SuppressWarnings("unchecked")

@@ -292,7 +292,7 @@ public class LazyTest {
                         }))
                 );
 
-                final CompletableFuture all = CompletableFuture.allOf(futures.toJavaList().toArray(new CompletableFuture<?>[0]));
+                final CompletableFuture all = CompletableFuture.allOf(new java.util.ArrayList<>(futures.asJava()).toArray(new CompletableFuture<?>[0]));
                 canProceed.set(true);
                 all.join();
             }

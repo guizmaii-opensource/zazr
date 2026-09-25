@@ -4,6 +4,8 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.SetViews;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import java.io.*;
@@ -141,13 +143,15 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @param elements Set elements
      * @param <T>      The value type
      * @return A HashSet containing the given elements; if {@code elements} is already a
-     *         HashSet, it is returned unchanged.
+     *         HashSet, or the {@link #asJava()} view of one, that HashSet is returned unchanged.
      */
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> HashSet<T> ofAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (elements instanceof HashSet) {
             return (HashSet<T>) elements;
+        } else if (JavaConverters.underlying(elements) instanceof HashSet<?> underlying) {
+            return (HashSet<T>) underlying;
         } else {
             final HashArrayMappedTrie<T, T> tree = addAll(HashArrayMappedTrie.empty(), elements);
             return tree.isEmpty() ? empty() : new HashSet<>(tree);
@@ -167,7 +171,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     /**
-     * The union of nested iterables. Static, like every {@code flatten} in zazr, because Java cannot demand of an
+     * The union of nested iterables. Static, like every {@code flatten} in Zazr, because Java cannot demand of an
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>
@@ -747,6 +751,22 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return tree.keysIterator();
     }
 
+    /**
+     * An unmodifiable {@link java.util.Set} view of this HashSet: nothing is copied, reads go through to this set,
+     * which never changes, and every mutator of the view (including those of its iterator) throws
+     * {@link UnsupportedOperationException}. It equals any {@code java.util.Set} with the same elements. A mutable
+     * copy is {@code new java.util.HashSet<>(set.asJava())}; {@code HashSet.ofAll} given the view returns this set
+     * without copying.
+     * <p>
+     * Complexity: O(1); {@code contains} on the view is effectively O(1).
+     *
+     * @return an unmodifiable {@code java.util.Set} view
+     */
+    @Override
+    public java.util.Set<T> asJava() {
+        return SetViews.asJava(this);
+    }
+
     @Override
     public <U extends @Nullable Object> HashSet<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -884,11 +904,6 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public HashSet<T> retainAll(Iterable<? extends T> elements) {
         return Collections.retainAll(this, elements, kept -> filter(kept));
-    }
-
-    @Override
-    public java.util.HashSet<T> toJavaSet() {
-        return toJavaSet(java.util.HashSet::new);
     }
 
     /**

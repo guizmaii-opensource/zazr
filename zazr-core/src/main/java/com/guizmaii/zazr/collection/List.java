@@ -18,12 +18,8 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
-import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
-import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.IMMUTABLE;
-import static com.guizmaii.zazr.collection.internal.JavaConverters.ChangePolicy.MUTABLE;
-import static com.guizmaii.zazr.collection.internal.JavaConverters.ListView;
 
 /**
  * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent programming.
@@ -229,9 +225,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         Objects.requireNonNull(elements, "elements is null");
         if (elements instanceof List) {
             return (List<T>) elements;
-        } else if (elements instanceof ListView
-                && ((ListView<T, ?>) elements).getDelegate() instanceof List) {
-            return (List<T>) ((ListView<T, ?>) elements).getDelegate();
+        } else if (JavaConverters.underlying(elements) instanceof List<?> underlying) {
+            return (List<T>) underlying;
         } else if (elements instanceof java.util.List) {
             List<T> result = Nil.instance();
             final java.util.List<T> list = (java.util.List<T>) elements;
@@ -274,7 +269,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Concatenates nested iterables into one List. Static, like every {@code flatten} in zazr, because Java cannot
+     * Concatenates nested iterables into one List. Static, like every {@code flatten} in Zazr, because Java cannot
      * demand of an instance method that the receiver's element type be a collection. The outer iterable and each inner
      * one are iterated once, so one-shot iterables are accepted.
      * <p>
@@ -895,61 +890,18 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Returns an immutable {@link java.util.List} view of this List: reads go through to this List, mutators throw
-     * {@link UnsupportedOperationException}.
+     * An unmodifiable {@link java.util.List} view of this List, in its order: nothing is copied, reads go through
+     * to this List, which never changes, and every mutator of the view (including those of its iterators and
+     * sub-lists) throws {@link UnsupportedOperationException}. {@code reversed()} and {@code subList} are views too.
+     * A mutable copy is {@code new java.util.ArrayList<>(list.asJava())}; {@code List.ofAll} given the view
+     * returns this List without copying.
      * <p>
-     * Complexity: O(1); {@code get(i)} on the view is O(i).
+     * Complexity: O(1); {@code get(i)} on the view is O(i), {@code size()} is O(1).
      *
-     * @return an immutable {@code java.util.List} view
+     * @return an unmodifiable {@code java.util.List} view
      */
     default java.util.List<T> asJava() {
-        return JavaConverters.asJava(this, IMMUTABLE);
-    }
-
-    /**
-     * Passes an immutable {@link java.util.List} view of this List to {@code action} and returns this List.
-     * <p>
-     * Complexity: O(1) to create the view.
-     *
-     * @param action receives the view
-     * @return this List
-     * @throws NullPointerException if {@code action} is null
-     * @see #asJava()
-     */
-    default List<T> asJava(Consumer<? super java.util.List<T>> action) {
-        Objects.requireNonNull(action, "action is null");
-        action.accept(asJava());
-        return this;
-    }
-
-    /**
-     * Returns a mutable {@link java.util.List} view of this List: every mutator replaces the view's underlying List
-     * by a new one; this List is never modified.
-     * <p>
-     * Complexity: O(1); each mutator costs what the corresponding List operation costs.
-     *
-     * @return a mutable {@code java.util.List} view
-     */
-    default java.util.List<T> asJavaMutable() {
-        return JavaConverters.asJava(this, MUTABLE);
-    }
-
-    /**
-     * Passes a mutable {@link java.util.List} view of this List to {@code action} and returns the List the view holds
-     * afterwards: this List if the action only read, a new one reflecting the writes otherwise.
-     * <p>
-     * Complexity: O(1) to create the view.
-     *
-     * @param action receives the view
-     * @return this List, or a new List reflecting the modifications made through the view
-     * @throws NullPointerException if {@code action} is null
-     * @see #asJavaMutable()
-     */
-    default List<T> asJavaMutable(Consumer<? super java.util.List<T>> action) {
-        Objects.requireNonNull(action, "action is null");
-        final ListView<T, List<T>> view = JavaConverters.asJava(this, MUTABLE);
-        action.accept(view);
-        return view.getDelegate();
+        return JavaConverters.asJava(this);
     }
 
     /**
@@ -3659,121 +3611,6 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
         return stream().collect(supplier, accumulator, combiner);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.Collection} that {@code factory} makes for the given
-     * capacity, in this List's order: {@code toJavaCollection(java.util.LinkedHashSet::new)}.
-     *
-     * @param factory makes an empty mutable collection with the given initial capacity
-     * @param <C>     the collection type
-     * @return the new collection, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <C extends java.util.Collection<T>> C toJavaCollection(Function<Integer, C> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * The elements copied into a new {@link java.util.ArrayList}, in this List's order.
-     *
-     * @return the new list
-     */
-    default java.util.List<T> toJavaList() {
-        return TraversableModule.toJavaCollection(this, ArrayList::new, 10);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.List} that {@code factory} makes for the given
-     * capacity, in this List's order: {@code toJavaList(capacity -> new java.util.LinkedList<>())}.
-     *
-     * @param factory makes an empty mutable list with the given initial capacity
-     * @param <LIST>  the list type
-     * @return the new list, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <LIST extends java.util.List<T>> LIST toJavaList(Function<Integer, LIST> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * The elements as the entries of a new {@link java.util.HashMap}, each mapped to a key and a value by
-     * {@code f}; of two entries with the same key, the later one in this List's order wins.
-     *
-     * @param f   the entry an element becomes
-     * @param <K> the key type
-     * @param <V> the value type
-     * @return the new map
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> toJavaMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return TraversableModule.toJavaMap(this, java.util.HashMap::new, f);
-    }
-
-    /**
-     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
-     * to a key by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the
-     * later one in this List's order wins.
-     *
-     * @param factory     makes an empty mutable map
-     * @param keyMapper   the key of an element
-     * @param valueMapper the value of an element
-     * @param <K>         the key type
-     * @param <V>         the value type
-     * @param <MAP>       the map type
-     * @return the new map, filled
-     * @throws NullPointerException if an argument is null
-     */
-    default <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
-        return TraversableModule.toJavaMap(this, factory, TraversableModule.entryMapper(keyMapper, valueMapper));
-    }
-
-    /**
-     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
-     * to a key and a value by {@code f}; of two entries with the same key, the later one in this List's order
-     * wins.
-     *
-     * @param factory makes an empty mutable map
-     * @param f       the entry an element becomes
-     * @param <K>     the key type
-     * @param <V>     the value type
-     * @param <MAP>   the map type
-     * @return the new map, filled
-     * @throws NullPointerException if an argument is null
-     */
-    default <K extends @Nullable Object, V extends @Nullable Object, MAP extends java.util.Map<K, V>> MAP toJavaMap(Supplier<MAP> factory, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return TraversableModule.toJavaMap(this, factory, f);
-    }
-
-    /**
-     * The distinct elements copied into a new {@link java.util.HashSet}.
-     *
-     * @return the new set
-     */
-    default java.util.Set<T> toJavaSet() {
-        return TraversableModule.toJavaCollection(this, java.util.HashSet::new, 16);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.Set} that {@code factory} makes for the given
-     * capacity: {@code toJavaSet(capacity -> new java.util.TreeSet<>(Comparator.reverseOrder()))}.
-     *
-     * @param factory makes an empty mutable set with the given initial capacity
-     * @param <SET>   the set type
-     * @return the new set, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <SET extends java.util.Set<T>> SET toJavaSet(Function<Integer, SET> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * A parallel {@link java.util.stream.Stream} over the elements, built on {@link #spliterator()}.
-     *
-     * @return a new parallel {@code java.util.stream.Stream}
-     */
-    default java.util.stream.Stream<T> toJavaParallelStream() {
-        return StreamSupport.stream(spliterator(), true);
     }
 
     /**

@@ -150,7 +150,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Concatenates a non-empty vector of non-empty vectors. Static, like every {@code flatten} in zazr, because Java
+     * Concatenates a non-empty vector of non-empty vectors. Static, like every {@code flatten} in Zazr, because Java
      * cannot demand of an instance method that the receiver's element type be a collection.
      *
      * @param nested Non-empty vectors
@@ -1027,9 +1027,14 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public java.util.stream.Stream<A> stream() { return vector.stream(); }
 
     /**
+     * An unmodifiable {@link java.util.List} view of the elements, the one {@link Vector#asJava()} gives: nothing is
+     * copied and every mutator of the view throws {@link UnsupportedOperationException}. A mutable copy is
+     * {@code new java.util.ArrayList<>(nonEmpty.asJava())}; {@code Vector.ofAll} given the view returns
+     * {@link #toVector()} without copying.
+     * <p>
      * Complexity: O(1); {@code get} on the view is effectively O(1).
      *
-     * @return an immutable {@link java.util.List} view of the elements; O(1)
+     * @return an unmodifiable {@code java.util.List} view
      */
     public java.util.List<A> asJava() { return vector.asJava(); }
 

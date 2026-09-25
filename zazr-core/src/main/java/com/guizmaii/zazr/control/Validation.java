@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A validation that either succeeds with a value of type {@code A} or fails with <em>one or more</em> errors of type
- * {@code E}. Modelled on zio-prelude's {@code Validation}, minus its log channel (design 3.5).
+ * {@code E}. Modelled on zio-prelude's {@code Validation}, minus its log channel.
  * <p>
  * Unlike {@link Either}, which stops at the first error, {@code Validation} keeps <em>all</em> errors: combining two
  * invalid values with {@link #zip(Validation)} concatenates their errors, which is what a form or a configuration
@@ -66,7 +66,7 @@ import org.jspecify.annotations.Nullable;
  * The sides are not symmetric (one is non-empty), so there is no {@code flip}. Equality is the record equality, order
  * sensitive on the errors: {@code Invalid(a, b)} is not {@code Invalid(b, a)}.
  * <p>
- * A {@code Validation} is not a collection and not {@link Iterable} (design 3.2): to iterate its value, convert it
+ * A {@code Validation} is not a collection and not {@link Iterable}: to iterate its value, convert it
  * explicitly with {@link #toVector()} or {@link #toOption()}.
  *
  * @param <E> the error type
@@ -120,7 +120,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * Removes one level of nesting: {@code Valid(Valid(a))} is {@code Valid(a)}, {@code Valid(Invalid(errors))} is
      * {@code Invalid(errors)}, and an outer {@code Invalid} is returned as it is. Nothing accumulates: the outer
      * validation is either invalid with its own errors or valid with the inner one as its value, so there is never a
-     * second set of errors to add. Static, like every {@code flatten} in zazr, because Java cannot demand of an
+     * second set of errors to add. Static, like every {@code flatten} in Zazr, because Java cannot demand of an
      * instance method that the value be a {@code Validation} itself.
      *
      * @param nested a {@code Validation} whose value is a {@code Validation} with the same error type

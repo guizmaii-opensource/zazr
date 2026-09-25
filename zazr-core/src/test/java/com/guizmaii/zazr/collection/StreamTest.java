@@ -4,7 +4,6 @@ import com.guizmaii.zazr.*;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Comparators;
-import com.guizmaii.zazr.collection.internal.JavaConverters;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
 import com.guizmaii.zazr.control.Try;
@@ -27,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 
 import static com.guizmaii.zazr.collection.Stream.concat;
-import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -386,10 +384,9 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfListView() {
-            final JavaConverters.ListView<Integer, Stream<Integer>> source = JavaConverters
-                    .asJava(ofAll(1, 2, 3), JavaConverters.ChangePolicy.IMMUTABLE);
-            final Stream<Integer> target = Stream.ofAll(source);
-            assertThat(target).isSameAs(source.getDelegate());
+            final Stream<Integer> persistent = ofAll(1, 2, 3);
+            final Stream<Integer> target = Stream.ofAll(persistent.asJava());
+            assertThat(target).isSameAs(persistent);
         }
     }
 
@@ -648,7 +645,6 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(Stream.continually(1).extend(i -> i + 1).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
         }
     }
-
 
     // -- subSequence(int, int)
 
@@ -1027,51 +1023,12 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class AsjavamutableTests {
-        @Test
-        public void shouldConvertAsJava() {
-            final java.util.List<Integer> list = of(1, 2, 3).asJavaMutable();
-            list.add(4);
-            assertThat(list).isEqualTo(Arrays.asList(1, 2, 3, 4));
-        }
-
-        @Test
-        public void shouldConvertAsJavaWithConsumer() {
-            final Stream<Integer> seq = of(1, 2, 3).asJavaMutable(list -> {
-                assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
-                list.add(4);
-            });
-            assertThat(seq).isEqualTo(of(1, 2, 3, 4));
-        }
-
-        @Test
-        public void shouldConvertAsJavaAndRethrowException() {
-            assertThatThrownBy(() -> of(1, 2, 3).asJavaMutable(list -> { throw new RuntimeException("test");}))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("test");
-        }
-
+    class AsjavaTests {
         @Test
         public void shouldConvertAsJavaImmutable() {
             final java.util.List<Integer> list = of(1, 2, 3).asJava();
             assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
             assertThatThrownBy(() -> list.add(4)).isInstanceOf(UnsupportedOperationException.class);
-        }
-
-        @Test
-        public void shouldConvertAsJavaImmutableWithConsumer() {
-            final Stream<Integer> seq = of(1, 2, 3).asJava(list -> {
-                assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
-                assertThatThrownBy(() -> list.add(4)).isInstanceOf(UnsupportedOperationException.class);
-            });
-            assertThat(seq).isEqualTo(of(1, 2, 3));
-        }
-
-        @Test
-        public void shouldConvertAsJavaImmutableAndRethrowException() {
-            assertThatThrownBy(() -> of(1, 2, 3).asJava(list -> { throw new RuntimeException("test");}))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("test");
         }
     }
 
@@ -3147,7 +3104,6 @@ public class StreamTest extends AbstractTraversableTest {
         }
     }
 
-
     @Nested
     class LazySearchTests {
 
@@ -3233,11 +3189,8 @@ public class StreamTest extends AbstractTraversableTest {
             assertThatNullPointerException().isThrownBy(() -> stream.search(1, null)).withMessage("comparator is null");
             assertThatNullPointerException().isThrownBy(() -> stream.sortBy(null, Function.identity())).withMessage("comparator is null");
             assertThatNullPointerException().isThrownBy(() -> stream.sortBy(Comparator.naturalOrder(), null)).withMessage("mapper is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.asJava(null)).withMessage("action is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.asJavaMutable(null)).withMessage("action is null");
         }
     }
-
 
     // -- the one-pass and positional cases every sequence answers
 
@@ -5273,49 +5226,6 @@ public class StreamTest extends AbstractTraversableTest {
         assertThat(array).isEqualTo(expected);
     }
 
-    // -- toJavaList
-
-    @TestTemplate
-    public void shouldConvertNilToArrayList() {
-        assertThat(this.<Integer>empty().toJavaList()).isEqualTo(new ArrayList<Integer>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToArrayList() {
-        assertThat(of(1, 2, 3).toJavaList()).isEqualTo(asList(1, 2, 3));
-    }
-
-    // -- toJavaMap(Function)
-
-    @TestTemplate
-    public void shouldConvertNilToHashMap() {
-        assertThat(this.<Integer>empty().toJavaMap(x -> Tuple.of(x, x))).isEqualTo(new java.util.HashMap<>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToHashMap() {
-        final java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
-        expected.put(1, 1);
-        expected.put(2, 2);
-        assertThat(of(1, 2).toJavaMap(x -> Tuple.of(x, x))).isEqualTo(expected);
-    }
-
-    // -- toJavaSet
-
-    @TestTemplate
-    public void shouldConvertNilToHashSet() {
-        assertThat(this.<Integer>empty().toJavaSet()).isEqualTo(new java.util.HashSet<>());
-    }
-
-    @TestTemplate
-    public void shouldConvertNonNilToHashSet() {
-        final java.util.Set<Integer> expected = new java.util.HashSet<>();
-        expected.add(2);
-        expected.add(1);
-        expected.add(3);
-        assertThat(of(1, 2, 2, 3).toJavaSet()).containsExactlyInAnyOrderElementsOf(expected);
-    }
-
     // -- single
 
     @TestTemplate
@@ -5503,65 +5413,6 @@ public class StreamTest extends AbstractTraversableTest {
     public void shouldConvertToStream() {
         assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
         assertThat(empty().toStream()).isSameAs(Stream.empty());
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaCollectionUsingSupplier() {
-        final java.util.List<Integer> ints = of(1, 2, 3).toJavaCollection(ArrayList::new);
-        assertThat(ints).isEqualTo(asList(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaList() {
-        final java.util.List<Integer> list = of(1, 2, 3).toJavaList();
-        assertThat(list).isEqualTo(asList(1, 2, 3));
-        assertThat(empty().toJavaList()).isEmpty();
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaListUsingSupplier() {
-        final java.util.List<Integer> ints = of(1, 2, 3).toJavaList(ArrayList::new);
-        assertThat(ints).isEqualTo(asList(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingFunction() {
-        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(v -> Tuple.of(v, v));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-        assertThat(empty().toJavaMap(v -> Tuple.of(v, v))).isEqualTo(java.util.Map.of());
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingSupplierAndFunction() {
-        final java.util.Map<Integer, Integer> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, i -> Tuple.of(i, i));
-        assertThat(map).isEqualTo(java.util.Map.of(1, 1, 2, 2, 3, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaMapUsingSupplierAndTwoFunction() {
-        final java.util.Map<Integer, String> map = of(1, 2, 3).toJavaMap(java.util.HashMap::new, Function.identity(), String::valueOf);
-        assertThat(map).isEqualTo(java.util.Map.of(1, "1", 2, "2", 3, "3"));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaSet() {
-        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet();
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
-        assertThat(empty().toJavaSet()).isEmpty();
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaSetUsingSupplier() {
-        final java.util.Set<Integer> set = of(1, 2, 3).toJavaSet(java.util.HashSet::new);
-        assertThat(set).containsExactlyInAnyOrderElementsOf(java.util.Set.of(1, 2, 3));
-    }
-
-    @TestTemplate
-    public void shouldConvertToJavaParallelStream() {
-        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).toJavaParallelStream();
-        assertThat(s1.isParallel()).isTrue();
-        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
-        assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
     }
 
     // -- the range factories
@@ -6125,7 +5976,6 @@ public class StreamTest extends AbstractTraversableTest {
         }
     }
 
-
     @Nested
     class LazyWindowsAndProductsTests {
 
@@ -6272,7 +6122,6 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(walks.get()).isEqualTo(1);
         }
     }
-
 
     // -- one-shot arguments (a java.util.stream can be iterated once): every argument is read exactly once
 
@@ -6445,7 +6294,7 @@ public class StreamTest extends AbstractTraversableTest {
                 assertThat(Stream.flatten(Stream.of(inner))).isEqualTo(inner);
                 assertThat(Stream.flatten(Stream.of(inner, inner))).isEqualTo(inner.appendAll(inner));
                 assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty(), inner, Stream.<Integer> empty()))).isEqualTo(inner);
-                assertThat(Stream.flatten(java.util.List.of(Vector.range(0, n), inner.toJavaList()))).isEqualTo(inner.appendAll(inner));
+                assertThat(Stream.flatten(java.util.List.of(Vector.range(0, n), new java.util.ArrayList<>(inner.asJava())))).isEqualTo(inner.appendAll(inner));
                 // n inner iterables of one element each
                 assertThat(Stream.flatten(inner.map(Stream::of))).isEqualTo(inner);
             }

@@ -5,6 +5,8 @@ import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.collection.internal.Collections;
 import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
 import com.guizmaii.zazr.collection.internal.Iterator;
+import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.MapViews;
 import com.guizmaii.zazr.collection.internal.Maps;
 import com.guizmaii.zazr.control.Option;
 import java.util.ArrayList;
@@ -136,10 +138,15 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param map A map
      * @param <K> The key type
      * @param <V> The value type
-     * @return A HashMap containing the given map
+     * @return A HashMap containing the given map; the {@link #asJavaMap()} view of a HashMap gives that HashMap
+     *         back, not a copy
      */
+    @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofAll(java.util.Map<? extends K, ? extends V> map) {
         Objects.requireNonNull(map, "map is null");
+        if (JavaConverters.underlying(map) instanceof HashMap<?, ?> underlying) {
+            return (HashMap<K, V>) underlying;
+        }
         HashArrayMappedTrie<K, V> tree = HashArrayMappedTrie.empty();
         for (java.util.Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             tree = tree.put(entry.getKey(), entry.getValue());
@@ -478,13 +485,16 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param entries Map entries
      * @param <K>     The key type
      * @param <V>     The value type
-     * @return A HashMap containing the given entries (the same instance if {@code entries} is already a HashMap)
+     * @return A HashMap containing the given entries (the same instance if {@code entries} is already a HashMap, or
+     *         the {@link #asJava()} view of one)
      */
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         Objects.requireNonNull(entries, "entries is null");
         if (entries instanceof HashMap) {
             return (HashMap<K, V>) entries;
+        } else if (JavaConverters.underlying(entries) instanceof HashMap<?, ?> underlying) {
+            return (HashMap<K, V>) underlying;
         } else {
             HashArrayMappedTrie<K, V> trie = HashArrayMappedTrie.empty();
             for (Tuple2<? extends K, ? extends V> entry : entries) {
@@ -853,9 +863,21 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return trie.size();
     }
 
+    /**
+     * An unmodifiable {@link java.util.Map} view of this HashMap: nothing is copied, reads go through to this map,
+     * which never changes, and every mutator of the view (including those of its key set, values, entry set and
+     * their iterators, and {@code setValue} on its entries) throws {@link UnsupportedOperationException}. The view
+     * equals any {@code java.util.Map} with the same mappings. A mutable copy is
+     * {@code new java.util.HashMap<>(map.asJavaMap())}; {@code HashMap.ofAll} given the view returns this map without
+     * copying.
+     * <p>
+     * Complexity: O(1); {@code get} and {@code containsKey} on the view are effectively O(1).
+     *
+     * @return an unmodifiable {@code java.util.Map} view
+     */
     @Override
-    public java.util.HashMap<K, V> toJavaMap() {
-        return toJavaMap(java.util.HashMap::new, t -> t);
+    public java.util.Map<K, V> asJavaMap() {
+        return MapViews.asJavaMap(this, trie);
     }
 
     /**

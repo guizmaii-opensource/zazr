@@ -24,7 +24,7 @@ public abstract class AbstractIterator<T extends @Nullable Object> implements It
 
     /**
      * Every {@code Iterator} implementation funnels through here, so this is the single place that
-     * rejects a null element produced by a user-supplied function or source (design 3.9): a mapper,
+     * rejects a null element produced by a user-supplied function or source: a mapper,
      * supplier, seed, fill value, or bulk source. {@link Lazy}'s own iterator is not an
      * {@code AbstractIterator} and stays outside this check, since {@code Lazy} may hold {@code null}.
      */

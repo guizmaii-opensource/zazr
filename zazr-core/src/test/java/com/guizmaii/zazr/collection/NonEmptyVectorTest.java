@@ -36,7 +36,7 @@ public class NonEmptyVectorTest {
         for (int n : SIZES) {
             final Vector<Integer> primitive = Vector.range(0, n);
             cases.add(Arguments.of(n, primitive));
-            cases.add(Arguments.of(n, Vector.ofAll(primitive.toJavaList())));
+            cases.add(Arguments.of(n, Vector.ofAll(new java.util.ArrayList<>(primitive.asJava()))));
         }
         return cases.stream();
     }
@@ -64,7 +64,7 @@ public class NonEmptyVectorTest {
             for (int n : SIZES) {
                 final Vector<Integer> expected = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromIterable(0, Vector.range(1, n)).toVector()).isEqualTo(expected);
-                assertThat(NonEmptyVector.fromIterable(0, Vector.range(1, n).toJavaList()).toVector()).isEqualTo(expected);
+                assertThat(NonEmptyVector.fromIterable(0, new java.util.ArrayList<>(Vector.range(1, n).asJava())).toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(0, (Iterable<Integer>) () -> Vector.range(1, n).iterator()).toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(0, List.<Integer> empty()).toVector()).isEqualTo(Vector.of(0));
             }
@@ -110,7 +110,7 @@ public class NonEmptyVectorTest {
         public void shouldCopyANonEmptyIterable() {
             for (int n : SIZES) {
                 final Vector<Integer> expected = Vector.range(0, n);
-                assertThat(NonEmptyVector.fromIterable(expected.toJavaList()).get().toVector()).isEqualTo(expected);
+                assertThat(NonEmptyVector.fromIterable(new java.util.ArrayList<>(expected.asJava())).get().toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable((Iterable<Integer>) expected::iterator).get().toVector()).isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(expected.toList()).get().toVector()).isEqualTo(expected);
             }
@@ -301,7 +301,7 @@ public class NonEmptyVectorTest {
             final NonEmptyVector<Integer> nev = nev(vector);
             final ArrayList<Integer> seen = new ArrayList<>();
             assertThat(nev.tap(seen::add)).isSameAs(nev);
-            assertThat(seen).isEqualTo(vector.toJavaList());
+            assertThat(seen).isEqualTo(new java.util.ArrayList<>(vector.asJava()));
             assertThatNullPointerException().isThrownBy(() -> nev.tap(null));
         }
 
@@ -556,8 +556,8 @@ public class NonEmptyVectorTest {
             final java.util.Spliterator<Integer> spliterator = nev.spliterator();
             assertThat(spliterator.hasCharacteristics(java.util.Spliterator.SIZED | java.util.Spliterator.SUBSIZED | java.util.Spliterator.ORDERED | java.util.Spliterator.IMMUTABLE | java.util.Spliterator.NONNULL)).isTrue();
             assertThat(spliterator.getExactSizeIfKnown()).isEqualTo(n);
-            assertThat(java.util.stream.StreamSupport.stream(nev.spliterator(), false).toList()).isEqualTo(vector.toJavaList());
-            assertThat(nev.stream().toList()).isEqualTo(vector.toJavaList());
+            assertThat(java.util.stream.StreamSupport.stream(nev.spliterator(), false).toList()).isEqualTo(new java.util.ArrayList<>(vector.asJava()));
+            assertThat(nev.stream().toList()).isEqualTo(new java.util.ArrayList<>(vector.asJava()));
             assertThat(nev.asJava()).isEqualTo(vector.asJava());
             assertThat(nev.asJava().size()).isEqualTo(n);
             assertThatThrownBy(() -> nev.asJava().add(1)).isInstanceOf(UnsupportedOperationException.class);
@@ -626,7 +626,7 @@ public class NonEmptyVectorTest {
         @MethodSource("com.guizmaii.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldBeEqualToAnotherNonEmptyVectorWithTheSameElements(int n, Vector<Integer> vector) {
             final NonEmptyVector<Integer> nev = nev(vector);
-            final NonEmptyVector<Integer> copy = NonEmptyVector.fromIterable(vector.toJavaList()).get();
+            final NonEmptyVector<Integer> copy = NonEmptyVector.fromIterable(new java.util.ArrayList<>(vector.asJava())).get();
             assertThat(nev).isEqualTo(nev);
             assertThat(nev).isEqualTo(copy);
             assertThat(nev.hashCode()).isEqualTo(copy.hashCode());

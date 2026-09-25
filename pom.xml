@@ -5,7 +5,7 @@
     <artifactId>zazr-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>zazr Parent</name>
+    <name>Zazr Parent</name>
     <description>zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
     <modules>
         <module>zazr-core</module>

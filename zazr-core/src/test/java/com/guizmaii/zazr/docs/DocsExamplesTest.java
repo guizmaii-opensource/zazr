@@ -683,8 +683,22 @@ public class DocsExamplesTest {
             assertThat(second).isEqualTo("Grace");
             assertThat(rejected).isTrue();
             assertThat(view.reversed()).containsExactly("Grace", "Ada");
-            assertThat(HashSet.of(1).asJava()).isNotInstanceOf(java.util.Set.class);
+            assertThat(HashSet.of(1).asJava()).isEqualTo(java.util.Set.of(1));
             assertThat(Vector.ofAll(names.asJava())).isSameAs(names);
+        }
+
+        @Test
+        void sortedViews() {
+            java.util.NavigableSet<Integer> scores = TreeSet.of(10, 20, 30, 40).asJava();
+            Integer atLeast25 = scores.ceiling(25);
+            java.util.NavigableSet<Integer> top = scores.tailSet(20, true);
+            java.util.NavigableMap<String, Integer> ages = TreeMap.of("Ada", 36, "Grace", 85).asJavaMap();
+            Integer grace = ages.get("Grace");
+            // atLeast25 is 30, top is [20, 30, 40], grace is 85
+
+            assertThat(atLeast25).isEqualTo(30);
+            assertThat(top).hasToString("[20, 30, 40]");
+            assertThat(grace).isEqualTo(85);
         }
 
         @Test

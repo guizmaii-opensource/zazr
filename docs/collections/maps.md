@@ -59,6 +59,6 @@ Every method: [complexity page](complexity.md#maps).
 - Do not rely on the iteration order of a `HashMap`: it depends on the hashes and may change between versions.
 - `LinkedHashMap.remove` is amortised: most calls are effectively O(1), and now and then one pays O(n) to
   clean up the insertion order.
-- `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries, not a `java.util.Map`
+- `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries; the `java.util.Map` view is `asJavaMap()`
   ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`.

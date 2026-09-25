@@ -5,59 +5,128 @@ import com.guizmaii.zazr.collection.Queue;
 import com.guizmaii.zazr.collection.Stream;
 import com.guizmaii.zazr.collection.Traversable;
 import com.guizmaii.zazr.collection.Vector;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /**
- * THIS CLASS IS INTENDED TO BE USED INTERNALLY ONLY!
+ * The unmodifiable JDK collection views of the Zazr collections: {@link java.util.Collection} for every
+ * {@link Traversable} ({@link CollectionView}) and {@link java.util.List} for the sequences ({@link ListView});
+ * the set views are in {@link SetViews}, the map views in {@link MapViews} and the sorted ones in
+ * {@link TreeViews}.
  * <p>
- * This helper class provides methods that return {@link java.util.List} views on the zazr sequences ({@link Vector},
- * {@link List}, {@link Queue} and {@link Stream}). The view creation and back conversion take O(1).
- *
- * @author Daniel Dietrich
+ * Every view is O(1) to create and copies nothing. It reads the persistent value it was made from, which never
+ * changes, so a view never goes stale. Every mutator throws {@link UnsupportedOperationException}, whether or not
+ * the call would change anything, as the collections of {@link java.util.Collections#unmodifiableList} do.
  */
-public class JavaConverters {
+public final class JavaConverters {
 
     private JavaConverters() {
     }
 
-    public static <T extends @Nullable Object> ListView<T, Vector<T>> asJava(Vector<T> vector, ChangePolicy changePolicy) {
-        return new VectorListView<>(vector, changePolicy.isMutable());
+    /**
+     * Implemented by every view. {@link #underlying()} gives the persistent value whose elements the view shows, in
+     * the same order, so that an {@code ofAll} factory handed a view can return that value instead of copying it.
+     */
+    public interface View {
+
+        /**
+         * The persistent value this view shows exactly, or {@code null} when the view shows something else (a
+         * reversed or descending view, a key range, the keys or the values of a map).
+         *
+         * @return the persistent value, or {@code null}
+         */
+        @Nullable Object underlying();
     }
-
-    public static <T extends @Nullable Object> ListView<T, List<T>> asJava(List<T> list, ChangePolicy changePolicy) {
-        return new ListListView<>(list, changePolicy.isMutable());
-    }
-
-    public static <T extends @Nullable Object> ListView<T, Queue<T>> asJava(Queue<T> queue, ChangePolicy changePolicy) {
-        return new QueueListView<>(queue, changePolicy.isMutable());
-    }
-
-    public static <T extends @Nullable Object> ListView<T, Stream<T>> asJava(Stream<T> stream, ChangePolicy changePolicy) {
-        return new StreamListView<>(stream, changePolicy.isMutable());
-    }
-
-    public enum ChangePolicy {
-
-        IMMUTABLE, MUTABLE;
-
-        boolean isMutable() {
-            return this == MUTABLE;
-        }
-    }
-
-    // -- private view implementations
 
     /**
-     * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
-     * the delegate's iterator and size, nothing copied, every mutator throwing {@link UnsupportedOperationException}
-     * whether or not it would change anything, as {@link java.util.Collections#unmodifiableCollection} does.
+     * The persistent value {@code object} shows, if it is a {@link View} of one, otherwise {@code null}.
+     *
+     * @param object any object
+     * @return the persistent value behind the view, or {@code null}
+     */
+    public static @Nullable Object underlying(@Nullable Object object) {
+        return object instanceof View view ? view.underlying() : null;
+    }
+
+    static UnsupportedOperationException unmodifiable() {
+        return new UnsupportedOperationException("unmodifiable view of a persistent collection");
+    }
+
+    public static <T extends @Nullable Object> java.util.List<T> asJava(Vector<T> vector) {
+        return new VectorListView<>(vector, false);
+    }
+
+    public static <T extends @Nullable Object> java.util.List<T> asJava(List<T> list) {
+        return new ListListView<>(list, false);
+    }
+
+    public static <T extends @Nullable Object> java.util.List<T> asJava(Queue<T> queue) {
+        return new QueueListView<>(queue, false);
+    }
+
+    public static <T extends @Nullable Object> java.util.List<T> asJava(Stream<T> stream) {
+        return new StreamListView<>(stream, false);
+    }
+
+    /**
+     * The base of the read-only {@link java.util.Collection} views: every mutator throws.
      *
      * @param <T> the element type
      */
-    public static final class CollectionView<T extends @Nullable Object> extends AbstractCollection<T> {
+    abstract static class UnmodifiableCollection<T extends @Nullable Object> extends AbstractCollection<T> implements View {
+
+        @Override
+        public final boolean add(T element) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final boolean addAll(Collection<? extends T> elements) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final boolean remove(@Nullable Object element) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final boolean removeAll(Collection<?> elements) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final boolean removeIf(Predicate<? super T> filter) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final boolean retainAll(Collection<?> elements) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final void clear() {
+            throw unmodifiable();
+        }
+    }
+
+    /**
+     * The read-only {@link java.util.Collection} view every {@link Traversable} gives through {@code asJava()}:
+     * the delegate's iterator and size, nothing copied. {@code contains} compares with {@code equals} along the
+     * iterator, as {@link AbstractCollection} does, so that any argument, {@code null} or of another type, is
+     * answered {@code false} (a map's own {@code contains} takes an entry).
+     *
+     * @param <T> the element type
+     */
+    public static final class CollectionView<T extends @Nullable Object> extends UnmodifiableCollection<T> {
 
         private final Traversable<T> delegate;
 
@@ -65,7 +134,8 @@ public class JavaConverters {
             this.delegate = delegate;
         }
 
-        public Traversable<T> getDelegate() {
+        @Override
+        public Object underlying() {
             return delegate;
         }
 
@@ -84,219 +154,140 @@ public class JavaConverters {
             return delegate.isEmpty();
         }
 
+
         @Override
         public Object[] toArray() {
             return delegate.toArray();
         }
 
         @Override
-        public java.util.stream.Stream<T> stream() {
-            return delegate.stream();
-        }
-
-        @Override
-        public boolean add(T element) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends T> elements) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean remove(@Nullable Object element) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> elements) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean removeIf(java.util.function.Predicate<? super T> filter) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean retainAll(Collection<?> elements) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clear() {
-            throw new UnsupportedOperationException();
+        public Spliterator<T> spliterator() {
+            return delegate.spliterator();
         }
     }
 
     /**
-     * Encapsulates the access to delegate and performs mutability checks.
-     *
-     * @param <C> The zazr collection type
-     */
-    private static abstract class HasDelegate<C extends Traversable<?>> {
-
-        private C delegate;
-        private final boolean mutable;
-
-        HasDelegate(C delegate, boolean mutable) {
-            this.delegate = delegate;
-            this.mutable = mutable;
-        }
-
-        protected boolean isMutable() {
-            return mutable;
-        }
-
-        public C getDelegate() {
-            return delegate;
-        }
-
-        protected boolean setDelegateAndCheckChanged(Supplier<C> delegate) {
-            ensureMutable();
-            final C previousDelegate = this.delegate;
-            final C newDelegate = delegate.get();
-            final boolean changed = newDelegate.size() != previousDelegate.size();
-            if (changed) {
-                this.delegate = newDelegate;
-            }
-            return changed;
-        }
-
-        protected void setDelegate(Supplier<C> newDelegate) {
-            ensureMutable();
-            this.delegate = newDelegate.get();
-        }
-
-        protected void ensureMutable() {
-            if (!mutable) {
-                throw new UnsupportedOperationException();
-            }
-        }
-    }
-
-    /**
-     * A {@link java.util.List} view over a persistent sequence. There is no shared sequence interface to call (design
-     * 3.7), so everything positional goes through the abstract hooks below, implemented once per delegate type:
-     * one per sequence type ({@link VectorListView}, {@link ListListView}, {@link QueueListView},
-     * {@link StreamListView}).
+     * A {@link java.util.List} view over a persistent sequence, or over the same sequence in reverse order when
+     * {@code reversed} is set (the view {@link #reversed()} returns). There is no shared sequence interface to call,
+     * so the positional reads go through the abstract hooks below, implemented once per sequence type
+     * ({@link VectorListView}, {@link ListListView}, {@link QueueListView}, {@link StreamListView}).
+     * <p>
+     * Nothing is computed ahead of the operation that needs it, which matters for a {@link Stream}: the iterator,
+     * the spliterator, {@code isEmpty}, {@code contains}, {@code indexOf}, {@code equals} and {@code get(i)} force no
+     * more cells than they read; {@code size}, {@code lastIndexOf}, {@code hashCode}, {@code getLast} and
+     * everything on the reversed view force the whole Stream.
      *
      * @param <T> the element type
-     * @param <C> the delegate type
+     * @param <C> the sequence type
      */
-    public static abstract class ListView<T extends @Nullable Object, C extends Traversable<T>> extends HasDelegate<C> implements java.util.List<T> {
+    public abstract static class ListView<T extends @Nullable Object, C extends Traversable<T>> extends UnmodifiableCollection<T> implements java.util.List<T> {
 
-        ListView(C delegate, boolean mutable) {
-            super(delegate, mutable);
+        final C delegate;
+        final boolean reversed;
+
+        ListView(C delegate, boolean reversed) {
+            this.delegate = delegate;
+            this.reversed = reversed;
         }
 
-        // -- the delegate operations a java.util.List needs and Traversable does not declare
-
-        abstract C delegateAppend(C delegate, T element);
-
-        abstract C delegateInsert(C delegate, int index, T element);
-
-        abstract C delegateAppendAll(C delegate, Iterable<? extends T> elements);
-
-        abstract C delegateInsertAll(C delegate, int index, Iterable<? extends T> elements);
-
-        abstract C delegateTake(C delegate, int n);
+        // -- the reads a java.util.List needs and Traversable does not declare
 
         abstract T delegateGet(C delegate, int index);
+
+        abstract T delegateLast(C delegate);
 
         abstract int delegateIndexOf(C delegate, T element);
 
         abstract int delegateLastIndexOf(C delegate, T element);
 
-        abstract C delegateRemoveAt(C delegate, int index);
-
-        abstract C delegateRemove(C delegate, T element);
-
-        abstract C delegateRemoveAll(C delegate, Iterable<? extends T> elements);
-
-        abstract C delegateRetainAll(C delegate, Iterable<? extends T> elements);
-
-        abstract C delegateUpdate(C delegate, int index, T element);
-
-        abstract C delegateSorted(C delegate, Comparator<? super T> comparator);
-
         abstract C delegateSubSequence(C delegate, int beginIndex, int endIndex);
 
-        abstract ListView<T, C> view(C delegate, boolean mutable);
+        /** An iterator over the elements from {@code index} on, {@code 0 <= index <= size}. */
+        abstract java.util.Iterator<T> delegateIteratorFrom(C delegate, int index);
+
+        abstract java.util.Iterator<T> delegateReverseIterator(C delegate);
+
+        abstract ListView<T, C> view(C delegate, boolean reversed);
+
+        /** Whether the sequence has at least {@code n} elements; forces at most {@code n} cells of a Stream. */
+        boolean delegateHasAtLeast(C delegate, int n) {
+            return delegate.size() >= n;
+        }
 
         // -- java.util.List
 
         @Override
-        public boolean add(T element) {
-            setDelegate(() -> delegateAppend(getDelegate(), element));
-            return true;
+        public @Nullable Object underlying() {
+            return reversed ? null : delegate;
         }
 
         @Override
-        public void add(int index, T element) {
-            setDelegate(() -> delegateInsert(getDelegate(), index, element));
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends T> collection) {
-            Objects.requireNonNull(collection, "collection is null");
-            return setDelegateAndCheckChanged(() -> delegateAppendAll(getDelegate(), collection));
-        }
-
-        @Override
-        public boolean addAll(int index, Collection<? extends T> collection) {
-            Objects.requireNonNull(collection, "collection is null");
-            return setDelegateAndCheckChanged(() -> delegateInsertAll(getDelegate(), index, collection));
-        }
-
-        @Override
-        public void clear() {
-            // DEV-NOTE: acts like Java: works for empty immutable collections
-            if (isEmpty()) {
-                return;
-            }
-            setDelegate(() -> delegateTake(getDelegate(), 0));
-        }
-
-        @Override
-        public boolean contains(Object obj) {
-            @SuppressWarnings("unchecked") final T that = (T) obj;
-            return getDelegate().contains(that);
-        }
-
-        @Override
-        public boolean containsAll(Collection<?> collection) {
-            Objects.requireNonNull(collection, "collection is null");
-            @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
-            return getDelegate().containsAll(that);
-        }
-
-        @Override
-        public T get(int index) {
-            return delegateGet(getDelegate(), index);
-        }
-
-        @Override
-        public int indexOf(Object obj) {
-            @SuppressWarnings("unchecked") final T that = (T) obj;
-            return delegateIndexOf(getDelegate(), that);
+        public int size() {
+            return delegate.size();
         }
 
         @Override
         public boolean isEmpty() {
-            return getDelegate().isEmpty();
+            return delegate.isEmpty();
+        }
+
+        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        @Override
+        public boolean contains(@Nullable Object element) {
+            return delegate.contains((T) element);
+        }
+
+        @Override
+        public T get(int index) {
+            if (reversed) {
+                final int size = delegate.size();
+                if (index < 0 || index >= size) {
+                    throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + size);
+                }
+                return delegateGet(delegate, size - 1 - index);
+            }
+            return delegateGet(delegate, index);
+        }
+
+        @Override
+        public T getFirst() {
+            if (delegate.isEmpty()) {
+                throw new NoSuchElementException();
+            }
+            return reversed ? delegateLast(delegate) : delegateGet(delegate, 0);
+        }
+
+        @Override
+        public T getLast() {
+            if (delegate.isEmpty()) {
+                throw new NoSuchElementException();
+            }
+            return reversed ? delegateGet(delegate, 0) : delegateLast(delegate);
+        }
+
+        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        @Override
+        public int indexOf(@Nullable Object element) {
+            if (reversed) {
+                final int index = delegateLastIndexOf(delegate, (T) element);
+                return index < 0 ? -1 : delegate.size() - 1 - index;
+            }
+            return delegateIndexOf(delegate, (T) element);
+        }
+
+        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        @Override
+        public int lastIndexOf(@Nullable Object element) {
+            if (reversed) {
+                final int index = delegateIndexOf(delegate, (T) element);
+                return index < 0 ? -1 : delegate.size() - 1 - index;
+            }
+            return delegateLastIndexOf(delegate, (T) element);
         }
 
         @Override
         public java.util.Iterator<T> iterator() {
-            return new Iterator<>(this);
-        }
-
-        @Override
-        public int lastIndexOf(Object obj) {
-            @SuppressWarnings("unchecked") final T that = (T) obj;
-            return delegateLastIndexOf(getDelegate(), that);
+            return reversed ? delegateReverseIterator(delegate) : delegate.iterator();
         }
 
         @Override
@@ -306,303 +297,242 @@ public class JavaConverters {
 
         @Override
         public java.util.ListIterator<T> listIterator(int index) {
+            if (index < 0 || (index > 0 && !hasAtLeast(index))) {
+                throw new IndexOutOfBoundsException("Index: " + index);
+            }
             return new ListIterator<>(this, index);
         }
 
         @Override
-        public T remove(int index) {
-            return setDelegateAndGetPreviousElement(index, () -> delegateRemoveAt(getDelegate(), index));
-        }
-
-        @Override
-        public boolean remove(Object obj) {
-            @SuppressWarnings("unchecked") final T that = (T) obj;
-            return setDelegateAndCheckChanged(() -> delegateRemove(getDelegate(), that));
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> collection) {
-            Objects.requireNonNull(collection, "collection is null");
-            @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
-            return setDelegateAndCheckChanged(() -> delegateRemoveAll(getDelegate(), that));
-        }
-
-        @Override
-        public boolean removeIf(java.util.function.Predicate<? super T> filter) {
-            Objects.requireNonNull(filter, "filter is null");
-            ensureMutable(); // an immutable view refuses the call even when no element matches
-            return java.util.List.super.removeIf(filter);
-        }
-
-        @Override
-        public boolean retainAll(Collection<?> collection) {
-            Objects.requireNonNull(collection, "collection is null");
-            @SuppressWarnings("unchecked") final Collection<T> that = (Collection<T>) collection;
-            return setDelegateAndCheckChanged(() -> delegateRetainAll(getDelegate(), that));
-        }
-
-        @Override
-        public T set(int index, T element) {
-            return setDelegateAndGetPreviousElement(index, () -> delegateUpdate(getDelegate(), index, element));
-        }
-
-        @Override
-        public int size() {
-            return getDelegate().size();
-        }
-
-        @Override
-        public void sort(Comparator<? super T> comparator) {
-            Objects.requireNonNull(comparator, "comparator is null");
-            if (isEmpty()) {
-                return;
+        public Spliterator<T> spliterator() {
+            if (reversed) {
+                return Spliterators.spliterator(this, Spliterator.ORDERED | Spliterator.IMMUTABLE);
             }
-            setDelegate(() -> delegateSorted(getDelegate(), comparator));
+            return delegate.spliterator();
         }
 
         /**
          * {@inheritDoc}
          * <p>
-         * Unlike the general {@link java.util.List#subList(int, int)} contract, the returned list is
-         * <strong>not</strong> backed by this list: it is an independent view over a snapshot of the
-         * requested range, so changes made through either list are not reflected in the other.
-         * In particular, {@code list.subList(from, to).clear()} does not remove elements from this list.
+         * The sub-list is a view over the sub-sequence of the same persistent value, which never changes, so it
+         * shows the same elements as this list does in that range for as long as it lives.
          */
         @Override
         public java.util.List<T> subList(int fromIndex, int toIndex) {
-            return view(delegateSubSequence(getDelegate(), fromIndex, toIndex), isMutable());
-        }
-
-        @Override
-        public Object [] toArray() {
-            return getDelegate().toArray();
-        }
-
-        // Collection.toArray(T[]) mandates writing null just past the last element, even when
-        // the caller's array has non-null components.
-        @SuppressWarnings({"unchecked", "NullAway"})
-        @Override
-        public <U extends @Nullable Object> U [] toArray(U [] array) {
-            Objects.requireNonNull(array, "array is null");
-            final U[] target;
-            final C delegate = getDelegate();
-            final int length = delegate.size();
-            if (array.length < length) {
-                final Class<? extends Object[]> newType = array.getClass();
-                target = (newType == Object[].class)
-                         ? (U[]) new Object[length]
-                         : (U[]) java.lang.reflect.Array.newInstance(newType.getComponentType(), length);
-            } else {
-                if (array.length > length) {
-                    array[length] = null;
+            if (fromIndex < 0) {
+                throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            }
+            if (!hasAtLeast(toIndex)) {
+                throw new IndexOutOfBoundsException("toIndex = " + toIndex);
+            }
+            if (fromIndex > toIndex) {
+                // the JDK's reversed list views check the range with Objects.checkFromToIndex, ArrayList does not
+                if (reversed) {
+                    throw new IndexOutOfBoundsException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
                 }
-                target = array;
+                throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
             }
-            final java.util.Iterator<T> iter = delegate.iterator();
-            for (int i = 0; i < length; i++) {
-                target[i] = (U) iter.next();
+            if (reversed) {
+                final int size = delegate.size();
+                return view(delegateSubSequence(delegate, size - toIndex, size - fromIndex), true);
             }
-            return target;
+            return view(delegateSubSequence(delegate, fromIndex, toIndex), false);
         }
 
-        // -- Object.*
+        @Override
+        public java.util.List<T> reversed() {
+            return view(delegate, !reversed);
+        }
+
+        @Override
+        public Object[] toArray() {
+            final Object[] array = delegate.toArray();
+            if (reversed) {
+                for (int i = 0, j = array.length - 1; i < j; i++, j--) {
+                    final Object tmp = array[i];
+                    array[i] = array[j];
+                    array[j] = tmp;
+                }
+            }
+            return array;
+        }
+
+        // -- mutators
+
+        @Override
+        public final void add(int index, T element) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final boolean addAll(int index, Collection<? extends T> elements) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final T remove(int index) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final T set(int index, T element) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final void replaceAll(UnaryOperator<T> operator) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final void sort(@Nullable Comparator<? super T> comparator) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final void addFirst(T element) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final void addLast(T element) {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final T removeFirst() {
+            throw unmodifiable();
+        }
+
+        @Override
+        public final T removeLast() {
+            throw unmodifiable();
+        }
+
+        // -- Object
 
         @Override
         public boolean equals(@Nullable Object o) {
-            return o == this || o instanceof java.util.List && Collections.areEqual(getDelegate(), (java.util.List<?>) o);
+            return o == this || o instanceof java.util.List<?> that && Collections.areEqual(this, that);
         }
 
         @Override
         public int hashCode() {
-            // DEV-NOTE: Ensures that hashCode calculation is stable, regardless of delegate.hashCode()
-            return Collections.hashOrdered(getDelegate());
-        }
-
-        @Override
-        public String toString() {
-            return getDelegate().mkString("[", ", ", "]");
+            return Collections.hashOrdered(this);
         }
 
         // -- private helpers
 
-        private T setDelegateAndGetPreviousElement(int index, Supplier<C> delegate) {
-            ensureMutable();
-            final T previousElement = get(index);
-            setDelegate(delegate);
-            return previousElement;
+        private boolean hasAtLeast(int n) {
+            return reversed ? delegate.size() >= n : delegateHasAtLeast(delegate, n);
         }
 
-        private static class Iterator<T extends @Nullable Object, C extends Traversable<T>> implements java.util.Iterator<T> {
+        /**
+         * A read-only list iterator. Moving forward on a view that is not reversed reads the delegate's own
+         * iterator, so a forward walk costs what iterating the sequence costs; moving backward, and every move on a
+         * reversed view, is a positional {@code get}.
+         */
+        private static final class ListIterator<T extends @Nullable Object, C extends Traversable<T>> implements java.util.ListIterator<T> {
 
-            ListView<T, C> list;
-            int expectedSize;
-            int nextIndex = 0;
-            int lastIndex = -1;
+            private final ListView<T, C> list;
+            private int cursor;
+            private java.util.@Nullable Iterator<T> forward;
+            private int forwardPosition = -1;
 
-            Iterator(ListView<T, C> list) {
+            ListIterator(ListView<T, C> list, int index) {
                 this.list = list;
-                expectedSize = list.size();
+                this.cursor = index;
             }
 
             @Override
             public boolean hasNext() {
-                return nextIndex != list.size();
+                if (list.reversed) {
+                    return cursor < list.size();
+                }
+                return forward().hasNext();
             }
 
             @Override
             public T next() {
-                checkForComodification();
-                if (nextIndex >= list.size()) {
+                if (list.reversed) {
+                    if (cursor >= list.size()) {
+                        throw new NoSuchElementException();
+                    }
+                    return list.get(cursor++);
+                }
+                final java.util.Iterator<T> iterator = forward();
+                if (!iterator.hasNext()) {
                     throw new NoSuchElementException();
                 }
-                try {
-                    return list.get(lastIndex = nextIndex++);
-                } catch (IndexOutOfBoundsException x) {
-                    throw new ConcurrentModificationException();
-                }
-            }
-
-            @Override
-            public void remove() {
-                list.ensureMutable();
-                if (lastIndex < 0) {
-                    throw new IllegalStateException();
-                }
-                checkForComodification();
-                try {
-                    list.remove(nextIndex = lastIndex);
-                    lastIndex = -1;
-                    expectedSize = list.size();
-                } catch (IndexOutOfBoundsException x) {
-                    throw new ConcurrentModificationException();
-                }
-            }
-
-            @Override
-            public void forEachRemaining(Consumer<? super T> consumer) {
-                Objects.requireNonNull(consumer, "consumer is  null");
-                checkForComodification();
-                if (nextIndex >= list.size()) {
-                    return;
-                }
-                int index = nextIndex;
-                // DEV-NOTE: intentionally not using hasNext() and next() in order not to modify internal state
-                while (expectedSize == list.size() && index < expectedSize) {
-                    consumer.accept(list.get(index++));
-                }
-                nextIndex = index;
-                lastIndex = index - 1;
-                checkForComodification();
-            }
-
-            final void checkForComodification() {
-                if (expectedSize != list.size()) {
-                    throw new ConcurrentModificationException();
-                }
-            }
-        }
-
-        private static class ListIterator<T extends @Nullable Object, C extends Traversable<T>> extends ListView.Iterator<T, C> implements java.util.ListIterator<T> {
-
-            ListIterator(ListView<T, C> list, int index) {
-                super(list);
-                if (index < 0 || index > list.size()) {
-                    throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + list.size());
-                }
-                this.nextIndex = index;
+                final T element = iterator.next();
+                forwardPosition = ++cursor;
+                return element;
             }
 
             @Override
             public boolean hasPrevious() {
-                return nextIndex != 0;
-            }
-
-            @Override
-            public int nextIndex() {
-                return nextIndex;
-            }
-
-            @Override
-            public int previousIndex() {
-                return nextIndex - 1;
+                return cursor > 0;
             }
 
             @Override
             public T previous() {
-                checkForComodification();
-                final int index = nextIndex - 1;
-                if (index < 0) {
+                if (cursor <= 0) {
                     throw new NoSuchElementException();
                 }
-                if (index >= list.size()) {
-                    throw new ConcurrentModificationException();
-                }
-                try {
-                    final T element = list.get(index);
-                    // DEV-NOTE: intentionally updating indices _after_ reading the element. This makes a difference in case of a concurrent modification.
-                    lastIndex = nextIndex = index;
-                    return element;
-                } catch (IndexOutOfBoundsException x) {
-                    throw new ConcurrentModificationException();
-                }
+                final T element = list.get(cursor - 1);
+                cursor--;
+                return element;
+            }
+
+            @Override
+            public int nextIndex() {
+                return cursor;
+            }
+
+            @Override
+            public int previousIndex() {
+                return cursor - 1;
+            }
+
+            @Override
+            public void remove() {
+                throw unmodifiable();
             }
 
             @Override
             public void set(T element) {
-                list.ensureMutable();
-                if (lastIndex < 0) {
-                    throw new IllegalStateException();
-                }
-                checkForComodification();
-                try {
-                    list.set(lastIndex, element);
-                } catch (IndexOutOfBoundsException x) {
-                    throw new ConcurrentModificationException();
-                }
+                throw unmodifiable();
             }
 
             @Override
             public void add(T element) {
-                list.ensureMutable();
-                checkForComodification();
-                try {
-                    final int index = nextIndex;
-                    list.add(index, element);
-                    // DEV-NOTE: intentionally increasing nextIndex _after_ adding the element. This makes a difference in case of a concurrent modification.
-                    nextIndex = index + 1;
-                    lastIndex = -1;
-                    expectedSize = list.size();
-                } catch (IndexOutOfBoundsException ex) {
-                    throw new ConcurrentModificationException();
+                throw unmodifiable();
+            }
+
+            private java.util.Iterator<T> forward() {
+                java.util.Iterator<T> iterator = forward;
+                if (iterator == null || forwardPosition != cursor) {
+                    iterator = list.delegateIteratorFrom(list.delegate, cursor);
+                    forward = iterator;
+                    forwardPosition = cursor;
                 }
+                return iterator;
             }
         }
     }
 
-    /** The view over a {@link Vector}: every hook is the Vector method of the same name. */
+    /** The view over a {@link Vector}: every positional read is effectively O(1). */
     static final class VectorListView<T extends @Nullable Object> extends ListView<T, Vector<T>> {
 
-        VectorListView(Vector<T> delegate, boolean mutable) {
-            super(delegate, mutable);
+        VectorListView(Vector<T> delegate, boolean reversed) {
+            super(delegate, reversed);
         }
 
         @Override
-        Vector<T> delegateAppend(Vector<T> delegate, T element) { return delegate.append(element); }
-
-        @Override
-        Vector<T> delegateInsert(Vector<T> delegate, int index, T element) { return delegate.insert(index, element); }
-
-        @Override
-        Vector<T> delegateAppendAll(Vector<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
-
-        @Override
-        Vector<T> delegateInsertAll(Vector<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
-
-        @Override
-        Vector<T> delegateTake(Vector<T> delegate, int n) { return delegate.take(n); }
-
-        @Override
         T delegateGet(Vector<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        T delegateLast(Vector<T> delegate) { return delegate.last(); }
 
         @Override
         int delegateIndexOf(Vector<T> delegate, T element) { return delegate.indexOf(element); }
@@ -611,54 +541,49 @@ public class JavaConverters {
         int delegateLastIndexOf(Vector<T> delegate, T element) { return delegate.lastIndexOf(element); }
 
         @Override
-        Vector<T> delegateRemoveAt(Vector<T> delegate, int index) { return delegate.removeAt(index); }
-
-        @Override
-        Vector<T> delegateRemove(Vector<T> delegate, T element) { return delegate.remove(element); }
-
-        @Override
-        Vector<T> delegateRemoveAll(Vector<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
-
-        @Override
-        Vector<T> delegateRetainAll(Vector<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
-
-        @Override
-        Vector<T> delegateUpdate(Vector<T> delegate, int index, T element) { return delegate.update(index, element); }
-
-        @Override
-        Vector<T> delegateSorted(Vector<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
-
-        @Override
         Vector<T> delegateSubSequence(Vector<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
 
         @Override
-        ListView<T, Vector<T>> view(Vector<T> delegate, boolean mutable) { return new VectorListView<>(delegate, mutable); }
-    }
-
-    /** The view over a {@link List}: every hook is the List method of the same name. */
-    static final class ListListView<T extends @Nullable Object> extends ListView<T, List<T>> {
-
-        ListListView(List<T> delegate, boolean mutable) {
-            super(delegate, mutable);
+        java.util.Iterator<T> delegateIteratorFrom(Vector<T> delegate, int index) {
+            return index == 0 ? delegate.iterator() : delegate.drop(index).iterator();
         }
 
         @Override
-        List<T> delegateAppend(List<T> delegate, T element) { return delegate.append(element); }
+        java.util.Iterator<T> delegateReverseIterator(Vector<T> delegate) {
+            return new java.util.Iterator<>() {
+                private int index = delegate.size() - 1;
+
+                @Override
+                public boolean hasNext() {
+                    return index >= 0;
+                }
+
+                @Override
+                public T next() {
+                    if (index < 0) {
+                        throw new NoSuchElementException();
+                    }
+                    return delegate.get(index--);
+                }
+            };
+        }
 
         @Override
-        List<T> delegateInsert(List<T> delegate, int index, T element) { return delegate.insert(index, element); }
+        ListView<T, Vector<T>> view(Vector<T> delegate, boolean reversed) { return new VectorListView<>(delegate, reversed); }
+    }
 
-        @Override
-        List<T> delegateAppendAll(List<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
+    /** The view over a {@link List}: a positional read walks the cons cells up to the index. */
+    static final class ListListView<T extends @Nullable Object> extends ListView<T, List<T>> {
 
-        @Override
-        List<T> delegateInsertAll(List<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
-
-        @Override
-        List<T> delegateTake(List<T> delegate, int n) { return delegate.take(n); }
+        ListListView(List<T> delegate, boolean reversed) {
+            super(delegate, reversed);
+        }
 
         @Override
         T delegateGet(List<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        T delegateLast(List<T> delegate) { return delegate.last(); }
 
         @Override
         int delegateIndexOf(List<T> delegate, T element) { return delegate.indexOf(element); }
@@ -667,54 +592,30 @@ public class JavaConverters {
         int delegateLastIndexOf(List<T> delegate, T element) { return delegate.lastIndexOf(element); }
 
         @Override
-        List<T> delegateRemoveAt(List<T> delegate, int index) { return delegate.removeAt(index); }
-
-        @Override
-        List<T> delegateRemove(List<T> delegate, T element) { return delegate.remove(element); }
-
-        @Override
-        List<T> delegateRemoveAll(List<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
-
-        @Override
-        List<T> delegateRetainAll(List<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
-
-        @Override
-        List<T> delegateUpdate(List<T> delegate, int index, T element) { return delegate.update(index, element); }
-
-        @Override
-        List<T> delegateSorted(List<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
-
-        @Override
         List<T> delegateSubSequence(List<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
 
         @Override
-        ListView<T, List<T>> view(List<T> delegate, boolean mutable) { return new ListListView<>(delegate, mutable); }
+        java.util.Iterator<T> delegateIteratorFrom(List<T> delegate, int index) { return delegate.drop(index).iterator(); }
+
+        @Override
+        java.util.Iterator<T> delegateReverseIterator(List<T> delegate) { return delegate.reverse().iterator(); }
+
+        @Override
+        ListView<T, List<T>> view(List<T> delegate, boolean reversed) { return new ListListView<>(delegate, reversed); }
     }
 
-    /** The view over a {@link Queue}: every hook is the Queue method of the same name. */
+    /** The view over a {@link Queue}. */
     static final class QueueListView<T extends @Nullable Object> extends ListView<T, Queue<T>> {
 
-        QueueListView(Queue<T> delegate, boolean mutable) {
-            super(delegate, mutable);
+        QueueListView(Queue<T> delegate, boolean reversed) {
+            super(delegate, reversed);
         }
 
         @Override
-        Queue<T> delegateAppend(Queue<T> delegate, T element) { return delegate.append(element); }
-
-        @Override
-        Queue<T> delegateInsert(Queue<T> delegate, int index, T element) { return delegate.insert(index, element); }
-
-        @Override
-        Queue<T> delegateAppendAll(Queue<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
-
-        @Override
-        Queue<T> delegateInsertAll(Queue<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
-
-        @Override
-        Queue<T> delegateTake(Queue<T> delegate, int n) { return delegate.take(n); }
-
-        @Override
         T delegateGet(Queue<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        T delegateLast(Queue<T> delegate) { return delegate.last(); }
 
         @Override
         int delegateIndexOf(Queue<T> delegate, T element) { return delegate.indexOf(element); }
@@ -723,54 +624,38 @@ public class JavaConverters {
         int delegateLastIndexOf(Queue<T> delegate, T element) { return delegate.lastIndexOf(element); }
 
         @Override
-        Queue<T> delegateRemoveAt(Queue<T> delegate, int index) { return delegate.removeAt(index); }
-
-        @Override
-        Queue<T> delegateRemove(Queue<T> delegate, T element) { return delegate.remove(element); }
-
-        @Override
-        Queue<T> delegateRemoveAll(Queue<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
-
-        @Override
-        Queue<T> delegateRetainAll(Queue<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
-
-        @Override
-        Queue<T> delegateUpdate(Queue<T> delegate, int index, T element) { return delegate.update(index, element); }
-
-        @Override
-        Queue<T> delegateSorted(Queue<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
-
-        @Override
         Queue<T> delegateSubSequence(Queue<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
 
         @Override
-        ListView<T, Queue<T>> view(Queue<T> delegate, boolean mutable) { return new QueueListView<>(delegate, mutable); }
+        java.util.Iterator<T> delegateIteratorFrom(Queue<T> delegate, int index) { return delegate.drop(index).iterator(); }
+
+        @Override
+        java.util.Iterator<T> delegateReverseIterator(Queue<T> delegate) { return delegate.reverse().iterator(); }
+
+        @Override
+        ListView<T, Queue<T>> view(Queue<T> delegate, boolean reversed) { return new QueueListView<>(delegate, reversed); }
     }
 
-    /** The view over a {@link Stream}: every hook is the Stream method of the same name. */
+    /**
+     * The view over a {@link Stream}. The bound checks of {@code listIterator(int)} and {@code subList} force as many
+     * cells as the index they check, never the whole Stream.
+     */
     static final class StreamListView<T extends @Nullable Object> extends ListView<T, Stream<T>> {
 
-        StreamListView(Stream<T> delegate, boolean mutable) {
-            super(delegate, mutable);
+        StreamListView(Stream<T> delegate, boolean reversed) {
+            super(delegate, reversed);
         }
 
         @Override
-        Stream<T> delegateAppend(Stream<T> delegate, T element) { return delegate.append(element); }
-
-        @Override
-        Stream<T> delegateInsert(Stream<T> delegate, int index, T element) { return delegate.insert(index, element); }
-
-        @Override
-        Stream<T> delegateAppendAll(Stream<T> delegate, Iterable<? extends T> elements) { return delegate.appendAll(elements); }
-
-        @Override
-        Stream<T> delegateInsertAll(Stream<T> delegate, int index, Iterable<? extends T> elements) { return delegate.insertAll(index, elements); }
-
-        @Override
-        Stream<T> delegateTake(Stream<T> delegate, int n) { return delegate.take(n); }
+        boolean delegateHasAtLeast(Stream<T> delegate, int n) {
+            return n <= 0 || !delegate.drop(n - 1).isEmpty();
+        }
 
         @Override
         T delegateGet(Stream<T> delegate, int index) { return delegate.get(index); }
+
+        @Override
+        T delegateLast(Stream<T> delegate) { return delegate.last(); }
 
         @Override
         int delegateIndexOf(Stream<T> delegate, T element) { return delegate.indexOf(element); }
@@ -779,27 +664,15 @@ public class JavaConverters {
         int delegateLastIndexOf(Stream<T> delegate, T element) { return delegate.lastIndexOf(element); }
 
         @Override
-        Stream<T> delegateRemoveAt(Stream<T> delegate, int index) { return delegate.removeAt(index); }
-
-        @Override
-        Stream<T> delegateRemove(Stream<T> delegate, T element) { return delegate.remove(element); }
-
-        @Override
-        Stream<T> delegateRemoveAll(Stream<T> delegate, Iterable<? extends T> elements) { return delegate.removeAll(elements); }
-
-        @Override
-        Stream<T> delegateRetainAll(Stream<T> delegate, Iterable<? extends T> elements) { return delegate.retainAll(elements); }
-
-        @Override
-        Stream<T> delegateUpdate(Stream<T> delegate, int index, T element) { return delegate.update(index, element); }
-
-        @Override
-        Stream<T> delegateSorted(Stream<T> delegate, Comparator<? super T> comparator) { return delegate.sorted(comparator); }
-
-        @Override
         Stream<T> delegateSubSequence(Stream<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
 
         @Override
-        ListView<T, Stream<T>> view(Stream<T> delegate, boolean mutable) { return new StreamListView<>(delegate, mutable); }
+        java.util.Iterator<T> delegateIteratorFrom(Stream<T> delegate, int index) { return delegate.drop(index).iterator(); }
+
+        @Override
+        java.util.Iterator<T> delegateReverseIterator(Stream<T> delegate) { return delegate.reverse().iterator(); }
+
+        @Override
+        ListView<T, Stream<T>> view(Stream<T> delegate, boolean reversed) { return new StreamListView<>(delegate, reversed); }
     }
 }

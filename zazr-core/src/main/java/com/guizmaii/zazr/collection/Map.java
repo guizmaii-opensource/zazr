@@ -7,7 +7,6 @@ import com.guizmaii.zazr.control.Option;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
-import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -103,7 +102,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the {@link Tuple2} of the {@code Some} of the value associated with the specified key
      * (or {@code None} if none), and the current or modified map
      * @throws NullPointerException if the key is present and {@code remappingFunction} returns {@code null}: the new
-     *                              value is handed back as {@code Some}, which cannot hold {@code null} (design 3.9)
+     *                              value is handed back as {@code Some}, which cannot hold {@code null}
      */
     Tuple2<Option<V>, ? extends Map<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
@@ -427,12 +426,20 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     int size();
 
     /**
-     * Converts this Vavr {@code Map} to a {@code java.util.Map} while preserving characteristics
-     * like insertion order ({@code LinkedHashMap}) and sort order ({@code SortedMap}).
+     * An unmodifiable {@link java.util.Map} view of this map: nothing is copied, reads go through to this map, which
+     * never changes, and every mutator of the view (including those of its key set, values, entry set and their
+     * iterators, and {@code setValue} on its entries) throws {@link UnsupportedOperationException}. The view equals
+     * any {@code java.util.Map} with the same mappings. A mutable copy is
+     * {@code new java.util.HashMap<>(map.asJavaMap())}.
+     * <p>
+     * It is not named {@code asJava()} because that is the {@link java.util.Collection} view of the entries every
+     * {@link Traversable} has, and a {@code java.util.Map} is not a {@code Collection}.
+     * <p>
+     * Complexity: O(1).
      *
-     * @return a new {@code java.util.Map} instance
+     * @return an unmodifiable {@code java.util.Map} view
      */
-    java.util.Map<K, V> toJavaMap();
+    java.util.Map<K, V> asJavaMap();
 
     /**
      * The values of this map as a {@link Vector}, in this map's iteration order; the same key order as
@@ -752,121 +759,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
         return stream().collect(supplier, accumulator, combiner);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.Collection} that {@code factory} makes for the given
-     * capacity, in this Map's order: {@code toJavaCollection(java.util.LinkedHashSet::new)}.
-     *
-     * @param factory makes an empty mutable collection with the given initial capacity
-     * @param <C>     the collection type
-     * @return the new collection, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <C extends java.util.Collection<Tuple2<K, V>>> C toJavaCollection(Function<Integer, C> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * The elements copied into a new {@link java.util.ArrayList}, in this Map's order.
-     *
-     * @return the new list
-     */
-    default java.util.List<Tuple2<K, V>> toJavaList() {
-        return TraversableModule.toJavaCollection(this, ArrayList::new, 10);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.List} that {@code factory} makes for the given
-     * capacity, in this Map's order: {@code toJavaList(capacity -> new java.util.LinkedList<>())}.
-     *
-     * @param factory makes an empty mutable list with the given initial capacity
-     * @param <LIST>  the list type
-     * @return the new list, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <LIST extends java.util.List<Tuple2<K, V>>> LIST toJavaList(Function<Integer, LIST> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * The elements as the entries of a new {@link java.util.HashMap}, each mapped to a key and a value by
-     * {@code f}; of two entries with the same key, the later one in this Map's order wins.
-     *
-     * @param f   the entry an element becomes
-     * @param <K2> the key type
-     * @param <V2> the value type
-     * @return the new map
-     * @throws NullPointerException if {@code f} is null
-     */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> java.util.Map<K2, V2> toJavaMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return TraversableModule.toJavaMap(this, java.util.HashMap::new, f);
-    }
-
-    /**
-     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
-     * to a key by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the
-     * later one in this Map's order wins.
-     *
-     * @param factory     makes an empty mutable map
-     * @param keyMapper   the key of an element
-     * @param valueMapper the value of an element
-     * @param <K2>         the key type
-     * @param <V2>         the value type
-     * @param <MAP>       the map type
-     * @return the new map, filled
-     * @throws NullPointerException if an argument is null
-     */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object, MAP extends java.util.Map<K2, V2>> MAP toJavaMap(Supplier<MAP> factory, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
-        return TraversableModule.toJavaMap(this, factory, TraversableModule.entryMapper(keyMapper, valueMapper));
-    }
-
-    /**
-     * The elements as the entries of a new mutable {@link java.util.Map} that {@code factory} makes, each mapped
-     * to a key and a value by {@code f}; of two entries with the same key, the later one in this Map's order
-     * wins.
-     *
-     * @param factory makes an empty mutable map
-     * @param f       the entry an element becomes
-     * @param <K2>     the key type
-     * @param <V2>     the value type
-     * @param <MAP>   the map type
-     * @return the new map, filled
-     * @throws NullPointerException if an argument is null
-     */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object, MAP extends java.util.Map<K2, V2>> MAP toJavaMap(Supplier<MAP> factory, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return TraversableModule.toJavaMap(this, factory, f);
-    }
-
-    /**
-     * The distinct elements copied into a new {@link java.util.HashSet}.
-     *
-     * @return the new set
-     */
-    default java.util.Set<Tuple2<K, V>> toJavaSet() {
-        return TraversableModule.toJavaCollection(this, java.util.HashSet::new, 16);
-    }
-
-    /**
-     * The elements copied into a new mutable {@link java.util.Set} that {@code factory} makes for the given
-     * capacity: {@code toJavaSet(capacity -> new java.util.TreeSet<>(Comparator.reverseOrder()))}.
-     *
-     * @param factory makes an empty mutable set with the given initial capacity
-     * @param <SET>   the set type
-     * @return the new set, filled
-     * @throws NullPointerException if {@code factory} is null
-     */
-    default <SET extends java.util.Set<Tuple2<K, V>>> SET toJavaSet(Function<Integer, SET> factory) {
-        return TraversableModule.toJavaCollection(this, factory);
-    }
-
-    /**
-     * A parallel {@link java.util.stream.Stream} over the elements, built on {@link #spliterator()}.
-     *
-     * @return a new parallel {@code java.util.stream.Stream}
-     */
-    default java.util.stream.Stream<Tuple2<K, V>> toJavaParallelStream() {
-        return StreamSupport.stream(spliterator(), true);
     }
 
     /**

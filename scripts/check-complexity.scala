@@ -38,8 +38,8 @@ val documented: Set[String] = Set(
   "shuffle", "splitAt", "startsWith", "endsWith", "distinct", "distinctBy", "remove", "removeAll", "removeFirst",
   "removeLast", "replace", "replaceAll", "leftPadTo", "asJava",
   "span", "retainAll", "transpose", "tailOption", "initOption", "iterator",
-  // the same, under the names the cons list, the queue and the lazy list give them
-  "asJavaMutable", "length", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
+  // the same, under the names the cons list, the queue, the lazy list and the maps give them
+  "asJavaMap", "length", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
   "segmentLength", "splitAtInclusive", "distinctByKeepLast", "dropRightUntil", "dropRightWhile", "takeRightUntil",
   "takeRightWhile", "duplicates", "duplicatesBy",
   "peek", "peekOption", "pop", "popOption", "pop2", "pop2Option", "push", "pushAll",
