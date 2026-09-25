@@ -4,6 +4,8 @@ description: Add Zazr to a build, then meet the control types and the collection
 
 # Getting started
 
+New to functional programming? Start with [why Zazr is useful](new-to-fp.md).
+
 ## Requirements
 
 JDK 25 or later. Zazr has no runtime dependency.
@@ -69,8 +71,8 @@ String greeting = name.map(n -> "hello " + n).getOrElse("hello stranger");
 // "hello stranger"
 ```
 
-`Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so a `switch` over them is exhaustive
-and can take the records apart.
+`Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so pattern matching on them with a
+`switch` is exhaustive, and record patterns take the records apart.
 
 ```java
 Either<String, Integer> parsed = Either.right(42);

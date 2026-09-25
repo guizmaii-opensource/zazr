@@ -18,7 +18,7 @@ below are deliberate. [Design](principles.md) explains the ideas behind them.
 | `Tree`, `BitSet`, `PriorityQueue`, the `Multimap` family | `Map<K, Vector<V>>` with `groupBy` |
 | `Seq`, `IndexedSeq`, `LinearSeq`, `Foldable`, `Value` | the concrete type, or `Traversable` for what every collection does at the same cost |
 | `Function0`, `Function1`, `Function2`, `CheckedFunction0` | `Supplier`, `Function`, `BiFunction`, `Callable` |
-| `PartialFunction`, `collect(PartialFunction)` | `collect(Function<A, Option<B>>)` with a `switch` inside the lambda |
+| `PartialFunction`, `collect(PartialFunction)` | `collect(Function<A, Option<B>>)` with pattern matching inside the lambda |
 | `Serializable` on every type | none; no Zazr type is `Serializable` |
 | `Either` projections, `Validation.Builder`, `combine`, `ap` | `mapLeft`, `flip`, `fold`; `zip` and `zipWith` at arity N |
 
