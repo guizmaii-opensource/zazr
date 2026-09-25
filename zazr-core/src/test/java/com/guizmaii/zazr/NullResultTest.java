@@ -91,7 +91,7 @@ public class NullResultTest {
         cases.add(throwing("Either.filterOrElse", "Either.filterOrElse: zero returned null", () -> Either.right(1).filterOrElse(x -> false, x -> null)));
         cases.add(throwing("Either.flatMap", "Either.flatMap: mapper returned null", () -> Either.right(1).flatMap(x -> null)));
         cases.add(throwing("Either.forEach", "Either.forEach: mapper returned null", () -> Either.forEach(List.of(1), x -> null)));
-        cases.add(throwing("Either.fromPredicate", "Either.fromPredicate: ifFalse returned null", () -> Either.fromPredicate(1, x -> false, () -> null)));
+        cases.add(throwing("Either.fromPredicate", "Either.fromPredicate: ifFalse returned null", () -> Either.fromPredicate(1, x -> false, x -> null)));
         cases.add(throwing("Either.map", "Either.map: mapper returned null", () -> Either.right(1).map(x -> null)));
         cases.add(throwing("Either.mapBoth", "Either.mapBoth: rightMapper returned null", () -> Either.right(1).mapBoth(l -> l, r -> null)));
         cases.add(throwing("Either.mapBoth", "Either.mapBoth: leftMapper returned null", () -> Either.left(1).mapBoth(l -> null, r -> r)));
