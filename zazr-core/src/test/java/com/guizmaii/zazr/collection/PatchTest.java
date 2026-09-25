@@ -55,4 +55,26 @@ public class PatchTest {
         assertThat(Stream.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(expected);
         assertThat(Vector.of(1, 2).patch(1, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(java.util.List.of(1, 9));
     }
+
+    @Test
+    public void shouldPatchANonEmptyVectorAsVectorAndTheModelOnEveryBound() {
+        final java.util.List<java.util.List<Integer>> replacements = java.util.List.of(java.util.List.of(), java.util.List.of(-1), java.util.List.of(-1, -2, -3));
+        for (int n : new int[] { 1, 5, 33 }) {
+            final Vector<Integer> vector = Vector.range(0, n);
+            final NonEmptyVector<Integer> nev = NonEmptyVector.fromIterable(vector).get();
+            final java.util.List<Integer> elements = new java.util.ArrayList<>(vector.asJava());
+            for (int from : indices(n)) {
+                for (int replaced : indices(n)) {
+                    for (java.util.List<Integer> that : replacements) {
+                        final String call = "NonEmptyVector.patch(" + from + ", " + that + ", " + replaced + ") of " + n;
+                        final Vector<Integer> patched = nev.patch(from, that, replaced);
+                        assertThat(patched).as(call).isEqualTo(vector.patch(from, that, replaced));
+                        assertThat(patched.asJava()).as(call).isEqualTo(model(elements, from, that, replaced));
+                    }
+                }
+            }
+        }
+        assertThat(NonEmptyVector.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE)).isEqualTo(Vector.of(1, 2, 9));
+        assertThat(NonEmptyVector.of(1, 2).patch(1, List.of(9), Integer.MAX_VALUE)).isEqualTo(Vector.of(1, 9));
+    }
 }
