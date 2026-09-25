@@ -130,6 +130,7 @@ val vocabulary: Map[String, Cost] = Map(
   "O(k * C(n, k))" -> Cost.Combinatorial,
   "O(n * 2^n)" -> Cost.Combinatorial,
   // Vector and NonEmptyVector
+  "O(k * C(n, k) + C(n, 0) + ... + C(n, k))" -> Cost.Combinatorial,
 
   // List
 

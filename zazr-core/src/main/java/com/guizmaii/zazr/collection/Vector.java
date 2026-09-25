@@ -24,16 +24,22 @@ import static com.guizmaii.zazr.collection.internal.Collections.withSize;
  * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
  * {@code slice}) are effectively constant too.
  * <p>
- * The implementation is based on a `bit-mapped trie`, a very wide and shallow tree (i.e. depth ≤ 6). Vector declares
- * its whole API itself and implements only {@link Traversable}: every positional method carries a
- * {@code Complexity:} line in its javadoc, where "effectively O(1)" means O(log32 n), a trie access or a path copy
- * of at most six nodes.
+ * The elements are kept in a very wide and shallow tree of arrays of 32 elements, at most six levels deep. Vector
+ * declares its whole API itself and implements only {@link Traversable}: every positional method carries a
+ * {@code Complexity:} line in its javadoc, where "effectively O(1)" means at most six array lookups, or a copy of at
+ * most six small arrays of 32 elements, whatever the size: the result shares every other element with this Vector.
+ * <p>
+ * Complexity: the methods without a note of their own ({@code map}, {@code filter}, {@code flatMap}, the folds,
+ * {@code groupBy}, the conversions, and the factories such as {@code ofAll} and {@code range}) walk the elements once:
+ * O(n), where n is the size of the result for a factory and {@code flatMap}. {@code containsAll} is O(n * m): one
+ * {@code contains} per element of its argument.
  * <p>
  * A Vector built from primitive values ({@code range}, {@code ofAll(int[])} and the other primitive {@code ofAll},
- * {@code filter} of those) keeps them in primitive arrays. All the leaves of a Vector share one array type, so the
+ * {@code filter} of those) keeps them in primitive arrays. All the arrays of a Vector have one element type, so the
  * first write of a value of another class ({@code append}, {@code prepend}, {@code update}, {@code insert} and their
- * bulk forms, through {@link #narrow(Vector)} for example) converts every element to objects once, O(n); the result
- * holds objects, and later writes are effectively O(1) again.
+ * bulk forms, through {@link #narrow(Vector)} for example) converts every element to objects: O(n). The result holds
+ * objects, and later writes on it are effectively O(1) again; a write on the original primitive Vector pays the O(n)
+ * again each time.
  *
  * @param <T> Component type of the Vector.
  * @author Ruslan Sennov, Pap Lőrinc
@@ -774,7 +780,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten} in
      * Zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
      * <p>
-     * Complexity: O(n) for n inner elements in total, one builder append each.
+     * Complexity: O(m) for m inner elements in total, each added to the result once.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -797,8 +803,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends an element.
      * <p>
-     * Complexity: effectively O(1) (a path copy; the last leaf is copied). On a Vector of primitive values, the first
-     * value of another class converts every element once, O(n) (see the class documentation).
+     * Complexity: effectively O(1): copies a few small arrays of 32 elements, not the Vector. On a Vector of primitive
+     * values, a value of another class first converts every element: O(n), paid again at each such write on the same
+     * Vector (see the class documentation).
      *
      * @param element the element to append
      * @return a new Vector ending with {@code element}
@@ -809,9 +816,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends all elements of the given iterable, in iteration order.
      * <p>
-     * Complexity: O(m) for m appended elements (one leaf copy per 32 elements plus a path copy); O(1) when this Vector
-     * is empty and {@code iterable} is a Vector, which is returned as is. On a Vector of primitive values, the first
-     * value of another class converts every element once, O(n) (see the class documentation).
+     * Complexity: O(m) for m appended elements, even when this Vector is much shorter than the argument; the elements
+     * of this Vector are shared, not copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which is
+     * returned as is. On a Vector of primitive values, a value of another class first converts every element: O(n),
+     * paid again at each such write on the same Vector (see the class documentation).
      *
      * @param iterable the elements to append
      * @return a new Vector ending with the given elements, or this Vector if there are none
@@ -841,7 +849,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * A mutable copy is {@code new java.util.ArrayList<>(vector.asJava())}; {@code Vector.ofAll} given the view
      * returns this Vector without copying.
      * <p>
-     * Complexity: O(1); {@code get} on the view is effectively O(1), and so is each step of its iterator.
+     * Complexity: O(1): nothing is copied. {@code get} on the view is effectively O(1), as {@link #get(int)}, and each
+     * step of its iterator is O(1).
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -853,7 +862,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * All combinations of the elements, for every size from 0 to {@code length()}, by position:
      * {@code Vector(1, 2).combinations()} is {@code Vector(Vector(), Vector(1), Vector(2), Vector(1, 2))}.
      * <p>
-     * Complexity: O(2^n) combinations, each of size up to n.
+     * Complexity: O(n * 2^n): the 2^n combinations hold n * 2^(n - 1) elements in all, and building them visits as
+     * many partial choices.
      *
      * @return the combinations, ordered by size, then by position
      */
@@ -862,7 +872,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
      * <p>
-     * Complexity: O(C(n, k)) combinations of size k.
+     * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)): the C(n, k) combinations of k elements are built, and
+     * every choice of fewer than k elements is visited on the way, even one that cannot be completed. That is
+     * O(k * C(n, k)) for k up to n / 2, and up to O(2^n) above: {@code combinations(n)} does O(2^n) work to return
+     * one combination.
      *
      * @param k the size of each combination; {@code k <= 0} gives one empty combination
      * @return the k-combinations, in position order
@@ -1005,7 +1018,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Returns a new {@code Vector} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: effectively O(1) (the path to the new first leaf is trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1057,7 +1071,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Returns a new {@code Vector} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: effectively O(1) (the path to the new last leaf is trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1178,7 +1193,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: effectively O(1) (O(log32 n) trie access).
+     * Complexity: effectively O(1): at most six array lookups, whatever the size.
      *
      * @param index a position, {@code 0 <= index < length()}
      * @return the element at that position
@@ -1244,6 +1259,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOf(Object)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexOf(Object)}.
      *
      * @param element the element to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
@@ -1254,6 +1271,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexOf(Object, int)}.
      *
      * @param element the element to find
      * @param from    the first position to look at
@@ -1293,6 +1312,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #indexOfSlice(Iterable)}.
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
@@ -1304,6 +1325,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #indexOfSlice(Iterable, int)}.
      *
      * @param that the slice to find
      * @param from the first position to look at
@@ -1351,6 +1374,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexWhere(Predicate)}.
      *
      * @param predicate the condition
      * @return {@code Some(index)} of the first satisfying element, or {@code None}
@@ -1362,6 +1387,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexWhere(Predicate, int)}.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -1377,7 +1404,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: effectively O(1) (the path to the last leaf is trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this Vector is empty
@@ -1395,7 +1423,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * This is the dual of {@link #tailOption()}.
      * <p>
-     * Complexity: effectively O(1) (one {@code init}).
+     * Complexity: effectively O(1), as {@link #init()}.
      *
      * @return {@code Some(traversable)} if non-empty, or {@code None} if this Vector is empty
      */
@@ -1404,9 +1432,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Inserts an element at {@code index}; the elements from that position on shift right by one.
      * <p>
-     * Complexity: O(min(i, n - i)): the shorter side is re-appended or re-prepended element by element. On a Vector of
-     * primitive values, the first value of another class converts every element once, O(n) (see the class
-     * documentation).
+     * Complexity: O(min(i, n - i)): the elements on the shorter side of i are copied, those on the longer side are
+     * shared. On a Vector of primitive values, a value of another class first converts every element: O(n), paid
+     * again at each such write on the same Vector (see the class documentation).
      *
      * @param index   a position, {@code 0 <= index <= length()}
      * @param element the element to insert
@@ -1420,8 +1448,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Inserts the given elements at {@code index}, in iteration order; the elements from that position on shift
      * right.
      * <p>
-     * Complexity: O(m + min(i, n - i)) for m inserted elements. On a Vector of primitive values, the first value of
-     * another class converts every element once, O(n) (see the class documentation).
+     * Complexity: O(m + min(i, n - i)) for m inserted elements: the elements on the shorter side of i are copied,
+     * those on the longer side are shared. On a Vector of primitive values, a value of another class first converts
+     * every element: O(n), paid again at each such write on the same Vector (see the class documentation).
      *
      * @param index    a position, {@code 0 <= index <= length()}
      * @param elements the elements to insert
@@ -1453,12 +1482,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> intersperse(T element) { return ofAll(Iterator.ofAll(this).intersperse(element)); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1).
+     */
     @Override
     public boolean isEmpty() { return length() == 0; }
 
     /**
      * Narrows to a {@link NonEmptyVector}, whose operations that cannot shrink keep that type and whose {@code head},
      * {@code last}, {@code max}, {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1): the result wraps this Vector, nothing is copied.
      *
      * @return {@code Some(nonEmptyVector)} sharing this Vector's elements, or {@code None} if this Vector is empty
      */
@@ -1467,7 +1503,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.
+     * Complexity: O(1) to create, and O(1) per step: moving on to the next block of 32 elements takes at most six
+     * array lookups.
      */
     @Override
     public java.util.Iterator<T> iterator() {
@@ -1523,6 +1560,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOf(Object)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexOf(Object)}.
      *
      * @param element the element to find
      * @return {@code Some(index)} of its last occurrence, or {@code None}
@@ -1533,6 +1572,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexOf(Object, int)}.
      *
      * @param element the element to find
      * @param end     the last position to look at
@@ -1572,6 +1613,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #lastIndexOfSlice(Iterable)}.
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its last occurrence, or {@code None}
@@ -1583,6 +1626,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as
+     * {@link #lastIndexOfSlice(Iterable, int)}.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1628,6 +1674,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexWhere(Predicate)}.
      *
      * @param predicate the condition
      * @return {@code Some(index)} of the last satisfying element, or {@code None}
@@ -1639,6 +1687,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexWhere(Predicate, int)}.
      *
      * @param predicate the condition
      * @param end       the last position to look at
@@ -1654,7 +1704,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * Equivalent to {@link #size()}.
      * <p>
-     * Complexity: O(1); the length is a field of the trie.
+     * Complexity: O(1): the length is stored.
      *
      * @return the number of elements
      */
@@ -1696,10 +1746,30 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return map(ignored -> value);
     }
 
+    /**
+     * This Vector if it is not empty, otherwise the elements of {@code other}.
+     * <p>
+     * Complexity: O(1) when this Vector is not empty or {@code other} is a Vector; otherwise O(m) for m elements of
+     * {@code other}, which are copied.
+     *
+     * @param other the elements to use when this Vector is empty
+     * @return this Vector, or a Vector of the elements of {@code other}
+     * @throws NullPointerException if this Vector is empty and {@code other} is null
+     */
     public Vector<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
 
+    /**
+     * This Vector if it is not empty, otherwise the elements {@code supplier} gives, which is called only then.
+     * <p>
+     * Complexity: O(1) when this Vector is not empty or the supplied iterable is a Vector; otherwise O(m) for the m
+     * supplied elements, which are copied.
+     *
+     * @param supplier gives the elements to use when this Vector is empty
+     * @return this Vector, or a Vector of the supplied elements
+     * @throws NullPointerException if this Vector is empty and {@code supplier} is null or gives null
+     */
     public Vector<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         return isEmpty() ? ofAll(supplier.get()) : this;
     }
@@ -1707,8 +1777,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends copies of {@code element} until the Vector has {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements appended. On a Vector of primitive values, the first value of another class
-     * converts every element once, O(n) (see the class documentation).
+     * Complexity: O(k) for the k elements appended. On a Vector of primitive values, a value of another class first
+     * converts every element: O(n), paid again at each such write on the same Vector (see the class documentation).
      *
      * @param length  the target length
      * @param element the padding element
@@ -1726,8 +1796,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends copies of {@code element} until the Vector has {@code length} elements.
      * <p>
-     * Complexity: O(k) for the k elements prepended. On a Vector of primitive values, the first value of another class
-     * converts every element once, O(n) (see the class documentation).
+     * Complexity: O(k) for the k elements prepended. On a Vector of primitive values, a value of another class first
+     * converts every element: O(n), paid again at each such write on the same Vector (see the class documentation).
      *
      * @param length  the target length
      * @param element the padding element
@@ -1747,7 +1817,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Replaces the {@code replaced} elements from {@code from} on by the elements of {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0; a {@code from} beyond the end appends.
      * <p>
-     * Complexity: O(n + m) for m elements of {@code that}.
+     * Complexity: O(n + m) for m elements of {@code that}: the elements before {@code from} are shared, and only
+     * {@code that} and the elements after the replaced ones are copied, so a patch near the end is O(m).
      *
      * @param from     the first position to replace
      * @param that     the replacement elements
@@ -1766,6 +1837,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return take(from).appendAll(that).appendAll(drop(end));
     }
 
+    /**
+     * Splits the elements into those that satisfy {@code predicate} and those that do not, each in order.
+     * <p>
+     * Complexity: O(n), one pass.
+     *
+     * @param predicate the condition
+     * @return the elements that satisfy it, and those that do not
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Tuple2<Vector<T>, Vector<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final ArrayList<T> left = new ArrayList<>(), right = new ArrayList<>();
@@ -1780,7 +1860,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
      * generalisation of {@link #partition(Predicate)}. Two builders, one pass, no intermediate list.
      * <p>
-     * Complexity: O(n), one builder append per element.
+     * Complexity: O(n), one pass.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -1810,7 +1890,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * All distinct permutations of the elements, in the order the distinct elements first occur.
      * <p>
-     * Complexity: O(n! * n) in the worst case (all elements distinct).
+     * Complexity: O(n! * n^2) in the worst case (all elements distinct): there are n! permutations of n elements, and
+     * each is rebuilt once per element, at every level of the recursion.
      *
      * @return the permutations; none for the empty Vector
      */
@@ -1846,8 +1927,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends an element.
      * <p>
-     * Complexity: effectively O(1) (a path copy; the first leaf is copied). On a Vector of primitive values, the first
-     * value of another class converts every element once, O(n) (see the class documentation).
+     * Complexity: effectively O(1): copies a few small arrays of 32 elements, not the Vector. On a Vector of primitive
+     * values, a value of another class first converts every element: O(n), paid again at each such write on the same
+     * Vector (see the class documentation).
      *
      * @param element the element to prepend
      * @return a new Vector starting with {@code element}
@@ -1858,9 +1940,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends all elements of the given iterable, keeping their order.
      * <p>
-     * Complexity: O(m) for m prepended elements (one leaf copy per 32 elements plus a path copy); O(1) when this Vector
-     * is empty and {@code iterable} is a Vector, which is returned as is. On a Vector of primitive values, the first
-     * value of another class converts every element once, O(n) (see the class documentation).
+     * Complexity: O(m) for m prepended elements, even when this Vector is much shorter than the argument; the elements
+     * of this Vector are shared, not copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which is
+     * returned as is. On a Vector of primitive values, a value of another class first converts every element: O(n),
+     * paid again at each such write on the same Vector (see the class documentation).
      *
      * @param iterable the elements to prepend
      * @return a new Vector starting with the given elements, or this Vector if there are none
@@ -1940,7 +2023,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Removes the element at {@code index}; the elements after it shift left by one.
      * <p>
-     * Complexity: O(min(i, n - i)): the shorter side is re-appended or re-prepended element by element.
+     * Complexity: O(min(i, n - i)): the elements on the shorter side of i are copied, those on the longer side are
+     * shared.
      *
      * @param index a position, {@code 0 <= index < length()}
      * @return a new Vector without the element at {@code index}
@@ -1973,7 +2057,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Removes every occurrence of every given element.
      * <p>
-     * Complexity: O(n + m) for m given elements.
+     * Complexity: O(n + m) for an argument of m elements: they are hashed once, then one filter pass.
      *
      * @param elements the elements to remove
      * @return a new Vector without them, or this Vector if none is present
@@ -2038,7 +2122,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Retains only the elements from this Vector that are contained in the given {@code elements}.
      * <p>
-     * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     * Complexity: O(n + m) for an argument of m elements: they are hashed once, then one filter pass.
      *
      * @param elements the elements to keep
      * @return a new Vector containing only the elements present in {@code elements}, in their original order
@@ -2086,7 +2170,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Rotates the elements {@code n} positions to the left: {@code Vector(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code Vector(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(k) for the k = n mod length elements moved to the end.
+     * Complexity: O(k), where k is the distance modulo the size: the first k elements are copied to the end, the
+     * others are shared. A negative distance can cost O(n): {@code rotateLeft(-1)} copies all the elements but one.
      *
      * @param n the distance
      * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
@@ -2103,7 +2188,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Rotates the elements {@code n} positions to the right: {@code Vector(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Vector(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(length - k) for k = n mod length: the elements before the moved suffix are re-appended.
+     * Complexity: O(n - k), where k is the distance modulo the size: the last k elements are shared and the n - k
+     * elements before them are copied after them, so {@code rotateRight(1)} is O(n).
      *
      * @param n the distance
      * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
@@ -2235,7 +2321,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * clamped, and an empty or reversed range gives the empty Vector: {@code Vector(1, 2).slice(-10, 10)} is the
      * whole Vector, {@code slice(1, 0)} is empty. {@link #subSequence(int, int)} throws instead of clamping.
      * <p>
-     * Complexity: effectively O(1) (the paths to the new first and last leaves are trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @param beginIndex the first position (inclusive)
      * @param endIndex   the last position (exclusive)
@@ -2254,7 +2341,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted in natural order (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and regrouped into leaves.
+     * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @return a new sorted Vector, or this Vector if it is empty
      * @throws ClassCastException if the elements are not {@link Comparable}
@@ -2273,7 +2360,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted by {@code comparator} (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and regrouped into leaves.
+     * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @param comparator the order
      * @return a new sorted Vector, or this Vector if it is empty
@@ -2293,7 +2380,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted by the natural order of the key {@code mapper} computes (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     * Complexity: O(n log n) comparisons; {@code mapper} is called again for both elements at every comparison.
      *
      * @param mapper computes the sort key
      * @param <U>    the key type
@@ -2307,7 +2394,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted by {@code comparator} applied to the key {@code mapper} computes (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     * Complexity: O(n log n) comparisons; {@code mapper} is called again for both elements at every comparison.
      *
      * @param comparator the order of the keys
      * @param mapper     computes the sort key
@@ -2341,7 +2428,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Splits at {@code n}: {@code (take(n), drop(n))}.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: effectively O(1): one {@link #take(int)} and one {@link #drop(int)}; both parts share their
+     * elements with this Vector.
      *
      * @param n the split position; clamped to {@code [0, length()]}
      * @return the first {@code n} elements and the rest
@@ -2449,7 +2537,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements from {@code beginIndex} on. Unlike {@link #drop(int)}, an out-of-range index throws.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: effectively O(1), as {@link #drop(int)}.
      *
      * @param beginIndex the first position, {@code 0 <= beginIndex <= length()}
      * @return the elements from {@code beginIndex} on; this Vector when it is 0
@@ -2467,7 +2555,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * The elements from {@code beginIndex} (inclusive) to {@code endIndex} (exclusive). Unlike
      * {@link #slice(int, int)}, out-of-range or reversed indices throw.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: effectively O(1), as {@link #slice(int, int)}.
      *
      * @param beginIndex the first position (inclusive), {@code >= 0}
      * @param endIndex   the last position (exclusive), {@code <= length()}
@@ -2483,7 +2571,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns a new {@code Vector} without its first element.
      * <p>
-     * Complexity: effectively O(1) (the path to the first leaf is trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @return a new {@code Vector} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Vector} is empty
@@ -2499,7 +2588,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns a new {@code Vector} without its first element as an {@code Option}.
      * <p>
-     * Complexity: effectively O(1) (one {@code tail}).
+     * Complexity: effectively O(1), as {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -2510,7 +2599,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
-     * Complexity: effectively O(1) (the path to the new last leaf is trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @param n the number of elements to take
      * @return a new {@code Vector} containing the first {@code n} elements
@@ -2562,7 +2652,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
      * <p>
-     * Complexity: effectively O(1) (the path to the new first leaf is trimmed).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only a few small arrays at the
+     * cut are copied.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code Vector} containing the last {@code n} elements
@@ -2657,8 +2748,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index}.
      * <p>
-     * Complexity: effectively O(1) (a path copy; the leaf holding the element is copied). On a Vector of primitive
-     * values, the first value of another class converts every element once, O(n) (see the class documentation).
+     * Complexity: effectively O(1): copies a few small arrays of 32 elements, not the Vector. On a Vector of primitive
+     * values, a value of another class first converts every element: O(n), paid again at each such write on the same
+     * Vector (see the class documentation).
      *
      * @param index   a position, {@code 0 <= index < length()}
      * @param element the new element
@@ -2677,8 +2769,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index} by {@code updater} applied to it.
      * <p>
-     * Complexity: effectively O(1) (one access and one path copy). On a Vector of primitive values, the first value of
-     * another class converts every element once, O(n) (see the class documentation).
+     * Complexity: effectively O(1): one {@link #get(int)} and one {@link #update(int, Object)}. On a Vector of
+     * primitive values, a value of another class first converts every element: O(n), paid again at each such write on
+     * the same Vector (see the class documentation).
      *
      * @param index   a position, {@code 0 <= index < length()}
      * @param updater computes the new element from the current one
@@ -2785,6 +2878,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Whether {@code o} is a sequence with equal elements in the same order: another Vector or one of the other
      * ordered sequence types.
+     * <p>
+     * Complexity: O(n + m) for a sequence of m elements: the sizes are compared first (a {@link List}, a
+     * {@link Queue} or a {@link Stream} counts its elements to answer), then the elements in order, up to the first difference. O(1)
+     * for an object that is not a sequence.
      *
      * @param o any object
      * @return true if {@code o} is an ordered sequence of the same elements
@@ -2794,6 +2891,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
     }
 
+    /**
+     * The hash of the elements in order, the same as that of an equal List, Queue or Stream.
+     * <p>
+     * Complexity: O(n), computed again at every call: nothing is cached, which matters for a Vector used as a key of
+     * a {@link HashMap} or an element of a {@link HashSet}.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
@@ -3095,7 +3200,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@code Vector(Vector(1, 2), Vector(3, 4), Vector(5))}; the last block is smaller when {@code size} does not
      * divide the length. The same as {@code sliding(size, size)}.
      * <p>
-     * Complexity: O(n / size) blocks, each an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n / size): one effectively O(1) {@link #slice(int, int)} per block; each block shares its elements
+     * with this Vector.
      *
      * @param size the block size, positive
      * @return the blocks, in order; empty if this Vector is empty
@@ -3110,7 +3216,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@code Vector.of(1, 2, 3, 4).sliding(3)} is {@code Vector(Vector(1, 2, 3), Vector(2, 3, 4))}. A Vector
      * shorter than {@code size} is one window. The same as {@code sliding(size, 1)}.
      * <p>
-     * Complexity: O(n) windows, each an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n): one effectively O(1) {@link #slice(int, int)} per window; each window shares its elements with
+     * this Vector, so no element is copied.
      *
      * @param size the window size, positive
      * @return the windows, in order; empty if this Vector is empty
@@ -3128,7 +3235,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * produced, so {@code Vector.of(1, 2, 3, 4).sliding(3)} has two windows. A Vector shorter than {@code size} is
      * one window; an empty Vector has none.
      * <p>
-     * Complexity: O(n / step) windows, each an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n / step): one effectively O(1) {@link #slice(int, int)} per window; each window shares its
+     * elements with this Vector, so no element is copied.
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -3155,7 +3263,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@code Vector(Vector(1, 2, 3), Vector(10, 12), Vector(5, 7), Vector(20, 29))}. The runs concatenate back to
      * this Vector.
      * <p>
-     * Complexity: O(n); each run is an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n): one key per element, and one effectively O(1) {@link #slice(int, int)} per run; each run
+     * shares its elements with this Vector.
      *
      * @param classifier the key of an element; two consecutive elements are in the same run when their keys are
      *                   equal
@@ -3200,7 +3309,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * The Cartesian power of this Vector: every Vector of {@code power} elements drawn from this one, in
      * lexicographic position order. {@code power == 0} gives one empty Vector; a negative power gives no result.
      * <p>
-     * Complexity: O(n^power) Vectors of size {@code power}, built now.
+     * Complexity: O(power * n^power): n^power Vectors of {@code power} elements each, built now.
      *
      * @param power the size of each result
      * @return the Vectors
@@ -3372,6 +3481,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     * <p>
+     * Complexity: O(n), as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines two elements
      * @return {@code Some(result)}, or {@code None} if this Vector is empty
@@ -3478,7 +3589,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: effectively O(1), that of {@link #head()}.
+     * Complexity: effectively O(1), as {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this Vector is empty
      */
@@ -3489,7 +3600,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: effectively O(1), that of {@link #last()}.
+     * Complexity: effectively O(1), as {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this Vector is empty
      */
@@ -3513,6 +3624,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #reduceLeft(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     * <p>
+     * Complexity: O(n), as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines the result so far and the next element
      * @return {@code Some(result)}, or {@code None} if this Vector is empty
@@ -3524,6 +3637,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     * <p>
+     * Complexity: O(n), as {@link #reduceRight(BiFunction)}.
      *
      * @param op combines the next element and the result so far
      * @return {@code Some(result)}, or {@code None} if this Vector is empty
@@ -3537,7 +3652,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The number of elements; the same as {@link #length()}.
      * <p>
-     * Complexity: O(1), that of {@link #length()}.
+     * Complexity: O(1), as {@link #length()}.
      *
      * @return the number of elements
      */
