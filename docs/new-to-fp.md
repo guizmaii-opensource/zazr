@@ -14,12 +14,12 @@ you can adopt one method at a time, and each one moves a mistake from production
 ### The problem with `null`
 
 A method that returns `null` looks exactly like one that never does. Nothing in its signature tells you to check.
+The examples in this section use a `record Customer(String name, String email)`.
 
 ```java
-java.util.Map<String, Customer> customers =
-    java.util.Map.of("c-1", new Customer("c-1", "Ada", "ada@example.com"));
-Customer customer = customers.get("c-2");       // null: nothing in the type says it can be
-String greeting = "Hello " + customer.name();   // NullPointerException
+var customers = java.util.Map.of("c-1", new Customer("Ada", "ada@example.com"));
+var customer = customers.get("c-2");        // Customer, yet it is null
+var greeting = "Hello " + customer.name();  // NullPointerException
 ```
 
 Here the crash is one line away from its cause. In real code the `null` travels through fields and method calls, and
@@ -33,10 +33,9 @@ compiler makes you deal with it: `customer.name()` does not compile on an `Optio
 Zazr's `HashMap.get` returns an `Option`:
 
 ```java
-HashMap<String, Customer> customers =
-    HashMap.of("c-1", new Customer("c-1", "Ada", "ada@example.com"));
-Option<Customer> customer = customers.get("c-2");
-String greeting = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest");
+var customers = HashMap.of("c-1", new Customer("Ada", "ada@example.com"));
+var customer = customers.get("c-2"); // Option<Customer>
+var greeting = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest");
 // "Hello, guest"
 ```
 
@@ -46,19 +45,19 @@ String greeting = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest
 through the whole chain untouched, with no `if` in sight.
 
 ```java
-Option<String> domain = customers.get("c-1")
+var domain = customers.get("c-1") // Option<String>
     .map(Customer::email)
     .flatMap(email -> Option.when(email.contains("@"), () -> email.split("@")[1]));
 // Some(example.com)
 ```
 
-### `switch` over `Some` and `None`
+### Pattern matching over `Some` and `None`
 
-`Option` is a sealed interface of two records, so a `switch` over it covers both cases, and the compiler checks that
-it does.
+`Option` is a sealed interface of two records, so pattern matching over it covers both cases, and the compiler checks
+that it does. `Some(var c)` is a record pattern: it matches the case and takes the value out in one step.
 
 ```java
-String message = switch (customers.get("c-1")) {
+var message = switch (customers.get("c-1")) {
     case Some(var c) -> "Welcome back, " + c.name();
     case None() -> "Please sign up";
 };
@@ -67,8 +66,8 @@ String message = switch (customers.get("c-1")) {
 
 ### What about `java.util.Optional`?
 
-`Optional` has the same idea, and `map`, `flatMap` and `orElse` too. But it is a final class, so you cannot `switch`
-over its cases. It also cannot be combined with other values (`zip`, `zipWith`) or turned into an `Either` or a
+`Optional` has the same idea, and `map`, `flatMap` and `orElse` too. But it is a final class, so you cannot pattern
+match on its cases. It also cannot be combined with other values (`zip`, `zipWith`) or turned into an `Either` or a
 `Validation`.
 
 `Option` is also used across the whole library: `HashMap.get`, `find`, `headOption` and the `...Option` methods of
@@ -85,7 +84,7 @@ or from a stack trace in production.
 ```java
 // throws two kinds of exception, and only this comment says so
 static int parseQuantityOrThrow(String input) {
-    int quantity = Integer.parseInt(input.trim());
+    var quantity = Integer.parseInt(input.trim());
     if (quantity <= 0) {
         throw new IllegalArgumentException("quantity must be positive");
     }
@@ -110,10 +109,10 @@ static Either<String, Integer> parseQuantity(String input) {
 }
 ```
 
-Reading the result is a `switch`, like for `Option`:
+Reading the result is pattern matching, like for `Option`:
 
 ```java
-String reply = switch (parseQuantity("0")) {
+var reply = switch (parseQuantity("0")) {
     case Right(var quantity) -> "added " + quantity + " to the cart";
     case Left(var error) -> error;
 };
@@ -126,8 +125,8 @@ String reply = switch (parseQuantity("0")) {
 the happy path and the error arrives at the end on its own.
 
 ```java
-Either<String, Integer> totalInCents = parseQuantity("3").map(q -> q * 1_250);
-Either<String, Integer> rejected = parseQuantity("three").map(q -> q * 1_250);
+var totalInCents = parseQuantity("3").map(q -> q * 1_250);  // Either<String, Integer>
+var rejected = parseQuantity("three").map(q -> q * 1_250);  // Either<String, Integer>
 // Right(3750), Left(not a number: three)
 ```
 
@@ -146,7 +145,7 @@ Exceptions are still the right tool for a failure that nobody can handle where i
 then gives an `Either` for the rest of your code, as `parseQuantity` does above.
 
 ```java
-Try<LocalDate> deliveryDate = Try.of(() -> LocalDate.parse("2026-02-30"));
+var deliveryDate = Try.of(() -> LocalDate.parse("2026-02-30")); // Try<LocalDate>
 // Failure(java.time.format.DateTimeParseException: ...)
 ```
 
@@ -183,11 +182,11 @@ Every check runs, and `Validation.zipWith` builds the `Person` only when all of 
 all the errors, in the order of the fields.
 
 ```java
-Validation<String, Person> person = Validation.zipWith(
+var person = Validation.zipWith( // Validation<String, Person>
     checkName(""), checkEmail("ada.example.com"), checkAge(16), checkPassword("hunter2"),
     Person::new);
 
-String response = switch (person) {
+var response = switch (person) {
     case Valid(var p) -> "Welcome, " + p.name();
     case Invalid(var errors) -> "Fix: " + errors.mkString("; ");
 };
@@ -231,7 +230,7 @@ final class Email {
     }
 
     static Validation<String, Email> parse(String input) {
-        String trimmed = input.trim();
+        var trimmed = input.trim();
         return trimmed.contains("@")
             ? Validation.valid(new Email(trimmed))
             : Validation.invalid("email has no @");
@@ -258,11 +257,11 @@ static Either<String, NonEmptyVector<String>> recipients(Vector<String> input) {
 ```
 
 ```java
-Either<String, NonEmptyVector<String>> none = recipients(Vector.empty());
-Either<String, NonEmptyVector<String>> some = recipients(Vector.of("ada@shop.com", "bob@shop.com"));
-String first = some.map(NonEmptyVector::head).getOrElse("nobody");
+var none = recipients(Vector.empty());          // Either<String, NonEmptyVector<String>>
+var some = recipients(Vector.of("ada@shop.com")); // Either<String, NonEmptyVector<String>>
+var first = some.map(NonEmptyVector::head).getOrElse("nobody");
 // none is Left(at least one recipient is required)
-// some is Right(NonEmptyVector(ada@shop.com, bob@shop.com))
+// some is Right(NonEmptyVector(ada@shop.com))
 // first is "ada@shop.com"
 ```
 
@@ -301,7 +300,7 @@ combinations cannot be written.
 
 ### The compiler finds the missing case
 
-A `switch` over a sealed interface must cover every case, and needs no `default`:
+Pattern matching over a sealed interface is exhaustive: the `switch` must cover every case, and needs no `default`:
 
 ```java
 static String describe(Connection connection) {
@@ -321,13 +320,17 @@ error: the switch expression does not cover all possible input values
                ^
 ```
 
-`Option`, `Either`, `Try` and `Validation` are built the same way, which is why a `switch` over them works.
+`Option`, `Either`, `Try` and `Validation` are built the same way, which is why pattern matching over them is
+exhaustive.
 
 ## Where to go next
 
 - [Getting started](getting-started.md): add Zazr to your build.
-- [Control types](control-types.md): `Option`, `Either` and `Try` in detail.
-- [Validation](validation.md): every way to combine checks.
+- [Control types](control/index.md): the types at a glance, and which one to pick.
+- [Option](control/option.md): a value that may be absent.
+- [Either](control/either.md): a result or an error.
+- [Try](control/try.md): code that may throw.
+- [Validation](control/validation.md): every way to combine checks.
 - [NonEmptyVector](non-empty-vector.md): the collection that cannot be empty.
 - [zip at arity N](zip.md): combine up to eight values in one call.
 - [Collections](collections/index.md): which collection to choose.
