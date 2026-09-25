@@ -510,7 +510,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      *
      * @param supplier provides the entries to fall back on
      * @return this map if non-empty, otherwise a map of {@code supplier.get()}
-     * @throws NullPointerException if this map is empty and {@code supplier} is null
+     * @throws NullPointerException if {@code supplier} is null, or if this map is empty and {@code supplier} returns null
      */
     Map<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier);
 
@@ -747,7 +747,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(Function<? super Tuple2<K, V>, ? extends K2> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Map.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -771,8 +771,12 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param accumulator adds an element to a container
      * @param combiner    merges two containers
      * @return the collected result
+     * @throws NullPointerException if {@code supplier}, {@code accumulator} or {@code combiner} is null
      */
     default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Objects.requireNonNull(accumulator, "accumulator is null");
+        Objects.requireNonNull(combiner, "combiner is null");
         return stream().collect(supplier, accumulator, combiner);
     }
 
@@ -799,11 +803,11 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param <K2> the key type
      * @param <V2> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Map.toMap: f returned null");
     }
 
     /**
@@ -831,11 +835,11 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param <K2> the key type
      * @param <V2> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Map.toLinkedMap: f returned null");
     }
 
     /**
@@ -862,7 +866,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param <K2> the key type
      * @param <V2> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -900,7 +904,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, SortedMap<K2, V2>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Map.toSortedMap: f returned null");
     }
 
     /**

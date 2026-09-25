@@ -2,8 +2,9 @@ package com.guizmaii.zazr.collection.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** The validity checker of red-black trees, shared by the tests of the tree operations and of the tree builder. */
-final class RedBlackTreeValidity {
+/** The validity checker of red-black trees, shared by the tests of the tree operations, of the tree builder and of
+ *  TreeSet and TreeMap (which reach their tree by reflection). */
+public final class RedBlackTreeValidity {
 
     private RedBlackTreeValidity() {
     }
@@ -11,7 +12,7 @@ final class RedBlackTreeValidity {
     /** Asserts that {@code tree} is a valid red-black tree: black root, no red node with a red child, the same number
      *  of black nodes on every path, the {@code blackHeight} and {@code size} fields equal to the recomputed values,
      *  and the elements strictly increasing. */
-    static <T> void assertValid(RedBlackTree<T> tree) {
+    public static <T> void assertValid(RedBlackTree<T> tree) {
         assertThat(tree.color()).as("root of %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
         blackNodesBelow(tree);
         T previous = null;

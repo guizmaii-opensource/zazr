@@ -689,7 +689,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log n) for m entries: one lookup each, and the ones present are inserted into a new tree.
+     * Complexity: O(m log(n + m)) for m given entries: one lookup each, then the present ones are sorted and a new
+     * tree is built from them in one pass.
      */
     @Override
     SortedMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements);

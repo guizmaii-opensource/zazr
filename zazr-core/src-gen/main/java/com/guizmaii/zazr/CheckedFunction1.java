@@ -161,7 +161,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *
      * @param recover the function applied in case of a non-fatal throwable
      * @return a function composed of this and recover
-     * @throws NullPointerException if recover is null
+     * @throws NullPointerException if recover is null; the composed function throws it, with the throwable as its
+     *                              cause, when recover returns null
      */
     default Function<T1, R> recover(Function<? super Throwable, ? extends Function<? super T1, ? extends R>> recover) {
         Objects.requireNonNull(recover, "recover is null");
@@ -173,7 +174,11 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
                     return sneakyThrow(throwable);
                 }
                 final Function<? super T1, ? extends R> func = recover.apply(throwable);
-                Objects.requireNonNull(func, () -> "recover return null for " + throwable.getClass() + ": " + throwable.getMessage());
+                if (func == null) {
+                    final NullPointerException nullResult = new NullPointerException("CheckedFunction1.recover: recover returned null");
+                    nullResult.initCause(throwable);
+                    throw nullResult;
+                }
                 return func.apply(t1);
             }
         };

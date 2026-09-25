@@ -414,7 +414,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
-        return new NonEmptySortedMap<>(map.map(mapper));
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new NonEmptySortedMap<>(map.map((k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.map: mapper returned null")));
     }
 
     /**
@@ -429,7 +430,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> map(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
-        return new NonEmptySortedMap<>(map.map(keyComparator, mapper));
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new NonEmptySortedMap<>(map.map(keyComparator, (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.map: mapper returned null")));
     }
 
     /**
@@ -622,7 +624,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public <C extends @Nullable Object> NonEmptyMap<C, NonEmptySortedMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
         final HashMap.Builder<C, NonEmptySortedMap<K, V>> groups = HashMap.newBuilder();
-        for (Tuple2<C, TreeMap<K, V>> group : map.<C> groupBy(classifier)) {
+        Objects.requireNonNull(classifier, "classifier is null");
+        for (Tuple2<C, TreeMap<K, V>> group : map.<C> groupBy(element -> Objects.requireNonNull(classifier.apply(element), "NonEmptySortedMap.groupBy: classifier returned null"))) {
             groups.put(group._1(), new NonEmptySortedMap<>(group._2()));
         }
         return NonEmptyMap.unsafeFromMap(groups.result());
@@ -711,7 +714,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
-        return map.collect(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return map.collect((k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.collect: mapper returned null"));
     }
 
     /**
@@ -725,7 +729,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
-        return map.collect(keyComparator, mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return map.collect(keyComparator, (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.collect: mapper returned null"));
     }
 
     /**
@@ -739,7 +744,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMapAll(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
-        return map.flatMap(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return map.flatMap((k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -753,7 +759,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMapAll(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
-        return map.flatMap(keyComparator, mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return map.flatMap(keyComparator, (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -1304,7 +1311,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return map.toLinkedMap(f);
+        Objects.requireNonNull(f, "f is null");
+        return map.toLinkedMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySortedMap.toLinkedMap: f returned null"));
     }
 
     /**
@@ -1373,7 +1381,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if {@code getKey} is null
      */
     public <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(Function<? super Tuple2<K, V>, ? extends K2> getKey) {
-        return map.arrangeBy(getKey);
+        Objects.requireNonNull(getKey, "getKey is null");
+        return map.arrangeBy(element -> Objects.requireNonNull(getKey.apply(element), "NonEmptySortedMap.arrangeBy: getKey returned null"));
     }
 
     /**

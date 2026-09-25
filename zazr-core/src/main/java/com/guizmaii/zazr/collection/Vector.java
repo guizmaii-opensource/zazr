@@ -757,10 +757,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Vector with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <T extends @Nullable Object, U extends @Nullable Object> Vector<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f).toVector();
+        return Iterator.unfoldRight(seed, f, "Vector.unfoldRight: f returned null").toVector();
     }
 
     /**
@@ -786,10 +786,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Vector with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <T extends @Nullable Object, U extends @Nullable Object> Vector<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldLeft(seed, f).toVector();
+        return Iterator.unfoldLeft(seed, f, "Vector.unfoldLeft: f returned null").toVector();
     }
 
     /**
@@ -814,10 +814,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Vector with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <T extends @Nullable Object> Vector<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
-        return Iterator.unfold(seed, f).toVector();
+        return Iterator.unfold(seed, f, "Vector.unfold: f returned null").toVector();
     }
 
     /**
@@ -1212,7 +1212,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <U extends @Nullable Object> Vector<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         final Builder<U> builder = newBuilder();
-        trie.forEach(element -> builder.addAll(mapper.apply(element)));
+        trie.forEach(element -> builder.addAll(Objects.requireNonNull(mapper.apply(element), "Vector.flatMap: mapper returned null")));
         return builder.result();
     }
 
@@ -1276,7 +1276,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
     }
 
-    public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Vector::ofAll); }
+    public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) { return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Vector::ofAll, "Vector.groupBy: classifier returned null"); }
 
     /**
      * The index of the first occurrence of {@code element}, or -1.
@@ -1798,7 +1798,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if this Vector is empty and {@code supplier} is null or gives null
      */
     public Vector<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "Vector.orElse: supplier returned null")) : this;
     }
 
     /**
@@ -2730,7 +2731,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         final Builder<T1> xs = newBuilder(size());
         final Builder<T2> ys = newBuilder(size());
         for (T element : this) {
-            final Tuple2<? extends T1, ? extends T2> t = unzipper.apply(element);
+            final Tuple2<? extends T1, ? extends T2> t = Objects.requireNonNull(unzipper.apply(element), "Vector.unzip: unzipper returned null");
             xs.add(t._1());
             ys.add(t._2());
         }
@@ -2755,7 +2756,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         final Builder<T2> ys = newBuilder(size());
         final Builder<T3> zs = newBuilder(size());
         for (T element : this) {
-            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(element);
+            final Tuple3<? extends T1, ? extends T2, ? extends T3> t = Objects.requireNonNull(unzipper.apply(element), "Vector.unzip3: unzipper returned null");
             xs.add(t._1());
             ys.add(t._2());
             zs.add(t._3());
@@ -3350,7 +3351,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Vector.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -3537,11 +3538,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Vector.toMap: f returned null");
     }
 
     /**
@@ -3569,11 +3570,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Vector.toLinkedMap: f returned null");
     }
 
     /**
@@ -3600,7 +3601,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -3638,7 +3639,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Vector.toSortedMap: f returned null");
     }
 
     /**

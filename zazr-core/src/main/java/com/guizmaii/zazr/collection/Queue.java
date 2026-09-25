@@ -690,10 +690,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Queue with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <T extends @Nullable Object, U extends @Nullable Object> Queue<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f).toQueue();
+        return Iterator.unfoldRight(seed, f, "Queue.unfoldRight: f returned null").toQueue();
     }
 
     /**
@@ -719,10 +719,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Queue with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <T extends @Nullable Object, U extends @Nullable Object> Queue<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldLeft(seed, f).toQueue();
+        return Iterator.unfoldLeft(seed, f, "Queue.unfoldLeft: f returned null").toQueue();
     }
 
     /**
@@ -747,10 +747,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
      * @return a Queue with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <T extends @Nullable Object> Queue<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
-        return Iterator.unfold(seed, f).toQueue();
+        return Iterator.unfold(seed, f, "Queue.unfold: f returned null").toQueue();
     }
 
     /**
@@ -796,7 +796,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param that the slice to look for
      * @return true if {@code that} occurs contiguously in this Queue (an empty slice always does)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public boolean containsSlice(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
@@ -835,7 +836,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param that the slice to find
      * @return the index of its first occurrence, or -1 (an empty slice occurs at 0)
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public int indexOfSlice(Iterable<? extends T> that) {
         return indexOfSlice(that, 0);
@@ -849,7 +851,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param that the slice to find
      * @param from the first position to look at
      * @return the index of its first occurrence at or after {@code from}, or -1
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public int indexOfSlice(Iterable<? extends T> that, int from) {
         return toList().indexOfSlice(that, from);
@@ -1065,7 +1068,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that) {
         return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that));
@@ -1079,7 +1083,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param that the slice to find
      * @param from the first position to look at
      * @return {@code Some(index)} of its first occurrence at or after {@code from}, or {@code None}
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that} is null, or if this Queue is not empty and {@code that} holds a null
+     *                              element; an empty Queue answers without reading {@code that}
      */
     public Option<Integer> indexOfSliceOption(Iterable<? extends T> that, int from) {
         return com.guizmaii.zazr.collection.internal.Collections.indexOption(indexOfSlice(that, from));
@@ -1499,7 +1504,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            return new Queue<>(toList().flatMap(mapper), com.guizmaii.zazr.collection.List.empty());
+            return new Queue<>(toList().flatMap(t -> Objects.requireNonNull(mapper.apply(t), "Queue.flatMap: mapper returned null")), com.guizmaii.zazr.collection.List.empty());
         }
     }
 
@@ -1540,7 +1545,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     public <C extends @Nullable Object> Map<C, Queue<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Queue::ofAll);
+        return com.guizmaii.zazr.collection.internal.Collections.groupBy(this, classifier, Queue::ofAll, "Queue.groupBy: classifier returned null");
     }
 
     /**
@@ -1776,7 +1781,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     public Queue<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "Queue.orElse: supplier returned null")) : this;
     }
 
     /**
@@ -2439,12 +2445,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Queue<T1>, Queue<T2>> unzip(
       Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().unzip(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
+        return toList().<T1, T2> unzip(t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip: unzipper returned null")).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Queue<T1>, Queue<T2>, Queue<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().unzip3(unzipper).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
+        return toList().<T1, T2, T3> unzip3(t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip3: unzipper returned null")).map(com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue, com.guizmaii.zazr.collection.List::toQueue);
     }
 
     /**
@@ -3073,7 +3079,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Queue.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -3258,11 +3264,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Queue.toMap: f returned null");
     }
 
     /**
@@ -3290,11 +3296,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Queue.toLinkedMap: f returned null");
     }
 
     /**
@@ -3321,7 +3327,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -3359,7 +3365,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Queue.toSortedMap: f returned null");
     }
 
     /**

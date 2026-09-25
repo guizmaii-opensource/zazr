@@ -232,7 +232,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param supplier provides the elements to fall back on
      * @return this set if non-empty, otherwise a set of {@code supplier.get()}
-     * @throws NullPointerException if this set is empty and {@code supplier} is null
+     * @throws NullPointerException if {@code supplier} is null, or if this set is empty and {@code supplier} returns null
      */
     Set<T> orElse(Supplier<? extends Iterable<? extends T>> supplier);
 
@@ -433,7 +433,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Set.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -522,11 +522,11 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Set.toMap: f returned null");
     }
 
     /**
@@ -554,11 +554,11 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Set.toLinkedMap: f returned null");
     }
 
     /**
@@ -585,7 +585,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -623,7 +623,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Set.toSortedMap: f returned null");
     }
 
     /**

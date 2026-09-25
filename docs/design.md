@@ -1530,6 +1530,28 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   and `collect` (and `HashMap.mapValues`) fold persistent puts and are unchanged, as are the fixed-arity `of(...)`
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
+- **The tree filter family keeps the untouched subtrees (decided 2026-09-25).** `filter`, `reject` and `partition` on
+  `TreeSet`, and the whole filter family and `partition` on `TreeMap` (`filterKeys`, `rejectValues`, the deprecated
+  `remove*` too), walk the tree once with `Node.filter` / `Node.partition`, ports of `filterEntries` /
+  `partitionEntries` of the Scala 3 standard library (the Scala 2.13 collection library that Scala 3 ships unchanged):
+  a subtree whose elements are all kept is returned as it is, and the kept parts are rejoined with `join` (kept node)
+  or `join2` (removed node, the maximum of the left part as the middle value; no tuple per level). No comparator call,
+  the predicate once per element in order, and the receiver itself when nothing is removed (the conserving rule of
+  Scala's `filter`; `partition` returns the receiver as the side that gets everything). `TreeSet.removeAll` and
+  `retainAll` go through `filter` and follow. `join` with an empty side appends the value down the outer spine with
+  the same rebalancing as `insert`, without comparing. A rough same-JVM probe (thread CPU time, a loaded machine):
+  large wins when whole ranges are kept or dropped (keeping all but one of 100 000 elements about 4x faster, with no
+  copy); the worst shape, every other element dropped, costs the same time and about 1.8x the bytes of the rebuild.
+  `groupBy` stays on the builder: sharing would need one walk per group.
+- **The remaining unsorted one-at-a-time paths (decided 2026-09-25)**, each rerouted on a rough probe showing a win:
+  `RedBlackTree.of(varargs)` (so `TreeSet.of`, `tabulate`, `fill`), `TreeSet.flatten` and `TreeMap.retainAll` use the
+  builder, keeping the last of equal elements as the insertions did (for `retainAll`, the given entry objects).
+  `TreeSet.addAll` keeps the element already present, or else the first given, as its `contains`-then-`insert` loop
+  did: the builder has a keep-first mode, and the sorted tree of the given elements is united with the receiver's
+  (`union` lets the argument tree's elements win). It is used only when the receiver is empty or the argument is a
+  collection that knows its size and holds at least as many elements as the receiver; a few elements into a large
+  set stay one lookup and one insertion each (the builder lost there, up to 9x for one element). The fixed-arity
+  `TreeMap.of(k, v, ...)` stays on insertions: at 2 to 10 pairs the builder was not faster.
 
 **Implemented for `LinkedHashMap`, `LinkedHashSet` and `List` (decided):**
 - `LinkedHashMap.Builder` is not the table's `HashMap.Builder` + `Vector.Builder` composite. A repeated key keeps the
@@ -1626,16 +1648,42 @@ deleted. Attribution in `NOTICE`.
   one successive persistent puts give, node for node. With the default 12-byte header and compressed oops the token
   costs no memory (four ints and three references make 40 bytes, and 36 without it pad to 40); with compact object
   headers it costs a padded 8 bytes per bitmap node (40 against 32).
-- **Scope of the port.** Step 1 ports the nodes, the iteration, the persistent `updated`/`removed` and the builders;
-  every public operation keeps its algorithm (the same loops of persistent puts and removals, the same factories).
-  Scala's `updateWithShallowMutations` is not ported: it would reroute the bulk paths without a measurement.
+- **Scope of the port.** The nodes, the iteration, the persistent `updated`/`removed` and the builders, then the
+  operations on whole subtrees (below). Scala's `updateWithShallowMutations` is not ported: it would reroute the
+  bulk paths that take any iterable, without a measurement. `HashMap.forEach(BiConsumer)` walks the nodes, with no
+  `Tuple2` per entry.
+- **Operations on whole subtrees** (Scala's, rewritten where Zazr keeps another key or another call order). They are
+  ported where their correctness is clear and not measured (decided 2026-09-25: correctness first; their performance
+  is measured and tuned in later tickets):
+  - `HashMap.equals`/`HashSet.equals` with another of their kind compare the tries node by node (bitmaps, hashes,
+    sizes and the cached hash sums first). Any other `Map` or `Set` goes through the element-by-element comparison.
+  - `HashSet.hashCode` is 1 plus the cached sum of the element hashes, the value the element walk gives. `HashMap`
+    hashes each entry's `Tuple2`, which the nodes do not cache, and stays a walk.
+  - `HashSet.union` and `addAll` with a `HashSet`, and `HashMap.merge` with a `HashMap`, concatenate the tries
+    (Scala's `concat`, whose right side wins). The receiver is the right side in both, since a set keeps the elements
+    it has and a merge keeps this map's entries; the receiver is returned when its size does not change.
+  - `HashSet.diff` and `removeAll` with a `HashSet` walk both tries (Scala's `diff`); `containsAll` of a `HashSet` is
+    Scala's `subsetOf`.
+  - `filter` and `reject` on both, and `filterKeys`, `filterValues`, `rejectKeys`, `rejectValues` on `HashMap`, filter
+    node by node, sharing the subtrees they keep whole and returning the receiver when nothing is dropped (Scala's
+    `filterImpl`, rewritten to call the predicate in iteration order: a node's entries, then its children).
+    `retainAll`, and `intersect` with a larger or equal argument, end in `filter` and follow.
+  - `HashMap.mapValues` and `replaceAll(BiFunction)` keep the keys in place and replace the values (Scala's
+    `transform`), calling the function in iteration order, with the null check and message of a put.
+  - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
+    `flatMap`.
+  - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
+    colliding hashes, checking the invariants and the canonical form of every result, the unchanged inputs, the
+    iteration order of the calls, and the node boundaries; `HashBulkTest` checks the public operations, which key
+    each keeps and when each returns the receiver. The cross-version trace keeps the same keys and values; filters and
+    `mapValues` returning the same values now return the receiver where they built an equal new collection.
 - **Tests.** `ChampMapTest`/`ChampSetTest` check the invariants of every trie they build (`ChampValidity`: bitmaps and
   array lengths, each entry in the slot of its hash fragment under its path, children of at least two entries, bitmap
   nodes above the last level and collision nodes below, cached sizes and hash sums), the canonical form after every
   removal of a model-based fuzz (a model of the kept key and value objects), the node boundaries (0/1/2/31/32/33
   entries in the root, 1023/1024/1025 over two levels, the deepest shift, collision nodes), and every scenario of the
   Vavr trie's builder test (shape against persistent puts, ownership, adoption, the pool fuzz of adopted tries that must
-  never change). `HashBuilderTest` passes unchanged.
+  never change). `HashBuilderTest` passes unchanged, apart from its header comment, which named the deleted test.
 
 ### 3.9 Null, equality, serialisation
 
@@ -1656,6 +1704,37 @@ deleted. Attribution in `NOTICE`.
   removed. Tuples are not collections and keep allowing null components.
   Same for `Right(null)`, `Success(null)`, `Valid(null)`: records with `requireNonNull` in the compact
   constructor. Collections keep allowing null elements (Java's do), but document it.
+- **A function whose result is a Zazr value that returns null is rejected at the call, by name (decided
+  2026-09-25, #120, narrowed in #163).** The rule covers a function, supplier or callable whose result is a Zazr
+  value (`Option`, `Either`, `Try`, `Validation`, `Lazy`, a tuple, a collection or an iterable of elements: the
+  functions of `flatMap`, `collect`, `partitionMap`, `unzip`, `unfold*`, `toMap(f)`, `orElse(Supplier)`, the map
+  `map`/`fill`/`tabulate`/`ofAll(stream, entryMapper)`, `Stream.cons`/`iterate`/`appendSelf`), the key a `groupBy` or
+  `arrangeBy` classifier produces, and the value a control type stores in a case (`Option.map`, `Either.map`,
+  `mapLeft`, `mapBoth`, `filterOrElse`, `toEither`/`toTry`/`toValidation`). The result is checked where the function
+  is called: `NullPointerException("<Type>.<method>: <parameter> returned null")` (`Option.flatMap: mapper returned
+  null`). A default method shared by several types names the interface that declares it (`Set.toMap`, `Map.toMap`).
+  A method that runs the function under `Try` (`map`, `flatMap`, `flatMapTry`, `collect`, `filter`, `mapError`,
+  `catchAll`, `catchSome`, `catchAllWith`, `catchSomeWith`, and `Try.of` as before) returns that exception as a
+  `Failure`; `Try.orElse(Supplier)` and `Try.forEach` throw it. On a lazy `Stream` these checks run when the element
+  is reached. `flatMap`, `iterate(Supplier)`, `unfoldRight`, `cons` and `appendSelf` remember the failure (a flag, or
+  the null result memoised and checked on every read), so forcing the stream again fails the same way without calling
+  the function again. `collect`, `unzip`/`unzip3` and `partitionMap` call the function again on a later force, as
+  they did before: a deterministic function fails the same way, a stateful one may not (the general case of a
+  re-forced `Stream` after a failure is #175).
+  A function that produces a plain element, key or value of a collection (`map`, `scan*`, `zipWith`, sequence
+  `fill`/`tabulate`, `mapValues`, `mapKeys`, `computeIfAbsent`, `merge`, `replaceAll`, the `keyMapper`/`valueMapper`
+  of `toMap`) is not checked by name: the collection's own null check rejects it (`Vector: element is null`,
+  `HashMap: value is null`), and on a lazy `Stream` a re-force after such a failure may go on past the element.
+  `fold`, `reduce` and `getOrElse`-style methods return the caller's own value and are not checked. The check is a
+  constant message on the failure path only. `NullResultTest` holds one row per overload and a reflective guard over
+  the exported types that fails when a public method taking a function whose result is a Zazr type has no row. A
+  null function *argument* is `<parameter> is null` at once, even where the function would not be called (an empty
+  map's `replaceAll`, a non-empty collection's `orElse(Supplier)`, a missing key's `computeIfPresent`).
+- **Slice searches read the slice as the type documents (decided in #163).** `Vector`, `NonEmptyVector` and a
+  non-empty `List`/`Queue` copy the slice first, so a null element in it throws. A `Stream` compares the slice
+  lazily and reads it only as far as the comparisons go: a null they reach throws, a null past them is not seen, and
+  an infinite slice is answered. An empty `List`, `Queue` or `Stream` answers `indexOfSlice` without reading the
+  slice.
 - **`Try.Failure` equality** stops comparing stack traces (`Try.java:1482`). Two failures are equal when
   their causes are the same object, or same class + message. Or simply make `Failure` a record and
   accept reference equality on the `Throwable`. Recommendation: record default (reference equality on the
