@@ -89,7 +89,7 @@ var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)))
 ## `Either`
 
 - Right-biased: `map`, `flatMap` and most members work on `Right` and pass a `Left` through.
-- Build: `Either.right(v)`, `Either.left(e)`, `Either.fromPredicate(value, test, () -> error)`.
+- Build: `Either.right(v)`, `Either.left(e)`, `Either.fromPredicate(value, test, ifFalse)`.
 - `mapLeft` transforms the error, `mapBoth` both sides, `flip` swaps them, `filterOrElse(test, value -> error)`
   rejects a `Right` (there is no `filter`).
 - Convert: `toOption()`, `toTry(Function<L, Throwable>)` (pass `t -> t` when the left side is already a

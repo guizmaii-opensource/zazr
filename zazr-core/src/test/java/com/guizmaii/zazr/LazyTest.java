@@ -251,6 +251,35 @@ public class LazyTest {
     @Nested
     class ConcurrencyTests {
         @Test
+        public void shouldRunTheComputationOnceWhenManyThreadsGetAtTheSameTime() throws Exception {
+            final int threads = 32;
+            for (int round = 0; round < 20; round++) {
+                final AtomicInteger calls = new AtomicInteger();
+                final Lazy<Object> lazy = Lazy.of(() -> {
+                    calls.incrementAndGet();
+                    Try.run(() -> Thread.sleep(2));
+                    return new Object();
+                });
+                final java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+                final java.util.List<CompletableFuture<Object>> results = new ArrayList<>();
+                try (var executor = java.util.concurrent.Executors.newFixedThreadPool(threads)) {
+                    for (int t = 0; t < threads; t++) {
+                        results.add(CompletableFuture.supplyAsync(() -> {
+                            Try.run(start::await);
+                            return lazy.get();
+                        }, executor));
+                    }
+                    start.countDown();
+                    final Object first = results.get(0).get();
+                    for (CompletableFuture<Object> result : results) {
+                        assertThat(result.get()).isSameAs(first);
+                    }
+                }
+                assertThat(calls.get()).isEqualTo(1);
+            }
+        }
+
+        @Test
         public void shouldSupportMultithreading() {
             final AtomicBoolean isEvaluated = new AtomicBoolean();
             final AtomicBoolean lock = new AtomicBoolean();
