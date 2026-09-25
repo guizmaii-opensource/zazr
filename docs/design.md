@@ -1328,11 +1328,12 @@ deleted. Attribution in `NOTICE`.
   its collision node skips an update whose value is the same object whatever the key. Zazr's `HashMap.put` has always
   replaced the key along with the value, so the nodes write both and return the same node only when both are the same
   objects; the factories, the collector and the builder do as successive puts, and `merge(that)` keeps this map's
-  entries. On `main`, `HashSet.add` kept the element already there but `of`, `ofAll`, `flatten`, the builder and the
-  collector kept the last of equal elements, and `addAll`/`union` replaced the elements already there unless nothing
-  was new (then the receiver, with its old elements, came back): the inconsistency #136 removed from `LinkedHashSet`.
-  Every `HashSet` factory and bulk addition now keeps the first of equal elements, as `add` does: the set nodes take a
-  `replace` flag, which the public operations never set. `intersect` keeps the receiver's elements whichever side is
+  entries. On `main`, `HashSet.add` kept the element already there, but every factory and every operation building a
+  set from elements kept the last of equal elements (`of`, `ofAll` of an iterable or a stream, `tabulate`, `fill`,
+  `flatten`, the builder, the collector, `map`, `flatMap`, `collect`, `partitionMap`), and `addAll`/`union` replaced
+  the elements already there unless nothing was new (then the receiver, with its old elements, came back): the
+  inconsistency #136 removed from `LinkedHashSet`. Every `HashSet` factory and operation now keeps the first of equal
+  elements, as `add` does: the set nodes take a `replace` flag, which the public operations never set. `intersect` keeps the receiver's elements whichever side is
   smaller (on `main`, those of the smaller side), looking each element of a smaller argument up in the receiver.
   `replace(current, equalNew)` swaps in the new object: it is an explicit replacement.
 - **Cross-version trace.** A trace of every public `HashMap`/`HashSet`/`LinkedHashMap`/`LinkedHashSet` operation over
