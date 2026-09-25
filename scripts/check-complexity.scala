@@ -78,6 +78,7 @@ val vocabulary: Map[String, Cost] = Map(
   "O(m)" -> Cost.Linear,
   "O(n + m)" -> Cost.Linear,
   "O(n + k)" -> Cost.Linear,
+  "O(k + m)" -> Cost.Linear,
   "O(min(n, m))" -> Cost.Linear,
   "O(max(n, m))" -> Cost.Linear,
   "O(min(i, n - i))" -> Cost.Linear,

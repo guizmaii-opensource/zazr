@@ -1737,7 +1737,7 @@ public class ListTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateByZeroWithoutWalkingTheElements() {
-            // the zero fast path answers before length(), which walks a List
+            // the zero fast path answers before size(), which walks a List
             final List<Integer> none = empty();
             final List<Integer> one = of(1);
             final List<Integer> many = of(1, 2, 3, 4, 5);

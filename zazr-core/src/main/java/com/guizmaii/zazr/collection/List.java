@@ -891,7 +891,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new List with the given elements appended at the end, in iteration order.
      * <p>
-     * Complexity: O(n + m) for m appended elements; this List and the appended elements are copied.
+     * Complexity: O(n + m) for m appended elements: this List is copied. A List argument is shared, not copied; any
+     * other argument is copied into a new List first.
      *
      * @param elements the elements to append
      * @return a new List ending with the given elements, or this List if there are none

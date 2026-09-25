@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /**
- * {@code List.Cons.length()} walks the list (a record has no field for a cached length), so every caller
+ * {@code List.Cons.size()} walks the list (a record has no field for a cached size), so every caller
  * must measure a length once, never per element. Each case below is milliseconds when linear and times out
  * when quadratic. The class runs alone, so that the time bound does not measure the other test classes running in
  * parallel.

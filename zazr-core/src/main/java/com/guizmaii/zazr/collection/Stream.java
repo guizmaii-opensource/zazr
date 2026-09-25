@@ -1694,8 +1694,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code Stream} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
-     * result reaches them.
+     * Complexity: O(k + m) for k dropped elements; they and the first element kept are computed now, the rest when
+     * the result reaches them. On a Stream built by append, dropping into the m appended elements rebuilds them, at
+     * every call. O(k) otherwise.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1854,7 +1855,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: O(i); the first i + 1 elements are computed.
+     * Complexity: O(i + m); the first i + 1 elements are computed. On a Stream built by append, reaching the m
+     * appended elements rebuilds them, at every call. O(i) otherwise.
      *
      * @param index the position
      * @return the element at that position
@@ -2863,10 +2865,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new {@code Stream} without its first element.
      * <p>
-     * Complexity: O(k) the first time, for k skipped elements: on a Stream returned by filter, reject, retainAll,
+     * Complexity: O(k) for k elements computed or rebuilt. On a Stream returned by filter, reject, retainAll,
      * removeAll, distinct, distinctBy, collect or flatMap, the first call computes the elements up to the next one
-     * kept, and never returns on an infinite Stream with no further match. O(1) on a Stream that skips nothing, and on
-     * every later call: the result is kept.
+     * kept, and never returns on an infinite Stream with no further match; later calls are O(1): the result is kept.
+     * On a Stream built by append, a call at the first appended element rebuilds the k appended elements, and nothing
+     * is kept, so every such call pays it again. O(1) otherwise.
      *
      * @return a new {@code Stream} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Stream} is empty
@@ -2876,7 +2879,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new {@code Stream} without its first element as an {@code Option}.
      * <p>
-     * Complexity: O(k) the first time, for k skipped elements, as {@link #tail()}.
+     * Complexity: O(k) for k elements computed or rebuilt, as {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */

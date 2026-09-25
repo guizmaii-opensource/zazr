@@ -1827,7 +1827,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateByZeroWithoutWalkingTheElements() {
-            // the zero fast path answers before length(), which walks a Queue
+            // the zero fast path answers before size(), which walks a Queue
             final Queue<Integer> none = empty();
             final Queue<Integer> one = of(1);
             final Queue<Integer> many = of(1, 2, 3, 4, 5);
