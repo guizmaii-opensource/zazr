@@ -35,7 +35,7 @@ public class ListTest extends AbstractTraversableTest {
     // -- construction
 
     @Override
-    protected <T> Collector<T, ArrayList<T>, List<T>> collector() {
+    protected <T> Collector<T, List.Builder<T>, List<T>> collector() {
         return List.collector();
     }
 

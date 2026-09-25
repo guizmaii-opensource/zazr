@@ -348,10 +348,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("com.guizmaii.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldGroupByIntoNonEmptyGroups(int n, Vector<Integer> vector) {
-            final HashMap<Integer, NonEmptyVector<Integer>> groups = nev(vector).groupBy(i -> i % 5);
+            final NonEmptyMap<Integer, NonEmptyVector<Integer>> groups = nev(vector).groupBy(i -> i % 5);
             final Map<Integer, Vector<Integer>> expected = vector.groupBy(i -> i % 5);
             assertThat(groups.size()).isEqualTo(Math.min(n, 5));
-            assertThat(groups.mapValues(NonEmptyVector::toVector)).isEqualTo(HashMap.ofEntries(expected));
+            assertThat(groups.mapValues(NonEmptyVector::toVector).toMap()).isEqualTo(HashMap.ofEntries(expected));
             assertThat(groups.values().map(NonEmptyVector::size).foldLeft(0, Integer::sum)).isEqualTo(n);
             assertThat(groups.get(0).get().head()).isEqualTo(0);
             assertThatNullPointerException().isThrownBy(() -> nev(vector).groupBy(null));
@@ -1174,8 +1174,8 @@ public class NonEmptyVectorTest {
             assertThat(nev.toSortedSet(Comparator.reverseOrder()).toVector()).isEqualTo(vector.reverse());
             assertThat(nev.toArray()).isEqualTo(doubled.toArray());
             assertThat(nev.toArray(Integer[]::new)).isEqualTo(doubled.toArray(Integer[]::new));
-            assertThat((Object) nev.toMap(i -> i % 7, i -> i)).isEqualTo(doubled.toMap(i -> i % 7, i -> i));
-            assertThat((Object) nev.toMap(i -> Tuple.of(i % 7, i))).isEqualTo(doubled.toMap(i -> Tuple.of(i % 7, i)));
+            assertThat(nev.toMap(i -> i % 7, i -> i).toMap()).isEqualTo(doubled.toMap(i -> i % 7, i -> i));
+            assertThat(nev.toMap(i -> Tuple.of(i % 7, i)).toMap()).isEqualTo(doubled.toMap(i -> Tuple.of(i % 7, i)));
             assertThat(nev.toLinkedMap(i -> i % 7, i -> i).toVector()).isEqualTo(doubled.toLinkedMap(i -> i % 7, i -> i).toVector());
             assertThat(nev.toLinkedMap(i -> Tuple.of(i % 7, i)).toVector()).isEqualTo(doubled.toLinkedMap(i -> Tuple.of(i % 7, i)).toVector());
             assertThat(nev.toSortedMap(i -> i % 7, i -> i).toVector()).isEqualTo(doubled.toSortedMap(i -> i % 7, i -> i).toVector());
@@ -1354,15 +1354,6 @@ public class NonEmptyVectorTest {
     @Nested
     class NonEmptyGuarantee {
 
-        /* the signature of a method as the table keys it: name(SimpleParameterType, ...) */
-        static String signature(java.lang.reflect.Method method) {
-            final java.util.StringJoiner joiner = new java.util.StringJoiner(", ", method.getName() + "(", ")");
-            for (Class<?> parameter : method.getParameterTypes()) {
-                joiner.add(parameter.getSimpleName());
-            }
-            return joiner.toString();
-        }
-
         /* signature -> calls of that overload, with arguments chosen to shrink the result as far as they can */
         static java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls() {
             final java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls = new java.util.HashMap<>();
@@ -1434,29 +1425,14 @@ public class NonEmptyVectorTest {
             calls.put("sliding(int, int)", v -> java.util.List.of(v.sliding(1, Integer.MAX_VALUE), v.sliding(Integer.MAX_VALUE, 1)));
             calls.put("slideBy(Function)", v -> java.util.List.of(v.slideBy(i -> 0), v.slideBy(i -> i)));
             calls.put("groupBy(Function)", v -> java.util.List.of(v.groupBy(i -> 0), v.groupBy(i -> i)));
+            // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
+            calls.put("toMap(Function, Function)", v -> java.util.List.of(v.toMap(i -> 0, i -> i)));
+            calls.put("toMap(Function)", v -> java.util.List.of(v.toMap(i -> Tuple.of(0, i))));
+            calls.put("toSortedMap(Function, Function)", v -> java.util.List.of(v.toSortedMap(i -> 0, i -> i)));
+            calls.put("toSortedMap(Function)", v -> java.util.List.of(v.toSortedMap(i -> Tuple.of(0, i))));
+            calls.put("toSortedMap(Comparator, Function, Function)", v -> java.util.List.of(v.toSortedMap(Comparator.<Integer> reverseOrder(), i -> 0, i -> i)));
+            calls.put("toSortedMap(Comparator, Function)", v -> java.util.List.of(v.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(0, i))));
             return calls;
-        }
-
-        /* every NonEmptyVector reachable from a result, through tuples, Options, maps and iterables, is non-empty */
-        static void assertEveryNonEmptyVectorIsNonEmpty(Object result, String call) {
-            switch (result) {
-                case NonEmptyVector<?> nev -> {
-                    assertThat(nev.toVector().isEmpty()).as(call).isFalse();
-                    nev.forEach(element -> assertEveryNonEmptyVectorIsNonEmpty(element, call));
-                }
-                case Tuple2<?, ?> t -> {
-                    assertEveryNonEmptyVectorIsNonEmpty(t._1(), call);
-                    assertEveryNonEmptyVectorIsNonEmpty(t._2(), call);
-                }
-                case com.guizmaii.zazr.Tuple3<?, ?, ?> t -> {
-                    assertEveryNonEmptyVectorIsNonEmpty(t._1(), call);
-                    assertEveryNonEmptyVectorIsNonEmpty(t._2(), call);
-                    assertEveryNonEmptyVectorIsNonEmpty(t._3(), call);
-                }
-                case Option<?> option -> option.forEach(value -> assertEveryNonEmptyVectorIsNonEmpty(value, call));
-                case Iterable<?> iterable -> iterable.forEach(element -> assertEveryNonEmptyVectorIsNonEmpty(element, call));
-                default -> { }
-            }
         }
 
         @ParameterizedTest
@@ -1464,37 +1440,14 @@ public class NonEmptyVectorTest {
         public void shouldReturnOnlyNonEmptyNonEmptyVectors(int n, Vector<Integer> vector) {
             for (var call : calls().entrySet()) {
                 for (Object result : call.getValue().apply(nev(vector))) {
-                    assertEveryNonEmptyVectorIsNonEmpty(result, call.getKey());
+                    NonEmptyChecks.assertEveryNonEmptyCollectionIsNonEmpty(result, call.getKey());
                 }
             }
         }
 
         @Test
-        public void shouldCatchAnEmptyNonEmptyVectorNestedAnywhere() {
-            // the API cannot build an empty one, so the checker is tested on one made through the private constructor
-            final java.lang.reflect.Constructor<?> constructor = NonEmptyVector.class.getDeclaredConstructors()[0];
-            constructor.setAccessible(true);
-            final Object hollow;
-            try {
-                hollow = constructor.newInstance(Vector.empty());
-            } catch (ReflectiveOperationException e) {
-                throw new AssertionError(e);
-            }
-            for (Object nested : java.util.List.of(hollow, Tuple.of(1, hollow), Tuple.of(1, 2, Vector.of(hollow)), Option.some(hollow), HashMap.of(1, hollow))) {
-                assertThatThrownBy(() -> assertEveryNonEmptyVectorIsNonEmpty(nested, "hollow")).isInstanceOf(AssertionError.class);
-            }
-        }
-
-        @Test
-        public void shouldCoverEveryOverloadWhoseResultHoldsANonEmptyVector() {
-            final java.util.Set<String> holding = new java.util.TreeSet<>();
-            for (java.lang.reflect.Method method : NonEmptyVector.class.getMethods()) {
-                if (method.getGenericReturnType().getTypeName().contains(NonEmptyVector.class.getName())) {
-                    holding.add(signature(method));
-                }
-            }
-            assertThat(holding).isNotEmpty();
-            assertThat(calls().keySet()).containsExactlyInAnyOrderElementsOf(holding);
+        public void shouldCoverEveryOverloadWhoseResultHoldsANonEmptyCollection() {
+            assertThat(calls().keySet()).containsExactlyInAnyOrderElementsOf(NonEmptyChecks.holding(NonEmptyVector.class));
         }
     }
 

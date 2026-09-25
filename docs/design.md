@@ -659,8 +659,79 @@ now has every operation of `Vector`, each under the same contract, delegating to
   an `Option`) is called by the non-empty guarantee test, which checks every `NonEmptyVector` it can reach in the
   result.
 
-**Decided.** `NonEmptyVector` only; no `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the
-motivating cases and `NonEmptyVector` covers them. Add `NonEmptySet`/`NonEmptyMap` only on demand.
+**Decided.** No `NonEmptyList` in v1. `Validation` errors and `reduce`/`max` are the motivating cases and
+`NonEmptyVector` covers them. `NonEmptySet`/`NonEmptyMap` were to come only on demand; the maintainer asked for them
+on 2026-09-25 (#110), below.
+
+#### 3.6.1 `NonEmptySet`, `NonEmptyMap` and their sorted variants (decided 2026-09-25, #110)
+
+From zio-prelude's `NonEmptySet`/`NonEmptyMap`/`NonEmptySortedSet`/`NonEmptySortedMap`, under `NonEmptyVector`'s
+contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the entries, `Tuple2<K, V>`, for the maps).
+
+- **Four types, the sorted ones included.** `NonEmptySet<A>` wraps a `HashSet`, `NonEmptySortedSet<A>` a `TreeSet`,
+  `NonEmptyMap<K, V>` a `HashMap`, `NonEmptySortedMap<K, V>` a `TreeMap`. The sorted variants are where the contract
+  pays most: `head` and `last` (O(log n)) become total, `tail`/`init` return the plain type with
+  `tailNonEmpty`/`initNonEmpty` as the narrowing, `grouped`, `sliding` and `slideBy` return a `Vector` of the
+  non-empty type, and `zipWithIndex` a `NonEmptyVector`. A `HashSet` or a `HashMap` has none of these (no order, so no
+  `head`, as decided in 3.7), so without the sorted variants a user wanting a total `head` would have to leave the
+  non-empty types. `LinkedHashSet`/`LinkedHashMap` get no wrapper: nothing asked for one.
+- **Same API as the plain type, minus the deliberate absences**, checked reflectively by each test class overload by
+  overload (name and parameter types), so a missing overload fails as a missing name does; the absences are listed by
+  signature: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
+  (`toNonEmptySet`, `toNonEmptySortedSet`, `toNonEmptyMap`, `toNonEmptySortedMap`); on the sorted ones also
+  `headOption`, `lastOption`, `tailOption`, `initOption`; on the maps also `removeKeys`/`removeValues`, deprecated on
+  `Map` in favour of `rejectKeys`/`rejectValues` (a new type does not start with deprecated methods; the deprecated
+  `removeAll(BiPredicate)` overload is left out for the same reason, `removeAll(Iterable)` keeps the name). Extra:
+  `reduceMap`, as on `NonEmptyVector`.
+- **Returns the non-empty type:** `add`, `addAll(Iterable)`, `union(Set)` (accept the possibly empty type), `map`
+  (equal results merge, never to zero), `as`, `replace`, `replaceAll`, `tap`; on the maps `put` ×4, `merge` ×2,
+  `computeIfAbsent`/`computeIfPresent` (as `Tuple2<V, NonEmptyMap>` / `Tuple2<Option<V>, NonEmptyMap>`: `Maps` only ever
+  puts), `map`, `mapBoth`, `mapKeys` ×2, `mapValues`, `replace` ×2, `replaceAll` ×2 (`replace(Tuple2, Tuple2)` onto a
+  present key shrinks the map by one, never below one), `replaceValue`; the `Comparator` overloads of `map`/`mapBoth`
+  on the sorted ones. `keySet()` returns a `NonEmptySet` (`NonEmptySortedSet` with the map's comparator on a sorted
+  map) and `values()` a `NonEmptyVector`. `groupBy` returns a `NonEmptyMap` of non-empty groups on all four, as on
+  `NonEmptyVector` (below).
+- **`flatMap` / `flatMapAll`**, as on `NonEmptyVector`: `flatMap` takes a function returning the non-empty type,
+  `flatMapAll` one returning any `Iterable` and returns the plain type.
+- **Returns the plain type:** `filter*`, `reject*`, `collect`, `remove`, `removeAll`, `retainAll`, `intersect`, `diff`,
+  `partition`, `partitionMap` (`HashSet` only, `TreeSet` has none), and on the sorted ones `tail`, `init`, `take*`,
+  `drop*`.
+- **Total:** `max()`, `min()`, `maxBy` ×2, `minBy` ×2, `reduce`, `reduceMap`, `fold`, `single` (throws on more than one),
+  `average` as a `double` on the sets, `head`/`last` on the sorted ones, all through the loops of
+  `collection.internal.NonEmptyModule` (no `Option` wrapped to be unwrapped). `max`/`min` stay in the natural order of
+  the elements on the sorted variants, as on `TreeSet`/`TreeMap`; the comparator's extremes are `head`/`last`.
+- **Unwrap and narrowing.** `toSet()`, `toSortedSet()`, `toMap()`, `toSortedMap()` without arguments return the
+  wrapped collection, O(1), next to the existing `to*` conversions with arguments (`TreeSet.toSortedSet()` already
+  returns the set itself, so the name keeps its meaning). Constructors: `of`, `single`, `fromIterable(head, tail)`,
+  `fromIterable(Iterable) : Option`, `fromSet`/`fromSortedSet`/`fromMap`/`fromSortedMap : Option` (wrap without
+  copying), `unsafeFrom…`, static `flatten` on the sets; the sorted ones take an optional leading `Comparator` (natural
+  order otherwise). On the plain types, `HashSet.toNonEmptySet()`, `TreeSet.toNonEmptySortedSet()`,
+  `HashMap.toNonEmptyMap()`, `TreeMap.toNonEmptySortedMap()` return an `Option`.
+- **Set algebra arguments.** `union`/`intersect`/`diff` keep the plain types' `Set` parameter; no overloads taking the
+  non-empty types (they would double the set algebra for each wrapper pair). A non-empty set is an `Iterable`, so
+  `addAll`/`retainAll`/`removeAll` take it directly.
+- **Nulls.** Where the wrapper receives an element, key, value or entry itself (constructors, `add`, `put`, `replace`,
+  `replaceValue`, `as`), it checks first with a message naming the type (`NonEmptyMap.put: key is null`). `addAll` of an
+  `Iterable` and the mapper results go through the plain type's own checks (`HashSet: element is null`): unlike
+  `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
+- **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
+  `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
+  the wrapped collection's `hashCode`, which is unordered. That holds, symmetric and hash-consistent, when the sorted
+  side's comparator is consistent with `equals`, as for the plain `HashSet`/`TreeSet`: with a case-insensitive order,
+  say, `equals` holds one way only (`Collections.equals` asks the argument's `contains`) and the hash codes differ.
+  Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
+- **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
+  `TreeSet`).
+- **Grouping and converting a non-empty collection gives a non-empty map** (maintainer decision, 2026-09-25). On
+  `NonEmptyVector` and the four wrappers, `groupBy` returns a `NonEmptyMap` whose values are the non-empty type
+  (`NonEmptyMap<K, NonEmptyVector<A>>`, `NonEmptyMap<K, NonEmptySet<A>>`, `NonEmptyMap<C, NonEmptySortedMap<K, V>>`…),
+  `toMap` ×2 a `NonEmptyMap` and `toSortedMap` ×4 a `NonEmptySortedMap`: there is at least one element, so at least
+  one entry, whatever the keys. `toLinkedMap` keeps returning a plain map, since there is no non-empty linked map.
+  `arrangeBy` stays an `Option` of a plain map, as it was not part of the decision. The maps are built by package-private
+  `NonEmptyMap.ofMapped`/`ofMappedEntries` (and their `NonEmptySortedMap` twins), one builder pass that puts keys and
+  values without an intermediate `Tuple2` and reports a null key, value or entry under the calling method's name
+  (`NonEmptySet.toMap: keyMapper returned null`), as `NonEmptyVector` already did. This changes 3.6's
+  `groupBy as HashMap<K, NonEmptyVector<A>>`.
 
 ### 3.7 Removing the `Seq` abstraction
 
@@ -1008,7 +1079,7 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   returned the receiver, old objects included, when nothing was new). They now insert only absent elements, through
   a package-private `LinkedHashMap.putIfAbsent`, and the javadoc of `addAll`/`union` states the rule instead of
   calling it unspecified.
-- **How the map factories build**: a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
+- **How the map factories build** (now `LinkedHashMap.Builder`, 3.8.1): a private `LinkedHashMap.Puts` accumulates the keys in an `ArrayList` and the
   slots in the `HashMap`, replacing the slot of a repeated key in place, and makes the insertion-order `Vector` once.
   It replaces the old path (a `HashMap` of entries, a `Vector` of every key, `reverse().distinct().reverse()`, then a
   second `HashMap` of slots), so it does less work, not more.
@@ -1034,9 +1105,10 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   extends L, ? extends R>>)`, `Try.flatten`, `Validation.flatten(Validation<? extends E, ? extends Validation<?
   extends E, ? extends A>>)` and `Lazy.flatten`.
 - **Implementation.** "`flatMap(identity)` over the builder" is how the result reads, not literally the code: only
-  `Vector` has a builder yet (3.8.1, #27), so each type accumulates as its own `partition` and `ofAll` do (a reversed
-  cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for `HashSet`/`LinkedHashSet`, `ofAll` over
-  the concatenation for `TreeSet`). Each reads its argument once, outer and inner iterables alike, so one-shot
+  `Vector` had a builder when this was written (3.8.1, #27), so each type accumulates as its own `partition` and
+  `ofAll` do (a reversed cons list for `List` and `Queue`, the private `addAll` path of `ofAll` for
+  `HashSet`/`LinkedHashSet`, `ofAll` over the concatenation for `TreeSet`). `List.flatten` and `LinkedHashSet.flatten`
+  now use their builders (3.8.1). Each reads its argument once, outer and inner iterables alike, so one-shot
   iterables work. `partitionMap` switches on the `Either` records, one pass, no list of `Either`s, and rejects a null
   result naming the type (`List.partitionMap: f returned null`). `duplicatesBy` on `Queue` and `Stream` runs the
   `Vector` algorithm over the receiver itself (`Collections.duplicatesBy` in `collection.internal`, no `toList()`
@@ -1449,6 +1521,50 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
 
+**Implemented for `LinkedHashMap`, `LinkedHashSet` and `List` (decided):**
+- `LinkedHashMap.Builder` is not the table's `HashMap.Builder` + `Vector.Builder` composite. A repeated key keeps the
+  position of its first occurrence and takes the key object and value of its last (the repeated-key decision, 3.7), so
+  a put must find the position already given to its key and overwrite the key object there: `HashMap.Builder` has no
+  lookup and `Vector.Builder` no update. A lookup on the transient trie would tie the linked builders to the trie's
+  node types, which the CHAMP port (3.8.2) replaced while this was written. The builder is therefore
+  `LinkedHashMap.Puts`, the helper of the repeated-key decision, made public: an `ArrayList` of the keys in insertion
+  order and a persistent `HashMap` from each key to its entry and position, made into the order `Vector` once, in
+  `result()`. The fixed-arity `of`,
+  `ofEntries`, `tabulate` and `fill` already built this way and now call the builder, a refactoring rather than a
+  reroute. Against successive `put`s it saves the intermediate maps and the order `Vector` appended to or updated at
+  each step; a builder-side lookup on the CHAMP nodes (3.8.2) is a follow-up.
+- `LinkedHashSet.Builder` is a `LinkedHashMap.Builder` of `element -> element` that keeps the first of equal elements
+  (`putIfAbsent`, package-private): a repeated element allocates nothing.
+- `putAll(LinkedHashMap)` / `addAll(LinkedHashSet)` on an empty builder keeps the source: `result()` returns it when
+  nothing else was put (for the set, when no new element was added). The first put that follows copies its insertion
+  order, markers, offset and marker count included, into the array list and starts from its hash map, so the builder
+  goes on exactly as successive puts on that map would.
+- `List.Builder` appends to an `Object[]` grown by half and makes the cells in `result()` from the last element to the
+  first: n cells and one array, against 2n cells for prepending then reversing. A `List` given to `addAll` becomes the
+  pending tail: `result()` prepends the buffered elements onto it and shares its cells (so an empty builder given a
+  `List` returns that `List`), and an addition after it copies it into the array first.
+- Every builder method checks that the builder is open before checking its argument for null; the null messages name
+  the builder (`List.Builder.add: element is null`), and the factories built on a builder keep their own messages
+  (`List: element is null`, `LinkedHashSet.of: element is null`, `LinkedHashMap: key is null`).
+- Rerouted after a rough same-JVM probe on the branch, the gate being "not slower" (1 fork, 3 iterations, a machine
+  running other benchmarks, microseconds per operation at 10 / 1 000 / 100 000 distinct elements, the old algorithm
+  written out with the public API against the new factory): `List.ofAll` of a collection that is not a
+  `java.util.List` 0.034 / 4.2 / 506 against 0.059 / 6.5 / 533 (prepend, then reverse); `List.ofAll(Stream)` 0.038 /
+  3.9 / 390 against 0.061 / 4.6 / 474; `LinkedHashSet.ofAll` 0.21 / 52 / 24 200 against 0.46 / 92 / 34 200 (successive
+  adds); `LinkedHashMap.ofAll(java.util.Map)` 0.28 / 52 / 19 200 against 0.41 / 153 / 70 800 (successive puts). The
+  error bars were wide (up to the size of the score at 100 000) and overlap at 10 everywhere. The collectors, which
+  now accumulate into the builder instead of an `ArrayList` handed to `ofAll`/`ofEntries`, do strictly less work but
+  were within the noise: `List` 0.094 / 9.7 / 874 against 0.42 / 35 / 830 (2 forks, 5 iterations), `LinkedHashMap`
+  0.30 / 103 / 48 000 against 0.33 / 78 / 27 600 in one run and 58 000 ± 48 000 against 64 500 ± 30 000 at 100 000 in
+  the next, while the same builder loop measured between 22 000 and 60 000 across runs. So `List.ofAll` (the branch
+  for anything but a `java.util.List` or a `NavigableSet`, which already build n cells back to front),
+  `List.ofAll(Stream)`, `List.flatten`, `LinkedHashSet.ofAll`, `of`, `flatten` (and `tabulate`/`fill` through `of`),
+  `LinkedHashMap.ofAll(java.util.Map)` and the three types' `collector()`s use the builders; the coordinator's 3-fork
+  run of `MapSetBuilderBenchmark` (new rows for the three types) is the reference. The collectors' accumulator type is
+  now the builder, as for the other four types. Unchanged: `LinkedHashMap.ofAll(Stream, ...)` (as on `HashMap` and
+  `TreeMap`), `map`, `flatMap` and `collect` on the linked maps, the instance `addAll`/`union`, and the operations of
+  `List` that prepend and reverse (`filter`, `map`, `take`, ...).
+
 #### 3.8.2 `HashMap` and `HashSet` on CHAMP (decided 2026-09-25)
 
 **Decision.** `HashMap` and `HashSet` sit on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer and
@@ -1780,6 +1896,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
 | #119 | `Using` and `Using.Manager`, ported from Scala, replacing `Try.withResources` | 3.14 | #116 |
+| #110 | `NonEmptySet`, `NonEmptyMap`, `NonEmptySortedSet`, `NonEmptySortedMap` | 3.6.1 | #90, #27 |
 | #117 | `HashMap` and `HashSet` on CHAMP, ported from Scala | 3.8.2 | #27 |
 
 ---

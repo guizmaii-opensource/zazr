@@ -35,7 +35,9 @@ import org.jspecify.annotations.Nullable;
  * {@code zipWithIndex}, {@code scan}, {@code scanLeft}, {@code scanRight}, {@code update}, {@code tap},
  * {@code permutations}, {@code combinations()}, {@code crossProduct()}, {@code crossProduct(NonEmptyVector)};
  * {@code unzip} and {@code unzip3} return tuples of them; {@code grouped}, {@code sliding}, {@code slideBy} and
- * {@code groupBy} return non-empty groups, as {@code splitAtInclusive} returns a non-empty first part;</li>
+ * {@code groupBy} return non-empty groups ({@code groupBy} in a {@link NonEmptyMap}), as {@code splitAtInclusive}
+ * returns a non-empty first part; {@code toMap} returns a {@code NonEmptyMap} and {@code toSortedMap} a
+ * {@link NonEmptySortedMap};</li>
  * <li>operations that can shrink return a {@link Vector}, or a tuple of them: {@code filter}, {@code reject},
  * {@code collect}, {@code flatMapAll}, {@code tail}, {@code init}, {@code drop*}, {@code take*}, {@code slice},
  * {@code subSequence}, {@code patch}, {@code remove*}, {@code retainAll}, {@code duplicates*}, {@code partition},
@@ -537,15 +539,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      *
      * @param classifier Computes the key of an element
      * @param <K>        Key type
-     * @return the groups, each non-empty
+     * @return the groups, each non-empty, in a non-empty map
      * @throws NullPointerException if {@code classifier} is null or returns null
      */
-    public <K extends @Nullable Object> HashMap<K, NonEmptyVector<A>> groupBy(Function<? super A, ? extends K> classifier) {
-        HashMap<K, NonEmptyVector<A>> groups = HashMap.empty();
+    public <K extends @Nullable Object> NonEmptyMap<K, NonEmptyVector<A>> groupBy(Function<? super A, ? extends K> classifier) {
+        final HashMap.Builder<K, NonEmptyVector<A>> groups = HashMap.newBuilder();
         for (Tuple2<K, Vector<A>> group : vector.<K> groupBy(classifier)) {
-            groups = groups.put(group._1(), new NonEmptyVector<>(group._2()));
+            groups.put(group._1(), new NonEmptyVector<>(group._2()));
         }
-        return groups;
+        return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
     /**
@@ -2110,7 +2112,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public A[] toArray(IntFunction<A[]> arrayFactory) { return vector.toArray(arrayFactory); }
 
     /**
-     * The elements as the entries of a new {@link HashMap}; of two entries with the same key, the later one wins.
+     * The elements as the entries of a new {@link NonEmptyMap}; of two entries with the same key, the later one wins.
      * <p>
      * Complexity: O(n), one entry built per element.
      *
@@ -2121,12 +2123,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return the map
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
-        return vector.toMap(entryMapper(keyMapper, valueMapper, "NonEmptyVector.toMap"));
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> toMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return NonEmptyMap.ofMapped(vector, keyMapper, valueMapper, "NonEmptyVector.toMap");
     }
 
     /**
-     * The elements as the entries of a new {@link HashMap}; of two entries with the same key, the later one wins.
+     * The elements as the entries of a new {@link NonEmptyMap}; of two entries with the same key, the later one wins.
      * <p>
      * Complexity: O(n), one entry built per element.
      *
@@ -2136,8 +2138,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return the map
      * @throws NullPointerException if {@code f} is null, returns null, or returns an entry with a null key or value
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return vector.toMap(checkedEntries(f, "NonEmptyVector.toMap"));
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> toMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return NonEmptyMap.ofMappedEntries(vector, f, "NonEmptyVector.toMap");
     }
 
     /**
@@ -2174,7 +2176,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys; of two entries with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2186,12 +2188,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return the map
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
-        return vector.toSortedMap(entryMapper(keyMapper, valueMapper, "NonEmptyVector.toSortedMap"));
+    public <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return NonEmptySortedMap.ofMapped(Comparators.naturalComparator(), vector, keyMapper, valueMapper, "NonEmptyVector.toSortedMap");
     }
 
     /**
-     * The elements as the entries of a new {@link TreeMap} in the natural order of the keys; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys; of two entries with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2202,12 +2204,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return the map
      * @throws NullPointerException if {@code f} is null, returns null, or returns an entry with a null key or value
      */
-    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return vector.toSortedMap(checkedEntries(f, "NonEmptyVector.toSortedMap"));
+    public <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return NonEmptySortedMap.ofMappedEntries(Comparators.naturalComparator(), vector, f, "NonEmptyVector.toSortedMap");
     }
 
     /**
-     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}; of two entries with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2220,13 +2222,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @return the map
      * @throws NullPointerException if an argument is null or a mapper returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        return vector.toSortedMap(comparator, entryMapper(keyMapper, valueMapper, "NonEmptyVector.toSortedMap"));
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return NonEmptySortedMap.ofMapped(comparator, vector, keyMapper, valueMapper, "NonEmptyVector.toSortedMap");
     }
 
     /**
-     * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}; of two entries with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2239,9 +2240,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if an argument is null, or {@code f} returns null or an entry with a null key or
      *                              value
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
-        Objects.requireNonNull(comparator, "comparator is null");
-        return vector.toSortedMap(comparator, checkedEntries(f, "NonEmptyVector.toSortedMap"));
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+        return NonEmptySortedMap.ofMappedEntries(comparator, vector, f, "NonEmptyVector.toSortedMap");
     }
 
     /* the entry of an element, its key and value checked, reported under the calling method's name */
