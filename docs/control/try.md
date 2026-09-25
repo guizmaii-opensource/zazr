@@ -123,10 +123,12 @@ Try<Integer> back = Try.fromCompletableFuture(future);
 
 ## Sharp edges
 
-### Two failures are equal only if they hold the same exception
+### Two failures are rarely equal
 
-`Failure` compares its cause by identity, because exceptions do not define equality. Two failures of the same
-input are not equal. Compare the class or the message of the cause instead.
+`Failure` compares its cause with the cause's own `equals`. JDK exceptions do not override it, so two failures are
+equal only if they hold the same exception object.
+
+Two failures of the same input are not equal. Compare the class or the message of the cause instead.
 
 ```java
 Try<Integer> first = Try.of(() -> Integer.parseInt("x"));

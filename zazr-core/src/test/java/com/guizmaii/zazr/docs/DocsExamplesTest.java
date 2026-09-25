@@ -289,7 +289,7 @@ public class DocsExamplesTest {
 
             assertThat(port).isEqualTo(8080);
             assertThat(shown).isEqualTo("no value");
-            assertThat(parsed.getCause()).isInstanceOf(NumberFormatException.class);
+            assertThat(parsed).hasToString("Failure(java.lang.NumberFormatException: For input string: \"x\")");
             assertThat(absent.getCause()).isInstanceOf(java.util.NoSuchElementException.class);
         }
 
@@ -477,6 +477,21 @@ public class DocsExamplesTest {
 
             assertThat(same).isFalse();
             assertThat(sameClass).isTrue();
+            // the same exception object: equal
+            assertThat(Try.failure(first.getCause())).isEqualTo(first);
+            // an exception class that defines its own equals is compared with it
+            class Timeout extends RuntimeException {
+                @Override
+                public boolean equals(Object o) {
+                    return o instanceof Timeout;
+                }
+
+                @Override
+                public int hashCode() {
+                    return 1;
+                }
+            }
+            assertThat(Try.failure(new Timeout())).isEqualTo(Try.failure(new Timeout()));
             // get() throws the cause itself
             assertThatThrownBy(first::get).isSameAs(first.getCause());
             // a future completed with null is a Failure of a NullPointerException
@@ -511,13 +526,29 @@ public class DocsExamplesTest {
             // evaluated is false, value is "localhost:8080"
 
             Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2)));
-            java.util.function.Supplier<Vector<Integer>> supplier = all.toSupplier();
-            // supplier.get() is Vector(1, 2), computed once
+            // all.get() is Vector(1, 2)
 
             assertThat(evaluated).isFalse();
             assertThat(value).isEqualTo("localhost:8080");
-            assertThat(supplier.get()).isEqualTo(Vector.of(1, 2));
-            assertThat(all.isEvaluated()).isTrue();
+            assertThat(all.isEvaluated()).isFalse();
+            assertThat(all.get()).isEqualTo(Vector.of(1, 2));
+        }
+
+        @Test
+        void conversions() {
+            int[] calls = {0};
+            Lazy<String> greeting = Lazy.of(() -> {
+                calls[0]++;
+                return "hello";
+            });
+            java.util.function.Supplier<String> supplier = greeting.toSupplier();
+            String twice = supplier.get() + supplier.get();
+            // twice is "hellohello", calls[0] is 1: computed once
+
+            assertThat(twice).isEqualTo("hellohello");
+            assertThat(calls[0]).isEqualTo(1);
+            assertThat(greeting.get()).isEqualTo("hello");
+            assertThat(calls[0]).isEqualTo(1);
         }
 
         @Test
@@ -534,8 +565,9 @@ public class DocsExamplesTest {
             // first is Failure(java.lang.IllegalStateException: not yet), second is "ready", attempts is 2
 
             Lazy<Integer> unread = Lazy.of(() -> 1);
+            Lazy<Integer> other = Lazy.of(() -> 1);
             String shown = unread.toString();
-            boolean equal = unread.equals(Lazy.of(() -> 1));
+            boolean equal = unread.equals(other);
             // shown is "Lazy(?)", equal is true, and both are now evaluated
 
             assertThat(first).hasToString("Failure(java.lang.IllegalStateException: not yet)");
@@ -544,6 +576,7 @@ public class DocsExamplesTest {
             assertThat(shown).isEqualTo("Lazy(?)");
             assertThat(equal).isTrue();
             assertThat(unread.isEvaluated()).isTrue();
+            assertThat(other.isEvaluated()).isTrue();
         }
     }
 

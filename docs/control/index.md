@@ -110,3 +110,18 @@ boolean npe = nullResult.getCause() instanceof NullPointerException;
 ```
 
 `Lazy` is the exception: it may hold `null`. Wrap its value explicitly, with `Option.ofNullable(lazy.get())`.
+
+<script>
+  // links to the sections of the former single page land on the page that now holds them
+  (function () {
+    var moved = {
+      "lazy": "lazy/",
+      "construction": "option/#construction",
+      "switch-over-the-cases": "option/#switch-over-the-cases"
+    };
+    var target = moved[window.location.hash.slice(1)];
+    if (target) {
+      window.location.replace(target);
+    }
+  })();
+</script>

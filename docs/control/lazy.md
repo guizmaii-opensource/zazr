@@ -46,15 +46,25 @@ String value = address.get();
 The static `collectAll` turns many `Lazy` values into one `Lazy` of a `Vector`, and `flatten` removes one level of
 nesting. Both compute nothing until the result is read.
 
+```java
+Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2)));
+// all.get() is Vector(1, 2)
+```
+
 ## Conversions
 
 `get()` gives the value. `toSupplier()` passes a `Lazy` to an API that takes a `Supplier`; the supplier shares the
 cache, so the value is still computed once.
 
 ```java
-Lazy<Vector<Integer>> all = Lazy.collectAll(Vector.of(Lazy.of(() -> 1), Lazy.of(() -> 2)));
-java.util.function.Supplier<Vector<Integer>> supplier = all.toSupplier();
-// supplier.get() is Vector(1, 2), computed once
+int[] calls = {0};
+Lazy<String> greeting = Lazy.of(() -> {
+    calls[0]++;
+    return "hello";
+});
+java.util.function.Supplier<String> supplier = greeting.toSupplier();
+String twice = supplier.get() + supplier.get();
+// twice is "hellohello", calls[0] is 1: computed once
 ```
 
 A `Lazy` may hold `null`, so wrapping its value in another control type is explicit: `Option.ofNullable(lazy.get())`.
@@ -86,8 +96,9 @@ prints `Lazy(?)` until the value is computed.
 
 ```java
 Lazy<Integer> unread = Lazy.of(() -> 1);
+Lazy<Integer> other = Lazy.of(() -> 1);
 String shown = unread.toString();
-boolean equal = unread.equals(Lazy.of(() -> 1));
+boolean equal = unread.equals(other);
 // shown is "Lazy(?)", equal is true, and both are now evaluated
 ```
 
