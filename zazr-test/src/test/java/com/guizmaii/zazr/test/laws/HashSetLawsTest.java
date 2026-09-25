@@ -1,7 +1,7 @@
 package com.guizmaii.zazr.test.laws;
 
 import com.guizmaii.zazr.collection.HashSet;
-import com.guizmaii.zazr.test.Arbitrary;
+import com.guizmaii.zazr.test.legacy.Arbitrary;
 import java.util.Random;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;

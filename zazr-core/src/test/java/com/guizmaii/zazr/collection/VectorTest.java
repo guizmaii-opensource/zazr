@@ -3,7 +3,6 @@ package com.guizmaii.zazr.collection;
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
 import com.guizmaii.zazr.Tuple3;
-import com.guizmaii.zazr.collection.internal.ArrayType;
 import com.guizmaii.zazr.collection.internal.Comparators;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.control.Either;
@@ -267,11 +266,6 @@ public class VectorTest extends AbstractTraversableTest {
                 // the primitive Vector is untouched
                 assertThat(primitives).isEqualTo(Vector.range(0, n));
             }
-        }
-
-        @Test
-        public void shouldThrowForVoidType() {
-            assertThrows(IllegalArgumentException.class, () -> ArrayType.of(void.class));
         }
     }
 

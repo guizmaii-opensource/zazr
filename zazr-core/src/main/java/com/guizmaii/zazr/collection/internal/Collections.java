@@ -589,7 +589,12 @@ public final class Collections {
             if (iterable instanceof Collection<?>) {
                 return ((Collection<? extends T>) iterable).toArray();
             } else {
-                return ArrayType.asArray(iterator(), size());
+                final Object[] array = new Object[size];
+                final java.util.Iterator<? extends T> it = iterator();
+                for (int i = 0; i < size; i++) {
+                    array[i] = it.next();
+                }
+                return array;
             }
         }
     }

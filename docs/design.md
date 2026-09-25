@@ -285,7 +285,7 @@ generated `ArrayType`) and `*Module` helper interfaces at the bottom of the publ
 collection internals go to `com.guizmaii.zazr.collection.internal`, everything else to `com.guizmaii.zazr.internal`
 (next to `Throwables`; `TryModule` is there). Each `*Module` helper has its own file (`VectorModule`, `ListModule`,
 `StreamModule`, `TraversableModule`, `IteratorModule`, `HashArrayMappedTrieModule`, `RedBlackTreeModule`,
-`TryModule`), and `BitMappedTrie`'s `LeafVisitor`, which `Vector` implements with lambdas, has its own file too.
+`TryModule`), and `BitMappedTrie`'s `LeafVisitor` got its own file too (both since deleted with the trie, 3.8).
 An internal type is `public` where the public packages call it, and so are the members they call; the packages are
 never exported (`module-info.java` exports exactly `com.guizmaii.zazr`, `com.guizmaii.zazr.collection` and
 `com.guizmaii.zazr.control`), the javadoc build excludes them (`excludePackageNames` `*.internal:*.internal.*` in the
@@ -1461,9 +1461,19 @@ the public API does not change.
   test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
   (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
 
-Step 3 then deletes `BitMappedTrie` with `LeafVisitor` and `NodeModifier`, `TrieVector` and the differential test,
-and `ArrayType` with its generator (`genArrayTypes`); `ArrayType`'s last user outside `Vector`,
-`IterableWithSize.toArray` in `Collections`, gets a plain loop.
+**Step 3 (#74): the trie deleted.** `BitMappedTrie` goes, with `LeafVisitor` and `NodeModifier`, and so does
+`TrieVector`. `ArrayType` goes with its generator (`genArrayTypes`); its last user outside `Vector`,
+`IterableWithSize.toArray` in `Collections`, copies the elements with a plain loop. `VectorPropertyTest` builds its
+primitive arrays itself, and `VectorTest` loses the test of `ArrayType.of(void.class)`.
+
+The differential test is not deleted with the trie: most of it never needed the old implementation. It holds the
+regression tests of step 1's reviews (a builder left unchanged by a rejected element, a length that never passes
+`Integer.MAX_VALUE`, updates at every slice boundary, `Vector6` reached by self-concatenation, the alignments of
+dimension 4 and 5), the shape invariants checked after every step and the persistence check at the end, none of which
+the tests of `Vector` reach. So it becomes `RadixVectorTest`, and its oracle becomes `VectorModel`: the contract of
+`Vector` on one flat array that every operation copies, too simple to share a bug with the finger tree. Every mutant
+of the reviews still fails it: U5 (4 tests), BI6 (4), L4 (2), the null check moved after `advance()` (1) and the
+`Integer.MAX_VALUE` guard of `Vector6.appended0` removed (1).
 
 #### 3.8.1 Builders for the other collections
 
@@ -1686,8 +1696,8 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 - **Specialised `OptionInt`/`OptionLong`/`OptionDouble`** (sealed, `record SomeInt(int value)`), the
   JDK's `OptionalInt` design. Pattern-matchable (`case SomeInt(int i)`), but a parallel API with no
   boxing-free `flatMap` across the primitive/reference boundary, and nothing in Zazr produces them: the
-  collections store primitives unboxed (`BitMappedTrie` leaves via `ArrayType`) but box on `get(i)`, and
-  there is no `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
+  collections store every element boxed (`Vector`'s leaves are `Object[]` only, 3.8), and there is no
+  `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
   hot path shows the boxing, and then added together with the producing methods (`indexOfOption`,
   numeric `max`/`sum` folds).
 - **JIT escape analysis** already removes both allocations for the common inline pattern
@@ -1781,8 +1791,9 @@ any number of resources decided at run time, and Scala's rule for which throwabl
   Maven coordinates changed so the fork can never be confused with Vavr on a classpath. Do this in the
   first commit; every later diff is then unambiguous.
 - **Generator**: keep `Generator.scala` but shrink it to `Tuple0..8` (records), `Function3..8`,
-  `CheckedFunction1..8`, and the `zip`/`zipWith` arity-N statics for each control type. `API.java`,
-  `ArrayType`'s eight specialisations (keep, they are real), `CaseN`, `ForLazyN` go. Consider replacing the
+  `CheckedFunction1..8`, and the `zip`/`zipWith` arity-N statics for each control type. `API.java`, `CaseN`,
+  `ForLazyN` go, and so does `ArrayType` with its eight primitive specialisations, deleted with `BitMappedTrie` when
+  `Vector` moved to `Object[]` leaves (3.8, #74). Consider replacing the
   Scala script with a plain Java `main` (`java Generator.java`, single-file source launch) so the build
   needs no Scala toolchain; **Open**, cosmetic.
 - **Jargon guard**: a CI step that fails on `monad|functor|applicative|semigroup|monoid` anywhere under `src/`, `src-gen/`, `generator/`.
