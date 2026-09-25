@@ -38,10 +38,6 @@ java.util.Set<String> jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJa
 // mutable is [1, 2, 3], jdkSet holds a and b
 ```
 
-`Vector`, `List`, `Queue` and `Stream` also have `asJavaMutable()`, a `java.util.List` view that accepts
-changes. The original collection is never modified: the view switches to a new collection at each change.
-`asJavaMutable(action)` runs `action` on such a view and returns the collection as it is at the end.
-
 ## The way back, and streams
 
 To come back from Java:
