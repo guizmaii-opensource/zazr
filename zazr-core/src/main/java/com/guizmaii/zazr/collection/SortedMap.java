@@ -59,7 +59,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@code keyMapper}.
      *
      * <p>
-     * Complexity: O(n log n): every new entry is inserted into a new tree, even when the order of the keys is kept.
+     * Complexity: O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new
+     * keys come out in order.
      *
      * @param <K2>          key's component type of the map result
      * @param <V2>          value's component type of the map result
@@ -77,7 +78,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@code mapper}.
      *
      * <p>
-     * Complexity: O(n + k log k) for k entries produced by {@code mapper}: each one is inserted into a new tree.
+     * Complexity: O(n + k log k) for k entries produced by {@code mapper}: they are sorted, then the new tree is built
+     * in one pass; O(n + k) when their keys come out in order.
      *
      * @param keyComparator A comparator for keys of type K2
      * @param mapper        A function which maps key/value pairs to Iterables map entries
@@ -91,7 +93,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * Matches and transforms the entries in one pass into a {@code SortedMap} ordered by {@code keyComparator};
      * see {@link Map#collect(BiFunction)}.
      * <p>
-     * Complexity: O(n log n): the collected entries are inserted one by one into a new tree.
+     * Complexity: O(n log n): the collected entries are sorted, then the new tree is built in one pass; O(n) when their
+     * keys come out in order.
      *
      * @param keyComparator the order of the new keys
      * @param mapper        a function from a key and a value to {@code Some} of the new entry or {@code None}; it
@@ -108,7 +111,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@code mapper}.
      *
      * <p>
-     * Complexity: O(n log n): every new entry is inserted into a new tree, even when the order of the keys is kept.
+     * Complexity: O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new
+     * keys come out in order.
      *
      * @param keyComparator A comparator for keys of type K2
      * @param <K2>          key's component type of the map result
@@ -362,7 +366,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): every new entry is inserted into a new tree, even when the order of the keys is kept.
+     * Complexity: O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new
+     * keys come out in order.
      */
     @Override
     <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
@@ -386,7 +391,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate);
@@ -394,7 +399,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> reject(Predicate<? super Tuple2<K, V>> predicate);
@@ -402,7 +407,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> filter(BiPredicate<? super K, ? super V> predicate);
@@ -410,7 +415,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> reject(BiPredicate<? super K, ? super V> predicate);
@@ -418,7 +423,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> filterKeys(Predicate<? super K> predicate);
@@ -426,7 +431,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> rejectKeys(Predicate<? super K> predicate);
@@ -434,7 +439,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> filterValues(Predicate<? super V> predicate);
@@ -442,7 +447,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     SortedMap<K, V> rejectValues(Predicate<? super V> predicate);
@@ -450,7 +455,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     @Deprecated
@@ -459,7 +464,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     @Deprecated
@@ -468,7 +473,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the kept entries are inserted one by one into a new tree.
+     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override
     @Deprecated
@@ -477,7 +482,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + k log k) for k entries produced by {@code mapper}: each one is inserted into a new tree.
+     * Complexity: O(n + k log k) for k entries produced by {@code mapper}: they are sorted, then the new tree is built
+     * in one pass; O(n + k) when their keys come out in order.
      */
     @Override
     <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper);
@@ -485,7 +491,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): each group is built by inserting its entries into a new tree.
+     * Complexity: O(n): each group gets its entries in order, and its tree is built from them in one pass.
      */
     @Override
     <C extends @Nullable Object> Map<C, ? extends SortedMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier);
@@ -493,7 +499,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the keys are inserted one by one into a new TreeSet.
+     * Complexity: O(n): the keys come in order, and the TreeSet is built from them in one pass.
      */
     @Override
     SortedSet<K> keySet();
@@ -504,7 +510,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * The result is ordered by the natural order of {@code K2}; use {@link #collect(Comparator, BiFunction)} to
      * choose the order.
      * <p>
-     * Complexity: O(n log n): the collected entries are inserted one by one into a new tree.
+     * Complexity: O(n log n): the collected entries are sorted, then the new tree is built in one pass; O(n) when their
+     * keys come out in order.
      */
     @Override
     <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper);
@@ -512,7 +519,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): every new entry is inserted into a new tree, even when the order of the keys is kept.
+     * Complexity: O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new
+     * keys come out in order.
      */
     @Override
     <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper);
@@ -520,7 +528,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): every new entry is inserted into a new tree, even when the order of the keys is kept.
+     * Complexity: O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new
+     * keys come out in order.
      */
     @Override
     <K2 extends @Nullable Object> SortedMap<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper);
@@ -536,7 +545,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): every entry is inserted into a new tree, although the keys do not change.
+     * Complexity: O(n): the keys do not change, so the new tree is built from the entries, in order, in one pass.
      */
     @Override
     <V2 extends @Nullable Object> SortedMap<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper);
@@ -545,7 +554,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@inheritDoc}
      * <p>
      * Complexity: O(m log(n + m)) for the m entries of {@code that}: one lookup and at most one insertion each. When
-     * this map is empty, the entries of {@code that} are inserted into a new tree, O(m log m).
+     * this map is empty, the entries of {@code that} are sorted and built into a new tree, O(m log m).
      */
     @Override
     SortedMap<K, V> merge(Map<? extends K, ? extends V> that);
@@ -554,7 +563,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@inheritDoc}
      * <p>
      * Complexity: O(m log(n + m)) for the m entries of {@code that}: one lookup and at most one insertion each. When
-     * this map is empty, the entries of {@code that} are inserted into a new tree, O(m log m).
+     * this map is empty, the entries of {@code that} are sorted and built into a new tree, O(m log m).
      */
     @Override
     <U extends V> SortedMap<K, V> merge(Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution);
@@ -562,8 +571,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log m) for the m entries of {@code other} when this map is empty: they are inserted into a new
-     * tree; O(1) when this map is not empty.
+     * Complexity: O(m log m) for the m entries of {@code other} when this map is empty: they are sorted, then the new
+     * tree is built in one pass (O(m) when they come sorted); O(1) when this map is not empty.
      */
     @Override
     SortedMap<K, V> orElse(Iterable<? extends Tuple2<K, V>> other);
@@ -571,8 +580,9 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log m) for the m supplied entries when this map is empty: they are inserted into a new tree;
-     * O(1) when this map is not empty, and the supplier is not called.
+     * Complexity: O(m log m) for the m supplied entries when this map is empty: they are sorted, then the new tree is
+     * built in one pass (O(m) when they come sorted); O(1) when this map is not empty, and the supplier is not
+     * called.
      */
     @Override
     SortedMap<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier);
@@ -580,7 +590,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): the entries of both results are inserted one by one into new trees.
+     * Complexity: O(n): both results get their entries in order, and their trees are built from them in one pass.
      */
     @Override
     Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
@@ -663,7 +673,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n): every entry is inserted into a new tree.
+     * Complexity: O(n): the keys do not change, so the new tree is built from the entries, in order, in one pass.
      */
     @Override
     SortedMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function);
