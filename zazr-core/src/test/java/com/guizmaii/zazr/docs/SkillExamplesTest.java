@@ -111,9 +111,14 @@ public class SkillExamplesTest {
                 .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
                 .filterOrElse(n -> n < 100, n -> n + " is too large")
                 .mapLeft(error -> "rejected: " + error);
-            // Right(20)
+            var positive = Either.fromPredicate(-1, n -> n > 0, n -> n + " is not positive"); // Either<String, Integer>
+            var named = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank"); // Either<String, String>
+            // Right(20), Left(-1 is not positive), Left(name is blank)
 
             assertThat(total).isEqualTo(Either.right(20));
+            assertThat(positive).isEqualTo(Either.left("-1 is not positive"));
+            assertThat(named).isEqualTo(Either.left("name is blank"));
+            assertThat(Either.fromPredicate(3, n -> n > 0, n -> n + " is not positive")).isEqualTo(Either.right(3));
         }
 
         @Test

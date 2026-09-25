@@ -89,7 +89,8 @@ var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)))
 ## `Either`
 
 - Right-biased: `map`, `flatMap` and most members work on `Right` and pass a `Left` through.
-- Build: `Either.right(v)`, `Either.left(e)`, `Either.fromPredicate(value, test, ifFalse)`.
+- Build: `Either.right(v)`, `Either.left(e)`, and `Either.fromPredicate(value, test, v -> error)`, which builds the
+  error from the rejected value (`_ -> error` when it is not needed).
 - `mapLeft` transforms the error, `mapBoth` both sides, `flip` swaps them, `filterOrElse(test, value -> error)`
   rejects a `Right` (there is no `filter`).
 - Convert: `toOption()`, `toTry(Function<L, Throwable>)` (pass `t -> t` when the left side is already a
@@ -100,7 +101,9 @@ var total = Either.<String, Integer>right(2) // Either<String, Integer>
     .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
     .filterOrElse(n -> n < 100, n -> n + " is too large")
     .mapLeft(error -> "rejected: " + error);
-// Right(20)
+var positive = Either.fromPredicate(-1, n -> n > 0, n -> n + " is not positive"); // Either<String, Integer>
+var named = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank"); // Either<String, String>
+// Right(20), Left(-1 is not positive), Left(name is blank)
 ```
 
 ## `Try`
