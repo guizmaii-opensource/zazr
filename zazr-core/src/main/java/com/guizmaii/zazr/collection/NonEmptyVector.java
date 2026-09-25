@@ -167,7 +167,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         return new NonEmptyVector<>(builder.result());
     }
 
-    /* a Vector cannot hold a null, so it is appended by leaf copies; anything else is checked element by element, naming this type */
+    /* a Vector cannot hold a null, so it is appended array by array; anything else is checked element by element, naming this type */
     private static <A extends @Nullable Object> Vector.Builder<A> addAll(Vector.Builder<A> builder, Iterable<? extends A> elements) {
         if (elements instanceof Vector) {
             return builder.addAll(elements);
@@ -776,18 +776,18 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     // -- total: what is partial on a Vector
 
     /**
-     * Complexity: effectively O(1), that of {@link Vector#head()}.
+     * Complexity: O(1), that of {@link Vector#head()}.
      *
      * @return the first element
      */
-    public A head() { return vector.get(0); }
+    public A head() { return vector.head(); }
 
     /**
-     * Complexity: effectively O(1), that of {@link Vector#last()}.
+     * Complexity: O(1), that of {@link Vector#last()}.
      *
      * @return the last element
      */
-    public A last() { return vector.get(vector.length() - 1); }
+    public A last() { return vector.last(); }
 
     /**
      * Complexity: O(n), every element compared once.
@@ -1011,7 +1011,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary.
+     * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary (amortised
+     * O(1)).
      */
     @Override
     public java.util.Iterator<A> iterator() { return vector.iterator(); }

@@ -162,7 +162,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
         return !(v instanceof RadixVector.Vector6<?> v6) || (long) v6.length0 + (WIDTH5 - v6.len12345) <= Integer.MAX_VALUE;
     }
 
-    private void checkOpen() {
+    /** @throws IllegalStateException if {@link #result()} has been called */
+    public void checkOpen() {
         if (done) {
             throw new IllegalStateException("result() has already been called on this Vector.Builder");
         }

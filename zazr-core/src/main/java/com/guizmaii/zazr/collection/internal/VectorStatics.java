@@ -200,7 +200,7 @@ final class VectorStatics {
     }
 
     private static Object mapped(@Nullable Object value) {
-        return Objects.requireNonNull(value, "Vector.map: element is null");
+        return Objects.requireNonNull(value, "Vector: element is null");
     }
 
     /**

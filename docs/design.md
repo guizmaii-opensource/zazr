@@ -1174,6 +1174,51 @@ split.
 Step 2 rebases `Vector` and `Vector.Builder` on `RadixVector` and `VectorBuilder`, with the coordinator's JMH table.
 Step 3 deletes `BitMappedTrie`, `ArrayType` and the differential test.
 
+**Step 2 (#74): `Vector` on the finger tree.** `Vector` holds a `RadixVector` and `Vector.Builder` a `VectorBuilder`;
+the public API does not change.
+- **Contract.** The exception types and messages are those of step 1. A probe of 1 615 edge calls (nulls, bad indices,
+  empty vectors, closed builders, identity results such as `drop(0) == this`, at sizes 0 to 40 000, built by `range` and
+  by `ofAll`) prints the same output on both, but for one message: a `map` whose function returns null on a vector built
+  by `range` or `ofAll(int[])` said `Vector.map: element is null`, and now says `Vector: element is null`, the message
+  `map` already gave on any other vector. `append(null)` and `prepend(null)` keep `List: element is null`, which comes
+  from the old path through `List.of`.
+- **Primitive leaves (decided): `Object[]` only**, as Scala does. `ofAll(int[])` and the other primitive `ofAll` add
+  each boxed value to the builder; `range` and its variants build from their `Iterator`. A rough probe (one JVM, best
+  of 15 batches after warm-up, not a benchmark; µs per operation at 100 000 elements, step 1 → step 2) shows what
+  primitive leaves bought and cost:
+  - they are cheaper to build and to keep: `ofAll(int[])` 27 → 410, and 4.6 → 20.6 retained bytes per element for
+    values outside the `Integer` cache;
+  - they box on every read: a `get` loop 1 970 → 290, iteration 670 → 130, `map` 1 300 → 540, `filter` 710 → 200.
+
+  A vector is read more often than it is built, and a primitive leaf also made the first write of another class convert
+  the whole vector. So no primitive path is kept; #29 (the `ClassCastException` fallbacks of primitive leaves) has
+  nothing left to fix in `Vector`.
+- **Size hint.** `newBuilder(sizeHint)` still rejects a negative hint but ignores the value: `VectorBuilder` always fills
+  32-wide leaves, and only the arrays cut at the end are trimmed by `result()`. The javadoc and `docs/builders.md` say so.
+- **Operations.** `appendAll`/`prependAll` hand a `Vector` (or the `java.util.List` view of one) to the tree as a tree,
+  so the two are concatenated by arrays; another iterable that can be traversed again is turned into a tree first, and a
+  one-shot one goes through the builder as before. `map` is `RadixVector.map` (the same shape, array by array); `filter`
+  finds the first rejected element and starts the builder from the kept prefix, whose arrays are shared; `flatMap` and
+  `collect` walk the tree with `forEach`; `head`, `last`, `tail`, `init` and `slice` are the tree's own.
+- **Complexity notes.** `head` and `last` are O(1); `append`, `prepend`, `tail` and `init` copy one leaf, amortised
+  O(1); `appendAll`/`prependAll` of a `Vector` are O(min(n, m)) plus O(log n) arrays: Scala's `appendedAll0` appends
+  a short argument element by element, prepends a much shorter receiver onto the argument (`LOG2_CONCAT_FASTER`),
+  aligns the builder on the longer side (`ALIGN_TO_FASTER`) so its arrays are reused whole, and otherwise starts the
+  builder from the receiver's arrays (`initFrom`) and copies the argument, which is then at most 64 elements longer.
+- **Tests.** `VectorTest`, `NonEmptyVectorTest`, the law tests and the docs examples pass unchanged. `VectorBuilderTest`
+  and `VectorPropertyTest` read the trie's leaves and depth, so they change: they read the tree's through a test-only
+  `RadixVectorShapes`, the depth replaces the root shift, and the sharing they assert is the finger tree's (a builder
+  started from a vector keeps all its leaves; an aligned builder shares the inner leaves of the vector it adds and copies
+  its first and last leaves; a builder whose current leaf is partly filled copies every leaf). The checks of primitive
+  leaf types and the package-private `addMapped` are gone.
+- **The differential test** keeps its oracle independent: `TrieVector`, a test-only class, computes the operations the
+  test calls with the contract of `Vector` on `BitMappedTrie`. With a reviewer's mutant of step 1 put back
+  (`Vector5.updated0`, `index >= len1234` changed to `>`), it fails 4 tests.
+
+Step 3 then deletes `BitMappedTrie` with `LeafVisitor` and `NodeModifier`, `TrieVector` and the differential test,
+and `ArrayType` with its generator (`genArrayTypes`); `ArrayType`'s last user outside `Vector`,
+`IterableWithSize.toArray` in `Collections`, gets a plain loop.
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same

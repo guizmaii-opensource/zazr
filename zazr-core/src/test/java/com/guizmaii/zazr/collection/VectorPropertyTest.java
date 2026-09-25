@@ -25,53 +25,43 @@ public class VectorPropertyTest {
                 assertThat(expected.get(j)).isEqualTo(actual.get(j));
             }
 
-            assert (i == 0) || !actual.trie.type.type().isPrimitive();
-
             /* boolean */
             final com.guizmaii.zazr.collection.List<Boolean> expectedBoolean = expected.map(v -> v > 0);
             final Vector<Boolean> actualBoolean = Vector.ofAll(ArrayType.<boolean[]> asPrimitives(boolean.class, expectedBoolean));
-            assert (i == 0) || (actualBoolean.trie.type.type() == boolean.class);
             assertAreEqual(expectedBoolean, actualBoolean);
 
             /* byte */
             final com.guizmaii.zazr.collection.List<Byte> expectedByte = expected.map(Integer::byteValue);
             final Vector<Byte> actualByte = Vector.ofAll(ArrayType.<byte[]> asPrimitives(byte.class, expectedByte));
-            assert (i == 0) || (actualByte.trie.type.type() == byte.class);
             assertAreEqual(expectedByte, actualByte);
 
             /* char */
             final com.guizmaii.zazr.collection.List<Character> expectedChar = expected.map(v -> (char) v.intValue());
             final Vector<Character> actualChar = Vector.ofAll(ArrayType.<char[]> asPrimitives(char.class, expectedChar));
-            assert (i == 0) || (actualChar.trie.type.type() == char.class);
             assertAreEqual(expectedChar, actualChar);
 
             /* double */
             final com.guizmaii.zazr.collection.List<Double> expectedDouble = expected.map(Integer::doubleValue);
             final Vector<Double> actualDouble = Vector.ofAll(ArrayType.<double[]> asPrimitives(double.class, expectedDouble));
-            assert (i == 0) || (actualDouble.trie.type.type() == double.class);
             assertAreEqual(expectedDouble, actualDouble);
 
             /* float */
             final com.guizmaii.zazr.collection.List<Float> expectedFloat = expected.map(Integer::floatValue);
             final Vector<Float> actualFloat = Vector.ofAll(ArrayType.<float[]> asPrimitives(float.class, expectedFloat));
-            assert (i == 0) || (actualFloat.trie.type.type() == float.class);
             assertAreEqual(expectedFloat, actualFloat);
 
             /* int */
             final Vector<Integer> actualInt = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
-            assert (i == 0) || (actualInt.trie.type.type() == int.class);
             assertAreEqual(expected, actualInt);
 
             /* long */
             final com.guizmaii.zazr.collection.List<Long> expectedLong = expected.map(Integer::longValue);
             final Vector<Long> actualLong = Vector.ofAll(ArrayType.<long[]> asPrimitives(long.class, expectedLong));
-            assert (i == 0) || (actualLong.trie.type.type() == long.class);
             assertAreEqual(expectedLong, actualLong);
 
             /* short */
             final com.guizmaii.zazr.collection.List<Short> expectedShort = expected.map(Integer::shortValue);
             final Vector<Short> actualShort = Vector.ofAll(ArrayType.<short[]> asPrimitives(short.class, expectedShort));
-            assert (i == 0) || (actualShort.trie.type.type() == short.class);
             assertAreEqual(expectedShort, actualShort);
         }
     }
@@ -89,13 +79,7 @@ public class VectorPropertyTest {
         com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 1000);
         Vector<Integer> actual = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
         for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
-            final java.util.Iterator<Integer> expectedIterator = expected.iterator();
-            actual.trie.<int[]> visit((index, leaf, start, end) -> {
-                for (int i = start; i < end; i++) {
-                    assertThat(leaf[i]).isEqualTo(expectedIterator.next());
-                }
-                return -1;
-            });
+            assertAreEqual(actual, expected);
 
             expected = expected.tail().init();
             actual = actual.tail().init();

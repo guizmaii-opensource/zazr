@@ -2,9 +2,9 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `head` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#head().">effectively O(1)</abbr> | effectively O(1), that of Vector#head(). |
+| `head` | <abbr class="cx cx-constant" title="O(1), that of Vector#head().">O(1)</abbr> | O(1), that of Vector#head(). |
 | `tail` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#tail().">effectively O(1)</abbr> | effectively O(1), that of Vector#tail(). |
-| `last` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#last().">effectively O(1)</abbr> | effectively O(1), that of Vector#last(). |
+| `last` | <abbr class="cx cx-constant" title="O(1), that of Vector#last().">O(1)</abbr> | O(1), that of Vector#last(). |
 | `init` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#init().">effectively O(1)</abbr> | effectively O(1), that of Vector#init(). |
 | `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#get(int).">effectively O(1)</abbr> | effectively O(1), that of Vector#get(int). |
 | `update` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of Vector#update(int,.">effectively O(1)</abbr> | effectively O(1), that of Vector#update(int,. |
