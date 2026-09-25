@@ -305,6 +305,35 @@ public class VectorTest extends AbstractTraversableTest {
     // -- dropRightWhile
 
     @Test
+    public void shouldClampTakeRightAndDropRightAtTheExtremes() {
+        final Vector<Integer> v = Vector.of(1, 2, 3);
+        for (int n : new int[] { Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -1, 0 }) {
+            assertThat(v.takeRight(n)).isEqualTo(Vector.empty());
+            assertThat(v.dropRight(n)).isSameAs(v);
+        }
+        for (int n : new int[] { 3, 4, Integer.MAX_VALUE }) {
+            assertThat(v.takeRight(n)).isEqualTo(v);
+            assertThat(v.dropRight(n)).isEqualTo(Vector.empty());
+        }
+        assertThat(Vector.<Integer> empty().takeRight(Integer.MIN_VALUE)).isEqualTo(Vector.empty());
+        assertThat(Vector.<Integer> empty().dropRight(Integer.MIN_VALUE)).isEqualTo(Vector.empty());
+    }
+
+    @Test
+    public void shouldClampTakeRightAndDropRightAtTheExtremesOnEverySequence() {
+        for (int n : new int[] { Integer.MIN_VALUE, -1, 0, 3, Integer.MAX_VALUE }) {
+            final Vector<Integer> expectedTake = Vector.of(1, 2, 3).takeRight(n);
+            final Vector<Integer> expectedDrop = Vector.of(1, 2, 3).dropRight(n);
+            assertThat(List.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
+            assertThat(List.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
+            assertThat(Queue.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
+            assertThat(Queue.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
+            assertThat(Stream.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
+            assertThat(Stream.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
+        }
+    }
+
+    @Test
     public void shouldDropRightWhileCorrect() {
         assertThat(ofAll("abc  ".toCharArray()).dropRightWhile(Character::isWhitespace)).isEqualTo(ofAll("abc".toCharArray()));
     }
