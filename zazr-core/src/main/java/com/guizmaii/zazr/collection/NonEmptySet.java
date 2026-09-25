@@ -316,7 +316,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      */
     public <K extends @Nullable Object> NonEmptyMap<K, NonEmptySet<A>> groupBy(Function<? super A, ? extends K> classifier) {
         final HashMap.Builder<K, NonEmptySet<A>> groups = HashMap.newBuilder();
-        for (Tuple2<K, HashSet<A>> group : set.<K> groupBy(classifier)) {
+        Objects.requireNonNull(classifier, "classifier is null");
+        for (Tuple2<K, HashSet<A>> group : set.<K> groupBy(element -> Objects.requireNonNull(classifier.apply(element), "NonEmptySet.groupBy: classifier returned null"))) {
             groups.put(group._1(), new NonEmptySet<>(group._2()));
         }
         return NonEmptyMap.unsafeFromMap(groups.result());
@@ -357,7 +358,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <B extends @Nullable Object> HashSet<B> collect(Function<? super A, ? extends Option<? extends B>> mapper) {
-        return set.collect(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return set.collect(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySet.collect: mapper returned null"));
     }
 
     /**
@@ -370,7 +372,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <B extends @Nullable Object> HashSet<B> flatMapAll(Function<? super A, ? extends Iterable<? extends B>> mapper) {
-        return set.flatMap(mapper);
+        Objects.requireNonNull(mapper, "mapper is null");
+        return set.flatMap(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySet.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -435,7 +438,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @throws NullPointerException if {@code f} is null or returns null
      */
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(Function<? super A, ? extends Either<? extends L, ? extends R>> f) {
-        return set.partitionMap(f);
+        Objects.requireNonNull(f, "f is null");
+        return set.partitionMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySet.partitionMap: f returned null"));
     }
 
     // -- total: what is partial on a HashSet
@@ -777,7 +781,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @throws NullPointerException if {@code f} is null or returns null
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
-        return set.toLinkedMap(f);
+        Objects.requireNonNull(f, "f is null");
+        return set.toLinkedMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySet.toLinkedMap: f returned null"));
     }
 
     /**
@@ -846,7 +851,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @throws NullPointerException if {@code getKey} is null
      */
     public <K extends @Nullable Object> Option<Map<K, A>> arrangeBy(Function<? super A, ? extends K> getKey) {
-        return set.arrangeBy(getKey);
+        Objects.requireNonNull(getKey, "getKey is null");
+        return set.arrangeBy(element -> Objects.requireNonNull(getKey.apply(element), "NonEmptySet.arrangeBy: getKey returned null"));
     }
 
     // -- Object

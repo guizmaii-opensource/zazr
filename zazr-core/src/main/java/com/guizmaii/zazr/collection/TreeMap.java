@@ -300,7 +300,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     public static <T extends @Nullable Object, K extends Comparable<? super K>, V extends @Nullable Object> TreeMap<K, V> ofAll(java.util.stream.Stream<? extends T> stream,
                                                                               Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
-        return Maps.ofStream(TreeMap.<K, V> empty(), stream, entryMapper);
+        return Maps.ofStream(TreeMap.<K, V> empty(), stream, entryMapper, "TreeMap.ofAll: entryMapper returned null");
     }
 
     /**
@@ -317,7 +317,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> ofAll(Comparator<? super K> keyComparator,
                                                 java.util.stream.Stream<? extends T> stream,
                                                 Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
-        return Maps.ofStream(empty(keyComparator), stream, entryMapper);
+        return Maps.ofStream(empty(keyComparator), stream, entryMapper, "TreeMap.ofAll: entryMapper returned null");
     }
 
     /**
@@ -801,7 +801,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> tabulate(Comparator<? super K> keyComparator, int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
-        return createTreeMap(EntryComparator.of(keyComparator), Collections.tabulate(n, f));
+        return createTreeMap(EntryComparator.of(keyComparator), Collections.tabulate(n, i -> Objects.requireNonNull(f.apply(i), "TreeMap.tabulate: f returned null")));
     }
 
     /**
@@ -815,11 +815,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param f   The Function computing element values
      * @return A TreeMap containing the entries {@code f(0), f(1), ..., f(n - 1)}; entries with equal keys collapse
      *         (the later one wins), so the result may contain fewer than {@code n} entries. Empty if {@code n <= 0}.
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     public static <K extends Comparable<? super K>, V extends @Nullable Object> TreeMap<K, V> tabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
-        return createTreeMap(EntryComparator.natural(), Collections.tabulate(n, f));
+        return createTreeMap(EntryComparator.natural(), Collections.tabulate(n, i -> Objects.requireNonNull(f.apply(i), "TreeMap.tabulate: f returned null")));
     }
 
     /**
@@ -838,7 +838,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> fill(Comparator<? super K> keyComparator, int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         Objects.requireNonNull(s, "s is null");
-        return createTreeMap(EntryComparator.of(keyComparator), Collections.fill(n, s));
+        return createTreeMap(EntryComparator.of(keyComparator), Collections.fill(n, () -> Objects.requireNonNull(s.get(), "TreeMap.fill: s returned null")));
     }
 
     /**
@@ -851,11 +851,11 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param s   The Supplier computing element values
      * @return A TreeMap containing the entries supplied by {@code s}; entries with equal keys collapse
      *         (the later one wins), so the result may contain fewer than {@code n} entries. Empty if {@code n <= 0}.
-     * @throws NullPointerException if {@code s} is null
+     * @throws NullPointerException if {@code s} is null or returns null
      */
     public static <K extends Comparable<? super K>, V extends @Nullable Object> TreeMap<K, V> fill(int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         Objects.requireNonNull(s, "s is null");
-        return createTreeMap(EntryComparator.natural(), Collections.fill(n, s));
+        return createTreeMap(EntryComparator.natural(), Collections.fill(n, () -> Objects.requireNonNull(s.get(), "TreeMap.fill: s returned null")));
     }
 
     /**
@@ -1053,7 +1053,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public <C extends @Nullable Object> Map<C, TreeMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
-        return Maps.groupBy(this, this::createFromEntries, classifier);
+        return Maps.groupBy(this, this::createFromEntries, classifier, "TreeMap.groupBy: classifier returned null");
     }
 
     @Override
@@ -1161,7 +1161,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public TreeMap<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier) {
-        return isEmpty() ? ofEntries(comparator(), supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofEntries(comparator(), Objects.requireNonNull(supplier.get(), "TreeMap.orElse: supplier returned null")) : this;
     }
 
     @Override
@@ -1266,6 +1267,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function, "function is null");
         return withValues(function);
     }
 
@@ -1482,7 +1484,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, V extends @Nullable Object, K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMap(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
             BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return createTreeMap(entryComparator, map.entries.iterator().flatMap(entry -> mapper.apply(entry._1(), entry._2())));
+        return createTreeMap(entryComparator, map.entries.iterator().flatMap(entry -> Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "TreeMap.flatMap: mapper returned null")));
     }
     private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
             BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
@@ -1495,7 +1497,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, K2 extends @Nullable Object, V extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> map(TreeMap<K, V> map, EntryComparator<K2, V2> entryComparator,
             BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return createTreeMap(entryComparator, map.entries, entry -> entry.map(mapper));
+        return createTreeMap(entryComparator, map.entries, entry -> Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "TreeMap.map: mapper returned null"));
     }
 
     // -- internal factory methods
