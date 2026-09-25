@@ -1425,18 +1425,19 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f, String nullResult) {
         Objects.requireNonNull(f, "the unfold iterating function is null");
         return new AbstractIterator<U>() {
-            private Lazy<Option<Tuple2<? extends U, ? extends T>>> nextVal = Lazy.of(() -> Objects.requireNonNull(f.apply(seed), nullResult));
+            // f's result is memoised as it is, null included, and checked on every read: a later force fails the same way
+            private Lazy<Option<Tuple2<? extends U, ? extends T>>> nextVal = Lazy.of(() -> f.apply(seed));
 
             @Override
             public boolean hasNext() {
-                return nextVal.get().isDefined();
+                return Objects.requireNonNull(nextVal.get(), nullResult).isDefined();
             }
 
             @Override
             public U getNext() {
                 Tuple2<? extends U, ? extends T> tuple = nextVal.get().get();
                 final U result = tuple._1();
-                nextVal = Lazy.of(() -> Objects.requireNonNull(f.apply(tuple._2()), nullResult));
+                nextVal = Lazy.of(() -> f.apply(tuple._2()));
                 return result;
             }
         };

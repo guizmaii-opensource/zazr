@@ -78,12 +78,12 @@ public class NullResultTest {
         final java.util.List<Case> cases = new ArrayList<>();
 
         // -- Option
-        cases.add(throwing("Option.collect(Function)", "Option.collect: mapper returned null", () -> Option.some(1).collect(x -> null)));
-        cases.add(throwing("Option.flatMap(Function)", "Option.flatMap: mapper returned null", () -> Option.some(1).flatMap(x -> null)));
-        cases.add(throwing("Option.forEach(Iterable, Function)", "Option.forEach: mapper returned null", () -> Option.forEach(List.of(1), x -> null)));
+        cases.add(throwing("Option.collect(java.util.function.Function)", "Option.collect: mapper returned null", () -> Option.some(1).collect(x -> null)));
+        cases.add(throwing("Option.flatMap(java.util.function.Function)", "Option.flatMap: mapper returned null", () -> Option.some(1).flatMap(x -> null)));
+        cases.add(throwing("Option.forEach(java.lang.Iterable, java.util.function.Function)", "Option.forEach: mapper returned null", () -> Option.forEach(List.of(1), x -> null)));
         cases.add(throwing("Option.map", "Option.map: mapper returned null", () -> Option.some(1).map(x -> null)));
         cases.add(failure("Option.mapTry", "Option.mapTry: mapper returned null", () -> Option.some(1).mapTry(x -> null)));
-        cases.add(throwing("Option.orElse(Supplier)", "Option.orElse: supplier returned null", () -> Option.none().orElse(() -> null)));
+        cases.add(throwing("Option.orElse(java.util.function.Supplier)", "Option.orElse: supplier returned null", () -> Option.none().orElse(() -> null)));
         cases.add(throwing("Option.toEither", "Option.toEither: leftSupplier returned null", () -> Option.none().toEither(() -> null)));
         cases.add(throwing("Option.toTry", "Option.toTry: ifEmpty returned null", () -> Option.none().toTry(() -> null)));
         cases.add(throwing("Option.toValidation", "Option.toValidation: invalidSupplier returned null", () -> Option.none().toValidation(() -> null)));
@@ -91,51 +91,51 @@ public class NullResultTest {
 
         // -- Either
         cases.add(throwing("Either.filterOrElse", "Either.filterOrElse: zero returned null", () -> Either.right(1).filterOrElse(x -> false, x -> null)));
-        cases.add(throwing("Either.flatMap(Function)", "Either.flatMap: mapper returned null", () -> Either.right(1).flatMap(x -> null)));
-        cases.add(throwing("Either.forEach(Iterable, Function)", "Either.forEach: mapper returned null", () -> Either.forEach(List.of(1), x -> null)));
+        cases.add(throwing("Either.flatMap(java.util.function.Function)", "Either.flatMap: mapper returned null", () -> Either.right(1).flatMap(x -> null)));
+        cases.add(throwing("Either.forEach(java.lang.Iterable, java.util.function.Function)", "Either.forEach: mapper returned null", () -> Either.forEach(List.of(1), x -> null)));
         cases.add(throwing("Either.fromPredicate", "Either.fromPredicate: ifFalse returned null", () -> Either.fromPredicate(1, x -> false, x -> null)));
         cases.add(throwing("Either.map", "Either.map: mapper returned null", () -> Either.right(1).map(x -> null)));
         cases.add(throwing("Either.mapBoth", "Either.mapBoth: rightMapper returned null", () -> Either.right(1).mapBoth(l -> l, r -> null)));
         cases.add(throwing("Either.mapBoth", "Either.mapBoth: leftMapper returned null", () -> Either.left(1).mapBoth(l -> null, r -> r)));
         cases.add(throwing("Either.mapLeft", "Either.mapLeft: leftMapper returned null", () -> Either.left(1).mapLeft(x -> null)));
-        cases.add(throwing("Either.orElse(Supplier)", "Either.orElse: supplier returned null", () -> Either.left(1).orElse(() -> null)));
+        cases.add(throwing("Either.orElse(java.util.function.Supplier)", "Either.orElse: supplier returned null", () -> Either.left(1).orElse(() -> null)));
         cases.add(throwing("Either.toTry", "Either.toTry: f returned null", () -> Either.left(1).toTry(x -> null)));
 
         // -- Try: the methods that run the function under Try return the exception as a Failure
         final Try<Integer> failed = Try.failure(new IllegalStateException("failed"));
         cases.add(failure("Try.catchAll", "Try.catchAll: f returned null", () -> failed.catchAll(e -> null)));
-        cases.add(failure("Try.catchAllWith(Function)", "Try.catchAllWith: f returned null", () -> failed.catchAllWith(e -> null)));
+        cases.add(failure("Try.catchAllWith(java.util.function.Function)", "Try.catchAllWith: f returned null", () -> failed.catchAllWith(e -> null)));
         cases.add(failure("Try.catchSome", "Try.catchSome: f returned null", () -> failed.catchSome(IllegalStateException.class, e -> null)));
-        cases.add(failure("Try.catchSomeWith(Class, Function)", "Try.catchSomeWith: f returned null", () -> failed.catchSomeWith(IllegalStateException.class, e -> null)));
-        cases.add(failure("Try.collect(Function)", "Try.collect: mapper returned null", () -> Try.success(1).collect(x -> null)));
+        cases.add(failure("Try.catchSomeWith(java.lang.Class, java.util.function.Function)", "Try.catchSomeWith: f returned null", () -> failed.catchSomeWith(IllegalStateException.class, e -> null)));
+        cases.add(failure("Try.collect(java.util.function.Function)", "Try.collect: mapper returned null", () -> Try.success(1).collect(x -> null)));
         cases.add(failure("Try.filter", "Try.filter: ifFalse returned null", () -> Try.success(1).filter(x -> false, x -> null)));
-        cases.add(failure("Try.flatMap(Function)", "Try.flatMap: mapper returned null", () -> Try.success(1).flatMap(x -> null)));
-        cases.add(failure("Try.flatMapTry(CheckedFunction1)", "Try.flatMapTry: mapper returned null", () -> Try.success(1).flatMapTry(x -> null)));
+        cases.add(failure("Try.flatMap(java.util.function.Function)", "Try.flatMap: mapper returned null", () -> Try.success(1).flatMap(x -> null)));
+        cases.add(failure("Try.flatMapTry(com.guizmaii.zazr.CheckedFunction1)", "Try.flatMapTry: mapper returned null", () -> Try.success(1).flatMapTry(x -> null)));
         cases.add(failure("Try.map", "Try.map: mapper returned null", () -> Try.success(1).map(x -> null)));
         cases.add(failure("Try.mapError", "Try.mapError: f returned null", () -> failed.mapError(e -> null)));
-        cases.add(throwing("Try.forEach(Iterable, Function)", "Try.forEach: mapper returned null", () -> Try.forEach(List.of(1), x -> null)));
-        cases.add(throwing("Try.orElse(Supplier)", "Try.orElse: supplier returned null", () -> failed.orElse(() -> null)));
+        cases.add(throwing("Try.forEach(java.lang.Iterable, java.util.function.Function)", "Try.forEach: mapper returned null", () -> Try.forEach(List.of(1), x -> null)));
+        cases.add(throwing("Try.orElse(java.util.function.Supplier)", "Try.orElse: supplier returned null", () -> failed.orElse(() -> null)));
 
         // -- Validation
-        cases.add(throwing("Validation.flatMap(Function)", "Validation.flatMap: f returned null", () -> Validation.valid(1).flatMap(x -> null)));
-        cases.add(throwing("Validation.flatMapEither(Function)", "Validation.flatMapEither: f returned null", () -> Validation.valid(1).flatMapEither(x -> null)));
-        cases.add(throwing("Validation.forEach(Iterable, Function)", "Validation.forEach: f returned null", () -> Validation.forEach(List.of(1), x -> null)));
-        cases.add(throwing("Validation.forEach(NonEmptyVector, Function)", "Validation.forEach: f returned null", () -> Validation.forEach(NonEmptyVector.of(1), x -> null)));
-        cases.add(throwing("Validation.mapErrorAll(Function)", "Validation.mapErrorAll: f returned null", () -> Validation.invalid("e").mapErrorAll(e -> null)));
-        cases.add(throwing("Validation.orElse(Supplier)", "Validation.orElse: that returned null", () -> Validation.invalid("e").orElse(() -> null)));
-        cases.add(throwing("Validation.partition(Iterable, Function)", "Validation.partition: f returned null", () -> Validation.partition(List.of(1), x -> null)));
+        cases.add(throwing("Validation.flatMap(java.util.function.Function)", "Validation.flatMap: f returned null", () -> Validation.valid(1).flatMap(x -> null)));
+        cases.add(throwing("Validation.flatMapEither(java.util.function.Function)", "Validation.flatMapEither: f returned null", () -> Validation.valid(1).flatMapEither(x -> null)));
+        cases.add(throwing("Validation.forEach(java.lang.Iterable, java.util.function.Function)", "Validation.forEach: f returned null", () -> Validation.forEach(List.of(1), x -> null)));
+        cases.add(throwing("Validation.forEach(com.guizmaii.zazr.collection.NonEmptyVector, java.util.function.Function)", "Validation.forEach: f returned null", () -> Validation.forEach(NonEmptyVector.of(1), x -> null)));
+        cases.add(throwing("Validation.mapErrorAll(java.util.function.Function)", "Validation.mapErrorAll: f returned null", () -> Validation.invalid("e").mapErrorAll(e -> null)));
+        cases.add(throwing("Validation.orElse(java.util.function.Supplier)", "Validation.orElse: that returned null", () -> Validation.invalid("e").orElse(() -> null)));
+        cases.add(throwing("Validation.partition(java.lang.Iterable, java.util.function.Function)", "Validation.partition: f returned null", () -> Validation.partition(List.of(1), x -> null)));
 
         // -- Lazy
-        cases.add(throwing("Lazy.flatMap(Function)", "Lazy.flatMap: mapper returned null", () -> Lazy.of(() -> 1).flatMap(x -> null).get()));
+        cases.add(throwing("Lazy.flatMap(java.util.function.Function)", "Lazy.flatMap: mapper returned null", () -> Lazy.of(() -> 1).flatMap(x -> null).get()));
 
         // -- tuples
-        cases.add(throwing("Tuple2.map(BiFunction)", "Tuple2.map: mapper returned null", () -> Tuple.of(1, 2).map((a, b) -> null)));
-        cases.add(throwing("Tuple3.map(Function3)", "Tuple3.map: mapper returned null", () -> Tuple.of(1, 2, 3).map((a, b, c) -> null)));
-        cases.add(throwing("Tuple4.map(Function4)", "Tuple4.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4).map((a, b, c, d) -> null)));
-        cases.add(throwing("Tuple5.map(Function5)", "Tuple5.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5).map((a, b, c, d, e) -> null)));
-        cases.add(throwing("Tuple6.map(Function6)", "Tuple6.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5, 6).map((a, b, c, d, e, f) -> null)));
-        cases.add(throwing("Tuple7.map(Function7)", "Tuple7.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5, 6, 7).map((a, b, c, d, e, f, g) -> null)));
-        cases.add(throwing("Tuple8.map(Function8)", "Tuple8.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5, 6, 7, 8).map((a, b, c, d, e, f, g, h) -> null)));
+        cases.add(throwing("Tuple2.map(java.util.function.BiFunction)", "Tuple2.map: mapper returned null", () -> Tuple.of(1, 2).map((a, b) -> null)));
+        cases.add(throwing("Tuple3.map(com.guizmaii.zazr.Function3)", "Tuple3.map: mapper returned null", () -> Tuple.of(1, 2, 3).map((a, b, c) -> null)));
+        cases.add(throwing("Tuple4.map(com.guizmaii.zazr.Function4)", "Tuple4.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4).map((a, b, c, d) -> null)));
+        cases.add(throwing("Tuple5.map(com.guizmaii.zazr.Function5)", "Tuple5.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5).map((a, b, c, d, e) -> null)));
+        cases.add(throwing("Tuple6.map(com.guizmaii.zazr.Function6)", "Tuple6.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5, 6).map((a, b, c, d, e, f) -> null)));
+        cases.add(throwing("Tuple7.map(com.guizmaii.zazr.Function7)", "Tuple7.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5, 6, 7).map((a, b, c, d, e, f, g) -> null)));
+        cases.add(throwing("Tuple8.map(com.guizmaii.zazr.Function8)", "Tuple8.map: mapper returned null", () -> Tuple.of(1, 2, 3, 4, 5, 6, 7, 8).map((a, b, c, d, e, f, g, h) -> null)));
 
         // -- checked functions: recover returning null fails the composed function, with the throwable as the cause
         final IOException io = new IOException("io");
@@ -143,173 +143,173 @@ public class NullResultTest {
                 () -> ((CheckedFunction1<Integer, Integer>) a -> { throw io; }).recover(t -> null).apply(1)));
         cases.add(throwing("CheckedFunction2.recover", "CheckedFunction2.recover: recover returned null",
                 () -> ((CheckedFunction2<Integer, Integer, Integer>) (a, b) -> { throw io; }).recover(t -> null).apply(1, 2)));
-        cases.add(throwing("CheckedFunction3.recover(Function)", "CheckedFunction3.recover: recover returned null",
+        cases.add(throwing("CheckedFunction3.recover(java.util.function.Function)", "CheckedFunction3.recover: recover returned null",
                 () -> ((CheckedFunction3<Integer, Integer, Integer, Integer>) (a, b, c) -> { throw io; }).recover(t -> null).apply(1, 2, 3)));
-        cases.add(throwing("CheckedFunction4.recover(Function)", "CheckedFunction4.recover: recover returned null",
+        cases.add(throwing("CheckedFunction4.recover(java.util.function.Function)", "CheckedFunction4.recover: recover returned null",
                 () -> ((CheckedFunction4<Integer, Integer, Integer, Integer, Integer>) (a, b, c, d) -> { throw io; }).recover(t -> null).apply(1, 2, 3, 4)));
-        cases.add(throwing("CheckedFunction5.recover(Function)", "CheckedFunction5.recover: recover returned null",
+        cases.add(throwing("CheckedFunction5.recover(java.util.function.Function)", "CheckedFunction5.recover: recover returned null",
                 () -> ((CheckedFunction5<Integer, Integer, Integer, Integer, Integer, Integer>) (a, b, c, d, e) -> { throw io; }).recover(t -> null).apply(1, 2, 3, 4, 5)));
-        cases.add(throwing("CheckedFunction6.recover(Function)", "CheckedFunction6.recover: recover returned null",
+        cases.add(throwing("CheckedFunction6.recover(java.util.function.Function)", "CheckedFunction6.recover: recover returned null",
                 () -> ((CheckedFunction6<Integer, Integer, Integer, Integer, Integer, Integer, Integer>) (a, b, c, d, e, f) -> { throw io; }).recover(t -> null).apply(1, 2, 3, 4, 5, 6)));
-        cases.add(throwing("CheckedFunction7.recover(Function)", "CheckedFunction7.recover: recover returned null",
+        cases.add(throwing("CheckedFunction7.recover(java.util.function.Function)", "CheckedFunction7.recover: recover returned null",
                 () -> ((CheckedFunction7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>) (a, b, c, d, e, f, g) -> { throw io; }).recover(t -> null).apply(1, 2, 3, 4, 5, 6, 7)));
-        cases.add(throwing("CheckedFunction8.recover(Function)", "CheckedFunction8.recover: recover returned null",
+        cases.add(throwing("CheckedFunction8.recover(java.util.function.Function)", "CheckedFunction8.recover: recover returned null",
                 () -> ((CheckedFunction8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>) (a, b, c, d, e, f, g, h) -> { throw io; }).recover(t -> null).apply(1, 2, 3, 4, 5, 6, 7, 8)));
 
         // -- sequences
-        cases.add(throwing("Vector.collect(Function)", "Vector.collect: mapper returned null", () -> Vector.of(1).collect(x -> null)));
-        cases.add(throwing("Vector.flatMap(Function)", "Vector.flatMap: mapper returned null", () -> Vector.of(1).flatMap(x -> null)));
+        cases.add(throwing("Vector.collect(java.util.function.Function)", "Vector.collect: mapper returned null", () -> Vector.of(1).collect(x -> null)));
+        cases.add(throwing("Vector.flatMap(java.util.function.Function)", "Vector.flatMap: mapper returned null", () -> Vector.of(1).flatMap(x -> null)));
         cases.add(throwing("Vector.groupBy", "Vector.groupBy: classifier returned null", () -> Vector.of(1).groupBy(x -> null)));
-        cases.add(throwing("Vector.orElse(Supplier)", "Vector.orElse: supplier returned null", () -> Vector.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("Vector.partitionMap(Function)", "Vector.partitionMap: f returned null", () -> Vector.of(1).partitionMap(x -> null)));
-        cases.add(throwing("Vector.toLinkedMap(Function)", "Vector.toLinkedMap: f returned null", () -> Vector.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("Vector.toMap(Function)", "Vector.toMap: f returned null", () -> Vector.of(1).toMap(x -> null)));
-        cases.add(throwing("Vector.toSortedMap(Function)", "Vector.toSortedMap: f returned null", () -> Vector.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("Vector.toSortedMap(Comparator, Function)", "Vector.toSortedMap: f returned null", () -> Vector.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("Vector.unfold(Object, Function)", "Vector.unfold: f returned null", () -> Vector.unfold(1, x -> null)));
-        cases.add(throwing("Vector.unfoldLeft(Object, Function)", "Vector.unfoldLeft: f returned null", () -> Vector.unfoldLeft(1, x -> null)));
-        cases.add(throwing("Vector.unfoldRight(Object, Function)", "Vector.unfoldRight: f returned null", () -> Vector.unfoldRight(1, x -> null)));
-        cases.add(throwing("Vector.unzip(Function)", "Vector.unzip: unzipper returned null", () -> Vector.of(1).unzip(x -> null)));
-        cases.add(throwing("Vector.unzip3(Function)", "Vector.unzip3: unzipper returned null", () -> Vector.of(1).unzip3(x -> null)));
+        cases.add(throwing("Vector.orElse(java.util.function.Supplier)", "Vector.orElse: supplier returned null", () -> Vector.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("Vector.partitionMap(java.util.function.Function)", "Vector.partitionMap: f returned null", () -> Vector.of(1).partitionMap(x -> null)));
+        cases.add(throwing("Vector.toLinkedMap(java.util.function.Function)", "Vector.toLinkedMap: f returned null", () -> Vector.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("Vector.toMap(java.util.function.Function)", "Vector.toMap: f returned null", () -> Vector.of(1).toMap(x -> null)));
+        cases.add(throwing("Vector.toSortedMap(java.util.function.Function)", "Vector.toSortedMap: f returned null", () -> Vector.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("Vector.toSortedMap(java.util.Comparator, java.util.function.Function)", "Vector.toSortedMap: f returned null", () -> Vector.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("Vector.unfold(java.lang.Object, java.util.function.Function)", "Vector.unfold: f returned null", () -> Vector.unfold(1, x -> null)));
+        cases.add(throwing("Vector.unfoldLeft(java.lang.Object, java.util.function.Function)", "Vector.unfoldLeft: f returned null", () -> Vector.unfoldLeft(1, x -> null)));
+        cases.add(throwing("Vector.unfoldRight(java.lang.Object, java.util.function.Function)", "Vector.unfoldRight: f returned null", () -> Vector.unfoldRight(1, x -> null)));
+        cases.add(throwing("Vector.unzip(java.util.function.Function)", "Vector.unzip: unzipper returned null", () -> Vector.of(1).unzip(x -> null)));
+        cases.add(throwing("Vector.unzip3(java.util.function.Function)", "Vector.unzip3: unzipper returned null", () -> Vector.of(1).unzip3(x -> null)));
 
-        cases.add(throwing("List.collect(Function)", "List.collect: mapper returned null", () -> List.of(1).collect(x -> null)));
-        cases.add(throwing("List.flatMap(Function)", "List.flatMap: mapper returned null", () -> List.of(1).flatMap(x -> null)));
+        cases.add(throwing("List.collect(java.util.function.Function)", "List.collect: mapper returned null", () -> List.of(1).collect(x -> null)));
+        cases.add(throwing("List.flatMap(java.util.function.Function)", "List.flatMap: mapper returned null", () -> List.of(1).flatMap(x -> null)));
         cases.add(throwing("List.groupBy", "List.groupBy: classifier returned null", () -> List.of(1).groupBy(x -> null)));
-        cases.add(throwing("List.orElse(Supplier)", "List.orElse: supplier returned null", () -> List.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("List.partitionMap(Function)", "List.partitionMap: f returned null", () -> List.of(1).partitionMap(x -> null)));
-        cases.add(throwing("List.toLinkedMap(Function)", "List.toLinkedMap: f returned null", () -> List.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("List.toMap(Function)", "List.toMap: f returned null", () -> List.of(1).toMap(x -> null)));
-        cases.add(throwing("List.toSortedMap(Function)", "List.toSortedMap: f returned null", () -> List.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("List.toSortedMap(Comparator, Function)", "List.toSortedMap: f returned null", () -> List.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("List.unfold(Object, Function)", "List.unfold: f returned null", () -> List.unfold(1, x -> null)));
-        cases.add(throwing("List.unfoldLeft(Object, Function)", "List.unfoldLeft: f returned null", () -> List.unfoldLeft(1, x -> null)));
-        cases.add(throwing("List.unfoldRight(Object, Function)", "List.unfoldRight: f returned null", () -> List.unfoldRight(1, x -> null)));
-        cases.add(throwing("List.unzip(Function)", "List.unzip: unzipper returned null", () -> List.of(1).unzip(x -> null)));
-        cases.add(throwing("List.unzip3(Function)", "List.unzip3: unzipper returned null", () -> List.of(1).unzip3(x -> null)));
+        cases.add(throwing("List.orElse(java.util.function.Supplier)", "List.orElse: supplier returned null", () -> List.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("List.partitionMap(java.util.function.Function)", "List.partitionMap: f returned null", () -> List.of(1).partitionMap(x -> null)));
+        cases.add(throwing("List.toLinkedMap(java.util.function.Function)", "List.toLinkedMap: f returned null", () -> List.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("List.toMap(java.util.function.Function)", "List.toMap: f returned null", () -> List.of(1).toMap(x -> null)));
+        cases.add(throwing("List.toSortedMap(java.util.function.Function)", "List.toSortedMap: f returned null", () -> List.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("List.toSortedMap(java.util.Comparator, java.util.function.Function)", "List.toSortedMap: f returned null", () -> List.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("List.unfold(java.lang.Object, java.util.function.Function)", "List.unfold: f returned null", () -> List.unfold(1, x -> null)));
+        cases.add(throwing("List.unfoldLeft(java.lang.Object, java.util.function.Function)", "List.unfoldLeft: f returned null", () -> List.unfoldLeft(1, x -> null)));
+        cases.add(throwing("List.unfoldRight(java.lang.Object, java.util.function.Function)", "List.unfoldRight: f returned null", () -> List.unfoldRight(1, x -> null)));
+        cases.add(throwing("List.unzip(java.util.function.Function)", "List.unzip: unzipper returned null", () -> List.of(1).unzip(x -> null)));
+        cases.add(throwing("List.unzip3(java.util.function.Function)", "List.unzip3: unzipper returned null", () -> List.of(1).unzip3(x -> null)));
 
-        cases.add(throwing("Queue.collect(Function)", "Queue.collect: mapper returned null", () -> Queue.of(1).collect(x -> null)));
-        cases.add(throwing("Queue.flatMap(Function)", "Queue.flatMap: mapper returned null", () -> Queue.of(1).flatMap(x -> null)));
+        cases.add(throwing("Queue.collect(java.util.function.Function)", "Queue.collect: mapper returned null", () -> Queue.of(1).collect(x -> null)));
+        cases.add(throwing("Queue.flatMap(java.util.function.Function)", "Queue.flatMap: mapper returned null", () -> Queue.of(1).flatMap(x -> null)));
         cases.add(throwing("Queue.groupBy", "Queue.groupBy: classifier returned null", () -> Queue.of(1).groupBy(x -> null)));
-        cases.add(throwing("Queue.orElse(Supplier)", "Queue.orElse: supplier returned null", () -> Queue.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("Queue.partitionMap(Function)", "Queue.partitionMap: f returned null", () -> Queue.of(1).partitionMap(x -> null)));
-        cases.add(throwing("Queue.toLinkedMap(Function)", "Queue.toLinkedMap: f returned null", () -> Queue.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("Queue.toMap(Function)", "Queue.toMap: f returned null", () -> Queue.of(1).toMap(x -> null)));
-        cases.add(throwing("Queue.toSortedMap(Function)", "Queue.toSortedMap: f returned null", () -> Queue.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("Queue.toSortedMap(Comparator, Function)", "Queue.toSortedMap: f returned null", () -> Queue.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("Queue.unfold(Object, Function)", "Queue.unfold: f returned null", () -> Queue.unfold(1, x -> null)));
-        cases.add(throwing("Queue.unfoldLeft(Object, Function)", "Queue.unfoldLeft: f returned null", () -> Queue.unfoldLeft(1, x -> null)));
-        cases.add(throwing("Queue.unfoldRight(Object, Function)", "Queue.unfoldRight: f returned null", () -> Queue.unfoldRight(1, x -> null)));
-        cases.add(throwing("Queue.unzip(Function)", "Queue.unzip: unzipper returned null", () -> Queue.of(1).unzip(x -> null)));
-        cases.add(throwing("Queue.unzip3(Function)", "Queue.unzip3: unzipper returned null", () -> Queue.of(1).unzip3(x -> null)));
+        cases.add(throwing("Queue.orElse(java.util.function.Supplier)", "Queue.orElse: supplier returned null", () -> Queue.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("Queue.partitionMap(java.util.function.Function)", "Queue.partitionMap: f returned null", () -> Queue.of(1).partitionMap(x -> null)));
+        cases.add(throwing("Queue.toLinkedMap(java.util.function.Function)", "Queue.toLinkedMap: f returned null", () -> Queue.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("Queue.toMap(java.util.function.Function)", "Queue.toMap: f returned null", () -> Queue.of(1).toMap(x -> null)));
+        cases.add(throwing("Queue.toSortedMap(java.util.function.Function)", "Queue.toSortedMap: f returned null", () -> Queue.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("Queue.toSortedMap(java.util.Comparator, java.util.function.Function)", "Queue.toSortedMap: f returned null", () -> Queue.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("Queue.unfold(java.lang.Object, java.util.function.Function)", "Queue.unfold: f returned null", () -> Queue.unfold(1, x -> null)));
+        cases.add(throwing("Queue.unfoldLeft(java.lang.Object, java.util.function.Function)", "Queue.unfoldLeft: f returned null", () -> Queue.unfoldLeft(1, x -> null)));
+        cases.add(throwing("Queue.unfoldRight(java.lang.Object, java.util.function.Function)", "Queue.unfoldRight: f returned null", () -> Queue.unfoldRight(1, x -> null)));
+        cases.add(throwing("Queue.unzip(java.util.function.Function)", "Queue.unzip: unzipper returned null", () -> Queue.of(1).unzip(x -> null)));
+        cases.add(throwing("Queue.unzip3(java.util.function.Function)", "Queue.unzip3: unzipper returned null", () -> Queue.of(1).unzip3(x -> null)));
 
         // a Stream is lazy: the null is rejected when the element is reached
-        cases.add(throwing("Stream.appendSelf(Function)", "Stream.appendSelf: mapper returned null", () -> Stream.of(1).appendSelf(s -> null).length()));
-        cases.add(throwing("Stream.collect(Function)", "Stream.collect: mapper returned null", () -> Stream.of(1).collect(x -> null).length()));
-        cases.add(throwing("Stream.cons(Object, Supplier)", "Stream.cons: tailSupplier returned null", () -> Stream.cons(1, () -> null).tail()));
-        cases.add(throwing("Stream.flatMap(Function)", "Stream.flatMap: mapper returned null", () -> Stream.of(1).flatMap(x -> null).length()));
+        cases.add(throwing("Stream.appendSelf(java.util.function.Function)", "Stream.appendSelf: mapper returned null", () -> Stream.of(1).appendSelf(s -> null).length()));
+        cases.add(throwing("Stream.collect(java.util.function.Function)", "Stream.collect: mapper returned null", () -> Stream.of(1).collect(x -> null).length()));
+        cases.add(throwing("Stream.cons(java.lang.Object, java.util.function.Supplier)", "Stream.cons: tailSupplier returned null", () -> Stream.cons(1, () -> null).tail()));
+        cases.add(throwing("Stream.flatMap(java.util.function.Function)", "Stream.flatMap: mapper returned null", () -> Stream.of(1).flatMap(x -> null).length()));
         cases.add(throwing("Stream.groupBy", "Stream.groupBy: classifier returned null", () -> Stream.of(1).groupBy(x -> null)));
-        cases.add(throwing("Stream.iterate(Supplier)", "Stream.iterate: supplier returned null", () -> Stream.iterate(() -> null).length()));
-        cases.add(throwing("Stream.orElse(Supplier)", "Stream.orElse: supplier returned null", () -> Stream.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("Stream.partitionMap(Function)", "Stream.partitionMap: f returned null", () -> Stream.of(1).partitionMap(x -> null)._1().length()));
-        cases.add(throwing("Stream.toLinkedMap(Function)", "Stream.toLinkedMap: f returned null", () -> Stream.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("Stream.toMap(Function)", "Stream.toMap: f returned null", () -> Stream.of(1).toMap(x -> null)));
-        cases.add(throwing("Stream.toSortedMap(Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("Stream.toSortedMap(Comparator, Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("Stream.unfold(Object, Function)", "Stream.unfold: f returned null", () -> Stream.unfold(1, x -> null).length()));
-        cases.add(throwing("Stream.unfoldLeft(Object, Function)", "Stream.unfoldLeft: f returned null", () -> Stream.unfoldLeft(1, x -> null).length()));
-        cases.add(throwing("Stream.unfoldRight(Object, Function)", "Stream.unfoldRight: f returned null", () -> Stream.unfoldRight(1, x -> null).length()));
-        cases.add(throwing("Stream.unzip(Function)", "Stream.unzip: unzipper returned null", () -> Stream.of(1).unzip(x -> null)._1().length()));
-        cases.add(throwing("Stream.unzip3(Function)", "Stream.unzip3: unzipper returned null", () -> Stream.of(1).unzip3(x -> null)._1().length()));
+        cases.add(throwing("Stream.iterate(java.util.function.Supplier)", "Stream.iterate: supplier returned null", () -> Stream.iterate(() -> null).length()));
+        cases.add(throwing("Stream.orElse(java.util.function.Supplier)", "Stream.orElse: supplier returned null", () -> Stream.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("Stream.partitionMap(java.util.function.Function)", "Stream.partitionMap: f returned null", () -> Stream.of(1).partitionMap(x -> null)._1().length()));
+        cases.add(throwing("Stream.toLinkedMap(java.util.function.Function)", "Stream.toLinkedMap: f returned null", () -> Stream.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("Stream.toMap(java.util.function.Function)", "Stream.toMap: f returned null", () -> Stream.of(1).toMap(x -> null)));
+        cases.add(throwing("Stream.toSortedMap(java.util.function.Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("Stream.toSortedMap(java.util.Comparator, java.util.function.Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("Stream.unfold(java.lang.Object, java.util.function.Function)", "Stream.unfold: f returned null", () -> Stream.unfold(1, x -> null).length()));
+        cases.add(throwing("Stream.unfoldLeft(java.lang.Object, java.util.function.Function)", "Stream.unfoldLeft: f returned null", () -> Stream.unfoldLeft(1, x -> null).length()));
+        cases.add(throwing("Stream.unfoldRight(java.lang.Object, java.util.function.Function)", "Stream.unfoldRight: f returned null", () -> Stream.unfoldRight(1, x -> null).length()));
+        cases.add(throwing("Stream.unzip(java.util.function.Function)", "Stream.unzip: unzipper returned null", () -> Stream.of(1).unzip(x -> null)._1().length()));
+        cases.add(throwing("Stream.unzip3(java.util.function.Function)", "Stream.unzip3: unzipper returned null", () -> Stream.of(1).unzip3(x -> null)._1().length()));
 
-        cases.add(throwing("NonEmptyVector.collect(Function)", "NonEmptyVector.collect: mapper returned null", () -> NonEmptyVector.of(1).collect(x -> null)));
-        cases.add(throwing("NonEmptyVector.flatMap(Function)", "NonEmptyVector.flatMap: mapper returned null", () -> NonEmptyVector.of(1).flatMap(x -> null)));
-        cases.add(throwing("NonEmptyVector.flatMapAll(Function)", "NonEmptyVector.flatMapAll: mapper returned null", () -> NonEmptyVector.of(1).flatMapAll(x -> null)));
+        cases.add(throwing("NonEmptyVector.collect(java.util.function.Function)", "NonEmptyVector.collect: mapper returned null", () -> NonEmptyVector.of(1).collect(x -> null)));
+        cases.add(throwing("NonEmptyVector.flatMap(java.util.function.Function)", "NonEmptyVector.flatMap: mapper returned null", () -> NonEmptyVector.of(1).flatMap(x -> null)));
+        cases.add(throwing("NonEmptyVector.flatMapAll(java.util.function.Function)", "NonEmptyVector.flatMapAll: mapper returned null", () -> NonEmptyVector.of(1).flatMapAll(x -> null)));
         cases.add(throwing("NonEmptyVector.groupBy", "NonEmptyVector.groupBy: classifier returned null", () -> NonEmptyVector.of(1).groupBy(x -> null)));
-        cases.add(throwing("NonEmptyVector.partitionMap(Function)", "NonEmptyVector.partitionMap: f returned null", () -> NonEmptyVector.of(1).partitionMap(x -> null)));
-        cases.add(throwing("NonEmptyVector.toLinkedMap(Function)", "NonEmptyVector.toLinkedMap: f returned null", () -> NonEmptyVector.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("NonEmptyVector.toMap(Function)", "NonEmptyVector.toMap: f returned null", () -> NonEmptyVector.of(1).toMap(x -> null)));
-        cases.add(throwing("NonEmptyVector.toSortedMap(Function)", "NonEmptyVector.toSortedMap: f returned null", () -> NonEmptyVector.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("NonEmptyVector.toSortedMap(Comparator, Function)", "NonEmptyVector.toSortedMap: f returned null", () -> NonEmptyVector.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("NonEmptyVector.unzip(Function)", "NonEmptyVector.unzip: unzipper returned null", () -> NonEmptyVector.of(1).unzip(x -> null)));
-        cases.add(throwing("NonEmptyVector.unzip3(Function)", "NonEmptyVector.unzip3: unzipper returned null", () -> NonEmptyVector.of(1).unzip3(x -> null)));
+        cases.add(throwing("NonEmptyVector.partitionMap(java.util.function.Function)", "NonEmptyVector.partitionMap: f returned null", () -> NonEmptyVector.of(1).partitionMap(x -> null)));
+        cases.add(throwing("NonEmptyVector.toLinkedMap(java.util.function.Function)", "NonEmptyVector.toLinkedMap: f returned null", () -> NonEmptyVector.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("NonEmptyVector.toMap(java.util.function.Function)", "NonEmptyVector.toMap: f returned null", () -> NonEmptyVector.of(1).toMap(x -> null)));
+        cases.add(throwing("NonEmptyVector.toSortedMap(java.util.function.Function)", "NonEmptyVector.toSortedMap: f returned null", () -> NonEmptyVector.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("NonEmptyVector.toSortedMap(java.util.Comparator, java.util.function.Function)", "NonEmptyVector.toSortedMap: f returned null", () -> NonEmptyVector.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("NonEmptyVector.unzip(java.util.function.Function)", "NonEmptyVector.unzip: unzipper returned null", () -> NonEmptyVector.of(1).unzip(x -> null)));
+        cases.add(throwing("NonEmptyVector.unzip3(java.util.function.Function)", "NonEmptyVector.unzip3: unzipper returned null", () -> NonEmptyVector.of(1).unzip3(x -> null)));
 
         // -- sets: toMap and its siblings are the defaults of Set
-        cases.add(throwing("HashSet.collect(Function)", "HashSet.collect: mapper returned null", () -> HashSet.of(1).collect(x -> null)));
-        cases.add(throwing("HashSet.flatMap(Function)", "HashSet.flatMap: mapper returned null", () -> HashSet.of(1).flatMap(x -> null)));
+        cases.add(throwing("HashSet.collect(java.util.function.Function)", "HashSet.collect: mapper returned null", () -> HashSet.of(1).collect(x -> null)));
+        cases.add(throwing("HashSet.flatMap(java.util.function.Function)", "HashSet.flatMap: mapper returned null", () -> HashSet.of(1).flatMap(x -> null)));
         cases.add(throwing("HashSet.groupBy", "HashSet.groupBy: classifier returned null", () -> HashSet.of(1).groupBy(x -> null)));
-        cases.add(throwing("HashSet.orElse(Supplier)", "HashSet.orElse: supplier returned null", () -> HashSet.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("HashSet.partitionMap(Function)", "HashSet.partitionMap: f returned null", () -> HashSet.of(1).partitionMap(x -> null)));
-        cases.add(throwing("HashSet.toLinkedMap(Function)", "Set.toLinkedMap: f returned null", () -> HashSet.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("HashSet.toMap(Function)", "Set.toMap: f returned null", () -> HashSet.of(1).toMap(x -> null)));
-        cases.add(throwing("HashSet.toSortedMap(Function)", "Set.toSortedMap: f returned null", () -> HashSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("HashSet.toSortedMap(Comparator, Function)", "Set.toSortedMap: f returned null", () -> HashSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("HashSet.orElse(java.util.function.Supplier)", "HashSet.orElse: supplier returned null", () -> HashSet.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("HashSet.partitionMap(java.util.function.Function)", "HashSet.partitionMap: f returned null", () -> HashSet.of(1).partitionMap(x -> null)));
+        cases.add(throwing("HashSet.toLinkedMap(java.util.function.Function)", "Set.toLinkedMap: f returned null", () -> HashSet.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("HashSet.toMap(java.util.function.Function)", "Set.toMap: f returned null", () -> HashSet.of(1).toMap(x -> null)));
+        cases.add(throwing("HashSet.toSortedMap(java.util.function.Function)", "Set.toSortedMap: f returned null", () -> HashSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("HashSet.toSortedMap(java.util.Comparator, java.util.function.Function)", "Set.toSortedMap: f returned null", () -> HashSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
 
-        cases.add(throwing("LinkedHashSet.collect(Function)", "LinkedHashSet.collect: mapper returned null", () -> LinkedHashSet.of(1).collect(x -> null)));
-        cases.add(throwing("LinkedHashSet.flatMap(Function)", "LinkedHashSet.flatMap: mapper returned null", () -> LinkedHashSet.of(1).flatMap(x -> null)));
+        cases.add(throwing("LinkedHashSet.collect(java.util.function.Function)", "LinkedHashSet.collect: mapper returned null", () -> LinkedHashSet.of(1).collect(x -> null)));
+        cases.add(throwing("LinkedHashSet.flatMap(java.util.function.Function)", "LinkedHashSet.flatMap: mapper returned null", () -> LinkedHashSet.of(1).flatMap(x -> null)));
         cases.add(throwing("LinkedHashSet.groupBy", "LinkedHashSet.groupBy: classifier returned null", () -> LinkedHashSet.of(1).groupBy(x -> null)));
-        cases.add(throwing("LinkedHashSet.orElse(Supplier)", "LinkedHashSet.orElse: supplier returned null", () -> LinkedHashSet.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("LinkedHashSet.partitionMap(Function)", "LinkedHashSet.partitionMap: f returned null", () -> LinkedHashSet.of(1).partitionMap(x -> null)));
-        cases.add(throwing("LinkedHashSet.toLinkedMap(Function)", "Set.toLinkedMap: f returned null", () -> LinkedHashSet.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("LinkedHashSet.toMap(Function)", "Set.toMap: f returned null", () -> LinkedHashSet.of(1).toMap(x -> null)));
-        cases.add(throwing("LinkedHashSet.toSortedMap(Function)", "Set.toSortedMap: f returned null", () -> LinkedHashSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("LinkedHashSet.toSortedMap(Comparator, Function)", "Set.toSortedMap: f returned null", () -> LinkedHashSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("LinkedHashSet.orElse(java.util.function.Supplier)", "LinkedHashSet.orElse: supplier returned null", () -> LinkedHashSet.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("LinkedHashSet.partitionMap(java.util.function.Function)", "LinkedHashSet.partitionMap: f returned null", () -> LinkedHashSet.of(1).partitionMap(x -> null)));
+        cases.add(throwing("LinkedHashSet.toLinkedMap(java.util.function.Function)", "Set.toLinkedMap: f returned null", () -> LinkedHashSet.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("LinkedHashSet.toMap(java.util.function.Function)", "Set.toMap: f returned null", () -> LinkedHashSet.of(1).toMap(x -> null)));
+        cases.add(throwing("LinkedHashSet.toSortedMap(java.util.function.Function)", "Set.toSortedMap: f returned null", () -> LinkedHashSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("LinkedHashSet.toSortedMap(java.util.Comparator, java.util.function.Function)", "Set.toSortedMap: f returned null", () -> LinkedHashSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
 
-        cases.add(throwing("TreeSet.collect(Function)", "TreeSet.collect: mapper returned null", () -> TreeSet.of(1).collect(x -> null)));
-        cases.add(throwing("TreeSet.collect(Comparator, Function)", "TreeSet.collect: mapper returned null", () -> TreeSet.of(1).collect(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("TreeSet.flatMap(Function)", "TreeSet.flatMap: mapper returned null", () -> TreeSet.of(1).flatMap(x -> (Iterable<Integer>) null)));
-        cases.add(throwing("TreeSet.flatMap(Comparator, Function)", "TreeSet.flatMap: mapper returned null", () -> TreeSet.of(1).flatMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("TreeSet.collect(java.util.function.Function)", "TreeSet.collect: mapper returned null", () -> TreeSet.of(1).collect(x -> null)));
+        cases.add(throwing("TreeSet.collect(java.util.Comparator, java.util.function.Function)", "TreeSet.collect: mapper returned null", () -> TreeSet.of(1).collect(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("TreeSet.flatMap(java.util.function.Function)", "TreeSet.flatMap: mapper returned null", () -> TreeSet.of(1).flatMap(x -> (Iterable<Integer>) null)));
+        cases.add(throwing("TreeSet.flatMap(java.util.Comparator, java.util.function.Function)", "TreeSet.flatMap: mapper returned null", () -> TreeSet.of(1).flatMap(Comparator.<Integer> naturalOrder(), x -> null)));
         cases.add(throwing("TreeSet.groupBy", "TreeSet.groupBy: classifier returned null", () -> TreeSet.of(1).groupBy(x -> null)));
-        cases.add(throwing("TreeSet.orElse(Supplier)", "TreeSet.orElse: supplier returned null", () -> TreeSet.<Integer> empty().orElse((Supplier<Iterable<Integer>>) () -> null)));
-        cases.add(throwing("TreeSet.toLinkedMap(Function)", "Set.toLinkedMap: f returned null", () -> TreeSet.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("TreeSet.toMap(Function)", "Set.toMap: f returned null", () -> TreeSet.of(1).toMap(x -> null)));
-        cases.add(throwing("TreeSet.toSortedMap(Function)", "Set.toSortedMap: f returned null", () -> TreeSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("TreeSet.toSortedMap(Comparator, Function)", "Set.toSortedMap: f returned null", () -> TreeSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("TreeSet.orElse(java.util.function.Supplier)", "TreeSet.orElse: supplier returned null", () -> TreeSet.<Integer> empty().orElse((Supplier<Iterable<Integer>>) () -> null)));
+        cases.add(throwing("TreeSet.toLinkedMap(java.util.function.Function)", "Set.toLinkedMap: f returned null", () -> TreeSet.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("TreeSet.toMap(java.util.function.Function)", "Set.toMap: f returned null", () -> TreeSet.of(1).toMap(x -> null)));
+        cases.add(throwing("TreeSet.toSortedMap(java.util.function.Function)", "Set.toSortedMap: f returned null", () -> TreeSet.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("TreeSet.toSortedMap(java.util.Comparator, java.util.function.Function)", "Set.toSortedMap: f returned null", () -> TreeSet.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
 
         // -- maps: toMap and its siblings are the defaults of Map
-        cases.add(throwing("HashMap.collect(BiFunction)", "HashMap.collect: mapper returned null", () -> HashMap.of(1, "a").collect((k, v) -> null)));
-        cases.add(throwing("HashMap.fill(int, Supplier)", "HashMap.fill: s returned null", () -> HashMap.fill(1, () -> null)));
-        cases.add(throwing("HashMap.flatMap(BiFunction)", "HashMap.flatMap: mapper returned null", () -> HashMap.of(1, "a").flatMap((k, v) -> null)));
+        cases.add(throwing("HashMap.collect(java.util.function.BiFunction)", "HashMap.collect: mapper returned null", () -> HashMap.of(1, "a").collect((k, v) -> null)));
+        cases.add(throwing("HashMap.fill(int, java.util.function.Supplier)", "HashMap.fill: s returned null", () -> HashMap.fill(1, () -> null)));
+        cases.add(throwing("HashMap.flatMap(java.util.function.BiFunction)", "HashMap.flatMap: mapper returned null", () -> HashMap.of(1, "a").flatMap((k, v) -> null)));
         cases.add(throwing("HashMap.groupBy", "HashMap.groupBy: classifier returned null", () -> HashMap.of(1, "a").groupBy(e -> null)));
-        cases.add(throwing("HashMap.map(BiFunction)", "HashMap.map: mapper returned null", () -> HashMap.of(1, "a").map((k, v) -> null)));
-        cases.add(throwing("HashMap.ofAll(Stream, Function)", "HashMap.ofAll: entryMapper returned null", () -> HashMap.ofAll(java.util.stream.Stream.of(1), x -> null)));
-        cases.add(throwing("HashMap.orElse(Supplier)", "HashMap.orElse: supplier returned null", () -> HashMap.<Integer, String> empty().orElse((Supplier<Iterable<Tuple2<Integer, String>>>) () -> null)));
-        cases.add(throwing("HashMap.tabulate(int, Function)", "HashMap.tabulate: f returned null", () -> HashMap.tabulate(1, i -> null)));
-        cases.add(throwing("HashMap.toLinkedMap(Function)", "Map.toLinkedMap: f returned null", () -> HashMap.of(1, "a").toLinkedMap(e -> null)));
-        cases.add(throwing("HashMap.toMap(Function)", "Map.toMap: f returned null", () -> HashMap.of(1, "a").toMap(e -> null)));
-        cases.add(throwing("HashMap.toSortedMap(Function)", "Map.toSortedMap: f returned null", () -> HashMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("HashMap.toSortedMap(Comparator, Function)", "Map.toSortedMap: f returned null", () -> HashMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("HashMap.map(java.util.function.BiFunction)", "HashMap.map: mapper returned null", () -> HashMap.of(1, "a").map((k, v) -> null)));
+        cases.add(throwing("HashMap.ofAll(java.util.stream.Stream, java.util.function.Function)", "HashMap.ofAll: entryMapper returned null", () -> HashMap.ofAll(java.util.stream.Stream.of(1), x -> null)));
+        cases.add(throwing("HashMap.orElse(java.util.function.Supplier)", "HashMap.orElse: supplier returned null", () -> HashMap.<Integer, String> empty().orElse((Supplier<Iterable<Tuple2<Integer, String>>>) () -> null)));
+        cases.add(throwing("HashMap.tabulate(int, java.util.function.Function)", "HashMap.tabulate: f returned null", () -> HashMap.tabulate(1, i -> null)));
+        cases.add(throwing("HashMap.toLinkedMap(java.util.function.Function)", "Map.toLinkedMap: f returned null", () -> HashMap.of(1, "a").toLinkedMap(e -> null)));
+        cases.add(throwing("HashMap.toMap(java.util.function.Function)", "Map.toMap: f returned null", () -> HashMap.of(1, "a").toMap(e -> null)));
+        cases.add(throwing("HashMap.toSortedMap(java.util.function.Function)", "Map.toSortedMap: f returned null", () -> HashMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("HashMap.toSortedMap(java.util.Comparator, java.util.function.Function)", "Map.toSortedMap: f returned null", () -> HashMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
 
-        cases.add(throwing("LinkedHashMap.collect(BiFunction)", "LinkedHashMap.collect: mapper returned null", () -> LinkedHashMap.of(1, "a").collect((k, v) -> null)));
-        cases.add(throwing("LinkedHashMap.fill(int, Supplier)", "LinkedHashMap.fill: s returned null", () -> LinkedHashMap.fill(1, () -> null)));
-        cases.add(throwing("LinkedHashMap.flatMap(BiFunction)", "LinkedHashMap.flatMap: mapper returned null", () -> LinkedHashMap.of(1, "a").flatMap((k, v) -> null)));
+        cases.add(throwing("LinkedHashMap.collect(java.util.function.BiFunction)", "LinkedHashMap.collect: mapper returned null", () -> LinkedHashMap.of(1, "a").collect((k, v) -> null)));
+        cases.add(throwing("LinkedHashMap.fill(int, java.util.function.Supplier)", "LinkedHashMap.fill: s returned null", () -> LinkedHashMap.fill(1, () -> null)));
+        cases.add(throwing("LinkedHashMap.flatMap(java.util.function.BiFunction)", "LinkedHashMap.flatMap: mapper returned null", () -> LinkedHashMap.of(1, "a").flatMap((k, v) -> null)));
         cases.add(throwing("LinkedHashMap.groupBy", "LinkedHashMap.groupBy: classifier returned null", () -> LinkedHashMap.of(1, "a").groupBy(e -> null)));
-        cases.add(throwing("LinkedHashMap.map(BiFunction)", "LinkedHashMap.map: mapper returned null", () -> LinkedHashMap.of(1, "a").map((k, v) -> null)));
-        cases.add(throwing("LinkedHashMap.ofAll(Stream, Function)", "LinkedHashMap.ofAll: entryMapper returned null", () -> LinkedHashMap.ofAll(java.util.stream.Stream.of(1), x -> null)));
-        cases.add(throwing("LinkedHashMap.orElse(Supplier)", "LinkedHashMap.orElse: supplier returned null", () -> LinkedHashMap.<Integer, String> empty().orElse((Supplier<Iterable<Tuple2<Integer, String>>>) () -> null)));
-        cases.add(throwing("LinkedHashMap.tabulate(int, Function)", "LinkedHashMap.tabulate: f returned null", () -> LinkedHashMap.tabulate(1, i -> null)));
-        cases.add(throwing("LinkedHashMap.toLinkedMap(Function)", "Map.toLinkedMap: f returned null", () -> LinkedHashMap.of(1, "a").toLinkedMap(e -> null)));
-        cases.add(throwing("LinkedHashMap.toMap(Function)", "Map.toMap: f returned null", () -> LinkedHashMap.of(1, "a").toMap(e -> null)));
-        cases.add(throwing("LinkedHashMap.toSortedMap(Function)", "Map.toSortedMap: f returned null", () -> LinkedHashMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("LinkedHashMap.toSortedMap(Comparator, Function)", "Map.toSortedMap: f returned null", () -> LinkedHashMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("LinkedHashMap.map(java.util.function.BiFunction)", "LinkedHashMap.map: mapper returned null", () -> LinkedHashMap.of(1, "a").map((k, v) -> null)));
+        cases.add(throwing("LinkedHashMap.ofAll(java.util.stream.Stream, java.util.function.Function)", "LinkedHashMap.ofAll: entryMapper returned null", () -> LinkedHashMap.ofAll(java.util.stream.Stream.of(1), x -> null)));
+        cases.add(throwing("LinkedHashMap.orElse(java.util.function.Supplier)", "LinkedHashMap.orElse: supplier returned null", () -> LinkedHashMap.<Integer, String> empty().orElse((Supplier<Iterable<Tuple2<Integer, String>>>) () -> null)));
+        cases.add(throwing("LinkedHashMap.tabulate(int, java.util.function.Function)", "LinkedHashMap.tabulate: f returned null", () -> LinkedHashMap.tabulate(1, i -> null)));
+        cases.add(throwing("LinkedHashMap.toLinkedMap(java.util.function.Function)", "Map.toLinkedMap: f returned null", () -> LinkedHashMap.of(1, "a").toLinkedMap(e -> null)));
+        cases.add(throwing("LinkedHashMap.toMap(java.util.function.Function)", "Map.toMap: f returned null", () -> LinkedHashMap.of(1, "a").toMap(e -> null)));
+        cases.add(throwing("LinkedHashMap.toSortedMap(java.util.function.Function)", "Map.toSortedMap: f returned null", () -> LinkedHashMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("LinkedHashMap.toSortedMap(java.util.Comparator, java.util.function.Function)", "Map.toSortedMap: f returned null", () -> LinkedHashMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
 
-        cases.add(throwing("TreeMap.collect(BiFunction)", "TreeMap.collect: mapper returned null", () -> TreeMap.of(1, "a").collect((k, v) -> null)));
-        cases.add(throwing("TreeMap.collect(Comparator, BiFunction)", "TreeMap.collect: mapper returned null", () -> TreeMap.of(1, "a").collect(Comparator.<Integer> naturalOrder(), (k, v) -> null)));
-        cases.add(throwing("TreeMap.fill(int, Supplier)", "TreeMap.fill: s returned null", () -> TreeMap.<Integer, String> fill(1, () -> null)));
-        cases.add(throwing("TreeMap.fill(Comparator, int, Supplier)", "TreeMap.fill: s returned null", () -> TreeMap.<Integer, String> fill(Comparator.naturalOrder(), 1, () -> null)));
-        cases.add(throwing("TreeMap.flatMap(BiFunction)", "TreeMap.flatMap: mapper returned null", () -> TreeMap.of(1, "a").flatMap((k, v) -> (Iterable<Tuple2<Integer, String>>) null)));
-        cases.add(throwing("TreeMap.flatMap(Comparator, BiFunction)", "TreeMap.flatMap: mapper returned null", () -> TreeMap.of(1, "a").flatMap(Comparator.<Integer> naturalOrder(), (k, v) -> null)));
+        cases.add(throwing("TreeMap.collect(java.util.function.BiFunction)", "TreeMap.collect: mapper returned null", () -> TreeMap.of(1, "a").collect((k, v) -> null)));
+        cases.add(throwing("TreeMap.collect(java.util.Comparator, java.util.function.BiFunction)", "TreeMap.collect: mapper returned null", () -> TreeMap.of(1, "a").collect(Comparator.<Integer> naturalOrder(), (k, v) -> null)));
+        cases.add(throwing("TreeMap.fill(int, java.util.function.Supplier)", "TreeMap.fill: s returned null", () -> TreeMap.<Integer, String> fill(1, () -> null)));
+        cases.add(throwing("TreeMap.fill(java.util.Comparator, int, java.util.function.Supplier)", "TreeMap.fill: s returned null", () -> TreeMap.<Integer, String> fill(Comparator.naturalOrder(), 1, () -> null)));
+        cases.add(throwing("TreeMap.flatMap(java.util.function.BiFunction)", "TreeMap.flatMap: mapper returned null", () -> TreeMap.of(1, "a").flatMap((k, v) -> (Iterable<Tuple2<Integer, String>>) null)));
+        cases.add(throwing("TreeMap.flatMap(java.util.Comparator, java.util.function.BiFunction)", "TreeMap.flatMap: mapper returned null", () -> TreeMap.of(1, "a").flatMap(Comparator.<Integer> naturalOrder(), (k, v) -> null)));
         cases.add(throwing("TreeMap.groupBy", "TreeMap.groupBy: classifier returned null", () -> TreeMap.of(1, "a").groupBy(e -> null)));
-        cases.add(throwing("TreeMap.map(BiFunction)", "TreeMap.map: mapper returned null", () -> TreeMap.of(1, "a").map((k, v) -> (Tuple2<Integer, String>) null)));
-        cases.add(throwing("TreeMap.map(Comparator, BiFunction)", "TreeMap.map: mapper returned null", () -> TreeMap.of(1, "a").map(Comparator.<Integer> naturalOrder(), (k, v) -> null)));
-        cases.add(throwing("TreeMap.ofAll(Stream, Function)", "TreeMap.ofAll: entryMapper returned null", () -> TreeMap.ofAll(java.util.stream.Stream.of(1), x -> (Tuple2<Integer, String>) null)));
-        cases.add(throwing("TreeMap.ofAll(Comparator, Stream, Function)", "TreeMap.ofAll: entryMapper returned null", () -> TreeMap.ofAll(Comparator.<Integer> naturalOrder(), java.util.stream.Stream.of(1), x -> null)));
-        cases.add(throwing("TreeMap.orElse(Supplier)", "TreeMap.orElse: supplier returned null", () -> TreeMap.<Integer, String> empty().orElse((Supplier<Iterable<Tuple2<Integer, String>>>) () -> null)));
-        cases.add(throwing("TreeMap.tabulate(int, Function)", "TreeMap.tabulate: f returned null", () -> TreeMap.<Integer, String> tabulate(1, i -> null)));
-        cases.add(throwing("TreeMap.tabulate(Comparator, int, Function)", "TreeMap.tabulate: f returned null", () -> TreeMap.<Integer, String> tabulate(Comparator.naturalOrder(), 1, i -> null)));
-        cases.add(throwing("TreeMap.toLinkedMap(Function)", "Map.toLinkedMap: f returned null", () -> TreeMap.of(1, "a").toLinkedMap(e -> null)));
-        cases.add(throwing("TreeMap.toMap(Function)", "Map.toMap: f returned null", () -> TreeMap.of(1, "a").toMap(e -> null)));
-        cases.add(throwing("TreeMap.toSortedMap(Function)", "Map.toSortedMap: f returned null", () -> TreeMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("TreeMap.toSortedMap(Comparator, Function)", "Map.toSortedMap: f returned null", () -> TreeMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("TreeMap.map(java.util.function.BiFunction)", "TreeMap.map: mapper returned null", () -> TreeMap.of(1, "a").map((k, v) -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("TreeMap.map(java.util.Comparator, java.util.function.BiFunction)", "TreeMap.map: mapper returned null", () -> TreeMap.of(1, "a").map(Comparator.<Integer> naturalOrder(), (k, v) -> null)));
+        cases.add(throwing("TreeMap.ofAll(java.util.stream.Stream, java.util.function.Function)", "TreeMap.ofAll: entryMapper returned null", () -> TreeMap.ofAll(java.util.stream.Stream.of(1), x -> (Tuple2<Integer, String>) null)));
+        cases.add(throwing("TreeMap.ofAll(java.util.Comparator, java.util.stream.Stream, java.util.function.Function)", "TreeMap.ofAll: entryMapper returned null", () -> TreeMap.ofAll(Comparator.<Integer> naturalOrder(), java.util.stream.Stream.of(1), x -> null)));
+        cases.add(throwing("TreeMap.orElse(java.util.function.Supplier)", "TreeMap.orElse: supplier returned null", () -> TreeMap.<Integer, String> empty().orElse((Supplier<Iterable<Tuple2<Integer, String>>>) () -> null)));
+        cases.add(throwing("TreeMap.tabulate(int, java.util.function.Function)", "TreeMap.tabulate: f returned null", () -> TreeMap.<Integer, String> tabulate(1, i -> null)));
+        cases.add(throwing("TreeMap.tabulate(java.util.Comparator, int, java.util.function.Function)", "TreeMap.tabulate: f returned null", () -> TreeMap.<Integer, String> tabulate(Comparator.naturalOrder(), 1, i -> null)));
+        cases.add(throwing("TreeMap.toLinkedMap(java.util.function.Function)", "Map.toLinkedMap: f returned null", () -> TreeMap.of(1, "a").toLinkedMap(e -> null)));
+        cases.add(throwing("TreeMap.toMap(java.util.function.Function)", "Map.toMap: f returned null", () -> TreeMap.of(1, "a").toMap(e -> null)));
+        cases.add(throwing("TreeMap.toSortedMap(java.util.function.Function)", "Map.toSortedMap: f returned null", () -> TreeMap.of(1, "a").toSortedMap(e -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("TreeMap.toSortedMap(java.util.Comparator, java.util.function.Function)", "Map.toSortedMap: f returned null", () -> TreeMap.of(1, "a").toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
         // arrangeBy classifies through groupBy, and names itself
         cases.add(throwing("Vector.arrangeBy", "Vector.arrangeBy: getKey returned null", () -> Vector.of(1).arrangeBy(x -> null)));
         cases.add(throwing("List.arrangeBy", "List.arrangeBy: getKey returned null", () -> List.of(1).arrangeBy(x -> null)));
@@ -365,6 +365,21 @@ public class NullResultTest {
         assertThatNullPointerException().isThrownBy(iterated::toVector).withMessage("Stream.iterate: supplier returned null");
         assertThatNullPointerException().isThrownBy(iterated::toVector).withMessage("Stream.iterate: supplier returned null");
         assertThat(iterated.head()).isEqualTo(1);
+
+        // stateful functions that return null once: the failure is remembered, the function is not called again
+        final java.util.concurrent.atomic.AtomicInteger unfoldCalls = new java.util.concurrent.atomic.AtomicInteger();
+        final Stream<Integer> unfolded = Stream.unfoldRight(0, x -> x > 4 ? Option.none()
+                : x == 2 && unfoldCalls.getAndIncrement() == 0 ? null : Option.some(Tuple.of(x, x + 1)));
+        for (int i = 0; i < 3; i++) {
+            assertThatNullPointerException().isThrownBy(unfolded::toVector).withMessage("Stream.unfoldRight: f returned null");
+        }
+        assertThat(unfoldCalls.get()).isEqualTo(1);
+        final java.util.concurrent.atomic.AtomicInteger appendCalls = new java.util.concurrent.atomic.AtomicInteger();
+        final Stream<Integer> appended = Stream.of(1, 2).appendSelf(self -> appendCalls.getAndIncrement() == 0 ? null : Stream.of(9));
+        for (int i = 0; i < 3; i++) {
+            assertThatNullPointerException().isThrownBy(appended::toVector).withMessage("Stream.appendSelf: mapper returned null");
+        }
+        assertThat(appendCalls.get()).isEqualTo(1);
 
         final Stream<Integer> consed = Stream.cons(1, () -> null);
         assertThat(consed.head()).isEqualTo(1);
@@ -440,11 +455,14 @@ public class NullResultTest {
         return found;
     }
 
-    /** {@code Type.method(Param1, Param2)}, the erased parameter types by simple name: one key per overload. */
+    /**
+     * {@code Type.method(pkg.Param1, pkg.Param2)}, the erased parameter types fully qualified: one key per overload,
+     * even where a Zazr type and a JDK type share a simple name ({@code Stream}, {@code List}, {@code Map}).
+     */
     private static String signature(Class<?> type, Method method) {
         final java.util.StringJoiner parameters = new java.util.StringJoiner(", ", "(", ")");
         for (Class<?> parameter : method.getParameterTypes()) {
-            parameters.add(parameter.getSimpleName());
+            parameters.add(parameter.getTypeName());
         }
         return type.getSimpleName() + "." + method.getName() + parameters;
     }

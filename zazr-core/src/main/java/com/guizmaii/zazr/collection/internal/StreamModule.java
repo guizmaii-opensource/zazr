@@ -116,6 +116,9 @@ public interface StreamModule {
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Cons<T> self;
+        // set once mapper returned null: the tail is not memoised on a failure, so every later force fails the same
+        // way instead of calling mapper again
+        private boolean failed;
 
         public AppendSelf(Cons<T> self, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
             this.self = appendAll(self, mapper);
@@ -124,7 +127,15 @@ public interface StreamModule {
         private Cons<T> appendAll(Cons<T> stream, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
             return (Cons<T>) Stream.cons(stream.head(), () -> {
                 final Stream<T> tail = stream.tail();
-                return tail.isEmpty() ? java.util.Objects.requireNonNull(mapper.apply(self), "Stream.appendSelf: mapper returned null") : appendAll((Cons<T>) tail, mapper);
+                if (!tail.isEmpty()) {
+                    return appendAll((Cons<T>) tail, mapper);
+                }
+                final Stream<T> mapped = failed ? null : mapper.apply(self);
+                if (mapped == null) {
+                    failed = true;
+                    throw new NullPointerException("Stream.appendSelf: mapper returned null");
+                }
+                return mapped;
             });
         }
 

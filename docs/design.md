@@ -1330,7 +1330,11 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   A method that runs the function under `Try` (`map`, `flatMap`, `flatMapTry`, `collect`, `filter`, `mapError`,
   `catchAll`, `catchSome`, `catchAllWith`, `catchSomeWith`, and `Try.of` as before) returns that exception as a
   `Failure`; `Try.orElse(Supplier)` and `Try.forEach` throw it. On a lazy `Stream` these checks run when the element
-  is reached, and forcing the stream again fails the same way rather than skipping the element.
+  is reached. `flatMap`, `iterate(Supplier)`, `unfoldRight`, `cons` and `appendSelf` remember the failure (a flag, or
+  the null result memoised and checked on every read), so forcing the stream again fails the same way without calling
+  the function again. `collect`, `unzip`/`unzip3` and `partitionMap` call the function again on a later force, as
+  they did before: a deterministic function fails the same way, a stateful one may not (the general case of a
+  re-forced `Stream` after a failure is #175).
   A function that produces a plain element, key or value of a collection (`map`, `scan*`, `zipWith`, sequence
   `fill`/`tabulate`, `mapValues`, `mapKeys`, `computeIfAbsent`, `merge`, `replaceAll`, the `keyMapper`/`valueMapper`
   of `toMap`) is not checked by name: the collection's own null check rejects it (`Vector: element is null`,
