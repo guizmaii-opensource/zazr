@@ -1,6 +1,6 @@
 # Collections
 
-Every Zazr collection (in `com.guizmaii.zazr.collection`) is immutable and persistent: an operation returns a new
+Every Zazr collection (in `dev.zazr.collection`) is immutable and persistent: an operation returns a new
 collection that shares what it can with the old one, which never changes. Full pages:
 https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexity/.
 

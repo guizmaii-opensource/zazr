@@ -75,7 +75,7 @@ Maven:
 </repositories>
 
 <dependency>
-    <groupId>com.guizmaii</groupId>
+    <groupId>dev.zazr</groupId>
     <artifactId>zazr-core</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 </dependency>
@@ -89,11 +89,11 @@ repositories {
 }
 
 dependencies {
-    implementation("com.guizmaii:zazr-core:0.1.0-SNAPSHOT")
+    implementation("dev.zazr:zazr-core:0.1.0-SNAPSHOT")
 }
 ```
 
-`com.guizmaii:zazr-test` adds property-based testing (`Gen`, `Check`) and ready-made laws.
+`dev.zazr:zazr-test` adds property-based testing (`Gen`, `Check`) and ready-made laws.
 
 ## A short tour
 

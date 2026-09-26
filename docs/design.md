@@ -279,18 +279,18 @@ documented as a return type only. `Option` stays, with `toOptional()`/`fromOptio
 which is also when the category-theory prose is scrubbed (3.3).
 
 **Internal types live in `.internal` packages (decided, #73).** The API packages hold the API and nothing else:
-`com.guizmaii.zazr.collection` had ten package-private top-level types (`Iterator`, `AbstractIterator`,
+`dev.zazr.collection` had ten package-private top-level types (`Iterator`, `AbstractIterator`,
 `BitMappedTrie`, `HashArrayMappedTrie`, `RedBlackTree`, `Collections`, `Maps`, `Comparators`, `JavaConverters`, the
 generated `ArrayType`) and `*Module` helper interfaces at the bottom of the public files. The convention:
-collection internals go to `com.guizmaii.zazr.collection.internal`, everything else to `com.guizmaii.zazr.internal`
+collection internals go to `dev.zazr.collection.internal`, everything else to `dev.zazr.internal`
 (next to `Throwables`; `TryModule` is there). Each `*Module` helper has its own file (`VectorModule`, `ListModule`,
 `StreamModule`, `TraversableModule`, `IteratorModule`, `HashArrayMappedTrieModule`, `RedBlackTreeModule`,
 `TryModule`), and `BitMappedTrie`'s `LeafVisitor` got its own file too (both since deleted with the trie, 3.8).
 An internal type is `public` where the public packages call it, and so are the members they call; the packages are
-never exported (`module-info.java` exports exactly `com.guizmaii.zazr`, `com.guizmaii.zazr.collection` and
-`com.guizmaii.zazr.control`), the javadoc build excludes them (`excludePackageNames` `*.internal:*.internal.*` in the
+never exported (`module-info.java` exports exactly `dev.zazr`, `dev.zazr.collection` and
+`dev.zazr.control`), the javadoc build excludes them (`excludePackageNames` `*.internal:*.internal.*` in the
 root `pom.xml`), each has a `package-info.java` saying it is not API and may change without notice, and both are
-`@NullMarked` like the API packages (NullAway's `AnnotatedPackages=com.guizmaii.zazr` already covers them). No public
+`@NullMarked` like the API packages (NullAway's `AnnotatedPackages=dev.zazr` already covers them). No public
 or protected signature of an exported type names an internal type: checked on the compiled classes (`javap
 -protected` over the three exported packages, public types only, has no `.internal.`), since a source grep would
 miss simple-name imports. The tests of internal types (`IteratorTest`, `RedBlackTreeTest`, `HashArrayMappedTrieTest`,
@@ -932,7 +932,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `Collection`, so it cannot be the override), and the `java.util.Map` views of 3.1 take the name `asJavaMap()` in
   #26; the set views stay `asJava()` (a `java.util.Set` is a `Collection`).
 - **The Zazr `Iterator` leaves the public API** (decided): `interface Iterator<T> extends java.util.Iterator<T>,
-  Iterable<T>` is package-private in `com.guizmaii.zazr.collection` (an unexported `collection.internal` type since
+  Iterable<T>` is package-private in `dev.zazr.collection` (an unexported `collection.internal` type since
   #73, 3.1), no longer a `Traversable`, and keeps only what
   the internals compose: the `range*`/`from`/`continually`/`iterate`/`unfold*`/`tabulate`/`fill`/`concat`/`of`/`ofAll`
   factories, the lazy `map`, `filter`, `collect`, `flatMap`, `take*`, `drop*`, `zip*`, `intersperse`,
@@ -1343,7 +1343,7 @@ existing `BitMappedTrie`, with JMH numbers; the finger tree is reconsidered only
 **Step 1 (#74): the finger tree ported as an internal structure.** #74 (decided 2026-09-25) lifts the deferral above:
 `Vector` moves to the finger tree, in stacked steps. Step 1 adds the port next to `BitMappedTrie` without switching
 `Vector` over. The source is `scala/collection/immutable/Vector.scala` from Scala 2.13.18. The Scala 3 standard library
-ships that file unchanged, so this is the Scala 3 `Vector`. The port is in `com.guizmaii.zazr.collection.internal`:
+ships that file unchanged, so this is the Scala 3 `Vector`. The port is in `dev.zazr.collection.internal`:
 - `RadixVector` is a sealed abstract class, with `Vector0`..`Vector6` as nested final classes. `BigVector` is the sealed
   intermediate that carries `suffix1` and `length0`, as in Scala.
 - `VectorBuilder`, `VectorSliceBuilder` and `VectorStatics` keep their Scala names. `VectorStatics` also holds what
@@ -1699,7 +1699,7 @@ deleted. Attribution in `NOTICE`.
   method with no representable answer for a stored null (PR #47 had to make them throw). The JDK's own
   immutable collections (`List.of`, `Set.of`, `Map.of`) reject null since Java 9, and "absence is an
   `Option`, not a null" is the library's message. Every constructor, factory, `ofAll`, builder, insertion
-  and update path under `com.guizmaii.zazr.collection` throws `NullPointerException` on a null element,
+  and update path under `dev.zazr.collection` throws `NullPointerException` on a null element,
   key or value; the entry-level detours and the "throws on a stored null" javadoc from #47 are then
   removed. Tuples are not collections and keep allowing null components.
   Same for `Right(null)`, `Success(null)`, `Valid(null)`: records with `requireNonNull` in the compact
@@ -1827,7 +1827,7 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
 
 ### 3.14 `Using` and `Using.Manager` (decided 2026-09-25)
 
-`Try.withResources` is removed and replaced by `com.guizmaii.zazr.control.Using`, a port of `scala.util.Using` from
+`Try.withResources` is removed and replaced by `dev.zazr.control.Using`, a port of `scala.util.Using` from
 the Scala 3 standard library (which ships the Scala 2.13 library's `Using` unchanged;
 [source](https://github.com/scala/scala/blob/2.13.x/src/library/scala/util/Using.scala)). `withResources` handled one
 resource, nesting for more, and let `try`-with-resources pick which exception surfaced; `Using` adds a manager for
@@ -1947,7 +1947,8 @@ unreleased).
 
 ## 4. Build, tooling, packaging
 
-- **Package rename (decided)**: `io.vavr` → `com.guizmaii.zazr` (`com.guizmaii.zazr.collection`, `.control`), module `com.guizmaii.zazr`, Maven groupId `com.guizmaii`,
+- **Package rename (decided)**: `io.vavr` → `dev.zazr` (`dev.zazr.collection`, `.control`), module `dev.zazr`, Maven groupId `dev.zazr`
+  (the namespace follows the `zazr.dev` domain, decided 2026-09-26, before 0.1.0),
   Maven coordinates changed so the fork can never be confused with Vavr on a classpath. Do this in the
   first commit; every later diff is then unambiguous.
 - **Generator**: keep `Generator.scala` but shrink it to `Tuple0..8` (records), `Function3..8`,
@@ -1964,8 +1965,8 @@ unreleased).
 
   | module | artifact | content |
   |---|---|---|
-  | `zazr-core` | `com.guizmaii:zazr-core` | everything in this document |
-  | `zazr-test` | `com.guizmaii:zazr-test` | property-based testing (`Gen`, `Check`, 3.15) + law suites (below); depends on `zazr-core`. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
+  | `zazr-core` | `dev.zazr:zazr-core` | everything in this document |
+  | `zazr-test` | `dev.zazr:zazr-test` | property-based testing (`Gen`, `Check`, 3.15) + law suites (below); depends on `zazr-core`. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
 
   Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
@@ -1975,7 +1976,7 @@ unreleased).
   from history (`git checkout da4baffb8^ -- vavr-test`: `Gen`, `Arbitrary`, `Checkable`, `CheckResult`,
   a generated `Property` with `forAll(a1..a8).suchThat(...).implies(...).check(random, size, tries)`,
   6,218 lines incl. tests) and adapt it:
-  - rename to `com.guizmaii.zazr.test`; `CheckResult` becomes a sealed interface with records
+  - rename to `dev.zazr.test`; `CheckResult` becomes a sealed interface with records
     `Satisfied`, `Falsified`, `Erroneous`; `Property.def(name)` → `Property.named(name)`;
     `suchThat` keeps its name (it reads well); `Gen.peek` → `tap`, `Gen.transform` deleted, per 3.3.
   - `Arbitrary`/`Gen` instances for every Zazr type: `option`, `either`, `try`, `validation`, `lazy`,
@@ -1998,8 +1999,8 @@ unreleased).
   aggregated HTML report (generated `src-gen` sources included, `zazr-benchmark` excluded); a CI job on JDK 25
   uploads it as an artifact and puts the line and branch coverage per module and package in the job summary. No
   threshold fails the build yet; one is chosen from the measured numbers.
-- **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `com.guizmaii:zazr-core`
-  (parent `com.guizmaii:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
+- **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `dev.zazr:zazr-core`
+  (parent `dev.zazr:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`
   (or by dispatching the `release` workflow with that tag): the workflow sets the Maven version from the
   tag with `versions:set`, signs with the imported PGP key and deploys with `-Pmaven-central-release`.
@@ -2037,7 +2038,7 @@ unreleased).
   the javadoc too, so the guide tables and the javadoc are written from the same source of truth.
 - **README rewrite** (decided): the current one is Vavr's (1.0.1 coordinates, Vavr badges, stargazer chart,
   "led and maintained by" line). The Zazr README states the fork's purpose in the terms of section 2,
-  the JDK 25+ requirement, the `com.guizmaii:zazr` coordinates, a ten-line tour (`switch` over
+  the JDK 25+ requirement, the `dev.zazr:zazr` coordinates, a ten-line tour (`switch` over
   `Validation`, `zip` at arity N, `NonEmptyVector`, `Vector.newBuilder()`), the list of things it does
   *not* have compared to Vavr with a pointer to this document, and the Apache-2.0 attribution to Vavr.
 
@@ -2054,7 +2055,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | # | item | design | after |
 |---|---|---|---|
 | #11 | Mono-repo layout: `zazr-core`, `zazr-test`, `zazr-benchmark` | 4 | |
-| #12 | Rename to `com.guizmaii.zazr` | 4 | #11 |
+| #12 | Rename to `dev.zazr` | 4 | #11 |
 | #13 | Delete the Match API and its helpers | 3.1 | #12 |
 | #14 | Delete `io.vavr.concurrent` | 3.10 | |
 | #15 | Delete `Array`, `CharSeq`, `Tree`, `BitSet`, `PriorityQueue`, `Multimap*` | 3.7 | |
@@ -2068,7 +2069,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #23 | Generated `zip`/`zipWith` at arities 2..8 | 3.4 | #22 |
 | #24 | Remove `Seq`; concrete collection APIs; complexity notes. Done in three stacked steps: #66 (`Vector` declares its own API, `IndexedSeq` deleted; PR #69), #67 (`List`, `Queue`, `Stream`; `Seq`, `LinearSeq` deleted; PR #70), #68 (`Traversable` slimmed to the 3.7 list, `Foldable`/`Ordered` deleted, `Map`/`Set` lose the sequence methods, `Iterator` leaves the public API, own-type `grouped`/`sliding`/`crossProduct`) | 3.7 | #20 |
 | #72 | Positional subset on the ordered sets and maps: `SortedSet`/`SortedMap` (rank split of the red-black tree), `LinkedHashSet`/`LinkedHashMap` (slice of the insertion order) | 3.7 | #24 |
-| #73 | Internal types move to `.internal` packages: `collection.internal` for the collection internals, `com.guizmaii.zazr.internal` for the rest | 3.1 | #72 |
+| #73 | Internal types move to `.internal` packages: `collection.internal` for the collection internals, `dev.zazr.internal` for the rest | 3.1 | #72 |
 | #25 | `partitionMap`, `duplicates`, static `flatten` | 3.7 | #24, #21 |
 | #26 | `asJava` views for every collection (`asJavaMap` for the maps); the `toJava*` copies deleted | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |

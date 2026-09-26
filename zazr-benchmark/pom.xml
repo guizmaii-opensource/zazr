@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.guizmaii</groupId>
+        <groupId>dev.zazr</groupId>
         <artifactId>zazr-parent</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -94,7 +94,7 @@
     </build>
 
     <profiles>
-        <!-- `make bench`: runs com.guizmaii.zazr.JmhRunner against the test classpath's JMH-generated benchmarks. -->
+        <!-- `make bench`: runs dev.zazr.JmhRunner against the test classpath's JMH-generated benchmarks. -->
         <profile>
             <id>benchmark</id>
             <build>
@@ -115,7 +115,7 @@
                                     <arguments>
                                         <argument>-classpath</argument>
                                         <classpath/>
-                                        <argument>com.guizmaii.zazr.JmhRunner</argument>
+                                        <argument>dev.zazr.JmhRunner</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

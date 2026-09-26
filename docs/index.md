@@ -214,7 +214,7 @@ JDK 25 or later, no runtime dependencies. Snapshots of `main` are on Maven Centr
     </repositories>
 
     <dependency>
-        <groupId>com.guizmaii</groupId>
+        <groupId>dev.zazr</groupId>
         <artifactId>zazr-core</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </dependency>
@@ -228,11 +228,11 @@ JDK 25 or later, no runtime dependencies. Snapshots of `main` are on Maven Centr
     }
 
     dependencies {
-        implementation("com.guizmaii:zazr-core:0.1.0-SNAPSHOT")
+        implementation("dev.zazr:zazr-core:0.1.0-SNAPSHOT")
     }
     ```
 
-`com.guizmaii:zazr-test` adds property-based testing; see [Testing with zazr-test](testing.md).
+`dev.zazr:zazr-test` adds property-based testing; see [Testing with zazr-test](testing.md).
 
 [Get started :octicons-arrow-right-24:](getting-started.md){ .md-button .md-button--primary }
 

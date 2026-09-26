@@ -1,7 +1,7 @@
 package outside_of_zazr;
 
-import com.guizmaii.zazr.collection.HashMap;
-import com.guizmaii.zazr.collection.Vector;
+import dev.zazr.collection.HashMap;
+import dev.zazr.collection.Vector;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Test;
 

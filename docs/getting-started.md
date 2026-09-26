@@ -28,7 +28,7 @@ between them.
     </repositories>
 
     <dependency>
-        <groupId>com.guizmaii</groupId>
+        <groupId>dev.zazr</groupId>
         <artifactId>zazr-core</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </dependency>
@@ -42,20 +42,20 @@ between them.
     }
 
     dependencies {
-        implementation("com.guizmaii:zazr-core:0.1.0-SNAPSHOT")
+        implementation("dev.zazr:zazr-core:0.1.0-SNAPSHOT")
     }
     ```
 
-If your project uses Java modules (a `module-info.java`), add `requires com.guizmaii.zazr;` to it. Projects
+If your project uses Java modules (a `module-info.java`), add `requires dev.zazr;` to it. Projects
 without a `module-info.java` need nothing more.
 
 ## Where things are
 
 | Package | Types |
 |---|---|
-| `com.guizmaii.zazr.control` | `Option`, `Either`, `Try`, `Validation` |
-| `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap` |
-| `com.guizmaii.zazr` | `Lazy`, `Tuple` and `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
+| `dev.zazr.control` | `Option`, `Either`, `Try`, `Validation` |
+| `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap` |
+| `dev.zazr` | `Lazy`, `Tuple` and `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
 `List` and `Stream` share their names with `java.util.List` and `java.util.stream.Stream`: import the Zazr ones and
 spell the JDK ones out, as the examples on this site do.

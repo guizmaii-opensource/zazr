@@ -1,0 +1,244 @@
+package dev.zazr.test.laws;
+
+import dev.zazr.Tuple2;
+import dev.zazr.collection.HashMap;
+import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LinkedHashMap;
+import dev.zazr.collection.LinkedHashSet;
+import dev.zazr.collection.List;
+import dev.zazr.collection.Queue;
+import dev.zazr.collection.Stream;
+import dev.zazr.collection.TreeMap;
+import dev.zazr.collection.TreeSet;
+import dev.zazr.collection.Vector;
+import dev.zazr.test.Check;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
+/**
+ * The contracts every collection keeps: {@code size}, {@code toList}, the iteration order, and an {@code equals}
+ * decided by the elements alone (in order for the sequences, as a set for the sets and maps), across the types of one family.
+ */
+public final class CollectionLaws {
+
+    private CollectionLaws() {
+    }
+
+    /**
+     * {@code size()} equals the number of elements the iterator returns.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sizeEqualsIterationCount() {
+        return Law.of("sizeEqualsIterationCount", (subject, config) -> Check.check(config, subject.values(),
+                fa -> Results.equal(subject.size().applyAsInt(fa), elements(fa).size())));
+    }
+
+    /**
+     * {@code toList()} holds the elements in iteration order, and {@code ofAll(fa.toList())} equals {@code fa}.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> toListRoundTrip() {
+        return Law.of("toListRoundTrip", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final List<T> list = subject.toList().apply(fa);
+            return Results.equal(elements(list), elements(fa)) && Results.equal(subject.ofAll().apply(list), fa);
+        }));
+    }
+
+    /**
+     * For collections {@code a} and {@code b}: {@code a.equals(b)} holds exactly when both have the same elements
+     * (in the same order for a sequence), and equal collections have equal hash codes. Besides an independent
+     * {@code b}, it compares {@code a} with its elements reversed and with its first element dropped.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> equalsAgreesWithElements() {
+        return Law.of("equalsAgreesWithElements", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                (a, b) -> {
+                    final ArrayList<T> reversed = elements(a);
+                    Collections.reverse(reversed);
+                    final ArrayList<T> dropped = elements(a);
+                    if (!dropped.isEmpty()) {
+                        dropped.removeFirst();
+                    }
+                    return agrees(subject, a, b) && agrees(subject, a, subject.ofAll().apply(reversed))
+                            && agrees(subject, a, subject.ofAll().apply(dropped));
+                }));
+    }
+
+    /**
+     * A collection built by {@code ofAll} iterates in the subject's {@link IterationOrder}: input order for a
+     * sequence, first occurrence for an insertion-ordered set, sorted for a sorted set, and so on. The input is the
+     * elements of one collection followed by those of another, reversed, so that it repeats elements. A subject
+     * without an order satisfies the law.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> iterationOrder() {
+        return Law.of("iterationOrder", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+                (a, b) -> {
+                    final ArrayList<T> input = elements(a);
+                    final ArrayList<T> second = elements(b);
+                    Collections.reverse(second);
+                    input.addAll(second);
+                    return subject.order()
+                            .map(order -> Results.equal(elements(subject.ofAll().apply(input)), order.of(input)))
+                            .getOrElse(true);
+                }));
+    }
+
+    /**
+     * A sequence equals a {@code Vector}, a {@code List}, a {@code Queue} and a {@code Stream} of the same elements
+     * in the same order, both ways, with the same hash code, and never equals a set.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sequenceEqualsAcrossTypes() {
+        return Law.of("sequenceEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final ArrayList<T> xs = elements(fa);
+            return allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), Stream.ofAll(xs))
+                    && noneEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs));
+        }));
+    }
+
+    /**
+     * A set equals a {@code HashSet}, a {@code LinkedHashSet} and (for comparable elements) a {@code TreeSet} of the
+     * same elements, both ways, with the same hash code, and never equals a sequence.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law
+     */
+    public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> setEqualsAcrossTypes() {
+        return Law.of("setEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final ArrayList<T> xs = elements(fa);
+            return allEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs))
+                    && (!comparable(xs) || allEqual(fa, treeSet(xs)))
+                    && noneEqual(fa, Vector.ofAll(xs), List.ofAll(xs));
+        }));
+    }
+
+    /**
+     * A map equals a {@code HashMap}, a {@code LinkedHashMap} and (for comparable keys) a {@code TreeMap} of the same
+     * entries, both ways, with the same hash code, and never equals the sequence of its entries.
+     *
+     * @param <T> the entry type
+     * @param <F> the map type
+     * @return the law
+     */
+    public static <T extends Tuple2<?, ?>, F extends Iterable<T>> Law<CollectionSubject<T, F>> mapEqualsAcrossTypes() {
+        return Law.of("mapEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+            final ArrayList<T> entries = elements(fa);
+            return allEqual(fa, HashMap.ofEntries(entries), LinkedHashMap.ofEntries(entries))
+                    && (!comparable(entries.stream().map(Tuple2::_1).toList()) || allEqual(fa, treeMap(entries)))
+                    && noneEqual(fa, Vector.ofAll(entries));
+        }));
+    }
+
+    /**
+     * {@link #sizeEqualsIterationCount()}, {@link #toListRoundTrip()}, {@link #equalsAgreesWithElements()} and
+     * {@link #iterationOrder()}.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law set
+     */
+    public static <T, F extends Iterable<T>> Laws<CollectionSubject<T, F>> all() {
+        return Laws.of(sizeEqualsIterationCount(), toListRoundTrip(), equalsAgreesWithElements(), iterationOrder());
+    }
+
+    /**
+     * {@link #all()} and {@link #sequenceEqualsAcrossTypes()}.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law set
+     */
+    public static <T, F extends Iterable<T>> Laws<CollectionSubject<T, F>> sequence() {
+        return CollectionLaws.<T, F>all().and(sequenceEqualsAcrossTypes());
+    }
+
+    /**
+     * {@link #all()} and {@link #setEqualsAcrossTypes()}.
+     *
+     * @param <T> the element type
+     * @param <F> the collection type
+     * @return the law set
+     */
+    public static <T, F extends Iterable<T>> Laws<CollectionSubject<T, F>> set() {
+        return CollectionLaws.<T, F>all().and(setEqualsAcrossTypes());
+    }
+
+    /**
+     * {@link #all()} and {@link #mapEqualsAcrossTypes()}.
+     *
+     * @param <T> the entry type
+     * @param <F> the map type
+     * @return the law set
+     */
+    public static <T extends Tuple2<?, ?>, F extends Iterable<T>> Laws<CollectionSubject<T, F>> map() {
+        return CollectionLaws.<T, F>all().and(mapEqualsAcrossTypes());
+    }
+
+    // -- helpers
+
+    static <T> ArrayList<T> elements(Iterable<T> iterable) {
+        final ArrayList<T> elements = new ArrayList<>();
+        iterable.forEach(elements::add);
+        return elements;
+    }
+
+    private static <T, F extends Iterable<T>> boolean agrees(CollectionSubject<T, F> subject, F a, F b) {
+        final boolean expected = subject.ordered()
+                ? elements(a).equals(elements(b))
+                : new java.util.HashSet<>(elements(a)).equals(new java.util.HashSet<>(elements(b)));
+        return Results.check(a.equals(b) == expected, () -> a + (expected ? " differs from " : " equals ") + b)
+                && EqualityLaws.consistent(a, b);
+    }
+
+    private static boolean allEqual(Object fa, Object... others) {
+        for (Object other : others) {
+            Results.check(fa.equals(other) && other.equals(fa), () -> fa + " differs from " + other + " of the same elements");
+            EqualityLaws.consistent(fa, other);
+        }
+        return true;
+    }
+
+    private static boolean noneEqual(Object fa, Object... others) {
+        for (Object other : others) {
+            Results.check(!fa.equals(other) && !other.equals(fa),
+                    () -> fa + " equals " + other.getClass().getSimpleName() + " " + other);
+        }
+        return true;
+    }
+
+    private static boolean comparable(java.util.List<?> xs) {
+        if (xs.isEmpty()) {
+            return true;
+        }
+        final Class<?> type = xs.getFirst().getClass();
+        return Comparable.class.isAssignableFrom(type) && xs.stream().allMatch(x -> x.getClass() == type);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static TreeSet<?> treeSet(ArrayList<?> xs) {
+        return TreeSet.ofAll((Iterable) xs);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static TreeMap<?, ?> treeMap(ArrayList<? extends Tuple2<?, ?>> entries) {
+        return TreeMap.ofEntries((Iterable) entries);
+    }
+}

@@ -4,7 +4,7 @@ description: Property-based testing with zazr-test - Gen generators, Check, Chec
 
 # Testing with `zazr-test`
 
-`com.guizmaii:zazr-test` checks properties against generated values. You state what must hold for every value; it
+`dev.zazr:zazr-test` checks properties against generated values. You state what must hold for every value; it
 generates a few hundred values and reports the first one that breaks the rule.
 
 A check is a method call that returns a result, so it runs in any test framework, such as JUnit.
@@ -13,7 +13,7 @@ A check is a method call that returns a result, so it runs in any test framework
 
     ```xml
     <dependency>
-        <groupId>com.guizmaii</groupId>
+        <groupId>dev.zazr</groupId>
         <artifactId>zazr-test</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <scope>test</scope>
@@ -24,7 +24,7 @@ A check is a method call that returns a result, so it runs in any test framework
 
     ```kotlin
     dependencies {
-        testImplementation("com.guizmaii:zazr-test:0.1.0-SNAPSHOT")
+        testImplementation("dev.zazr:zazr-test:0.1.0-SNAPSHOT")
     }
     ```
 
@@ -64,7 +64,7 @@ framework reports the `AssertionError`.
 
 ## The types
 
-Four types, all in `com.guizmaii.zazr.test`:
+Four types, all in `dev.zazr.test`:
 
 | Type | Role |
 |---|---|
@@ -311,7 +311,7 @@ collection generators build each value in several ways, so your properties meet 
 ## Laws
 
 A law is a named rule that every value of a type must satisfy, such as `mapIdentity`: mapping the identity function
-changes nothing. The package `com.guizmaii.zazr.test.laws` states each law once, and you check it against any type.
+changes nothing. The package `dev.zazr.test.laws` states each law once, and you check it against any type.
 
 A law set groups laws. `MapLaws.all()` is `mapIdentity` and `mapComposition`; `and` joins two laws or two sets.
 
