@@ -26,7 +26,7 @@ public final class FlatMapLaws {
     public static <F> Law<FlatMapSubject<F>> flatMapAssociativity() {
         return Law.of("flatMapAssociativity", (subject, config) -> {
             final Gen<Function<Object, F>> functions = functions(subject);
-            return Check.check(config, subject.values(), functions, functions, (fa, f, g) -> Results.equal(
+            return Check.evaluate(config, subject.values(), functions, functions, (fa, f, g) -> Results.equal(
                     subject.flatMap(subject.flatMap(fa, f), g),
                     subject.flatMap(fa, x -> subject.flatMap(f.apply(x), g))));
         });
@@ -39,7 +39,7 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> flatMapLeftIdentity() {
-        return Law.of("flatMapLeftIdentity", (subject, config) -> Check.check(config, Values.integers(), functions(subject),
+        return Law.of("flatMapLeftIdentity", (subject, config) -> Check.evaluate(config, Values.integers(), functions(subject),
                 (a, f) -> Results.equal(subject.flatMap(subject.succeed(a), f), f.apply(a))));
     }
 
@@ -50,7 +50,7 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> flatMapRightIdentity() {
-        return Law.of("flatMapRightIdentity", (subject, config) -> Check.check(config, subject.values(),
+        return Law.of("flatMapRightIdentity", (subject, config) -> Check.evaluate(config, subject.values(),
                 fa -> Results.equal(subject.flatMap(fa, subject::succeed), fa)));
     }
 
@@ -61,7 +61,7 @@ public final class FlatMapLaws {
      * @return the law
      */
     public static <F> Law<FlatMapSubject<F>> mapIsFlatMapSucceed() {
-        return Law.of("mapIsFlatMapSucceed", (subject, config) -> Check.check(config, subject.values(), Functions.integers(),
+        return Law.of("mapIsFlatMapSucceed", (subject, config) -> Check.evaluate(config, subject.values(), Functions.integers(),
                 (fa, f) -> Results.equal(subject.map(fa, f), subject.flatMap(fa, x -> subject.succeed(f.apply(x))))));
     }
 

@@ -74,7 +74,7 @@ class GenTest {
     @Test
     void aNullValueReachesTheCheckButNotAList() {
         final java.util.List<Object> seen = new ArrayList<>();
-        Check.checkAll(Gen.fromIterable(Arrays.asList(1, null)), value -> seen.add(value)).assertIsSatisfied();
+        Check.checkAll(Gen.fromIterable(Arrays.asList(1, null)), value -> seen.add(value));
         assertThat(seen).containsExactly(1, null);
         assertThatThrownBy(() -> pass(Gen.constant(null))).isInstanceOf(NullPointerException.class);
     }
@@ -675,7 +675,7 @@ class GenTest {
                 .hasMessage("the generator produced no value: 11 discards since the last sample, more than the discard budget of 10");
         final Gen<Character> firstLetters = Gen.strings(Gen.alphaChars()).filter(s -> !s.isEmpty()).map(s -> s.charAt(0));
         assertThatThrownBy(() -> Gen.stringsN(5, firstLetters).runCollect(config(1).withSize(0))).isInstanceOf(IllegalStateException.class);
-        final CheckResult result = Check.check(config(1),
+        final CheckResult result = Check.evaluate(config(1),
                 Gen.stringsN(1, Gen.sized(n -> Gen.constant((char) (int) n)).filter(c -> c > 150)).map(s -> (int) s.charAt(0)), x -> x <= 100);
         assertThat(result.isErroneous()).as(result.toString()).isTrue();
     }
