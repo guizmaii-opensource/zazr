@@ -1,10 +1,10 @@
 ---
 name: zazr
 description: >-
-  Writes idiomatic Java 25 code with Zazr (package com.guizmaii.zazr, Maven artifact com.guizmaii:zazr-core), a
+  Writes idiomatic Java 25 code with Zazr (package dev.zazr, Maven artifact dev.zazr:zazr-core), a
   library of immutable collections and functional types forked from Vavr: Option, Either, Try, Validation, Lazy,
   Using, Vector, NonEmptyVector, List, Queue, Stream, HashSet, TreeSet, HashMap, TreeMap. Use it when the code
-  imports com.guizmaii.zazr, when porting Vavr code to Zazr, or when the user asks for immutable or persistent
+  imports dev.zazr, when porting Vavr code to Zazr, or when the user asks for immutable or persistent
   collections, Option, Either or Validation, errors as values, or functional-style code in Java 25.
 license: Apache-2.0
 ---
@@ -17,7 +17,7 @@ matching. Its names come from ZIO and its collections from Scala's. Website: htt
 
 ## When to use this skill
 
-- The code imports `com.guizmaii.zazr`, or the build depends on `com.guizmaii:zazr-core`.
+- The code imports `dev.zazr`, or the build depends on `dev.zazr:zazr-core`.
 - The user wants immutable collections, `Option`/`Either`/`Validation`, or errors as values in Java.
 - The code is being moved from Vavr (`io.vavr`) to Zazr.
 
@@ -25,12 +25,12 @@ matching. Its names come from ZIO and its collections from Scala's. Website: htt
 
 | Package | Types |
 |---|---|
-| `com.guizmaii.zazr.control` | `Option` (`Some`, `None`), `Either` (`Left`, `Right`), `Try` (`Success`, `Failure`), `Validation` (`Valid`, `Invalid`), `Using` |
-| `com.guizmaii.zazr.collection` | `Vector`, `NonEmptyVector`, `List` (`Cons`, `Nil`), `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap`, `Traversable` |
-| `com.guizmaii.zazr` | `Lazy`, `Tuple`, `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
+| `dev.zazr.control` | `Option` (`Some`, `None`), `Either` (`Left`, `Right`), `Try` (`Success`, `Failure`), `Validation` (`Valid`, `Invalid`), `Using` |
+| `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List` (`Cons`, `Nil`), `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap`, `Traversable` |
+| `dev.zazr` | `Lazy`, `Tuple`, `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
-The cases are nested records: `import com.guizmaii.zazr.control.Option.Some;`. With a `module-info.java`, add
-`requires com.guizmaii.zazr;`.
+The cases are nested records: `import dev.zazr.control.Option.Some;`. With a `module-info.java`, add
+`requires dev.zazr;`.
 
 ## The ten rules
 
@@ -97,4 +97,4 @@ Read the one that matches the task:
 - [references/functional-java.md](references/functional-java.md): how to write functional Java 25, with Zazr as
   the toolkit.
 
-For tests, `com.guizmaii:zazr-test` adds property-based testing; see https://zazr.dev/testing/.
+For tests, `dev.zazr:zazr-test` adds property-based testing; see https://zazr.dev/testing/.

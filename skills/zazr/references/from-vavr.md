@@ -7,7 +7,7 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 
 | Not this (Vavr) | This (Zazr) |
 |---|---|
-| `import io.vavr.control.Option` | `import com.guizmaii.zazr.control.Option` (collections in `com.guizmaii.zazr.collection`, `Lazy` and tuples in `com.guizmaii.zazr`) |
+| `import io.vavr.control.Option` | `import dev.zazr.control.Option` (collections in `dev.zazr.collection`, `Lazy` and tuples in `dev.zazr`) |
 | `Option.of(nullable)` | `Option.ofNullable(nullable)`, or `Option.some(value)` for a value that is never `null` |
 | `Match(x).of(Case($Some($()), ...), Case($None(), ...))` | a `switch` expression with record patterns: `case Some(var v) ->`, `case None() ->` |
 | `API.For(a, b).yield(f)` | `Option.zipWith(a, b, f)` (static, 2 to 8 values), or `flatMap` when a step needs the previous one |

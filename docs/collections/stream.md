@@ -7,7 +7,7 @@ description: Stream, the lazy list that keeps what it computed - possibly infini
 A lazy list that remembers what it computed. The first element is computed when the `Stream` is built, each of the
 others when it is first reached, and then kept. It can be infinite.
 
-Its name clashes with `java.util.stream.Stream`: import `com.guizmaii.zazr.collection.Stream`, and write the JDK one
+Its name clashes with `java.util.stream.Stream`: import `dev.zazr.collection.Stream`, and write the JDK one
 in full when you need both.
 
 ## When to choose it

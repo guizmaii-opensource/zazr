@@ -46,7 +46,7 @@ throw, `Try` gives a `Failure`, `Lazy` holds `null`.
 
 ## Tuples
 
-`Tuple2` to `Tuple8` (in `com.guizmaii.zazr`) are records: read them with `_1()`, `_2()`, or take them apart with a
+`Tuple2` to `Tuple8` (in `dev.zazr`) are records: read them with `_1()`, `_2()`, or take them apart with a
 record pattern.
 
 ```java
