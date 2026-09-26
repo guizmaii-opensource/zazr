@@ -19,7 +19,8 @@
 //      `java.util.stream.Stream` keeps its bare `Stream` (there it is the JDK type). The bare word `Stream`, its plural,
 //      the Zazr identifiers made from it (`StreamModule`, `toStream`, `Stream...Tests`, ...), the zazr-test generator
 //      `Gen.stream`, and the site links to the page are renamed.
-//   3. It prints the occurrences of `Stream` left in identifiers, for review: they name the JDK type or `stream()`.
+//   3. It rewords the few sentences of the site and the skill about the name clash, which the rename makes untrue.
+//   4. It prints the occurrences of `Stream` left in identifiers, for review: they name the JDK type or `stream()`.
 //
 // Deliberately kept: `java.util.stream.*` (`Stream`, `IntStream`, `LongStream`, `DoubleStream`, `StreamSupport`,
 // `Collector`), `stream()` and `parallelStream()` (the JDK conversion) and the variables and parameters named `stream`,
@@ -103,6 +104,51 @@ val Rules: List[Rule] = List(
 val Comment = """^\s*(\*|///)""".r
 val ProseStream = """(?<!@param )(?<!\{@code )(?<!lazily )(?<![`.\w])\bstream(s?)\b(?![(`}\w])(?!\.\w)""".r
 
+// The sentences about the name clash with `java.util.stream.Stream`, which the rename makes untrue, as the rules above
+// leave them and as they are reworded.
+final case class Rewording(path: String, from: String, to: String)
+
+val Rewordings: List[Rewording] = List(
+  Rewording(
+    "docs/collections/lazy-list.md",
+    "Its name clashes with `java.util.stream.Stream`: import `dev.zazr.collection.LazyList`, and write the JDK one\n" +
+      "in full when you need both.\n",
+    "Unlike a `java.util.stream.Stream`, which is a one-shot pipeline, a `LazyList` is a collection: it can be read\n" +
+      "many times, and each read after the first reuses what was computed.\n"
+  ),
+  Rewording(
+    "docs/getting-started.md",
+    "`List` and `LazyList` share their names with `java.util.List` and `java.util.stream.Stream`: import the Zazr ones " +
+      "and\nspell the JDK ones out, as the examples on this site do.",
+    "`List` shares its name with `java.util.List`: import the Zazr one and spell the JDK one out, as the examples on " +
+      "this\nsite do."
+  ),
+  Rewording(
+    "skills/zazr/SKILL.md",
+    "`List` and `LazyList` clash with the JDK names: import Zazr's and write\n" +
+      "   `java.util.List` and `java.util.stream.Stream` in full.",
+    "`List` clashes with `java.util.List`: import Zazr's and write the JDK\n   one in full."
+  ),
+  Rewording(
+    "skills/zazr/references/collections.md",
+    "`List` and `LazyList` clash with `java.util.List` and `java.util.stream.Stream`: import Zazr's, spell the JDK ones " +
+      "out.",
+    "`List` clashes with `java.util.List`: import Zazr's, spell the JDK one out."
+  ),
+  Rewording(
+    "skills/zazr/references/functional-java.md",
+    "Imports: Zazr's `List`, `LazyList`, `Map`, `Set` and `Queue` share their names with JDK types. Import Zazr's and " +
+      "write\nthe JDK ones in full (`java.util.List`, `java.util.stream.Stream`).",
+    "Imports: Zazr's `List`, `Map`, `Set` and `Queue` share their names with JDK types. Import Zazr's and write the " +
+      "JDK\nones in full (`java.util.List`, `java.util.Map`)."
+  ),
+  Rewording(
+    "skills/zazr/references/functional-java.md",
+    "Zazr's `LazyList` is a lazy list that keeps what it computed",
+    "Zazr's `LazyList` keeps what it computed"
+  )
+)
+
 // The redirect kept for the old address of the page.
 val Redirect = "        collections/stream.md: collections/lazy-list.md"
 
@@ -165,7 +211,9 @@ def rewrite(path: String, text: String): String = {
   val lines = text.split("\n", -1).toList.map { line =>
     if (path == "mkdocs.yml" && line == Redirect) line else rewriteLine(path, line, jdkStreamImported)
   }
-  val rewritten = lines.mkString("\n")
+  val rewritten = Rewordings.filter(_.path == path).foldLeft(lines.mkString("\n")) { (text, r) =>
+    text.replace(r.from, r.to)
+  }
   if (path == "mkdocs.yml" && !rewritten.contains(Redirect)) {
     rewritten.replace("      redirect_maps:\n", s"      redirect_maps:\n$Redirect\n")
   } else {
