@@ -560,8 +560,8 @@ class GenTypesTest {
     @Test
     void streamReachesEvaluatedAndUnevaluatedTails() {
         final List<Stream<Integer>> streams = samples(Gen.stream(Gen.integers()));
-        assertSome(streams, s -> !s.isEmpty() && !((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(), "an unevaluated tail");
-        assertSome(streams, s -> !s.isEmpty() && ((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(), "an evaluated tail");
+        assertSome(streams, s -> !s.isEmpty() && !(field(s, Stream.Cons.class, "tail") instanceof Stream<?>), "an unevaluated tail");
+        assertSome(streams, s -> !s.isEmpty() && field(s, Stream.Cons.class, "tail") instanceof Stream<?>, "an evaluated tail");
     }
 
     @Test

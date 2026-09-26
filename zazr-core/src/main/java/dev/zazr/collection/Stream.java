@@ -102,6 +102,11 @@ import org.jspecify.annotations.Nullable;
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
  * {@code ...Option} variant costs what the method it wraps costs. {@code toString} shows only the elements already
  * computed.
+ * <p>
+ * A Stream never changes its contents. Each element is computed once and kept; when computing one throws, the
+ * exception is kept in its place, and every later read of that place throws the same exception instead of computing
+ * it again, so a Stream read from a one-shot source never skips or reorders an element. Only a
+ * {@link VirtualMachineError}, such as a stack overflow, is not kept.
  *
  * @param <T> component type of this Stream
  * @author Daniel Dietrich, Jörgen Andersson, Ruslan Sennov
@@ -1413,7 +1418,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new Stream ending with the given element
      */
     default Stream<T> append(T element) {
-        return isEmpty() ? Stream.of(element) : new Cons.AppendElements<>(head(), dev.zazr.collection.Queue.of(element), this::tail);
+        return isEmpty() ? Stream.of(element) : new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(element));
     }
 
     /**
@@ -3334,17 +3339,76 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     abstract class Cons<T extends @Nullable Object> implements Stream<T> {
 
-        final T head;
-        final Lazy<Stream<T>> tail;
+        // the state of a tail being computed: seeing it again on the thread computing it means the tail needs itself
+        private static final Object EVALUATING = new Object();
 
-        Cons(T head, Supplier<Stream<T>> tail) {
-            this(head, Lazy.of(Objects.requireNonNull(tail, "tail is null")));
+        final T head;
+
+        // null until the tail is computed; then the tail, or a Failure holding what computing it threw. Written only
+        // under the lock of this cell, and never changed once it is a Stream or a Failure.
+        private volatile @Nullable Object tail;
+
+        Cons(T head) {
+            this.head = head;
         }
 
-        // shares an already memoized tail instead of wrapping it in a second Lazy
-        Cons(T head, Lazy<Stream<T>> tail) {
-            this.head = head;
-            this.tail = tail;
+        /// Computes the tail. Called under the lock of this cell, once, or again only after a
+        /// [VirtualMachineError] left the cell as it was.
+        abstract Stream<T> computeTail();
+
+        /// Lets go of what [#computeTail()] needed, once its result or failure is kept.
+        void release() {
+        }
+
+        /// The tail, computed on the first call and kept. A failure is kept too: every later call throws the same
+        /// exception, so a Stream built from a one-shot source never skips or reorders elements after a failed call.
+        /// Only a [VirtualMachineError] (such as a stack overflow) is not kept: the next call computes the tail again.
+        @Override
+        @SuppressWarnings("unchecked")
+        public final Stream<T> tail() {
+            final Object state = tail;
+            return state instanceof Stream<?> ? (Stream<T>) state : evaluateTail();
+        }
+
+        final boolean isTailComputed() {
+            final Object state = tail;
+            return state instanceof Stream<?> || state instanceof Failure;
+        }
+
+        @SuppressWarnings("unchecked")
+        private Stream<T> evaluateTail() {
+            Object state;
+            synchronized (this) {
+                state = tail;
+                if (state == EVALUATING) {
+                    throw new IllegalStateException("Stream: computing this tail needs the tail itself");
+                } else if (state == null) {
+                    tail = EVALUATING;
+                    try {
+                        state = Objects.requireNonNull(computeTail());
+                    } catch (VirtualMachineError error) {
+                        tail = null;
+                        throw error;
+                    } catch (Throwable failure) {
+                        state = new Failure(failure);
+                    }
+                    tail = state;
+                    release();
+                }
+            }
+            if (state instanceof Failure failure) {
+                throw Failure.<RuntimeException> rethrow(failure.cause());
+            }
+            return (Stream<T>) state;
+        }
+
+        // what computing a tail threw, thrown again by every later call
+        private record Failure(Throwable cause) {
+
+            @SuppressWarnings("unchecked")
+            static <E extends Throwable> E rethrow(Throwable cause) throws E {
+                throw (E) cause;
+            }
         }
 
         @Override
@@ -3379,7 +3443,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             while (stream != null && !stream.isEmpty()) {
                 final Cons<T> cons = (Cons<T>) stream;
                 builder.append(cons.head);
-                if (cons.tail.isEvaluated()) {
+                if (cons.tail instanceof Stream<?>) {
                     stream = stream.tail();
                     if (!stream.isEmpty()) {
                         builder.append(", ");
@@ -3394,57 +3458,60 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         private static final class ConsImpl<T extends @Nullable Object> extends Cons<T> {
 
-            ConsImpl(T head, Supplier<Stream<T>> tail) {
-                super(head, tail);
+            // null once the tail is computed or has failed
+            private @Nullable Supplier<Stream<T>> supplier;
+
+            ConsImpl(T head, Supplier<Stream<T>> supplier) {
+                super(head);
+                this.supplier = Objects.requireNonNull(supplier, "tail is null");
             }
 
             @Override
-            public Stream<T> tail() {
-                return Objects.requireNonNull(tail.get(), "Stream.cons: tailSupplier returned null");
+            @SuppressWarnings("NullAway") // computeTail() runs only while the tail is not kept, so supplier is set
+            Stream<T> computeTail() {
+                return Objects.requireNonNull(supplier.get(), "Stream.cons: tailSupplier returned null");
             }
 
+            @Override
+            void release() {
+                supplier = null;
+            }
         }
 
+        // The elements of prefix, a non-empty Stream whose head is this one's, then those of queue.
         private static final class AppendElements<T extends @Nullable Object> extends Cons<T> {
 
+            private final Stream<T> prefix;
             private final dev.zazr.collection.Queue<T> queue;
 
-            AppendElements(T head, dev.zazr.collection.Queue<T> queue, Supplier<Stream<T>> tail) {
-                this(head, queue, Lazy.of(tail));
-            }
-
-            AppendElements(T head, dev.zazr.collection.Queue<T> queue, Lazy<Stream<T>> tail) {
-                super(head, tail);
+            AppendElements(Stream<T> prefix, dev.zazr.collection.Queue<T> queue) {
+                super(prefix.head());
+                this.prefix = prefix;
                 this.queue = queue;
             }
 
             @Override
             public Stream<T> append(T element) {
-                return new AppendElements<>(head, queue.append(element), tail);
+                return new AppendElements<>(prefix, queue.append(element));
             }
 
             @Override
             public Stream<T> appendAll(Iterable<? extends T> elements) {
                 Objects.requireNonNull(elements, "elements is null");
-                return isEmpty() ? Stream.ofAll(queue) : new AppendElements<>(head, queue.appendAll(elements), tail);
+                return new AppendElements<>(prefix, queue.appendAll(elements));
             }
 
             @Override
-            public Stream<T> tail() {
-                final Stream<T> t = tail.get();
-                if (t.isEmpty()) {
+            Stream<T> computeTail() {
+                final Stream<T> rest = prefix.tail();
+                if (rest.isEmpty()) {
                     return Stream.ofAll(queue);
+                } else if (rest instanceof AppendElements<T> nested) {
+                    return new AppendElements<>(nested.prefix, nested.queue.appendAll(queue));
                 } else {
-                    if (t instanceof ConsImpl) {
-                        final ConsImpl<T> c = (ConsImpl<T>) t;
-                        return new AppendElements<>(c.head(), queue, c.tail);
-                    } else {
-                        final AppendElements<T> a = (AppendElements<T>) t;
-                        return new AppendElements<>(a.head(), a.queue.appendAll(queue), a.tail);
-                    }
+                    return new AppendElements<>(rest, queue);
                 }
             }
-
         }
     }
 

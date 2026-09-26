@@ -57,5 +57,8 @@ Every method: [complexity page](complexity.md#stream).
   `crossProduct(power)` are such Streams), `appendAll` and `extend` with a value or a supplier read their whole
   argument right away, so an infinite one never returns. Likewise, `s.prependAll(t)` and `s.insertAll(i, t)` with
   such a `t` read all of `s`.
+- When computing an element throws, the `Stream` keeps the exception in its place: reading that element again throws
+  the same exception, and never skips to the next one. Only a `VirtualMachineError`, such as a stack overflow, lets a
+  later read try again.
 - A `Stream` keeps every element it computed. Holding on to the start of a long `Stream` while walking it keeps all
   of it in memory.
