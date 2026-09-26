@@ -7260,4 +7260,77 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(read.takeRight(3)).isEqualTo(Vector.of(-(LOOP - 3), -(LOOP - 2), -(LOOP - 1)));
         }
     }
+
+    @Nested
+    class InfiniteEqualsTests {
+
+        private Vector<Traversable<Integer>> sequencesOf(Integer... elements) {
+            return Vector.of(List.of(elements), Vector.of(elements), Queue.of(elements), Stream.of(elements),
+                    Stream.of(elements).append(0).init());
+        }
+
+        @Test
+        public void anInfiniteStreamIsNotEqualToAFiniteSequence() {
+            for (Traversable<Integer> finite : sequencesOf(0, 1, 2).appendAll(sequencesOf()).appendAll(sequencesOf(0))) {
+                final Stream<Integer> infinite = Stream.from(0);
+                assertThat(infinite.equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(infinite)).as("%s", finite).isFalse();
+                final Stream<Integer> appended = Stream.of(0).append(1).appendAll(Stream.from(2));
+                assertThat(appended.equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(appended)).as("%s", finite).isFalse();
+            }
+        }
+
+        @Test
+        public void anInfiniteStreamIsNotEqualToAFiniteSequenceThatDiffers() {
+            for (Traversable<Integer> finite : sequencesOf(1, 2)) {
+                assertThat(Stream.from(0).equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(Stream.from(0))).as("%s", finite).isFalse();
+            }
+        }
+
+        @Test
+        public void equalsStopsAtTheFirstDifference() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> stream = Stream.continually(forced::incrementAndGet); // 1, 2, 3, ...
+            assertThat(stream.equals(List.of(1, 2, 9, 4))).isFalse();
+            assertThat(forced.get()).isEqualTo(3);
+            assertThat(Vector.of(1, 2, 3, 4, 9).equals(stream)).isFalse();
+            assertThat(forced.get()).isEqualTo(5);
+        }
+
+        @Test
+        public void equalsStopsOneElementAfterTheEndOfTheShorterSide() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> stream = Stream.continually(forced::incrementAndGet);
+            assertThat(stream.equals(Queue.of(1, 2, 3))).isFalse();
+            // the fourth element answers whether the Stream goes on
+            assertThat(forced.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void twoInfiniteStreamsThatDifferAreNotEqual() {
+            assertThat(Stream.from(0).equals(Stream.from(0).update(1_000, -1))).isFalse();
+            assertThat(Stream.from(0).equals(Stream.from(1))).isFalse();
+        }
+
+        @Test
+        public void finiteSequencesOfEveryTypeAreEqualToAStreamWithTheSameElements() {
+            for (Traversable<Integer> finite : sequencesOf(0, 1, 2)) {
+                for (Traversable<Integer> other : sequencesOf(0, 1, 2)) {
+                    assertThat(finite.equals(other)).as("%s %s", finite, other).isTrue();
+                }
+                for (Traversable<Integer> shorter : sequencesOf(0, 1)) {
+                    assertThat(finite.equals(shorter)).as("%s %s", finite, shorter).isFalse();
+                    assertThat(shorter.equals(finite)).as("%s %s", shorter, finite).isFalse();
+                }
+            }
+        }
+
+        @Test
+        public void aStreamIsEqualToItself() {
+            final Stream<Integer> infinite = Stream.from(0);
+            assertThat(infinite.equals(infinite)).isTrue();
+        }
+    }
 }

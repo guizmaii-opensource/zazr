@@ -97,8 +97,10 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Complexity: a lazy call computes now only what its note says, and each further element when the result reaches it.
  * The methods without a note of their own that read every element (the folds, {@code reduce}, {@code count},
- * {@code sum}, {@code mkString}, {@code forEach}, the conversions to other collections, {@code equals} and
- * {@code hashCode}) are O(n) and never return on an infinite Stream; {@code exists}, {@code forAll}, {@code find} and
+ * {@code sum}, {@code mkString}, {@code forEach}, the conversions to other collections and {@code hashCode}) are O(n)
+ * and never return on an infinite Stream; {@code equals} compares the elements in order and stops at the first
+ * difference or at the end of the shorter side, so it returns when either side is finite, but never on two infinite
+ * Streams with the same elements; {@code exists}, {@code forAll}, {@code find} and
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
  * {@code ...Option} variant costs what the method it wraps costs. {@code toString} shows only the elements already
  * computed.

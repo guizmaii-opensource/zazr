@@ -562,7 +562,7 @@ A Queue keeps its last elements in reverse order (those added at its back since 
 
 ### `Stream`
 
-A lazy call computes now only what its note says, and each further element when the result reaches it. The methods without a note of their own that read every element (the folds, reduce, count, sum, mkString, forEach, the conversions to other collections, equals and hashCode) are O(n) and never return on an infinite Stream; exists, forAll, find and contains stop at the first element that decides, existsUnique at the second match, and each ...Option variant costs what the method it wraps costs. toString shows only the elements already computed.
+A lazy call computes now only what its note says, and each further element when the result reaches it. The methods without a note of their own that read every element (the folds, reduce, count, sum, mkString, forEach, the conversions to other collections and hashCode) are O(n) and never return on an infinite Stream; equals compares the elements in order and stops at the first difference or at the end of the shorter side, so it returns when either side is finite, but never on two infinite Streams with the same elements; exists, forAll, find and contains stop at the first element that decides, existsUnique at the second match, and each ...Option variant costs what the method it wraps costs. toString shows only the elements already computed.
 
 | Method | Cost | Note |
 |---|---|---|
