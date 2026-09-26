@@ -97,4 +97,5 @@ Read the one that matches the task:
 - [references/functional-java.md](references/functional-java.md): how to write functional Java 25, with Zazr as
   the toolkit.
 
-For tests, `dev.zazr:zazr-test` adds property-based testing; see https://zazr.dev/testing/.
+For tests, `dev.zazr:zazr-test` adds property-based testing, with assertions that explain a failure
+(`Check.check(gen, value -> assertThat(value, isSome(isGreaterThan(0))))`); see https://zazr.dev/testing/.

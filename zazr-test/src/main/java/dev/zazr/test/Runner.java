@@ -78,7 +78,7 @@ final class Runner {
      * Checks {@code body} against the samples of {@code gen}: {@code config.samples()} of them, or every value of
      * one pass at the configured size when {@code all} is true.
      */
-    static <T extends Tuple> CheckResult check(CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, Boolean> body, boolean all) {
+    static <T extends Tuple> CheckResult check(CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, ?> body, boolean all) {
         final long seed = config.seed();
         final State state = new State();
         final Gen.Sink<T> sink = sample -> {
@@ -104,14 +104,17 @@ final class Runner {
         CheckResult failure;
     }
 
-    /// The failure of one sample, or null when it passed.
-    private static <T extends Tuple> CheckResult evaluate(int sampleNumber, long seed, T sample, CheckedFunction1<? super T, Boolean> body) {
+    /// The failure of one sample, or null when it passed. The body returns a `Boolean` or a `TestResult`.
+    private static <T extends Tuple> CheckResult evaluate(int sampleNumber, long seed, T sample, CheckedFunction1<? super T, ?> body) {
         try {
-            final Boolean holds = body.apply(sample);
-            if (holds == null) {
-                return new CheckResult.Erroneous(sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
-            }
-            return holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
+            return switch (body.apply(sample)) {
+                case Boolean holds -> holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
+                case TestResult.Success ignored -> null;
+                case TestResult.Failure(var explanation) -> new CheckResult.Falsified(sampleNumber, seed, sample, Option.some(explanation));
+                case null -> new CheckResult.Erroneous(sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
+                case Object other -> new CheckResult.Erroneous(sampleNumber, seed, new ClassCastException("the check returned a "
+                        + other.getClass().getName() + ", not a boolean or a TestResult"), Option.some(sample));
+            };
         } catch (AssertionError failure) {
             return new CheckResult.Falsified(sampleNumber, seed, sample, Option.ofNullable(failure.getMessage()));
         } catch (Throwable error) {
