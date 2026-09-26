@@ -23,7 +23,7 @@ public final class EqualityLaws {
      * @return the law
      */
     public static <T> Law<EqualitySubject<T>> equalsHashCodeConsistency() {
-        return Law.of("equalsHashCodeConsistency", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+        return Law.of("equalsHashCodeConsistency", (subject, config) -> Check.evaluate(config, subject.values(), subject.values(),
                 (a, b) -> {
                     final T copy = subject.copy().apply(a);
                     return consistent(a, a) && consistent(a, copy)
@@ -43,7 +43,7 @@ public final class EqualityLaws {
      * @return the law
      */
     public static <T> Law<EqualitySubject<T>> equalsAgreesWithModel() {
-        return Law.of("equalsAgreesWithModel", (subject, config) -> Check.check(config, pairs(subject),
+        return Law.of("equalsAgreesWithModel", (subject, config) -> Check.evaluate(config, pairs(subject),
                 pair -> {
                     final T a = pair._1();
                     final T b = pair._2();
