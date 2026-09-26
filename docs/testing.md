@@ -7,7 +7,8 @@ description: Property-based testing with zazr-test - Gen generators, Check, Chec
 `dev.zazr:zazr-test` checks properties against generated values. You state what must hold for every value; it
 generates a few hundred values and reports the first one that breaks the rule.
 
-A check is a method call that returns a result, so it runs in any test framework, such as JUnit.
+A check is a method call that fails the test itself when a value breaks the rule, so it runs in any test framework,
+such as JUnit. `Check.evaluate` returns the result instead, for code that looks at it.
 
 === "Maven"
 
