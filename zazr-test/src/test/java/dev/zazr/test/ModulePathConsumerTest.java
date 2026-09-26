@@ -74,7 +74,8 @@ class ModulePathConsumerTest {
 
                 public final class Main {
                     public static void main(String[] args) {
-                        System.out.println(Check.check(CheckConfig.defaults().withSeed(1), Gen.vector(Gen.integers()),
+                        Check.check(Gen.integers(), n -> n == n);
+                        System.out.println(Check.evaluate(CheckConfig.defaults().withSeed(1), Gen.vector(Gen.integers()),
                                 v -> v.reverse().reverse().equals(v)));
                         System.out.println(Vector.of(1, 2) + " " + MapLaws.all());
                     }

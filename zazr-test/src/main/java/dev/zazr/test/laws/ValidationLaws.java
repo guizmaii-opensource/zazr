@@ -20,7 +20,7 @@ public final class ValidationLaws {
      * @return the law, checked against a generator of validations
      */
     public static Law<Gen<Validation<?, ?>>> validationZipAccumulatesBothSides() {
-        return Law.of("validationZipAccumulatesBothSides", (values, config) -> Check.check(config, values, values,
+        return Law.of("validationZipAccumulatesBothSides", (values, config) -> Check.evaluate(config, values, values,
                 (a, b) -> Results.equal(zip(a, b), expected(a, b))));
     }
 

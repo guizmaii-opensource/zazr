@@ -137,14 +137,14 @@ class LawsTest {
 
     @Test
     void erroneousLawIsReported() {
-        final Law<String> throwing = Law.of("throwing", (subject, config) -> Check.check(config, Values.integers(), i -> {
+        final Law<String> throwing = Law.of("throwing", (subject, config) -> Check.evaluate(config, Values.integers(), i -> {
             throw new IllegalStateException("boom");
         }));
         assertThatThrownBy(() -> Laws.<String>of(throwing).assertSatisfied("subject", SMALL))
                 .hasMessageStartingWith("1 law(s) failed:\nthrowing: erroneous at sample 1 with (0): ")
                 .hasMessageContaining("boom")
                 .hasMessageEndingWith("(seed 1, replay with -Dzazr.check.seed=1)");
-        final Law<String> generating = Law.of("generating", (subject, config) -> Check.check(config,
+        final Law<String> generating = Law.of("generating", (subject, config) -> Check.evaluate(config,
                 Values.integers().map(i -> {
                     throw new IllegalStateException("no value");
                 }), i -> true));

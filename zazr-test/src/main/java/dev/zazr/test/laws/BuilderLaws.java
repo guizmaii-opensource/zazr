@@ -70,7 +70,7 @@ public final class BuilderLaws {
      * @return the law, checked against a generator of lists of elements
      */
     public static Law<Gen<? extends Iterable<?>>> builderResultEqualsOfAll() {
-        return Law.of("builderResultEqualsOfAll", (elements, config) -> Check.check(config, elements, Values.integers(),
+        return Law.of("builderResultEqualsOfAll", (elements, config) -> Check.evaluate(config, elements, Values.integers(),
                 (xs, hint) -> {
                     final Vector<Object> expected = Vector.ofAll(xs);
                     final Vector.Builder<Object> oneByOne = Vector.newBuilder();
@@ -92,7 +92,7 @@ public final class BuilderLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectorSubject<T, F>> collectorResultEqualsOfAll() {
-        return Law.of("collectorResultEqualsOfAll", (subject, config) -> Check.check(config, subject.elements(), xs -> {
+        return Law.of("collectorResultEqualsOfAll", (subject, config) -> Check.evaluate(config, subject.elements(), xs -> {
             final ArrayList<T> list = CollectionLaws.elements(xs);
             final F expected = subject.ofAll().apply(list);
             final F sequential = list.stream().collect(subject.collector());
