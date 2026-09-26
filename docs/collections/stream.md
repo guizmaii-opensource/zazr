@@ -51,12 +51,6 @@ Every method: [complexity page](complexity.md#stream).
   elements all go to one side, they never return.
 - The first element is never lazy: building a `Stream` computes it, and `map`, `tap` and the others compute the first
   element of their result.
-- Each `appendAll` or `prependAll` adds a step to reading every element of its result, so calling them in a loop is
-  quadratic. `append` in a loop stays cheap; or build a `Vector`.
-- On a `Stream` built by `append`, or a tail of one (the first part of `splitAtInclusive` and the results of
-  `crossProduct(power)` are such Streams), `appendAll` and `extend` with a value or a supplier read their whole
-  argument right away, so an infinite one never returns. Likewise, `s.prependAll(t)` and `s.insertAll(i, t)` with
-  such a `t` read all of `s`.
 - When computing an element throws, the `Stream` keeps the exception in its place: reading that element again throws
   the same exception, and never skips to the next one. Only a `VirtualMachineError`, such as a stack overflow, lets a
   later read try again.
