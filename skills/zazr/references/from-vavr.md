@@ -36,7 +36,7 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 | `andFinally` | `ensuring` |
 | `Either.cond`, `Validation.cond` | `Either.fromPredicate`, `Validation.fromPredicate` |
 | `getOrElseGet(f)` | `getOrElse(f)`, an overload taking the failure |
-| `mapTo(value)` | `as(value)` on a collection; `map(x -> value)` on a control type |
+| `mapTo(value)` | `as(value)` on a sequence or a set; `map(x -> value)` on a control type or a map |
 | `toJavaList()`, `toJavaSet()`, `toJavaMap()` | the view `asJava()` or `asJavaMap()`; copy with `new java.util.ArrayList<>(x.asJava())` |
 | `toJavaOptional()` | `toOptional()` |
 | `toJavaStream()` | `stream()` |

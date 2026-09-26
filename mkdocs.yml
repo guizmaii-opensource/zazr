@@ -144,4 +144,5 @@ nav:
       - Complexity: collections/complexity.md
   - Testing: testing.md
   - Compared to Vavr: vavr.md
+  - Releases: https://github.com/guizmaii-opensource/zazr/releases
   - Design: principles.md

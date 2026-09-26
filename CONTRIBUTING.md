@@ -77,12 +77,21 @@ a small example where it helps, and no internal names or ticket numbers. The met
 - Branch from `main` and open a pull request against it; `main` only changes through pull requests.
 - Keep a pull request to one change. A large change is split into several pull requests, each building on the
   previous one.
-- Write commit messages that explain what changed and why, enough to write the changelog from them.
+- Write commit messages that explain what changed and why, enough to write the release notes from them.
 
 ## Releases and versions
 
 Zazr is pre-1.0: the API changes between snapshots, with no compatibility promise. From 1.0, it follows
 [Semantic Versioning](https://semver.org).
 
-Snapshots of `main` are published automatically. A release is made by publishing a GitHub release whose tag is the
-version prefixed with `v` (for example `v0.1.0`); the `release` workflow builds it and publishes it to Maven Central.
+Snapshots of `main` are published automatically.
+
+A release is fully automatic once the GitHub release is published:
+
+1. Create a GitHub release whose tag is the version prefixed with `v` (for example `v0.1.0`), on a `main` commit whose
+   CI is green, with the release notes in its description. There is no changelog file: the notes live in the release.
+2. Publishing it starts the `release` workflow. It builds and signs the artifacts, uploads them to the Maven Central
+   Portal, and waits until Central has validated and published them. If Central rejects them, or does not publish them
+   in time, the workflow fails.
+3. When the workflow succeeds, the release is on Maven Central. Bump `main` to the next snapshot version
+   (`./mvnw versions:set -DnewVersion=0.2.0-SNAPSHOT -DgenerateBackupPoms=false`) in a pull request.
