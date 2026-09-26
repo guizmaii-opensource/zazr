@@ -19,7 +19,7 @@ public final class MapLaws {
      * @return the law
      */
     public static <F> Law<MapSubject<F>> mapIdentity() {
-        return Law.of("mapIdentity", (subject, config) -> Check.check(config, subject.values(),
+        return Law.of("mapIdentity", (subject, config) -> Check.evaluate(config, subject.values(),
                 fa -> Results.equal(subject.map(fa, Function.identity()), fa)));
     }
 
@@ -31,7 +31,7 @@ public final class MapLaws {
      * @return the law
      */
     public static <F> Law<MapSubject<F>> mapComposition() {
-        return Law.of("mapComposition", (subject, config) -> Check.check(config, subject.values(),
+        return Law.of("mapComposition", (subject, config) -> Check.evaluate(config, subject.values(),
                 Functions.integers(), Functions.integers(),
                 (fa, f, g) -> Results.equal(subject.map(subject.map(fa, f), g), subject.map(fa, f.andThen(g)))));
     }

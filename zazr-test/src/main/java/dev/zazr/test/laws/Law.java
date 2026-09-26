@@ -13,7 +13,7 @@ import java.util.function.BiFunction;
  * <p>
  * The subject {@code S} is what the law is checked against: the generator of the values of the type under test and
  * the operations the law calls on them (see {@link MapSubject}, {@link FlatMapSubject}, {@link ZipSubject},
- * {@link CollectionSubject}). A law runs one {@link Check#check} with the configuration it is given; its body fails
+ * {@link CollectionSubject}). A law runs one {@link Check#evaluate} with the configuration it is given; its body fails
  * a sample by throwing an {@link AssertionError} that explains what differed.
  *
  * @param <S> the subject the law is checked against
@@ -32,7 +32,7 @@ public final class Law<S> {
      * Creates a law.
      *
      * @param name  the law's name, reported when it fails
-     * @param check checks the law for a subject with a configuration, usually through {@link Check#check}
+     * @param check checks the law for a subject with a configuration, usually through {@link Check#evaluate}
      * @param <S>   the subject the law is checked against
      * @return a new law
      * @throws NullPointerException     if an argument is null

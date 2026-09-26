@@ -33,7 +33,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sizeEqualsIterationCount() {
-        return Law.of("sizeEqualsIterationCount", (subject, config) -> Check.check(config, subject.values(),
+        return Law.of("sizeEqualsIterationCount", (subject, config) -> Check.evaluate(config, subject.values(),
                 fa -> Results.equal(subject.size().applyAsInt(fa), elements(fa).size())));
     }
 
@@ -45,7 +45,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> toListRoundTrip() {
-        return Law.of("toListRoundTrip", (subject, config) -> Check.check(config, subject.values(), fa -> {
+        return Law.of("toListRoundTrip", (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
             final List<T> list = subject.toList().apply(fa);
             return Results.equal(elements(list), elements(fa)) && Results.equal(subject.ofAll().apply(list), fa);
         }));
@@ -61,7 +61,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> equalsAgreesWithElements() {
-        return Law.of("equalsAgreesWithElements", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+        return Law.of("equalsAgreesWithElements", (subject, config) -> Check.evaluate(config, subject.values(), subject.values(),
                 (a, b) -> {
                     final ArrayList<T> reversed = elements(a);
                     Collections.reverse(reversed);
@@ -85,7 +85,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> iterationOrder() {
-        return Law.of("iterationOrder", (subject, config) -> Check.check(config, subject.values(), subject.values(),
+        return Law.of("iterationOrder", (subject, config) -> Check.evaluate(config, subject.values(), subject.values(),
                 (a, b) -> {
                     final ArrayList<T> input = elements(a);
                     final ArrayList<T> second = elements(b);
@@ -106,7 +106,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sequenceEqualsAcrossTypes() {
-        return Law.of("sequenceEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+        return Law.of("sequenceEqualsAcrossTypes", (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
             final ArrayList<T> xs = elements(fa);
             return allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), Stream.ofAll(xs))
                     && noneEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs));
@@ -122,7 +122,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> setEqualsAcrossTypes() {
-        return Law.of("setEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+        return Law.of("setEqualsAcrossTypes", (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
             final ArrayList<T> xs = elements(fa);
             return allEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs))
                     && (!comparable(xs) || allEqual(fa, treeSet(xs)))
@@ -139,7 +139,7 @@ public final class CollectionLaws {
      * @return the law
      */
     public static <T extends Tuple2<?, ?>, F extends Iterable<T>> Law<CollectionSubject<T, F>> mapEqualsAcrossTypes() {
-        return Law.of("mapEqualsAcrossTypes", (subject, config) -> Check.check(config, subject.values(), fa -> {
+        return Law.of("mapEqualsAcrossTypes", (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
             final ArrayList<T> entries = elements(fa);
             return allEqual(fa, HashMap.ofEntries(entries), LinkedHashMap.ofEntries(entries))
                     && (!comparable(entries.stream().map(Tuple2::_1).toList()) || allEqual(fa, treeMap(entries)))

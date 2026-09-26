@@ -26,68 +26,97 @@ class Check1Test {
     @Test
     void passesTheValuesInOrder() {
         final ArrayList<Object> seen = new ArrayList<>();
-        final CheckResult result = Check.check(CONFIG, Gen.constant(1), (v1) -> seen.add(Tuple.of(v1)));
+        final CheckResult result = Check.evaluate(CONFIG, Gen.constant(1), (v1) -> seen.add(Tuple.of(v1)));
         assertThat(result).isEqualTo(new CheckResult.Satisfied(20));
         assertThat(seen).hasSize(20).containsOnly(Tuple.of(1));
     }
 
     @Test
     void checkUsesTheDefaultConfiguration() {
-        assertThat(Check.check(Gen.constant(1), (v1) -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
+        assertThat(Check.evaluate(Gen.constant(1), (v1) -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
     }
 
     @Test
     void checkNRunsNSamples() {
-        assertThat(Check.checkN(3, Gen.constant(1), (v1) -> true)).isEqualTo(new CheckResult.Satisfied(3));
-        assertThatThrownBy(() -> Check.checkN(-1, Gen.constant(1), (v1) -> true)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(Check.evaluateN(3, Gen.constant(1), (v1) -> true)).isEqualTo(new CheckResult.Satisfied(3));
+        assertThatThrownBy(() -> Check.evaluateN(-1, Gen.constant(1), (v1) -> true)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void checkAllRunsEveryCombinationOnce() {
         final ArrayList<Object> seen = new ArrayList<>();
-        assertThat(Check.checkAll(TWO, (v1) -> seen.add(Tuple.of(v1)))).isEqualTo(new CheckResult.Satisfied(2));
+        assertThat(Check.evaluateAll(TWO, (v1) -> seen.add(Tuple.of(v1)))).isEqualTo(new CheckResult.Satisfied(2));
         assertThat(seen).hasSize(2).doesNotHaveDuplicates();
         seen.clear();
-        assertThat(Check.checkAll(CONFIG, TWO, (v1) -> seen.add(Tuple.of(v1)))).isEqualTo(new CheckResult.Satisfied(2));
+        assertThat(Check.evaluateAll(CONFIG, TWO, (v1) -> seen.add(Tuple.of(v1)))).isEqualTo(new CheckResult.Satisfied(2));
         assertThat(seen).hasSize(2).doesNotHaveDuplicates();
     }
 
     @Test
     void falseFalsifiesTheCheck() {
-        assertThat(Check.check(CONFIG, Gen.constant(1), (v1) -> false))
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> false))
                 .isEqualTo(new CheckResult.Falsified(1, 42L, Tuple.of(1), Option.none()));
-        assertThat(Check.checkAll(CONFIG, TWO, (v1) -> v1 < 1))
+        assertThat(Check.evaluateAll(CONFIG, TWO, (v1) -> v1 < 1))
                 .isEqualTo(new CheckResult.Falsified(2, 42L, Tuple.of(1), Option.none()));
     }
 
     @Test
     void anAssertionErrorFalsifiesTheCheck() {
-        assertThat(Check.check(CONFIG, Gen.constant(1), (v1) -> {
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> {
             throw new AssertionError("sum " + (v1));
         })).isEqualTo(new CheckResult.Falsified(1, 42L, Tuple.of(1), Option.some("sum 1")));
     }
 
     @Test
     void anExceptionMakesTheCheckErroneous() {
-        assertThat(Check.check(CONFIG, Gen.constant(1), (v1) -> {
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> {
             throw BOOM;
         })).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.some(Tuple.of(1))));
-        assertThat(Check.check(CONFIG, Gen.constant(1), (v1) -> null).isErroneous()).isTrue();
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> null).isErroneous()).isTrue();
     }
 
     @Test
     void aFailingGeneratorMakesTheCheckErroneous() {
-        assertThat(Check.check(CONFIG, FAILING, (v1) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.checkAll(CONFIG, FAILING, (v1) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(CONFIG, FAILING, (v1) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(CONFIG, FAILING, (v1) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+    }
+
+    @Test
+    void checkReturnsWhenEveryValuePasses() {
+        final ArrayList<Object> seen = new ArrayList<>();
+        Check.check(CONFIG, Gen.constant(1), (v1) -> seen.add(Tuple.of(v1)));
+        assertThat(seen).hasSize(20);
+        Check.check(Gen.constant(1), (v1) -> true);
+        Check.checkN(3, Gen.constant(1), (v1) -> true);
+        Check.checkAll(TWO, (v1) -> true);
+        Check.checkAll(CONFIG, TWO, (v1) -> true);
+    }
+
+    @Test
+    void checkThrowsTheAssertionErrorOfTheResult() {
+        assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), (v1) -> false))
+                .isExactlyInstanceOf(AssertionError.class)
+                .hasMessage("falsified at sample 1 by (1) (seed 42, replay with -Dzazr.check.seed=42)");
+        assertThatThrownBy(() -> Check.check(Gen.constant(1), (v1) -> false)).isExactlyInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> Check.checkN(3, Gen.constant(1), (v1) -> false)).isExactlyInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> Check.checkAll(TWO, (v1) -> v1 < 1)).isExactlyInstanceOf(AssertionError.class)
+                .hasMessageStartingWith("falsified at sample 2 by (");
+        assertThatThrownBy(() -> Check.checkAll(CONFIG, Gen.constant(1), (v1) -> {
+            throw BOOM;
+        })).isExactlyInstanceOf(AssertionError.class).hasCause(BOOM)
+                .hasMessage("erroneous at sample 1 with (1): java.lang.IllegalStateException: boom (seed 42, replay with -Dzazr.check.seed=42)");
     }
 
     @Test
     void rejectsNulls() {
-        assertThatThrownBy(() -> Check.check((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.checkAll((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluate((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluateAll((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.checkAll(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.check(CONFIG, null, (v1) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
-        assertThatThrownBy(() -> Check.checkAll(CONFIG, null, (v1) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
+        assertThatThrownBy(() -> Check.check((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluate(CONFIG, null, (v1) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, null, (v1) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
     }
 }

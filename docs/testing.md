@@ -38,7 +38,7 @@ class ListReverseTest {
     @Test
     void reversingTwiceGivesTheListBack() {
         var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
-        Check.check(lists, list -> list.reverse().reverse().equals(list)).assertIsSatisfied();
+        Check.check(lists, list -> list.reverse().reverse().equals(list));
     }
 }
 ```
@@ -46,8 +46,8 @@ class ListReverseTest {
 `mvn test` or `gradle test` runs it through your test framework, like any other test. A check that passes is a green
 test.
 
-When a sample breaks the property, `assertIsSatisfied()` throws an `AssertionError`. The framework reports it as a
-normal test failure, with the counterexample, the sample number and the seed in the message. The Surefire summary, its
+When a sample breaks the property, `Check.check` throws an `AssertionError`. The framework reports it as a normal
+test failure, with the counterexample, the sample number and the seed in the message. The Surefire summary, its
 XML reports and your CI show it like any other failure.
 
 For a test `everyListIsShort` whose property is `list.size() < 5`, run with the seed 42, Maven prints:
@@ -69,7 +69,7 @@ Four types, all in `dev.zazr.test`:
 | Type | Role |
 |---|---|
 | `Gen<A>` | a generator of values of type `A`: scalars, combinators, and one generator per Zazr type |
-| `Check` | runs a property: `check`, `checkN` and `checkAll`, for 1 to 8 generators |
+| `Check` | runs a property for 1 to 8 generators: `check`, `checkN` and `checkAll` fail the test when it breaks; `evaluate`, `evaluateN` and `evaluateAll` return the result |
 | `CheckResult` | the outcome: `Satisfied`, `Falsified` or `Erroneous` |
 | `CheckConfig` | the number of samples, the size, the seed and the discard budget |
 
@@ -81,21 +81,19 @@ If your tests use Java modules, add `requires dev.zazr.test;` to their `module-i
 
 ```java
 var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
-Check.check(lists, list -> list.reverse().reverse().equals(list)).assertIsSatisfied();
+Check.check(lists, list -> list.reverse().reverse().equals(list));
 ```
 
-The check runs 200 samples. `assertIsSatisfied()` does nothing when every sample passed, and throws an
-`AssertionError` otherwise, so the test fails.
+The check runs 200 samples. It returns when every sample passed, and throws an `AssertionError` otherwise, so the
+test fails.
 
 ## What a failure prints
 
 The error names the sample that broke the property, its number, and the seed of the run.
 
 ```java
-var config = CheckConfig.defaults().withSeed(42); // CheckConfig
-// CheckResult
-var shortLists = Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5);
-shortLists.assertIsSatisfied(); // throws an AssertionError
+var config = CheckConfig.defaults().withSeed(42);                        // CheckConfig
+Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5);  // throws an AssertionError
 ```
 
 ```text
@@ -115,7 +113,8 @@ In the example above, the first list that breaks `size() < 5` has exactly 5 elem
 
 ## Reading a result
 
-A `CheckResult` is one of three records, so pattern matching over it covers every outcome:
+`Check.evaluate` runs the same check and returns its `CheckResult` instead of throwing. A `CheckResult` is one of
+three records, so pattern matching over it covers every outcome:
 
 - `Satisfied(samples)`: every sample passed.
 - `Falsified(sampleNumber, seed, counterexample, message)`: the property returned `false` or threw an
@@ -123,7 +122,7 @@ A `CheckResult` is one of three records, so pattern matching over it covers ever
 - `Erroneous(sampleNumber, seed, cause, sample)`: a generator threw, or the property threw another exception.
 
 ```java
-var result = Check.check(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
+var result = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
 var summary = switch (result) {
     case CheckResult.Satisfied(var samples) -> "passed " + samples + " samples";
     case CheckResult.Falsified(var sampleNumber, _, var counterexample, _) -> "broken at sample " + sampleNumber + " by " + counterexample;
@@ -132,7 +131,8 @@ var summary = switch (result) {
 // "broken at sample 3 by (1000)"
 ```
 
-`isSatisfied()`, `isFalsified()` and `isErroneous()` answer the same question without pattern matching.
+`isSatisfied()`, `isFalsified()` and `isErroneous()` answer the same question without pattern matching, and
+`assertIsSatisfied()` throws the `AssertionError` that `Check.check` would.
 
 ## Assertions in the property
 
@@ -141,7 +141,7 @@ in the result. A block body still ends with `return true`.
 
 ```java
 var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
-var result = Check.check(CheckConfig.defaults().withSeed(42), digits, vector -> {
+var result = Check.evaluate(CheckConfig.defaults().withSeed(42), digits, vector -> {
     assertThat(vector.distinct()).isEqualTo(vector);
     return true;
 }); // CheckResult
@@ -179,7 +179,7 @@ var twoDice = dice.zipWith(dice, Integer::sum);  // Gen<Integer>
 var coin    = Gen.elements("heads", "tails");    // Gen<String>
 // Gen<String>
 var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0));
-Check.check(twoDice, sum -> sum >= 2 && sum <= 12).assertIsSatisfied();
+Check.check(twoDice, sum -> sum >= 2 && sum <= 12);
 ```
 
 `Gen.zip(g1, ..., g8)` and `Gen.zipWith` combine up to eight generators at once.
@@ -196,11 +196,11 @@ var variants = sizes.zip(colours).runCollect();             // List<Tuple2<Strin
 // List((S, red), (S, blue), (M, red), (M, blue))
 ```
 
-`checkAll` checks every value of finite generators exactly once, instead of 200 samples.
+`checkAll` checks every value of finite generators exactly once, instead of 200 samples; `evaluateAll` shows it.
 
 ```java
-var days   = Gen.fromIterable(EnumSet.allOf(DayOfWeek.class));  // Gen<DayOfWeek>
-var result = Check.checkAll(days, day -> day.plus(7) == day);   // CheckResult
+var days   = Gen.fromIterable(EnumSet.allOf(DayOfWeek.class));    // Gen<DayOfWeek>
+var result = Check.evaluateAll(days, day -> day.plus(7) == day);  // CheckResult
 // Satisfied[samples=7]
 ```
 
@@ -245,19 +245,20 @@ var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
 var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2);
 var nonEmpty  = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
 // CheckResult
-var impossible = Check.check(Gen.integers().filter(n -> false), n -> true);
+var impossible = Check.evaluate(Gen.integers().filter(n -> false), n -> true);
 // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
 ```
 
 ## Configuration
 
 `CheckConfig.defaults()` is 200 samples, a size of 100, a random seed and a budget of 1,000 discards. Each value
-has a `with` method, and `check` and `checkAll` take a configuration as their first argument.
+has a `with` method, and `check`, `checkAll` and their `evaluate` forms take a configuration as their first
+argument.
 
 ```java
 var config = CheckConfig.defaults().withSamples(1_000).withSeed(42); // CheckConfig
-Check.check(config, Gen.integers(), n -> Integer.parseInt(Integer.toString(n)) == n).assertIsSatisfied();
-Check.checkN(50, Gen.alphaNumericStrings(), s -> s.strip().equals(s)).assertIsSatisfied();
+Check.check(config, Gen.integers(), n -> Integer.parseInt(Integer.toString(n)) == n);
+Check.checkN(50, Gen.alphaNumericStrings(), s -> s.strip().equals(s));
 ```
 
 `checkN(n, ...)` is `check` with `n` samples.
@@ -294,7 +295,7 @@ build passes it to the test JVM. Maven does; a Gradle build needs `systemPropert
 
 ```java
 var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
-Check.check(checks, checks, (a, b) -> a.zip(b).isValid() == (a.isValid() && b.isValid())).assertIsSatisfied();
+Check.check(checks, checks, (a, b) -> a.zip(b).isValid() == (a.isValid() && b.isValid()));
 ```
 
 A collection has up to the current size elements (a non-empty vector has at least one). Half of the lengths are 0, 1, the size or the size minus one, so
@@ -328,7 +329,8 @@ A law set groups laws. `MapLaws.all()` is `mapIdentity` and `mapComposition`; `a
 | `ValidationLaws` | `zip` of two `Validation`s keeps the errors of both sides, in order |
 | `NonEmptyVectorLaws` | `head` never fails, and `equals` between a `NonEmptyVector` and its `Vector` gives the same answer both ways |
 
-`Law.of(name, (subject, config) -> ...)` states a law of your own; its check is usually a `Check.check`.
+`Law.of(name, (subject, config) -> ...)` states a law of your own; its check is usually a `Check.evaluate`, which
+returns the result the law reports.
 
 ## Checking your own type
 

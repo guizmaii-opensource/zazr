@@ -616,7 +616,7 @@ class GenTypesTest {
         gens.put("treeMap with null values", Gen.treeMap(Gen.integers(), NULLS));
         gens.forEach((name, gen) -> {
             assertThatThrownBy(() -> gen.runCollectN(50, config)).as(name).isInstanceOf(NullPointerException.class);
-            final CheckResult result = Check.check(config.withSamples(50), gen, value -> true);
+            final CheckResult result = Check.evaluate(config.withSamples(50), gen, value -> true);
             assertThat(result.isErroneous()).as(name).isTrue();
             assertThat(result.error().get()).as(name).isInstanceOf(NullPointerException.class);
         });
@@ -748,11 +748,11 @@ class GenTypesTest {
     void aCollectionFilteredToNonEmptyWorksWithTheDefaultConfiguration() {
         for (long seed = 0; seed < 10; seed++) {
             final CheckConfig config = CheckConfig.defaults().withSeed(seed);
-            Check.check(config, Gen.list(Gen.integers()).filter(l -> !l.isEmpty()), l -> !l.isEmpty()).assertIsSatisfied();
-            Check.check(config, Gen.vector(Gen.integers()).filter(v -> !v.isEmpty()), v -> !v.isEmpty()).assertIsSatisfied();
-            Check.check(config, Gen.hashSet(Gen.integers()).filter(s -> !s.isEmpty()), s -> !s.isEmpty()).assertIsSatisfied();
-            Check.check(config, Gen.hashMap(Gen.integers(), Gen.integers()).filter(m -> !m.isEmpty()), m -> !m.isEmpty()).assertIsSatisfied();
-            Check.check(config, Gen.list(Gen.alphaNumericStrings().filter(s -> !s.isEmpty())), l -> l.forAll(s -> !s.isEmpty())).assertIsSatisfied();
+            Check.check(config, Gen.list(Gen.integers()).filter(l -> !l.isEmpty()), l -> !l.isEmpty());
+            Check.check(config, Gen.vector(Gen.integers()).filter(v -> !v.isEmpty()), v -> !v.isEmpty());
+            Check.check(config, Gen.hashSet(Gen.integers()).filter(s -> !s.isEmpty()), s -> !s.isEmpty());
+            Check.check(config, Gen.hashMap(Gen.integers(), Gen.integers()).filter(m -> !m.isEmpty()), m -> !m.isEmpty());
+            Check.check(config, Gen.list(Gen.alphaNumericStrings().filter(s -> !s.isEmpty())), l -> l.forAll(s -> !s.isEmpty()));
         }
     }
 }
