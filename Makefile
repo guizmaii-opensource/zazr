@@ -56,7 +56,7 @@ vocabulary: ## fail on category-theory vocabulary in the code, the site and the 
 # supertypes read to resolve the notes a type inherits.
 COMPLEXITY_DIR := zazr-core/src/main/java/dev/zazr/collection
 COMPLEXITY_FILES := $(addprefix $(COMPLEXITY_DIR)/, \
-	Vector.java List.java Queue.java Stream.java NonEmptyVector.java \
+	Vector.java List.java Queue.java LazyList.java NonEmptyVector.java \
 	HashSet.java LinkedHashSet.java TreeSet.java SortedSet.java NonEmptySet.java NonEmptySortedSet.java \
 	HashMap.java LinkedHashMap.java TreeMap.java SortedMap.java NonEmptyMap.java NonEmptySortedMap.java)
 COMPLEXITY_CONTEXT := $(addprefix --context $(COMPLEXITY_DIR)/, Traversable.java Set.java Map.java)

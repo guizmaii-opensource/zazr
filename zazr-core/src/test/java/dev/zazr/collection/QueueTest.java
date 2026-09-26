@@ -2146,12 +2146,12 @@ public class QueueTest extends AbstractTraversableTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldSortByFunctionWhenElementsAreInfiniteStreams() {
-        final Stream<Integer> stream1 = Stream.continually(1);
-        final Stream<Integer> stream2 = Stream.continually(2);
-        final Queue<Stream<Integer>> testee = of(stream2, stream1);
-        final Queue<Stream<Integer>> actual = testee.sortBy(Stream::head);
-        final Queue<Stream<Integer>> expected = of(stream1, stream2);
+    public void shouldSortByFunctionWhenElementsAreInfiniteLazyLists() {
+        final LazyList<Integer> stream1 = LazyList.continually(1);
+        final LazyList<Integer> stream2 = LazyList.continually(2);
+        final Queue<LazyList<Integer>> testee = of(stream2, stream1);
+        final Queue<LazyList<Integer>> actual = testee.sortBy(LazyList::head);
+        final Queue<LazyList<Integer>> expected = of(stream1, stream2);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2467,12 +2467,12 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowOnSubSequenceWhenEndIndexExceedsUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2, 3).subSequence(1, 4).mkString()); // force computation of last element, e.g. because Stream is lazy
+        assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2, 3).subSequence(1, 4).mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
     public void shouldThrowOnSubSequenceWhenBeginIndexIsGreaterThanEndIndex() {
-        assertThrows(IllegalArgumentException.class, () -> of(1, 2, 3).subSequence(2, 1).mkString()); // force computation of last element, e.g. because Stream is lazy
+        assertThrows(IllegalArgumentException.class, () -> of(1, 2, 3).subSequence(2, 1).mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
@@ -2620,15 +2620,15 @@ public class QueueTest extends AbstractTraversableTest {
     class NonQueueArgumentTests {
         @Test
         public void shouldStartWithANonQueueIterable() {
-            assertThat(of(1, 3, 4).startsWith(Stream.of(1, 3))).isTrue();
-            assertThat(of(1, 2, 3, 4).startsWith(Stream.of(1, 2, 4))).isFalse();
-            assertThat(of(1, 2).startsWith(Stream.of(1, 2, 4))).isFalse();
+            assertThat(of(1, 3, 4).startsWith(LazyList.of(1, 3))).isTrue();
+            assertThat(of(1, 2, 3, 4).startsWith(LazyList.of(1, 2, 4))).isFalse();
+            assertThat(of(1, 2).startsWith(LazyList.of(1, 2, 4))).isFalse();
         }
 
         @Test
         public void shouldEndWithANonQueueIterable() {
-            assertThat(of(1, 3, 4).endsWith(Stream.of(3, 4))).isTrue();
-            assertThat(of(1, 2, 3, 4).endsWith(Stream.of(2, 3, 5))).isFalse();
+            assertThat(of(1, 3, 4).endsWith(LazyList.of(3, 4))).isTrue();
+            assertThat(of(1, 2, 3, 4).endsWith(LazyList.of(2, 3, 5))).isFalse();
         }
     }
 
@@ -5058,9 +5058,9 @@ public class QueueTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThat(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- the range factories

@@ -658,7 +658,7 @@ public class OptionTest {
     }
 
     @Nested
-    class StreamTests {
+    class LazyListTests {
         @Test
         public void shouldStreamTheValueOfSome() {
             assertThat(Option.some(1).stream().collect(Collectors.toList())).containsExactly(1);

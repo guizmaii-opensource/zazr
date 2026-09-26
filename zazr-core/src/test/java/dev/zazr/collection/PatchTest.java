@@ -38,7 +38,7 @@ public class PatchTest {
                         assertThat(Queue.ofAll(elements).patch(from, that, replaced).asJava()).as("Queue." + call).isEqualTo(expected);
                         assertThat(Queue.ofAll(elements.subList(0, n / 2)).enqueueAll(elements.subList(n / 2, n)).patch(from, that, replaced).asJava())
                                 .as("Queue with a rear." + call).isEqualTo(expected);
-                        assertThat(Stream.ofAll(elements).patch(from, that, replaced).asJava()).as("Stream." + call).isEqualTo(expected);
+                        assertThat(LazyList.ofAll(elements).patch(from, that, replaced).asJava()).as("LazyList." + call).isEqualTo(expected);
                         assertThat(Vector.range(0, n).patch(from, that, replaced).asJava()).as("primitive Vector." + call).isEqualTo(expected);
                     }
                 }
@@ -52,7 +52,7 @@ public class PatchTest {
         assertThat(Vector.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(expected);
         assertThat(List.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(expected);
         assertThat(Queue.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(expected);
-        assertThat(Stream.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(expected);
+        assertThat(LazyList.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(expected);
         assertThat(Vector.of(1, 2).patch(1, List.of(9), Integer.MAX_VALUE).asJava()).isEqualTo(java.util.List.of(1, 9));
     }
 

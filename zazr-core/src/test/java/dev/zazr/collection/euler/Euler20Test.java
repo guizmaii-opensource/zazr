@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Vector;
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ public class Euler20Test {
     }
 
     private static BigInteger factorial(int n) {
-        return Stream.rangeClosed(1, n)
+        return LazyList.rangeClosed(1, n)
                 .map(BigInteger::valueOf)
                 .reduce(BigInteger::multiply);
     }

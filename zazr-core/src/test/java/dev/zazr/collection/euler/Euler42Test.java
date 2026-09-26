@@ -1,7 +1,7 @@
 package dev.zazr.collection.euler;
 
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import java.util.function.Function;
 import org.assertj.core.api.Assertions;
@@ -68,7 +68,7 @@ public class Euler42Test {
 
     private static final Function<Integer, Boolean> isTriangleNumberMemoized = Memoize.of(Euler42Test::isTriangleNumber);
 
-    private static final Stream<Integer> TRIANGLE_NUMBERS = Stream.from(1).map(n -> 0.5 * n * (n + 1)).map(Double::intValue);
+    private static final LazyList<Integer> TRIANGLE_NUMBERS = LazyList.from(1).map(n -> 0.5 * n * (n + 1)).map(Double::intValue);
 
     private static int sumOfAlphabeticalPositions(String word) {
         return Vector.ofAll(word.toCharArray())

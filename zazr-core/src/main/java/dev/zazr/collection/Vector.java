@@ -250,7 +250,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Creates a Vector that contains the elements of the given {@link java.util.stream.Stream}.
      *
      * @param javaStream A {@link java.util.stream.Stream}
-     * @param <T>        Component type of the Stream.
+     * @param <T>        Component type of the LazyList.
      * @return A Vector containing the given elements in the same order.
      */
     public static <T extends @Nullable Object> Vector<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
@@ -2896,8 +2896,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * ordered sequence types.
      * <p>
      * Complexity: O(n + m) for a sequence of m elements: the sizes are compared first (a {@link List}, a
-     * {@link Queue} or a {@link Stream} counts its elements to answer), then the elements in order, up to the first
-     * difference. So it does not terminate when compared with an infinite {@link Stream}. O(1) for an object that is
+     * {@link Queue} or a {@link LazyList} counts its elements to answer), then the elements in order, up to the first
+     * difference. So it does not terminate when compared with an infinite {@link LazyList}. O(1) for an object that is
      * not a sequence.
      *
      * @param o any object
@@ -2909,7 +2909,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * The hash of the elements in order, the same as that of an equal List, Queue or Stream.
+     * The hash of the elements in order, the same as that of an equal List, Queue or LazyList.
      * <p>
      * Complexity: O(n), computed again at every call: nothing is cached, which matters for a Vector used as a key of
      * a {@link HashMap} or an element of a {@link HashSet}.
@@ -3683,12 +3683,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * The elements as a {@link Stream}, in this Vector's order.
+     * The elements as a {@link LazyList}, in this Vector's order.
      *
-     * @return a {@code Stream} of the elements
+     * @return a {@code LazyList} of the elements
      */
-    public Stream<T> toStream() {
-        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    public LazyList<T> toLazyList() {
+        return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
 
 }

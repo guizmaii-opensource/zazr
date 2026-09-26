@@ -1530,9 +1530,9 @@ public class TreeSetTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThat(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- static range, rangeBy, rangeClosed, rangeClosedBy

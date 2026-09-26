@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -17,22 +17,22 @@ final class Utils {
 
     static final Function<Long, Boolean> MEMOIZED_IS_PRIME = Memoize.of(Utils::isPrime);
 
-    static Stream<BigInteger> fibonacci() {
-        return Stream.of(BigInteger.ZERO, BigInteger.ONE).appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));
+    static LazyList<BigInteger> fibonacci() {
+        return LazyList.of(BigInteger.ZERO, BigInteger.ONE).appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));
     }
 
     static BigInteger factorial(int n) {
-        return Stream.rangeClosed(1, n).map(BigInteger::valueOf).fold(BigInteger.ONE, BigInteger::multiply);
+        return LazyList.rangeClosed(1, n).map(BigInteger::valueOf).fold(BigInteger.ONE, BigInteger::multiply);
     }
 
-    static Stream<Long> factors(long number) {
-        return Stream.rangeClosed(1, (long) Math.sqrt(number))
+    static LazyList<Long> factors(long number) {
+        return LazyList.rangeClosed(1, (long) Math.sqrt(number))
                 .filter(d -> number % d == 0)
-                .flatMap(d -> Stream.of(d, number / d))
+                .flatMap(d -> LazyList.of(d, number / d))
                 .distinct();
     }
 
-    static Stream<Long> divisors(long l) {
+    static LazyList<Long> divisors(long l) {
         return factors(l).filter((d) -> d < l);
     }
 
@@ -47,7 +47,7 @@ final class Utils {
         return !PrimeNumbers.primes().takeWhile(d -> d <= upperLimitToCheck).exists(d -> val % d == 0);
     }
 
-    static Stream<String> readLines(File file) {
+    static LazyList<String> readLines(File file) {
         try {
             final java.util.Iterator<String> lines = new java.util.Iterator<String>() {
 
@@ -67,9 +67,9 @@ final class Utils {
                     return scanner.nextLine();
                 }
             };
-            return Stream.ofAll((Iterable<String>) () -> lines);
+            return LazyList.ofAll((Iterable<String>) () -> lines);
         } catch (FileNotFoundException e) {
-            return Stream.empty();
+            return LazyList.empty();
         }
     }
 

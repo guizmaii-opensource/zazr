@@ -961,9 +961,9 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public Queue<A> toQueue() { return set.toQueue(); }
 
     /**
-     * @return the elements as a {@link Stream}, in order
+     * @return the elements as a {@link LazyList}, in order
      */
-    public Stream<A> toStream() { return set.toStream(); }
+    public LazyList<A> toLazyList() { return set.toLazyList(); }
 
     /**
      * @return the elements as a {@link HashSet}

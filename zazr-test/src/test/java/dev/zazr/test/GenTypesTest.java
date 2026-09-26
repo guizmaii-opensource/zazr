@@ -5,12 +5,12 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Traversable;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
@@ -91,7 +91,7 @@ class GenTypesTest {
         lengths.put("vector", Gen.vector(distinct()).map(Traversable::size));
         lengths.put("list", Gen.list(distinct()).map(Traversable::size));
         lengths.put("queue", Gen.queue(distinct()).map(Traversable::size));
-        lengths.put("stream", Gen.stream(distinct()).map(Traversable::size));
+        lengths.put("lazyList", Gen.lazyList(distinct()).map(Traversable::size));
         lengths.put("hashSet", Gen.hashSet(distinct()).map(Traversable::size));
         lengths.put("linkedHashSet", Gen.linkedHashSet(distinct()).map(Traversable::size));
         lengths.put("treeSet", Gen.treeSet(distinct()).map(Traversable::size));
@@ -127,7 +127,7 @@ class GenTypesTest {
         gens.put("nonEmptyVector", Gen.nonEmptyVector(ints));
         gens.put("list", Gen.list(ints));
         gens.put("queue", Gen.queue(ints));
-        gens.put("stream", Gen.stream(ints));
+        gens.put("lazyList", Gen.lazyList(ints));
         gens.put("hashSet", Gen.hashSet(ints));
         gens.put("linkedHashSet", Gen.linkedHashSet(ints));
         gens.put("treeSet", Gen.treeSet(ints));
@@ -335,7 +335,7 @@ class GenTypesTest {
     @Test
     void atSizeZeroEveryCollectionIsEmptyAndNoElementIsDrawn() {
         final java.util.List<Gen<? extends Traversable<?>>> gens = java.util.List.of(
-                Gen.vector(failing()), Gen.vectorN(0, failing()), Gen.list(failing()), Gen.queue(failing()), Gen.stream(failing()),
+                Gen.vector(failing()), Gen.vectorN(0, failing()), Gen.list(failing()), Gen.queue(failing()), Gen.lazyList(failing()),
                 Gen.hashSet(failing()), Gen.linkedHashSet(failing()), Gen.treeSet(failing()),
                 Gen.hashMap(failing(), failing()), Gen.linkedHashMap(failing(), failing()), Gen.treeMap(failing(), failing()));
         for (Gen<? extends Traversable<?>> gen : gens) {
@@ -377,7 +377,7 @@ class GenTypesTest {
         final java.util.Map<String, Class<?>> classes = java.util.Map.ofEntries(
                 java.util.Map.entry("vector", Vector.class), java.util.Map.entry("vectorN", Vector.class),
                 java.util.Map.entry("nonEmptyVector", NonEmptyVector.class), java.util.Map.entry("list", List.class),
-                java.util.Map.entry("queue", Queue.class), java.util.Map.entry("stream", Stream.class),
+                java.util.Map.entry("queue", Queue.class), java.util.Map.entry("lazyList", LazyList.class),
                 java.util.Map.entry("hashSet", HashSet.class), java.util.Map.entry("linkedHashSet", LinkedHashSet.class),
                 java.util.Map.entry("treeSet", TreeSet.class), java.util.Map.entry("hashMap", HashMap.class),
                 java.util.Map.entry("linkedHashMap", LinkedHashMap.class), java.util.Map.entry("treeMap", TreeMap.class));
@@ -394,7 +394,7 @@ class GenTypesTest {
         assertThat(Shapes.VECTOR_LAYOUTS).isEqualTo(6);
         assertThat(Shapes.LIST_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.QUEUE_LAYOUTS).isEqualTo(4);
-        assertThat(Shapes.STREAM_LAYOUTS).isEqualTo(5);
+        assertThat(Shapes.LAZY_LIST_LAYOUTS).isEqualTo(5);
         assertThat(Shapes.NON_EMPTY_VECTOR_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.SET_LAYOUTS).isEqualTo(4);
         assertThat(Shapes.MAP_LAYOUTS).isEqualTo(4);
@@ -421,8 +421,8 @@ class GenTypesTest {
                 assertThat(queue).as("queue layout %d of %d elements", layout, n).containsExactlyElementsOf(elements(n));
                 assertThat(queue.size()).isEqualTo(n);
             }
-            for (int layout = 0; layout < Shapes.STREAM_LAYOUTS; layout++) {
-                final Stream<Integer> stream = Shapes.stream(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+            for (int layout = 0; layout < Shapes.LAZY_LIST_LAYOUTS; layout++) {
+                final LazyList<Integer> stream = Shapes.lazyList(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
                 assertThat(stream).as("stream layout %d of %d elements", layout, n).containsExactlyElementsOf(elements(n));
             }
         }
@@ -558,10 +558,10 @@ class GenTypesTest {
     }
 
     @Test
-    void streamReachesEvaluatedAndUnevaluatedTails() {
-        final List<Stream<Integer>> streams = samples(Gen.stream(Gen.integers()));
-        assertSome(streams, s -> !s.isEmpty() && !((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(), "an unevaluated tail");
-        assertSome(streams, s -> !s.isEmpty() && ((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(), "an evaluated tail");
+    void lazyListReachesEvaluatedAndUnevaluatedTails() {
+        final List<LazyList<Integer>> streams = samples(Gen.lazyList(Gen.integers()));
+        assertSome(streams, s -> !s.isEmpty() && !((Lazy<?>) field(s, LazyList.Cons.class, "tail")).isEvaluated(), "an unevaluated tail");
+        assertSome(streams, s -> !s.isEmpty() && ((Lazy<?>) field(s, LazyList.Cons.class, "tail")).isEvaluated(), "an evaluated tail");
     }
 
     @Test
@@ -604,7 +604,7 @@ class GenTypesTest {
         gens.put("nonEmptyVector", Gen.nonEmptyVector(NULLS));
         gens.put("list", Gen.list(NULLS));
         gens.put("queue", Gen.queue(NULLS));
-        gens.put("stream", Gen.stream(NULLS));
+        gens.put("lazyList", Gen.lazyList(NULLS));
         gens.put("hashSet", Gen.hashSet(NULLS));
         gens.put("linkedHashSet", Gen.linkedHashSet(NULLS));
         gens.put("treeSet", Gen.treeSet(NULLS));
@@ -659,7 +659,7 @@ class GenTypesTest {
                 () -> Gen.tuple6(g, g, g, g, g, n), () -> Gen.tuple7(g, g, g, g, g, g, n), () -> Gen.tuple8(g, g, g, g, g, g, g, n),
                 () -> Gen.tuple8(n, g, g, g, g, g, g, g),
                 () -> Gen.vector(n), () -> Gen.vectorN(1, n), () -> Gen.nonEmptyVector(n), () -> Gen.list(n), () -> Gen.queue(n),
-                () -> Gen.stream(n), () -> Gen.hashSet(n), () -> Gen.linkedHashSet(n), () -> Gen.treeSet(n),
+                () -> Gen.lazyList(n), () -> Gen.hashSet(n), () -> Gen.linkedHashSet(n), () -> Gen.treeSet(n),
                 () -> Gen.hashMap(n, g), () -> Gen.hashMap(g, n), () -> Gen.linkedHashMap(n, g), () -> Gen.linkedHashMap(g, n),
                 () -> Gen.treeMap(n, g), () -> Gen.treeMap(g, n));
         for (int i = 0; i < calls.size(); i++) {
@@ -694,7 +694,7 @@ class GenTypesTest {
     }
 
     @Test
-    void streamElementsAreDrawnWhenTheStreamIsGenerated() {
+    void lazyListElementsAreDrawnWhenTheLazyListIsGenerated() {
         final AtomicBoolean done = new AtomicBoolean();
         final Gen<Integer> elements = Gen.fromRandom(random -> {
             if (done.get()) {
@@ -702,11 +702,11 @@ class GenTypesTest {
             }
             return random.nextInt();
         });
-        final List<Stream<Integer>> first = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
+        final List<LazyList<Integer>> first = Gen.lazyList(elements).withSize(100).runCollectN(300, config(7));
         done.set(true);
         final List<List<Integer>> evaluated = first.map(List::ofAll);
         done.set(false);
-        final List<Stream<Integer>> second = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
+        final List<LazyList<Integer>> second = Gen.lazyList(elements).withSize(100).runCollectN(300, config(7));
         done.set(true);
         assertThat(second.map(List::ofAll)).isEqualTo(evaluated);
         assertThat(evaluated).anyMatch(l -> l.size() > 32);
@@ -727,7 +727,7 @@ class GenTypesTest {
     void elementsAreDrawnAtTheCurrentSize() {
         final Gen<Integer> size = Gen.size();
         final java.util.List<Gen<? extends Iterable<?>>> gens = java.util.List.of(
-                Gen.vector(size), Gen.vectorN(40, size), Gen.nonEmptyVector(size), Gen.list(size), Gen.queue(size), Gen.stream(size),
+                Gen.vector(size), Gen.vectorN(40, size), Gen.nonEmptyVector(size), Gen.list(size), Gen.queue(size), Gen.lazyList(size),
                 Gen.hashSet(size), Gen.linkedHashSet(size), Gen.treeSet(size));
         for (Gen<? extends Iterable<?>> gen : gens) {
             assertThat(gen.withSize(7).runCollectN(100, config(1))).anyMatch(c -> c.iterator().hasNext()).allMatch(c -> onlySevens(c));

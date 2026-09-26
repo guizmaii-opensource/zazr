@@ -3,6 +3,7 @@ package dev.zazr.collection.internal;
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
@@ -11,7 +12,6 @@ import dev.zazr.collection.Queue;
 import dev.zazr.collection.Set;
 import dev.zazr.collection.SortedMap;
 import dev.zazr.collection.SortedSet;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Traversable;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
@@ -70,7 +70,7 @@ public final class Collections {
         return equalsSequence(source, object);
     }
 
-    public static <V extends @Nullable Object> boolean equals(Stream<V> source, @Nullable Object object) {
+    public static <V extends @Nullable Object> boolean equals(LazyList<V> source, @Nullable Object object) {
         return equalsSequence(source, object);
     }
 
@@ -87,7 +87,7 @@ public final class Collections {
 
     // the ordered sequence types, equal to each other element by element in order
     static boolean isSequence(@Nullable Object object) {
-        return object instanceof Vector || object instanceof List || object instanceof Queue || object instanceof Stream;
+        return object instanceof Vector || object instanceof List || object instanceof Queue || object instanceof LazyList;
     }
 
     @SuppressWarnings("unchecked")
@@ -202,9 +202,9 @@ public final class Collections {
         return (iterable instanceof Collection) || (iterable instanceof Traversable);
     }
 
-    // A size that is known without walking the elements: a Stream may be infinite.
+    // A size that is known without walking the elements: a LazyList may be infinite.
     static boolean hasDefiniteSize(Traversable<?> traversable) {
-        return !(traversable instanceof Stream);
+        return !(traversable instanceof LazyList);
     }
 
     // sliding/grouped windows: both the size and the step must be positive
@@ -429,8 +429,8 @@ public final class Collections {
             return Iterator.ofAll(((Queue<T>) iterable).reverse().iterator());
         } else if (iterable instanceof List) {
             return Iterator.ofAll(((List<T>) iterable).reverse());
-        } else if (iterable instanceof Stream) {
-            return Iterator.ofAll(((Stream<T>) iterable).reverse());
+        } else if (iterable instanceof LazyList) {
+            return Iterator.ofAll(((LazyList<T>) iterable).reverse());
         } else {
             return Iterator.ofAll(List.<T>empty().pushAll(iterable));
         }

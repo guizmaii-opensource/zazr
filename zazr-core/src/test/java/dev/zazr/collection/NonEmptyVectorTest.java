@@ -1167,7 +1167,7 @@ public class NonEmptyVectorTest {
             final Vector<Integer> doubled = vector.appendAll(vector.reverse());
             final NonEmptyVector<Integer> nev = nev(doubled);
             assertThat(nev.toQueue()).isEqualTo(doubled.toQueue());
-            assertThat(nev.toStream()).isEqualTo(doubled.toStream());
+            assertThat(nev.toLazyList()).isEqualTo(doubled.toLazyList());
             assertThat((Object) nev.toLinkedSet()).isEqualTo(doubled.toLinkedSet());
             assertThat(nev.toLinkedSet().toVector()).isEqualTo(vector);
             assertThat((Object) nev.toSortedSet()).isEqualTo(doubled.toSortedSet());

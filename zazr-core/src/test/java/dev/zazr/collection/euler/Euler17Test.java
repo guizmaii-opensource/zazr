@@ -2,13 +2,13 @@ package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Map;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
-import static dev.zazr.collection.Stream.rangeClosed;
+import static dev.zazr.collection.LazyList.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Euler17Test {
@@ -57,7 +57,7 @@ public class Euler17Test {
     private interface SolutionProblem17 {
         int letterCount(int num);
 
-        default int letterCount(Stream<Integer> range) {
+        default int letterCount(LazyList<Integer> range) {
             return range.map(this::letterCount)
                     .sum().intValue();
         }

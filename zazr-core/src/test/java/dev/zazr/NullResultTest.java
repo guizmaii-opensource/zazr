@@ -2,6 +2,7 @@ package dev.zazr;
 
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
@@ -11,7 +12,6 @@ import dev.zazr.collection.NonEmptySortedMap;
 import dev.zazr.collection.NonEmptySortedSet;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
@@ -210,24 +210,24 @@ public class NullResultTest {
         cases.add(throwing("Queue.unzip(java.util.function.Function)", "Queue.unzip: unzipper returned null", () -> Queue.of(1).unzip(x -> null)));
         cases.add(throwing("Queue.unzip3(java.util.function.Function)", "Queue.unzip3: unzipper returned null", () -> Queue.of(1).unzip3(x -> null)));
 
-        // a Stream is lazy: the null is rejected when the element is reached
-        cases.add(throwing("Stream.appendSelf(java.util.function.Function)", "Stream.appendSelf: mapper returned null", () -> Stream.of(1).appendSelf(s -> null).size()));
-        cases.add(throwing("Stream.collect(java.util.function.Function)", "Stream.collect: mapper returned null", () -> Stream.of(1).collect(x -> null).size()));
-        cases.add(throwing("Stream.cons(java.lang.Object, java.util.function.Supplier)", "Stream.cons: tailSupplier returned null", () -> Stream.cons(1, () -> null).tail()));
-        cases.add(throwing("Stream.flatMap(java.util.function.Function)", "Stream.flatMap: mapper returned null", () -> Stream.of(1).flatMap(x -> null).size()));
-        cases.add(throwing("Stream.groupBy", "Stream.groupBy: classifier returned null", () -> Stream.of(1).groupBy(x -> null)));
-        cases.add(throwing("Stream.iterate(java.util.function.Supplier)", "Stream.iterate: supplier returned null", () -> Stream.iterate(() -> null).size()));
-        cases.add(throwing("Stream.orElse(java.util.function.Supplier)", "Stream.orElse: supplier returned null", () -> Stream.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("Stream.partitionMap(java.util.function.Function)", "Stream.partitionMap: f returned null", () -> Stream.of(1).partitionMap(x -> null)._1().size()));
-        cases.add(throwing("Stream.toLinkedMap(java.util.function.Function)", "Stream.toLinkedMap: f returned null", () -> Stream.of(1).toLinkedMap(x -> null)));
-        cases.add(throwing("Stream.toMap(java.util.function.Function)", "Stream.toMap: f returned null", () -> Stream.of(1).toMap(x -> null)));
-        cases.add(throwing("Stream.toSortedMap(java.util.function.Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
-        cases.add(throwing("Stream.toSortedMap(java.util.Comparator, java.util.function.Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("Stream.unfold(java.lang.Object, java.util.function.Function)", "Stream.unfold: f returned null", () -> Stream.unfold(1, x -> null).size()));
-        cases.add(throwing("Stream.unfoldLeft(java.lang.Object, java.util.function.Function)", "Stream.unfoldLeft: f returned null", () -> Stream.unfoldLeft(1, x -> null).size()));
-        cases.add(throwing("Stream.unfoldRight(java.lang.Object, java.util.function.Function)", "Stream.unfoldRight: f returned null", () -> Stream.unfoldRight(1, x -> null).size()));
-        cases.add(throwing("Stream.unzip(java.util.function.Function)", "Stream.unzip: unzipper returned null", () -> Stream.of(1).unzip(x -> null)._1().size()));
-        cases.add(throwing("Stream.unzip3(java.util.function.Function)", "Stream.unzip3: unzipper returned null", () -> Stream.of(1).unzip3(x -> null)._1().size()));
+        // a LazyList is lazy: the null is rejected when the element is reached
+        cases.add(throwing("LazyList.appendSelf(java.util.function.Function)", "LazyList.appendSelf: mapper returned null", () -> LazyList.of(1).appendSelf(s -> null).size()));
+        cases.add(throwing("LazyList.collect(java.util.function.Function)", "LazyList.collect: mapper returned null", () -> LazyList.of(1).collect(x -> null).size()));
+        cases.add(throwing("LazyList.cons(java.lang.Object, java.util.function.Supplier)", "LazyList.cons: tailSupplier returned null", () -> LazyList.cons(1, () -> null).tail()));
+        cases.add(throwing("LazyList.flatMap(java.util.function.Function)", "LazyList.flatMap: mapper returned null", () -> LazyList.of(1).flatMap(x -> null).size()));
+        cases.add(throwing("LazyList.groupBy", "LazyList.groupBy: classifier returned null", () -> LazyList.of(1).groupBy(x -> null)));
+        cases.add(throwing("LazyList.iterate(java.util.function.Supplier)", "LazyList.iterate: supplier returned null", () -> LazyList.iterate(() -> null).size()));
+        cases.add(throwing("LazyList.orElse(java.util.function.Supplier)", "LazyList.orElse: supplier returned null", () -> LazyList.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
+        cases.add(throwing("LazyList.partitionMap(java.util.function.Function)", "LazyList.partitionMap: f returned null", () -> LazyList.of(1).partitionMap(x -> null)._1().size()));
+        cases.add(throwing("LazyList.toLinkedMap(java.util.function.Function)", "LazyList.toLinkedMap: f returned null", () -> LazyList.of(1).toLinkedMap(x -> null)));
+        cases.add(throwing("LazyList.toMap(java.util.function.Function)", "LazyList.toMap: f returned null", () -> LazyList.of(1).toMap(x -> null)));
+        cases.add(throwing("LazyList.toSortedMap(java.util.function.Function)", "LazyList.toSortedMap: f returned null", () -> LazyList.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
+        cases.add(throwing("LazyList.toSortedMap(java.util.Comparator, java.util.function.Function)", "LazyList.toSortedMap: f returned null", () -> LazyList.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
+        cases.add(throwing("LazyList.unfold(java.lang.Object, java.util.function.Function)", "LazyList.unfold: f returned null", () -> LazyList.unfold(1, x -> null).size()));
+        cases.add(throwing("LazyList.unfoldLeft(java.lang.Object, java.util.function.Function)", "LazyList.unfoldLeft: f returned null", () -> LazyList.unfoldLeft(1, x -> null).size()));
+        cases.add(throwing("LazyList.unfoldRight(java.lang.Object, java.util.function.Function)", "LazyList.unfoldRight: f returned null", () -> LazyList.unfoldRight(1, x -> null).size()));
+        cases.add(throwing("LazyList.unzip(java.util.function.Function)", "LazyList.unzip: unzipper returned null", () -> LazyList.of(1).unzip(x -> null)._1().size()));
+        cases.add(throwing("LazyList.unzip3(java.util.function.Function)", "LazyList.unzip3: unzipper returned null", () -> LazyList.of(1).unzip3(x -> null)._1().size()));
 
         cases.add(throwing("NonEmptyVector.collect(java.util.function.Function)", "NonEmptyVector.collect: mapper returned null", () -> NonEmptyVector.of(1).collect(x -> null)));
         cases.add(throwing("NonEmptyVector.flatMap(java.util.function.Function)", "NonEmptyVector.flatMap: mapper returned null", () -> NonEmptyVector.of(1).flatMap(x -> null)));
@@ -370,7 +370,7 @@ public class NullResultTest {
         cases.add(throwing("Vector.arrangeBy", "Vector.arrangeBy: getKey returned null", () -> Vector.of(1).arrangeBy(x -> null)));
         cases.add(throwing("List.arrangeBy", "List.arrangeBy: getKey returned null", () -> List.of(1).arrangeBy(x -> null)));
         cases.add(throwing("Queue.arrangeBy", "Queue.arrangeBy: getKey returned null", () -> Queue.of(1).arrangeBy(x -> null)));
-        cases.add(throwing("Stream.arrangeBy", "Stream.arrangeBy: getKey returned null", () -> Stream.of(1).arrangeBy(x -> null)));
+        cases.add(throwing("LazyList.arrangeBy", "LazyList.arrangeBy: getKey returned null", () -> LazyList.of(1).arrangeBy(x -> null)));
         cases.add(throwing("NonEmptyVector.arrangeBy", "NonEmptyVector.arrangeBy: getKey returned null", () -> NonEmptyVector.of(1).arrangeBy(x -> null)));
         cases.add(throwing("HashSet.arrangeBy", "Set.arrangeBy: getKey returned null", () -> HashSet.of(1).arrangeBy(x -> null)));
         cases.add(throwing("TreeSet.arrangeBy", "Set.arrangeBy: getKey returned null", () -> TreeSet.of(1).arrangeBy(x -> null)));
@@ -410,37 +410,37 @@ public class NullResultTest {
 
     @Test
     public void shouldReportTheSameFailureWhenALazyResultIsForcedAgain() {
-        final Stream<Object> flatMapped = Stream.of(1, 2).flatMap(x -> x == 2 ? null : List.of(x));
+        final LazyList<Object> flatMapped = LazyList.of(1, 2).flatMap(x -> x == 2 ? null : List.of(x));
         assertThat(flatMapped.head()).isEqualTo(1);
-        assertThatNullPointerException().isThrownBy(flatMapped::size).withMessage("Stream.flatMap: mapper returned null");
-        assertThatNullPointerException().isThrownBy(flatMapped::size).withMessage("Stream.flatMap: mapper returned null");
+        assertThatNullPointerException().isThrownBy(flatMapped::size).withMessage("LazyList.flatMap: mapper returned null");
+        assertThatNullPointerException().isThrownBy(flatMapped::size).withMessage("LazyList.flatMap: mapper returned null");
 
         // a stateful supplier: forcing again must not ask it for the value after the null and drop the rejected one
         final java.util.Iterator<Option<Integer>> supplied = java.util.Arrays.asList(Option.some(1), null, Option.some(3), Option.<Integer> none()).iterator();
-        final Stream<Integer> iterated = Stream.iterate(supplied::next);
-        assertThatNullPointerException().isThrownBy(iterated::toVector).withMessage("Stream.iterate: supplier returned null");
-        assertThatNullPointerException().isThrownBy(iterated::toVector).withMessage("Stream.iterate: supplier returned null");
+        final LazyList<Integer> iterated = LazyList.iterate(supplied::next);
+        assertThatNullPointerException().isThrownBy(iterated::toVector).withMessage("LazyList.iterate: supplier returned null");
+        assertThatNullPointerException().isThrownBy(iterated::toVector).withMessage("LazyList.iterate: supplier returned null");
         assertThat(iterated.head()).isEqualTo(1);
 
         // stateful functions that return null once: the failure is remembered, the function is not called again
         final java.util.concurrent.atomic.AtomicInteger unfoldCalls = new java.util.concurrent.atomic.AtomicInteger();
-        final Stream<Integer> unfolded = Stream.unfoldRight(0, x -> x > 4 ? Option.none()
+        final LazyList<Integer> unfolded = LazyList.unfoldRight(0, x -> x > 4 ? Option.none()
                 : x == 2 && unfoldCalls.getAndIncrement() == 0 ? null : Option.some(Tuple.of(x, x + 1)));
         for (int i = 0; i < 3; i++) {
-            assertThatNullPointerException().isThrownBy(unfolded::toVector).withMessage("Stream.unfoldRight: f returned null");
+            assertThatNullPointerException().isThrownBy(unfolded::toVector).withMessage("LazyList.unfoldRight: f returned null");
         }
         assertThat(unfoldCalls.get()).isEqualTo(1);
         final java.util.concurrent.atomic.AtomicInteger appendCalls = new java.util.concurrent.atomic.AtomicInteger();
-        final Stream<Integer> appended = Stream.of(1, 2).appendSelf(self -> appendCalls.getAndIncrement() == 0 ? null : Stream.of(9));
+        final LazyList<Integer> appended = LazyList.of(1, 2).appendSelf(self -> appendCalls.getAndIncrement() == 0 ? null : LazyList.of(9));
         for (int i = 0; i < 3; i++) {
-            assertThatNullPointerException().isThrownBy(appended::toVector).withMessage("Stream.appendSelf: mapper returned null");
+            assertThatNullPointerException().isThrownBy(appended::toVector).withMessage("LazyList.appendSelf: mapper returned null");
         }
         assertThat(appendCalls.get()).isEqualTo(1);
 
-        final Stream<Integer> consed = Stream.cons(1, () -> null);
+        final LazyList<Integer> consed = LazyList.cons(1, () -> null);
         assertThat(consed.head()).isEqualTo(1);
-        assertThatNullPointerException().isThrownBy(consed::tail).withMessage("Stream.cons: tailSupplier returned null");
-        assertThatNullPointerException().isThrownBy(consed::tail).withMessage("Stream.cons: tailSupplier returned null");
+        assertThatNullPointerException().isThrownBy(consed::tail).withMessage("LazyList.cons: tailSupplier returned null");
+        assertThatNullPointerException().isThrownBy(consed::tail).withMessage("LazyList.cons: tailSupplier returned null");
 
         final Lazy<Object> lazy = Lazy.of(() -> 1).flatMap(x -> null);
         assertThatNullPointerException().isThrownBy(lazy::get).withMessage("Lazy.flatMap: mapper returned null");
@@ -513,7 +513,7 @@ public class NullResultTest {
 
     /**
      * {@code Type.method(pkg.Param1, pkg.Param2)}, the erased parameter types fully qualified: one key per overload,
-     * even where a Zazr type and a JDK type share a simple name ({@code Stream}, {@code List}, {@code Map}).
+     * even where a Zazr type and a JDK type share a simple name ({@code LazyList}, {@code List}, {@code Map}).
      */
     private static String signature(Class<?> type, Method method) {
         final java.util.StringJoiner parameters = new java.util.StringJoiner(", ", "(", ")");

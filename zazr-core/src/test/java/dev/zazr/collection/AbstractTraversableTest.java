@@ -125,9 +125,9 @@ public abstract class AbstractTraversableTest {
         return empty.substring(0, empty.length() - "()".length());
     }
 
-    // what the type guarantees: a Stream has no size that is known without a walk
+    // what the type guarantees: a LazyList has no size that is known without a walk
     protected final boolean hasDefiniteSize() {
-        return !(empty() instanceof Stream);
+        return !(empty() instanceof LazyList);
     }
 
     protected final boolean isDistinct() {
@@ -850,7 +850,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldHaveAReasonableToString() {
         final Traversable<Integer> value = of(1, 2);
-        value.toList(); // evaluate all elements (e.g. for Stream)
+        value.toList(); // evaluate all elements (e.g. for LazyList)
         assertThat(value.toString()).contains("1", "2");
     }
 

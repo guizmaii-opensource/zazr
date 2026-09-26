@@ -17,12 +17,12 @@ import dev.zazr.Tuple7;
 import dev.zazr.Tuple8;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
@@ -30,7 +30,6 @@ import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import dev.zazr.control.Try;
 import dev.zazr.control.Validation;
-
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -1663,20 +1662,20 @@ public final class Gen<A> {
     }
 
     /**
-     * A random finite stream of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size
-     * and the size minus one. Each element is the first value of one pass of {@code gen}, drawn when the stream is
-     * generated. The stream is built by {@code ofAll}, as a chain of lazy tails, as the same chain with a prefix
+     * A random finite lazy list of up to the current size elements of {@code gen}, favouring the lengths 0, 1, the size
+     * and the size minus one. Each element is the first value of one pass of {@code gen}, drawn when the lazy list is
+     * generated. The lazy list is built by {@code ofAll}, as a chain of lazy tails, as the same chain with a prefix
      * already evaluated, as an eager prefix with a lazy suffix appended, or as the rest of a longer chain after
      * {@code drop}, each as likely.
      *
      * @param gen the generator of the elements; a null element makes the collection throw
      * @param <A> the type of the elements
-     * @return a random generator of streams
+     * @return a random generator of lazy lists
      * @throws NullPointerException if {@code gen} is null
      */
-    public static <A> Gen<Stream<A>> stream(Gen<A> gen) {
+    public static <A> Gen<LazyList<A>> lazyList(Gen<A> gen) {
         Objects.requireNonNull(gen, "gen is null");
-        return Shapes.stream(gen);
+        return Shapes.lazyList(gen);
     }
 
     /**

@@ -1,8 +1,8 @@
 package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +45,7 @@ public class Euler30Test {
     }
 
     private static long maximalSumForPowers(int powers) {
-        return Stream.from(1)
+        return LazyList.from(1)
                 .map(i -> Tuple.of((long) Math.pow(10, i) - 1, List.fill(i, () -> Math.pow(9, powers)).sum().longValue()))
                 .find(t -> t._1() > t._2())
                 .map(t -> t._1()).get();

@@ -26,7 +26,7 @@ Choose another sequence for a specific need:
 
 - [`List`](list.md) to take a sequence apart from the front with pattern matching;
 - [`Queue`](queue.md) for first in, first out;
-- [`Stream`](stream.md) for a lazy or infinite sequence.
+- [`LazyList`](lazy-list.md) for a lazy or infinite sequence.
 
 ```java
 var letters = Vector.of("a", "b", "c", "d");

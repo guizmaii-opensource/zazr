@@ -320,9 +320,9 @@ final case class Family(title: String, intro: String, columns: List[String], row
 val families: List[Family] = List(
   Family(
     "Sequences",
-    "`NonEmptyVector` wraps a `Vector`, so its costs are those of `Vector`. `Stream` is lazy: most of its " +
+    "`NonEmptyVector` wraps a `Vector`, so its costs are those of `Vector`. `LazyList` is lazy: most of its " +
       "operations compute their result as it is read.",
-    List("Vector", "List", "Queue", "Stream", "NonEmptyVector"),
+    List("Vector", "List", "Queue", "LazyList", "NonEmptyVector"),
     List("head", "tail", "last", "init", "get", "update", "prepend", "append", "prependAll", "appendAll", "insert",
       "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "size", "contains", "indexOf",
       "zip", "sliding", "grouped", "distinct", "concat")
@@ -445,11 +445,11 @@ def page(types: List[TypeInfo]): String = {
     "changes, so you can also call the method again on an older version: each such call may pay the O(n) step " +
     "again. The note of each amortised method says when that happens.\n"
   out ++= "\n## Lazy\n\n" +
-    "A `Stream` computes its elements when they are read, and keeps each one once computed. A lazy call returns a " +
-    "`Stream` without walking this one: its note says what is computed now, and the rest is computed as you read " +
+    "A `LazyList` computes its elements when they are read, and keeps each one once computed. A lazy call returns a " +
+    "`LazyList` without walking this one: its note says what is computed now, and the rest is computed as you read " +
     "the result.\n\n" +
     "\"Now\" can still be more than one element. A call that keeps only some elements, such as `filter`, reads " +
-    "until its first kept element; on an infinite `Stream` where none is kept, it never returns.\n"
+    "until its first kept element; on an infinite `LazyList` where none is kept, it never returns.\n"
   out ++= "\n## Missing operations\n\n" +
     "`n/a` in a table means that the type has no such method. `HashSet` and `HashMap` have no positional methods " +
     "(`head`, `take`, `drop`), because their order is not defined.\n"

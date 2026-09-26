@@ -168,7 +168,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Creates a Queue that contains the elements of the given {@link java.util.stream.Stream}.
      *
      * @param javaStream A {@link java.util.stream.Stream}
-     * @param <T>        Component type of the Stream.
+     * @param <T>        Component type of the LazyList.
      * @return A Queue containing the given elements in the same order.
      */
     public static <T extends @Nullable Object> Queue<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
@@ -3409,12 +3409,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * The elements as a {@link Stream}, in this Queue's order.
+     * The elements as a {@link LazyList}, in this Queue's order.
      *
-     * @return a {@code Stream} of the elements
+     * @return a {@code LazyList} of the elements
      */
-    public Stream<T> toStream() {
-        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    public LazyList<T> toLazyList() {
+        return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
 
     /**

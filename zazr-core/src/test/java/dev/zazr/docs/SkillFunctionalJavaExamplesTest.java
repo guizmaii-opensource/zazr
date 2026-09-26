@@ -2,8 +2,8 @@ package dev.zazr.docs;
 
 import dev.zazr.Lazy;
 import dev.zazr.collection.HashMap;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.NonEmptyVector;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Either;
 import dev.zazr.control.Either.Left;
@@ -510,7 +510,7 @@ public class SkillFunctionalJavaExamplesTest {
         @Test
         void stream() {
             // after
-            var primes = Stream.from(2).filter(n -> isPrime(n)).take(5).toVector(); // Vector<Integer>
+            var primes = LazyList.from(2).filter(n -> isPrime(n)).take(5).toVector(); // Vector<Integer>
             // Vector(2, 3, 5, 7, 11)
 
             assertThat(primes).isEqualTo(Vector.of(2, 3, 5, 7, 11));
