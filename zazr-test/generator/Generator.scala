@@ -28,11 +28,11 @@ def generateMainClasses(): Unit = {
   genCheck()
 
   /**
-   * Generator of com.guizmaii.zazr.test.Check: check, checkN and checkAll for 1 to N generators.
+   * Generator of dev.zazr.test.Check: check, checkN and checkAll for 1 to N generators.
    */
   def genCheck(): Unit = {
 
-    genVavrFile("com.guizmaii.zazr.test", "Check")((im: ImportManager, packageName: String, className: String) => {
+    genVavrFile("dev.zazr.test", "Check")((im: ImportManager, packageName: String, className: String) => {
 
       val objects = im.getType("java.util.Objects")
 
@@ -40,10 +40,10 @@ def generateMainClasses(): Unit = {
         val generics = (1 to i).gen(j => s"T$j")(using ", ")
         val gens = (1 to i).gen(j => s"Gen<? extends T$j> g$j")(using ", ")
         val gensArgs = (1 to i).gen(j => s"g$j")(using ", ")
-        val checked = im.getType(s"com.guizmaii.zazr.CheckedFunction$i")
+        val checked = im.getType(s"dev.zazr.CheckedFunction$i")
         val bodyType = s"$checked<${(1 to i).gen(j => s"? super T$j")(using ", ")}, Boolean>"
-        val tupleType = im.getType(s"com.guizmaii.zazr.Tuple$i")
-        val zipped = if (i == 1) s"g1.<$tupleType<T1>>map(${im.getType("com.guizmaii.zazr.Tuple")}::of)" else s"Gen.zip($gensArgs)"
+        val tupleType = im.getType(s"dev.zazr.Tuple$i")
+        val zipped = if (i == 1) s"g1.<$tupleType<T1>>map(${im.getType("dev.zazr.Tuple")}::of)" else s"Gen.zip($gensArgs)"
         val apply = s"sample -> body.apply(${(1 to i).gen(j => s"sample._$j()")(using ", ")})"
         val genParams = (1 to i).gen(j => s"* @param g$j   the generator of the ${j.ordinal} value")(using "\n")
         val typeParams = (1 to i).gen(j => s"* @param <T$j> the type of the ${j.ordinal} value")(using "\n")
@@ -166,17 +166,17 @@ def generateTestClasses(): Unit = {
   genCheckTests()
 
   /**
-   * Generator of the tests of com.guizmaii.zazr.test.Check, one class per arity.
+   * Generator of the tests of dev.zazr.test.Check, one class per arity.
    */
   def genCheckTests(): Unit = {
     for (i <- 1 to N) {
-      genVavrFile("com.guizmaii.zazr.test", s"Check${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName: String, className: String) => {
+      genVavrFile("dev.zazr.test", s"Check${i}Test", baseDir = TARGET_TEST)((im: ImportManager, packageName: String, className: String) => {
 
         val test = im.getType("org.junit.jupiter.api.Test")
         val assertThat = im.getStatic("org.assertj.core.api.Assertions.assertThat")
         val assertThatThrownBy = im.getStatic("org.assertj.core.api.Assertions.assertThatThrownBy")
-        val tuple = im.getType("com.guizmaii.zazr.Tuple")
-        val option = im.getType("com.guizmaii.zazr.control.Option")
+        val tuple = im.getType("dev.zazr.Tuple")
+        val option = im.getType("dev.zazr.control.Option")
         val arrayList = im.getType("java.util.ArrayList")
         val jlist = im.getType("java.util.List")
 

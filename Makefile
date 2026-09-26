@@ -54,7 +54,7 @@ vocabulary: ## fail on category-theory vocabulary in the code, the site and the 
 
 # The files whose positional and size-sensitive methods must document their cost (design.md 3.7), and the
 # supertypes read to resolve the notes a type inherits.
-COMPLEXITY_DIR := zazr-core/src/main/java/com/guizmaii/zazr/collection
+COMPLEXITY_DIR := zazr-core/src/main/java/dev/zazr/collection
 COMPLEXITY_FILES := $(addprefix $(COMPLEXITY_DIR)/, \
 	Vector.java List.java Queue.java Stream.java NonEmptyVector.java \
 	HashSet.java LinkedHashSet.java TreeSet.java SortedSet.java NonEmptySet.java NonEmptySortedSet.java \
@@ -78,10 +78,10 @@ docs-complexity-check: docs-complexity ## fail when the committed complexity pag
 # The tests that compile and run every fenced java block of the site and of the Agent Skill under skills/ (zazr-test's
 # own, since zazr-core cannot depend on it).
 DOCS_EXAMPLES_TESTS := \
-	zazr-core/src/test/java/com/guizmaii/zazr/docs/DocsExamplesTest.java \
-	zazr-core/src/test/java/com/guizmaii/zazr/docs/SkillExamplesTest.java \
-	zazr-core/src/test/java/com/guizmaii/zazr/docs/SkillFunctionalJavaExamplesTest.java \
-	zazr-test/src/test/java/com/guizmaii/zazr/test/docs/DocsTestingExamplesTest.java
+	zazr-core/src/test/java/dev/zazr/docs/DocsExamplesTest.java \
+	zazr-core/src/test/java/dev/zazr/docs/SkillExamplesTest.java \
+	zazr-core/src/test/java/dev/zazr/docs/SkillFunctionalJavaExamplesTest.java \
+	zazr-test/src/test/java/dev/zazr/test/docs/DocsTestingExamplesTest.java
 
 docs-examples: ## fail when a java block of the site or the skill is not in a docs example test (they compile and run every snippet)
 	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --docs skills --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)
@@ -122,7 +122,7 @@ fmt-check: ## fail if sources are not formatted (spotless check)
 nullness: ## NullAway / JSpecify nullness check
 	$(MVN) -Pnullaway compile
 
-bench: ## run the JMH benchmarks (com.guizmaii.zazr.JmhRunner, zazr-benchmark module)
+bench: ## run the JMH benchmarks (dev.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
 # zazr-benchmark has no tests and stays out of the report.

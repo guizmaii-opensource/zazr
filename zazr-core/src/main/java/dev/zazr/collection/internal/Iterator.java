@@ -1,0 +1,2020 @@
+package dev.zazr.collection.internal;
+
+import dev.zazr.*;
+import dev.zazr.collection.List;
+import dev.zazr.collection.Queue;
+import dev.zazr.collection.Stream;
+import dev.zazr.collection.TreeSet;
+import dev.zazr.collection.Vector;
+import dev.zazr.collection.internal.IteratorModule.ConcatIterator;
+import dev.zazr.collection.internal.IteratorModule.DistinctIterator;
+import dev.zazr.collection.internal.IteratorModule.GroupedIterator;
+import dev.zazr.control.Option;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.function.*;
+import org.jspecify.annotations.Nullable;
+
+import static dev.zazr.collection.internal.IteratorModule.BigDecimalHelper.areEqual;
+import static dev.zazr.collection.internal.IteratorModule.BigDecimalHelper.asDecimal;
+import static dev.zazr.collection.internal.IteratorModule.CachedIterator;
+import static dev.zazr.collection.internal.IteratorModule.EmptyIterator;
+
+/**
+ * The single-pass cursor the collections are built with: a {@link java.util.Iterator} with the lazy combinators
+ * ({@code map}, {@code filter}, {@code take}, {@code zip}, {@code sliding}, ...) that the implementations compose
+ * before materialising a result, and the numeric ranges the {@code range*} factories of the collections are
+ * built on. It is not part of the public API: every public method returns a collection or a
+ * {@code java.util.Iterator}.
+ * <p>
+ * An {@code Iterator} keeps mutable state, is not thread-safe and is consumed by one traversal: once a combinator
+ * has been called on it, only the result may be used. {@code Iterator.ofAll(iterable)} wraps any
+ * {@code java.util.Iterator} once, or returns it unchanged when it already is one of these.
+ *
+ * @param <T> the element type
+ * @author Daniel Dietrich
+ */
+// DEV-NOTE: we prefer returning empty() over this if !hasNext() == true in order to free memory.
+public interface Iterator<T extends @Nullable Object> extends java.util.Iterator<T>, Iterable<T> {
+
+    /**
+     * Creates an {@code Iterator} that traverses the elements of the provided
+     * iterables in sequence, as if they were concatenated.
+     *
+     * @param iterables the source iterables
+     * @param <T>       the element type
+     * @return an iterator yielding the elements of each iterable in order
+     * @throws NullPointerException if {@code iterables} is {@code null}
+     */
+    @SuppressWarnings("varargs")
+    @SafeVarargs
+    static <T extends @Nullable Object> Iterator<T> concat(Iterable<? extends T>... iterables) {
+        Objects.requireNonNull(iterables, "iterables is null");
+        if (iterables.length == 0) {
+            return empty();
+        } else {
+            ConcatIterator<T> res = new ConcatIterator<>();
+            for (Iterable<? extends T> iterable : iterables) {
+                res.append(iterable.iterator());
+            }
+            return res;
+        }
+    }
+
+    /**
+     * Creates an {@code Iterator} that iterates over all elements of the supplied
+     * sequence of iterables, in order.
+     *
+     * @param iterables an iterable whose elements provide the individual iterables to traverse
+     * @param <T>       the element type
+     * @return an iterator yielding the concatenated contents of the nested iterables
+     * @throws NullPointerException if {@code iterables} is {@code null}
+     */
+    static <T extends @Nullable Object> Iterator<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
+        Objects.requireNonNull(iterables, "iterables is null");
+        // one pass over the outer iterable, which may be one-shot; nothing appended means the empty iterator
+        final ConcatIterator<T> res = new ConcatIterator<>();
+        boolean appended = false;
+        for (Iterable<? extends T> iterable : iterables) {
+            res.append(iterable.iterator());
+            appended = true;
+        }
+        return appended ? res : empty();
+    }
+
+    /**
+     * Returns an empty {@code Iterator}.
+     *
+     * @param <T> the element type
+     * @return an iterator with no elements
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends @Nullable Object> Iterator<T> empty() {
+        return (Iterator<T>) EmptyIterator.INSTANCE;
+    }
+
+    /**
+     * Creates an {@code Iterator} that yields exactly one element.
+     *
+     * @param element the single element
+     * @param <T>     the element type
+     * @return an iterator containing only {@code element}
+     */
+    static <T extends @Nullable Object> Iterator<T> of(T element) {
+        Objects.requireNonNull(element, "Iterator.of: element is null");
+        return new AbstractIterator<T>() {
+
+            boolean hasNext = true;
+
+            @Override
+            public boolean hasNext() {
+                return hasNext;
+            }
+
+            @Override
+            public T getNext() {
+                hasNext = false;
+                return element;
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} that iterates over the provided elements.
+     *
+     * @param elements zero or more elements
+     * @param <T>      the element type
+     * @return an iterator over the supplied elements
+     */
+    @SafeVarargs
+    static <T extends @Nullable Object> Iterator<T> of(T... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        for (T element : elements) {
+            Objects.requireNonNull(element, "Iterator.of: element is null");
+        }
+        if (elements.length == 0) {
+            return empty();
+        } else {
+            return new AbstractIterator<T>() {
+
+                int index = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return index < elements.length;
+                }
+
+                @Override
+                public T getNext() {
+                    return Objects.requireNonNull(elements[index++], "Iterator.of: element is null");
+                }
+            };
+        }
+    }
+
+    /**
+     * Creates an {@code Iterator} from the provided {@link Iterable}.
+     * This is a convenience method equivalent to calling
+     * {@code Iterator.ofAll(iterable.iterator())}.
+     *
+     * @param iterable the source iterable
+     * @param <T>      the element type
+     * @return an iterator over the iterable's elements
+     * @throws NullPointerException if {@code iterable} is {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends @Nullable Object> Iterator<T> ofAll(Iterable<? extends T> iterable) {
+        Objects.requireNonNull(iterable, "iterable is null");
+        if (iterable instanceof Iterator) {
+            return (Iterator<T>) iterable;
+        } else {
+            return ofAll(iterable.iterator());
+        }
+    }
+
+    /**
+     * Creates an {@code Iterator} that delegates {@code hasNext()} and {@code next()}
+     * to the given {@link java.util.Iterator}.
+     *
+     * @param iterator the underlying iterator
+     * @param <T>      the element type
+     * @return an iterator that forwards calls to {@code iterator}
+     * @throws NullPointerException if {@code iterator} is {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends @Nullable Object> Iterator<T> ofAll(java.util.Iterator<? extends T> iterator) {
+        Objects.requireNonNull(iterator, "iterator is null");
+        if (iterator instanceof Iterator) {
+            return (Iterator<T>) iterator;
+        } else {
+            return new AbstractIterator<T>() {
+
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+
+                @Override
+                public T getNext() {
+                    return Objects.requireNonNull(iterator.next(), "Iterator: element is null");
+                }
+            };
+        }
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given boolean values.
+     *
+     * @param elements the boolean values
+     * @return an iterator yielding the boxed values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Boolean> ofAll(boolean... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Boolean>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Boolean getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given byte values.
+     *
+     * @param elements the byte values
+     * @return an iterator yielding the boxed {@code Byte} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Byte> ofAll(byte... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Byte>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Byte getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given char values.
+     *
+     * @param elements the char values
+     * @return an iterator yielding the boxed {@code Character} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Character> ofAll(char... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Character>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Character getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given double values.
+     *
+     * @param elements the double values
+     * @return an iterator yielding the boxed {@code Double} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Double> ofAll(double... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Double>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Double getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given float values.
+     *
+     * @param elements the float values
+     * @return an iterator yielding the boxed {@code Float} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Float> ofAll(float... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Float>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Float getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given int values.
+     *
+     * @param elements the int values
+     * @return an iterator yielding the boxed {@code Integer} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Integer> ofAll(int... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Integer>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Integer getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given long values.
+     *
+     * @param elements the long values
+     * @return an iterator yielding the boxed {@code Long} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Long> ofAll(long... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Long>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Long getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Creates an {@code Iterator} over the given short values.
+     *
+     * @param elements the short values
+     * @return an iterator yielding the boxed {@code Short} values
+     * @throws NullPointerException if {@code elements} is {@code null}
+     */
+    static Iterator<Short> ofAll(short... elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        return new AbstractIterator<Short>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < elements.length;
+            }
+
+            @Override
+            public Short getNext() {
+                return elements[i++];
+            }
+        };
+    }
+
+    /**
+     * Returns an {@code Iterator} over a sequence of {@code n} elements, where each element
+     * is computed by the given function {@code f} applied to its index.
+     *
+     * <p>The resulting sequence is {@code f(0), f(1), ..., f(n - 1)}.
+     *
+     * @param <T> the element type
+     * @param n   the number of elements
+     * @param f   the function computing element values
+     * @return an iterator over the computed elements
+     * @throws NullPointerException if {@code f} is {@code null}
+     */
+    static <T extends @Nullable Object> Iterator<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
+        Objects.requireNonNull(f, "f is null");
+        return dev.zazr.collection.internal.Collections.tabulate(n, f);
+    }
+
+    /**
+     * Returns an {@code Iterator} over a sequence of {@code n} elements supplied
+     * by the given {@code Supplier}.
+     *
+     * <p>Each element is obtained by invoking {@code s.get()}.
+     *
+     * @param <T> the element type
+     * @param n   the number of elements
+     * @param s   the supplier providing element values
+     * @return an iterator over the supplied elements
+     * @throws NullPointerException if {@code s} is {@code null}
+     */
+    static <T extends @Nullable Object> Iterator<T> fill(int n, Supplier<? extends T> s) {
+        Objects.requireNonNull(s, "s is null");
+        return dev.zazr.collection.internal.Collections.fill(n, s);
+    }
+
+    /**
+     * Returns an {@code Iterator} containing the given {@code element} repeated {@code n} times.
+     *
+     * @param <T>     the element type
+     * @param n       the number of repetitions
+     * @param element the element to repeat
+     * @return an iterator over {@code n} occurrences of {@code element}
+     */
+    static <T extends @Nullable Object> Iterator<T> fill(int n, T element) {
+        Objects.requireNonNull(element, "Iterator.fill: element is null");
+        return dev.zazr.collection.internal.Collections.fillObject(n, element);
+    }
+
+    /**
+     * Creates an {@code Iterator} of characters starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive).
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.range('a', 'c')  // yields 'a', 'b'
+     * Iterator.range('c', 'a')  // yields no elements
+     * </pre>
+     *
+     * @param from        the first character (inclusive)
+     * @param toExclusive the end character (exclusive)
+     * @return an iterator over the specified character range, or empty if {@code from >= toExclusive}
+     */
+    static Iterator<Character> range(char from, char toExclusive) {
+        return rangeBy(from, toExclusive, 1);
+    }
+
+    /**
+     * Creates an {@code Iterator} of characters starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeBy('a', 'c', 1)  // yields 'a', 'b'
+     * Iterator.rangeBy('a', 'd', 2)  // yields 'a', 'c'
+     * Iterator.rangeBy('d', 'a', -2) // yields 'd', 'b'
+     * Iterator.rangeBy('d', 'a', 2)  // yields no elements
+     * </pre>
+     *
+     * @param from        the first character (inclusive)
+     * @param toExclusive the end character (exclusive); the actual last character yielded is
+     *                    the closest value of the form {@code from + k*step} that lies strictly
+     *                    before {@code toExclusive}, not necessarily its successor/predecessor
+     * @param step        the increment between characters; must not be zero
+     * @return an iterator over the specified character range, or empty if the step direction
+     *         does not match the direction from {@code from} to {@code toExclusive}
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Character> rangeBy(char from, char toExclusive, int step) {
+        return rangeBy((int) from, (int) toExclusive, step).map(i -> (char) i.shortValue());
+    }
+
+    /**
+     * Creates an {@code Iterator} of double values starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeBy(1.0, 3.0, 1.0)   // yields 1.0, 2.0
+     * Iterator.rangeBy(1.0, 4.0, 2.0)   // yields 1.0, 3.0
+     * Iterator.rangeBy(4.0, 1.0, -2.0)  // yields 4.0, 2.0
+     * Iterator.rangeBy(4.0, 1.0, 2.0)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toExclusive the end number (exclusive)
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step direction does not match the
+     *         direction from {@code from} to {@code toExclusive}, or if {@code from == toExclusive}
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Double> rangeBy(double from, double toExclusive, double step) {
+        final BigDecimal fromDecimal = asDecimal(from), toDecimal = asDecimal(toExclusive), stepDecimal = asDecimal(step);
+        return rangeBy(fromDecimal, toDecimal, stepDecimal).map(BigDecimal::doubleValue);
+    }
+
+    /**
+     * Creates an {@code Iterator} of {@code BigDecimal} values starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive), advancing by the specified {@code step}.
+     *
+     * <p>This method provides precise decimal arithmetic suitable for financial calculations
+     * and other scenarios where exact decimal representation is required.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeBy(new BigDecimal("1.0"), new BigDecimal("3.0"), new BigDecimal("1.0"))   // yields 1.0, 2.0
+     * Iterator.rangeBy(new BigDecimal("1.0"), new BigDecimal("4.0"), new BigDecimal("2.0"))   // yields 1.0, 3.0
+     * Iterator.rangeBy(new BigDecimal("4.0"), new BigDecimal("1.0"), new BigDecimal("-2.0"))  // yields 4.0, 2.0
+     * Iterator.rangeBy(new BigDecimal("4.0"), new BigDecimal("1.0"), new BigDecimal("2.0"))   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toExclusive the end number (exclusive)
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step direction does not match the
+     *         direction from {@code from} to {@code toExclusive}, or if {@code from == toExclusive}
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<BigDecimal> rangeBy(BigDecimal from, BigDecimal toExclusive, BigDecimal step) {
+        if (step.signum() == 0) {
+            throw new IllegalArgumentException("step cannot be 0");
+        } else if (areEqual(from, toExclusive) || step.signum() == from.subtract(toExclusive).signum()) {
+            return empty();
+        } else {
+            if (step.signum() > 0) {
+                return new AbstractIterator<BigDecimal>() {
+                    BigDecimal i = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        return i.compareTo(toExclusive) < 0;
+                    }
+
+                    @Override
+                    public BigDecimal getNext() {
+                        final BigDecimal next = this.i;
+                        this.i = next.add(step);
+                        return next;
+                    }
+                };
+            } else {
+                return new AbstractIterator<BigDecimal>() {
+                    BigDecimal i = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        return i.compareTo(toExclusive) > 0;
+                    }
+
+                    @Override
+                    public BigDecimal getNext() {
+                        final BigDecimal next = this.i;
+                        this.i = next.add(step);
+                        return next;
+                    }
+                };
+            }
+        }
+    }
+
+    /**
+     * Creates an {@code Iterator} of int values starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive).
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.range(0, 0)   // yields no elements
+     * Iterator.range(2, 0)   // yields no elements
+     * Iterator.range(-2, 2)  // yields -2, -1, 0, 1
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toExclusive the end number (exclusive)
+     * @return an iterator over the specified range, or empty if {@code from >= toExclusive}
+     */
+    static Iterator<Integer> range(int from, int toExclusive) {
+        return rangeBy(from, toExclusive, 1);
+    }
+
+    /**
+     * Creates an {@code Iterator} of int values starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeBy(1, 3, 1)   // yields 1, 2
+     * Iterator.rangeBy(1, 4, 2)   // yields 1, 3
+     * Iterator.rangeBy(4, 1, -2)  // yields 4, 2
+     * Iterator.rangeBy(4, 1, 2)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toExclusive the exclusive upper bound (if {@code step > 0}) or exclusive lower
+     *                    bound (if {@code step < 0}); the actual last element yielded is the
+     *                    closest value of the form {@code from + k*step} that lies strictly
+     *                    before {@code toExclusive}
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step direction does not match the
+     *         direction from {@code from} to {@code toExclusive}, or if {@code from == toExclusive}
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Integer> rangeBy(int from, int toExclusive, int step) {
+        if ((step > 0 && toExclusive == Integer.MIN_VALUE) || (step < 0 && toExclusive == Integer.MAX_VALUE)) {
+            // no int lies strictly before the type boundary in the step direction
+            return empty();
+        }
+        final int toInclusive = toExclusive - (step > 0 ? 1 : -1);
+        return rangeClosedBy(from, toInclusive, step);
+    }
+
+    /**
+     * Creates an {@code Iterator} of long values starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive).
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.range(0L, 0L)   // yields no elements
+     * Iterator.range(2L, 0L)   // yields no elements
+     * Iterator.range(-2L, 2L)  // yields -2L, -1L, 0L, 1L
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toExclusive the end number (exclusive)
+     * @return an iterator over the specified range, or empty if {@code from >= toExclusive}
+     */
+    static Iterator<Long> range(long from, long toExclusive) {
+        return rangeBy(from, toExclusive, 1);
+    }
+
+    /**
+     * Creates an {@code Iterator} of long values starting from {@code from} (inclusive)
+     * up to {@code toExclusive} (exclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeBy(1L, 3L, 1L)   // yields 1L, 2L
+     * Iterator.rangeBy(1L, 4L, 2L)   // yields 1L, 3L
+     * Iterator.rangeBy(4L, 1L, -2L)  // yields 4L, 2L
+     * Iterator.rangeBy(4L, 1L, 2L)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toExclusive the exclusive upper bound (if {@code step > 0}) or exclusive lower
+     *                    bound (if {@code step < 0}); the actual last element yielded is the
+     *                    closest value of the form {@code from + k*step} that lies strictly
+     *                    before {@code toExclusive}
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step direction does not match
+     *         the direction from {@code from} to {@code toExclusive}, or if {@code from == toExclusive}
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Long> rangeBy(long from, long toExclusive, long step) {
+        if ((step > 0 && toExclusive == Long.MIN_VALUE) || (step < 0 && toExclusive == Long.MAX_VALUE)) {
+            // no long lies strictly before the type boundary in the step direction
+            return empty();
+        }
+        final long toInclusive = toExclusive - (step > 0 ? 1 : -1);
+        return rangeClosedBy(from, toInclusive, step);
+    }
+
+    /**
+     * Creates an {@code Iterator} of characters starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive).
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosed('a', 'c')  // yields 'a', 'b', 'c'
+     * Iterator.rangeClosed('c', 'a')  // yields no elements
+     * </pre>
+     *
+     * @param from        the first character (inclusive)
+     * @param toInclusive the last character (inclusive)
+     * @return an iterator over the specified character range, or empty if {@code from > toInclusive}
+     */
+
+    static Iterator<Character> rangeClosed(char from, char toInclusive) {
+        return rangeClosedBy(from, toInclusive, 1);
+    }
+
+    /**
+     * Creates an {@code Iterator} of characters starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosedBy('a', 'c', 1)   // yields 'a', 'b', 'c'
+     * Iterator.rangeClosedBy('a', 'd', 2)   // yields 'a', 'c'
+     * Iterator.rangeClosedBy('d', 'a', -2)  // yields 'd', 'b'
+     * Iterator.rangeClosedBy('d', 'a', 2)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first character (inclusive)
+     * @param toInclusive the last character (inclusive)
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified character range, or empty if the step
+     *         direction does not match the direction from {@code from} to {@code toInclusive}
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Character> rangeClosedBy(char from, char toInclusive, int step) {
+        return rangeClosedBy((int) from, (int) toInclusive, step).map(i -> (char) i.shortValue());
+    }
+
+    /**
+     * Creates an {@code Iterator} of double values starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosedBy(1.0, 3.0, 1.0)   // yields 1.0, 2.0, 3.0
+     * Iterator.rangeClosedBy(1.0, 4.0, 2.0)   // yields 1.0, 3.0
+     * Iterator.rangeClosedBy(4.0, 1.0, -2.0)  // yields 4.0, 2.0
+     * Iterator.rangeClosedBy(4.0, 1.0, 2.0)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toInclusive the last number (inclusive)
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step
+     *         direction does not match the direction from {@code from} to {@code toInclusive},
+     *         or if {@code from == toInclusive} it returns a singleton iterator
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Double> rangeClosedBy(double from, double toInclusive, double step) {
+        if (step == 0) {
+            throw new IllegalArgumentException("step cannot be 0");
+        } else if (from == toInclusive) {
+            return of(from);
+        }
+
+        final double toExclusive = (step > 0) ? Math.nextUp(toInclusive) : Math.nextDown(toInclusive);
+        return rangeBy(from, toExclusive, step);
+    }
+
+    /**
+     * Creates an {@code Iterator} of int values starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive).
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosed(0, 0)   // yields 0
+     * Iterator.rangeClosed(2, 0)   // yields no elements
+     * Iterator.rangeClosed(-2, 2)  // yields -2, -1, 0, 1, 2
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toInclusive the last number (inclusive)
+     * @return an iterator over the specified range, or empty if {@code from > toInclusive}
+     */
+    static Iterator<Integer> rangeClosed(int from, int toInclusive) {
+        return rangeClosedBy(from, toInclusive, 1);
+    }
+
+    /**
+     * Creates an {@code Iterator} of int values starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosedBy(1, 3, 1)   // yields 1, 2, 3
+     * Iterator.rangeClosedBy(1, 4, 2)   // yields 1, 3
+     * Iterator.rangeClosedBy(4, 1, -2)  // yields 4, 2
+     * Iterator.rangeClosedBy(4, 1, 2)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toInclusive the last number (inclusive)
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step
+     *         direction does not match the direction from {@code from} to {@code toInclusive},
+     *         or if {@code from == toInclusive} it returns a singleton iterator
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Integer> rangeClosedBy(int from, int toInclusive, int step) {
+        if (step == 0) {
+            throw new IllegalArgumentException("step cannot be 0");
+        } else if (from == toInclusive) {
+            return of(from);
+        } else if ((step > 0) == (from > toInclusive)) {
+            return empty();
+        } else {
+            // DEV-NOTE: the cursor never leaves [from, toInclusive], so the remaining distance to
+            // toInclusive is non-negative and fits an unsigned int; comparing it unsigned against
+            // |step| avoids the overflow that `from - step` / `toInclusive - step` would cause at
+            // Integer.MIN_VALUE / Integer.MAX_VALUE.
+            if (step > 0) {
+                return new AbstractIterator<Integer>() {
+                    boolean started = false;
+                    int i = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        return !started || Integer.compareUnsigned(toInclusive - i, step) >= 0;
+                    }
+
+                    @Override
+                    public Integer getNext() {
+                        if (started) {
+                            i += step;
+                        } else {
+                            started = true;
+                        }
+                        return i;
+                    }
+                };
+            } else {
+                return new AbstractIterator<Integer>() {
+                    boolean started = false;
+                    int i = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        // -Integer.MIN_VALUE == Integer.MIN_VALUE, whose unsigned value is the correct |step|
+                        return !started || Integer.compareUnsigned(i - toInclusive, -step) >= 0;
+                    }
+
+                    @Override
+                    public Integer getNext() {
+                        if (started) {
+                            i += step;
+                        } else {
+                            started = true;
+                        }
+                        return i;
+                    }
+                };
+            }
+        }
+    }
+
+    /**
+     * Creates an {@code Iterator} of long values starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive).
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosed(0L, 0L)   // yields 0L
+     * Iterator.rangeClosed(2L, 0L)   // yields no elements
+     * Iterator.rangeClosed(-2L, 2L)  // yields -2L, -1L, 0L, 1L, 2L
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toInclusive the last number (inclusive)
+     * @return an iterator over the specified range, or empty if {@code from > toInclusive}
+     */
+    static Iterator<Long> rangeClosed(long from, long toInclusive) {
+        return rangeClosedBy(from, toInclusive, 1L);
+    }
+
+    /**
+     * Creates an {@code Iterator} of long values starting from {@code from} (inclusive)
+     * up to {@code toInclusive} (inclusive), advancing by the specified {@code step}.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.rangeClosedBy(1L, 3L, 1L)   // yields 1L, 2L, 3L
+     * Iterator.rangeClosedBy(1L, 4L, 2L)   // yields 1L, 3L
+     * Iterator.rangeClosedBy(4L, 1L, -2L)  // yields 4L, 2L
+     * Iterator.rangeClosedBy(4L, 1L, 2L)   // yields no elements
+     * </pre>
+     *
+     * @param from        the first number (inclusive)
+     * @param toInclusive the last number (inclusive)
+     * @param step        the increment; must not be zero
+     * @return an iterator over the specified range, or empty if the step
+     *         direction does not match the direction from {@code from} to {@code toInclusive},
+     *         or if {@code from == toInclusive} it returns a singleton iterator
+     * @throws IllegalArgumentException if {@code step} is zero
+     */
+    static Iterator<Long> rangeClosedBy(long from, long toInclusive, long step) {
+        if (step == 0) {
+            throw new IllegalArgumentException("step cannot be 0");
+        } else if (from == toInclusive) {
+            return of(from);
+        } else if ((step > 0) == (from > toInclusive)) {
+            return empty();
+        } else {
+            // DEV-NOTE: see rangeClosedBy(int, int, int) - same overflow-safe scheme using unsigned distances
+            if (step > 0) {
+                return new AbstractIterator<Long>() {
+                    boolean started = false;
+                    long i = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        return !started || Long.compareUnsigned(toInclusive - i, step) >= 0;
+                    }
+
+                    @Override
+                    public Long getNext() {
+                        if (started) {
+                            i += step;
+                        } else {
+                            started = true;
+                        }
+                        return i;
+                    }
+                };
+            } else {
+                return new AbstractIterator<Long>() {
+                    boolean started = false;
+                    long i = from;
+
+                    @Override
+                    public boolean hasNext() {
+                        // -Long.MIN_VALUE == Long.MIN_VALUE, whose unsigned value is the correct |step|
+                        return !started || Long.compareUnsigned(i - toInclusive, -step) >= 0;
+                    }
+
+                    @Override
+                    public Long getNext() {
+                        if (started) {
+                            i += step;
+                        } else {
+                            started = true;
+                        }
+                        return i;
+                    }
+                };
+            }
+        }
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} of int values starting from {@code value}.
+     *
+     * <p>The iterator wraps from {@code Integer.MAX_VALUE} to {@code Integer.MIN_VALUE}.
+     *
+     * @param value the starting int value
+     * @return an iterator that endlessly yields consecutive int values starting from {@code value}
+     */
+    static Iterator<Integer> from(int value) {
+        return new AbstractIterator<Integer>() {
+            private int next = value;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Integer getNext() {
+                return next++;
+            }
+        };
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} of int values starting from {@code value}
+     * and advancing by the specified {@code step}.
+     *
+     * <p>The iterator uses plain {@code int} arithmetic and wraps around on overflow: from
+     * {@code Integer.MAX_VALUE} to {@code Integer.MIN_VALUE} if {@code step > 0}, or from
+     * {@code Integer.MIN_VALUE} to {@code Integer.MAX_VALUE} if {@code step < 0}.
+     *
+     * @param value the starting int value
+     * @param step  the increment for each iteration
+     * @return an iterator that endlessly yields consecutive int values starting from {@code value}, spaced by {@code step}
+     */
+    static Iterator<Integer> from(int value, int step) {
+        return new AbstractIterator<Integer>() {
+            private int next = value;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Integer getNext() {
+                final int result = next;
+                next += step;
+                return result;
+            }
+        };
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} of long values starting from {@code value}.
+     *
+     * <p>The iterator wraps from {@code Long.MAX_VALUE} to {@code Long.MIN_VALUE} if overflow occurs.
+     *
+     * @param value the starting long value
+     * @return an iterator that endlessly yields consecutive long values starting from {@code value}
+     */
+    static Iterator<Long> from(long value) {
+        return new AbstractIterator<Long>() {
+            private long next = value;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Long getNext() {
+                return next++;
+            }
+        };
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} of long values starting from {@code value}
+     * and advancing by the specified {@code step}.
+     *
+     * <p>The iterator uses plain {@code long} arithmetic and wraps around on overflow: from
+     * {@code Long.MAX_VALUE} to {@code Long.MIN_VALUE} if {@code step > 0}, or from
+     * {@code Long.MIN_VALUE} to {@code Long.MAX_VALUE} if {@code step < 0}.
+     *
+     * @param value the starting long value
+     * @param step  the increment for each iteration
+     * @return an iterator that endlessly yields consecutive long values starting from {@code value}, spaced by {@code step}
+     */
+    static Iterator<Long> from(long value, long step) {
+        return new AbstractIterator<Long>() {
+            private long next = value;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Long getNext() {
+                final long result = next;
+                next += step;
+                return result;
+            }
+        };
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} that repeatedly generates values
+     * using the provided {@code Supplier}.
+     *
+     * @param supplier the supplier providing iterator values; must not be {@code null}
+     * @param <T>      the type of values produced
+     * @return an iterator that endlessly yields values from the supplier
+     * @throws NullPointerException if {@code supplier} is {@code null}
+     */
+    static <T extends @Nullable Object> Iterator<T> continually(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new AbstractIterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public T getNext() {
+                return supplier.get();
+            }
+        };
+    }
+
+    /** {@link #iterate(Supplier, String)}, a {@code null} from {@code supplier} reported as {@code Iterator.iterate}. */
+    static <T extends @Nullable Object> Iterator<T> iterate(Supplier<? extends Option<? extends T>> supplier) {
+        return iterate(supplier, "Iterator.iterate: supplier returned null");
+    }
+
+    /**
+     * Creates an {@code Iterator} that repeatedly invokes the given {@code Supplier}
+     * as long as it returns a {@code Some} value, terminating when it returns {@code None}.
+     *
+     * @param supplier the supplier providing {@code Option} values; must not be {@code null}
+     * @param nullResult the message of the {@code NullPointerException} thrown when {@code supplier} returns {@code null}
+     * @param <T>      the type of values produced
+     * @return an iterator yielding the values wrapped in {@code Some}, stopping at the first {@code None}
+     * @throws NullPointerException if the supplier produces a {@code null} value
+     */
+    static <T extends @Nullable Object> Iterator<T> iterate(Supplier<? extends Option<? extends T>> supplier, String nullResult) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return new AbstractIterator<T>() {
+            @Nullable Option<? extends T> nextOption;
+            // set once supplier returned null: every later call fails the same way instead of asking for the next value
+            boolean failed;
+
+            @Override
+            public boolean hasNext() {
+                if (failed) {
+                    throw new NullPointerException(nullResult);
+                }
+                if (nextOption == null) {
+                    final Option<? extends T> supplied = supplier.get();
+                    if (supplied == null) {
+                        failed = true;
+                        throw new NullPointerException(nullResult);
+                    }
+                    nextOption = supplied;
+                }
+                return nextOption.isDefined();
+            }
+
+            @Override
+            // hasNext() populates nextOption, and AbstractIterator only calls getNext() after it
+            @SuppressWarnings("NullAway")
+            public T getNext() {
+                final T next =  nextOption.get();
+                nextOption = null;
+                return next;
+            }
+        };
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} that generates values by repeatedly
+     * applying the given function to the previous value, starting with {@code seed}.
+     *
+     * <p>The first element is {@code seed}; each subsequent call to {@code getNext()}
+     * produces the next element by applying {@code f} to the previous element.
+     *
+     * @param seed the initial value
+     * @param f    the function to compute the next value from the previous; must not be {@code null}
+     * @param <T>  the type of values produced
+     * @return an iterator that endlessly yields values generated from {@code seed} using {@code f}
+     * @throws NullPointerException if {@code f} is {@code null}
+     */
+    static <T extends @Nullable Object> Iterator<T> iterate(T seed, Function<? super T, ? extends T> f) {
+        Objects.requireNonNull(f, "f is null");
+        Objects.requireNonNull(seed, "Iterator.iterate: element is null");
+        return new AbstractIterator<T>() {
+            Function<? super T, ? extends T> nextFunc = s -> {
+                nextFunc = f;
+                return seed;
+            };
+            @Nullable T current = null;
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            // nextFunc ignores its argument on the first call (it yields the seed), so the initial
+            // null cursor is never actually consumed.
+            @SuppressWarnings("NullAway")
+            public T getNext() {
+                current = nextFunc.apply(current);
+                return current;
+            }
+        };
+    }
+
+    /**
+     * Returns an infinite {@code Iterator} that endlessly yields the given element.
+     *
+     * @param t   the element to repeat
+     * @param <T> the type of the element
+     * @return an iterator that repeatedly returns {@code t}
+     */
+    static <T extends @Nullable Object> Iterator<T> continually(T t) {
+        Objects.requireNonNull(t, "Iterator.continually: element is null");
+        return new AbstractIterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public T getNext() {
+                return t;
+            }
+        };
+    }
+
+    // -- Additional methods of Iterator
+
+    /**
+     * Returns a new {@code Iterator} that yields the elements of this iterator
+     * followed by all elements of the specified iterator.
+     *
+     * <p>This method appends the elements from {@code that} to the end of this
+     * iterator, creating a concatenated sequence.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.of(1, 2).concat(Iterator.of(3, 4))          // yields 1, 2, 3, 4
+     * Iterator.empty().concat(Iterator.of(1, 2))           // yields 1, 2
+     * Iterator.of(1, 2).concat(Iterator.of(3, 4).drop(2))  // yields 1, 2
+     * </pre>
+     *
+     * @param that the iterator whose elements should be appended
+     * @return an iterator yielding the elements of this iterator followed by those of
+     *         {@code that}; this instance is returned as-is if {@code that} is empty, and
+     *         {@code that} (as an {@code Iterator}) is returned as-is if this iterator is empty
+     * @throws NullPointerException if {@code that} is {@code null}
+     */
+    // DEV-NOTE: cannot use arg Iterable, it would be ambiguous
+    default Iterator<T> concat(java.util.Iterator<? extends T> that) {
+        Objects.requireNonNull(that, "that is null");
+        if (!that.hasNext()) {
+            return this;
+        } else if (!hasNext()) {
+            return ofAll(that);
+        } else {
+            return concat(this, ofAll(that));
+        }
+    }
+
+    /**
+     * Returns a new {@code Iterator} where the specified {@code element} is inserted
+     * between each element of this iterator.
+     *
+     * @param element the element to intersperse
+     * @return an iterator with {@code element} interleaved between the original elements
+     */
+    default Iterator<T> intersperse(T element) {
+        Objects.requireNonNull(element, "Iterator.intersperse: element is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+
+                boolean insertElement = false;
+
+                @Override
+                public boolean hasNext() {
+                    return that.hasNext();
+                }
+
+                @Override
+                public T getNext() {
+                    if (insertElement) {
+                        insertElement = false;
+                        return element;
+                    } else {
+                        insertElement = true;
+                        return that.next();
+                    }
+                }
+            };
+        }
+    }
+
+    default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zip(Iterable<? extends U> that) {
+        return zipWith(that, Tuple::of);
+    }
+
+    default <U extends @Nullable Object, R extends @Nullable Object> Iterator<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isEmpty()) {
+            return empty();
+        } else {
+            final Iterator<T> it1 = this;
+            final java.util.Iterator<? extends U> it2 = that.iterator();
+            return new AbstractIterator<R>() {
+                @Override
+                public boolean hasNext() {
+                    return it1.hasNext() && it2.hasNext();
+                }
+
+                @Override
+                public R getNext() {
+                    return mapper.apply(it1.next(), it2.next());
+                }
+            };
+        }
+    }
+
+    default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
+        Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "Iterator.zipAll: element is null");
+        Objects.requireNonNull(thatElem, "Iterator.zipAll: element is null");
+        final java.util.Iterator<? extends U> thatIt = that.iterator();
+        if (isEmpty() && !thatIt.hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> thisIt = this;
+            return new AbstractIterator<Tuple2<T, U>>() {
+                @Override
+                public boolean hasNext() {
+                    return thisIt.hasNext() || thatIt.hasNext();
+                }
+
+                @Override
+                public Tuple2<T, U> getNext() {
+                    final T v1 = thisIt.hasNext() ? thisIt.next() : thisElem;
+                    final U v2 = thatIt.hasNext() ? thatIt.next() : thatElem;
+                    return Tuple.of(v1, v2);
+                }
+            };
+        }
+    }
+
+    default Iterator<Tuple2<T, Integer>> zipWithIndex() {
+        return zipWithIndex(Tuple::of);
+    }
+
+    default <U extends @Nullable Object> Iterator<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isEmpty()) {
+            return empty();
+        } else {
+            final Iterator<T> it1 = this;
+            return new AbstractIterator<U>() {
+                private int index = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return it1.hasNext();
+                }
+
+                @Override
+                public U getNext() {
+                    return mapper.apply(it1.next(), index++);
+                }
+            };
+        }
+    }
+
+    /** {@link #unfold(Object, Function, String)}, a {@code null} from {@code f} reported as {@code Iterator.unfold}. */
+    static <T extends @Nullable Object> Iterator<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
+        return unfold(seed, f, "Iterator.unfold: f returned null");
+    }
+
+    /**
+     * Creates an {@code Iterator} by repeatedly applying a function to a seed value.
+     * <p>
+     * The function takes the current seed and returns {@code None} to signal the end of iteration,
+     * or {@code Some<Tuple2>} containing the next seed and the element to yield
+     * (i.e. {@code Tuple2(nextSeed, element)}), matching {@link #unfoldLeft}.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * Iterator.unfold(10, x -> x == 0
+     *   ? Option.none()
+     *   : Option.some(new Tuple2<>(x-1, x)));
+     * // yields 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+     * }
+     * </pre>
+     *
+     * @param <T>  the type of the seed and produced elements
+     * @param seed the initial seed value
+     * @param f    the function to produce the next element and seed; must not be {@code null}
+     * @param nullResult the message of the {@code NullPointerException} thrown when {@code f} returns {@code null}
+     * @return an iterator producing the elements generated by repeatedly applying {@code f}
+     * @throws NullPointerException if {@code f} is {@code null}
+     */
+    static <T extends @Nullable Object> Iterator<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f, String nullResult) {
+        return unfoldLeft(seed, f, nullResult);
+    }
+
+    /** {@link #unfoldLeft(Object, Function, String)}, a {@code null} from {@code f} reported as {@code Iterator.unfoldLeft}. */
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
+        return unfoldLeft(seed, f, "Iterator.unfoldLeft: f returned null");
+    }
+
+    /**
+     * Creates an {@code Iterator} by repeatedly applying a function to a seed value,
+     * generating elements in a left-to-right order.
+     *
+     * <p>The function receives the current seed and returns {@code None} to signal
+     * the end of iteration, or {@code Some<Tuple2>} containing the next seed and
+     * the element to include in the iterator.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * Iterator.unfoldLeft(10, x -> x == 0
+     *   ? Option.none()
+     *   : Option.some(new Tuple2<>(x-1, x)));
+     * // yields 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+     * }
+     * </pre>
+     *
+     * @param <T>  the type of the seed
+     * @param <U>  the type of the produced elements
+     * @param seed the initial seed value
+     * @param f    the function to produce the next element and seed; must not be {@code null}
+     * @param nullResult the message of the {@code NullPointerException} thrown when {@code f} returns {@code null}
+     * @return an iterator producing elements generated from the seed using {@code f}
+     * @throws NullPointerException if {@code f} is {@code null}
+     */
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f, String nullResult) {
+        Objects.requireNonNull(f, "f is null");
+        return Iterator.ofAll(Stream.<U> ofAll(
+                unfoldRight(seed, f.andThen(tupleOpt -> Objects.requireNonNull(tupleOpt, nullResult).map(t -> Tuple.of(t._2(), t._1()))), nullResult))
+                .reverse());
+    }
+
+    /** {@link #unfoldRight(Object, Function, String)}, a {@code null} from {@code f} reported as {@code Iterator.unfoldRight}. */
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
+        return unfoldRight(seed, f, "Iterator.unfoldRight: f returned null");
+    }
+
+    /**
+     * Creates an {@code Iterator} by repeatedly applying a function to a seed value,
+     * generating elements in a right-to-left order.
+     *
+     * <p>The function receives the current seed and returns {@code None} to signal
+     * the end of iteration, or {@code Some<Tuple2>} containing the element to yield
+     * and the next seed for subsequent calls.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * Iterator.unfoldRight(10, x -> x == 0
+     *   ? Option.none()
+     *   : Option.some(new Tuple2<>(x, x-1)));
+     * // yields 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+     * }
+     * </pre>
+     *
+     * @param <T>  the type of the seed
+     * @param <U>  the type of the produced elements
+     * @param seed the initial seed value
+     * @param f    the function to produce the next element and seed; must not be {@code null}
+     * @param nullResult the message of the {@code NullPointerException} thrown when {@code f} returns {@code null}
+     * @return an iterator producing elements generated from the seed using {@code f}
+     * @throws NullPointerException if {@code f} is {@code null}
+     */
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f, String nullResult) {
+        Objects.requireNonNull(f, "the unfold iterating function is null");
+        return new AbstractIterator<U>() {
+            // f's result is memoised as it is, null included, and checked on every read: a later force fails the same way
+            private Lazy<Option<Tuple2<? extends U, ? extends T>>> nextVal = Lazy.of(() -> f.apply(seed));
+
+            @Override
+            public boolean hasNext() {
+                return Objects.requireNonNull(nextVal.get(), nullResult).isDefined();
+            }
+
+            @Override
+            public U getNext() {
+                Tuple2<? extends U, ? extends T> tuple = nextVal.get().get();
+                final U result = tuple._1();
+                nextVal = Lazy.of(() -> f.apply(tuple._2()));
+                return result;
+            }
+        };
+    }
+
+    // -- the lazy combinators
+
+    default Iterator<T> distinctBy(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            return new DistinctIterator<>(this, TreeSet.empty(comparator), Function.identity());
+        }
+    }
+
+    default <U extends @Nullable Object> Iterator<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            return new DistinctIterator<>(this, dev.zazr.collection.HashSet.empty(), keyExtractor);
+        }
+    }
+
+    /**
+     * Returns a new {@code Iterator} containing the elements of this instance without duplicates,
+     * keeping the last occurrence of each duplicate element, as determined by the given {@code comparator}.
+     *
+     * <p>When multiple elements are considered equal according to the comparator, only the
+     * last occurrence in the sequence is retained.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.of(1, 2, 2, 3, 1).distinctByKeepLast(Comparator.naturalOrder())  // yields 2, 3, 1
+     * </pre>
+     *
+     * @param comparator the comparator used to determine equality
+     * @return a new iterator containing distinct elements, keeping the last occurrence of duplicates
+     * @throws NullPointerException if {@code comparator} is {@code null}
+     */
+    default Iterator<T> distinctByKeepLast(Comparator<? super T> comparator) {
+        Objects.requireNonNull(comparator, "comparator is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            return Collections.reverseIterator(new DistinctIterator<>(
+                    Collections.reverseIterator(this),
+                    TreeSet.empty(comparator),
+                    Function.identity()));
+        }
+    }
+
+    /**
+     * Returns a new {@code Iterator} containing the elements of this instance without duplicates,
+     * keeping the last occurrence of each duplicate element, based on keys extracted from elements
+     * using {@code keyExtractor}.
+     *
+     * <p>When multiple elements have the same extracted key, only the last occurrence in the
+     * sequence is retained.
+     *
+     * <p>Examples:
+     * <pre>
+     * Iterator.of("a", "ab", "abc", "b").distinctByKeepLast(String::length)  // yields "ab", "abc", "b"
+     * </pre>
+     *
+     * @param keyExtractor function used to extract the key from elements
+     * @param <U>          the type of the extracted key
+     * @return a new iterator containing distinct elements, keeping the last occurrence of duplicates
+     * @throws NullPointerException if {@code keyExtractor} is {@code null}
+     */
+    default <U extends @Nullable Object> Iterator<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
+        Objects.requireNonNull(keyExtractor, "keyExtractor is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            return Collections.reverseIterator(new DistinctIterator<>(
+                    Collections.reverseIterator(this),
+                    dev.zazr.collection.HashSet.empty(),
+                    keyExtractor));
+        }
+    }
+
+    /**
+     * Removes up to n elements from this iterator.
+     *
+     * @param n A number
+     * @return this iterator, if {@code n <= 0}; the empty iterator, if this iterator is
+     *         empty; otherwise a new iterator without the first {@code n} elements.
+     */
+    default Iterator<T> drop(int n) {
+        if (n <= 0) {
+            return this;
+        } else if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+
+                long count = n;
+
+                @Override
+                public boolean hasNext() {
+                    while (count > 0 && that.hasNext()) {
+                        that.next(); // discarded
+                        count--;
+                    }
+                    return that.hasNext();
+                }
+
+                @Override
+                public T getNext() {
+                    return that.next();
+                }
+            };
+        }
+    }
+
+    default Iterator<T> dropRight(int n) {
+        if (n <= 0) {
+            return this;
+        } else if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+                private dev.zazr.collection.Queue<T> queue = dev.zazr.collection.Queue.empty();
+                private int size = 0; // queue.size() walks the queue's lists, so the size is counted here
+
+                @Override
+                public boolean hasNext() {
+                    while (size < n && that.hasNext()) {
+                        queue = queue.append(that.next());
+                        size++;
+                    }
+                    return size == n && that.hasNext();
+                }
+
+                @Override
+                public T getNext() {
+                    final Tuple2<T, dev.zazr.collection.Queue<T>> t = queue.append(that.next()).dequeue();
+                    queue = t._2();
+                    return t._1();
+                }
+            };
+        }
+    }
+
+    default Iterator<T> dropWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final CachedIterator<T> that = new CachedIterator<>(this);
+            while (that.hasNext() && predicate.test(that.touch())) {
+                that.next();
+            }
+            return that;
+        }
+    }
+
+    /**
+     * Returns an Iterator that contains elements that satisfy the given {@code predicate}.
+     *
+     * @param predicate A predicate
+     * @return A new Iterator
+     */
+    default Iterator<T> filter(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+
+                // a flag and a field, not an Option: cheaper on this hot loop, and elements can never be null anyway
+                private boolean nextDefined = false;
+                private @Nullable T next;
+
+                @Override
+                public boolean hasNext() {
+                    while (!nextDefined && that.hasNext()) {
+                        final T candidate = that.next();
+                        if (predicate.test(candidate)) {
+                            next = candidate;
+                            nextDefined = true;
+                        }
+                    }
+                    return nextDefined;
+                }
+
+                @Override
+                // hasNext() sets `next` whenever it sets `nextDefined`
+                @SuppressWarnings("NullAway")
+                public T getNext() {
+                    final T result = next;
+                    nextDefined = false;
+                    next = null;
+                    return result;
+                }
+            };
+        }
+    }
+
+    /**
+     * FlatMaps the elements of this Iterator to Iterables, which are iterated in the order of occurrence.
+     *
+     * @param mapper A mapper
+     * @param <U>    Component type
+     * @return A new Iterator
+     */
+    default <U extends @Nullable Object> Iterator<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<U>() {
+
+                final Iterator<? extends T> inputs = that;
+                java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
+
+                @Override
+                public boolean hasNext() {
+                    boolean currentHasNext;
+                    while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
+                        current = mapper.apply(inputs.next()).iterator();
+                    }
+                    return currentHasNext;
+                }
+
+                @Override
+                public U getNext() {
+                    return current.next();
+                }
+            };
+        }
+    }
+
+    default boolean isEmpty() {
+        return !hasNext();
+    }
+
+    default <U extends @Nullable Object> U foldLeft(U zero, BiFunction<? super U, ? super T, ? extends U> f) {
+        Objects.requireNonNull(f, "f is null");
+        U xs = zero;
+        while (hasNext()) {
+            xs = f.apply(xs, next());
+        }
+        return xs;
+    }
+
+    default Option<T> headOption() {
+        return hasNext() ? Option.some(next()) : Option.none();
+    }
+
+    default Option<T> find(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        while (hasNext()) {
+            final T t = next();
+            if (predicate.test(t)) {
+                return Option.some(t);
+            }
+        }
+        return Option.none();
+    }
+
+    default String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
+        final StringBuilder builder = new StringBuilder(prefix);
+        boolean first = true;
+        while (hasNext()) {
+            if (first) {
+                first = false;
+            } else {
+                builder.append(delimiter);
+            }
+            builder.append(next());
+        }
+        return builder.append(suffix).toString();
+    }
+
+    default List<T> toList() {
+        return hasNext() ? List.ofAll(this) : List.empty();
+    }
+
+    default Queue<T> toQueue() {
+        return hasNext() ? Queue.ofAll(this) : Queue.empty();
+    }
+
+    default Stream<T> toStream() {
+        return hasNext() ? Stream.ofAll(this) : Stream.empty();
+    }
+
+    default Vector<T> toVector() {
+        return hasNext() ? Vector.ofAll(this) : Vector.empty();
+    }
+
+    /**
+     * Returns this iterator itself, since an {@code Iterator} is already an
+     * iterator over its own elements.
+     *
+     * @return this instance
+     */
+    default Iterator<T> iterator() {
+        return this;
+    }
+
+    /**
+     * Maps the elements of this Iterator lazily using the given {@code mapper}.
+     *
+     * @param mapper A mapper.
+     * @param <U>    Component type
+     * @return A new Iterator
+     */
+    default <U extends @Nullable Object> Iterator<U> map(Function<? super T, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<U>() {
+
+                @Override
+                public boolean hasNext() {
+                    return that.hasNext();
+                }
+
+                @Override
+                public U getNext() {
+                    return mapper.apply(that.next());
+                }
+            };
+        }
+    }
+
+    default <U extends @Nullable Object> Iterator<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<U>() {
+
+                // a flag and a field, not an Option, as in filter(): the mapper's Option is unwrapped as soon as it is seen
+                private boolean nextDefined = false;
+                private @Nullable U next;
+
+                @Override
+                public boolean hasNext() {
+                    while (!nextDefined && that.hasNext()) {
+                        final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(that.next()), "Iterator.collect: mapper returned null");
+                        if (collected.isDefined()) {
+                            next = collected.get();
+                            nextDefined = true;
+                        }
+                    }
+                    return nextDefined;
+                }
+
+                @Override
+                // hasNext() sets `next` whenever it sets `nextDefined`
+                @SuppressWarnings("NullAway")
+                public U getNext() {
+                    final U result = next;
+                    nextDefined = false;
+                    next = null;
+                    return result;
+                }
+            };
+        }
+    }
+
+    /**
+     * Produces a new Iterator containing cumulative results of applying the operator
+     * going left to right, including the initial value.
+     * <p>
+     * This lazy implementation
+     * terminates even for infinite iterators: each accumulated value is computed only
+     * when consumed via {@link #next()}.
+     *
+     * @param zero      the initial value
+     * @param operation the associative operation to apply
+     * @return a new Iterator of accumulated values
+     */
+    default <U extends @Nullable Object> Iterator<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
+        Objects.requireNonNull(operation, "operation is null");
+        Objects.requireNonNull(zero, "Iterator.scanLeft: element is null");
+        if (isEmpty()) {
+            return of(zero);
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<U>() {
+
+                boolean isFirst = true;
+                U acc = zero;
+
+                @Override
+                public boolean hasNext() {
+                    return isFirst || that.hasNext();
+                }
+
+                @Override
+                public U getNext() {
+                    if (isFirst) {
+                        isFirst = false;
+                    } else {
+                        acc = operation.apply(acc, that.next());
+                    }
+                    return acc;
+                }
+            };
+        }
+    }
+
+    default Iterator<Vector<T>> slideBy(Function<? super T, ?> classifier) {
+        Objects.requireNonNull(classifier, "classifier is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final CachedIterator<T> source = new CachedIterator<>(this);
+            return new AbstractIterator<Vector<T>>() {
+                private @Nullable Vector<T> next = null;
+                // the key of the element that ended the previous run, which starts the next one: classified once
+                private @Nullable Object pendingKey = null;
+                private boolean pendingKeyDefined = false;
+
+                @Override
+                public boolean hasNext() {
+                    if (next == null && source.hasNext()) {
+                        final Object key = pendingKeyDefined ? pendingKey : classifier.apply(source.touch());
+                        pendingKeyDefined = false;
+                        final java.util.List<T> acc = new ArrayList<>();
+                        acc.add(source.next());
+                        while (source.hasNext()) {
+                            final Object candidate = classifier.apply(source.touch());
+                            if (!Objects.equals(key, candidate)) {
+                                pendingKey = candidate;
+                                pendingKeyDefined = true;
+                                break;
+                            }
+                            acc.add(source.getNext());
+                        }
+                        next = Vector.ofAll(acc);
+                    }
+                    return next != null;
+                }
+
+                @Override
+                // hasNext() fills the buffer, and AbstractIterator only calls getNext() after it
+                @SuppressWarnings("NullAway")
+                public Vector<T> getNext() {
+                    final Vector<T> result = next;
+                    next = null;
+                    return result;
+                }
+            };
+        }
+    }
+
+    default Iterator<Vector<T>> sliding(int size) {
+        return sliding(size, 1);
+    }
+
+    default Iterator<Vector<T>> sliding(int size, int step) {
+        return new GroupedIterator<>(this, size, step);
+    }
+    
+    default Tuple2<Iterator<T>, Iterator<T>> span(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        if (!hasNext()) {
+            return Tuple.of(empty(), empty());
+        } else {
+            final Stream<T> that = Stream.ofAll(this);
+            return Tuple.of(Iterator.ofAll(that).takeWhile(predicate), Iterator.ofAll(that).dropWhile(predicate));
+        }
+    }
+
+
+    /**
+     * Take the first n elements from this iterator.
+     *
+     * @param n A number
+     * @return The empty iterator, if {@code n <= 0} or this is empty, otherwise a new
+     *         iterator consisting of at most the first {@code n} elements of this iterator.
+     */
+    default Iterator<T> take(int n) {
+        if (n <= 0 || !hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+
+                long count = n;
+
+                @Override
+                public boolean hasNext() {
+                    return count > 0 && that.hasNext();
+                }
+
+                @Override
+                public T getNext() {
+                    count--;
+                    return that.next();
+                }
+            };
+        }
+    }
+
+    default Iterator<T> takeRight(int n) {
+        if (n <= 0) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+                private dev.zazr.collection.Queue<T> queue = dev.zazr.collection.Queue.empty();
+                private int size = 0; // queue.size() walks the queue's lists, so the size is counted here
+
+                @Override
+                public boolean hasNext() {
+                    while (that.hasNext()) {
+                        queue = queue.enqueue(that.next());
+                        if (size < n) {
+                            size++;
+                        } else {
+                            queue = queue.dequeue()._2();
+                        }
+                    }
+                    return !queue.isEmpty();
+                }
+
+                @Override
+                public T getNext() {
+                    final Tuple2<T, dev.zazr.collection.Queue<T>> t = queue.dequeue();
+                    queue = t._2();
+                    return t._1();
+                }
+            };
+        }
+    }
+
+    default Iterator<T> takeWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        if (!hasNext()) {
+            return empty();
+        } else {
+            final Iterator<T> that = this;
+            return new AbstractIterator<T>() {
+
+                private @Nullable T next;
+                private boolean cached = false;
+                private boolean finished = false;
+
+                @Override
+                public boolean hasNext() {
+                    if (cached) {
+                        return true;
+                    } else if (finished) {
+                        return false;
+                    } else if (that.hasNext()) {
+                        next = that.next();
+                        if (predicate.test(next)) {
+                            cached = true;
+                            return true;
+                        }
+                    }
+                    finished = true;
+                    return false;
+                }
+
+                @Override
+                // hasNext() sets `next` whenever it sets `cached`
+                @SuppressWarnings("NullAway")
+                public T getNext() {
+                    cached = false;
+                    return next;
+                }
+            };
+        }
+    }
+}

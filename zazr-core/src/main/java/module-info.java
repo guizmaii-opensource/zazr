@@ -1,6 +1,6 @@
-module com.guizmaii.zazr {
-    exports com.guizmaii.zazr;
-    exports com.guizmaii.zazr.collection;
-    exports com.guizmaii.zazr.control;
+module dev.zazr {
+    exports dev.zazr;
+    exports dev.zazr.collection;
+    exports dev.zazr.control;
     requires static org.jspecify;
 }

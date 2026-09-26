@@ -1,6 +1,6 @@
 # Control types
 
-`Option`, `Either`, `Try`, `Validation` (in `com.guizmaii.zazr.control`) and `Lazy` (in `com.guizmaii.zazr`) hold
+`Option`, `Either`, `Try`, `Validation` (in `dev.zazr.control`) and `Lazy` (in `dev.zazr`) hold
 the result of a step. `Using` releases resources and returns a `Try`. Full pages: https://zazr.dev/control/.
 
 ## Which one
@@ -25,7 +25,7 @@ Rules of thumb:
 ## Reading a value: pattern matching
 
 The four are sealed interfaces whose cases are records. A `switch` expression over them needs no `default`, and a
-`when` guard adds a condition. Import the cases: `import com.guizmaii.zazr.control.Option.Some;` and so on.
+`when` guard adds a condition. Import the cases: `import dev.zazr.control.Option.Some;` and so on.
 
 ```java
 var age = Option.some(17); // Option<Integer>
