@@ -1128,12 +1128,12 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1), as {@link #remove(Object)}: one removal, with its O(n) cases, and one
-     * {@link #put(Tuple2)}; a map holds an entry once.
+     * Complexity: amortised O(1), as {@link #replace(Tuple2, Tuple2)}: a map holds an entry once. The new entry takes
+     * the position of the replaced one.
      */
     @Override
     public LinkedHashMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
-        return Maps.replaceAll(this, currentElement, newElement);
+        return replace(currentElement, newElement);
     }
 
     /**

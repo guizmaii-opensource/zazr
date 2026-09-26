@@ -2828,4 +2828,67 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             return map;
         }
     }
+
+    @Nested
+    class ReplaceKeepsThePositionTests {
+
+        private final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
+
+        private void assertBothReplace(Tuple2<Integer, String> current, Tuple2<Integer, String> replacement,
+                                       LinkedHashMap<Integer, String> expected) {
+            final LinkedHashMap<Integer, String> replaced = map.replace(current, replacement);
+            final LinkedHashMap<Integer, String> replacedAll = map.replaceAll(current, replacement);
+            Assertions.assertThat(replaced.toList()).isEqualTo(expected.toList());
+            Assertions.assertThat(replacedAll.toList()).isEqualTo(expected.toList());
+            Assertions.assertThat(replacedAll.keySet().toList()).isEqualTo(expected.keySet().toList());
+            Assertions.assertThat(map.toList()).isEqualTo(List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
+        }
+
+        @Test
+        public void aNewValueForTheSameKeyKeepsItsPosition() {
+            assertBothReplace(Tuple.of(2, "b"), Tuple.of(2, "x"), LinkedHashMap.<Integer, String> empty().put(1, "a").put(2, "x").put(3, "c"));
+            assertBothReplace(Tuple.of(1, "a"), Tuple.of(1, "x"), LinkedHashMap.<Integer, String> empty().put(1, "x").put(2, "b").put(3, "c"));
+            assertBothReplace(Tuple.of(3, "c"), Tuple.of(3, "x"), LinkedHashMap.<Integer, String> empty().put(1, "a").put(2, "b").put(3, "x"));
+        }
+
+        @Test
+        public void aNewKeyTakesThePositionOfTheReplacedEntry() {
+            assertBothReplace(Tuple.of(2, "b"), Tuple.of(4, "x"), LinkedHashMap.<Integer, String> empty().put(1, "a").put(4, "x").put(3, "c"));
+            assertBothReplace(Tuple.of(1, "a"), Tuple.of(4, "x"), LinkedHashMap.<Integer, String> empty().put(4, "x").put(2, "b").put(3, "c"));
+        }
+
+        @Test
+        public void aNewKeyFoundElsewhereIsRemovedFromItsPosition() {
+            assertBothReplace(Tuple.of(2, "b"), Tuple.of(3, "x"), LinkedHashMap.<Integer, String> empty().put(1, "a").put(3, "x"));
+            assertBothReplace(Tuple.of(3, "c"), Tuple.of(1, "x"), LinkedHashMap.<Integer, String> empty().put(2, "b").put(1, "x"));
+        }
+
+        @Test
+        public void anAbsentOrEqualEntryReturnsTheSameMap() {
+            Assertions.assertThat(map.replaceAll(Tuple.of(2, "z"), Tuple.of(2, "x"))).isSameAs(map);
+            Assertions.assertThat(map.replaceAll(Tuple.of(9, "b"), Tuple.of(2, "x"))).isSameAs(map);
+            Assertions.assertThat(map.replaceAll(Tuple.of(2, "b"), Tuple.of(2, "b"))).isSameAs(map);
+            Assertions.assertThat(LinkedHashMap.<Integer, String> empty().replaceAll(Tuple.of(2, "b"), Tuple.of(2, "x")))
+                    .isSameAs(LinkedHashMap.empty());
+        }
+
+        @Test
+        public void theKeySetReplacesAtThePosition() {
+            final Set<Integer> keys = map.keySet();
+            Assertions.assertThat(keys.replaceAll(2, 4).toList()).isEqualTo(List.of(1, 4, 3));
+            Assertions.assertThat(keys.replaceAll(2, 3).toList()).isEqualTo(List.of(1, 3));
+            Assertions.assertThat(keys.replaceAll(3, 1).toList()).isEqualTo(List.of(2, 1));
+            Assertions.assertThat(keys.replaceAll(9, 4)).isSameAs(keys);
+            Assertions.assertThat(keys.replaceAll(2, 2)).isSameAs(keys);
+            Assertions.assertThat(keys.replace(2, 4).toList()).isEqualTo(keys.replaceAll(2, 4).toList());
+        }
+
+        @Test
+        public void nullsAreRejectedAsByReplace() {
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(null, Tuple.of(2, "x")));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(Tuple.of(2, "b"), null));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(Tuple.of(2, "b"), Tuple.of(null, "x")));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(Tuple.of(2, "b"), Tuple.of(2, null)));
+        }
+    }
 }
