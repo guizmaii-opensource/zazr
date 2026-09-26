@@ -57,7 +57,8 @@ The error names the sample that broke the property, its number, and the seed of 
 
 ```java
 var config = CheckConfig.defaults().withSeed(42); // CheckConfig
-var shortLists = Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5); // CheckResult
+// CheckResult
+var shortLists = Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5);
 shortLists.assertIsSatisfied(); // throws an AssertionError
 ```
 
@@ -137,10 +138,11 @@ the others are uniform. Off-by-one mistakes show up in a few samples.
 `weighted` choose among values or generators.
 
 ```java
-var dice = Gen.integers(1, 6); // Gen<Integer>
-var twoDice = dice.zipWith(dice, Integer::sum); // Gen<Integer>
-var coin = Gen.elements("heads", "tails"); // Gen<String>
-var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0)); // Gen<String>
+var dice    = Gen.integers(1, 6);                // Gen<Integer>
+var twoDice = dice.zipWith(dice, Integer::sum);  // Gen<Integer>
+var coin    = Gen.elements("heads", "tails");    // Gen<String>
+// Gen<String>
+var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0));
 Check.check(twoDice, sum -> sum >= 2 && sum <= 12).assertIsSatisfied();
 ```
 
@@ -152,17 +154,17 @@ Check.check(twoDice, sum -> sum >= 2 && sum <= 12).assertIsSatisfied();
 gives every combination.
 
 ```java
-var sizes = Gen.fromIterable(Vector.of("S", "M")); // Gen<String>
-var colours = Gen.fromIterable(Vector.of("red", "blue")); // Gen<String>
-var variants = sizes.zip(colours).runCollect(); // List<Tuple2<String, String>>
+var sizes    = Gen.fromIterable(Vector.of("S", "M"));       // Gen<String>
+var colours  = Gen.fromIterable(Vector.of("red", "blue"));  // Gen<String>
+var variants = sizes.zip(colours).runCollect();             // List<Tuple2<String, String>>
 // List((S, red), (S, blue), (M, red), (M, blue))
 ```
 
 `checkAll` checks every value of finite generators exactly once, instead of 200 samples.
 
 ```java
-var days = Gen.fromIterable(EnumSet.allOf(DayOfWeek.class)); // Gen<DayOfWeek>
-var result = Check.checkAll(days, day -> day.plus(7) == day); // CheckResult
+var days   = Gen.fromIterable(EnumSet.allOf(DayOfWeek.class));  // Gen<DayOfWeek>
+var result = Check.checkAll(days, day -> day.plus(7) == day);   // CheckResult
 // Satisfied[samples=7]
 ```
 
@@ -178,9 +180,10 @@ The size bounds what a generator produces, such as the length of a collection. T
 - `withSize(n)` runs a generator at a fixed size.
 
 ```java
-var depth = Gen.sized(size -> Gen.integers(0, size)); // Gen<Integer>
-var words = Gen.small(size -> Gen.stringsN(size, Gen.alphaChars())); // Gen<String>
-var shortLists = Gen.list(Gen.integers()).withSize(3); // Gen<List<Integer>>, at most 3 elements
+var depth = Gen.sized(size -> Gen.integers(0, size));                 // Gen<Integer>
+var words = Gen.small(size -> Gen.stringsN(size, Gen.alphaChars()));  // Gen<String>
+// Gen<List<Integer>>, at most 3 elements
+var shortLists = Gen.list(Gen.integers()).withSize(3);
 ```
 
 A check grows the size evenly over its samples, from 0 to the configured size:
@@ -202,9 +205,11 @@ is better written as a `map` that builds the wanted values.
 
 ```java
 var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
-var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
-var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
-var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
+// Gen<Integer>, with no rejected value
+var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2);
+var nonEmpty  = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
+// CheckResult
+var impossible = Check.check(Gen.integers().filter(n -> false), n -> true);
 // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
 ```
 

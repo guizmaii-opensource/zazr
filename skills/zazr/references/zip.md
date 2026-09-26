@@ -16,7 +16,8 @@ Prefer the static `zipWith` with every value at once: it passes the values strai
 
 ```java
 var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
-var triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true)); // Option<Tuple3<Integer, String, Boolean>>
+// Option<Tuple3<Integer, String, Boolean>>
+var triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true));
 // Some(6), Some((1, a, true))
 ```
 

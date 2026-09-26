@@ -81,7 +81,7 @@ var all = Option.collectAll(Vector.of(Option.some(1), Option.some(2))); // Optio
   absent with `flatMap` and `Option.ofNullable`:
 
 ```java
-var env = java.util.Map.of("HOME", "/home/ada");
+var env   = java.util.Map.of("HOME", "/home/ada");
 var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key))); // Option<String>
 // None, where map(env::get) would throw
 ```
@@ -101,8 +101,8 @@ var total = Either.<String, Integer>right(2) // Either<String, Integer>
     .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
     .filterOrElse(n -> n < 100, n -> n + " is too large")
     .mapLeft(error -> "rejected: " + error);
-var positive = Either.fromPredicate(-1, n -> n > 0, n -> n + " is not positive"); // Either<String, Integer>
-var named = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank"); // Either<String, String>
+var positive = Either.fromPredicate(-1, n -> n > 0, n -> n + " is not positive");  // Either<String, Integer>
+var named    = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank");  // Either<String, String>
 // Right(20), Left(-1 is not positive), Left(name is blank)
 ```
 

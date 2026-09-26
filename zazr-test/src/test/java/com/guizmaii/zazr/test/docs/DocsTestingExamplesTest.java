@@ -42,7 +42,8 @@ public class DocsTestingExamplesTest {
     void whatAFailurePrints() {
         assertThatThrownBy(() -> {
             var config = CheckConfig.defaults().withSeed(42); // CheckConfig
-            var shortLists = Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5); // CheckResult
+            // CheckResult
+            var shortLists = Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5);
             shortLists.assertIsSatisfied(); // throws an AssertionError
 
             CheckConfig typedConfig = config;
@@ -106,7 +107,8 @@ public class DocsTestingExamplesTest {
         var dice = Gen.integers(1, 6); // Gen<Integer>
         var twoDice = dice.zipWith(dice, Integer::sum); // Gen<Integer>
         var coin = Gen.elements("heads", "tails"); // Gen<String>
-        var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0)); // Gen<String>
+        // Gen<String>
+        var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0));
         Check.check(twoDice, sum -> sum >= 2 && sum <= 12).assertIsSatisfied();
 
         Gen<Integer> typedDice = dice;
@@ -154,7 +156,8 @@ public class DocsTestingExamplesTest {
     void sizedGenerators() {
         var depth = Gen.sized(size -> Gen.integers(0, size)); // Gen<Integer>
         var words = Gen.small(size -> Gen.stringsN(size, Gen.alphaChars())); // Gen<String>
-        var shortLists = Gen.list(Gen.integers()).withSize(3); // Gen<List<Integer>>, at most 3 elements
+        // Gen<List<Integer>>, at most 3 elements
+        var shortLists = Gen.list(Gen.integers()).withSize(3);
 
         var config = CheckConfig.defaults().withSize(50);
         Gen<Integer> typedDepth = depth;
@@ -177,9 +180,11 @@ public class DocsTestingExamplesTest {
     @Test
     void filtering() {
         var evens = Gen.integers(-1000, 1000).filter(n -> n % 2 == 0); // Gen<Integer>
-        var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2); // Gen<Integer>, with no rejected value
+        // Gen<Integer>, with no rejected value
+        var alsoEvens = Gen.integers(-500, 500).map(n -> n * 2);
         var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
-        var impossible = Check.check(Gen.integers().filter(n -> false), n -> true); // CheckResult
+        // CheckResult
+        var impossible = Check.check(Gen.integers().filter(n -> false), n -> true);
         // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
 
         Gen<Integer> typedEvens = evens;

@@ -109,9 +109,9 @@ if (nickname != null) {
 
 ```java
 // after
-var nickname = HashMap.of("ada", "Countess").get("alan"); // Option<String>
-var display = nickname.map(String::toUpperCase).getOrElse("anonymous");
-var length = nickname.fold(() -> 0, String::length); // Integer
+var nickname = HashMap.of("ada", "Countess").get("alan");  // Option<String>
+var display  = nickname.map(String::toUpperCase).getOrElse("anonymous");
+var length   = nickname.fold(() -> 0, String::length);     // Integer
 // display is "anonymous", length is 0
 ```
 
@@ -119,7 +119,7 @@ A loop that accumulates into a variable is a `foldLeft`:
 
 ```java
 var prices = Vector.of(1_200, 850, 4_000);
-var total = prices.foldLeft(0, Integer::sum); // Integer
+var total  = prices.foldLeft(0, Integer::sum); // Integer
 // 6050
 ```
 
@@ -264,8 +264,8 @@ record Sku(String value) {
 ```
 
 ```java
-var good = Sku.parse(" abc-1234 "); // Either<String, Sku>
-var bad = Sku.parse("abc");         // Either<String, Sku>
+var good = Sku.parse(" abc-1234 ");  // Either<String, Sku>
+var bad  = Sku.parse("abc");         // Either<String, Sku>
 // Right(Sku[value=ABC-1234]), Left(not a SKU: abc)
 ```
 
@@ -280,9 +280,9 @@ as its own record under a sealed interface, holding exactly the data of that sta
 ```java
 // before
 final class Payment {
-    String method;     // "card" or "transfer"
-    String cardNumber; // set when method is "card", hopefully
-    String iban;       // set when method is "transfer", hopefully
+    String method;      // "card" or "transfer"
+    String cardNumber;  // set when method is "card", hopefully
+    String iban;        // set when method is "transfer", hopefully
 }
 ```
 
@@ -330,8 +330,8 @@ static int highestScore(NonEmptyVector<Integer> scores) {
 ```
 
 ```java
-var scores = Vector.of(12, 40, 7).toNonEmptyVector(); // Option<NonEmptyVector<Integer>>
-var best = scores.map(s -> highestScore(s));        // Option<Integer>
+var scores = Vector.of(12, 40, 7).toNonEmptyVector();  // Option<NonEmptyVector<Integer>>
+var best   = scores.map(s -> highestScore(s));         // Option<Integer>
 // Some(40); an empty Vector gives None
 ```
 
@@ -425,7 +425,7 @@ The two snippets below use a static `isPrime(int)` method.
 
 ```java
 // before
-var found = new java.util.ArrayList<Integer>();
+var found     = new java.util.ArrayList<Integer>();
 var candidate = 2;
 while (found.size() < 5) {
     if (isPrime(candidate)) {
@@ -487,9 +487,9 @@ static String summary(Option<Payment> payment) {
 ```
 
 ```java
-var paid = summary(Option.some(new Transfer("FR76 3000 6000 0112 3456 7890 189")));
+var paid   = summary(Option.some(new Transfer("FR76 3000 6000 0112 3456 7890 189")));
 var unpaid = summary(Option.none());
-var count = Vector.of("a", "b", "c").foldLeft(0, (n, _) -> n + 1); // Integer
+var count  = Vector.of("a", "b", "c").foldLeft(0, (n, _) -> n + 1); // Integer
 // "bank transfer", "not paid yet", 3
 ```
 

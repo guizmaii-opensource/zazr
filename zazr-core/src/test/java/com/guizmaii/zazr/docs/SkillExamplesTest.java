@@ -202,7 +202,8 @@ public class SkillExamplesTest {
         @Test
         void nonEmptyVector() {
             var input = Vector.of("ada@shop.com", "grace@shop.com");
-            var recipients = input.toNonEmptyVector().toEither(() -> "at least one recipient is required"); // Either<String, NonEmptyVector<String>>
+            // Either<String, NonEmptyVector<String>>
+            var recipients = input.toNonEmptyVector().toEither(() -> "at least one recipient is required");
             var first = recipients.map(NonEmptyVector::head).getOrElse("nobody"); // String
             var scores = NonEmptyVector.of(7, 3, 9);
             var best = scores.max(Integer::compare); // Integer, nothing can go wrong
@@ -234,7 +235,8 @@ public class SkillExamplesTest {
         @Test
         void arity() {
             var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
-            var triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true)); // Option<Tuple3<Integer, String, Boolean>>
+            // Option<Tuple3<Integer, String, Boolean>>
+            var triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true));
             // Some(6), Some((1, a, true))
 
             assertThat(sum).isEqualTo(Option.some(6));

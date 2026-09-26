@@ -120,7 +120,7 @@ A `List` given to `addAll` becomes the end of the result as it is, when nothing 
 are shared, not copied.
 
 ```java
-var tail = List.of(8, 9);
+var tail  = List.of(8, 9);
 var whole = List.<Integer>newBuilder().add(7).addAll(tail).result(); // List<Integer>
 // List(7, 8, 9); whole.tail() is tail itself
 ```
