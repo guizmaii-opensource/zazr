@@ -66,6 +66,9 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/guizmaii-opensource/zazr
 
+extra_javascript:
+  - assets/external-links.js
+
 extra_css:
   - assets/zazr.css
 
