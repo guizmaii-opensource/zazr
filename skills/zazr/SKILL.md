@@ -57,8 +57,8 @@ The cases are nested records: `import dev.zazr.control.Option.Some;`. With a `mo
    `mapBoth`, `tap`, `catchAll`, `flip`, `fromPredicate`. No `Match`, no `Seq`, no `Function1`. No
    category-theory words (`ap`, `pure`, `traverse`, `sequence`) in names or comments.
 9. **Cross to the JDK with views.** `asJava()` (`asJavaMap()` for a map) gives a read-only `java.util` view in
-   O(1); `ofAll` and `collector()` come back. `List` and `LazyList` clash with the JDK names: import Zazr's and write
-   `java.util.List` and `java.util.stream.Stream` in full. The number of elements is `size()`, on every collection;
+   O(1); `ofAll` and `collector()` come back. `List` clashes with `java.util.List`: import Zazr's and write the JDK
+   one in full. The number of elements is `size()`, on every collection;
    there is no `length()`.
 10. **Write functional Java.** Records and persistent collections instead of setters, expressions instead of
     statements that assign, effects at the edges. Locals are `var`, with the type in a comment when it is not

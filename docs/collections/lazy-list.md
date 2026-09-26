@@ -7,8 +7,8 @@ description: LazyList, the lazy list that keeps what it computed - possibly infi
 A lazy list that remembers what it computed. The first element is computed when the `LazyList` is built, each of the
 others when it is first reached, and then kept. It can be infinite.
 
-Its name clashes with `java.util.stream.Stream`: import `dev.zazr.collection.LazyList`, and write the JDK one
-in full when you need both.
+Unlike a `java.util.stream.Stream`, which is a one-shot pipeline, a `LazyList` is a collection: it can be read
+many times, and each read after the first reuses what was computed.
 
 ## When to choose it
 

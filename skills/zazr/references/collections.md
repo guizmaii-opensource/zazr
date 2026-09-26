@@ -142,7 +142,7 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
 // view.get(1) is "Grace", back == names, fromJdk is Vector(3, 1, 2)
 ```
 
-`List` and `LazyList` clash with `java.util.List` and `java.util.stream.Stream`: import Zazr's, spell the JDK ones out.
+`List` clashes with `java.util.List`: import Zazr's, spell the JDK one out.
 
 ## Sharp edges
 

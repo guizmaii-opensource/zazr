@@ -5,8 +5,8 @@ functional code to write instead.
 
 The ideas are explained for a human reader at https://zazr.dev/new-to-fp/. Follow the same rules here.
 
-Imports: Zazr's `List`, `LazyList`, `Map`, `Set` and `Queue` share their names with JDK types. Import Zazr's and write
-the JDK ones in full (`java.util.List`, `java.util.stream.Stream`). Pattern matching on Zazr values needs the case
+Imports: Zazr's `List`, `Map`, `Set` and `Queue` share their names with JDK types. Import Zazr's and write the JDK
+ones in full (`java.util.List`, `java.util.Map`). Pattern matching on Zazr values needs the case
 records imported: `Option.Some`, `Option.None`, `Either.Left`, `Either.Right`, `Try.Success`, `Try.Failure`,
 `Validation.Valid`, `Validation.Invalid`.
 
@@ -441,7 +441,7 @@ var primes = LazyList.from(2).filter(n -> isPrime(n)).take(5).toVector(); // Vec
 // Vector(2, 3, 5, 7, 11)
 ```
 
-Zazr's `LazyList` is a lazy list that keeps what it computed, so it can be read many times; `java.util.stream.Stream`
+Zazr's `LazyList` keeps what it computed, so it can be read many times; `java.util.stream.Stream`
 is a one-shot pipeline. On an infinite `LazyList`, call `take` or `takeWhile` before anything that reads every
 element (`toVector`, `foldLeft`, `size`). See https://zazr.dev/collections/lazy-list/.
 
