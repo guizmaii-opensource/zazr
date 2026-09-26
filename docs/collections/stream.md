@@ -17,13 +17,13 @@ read, or a sequence defined in terms of itself.
 
 ```java
 var naturals = Stream.from(1); // Stream<Integer>
-var squares = naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
+var squares  = naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
 // Vector(1, 9, 25, 49)
 ```
 
 ```java
 var fibonacci = Stream.of(0L, 1L).appendSelf(self -> self.zipWith(self.tail(), Long::sum));
-var firstTen = fibonacci.take(10).toVector(); // Vector<Long>
+var firstTen  = fibonacci.take(10).toVector(); // Vector<Long>
 // Vector(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
 ```
 

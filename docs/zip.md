@@ -46,8 +46,8 @@ var all = Validation.zipWith(Validation.<String, Integer>invalid("no a"),
 `zipLeft` and `zipRight` keep one value, but still fail when either side fails. They are not `orElse`.
 
 ```java
-var left = Option.some(1).zipLeft(Option.none()); // Option<Integer>
-var right = Option.some(1).zipRight(Option.some("kept")); // Option<String>
+var left  = Option.some(1).zipLeft(Option.none());         // Option<Integer>
+var right = Option.some(1).zipRight(Option.some("kept"));  // Option<String>
 // None, Some(kept)
 ```
 

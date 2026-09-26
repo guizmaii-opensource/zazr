@@ -26,9 +26,9 @@ such as `clear()` on an empty view. That includes `pollFirst()` on a `NavigableS
 entry.
 
 ```java
-var names = Vector.of("Ada", "Grace");
-var view = names.asJava(); // java.util.List<String>
-var second = view.get(1);
+var names    = Vector.of("Ada", "Grace");
+var view     = names.asJava(); // java.util.List<String>
+var second   = view.get(1);
 var rejected = Try.run(() -> view.add("Linus")).getCause() instanceof UnsupportedOperationException;
 // second is "Grace", rejected is true
 ```
@@ -42,11 +42,11 @@ The views of `TreeSet` and `TreeMap` navigate the tree: `ceiling`, `floor`, `fir
 O(log n). `subSet`, `headMap`, `descendingSet` and the like are views too.
 
 ```java
-var scores = TreeSet.of(10, 20, 30, 40).asJava(); // java.util.NavigableSet<Integer>
-var atLeast25 = scores.ceiling(25); // Integer
-var top = scores.tailSet(20, true); // java.util.NavigableSet<Integer>
-var ages = TreeMap.of("Ada", 36, "Grace", 85).asJavaMap(); // java.util.NavigableMap<String, Integer>
-var grace = ages.get("Grace"); // Integer
+var scores    = TreeSet.of(10, 20, 30, 40).asJava();             // java.util.NavigableSet<Integer>
+var atLeast25 = scores.ceiling(25);                              // Integer
+var top       = scores.tailSet(20, true);                        // java.util.NavigableSet<Integer>
+var ages      = TreeMap.of("Ada", 36, "Grace", 85).asJavaMap();  // java.util.NavigableMap<String, Integer>
+var grace     = ages.get("Grace");                               // Integer
 // atLeast25 is 30, top is [20, 30, 40], grace is 85
 ```
 
@@ -61,9 +61,9 @@ When a JDK API needs a collection it can modify, copy the view with the JDK cons
 `new java.util.ArrayList<>(vector.asJava())`, `new java.util.HashMap<>(map.asJavaMap())`.
 
 ```java
-var mutable = new java.util.ArrayList<>(Vector.of(1, 2).asJava()); // java.util.ArrayList<Integer>
+var mutable = new java.util.ArrayList<>(Vector.of(1, 2).asJava());     // java.util.ArrayList<Integer>
 mutable.add(3);
-var jdkSet = new java.util.HashSet<>(HashSet.of("a", "b").asJava()); // java.util.HashSet<String>
+var jdkSet  = new java.util.HashSet<>(HashSet.of("a", "b").asJava());  // java.util.HashSet<String>
 // mutable is [1, 2, 3], jdkSet holds a and b
 ```
 
@@ -79,9 +79,9 @@ To come back from Java:
 In the other direction, `stream()` on any Zazr collection returns a `java.util.stream.Stream`.
 
 ```java
-var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2)); // Vector<Integer>
-var sum = fromJdk.stream().mapToInt(Integer::intValue).sum();
-var fromOptional = Option.ofOptional(java.util.Optional.of(4)); // Option<Integer>
+var fromJdk      = Vector.ofAll(java.util.List.of(3, 1, 2));     // Vector<Integer>
+var sum          = fromJdk.stream().mapToInt(Integer::intValue).sum();
+var fromOptional = Option.ofOptional(java.util.Optional.of(4));  // Option<Integer>
 // Vector(3, 1, 2), 6, Some(4)
 ```
 

@@ -75,7 +75,7 @@ jobs:
 
   docs:
     runs-on: ubuntu-latest
-    name: Complexity page up to date, every site example tested
+    name: Complexity page up to date, every site example tested and aligned
     steps:
       - uses: actions/checkout@v7
       - name: Setup scala-cli
@@ -90,6 +90,8 @@ jobs:
         run: make docs-complexity-check
       - name: Check that every java block of the site is in a docs example test
         run: make docs-examples
+      - name: Check that the declarations of every java block of the site are aligned
+        run: make docs-align-check
 
   coverage:
     runs-on: ubuntu-latest

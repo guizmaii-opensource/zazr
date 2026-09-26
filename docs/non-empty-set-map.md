@@ -30,9 +30,9 @@ value itself. The same holds for `min`, `maxBy`, `minBy`, `average` on the sets,
 variants.
 
 ```java
-var tags = NonEmptySet.of("java", "scala", "java");
-var longest = tags.maxBy(String::length); // String
-var total = NonEmptySet.of(1, 2, 3).reduce(Integer::sum); // Integer
+var tags    = NonEmptySet.of("java", "scala", "java");
+var longest = tags.maxBy(String::length);                    // String
+var total   = NonEmptySet.of(1, 2, 3).reduce(Integer::sum);  // Integer
 // scala, 6
 ```
 
@@ -58,16 +58,18 @@ On a map, `keySet()` returns a `NonEmptySet` (a `NonEmptySortedSet` on a `NonEmp
 `NonEmptySortedMap`, on these types and on `NonEmptyVector`: a non-empty source gives at least one entry.
 
 ```java
-var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length); // NonEmptyMap<Integer, NonEmptySet<String>>
-var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word); // NonEmptyMap<Integer, String>
+// NonEmptyMap<Integer, NonEmptySet<String>>
+var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length);
+// NonEmptyMap<Integer, String>
+var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word);
 // byLength maps 1 to a set of a, and 2 to a set of bb and cc; index is NonEmptyMap((1, a), (2, bb))
 ```
 
 ```java
 var prices = NonEmptySortedMap.of(Tuple.of("pear", 3), Tuple.of("apple", 2));
-var first = prices.head(); // Tuple2<String, Integer>
-var names = prices.keySet(); // NonEmptySortedSet<String>
-var cheap = prices.filterValues(price -> price < 3); // TreeMap<String, Integer>
+var first  = prices.head();                            // Tuple2<String, Integer>
+var names  = prices.keySet();                          // NonEmptySortedSet<String>
+var cheap  = prices.filterValues(price -> price < 3);  // TreeMap<String, Integer>
 // (apple, 2), NonEmptySortedSet(apple, pear), TreeMap((apple, 2))
 ```
 
@@ -89,8 +91,8 @@ The sorted variants have the same constructors, each in two forms: one for the n
 `TreeSet.toNonEmptySortedSet()` and `TreeMap.toNonEmptySortedMap()`.
 
 ```java
-var fromInput = HashMap.of("a", 1).toNonEmptyMap(); // Option<NonEmptyMap<String, Integer>>
-var fromNothing = HashSet.<String>empty().toNonEmptySet(); // Option<NonEmptySet<String>>
+var fromInput   = HashMap.of("a", 1).toNonEmptyMap();       // Option<NonEmptyMap<String, Integer>>
+var fromNothing = HashSet.<String>empty().toNonEmptySet();  // Option<NonEmptySet<String>>
 // Some(NonEmptyMap((a, 1))), None
 ```
 

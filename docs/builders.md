@@ -33,10 +33,10 @@ A builder is not thread-safe and not reusable: after `result()`, create a new on
 the same as `newBuilder()`.
 
 ```java
-var both = Vector.<Integer>newBuilder(8); // Vector.Builder<Integer>
+var both   = Vector.<Integer>newBuilder(8);  // Vector.Builder<Integer>
 both.addAll(Vector.of(1, 2, 3)).add(4);
-var added = both.size();
-var result = both.result(); // Vector<Integer>
+var added  = both.size();
+var result = both.result();                  // Vector<Integer>
 // added is 4, result is Vector(1, 2, 3, 4)
 ```
 
@@ -120,7 +120,7 @@ A `List` given to `addAll` becomes the end of the result as it is, when nothing 
 are shared, not copied.
 
 ```java
-var tail = List.of(8, 9);
+var tail  = List.of(8, 9);
 var whole = List.<Integer>newBuilder().add(7).addAll(tail).result(); // List<Integer>
 // List(7, 8, 9); whole.tail() is tail itself
 ```

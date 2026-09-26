@@ -20,10 +20,10 @@ has no failure case and is never empty.
 tells whether that has happened.
 
 ```java
-var answer = Lazy.of(() -> 6 * 7); // Lazy<Integer>
+var answer = Lazy.of(() -> 6 * 7);          // Lazy<Integer>
 var before = answer.isEvaluated();
-var value = answer.map(n -> n + 1).get(); // Integer
-var after = answer.isEvaluated();
+var value  = answer.map(n -> n + 1).get();  // Integer
+var after  = answer.isEvaluated();
 // before is false, value is 43, after is true
 ```
 
@@ -35,11 +35,11 @@ var after = answer.isEvaluated();
 values they depend on are computed when the result is.
 
 ```java
-var host = Lazy.of(() -> "localhost"); // Lazy<String>
-var port = Lazy.of(() -> 8080); // Lazy<Integer>
-var address = host.zipWith(port, (h, p) -> h + ":" + p); // Lazy<String>
+var host      = Lazy.of(() -> "localhost");                 // Lazy<String>
+var port      = Lazy.of(() -> 8080);                        // Lazy<Integer>
+var address   = host.zipWith(port, (h, p) -> h + ":" + p);  // Lazy<String>
 var evaluated = host.isEvaluated();
-var value = address.get(); // String
+var value     = address.get();                              // String
 // evaluated is false, value is "localhost:8080"
 ```
 
@@ -63,7 +63,7 @@ var greeting = Lazy.of(() -> {
     return "hello";
 }); // Lazy<String>
 var supplier = greeting.toSupplier(); // java.util.function.Supplier<String>
-var twice = supplier.get() + supplier.get();
+var twice    = supplier.get() + supplier.get();
 // twice is "hellohello", calls[0] is 1: computed once
 ```
 
@@ -84,8 +84,8 @@ var flaky = Lazy.of(() -> {
     }
     return "ready";
 }); // Lazy<String>
-var first = Try.of(flaky::get); // Try<String>
-var second = flaky.get(); // String
+var first  = Try.of(flaky::get);  // Try<String>
+var second = flaky.get();         // String
 // first is Failure(java.lang.IllegalStateException: not yet), second is "ready", attempts is 2
 ```
 
@@ -95,10 +95,10 @@ Two `Lazy` values are equal when their values are, so `equals` and `hashCode` co
 prints `Lazy(?)` until the value is computed.
 
 ```java
-var unread = Lazy.of(() -> 1); // Lazy<Integer>
-var other = Lazy.of(() -> 1); // Lazy<Integer>
-var shown = unread.toString();
-var equal = unread.equals(other);
+var unread = Lazy.of(() -> 1);  // Lazy<Integer>
+var other  = Lazy.of(() -> 1);  // Lazy<Integer>
+var shown  = unread.toString();
+var equal  = unread.equals(other);
 // shown is "Lazy(?)", equal is true, and both are now evaluated
 ```
 

@@ -59,8 +59,8 @@ var user = Validation.zipWith(name(""), age(-1), email("jules"), User::new); // 
 ```
 
 ```java
-var pair = name("Ada").zip(age(36)); // Validation<String, Tuple2<String, Integer>>
-var both = name("").zipWith(age(-1), (n, a) -> n + a); // Validation<String, String>
+var pair = name("Ada").zip(age(36));                    // Validation<String, Tuple2<String, Integer>>
+var both = name("").zipWith(age(-1), (n, a) -> n + a);  // Validation<String, String>
 // Valid((Ada, 36)), Invalid(name is blank, age is negative)
 ```
 
@@ -141,8 +141,8 @@ stays non-empty. `mapBoth` transforms the errors and the value at once.
 - `toOption()` and `toVector()` keep the value and drop the errors.
 
 ```java
-var negative = age(-3); // Validation<String, Integer>
-var joined = negative.toEitherWith(errors -> errors.mkString("; ")); // Either<String, Integer>
+var negative = age(-3);                                                 // Validation<String, Integer>
+var joined   = negative.toEitherWith(errors -> errors.mkString("; "));  // Either<String, Integer>
 var failure = negative.toTry(
     errors -> new IllegalArgumentException(errors.mkString("; "))); // Try<Integer>
 // Left(age is negative), Failure(java.lang.IllegalArgumentException: age is negative)

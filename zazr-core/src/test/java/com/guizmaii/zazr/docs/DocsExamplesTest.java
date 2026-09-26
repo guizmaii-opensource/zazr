@@ -496,7 +496,7 @@ public class DocsExamplesTest {
 
         @Test
         void sharpEdges() {
-            var env = java.util.Map.of("HOME", "/home/ada"); // java.util.Map<String, String>
+            var env = java.util.Map.of("HOME", "/home/ada");
             var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key))); // Option<String>
             // None, where map(env::get) would throw
 
@@ -640,7 +640,7 @@ public class DocsExamplesTest {
         @Test
         void conversions() {
             var either = Try.of(() -> Integer.parseInt("7")).toEither(); // Either<Throwable, Integer>
-            var future = Try.success(7).toCompletableFuture(); // java.util.concurrent.CompletableFuture<Integer>
+            var future = Try.success(7).toCompletableFuture(); // CompletableFuture<Integer>
             var back = Try.fromCompletableFuture(future); // Try<Integer>
             // Right(7), a completed future, Success(7)
 
@@ -1082,8 +1082,10 @@ public class DocsExamplesTest {
 
         @Test
         void groupingAndConverting() {
-            var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length); // NonEmptyMap<Integer, NonEmptySet<String>>
-            var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word); // NonEmptyMap<Integer, String>
+            // NonEmptyMap<Integer, NonEmptySet<String>>
+            var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length);
+            // NonEmptyMap<Integer, String>
+            var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word);
             // byLength maps 1 to a set of a, and 2 to a set of bb and cc; index is NonEmptyMap((1, a), (2, bb))
 
             assertThat(byLength.get(1).map(NonEmptySet::toSet)).isEqualTo(Option.some(HashSet.of("a")));

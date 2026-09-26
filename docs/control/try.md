@@ -19,9 +19,9 @@ Use `Try` around code that throws: parsing, I/O, a library that reports errors w
 its success value is the empty tuple `()`.
 
 ```java
-var parsed = Try.of(() -> Integer.parseInt("42")); // Try<Integer>
-var failed = Try.of(() -> Integer.parseInt("forty-two")); // Try<Integer>
-var ran = Try.run(() -> Thread.sleep(1)); // Try<Tuple0>
+var parsed = Try.of(() -> Integer.parseInt("42"));         // Try<Integer>
+var failed = Try.of(() -> Integer.parseInt("forty-two"));  // Try<Integer>
+var ran    = Try.run(() -> Thread.sleep(1));               // Try<Tuple0>
 // Success(42), Failure(java.lang.NumberFormatException: For input string: "forty-two"), Success(())
 ```
 
@@ -89,7 +89,7 @@ var positive = Try.success(-1)
 `ensuring` runs an action whatever the outcome, like a `finally` block.
 
 ```java
-var log = new StringBuilder();
+var log  = new StringBuilder();
 var done = Try.of(() -> 1).ensuring(() -> log.append("closed")); // Try<Integer>
 // Success(1), and log is "closed"
 ```
@@ -109,9 +109,9 @@ Other members:
   captures its outcome.
 
 ```java
-var either = Try.of(() -> Integer.parseInt("7")).toEither(); // Either<Throwable, Integer>
-var future = Try.success(7).toCompletableFuture(); // java.util.concurrent.CompletableFuture<Integer>
-var back = Try.fromCompletableFuture(future); // Try<Integer>
+var either = Try.of(() -> Integer.parseInt("7")).toEither();  // Either<Throwable, Integer>
+var future = Try.success(7).toCompletableFuture();            // CompletableFuture<Integer>
+var back   = Try.fromCompletableFuture(future);               // Try<Integer>
 // Right(7), a completed future, Success(7)
 ```
 
@@ -125,9 +125,9 @@ equal only if they hold the same exception object.
 Two failures of the same input are not equal. Compare the class or the message of the cause instead.
 
 ```java
-var first = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
-var second = Try.of(() -> Integer.parseInt("x")); // Try<Integer>
-var same = first.equals(second);
+var first     = Try.of(() -> Integer.parseInt("x"));  // Try<Integer>
+var second    = Try.of(() -> Integer.parseInt("x"));  // Try<Integer>
+var same      = first.equals(second);
 var sameClass = first.getCause().getClass() == second.getCause().getClass();
 // same is false, sameClass is true
 ```

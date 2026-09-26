@@ -24,9 +24,9 @@ var first = switch (list) {
 ```
 
 ```java
-var stack = List.<String>empty().push("a").push("b"); // List<String>
-var top = stack.peek(); // String
-var popped = stack.pop(); // List<String>
+var stack  = List.<String>empty().push("a").push("b");  // List<String>
+var top    = stack.peek();                              // String
+var popped = stack.pop();                               // List<String>
 // top is "b", popped is List(a)
 ```
 

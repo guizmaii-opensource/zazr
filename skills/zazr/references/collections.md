@@ -61,8 +61,8 @@ var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
 var stock = HashMap.of("apple", 3, "pear", 0) // HashMap<String, Integer>
     .put("pear", 5, Integer::sum)
     .put("fig", 1);
-var pears = stock.get("pear"); // Option<Integer>
-var kiwis = stock.getOrElse("kiwi", 0); // Integer
+var pears = stock.get("pear");           // Option<Integer>
+var kiwis = stock.getOrElse("kiwi", 0);  // Integer
 // split is (List(2, 4), List(odd 1, odd 3)), pears is Some(5), kiwis is 0
 ```
 
@@ -85,8 +85,8 @@ var builder = Vector.<String>newBuilder(); // Vector.Builder<String>
 for (var word : "the quick brown fox".split(" ")) {
     builder.add(word.toUpperCase());
 }
-var words = builder.result(); // Vector<String>
-var sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector()); // TreeSet<String>
+var words  = builder.result();                                                        // Vector<String>
+var sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector());  // TreeSet<String>
 // Vector(THE, QUICK, BROWN, FOX), TreeSet(a, b)
 ```
 
@@ -113,11 +113,12 @@ A sequence with at least one element, backed by a `Vector`. Parse into it instea
 
 ```java
 var input = Vector.of("ada@shop.com", "grace@shop.com");
-var recipients = input.toNonEmptyVector().toEither(() -> "at least one recipient is required"); // Either<String, NonEmptyVector<String>>
-var first = recipients.map(NonEmptyVector::head).getOrElse("nobody"); // String
-var scores = NonEmptyVector.of(7, 3, 9);
-var best = scores.max(Integer::compare); // Integer, nothing can go wrong
-var passed = scores.filter(s -> s > 5); // Vector<Integer>, may be empty
+// Either<String, NonEmptyVector<String>>
+var recipients = input.toNonEmptyVector().toEither(() -> "at least one recipient is required");
+var first      = recipients.map(NonEmptyVector::head).getOrElse("nobody");  // String
+var scores     = NonEmptyVector.of(7, 3, 9);
+var best       = scores.max(Integer::compare);                              // Integer, nothing can go wrong
+var passed     = scores.filter(s -> s > 5);                                 // Vector<Integer>, may be empty
 // first is "ada@shop.com", best is 9, passed is Vector(7, 9)
 ```
 
@@ -134,10 +135,10 @@ Zazr collections do not implement `java.util.List`, `Set` or `Map`. Cross with v
 - `Option.ofOptional` and `toOptional()`; `Try.fromCompletableFuture` and `toCompletableFuture()`.
 
 ```java
-var names = Vector.of("Ada", "Grace");
-var view = names.asJava(); // java.util.List<String>, no copy
-var back = Vector.ofAll(view); // Vector<String>, the same instance
-var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2)); // Vector<Integer>
+var names   = Vector.of("Ada", "Grace");
+var view    = names.asJava();                            // java.util.List<String>, no copy
+var back    = Vector.ofAll(view);                        // Vector<String>, the same instance
+var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
 // view.get(1) is "Grace", back == names, fromJdk is Vector(3, 1, 2)
 ```
 
