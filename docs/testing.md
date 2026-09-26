@@ -28,6 +28,40 @@ A check is a method call that returns a result, so it runs in any test framework
     }
     ```
 
+## Running in your test suite
+
+`zazr-test` is not a test runner and not a JUnit engine. A check is a method call inside an ordinary test method.
+
+```java
+class ListReverseTest {
+
+    @Test
+    void reversingTwiceGivesTheListBack() {
+        var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
+        Check.check(lists, list -> list.reverse().reverse().equals(list)).assertIsSatisfied();
+    }
+}
+```
+
+`mvn test` or `gradle test` runs it through your test framework, like any other test. A check that passes is a green
+test.
+
+When a sample breaks the property, `assertIsSatisfied()` throws an `AssertionError`. The framework reports it as a
+normal test failure, with the counterexample, the sample number and the seed in the message. The Surefire summary, its
+XML reports and your CI show it like any other failure.
+
+For a test `everyListIsShort` whose property is `list.size() < 5`, run with the seed 42, Maven prints:
+
+```text
+[ERROR] Failures:
+[ERROR]   ListShortTest.everyListIsShort:13 falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42)
+```
+
+The example uses JUnit 5. JUnit 4, TestNG and Spock work the same way: the test method calls the check, and the
+framework reports the `AssertionError`.
+
+`zazr-test` depends on no test framework, only on `zazr-core`.
+
 ## The types
 
 Four types, all in `com.guizmaii.zazr.test`:
