@@ -32,7 +32,7 @@ public class ListBuilderTest {
 
     /// Whether `suffix` is, cell for cell, the end of `list`.
     private static <T> boolean endsWithCells(List<T> list, List<T> suffix) {
-        final int skip = list.length() - suffix.length();
+        final int skip = list.size() - suffix.size();
         List<T> rest = list;
         for (int i = 0; i < skip; i++) {
             rest = rest.tail();
@@ -51,7 +51,7 @@ public class ListBuilderTest {
             assertThat(byElement.size()).isEqualTo(size);
             final List<Integer> built = byElement.result();
             assertThat(javaList(built)).isEqualTo(input);
-            assertThat(built.length()).isEqualTo(size);
+            assertThat(built.size()).isEqualTo(size);
             assertThat(built).isEqualTo(List.ofAll(input));
             assertThat(javaList(List.<Integer> newBuilder().addAll(input).result())).isEqualTo(input);
             assertThat(javaList(List.<Integer> newBuilder().addAll(oneShot(input)).result())).isEqualTo(input);
@@ -86,7 +86,7 @@ public class ListBuilderTest {
             assertThat(builder.size()).isEqualTo(oracle.size());
             final List<Integer> built = builder.result();
             assertThat(javaList(built)).isEqualTo(oracle);
-            assertThat(built.length()).isEqualTo(oracle.size());
+            assertThat(built.size()).isEqualTo(oracle.size());
         }
     }
 
@@ -122,13 +122,13 @@ public class ListBuilderTest {
         final List<Integer> built = builder.result();
         assertThat(built).isEqualTo(List.of(1, 2, 3, 4, 1, 2, 3, 5));
         assertThat(source).isEqualTo(List.of(1, 2, 3));
-        assertThat(source.length()).isEqualTo(3);
+        assertThat(source.size()).isEqualTo(3);
         // a List built by the builder is persistent: a new version leaves it as it was
         final List<Integer> prepended = built.prepend(0);
         final List<Integer> appended = built.append(6);
         assertThat(built).isEqualTo(List.of(1, 2, 3, 4, 1, 2, 3, 5));
         assertThat(prepended.tail()).isSameAs(built);
-        assertThat(appended.length()).isEqualTo(9);
+        assertThat(appended.size()).isEqualTo(9);
     }
 
     @Test

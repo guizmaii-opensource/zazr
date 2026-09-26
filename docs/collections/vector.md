@@ -6,8 +6,9 @@ description: Vector, the default sequence - fast access by index, at both ends a
 
 The default sequence, like ZIO's `Chunk`. A `Vector` is a tree of arrays of 32 elements, at most six levels deep.
 
-Access by index, `update`, adding at either end, `take`, `drop` and `slice` are "effectively O(1)": their cost grows
-with the depth of the tree, which is never more than six levels.
+Access by index, `update`, adding at either end, `take`, `drop` and `slice` are "effectively O(1)": they read or copy
+a few small arrays whatever the size, because the tree is never more than six levels deep. A result shares every other
+element with the original.
 
 The first and the last leaves are kept apart from the rest of the tree. So `head` and `last` read one array, and
 `prepend` and `append` usually copy one leaf of at most 32 elements.
@@ -52,6 +53,6 @@ Every method: [complexity page](complexity.md#vector).
 
 - `sliding`, `grouped` and `crossProduct` return a `Vector`, built at once, not an iterator. Each window shares its
   elements with the original `Vector`.
-- `insert` and `removeAt` in the middle cost O(min(i, n - i)): the shorter side is copied element by element.
+- `insert` and `removeAt` in the middle cost O(min(i, n - i)): the elements on the shorter side are copied.
 - Building element by element is cheapest through [`Vector.Builder`](../builders.md), or `Vector.collector()` from a
   `java.util.stream.Stream`.

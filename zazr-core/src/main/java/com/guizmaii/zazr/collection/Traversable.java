@@ -93,8 +93,8 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * Whether {@code element} is one of the elements, compared with {@link Objects#equals(Object, Object)}. The
      * sets and the maps answer it from their own structure, the sequences by walking their elements.
      * <p>
-     * Complexity: O(n) for this default, which walks the elements; the sets and the maps override it with their own
-     * lookup.
+     * Complexity: O(n): the elements are compared one by one until an equal one is found. The sets and the maps
+     * override it with a lookup.
      *
      * @param element the element to look for
      * @return {@code true} if an equal element is contained, {@code false} otherwise
@@ -344,6 +344,9 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * entries, whose {@code contains} looks the key of an entry up in the map, and its {@link java.util.Map} view is
      * {@link Map#asJavaMap()}. A mutable copy is
      * {@code new java.util.ArrayList<>(traversable.asJava())}.
+     * <p>
+     * Complexity: O(1): nothing is copied. On the view, {@code contains} costs what this collection's own
+     * {@code contains} costs.
      *
      * @return a read-only view of the elements
      */

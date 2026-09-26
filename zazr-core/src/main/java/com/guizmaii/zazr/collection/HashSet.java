@@ -25,6 +25,11 @@ import org.jspecify.annotations.Nullable;
  * Of two equal elements, a HashSet keeps the one it received first: {@link #add(Object)}, {@link #addAll(Iterable)},
  * {@link #union(Set)}, the factories, the collector and the {@link Builder} never replace an element already there,
  * and {@link #intersect(Set)} keeps the elements of this set.
+ * <p>
+ * Complexity: lookups, insertions and removals are effectively O(1); an insertion or a removal copies a few small
+ * arrays and shares the rest with the original set. The methods without a note of their own (map, filter, the folds,
+ * the conversions) walk the elements once, O(n), and those that build a new set insert each kept element in
+ * effectively O(1).
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -195,7 +200,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: O(n) for n inner elements in total, one effectively O(1) insertion each.
+     * Complexity: O(m) for m inner elements in total, one effectively O(1) insertion each.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -638,7 +643,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup, then a path copy of the trie when the element is new).
+     * Complexity: effectively O(1): one hash lookup; a new element also costs a copy of a few small arrays, the rest
+     * is shared with this set.
      */
     @Override
     public HashSet<T> add(T element) {
@@ -650,8 +656,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for m elements, each an effectively O(1) insertion; O(1) when this set is empty and {@code
-     * elements} is a HashSet, which is returned as is.
+     * Complexity: O(n + m) for m elements. A HashSet is merged with this set part by part, and a part only one of them
+     * holds is shared without being walked; other elements cost O(m), one effectively O(1) insertion each. O(1) when
+     * this set is empty and {@code elements} is a HashSet, which is returned as is.
      */
     @Override
     public HashSet<T> addAll(Iterable<? extends T> elements) {
@@ -676,7 +683,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup).
+     * Complexity: effectively O(1): one hash lookup.
      */
     @Override
     public boolean contains(T element) {
@@ -686,7 +693,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for a set of m elements (a hash set of them, then one filter pass).
+     * Complexity: O(n + m) for a set of m elements; O(n) when it is a HashSet. Another kind of set is put in a hash
+     * set, then every element of this set is checked against it: the whole set is walked even to remove one element,
+     * which {@link #remove(Object)} does in effectively O(1). A HashSet is compared with this set part by part, and a
+     * part of this set that the argument does not reach is kept whole, not walked.
      */
     @Override
     public HashSet<T> diff(Set<? extends T> elements) {
@@ -701,8 +711,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per element; the subtrees the filter keeps whole are shared, not
-     * copied.
+     * Complexity: O(n), one call of the predicate per element; the parts that lose no element are shared, not copied.
      */
     @Override
     public HashSet<T> filter(Predicate<? super T> predicate) {
@@ -713,8 +722,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per element; the subtrees the filter keeps whole are shared, not
-     * copied.
+     * Complexity: O(n), one call of the predicate per element; the parts that lose no element are shared, not copied.
      */
     @Override
     public HashSet<T> reject(Predicate<? super T> predicate) {
@@ -741,8 +749,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for m elements, each an effectively O(1) lookup; when {@code elements} is a HashSet, the two
-     * tries are compared node by node.
+     * Complexity: O(m) for m elements, each an effectively O(1) lookup; a HashSet is compared with this set part by
+     * part.
      */
     @Override
     public boolean containsAll(Iterable<? extends T> elements) {
@@ -775,8 +783,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for a set of m elements (this set filtered against a hash set of them, or, when they are
-     * fewer, each of them looked up in this set). The elements kept are those of this set, whichever side is smaller.
+     * Complexity: O(m) for a set of m elements; O(min(n, m)) when it is a HashSet: the elements of the smaller set are
+     * checked against the larger one. Another kind of set is first copied into a hash set.
      */
     @Override
     public HashSet<T> intersect(Set<? extends T> elements) {
@@ -802,11 +810,21 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1).
+     */
     @Override
     public boolean isEmpty() {
         return tree.size() == 0;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the size is stored, not counted.
+     */
     @Override
     public int size() {
         return tree.size();
@@ -829,7 +847,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * copy is {@code new java.util.HashSet<>(set.asJava())}; {@code HashSet.ofAll} given the view returns this set
      * without copying.
      * <p>
-     * Complexity: O(1); {@code contains} on the view is effectively O(1).
+     * Complexity: O(1): nothing is copied. {@code contains} on the view is effectively O(1).
      *
      * @return an unmodifiable {@code java.util.Set} view
      */
@@ -895,7 +913,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * generalisation of {@link #partition(Predicate)}. One pass, {@code f} called once per element, no intermediate
      * collection of {@code Either}s. Values equal on one side are kept once.
      * <p>
-     * Complexity: O(n), one effectively O(1) insertion per element.
+     * Complexity: O(n): one effectively O(1) insertion per element.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -926,7 +944,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup and a path copy of the trie).
+     * Complexity: effectively O(1): one hash lookup, then a copy of a few small arrays; the rest is shared with this
+     * set.
      */
     @Override
     public HashSet<T> remove(T element) {
@@ -937,7 +956,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for m given elements (a hash set of them, then one filter pass).
+     * Complexity: O(n + m) for m given elements; O(n) when they are a HashSet. Other elements are put in a hash set,
+     * then every element of this set is checked against it: the whole set is walked even to remove one element,
+     * which {@link #remove(Object)} does in effectively O(1). A HashSet is compared with this set part by part, and a
+     * part of this set that the argument does not reach is kept whole, not walked.
      */
     @Override
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
@@ -954,7 +976,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one lookup, one removal and one insertion).
+     * Complexity: effectively O(1): one lookup, one removal and one insertion.
      */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
@@ -968,7 +990,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1), that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: effectively O(1), as {@link #replace(Object, Object)}: a set holds an element once.
      */
     @Override
     public HashSet<T> replaceAll(T currentElement, T newElement) {
@@ -978,7 +1000,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for m given elements (a hash set of them, then one filter pass).
+     * Complexity: O(n + m) for m given elements; O(n) when they are a HashSet. The m elements are put in a hash set
+     * (unless they already are one), then every element of this set is checked against it.
      */
     @Override
     public HashSet<T> retainAll(Iterable<? extends T> elements) {
@@ -988,8 +1011,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion; this set or a HashSet argument is
-     * returned as is when the other side is empty.
+     * Complexity: O(n + m) for a set of m elements. A HashSet is merged with this set part by part, and a part only
+     * one of them holds is shared without being walked; another kind of set costs O(m), one effectively O(1)
+     * insertion per element. This set, or a HashSet argument, is returned as is when the other side is empty.
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -1030,8 +1054,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n); with another HashSet, the two tries are compared node by node, which answers a different size,
-     * bitmap or hash without looking at an element.
+     * Complexity: O(n log n) against a TreeSet, O(n) against a HashSet or a LinkedHashSet: each element of this set is
+     * looked up in the other one. O(1) when the sizes differ. Against another HashSet, the two are compared part by
+     * part, and a part of a different size or shape answers without looking at an element.
      */
     @Override
     public boolean equals(@Nullable Object o) {
@@ -1048,7 +1073,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1): the sum of the hashes of the elements is kept in the trie.
+     * Complexity: O(1): the sum of the hashes of the elements is stored.
      */
     @Override
     public int hashCode() {

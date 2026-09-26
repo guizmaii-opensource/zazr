@@ -24,12 +24,16 @@ import static com.guizmaii.zazr.collection.internal.Collections.withSize;
  * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
  * {@code slice}) are effectively constant too.
  * <p>
- * The implementation is the radix-balanced finger tree of the Scala standard library's {@code Vector}: a tree of
- * arrays of 32 entries, at most six levels deep, whose first and last leaves (and the first and last arrays of every
- * level) are kept apart from the middle, so that {@code head}, {@code last}, {@code prepend} and {@code append} work
- * on the outer leaves only. Vector declares its whole API itself and implements only {@link Traversable}: every
- * positional method carries a {@code Complexity:} line in its javadoc, where "effectively O(1)" means O(log32 n): at
- * most six array reads, or a copy of at most six arrays of 32 entries.
+ * The elements are kept in a wide, shallow tree of arrays of 32 elements, at most six levels deep, whose first and
+ * last arrays are kept apart, so that {@code head}, {@code last}, {@code prepend} and {@code append} work on those
+ * only. Vector declares its whole API itself and implements only {@link Traversable}: every positional method carries
+ * a {@code Complexity:} line in its javadoc, where "effectively O(1)" means at most six array reads, or a copy of at
+ * most six small arrays of 32 elements, whatever the size: the result shares every other element with this Vector.
+ * <p>
+ * Complexity: the methods without a note of their own ({@code map}, {@code filter}, {@code flatMap}, the folds,
+ * {@code groupBy}, the conversions, and the factories such as {@code ofAll} and {@code range}) walk the elements once:
+ * O(n), where n is the size of the result for a factory and {@code flatMap}. {@code containsAll} is O(n * m): one
+ * {@code contains} per element of its argument.
  *
  * @param <T> Component type of the Vector.
  * @author Ruslan Sennov, Pap Lőrinc
@@ -820,7 +824,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten} in
      * Zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
      * <p>
-     * Complexity: O(n) for n inner elements in total, one builder append each.
+     * Complexity: O(m) for m inner elements in total, each added to the result once.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -843,8 +847,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends an element.
      * <p>
-     * Complexity: effectively O(1): the last leaf, at most 32 elements, is copied, and the arrays above it only once it
-     * is full, once every 32 appends (amortised O(1)).
+     * Complexity: effectively O(1): the last array, at most 32 elements, is copied; once every 32 appends, a few
+     * arrays above it are copied too.
      *
      * @param element the element to append
      * @return a new Vector ending with {@code element}
@@ -857,9 +861,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Appends all elements of the given iterable, in iteration order.
      * <p>
-     * Complexity: O(m) for m appended elements; O(min(n, m)) when {@code iterable} is a Vector: the arrays of the longer
-     * side are reused whole and only the shorter side is copied, element by element or leaf by leaf, plus O(log n)
-     * arrays. O(1) when this Vector is empty and {@code iterable} is a Vector, which is returned as is.
+     * Complexity: O(m) for m appended elements; O(min(n, m)) when {@code iterable} is a Vector: the longer side is
+     * shared and only the shorter one is copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which
+     * is returned as is.
      *
      * @param iterable the elements to append
      * @return a new Vector ending with the given elements, or this Vector if there are none
@@ -887,7 +891,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * A mutable copy is {@code new java.util.ArrayList<>(vector.asJava())}; {@code Vector.ofAll} given the view
      * returns this Vector without copying.
      * <p>
-     * Complexity: O(1); {@code get} on the view is effectively O(1), and so is each step of its iterator.
+     * Complexity: O(1): nothing is copied. {@code get} on the view is effectively O(1), as {@link #get(int)}, and each
+     * step of its iterator is O(1).
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -896,19 +901,23 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * All combinations of the elements, for every size from 0 to {@code length()}, by position:
+     * All combinations of the elements, for every size from 0 to {@code size()}, by position:
      * {@code Vector(1, 2).combinations()} is {@code Vector(Vector(), Vector(1), Vector(2), Vector(1, 2))}.
      * <p>
-     * Complexity: O(2^n) combinations, each of size up to n.
+     * Complexity: O(n * 2^n): the 2^n combinations hold n * 2^(n - 1) elements in all, and building them visits as
+     * many partial choices.
      *
      * @return the combinations, ordered by size, then by position
      */
-    public Vector<Vector<T>> combinations() { return rangeClosed(0, length()).map(this::combinations).flatMap(Function.identity()); }
+    public Vector<Vector<T>> combinations() { return rangeClosed(0, size()).map(this::combinations).flatMap(Function.identity()); }
 
     /**
      * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
      * <p>
-     * Complexity: O(C(n, k)) combinations of size k.
+     * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)): the C(n, k) combinations of k elements are built, and
+     * every choice of fewer than k elements is visited on the way, even one that cannot be completed. That is
+     * O(k * C(n, k)) for k up to n / 2; as k approaches n, the visited choices approach 2^n while the result shrinks:
+     * {@code combinations(n)} does O(2^n) work to return one combination.
      *
      * @param k the size of each combination; {@code k <= 0} gives one empty combination
      * @return the k-combinations, in position order
@@ -970,7 +979,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> Vector<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        final java.util.Set<U> seen = new java.util.HashSet<>(length());
+        final java.util.Set<U> seen = new java.util.HashSet<>(size());
         return filter(t -> seen.add(keyExtractor.apply(t)));
     }
 
@@ -1051,7 +1060,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Returns a new {@code Vector} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: effectively O(1) (the arrays along the cut are copied, O(log32 n) of them; the others are shared).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1072,7 +1082,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int length = length();
+        final int length = size();
         for (int i = 0; i < length; i++) {
             if (predicate.test(get(i))) {
                 return drop(i);
@@ -1103,14 +1113,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Returns a new {@code Vector} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: effectively O(1) (the arrays along the cut are copied, O(log32 n) of them; the others are shared).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
      */
     public Vector<T> dropRight(int n) {
-        // n <= 0 first: length() - n overflows for Integer.MIN_VALUE
-        return n <= 0 ? this : take(length() - n);
+        // n <= 0 first: size() - n overflows for Integer.MIN_VALUE
+        return n <= 0 ? this : take(size() - n);
     }
 
     /**
@@ -1124,7 +1135,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> dropRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = length() - 1; i >= 0; i--) {
+        for (int i = size() - 1; i >= 0; i--) {
             if (predicate.test(get(i))) {
                 return take(i + 1);
             }
@@ -1159,8 +1170,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
         final Vector<? extends T> suffix = ofAll(that);
-        final int suffixLength = suffix.length();
-        int i = length() - suffixLength;
+        final int suffixLength = suffix.size();
+        int i = size() - suffixLength;
         if (i < 0) {
             return false;
         }
@@ -1179,7 +1190,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         while (elements.hasNext() && predicate.test(elements.next())) {
             kept++;
         }
-        if (kept == length()) {
+        if (kept == size()) {
             return this;
         }
         // the elements before the first rejected one are a prefix of this Vector: the builder starts from its arrays
@@ -1224,7 +1235,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         U xs = zero;
-        for (int i = length() - 1; i >= 0; i--) {
+        for (int i = size() - 1; i >= 0; i--) {
             xs = f.apply(get(i), xs);
         }
         return xs;
@@ -1233,9 +1244,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: effectively O(1) (O(log32 n) array reads; one read in the first and the last leaf).
+     * Complexity: effectively O(1): at most six array reads, whatever the size; one for the first and the last 32
+     * elements.
      *
-     * @param index a position, {@code 0 <= index < length()}
+     * @param index a position, {@code 0 <= index < size()}
      * @return the element at that position
      * @throws IndexOutOfBoundsException if {@code index} is out of range
      */
@@ -1246,12 +1258,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
     }
-    private boolean isValid(int index) { return (index >= 0) && (index < length()); }
+    private boolean isValid(int index) { return (index >= 0) && (index < size()); }
 
     /**
      * Returns the first element of this non-empty {@code Vector}.
      * <p>
-     * Complexity: O(1) (the first leaf is a field of the tree).
+     * Complexity: O(1): the first elements are kept apart, in their own array.
      *
      * @return the first element
      * @throws NoSuchElementException if this {@code Vector} is empty
@@ -1289,7 +1301,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return the first index {@code >= from} of the element, or -1 if absent
      */
     public int indexOf(T element, int from) {
-        for (int i = Math.max(from, 0); i < length(); i++) {
+        for (int i = Math.max(from, 0); i < size(); i++) {
             if (Objects.equals(get(i), element)) {
                 return i;
             }
@@ -1299,6 +1311,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOf(Object)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexOf(Object)}.
      *
      * @param element the element to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
@@ -1309,6 +1323,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexOf(Object, int)}.
      *
      * @param element the element to find
      * @param from    the first position to look at
@@ -1348,6 +1364,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #indexOfSlice(Iterable)}.
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its first occurrence, or {@code None}
@@ -1359,6 +1377,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #indexOfSlice(Iterable, int)}.
      *
      * @param that the slice to find
      * @param from the first position to look at
@@ -1395,7 +1415,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public int indexWhere(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int length = length();
+        final int length = size();
         for (int i = Math.max(from, 0); i < length; i++) {
             if (predicate.test(get(i))) {
                 return i;
@@ -1406,6 +1426,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexWhere(Predicate)}.
      *
      * @param predicate the condition
      * @return {@code Some(index)} of the first satisfying element, or {@code None}
@@ -1417,6 +1439,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #indexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #indexWhere(Predicate, int)}.
      *
      * @param predicate the condition
      * @param from      the first position to look at
@@ -1432,8 +1456,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: effectively O(1): the last leaf, at most 32 elements, is copied without its last element; the arrays
-     * above it change only when that leaf held one element (amortised O(1)).
+     * Complexity: effectively O(1): the last array, at most 32 elements, is copied without its last element; the few
+     * arrays above it change only when it held one element.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this Vector is empty
@@ -1451,7 +1475,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * This is the dual of {@link #tailOption()}.
      * <p>
-     * Complexity: effectively O(1) (one {@code init}).
+     * Complexity: effectively O(1), as {@link #init()}.
      *
      * @return {@code Some(traversable)} if non-empty, or {@code None} if this Vector is empty
      */
@@ -1460,9 +1484,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Inserts an element at {@code index}; the elements from that position on shift right by one.
      * <p>
-     * Complexity: O(min(i, n - i)): the shorter side is added to the longer one, element by element or leaf by leaf.
+     * Complexity: O(min(i, n - i)): the elements on the shorter side of i are copied, those on the longer side are
+     * shared.
      *
-     * @param index   a position, {@code 0 <= index <= length()}
+     * @param index   a position, {@code 0 <= index <= size()}
      * @param element the element to insert
      * @return a new Vector with {@code element} at {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is out of range
@@ -1474,9 +1499,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Inserts the given elements at {@code index}, in iteration order; the elements from that position on shift
      * right.
      * <p>
-     * Complexity: O(m + min(i, n - i)) for m inserted elements.
+     * Complexity: O(m + min(i, n - i)) for m inserted elements: the elements on the shorter side of i are copied,
+     * those on the longer side are shared.
      *
-     * @param index    a position, {@code 0 <= index <= length()}
+     * @param index    a position, {@code 0 <= index <= size()}
      * @param elements the elements to insert
      * @return a new Vector with the elements at {@code index}, or this Vector if there are none
      * @throws IndexOutOfBoundsException if {@code index} is out of range
@@ -1484,14 +1510,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if ((index >= 0) && (index <= length())) {
+        if ((index >= 0) && (index <= size())) {
             final Vector<T> begin = take(index).appendAll(elements);
             final Vector<T> end = drop(index);
             return (begin.size() > end.size())
                    ? begin.appendAll(end)
                    : end.prependAll(begin);
         } else {
-            throw new IndexOutOfBoundsException("insert(" + index + ", e) on Vector of length " + length());
+            throw new IndexOutOfBoundsException("insert(" + index + ", e) on Vector of length " + size());
         }
     }
 
@@ -1506,12 +1532,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> intersperse(T element) { return ofAll(Iterator.ofAll(this).intersperse(element)); }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1).
+     */
     @Override
-    public boolean isEmpty() { return length() == 0; }
+    public boolean isEmpty() { return size() == 0; }
 
     /**
      * Narrows to a {@link NonEmptyVector}, whose operations that cannot shrink keep that type and whose {@code head},
      * {@code last}, {@code max}, {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1): the result wraps this Vector, nothing is copied.
      *
      * @return {@code Some(nonEmptyVector)} sharing this Vector's elements, or {@code None} if this Vector is empty
      */
@@ -1520,8 +1553,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; each step is O(1) within a leaf and effectively O(1) at a leaf boundary (amortised
-     * O(1)).
+     * Complexity: O(1) to create, and O(1) per step: moving on to the next block of 32 elements takes at most six
+     * array lookups.
      */
     @Override
     public java.util.Iterator<T> iterator() {
@@ -1532,7 +1565,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns the last element of this Vector.
      * <p>
-     * Complexity: O(1) (the last leaf is a field of the tree).
+     * Complexity: O(1): the last elements are kept apart, in their own array.
      *
      * @return the last element
      * @throws NoSuchElementException if this Vector is empty
@@ -1567,7 +1600,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return the last index {@code <= end} of the element, or -1 if absent
      */
     public int lastIndexOf(T element, int end) {
-        for (int i = Math.min(end, length() - 1); i >= 0; i--) {
+        for (int i = Math.min(end, size() - 1); i >= 0; i--) {
             if (Objects.equals(get(i), element)) {
                 return i;
             }
@@ -1577,6 +1610,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOf(Object)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexOf(Object)}.
      *
      * @param element the element to find
      * @return {@code Some(index)} of its last occurrence, or {@code None}
@@ -1587,6 +1622,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOf(Object, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexOf(Object, int)}.
      *
      * @param element the element to find
      * @param end     the last position to look at
@@ -1602,7 +1639,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Complexity: O(n * m) for a slice of m elements.
      *
      * @param that the slice to find
-     * @return the index of its last occurrence, or -1 (an empty slice occurs at {@code length()})
+     * @return the index of its last occurrence, or -1 (an empty slice occurs at {@code size()})
      * @throws NullPointerException if {@code that} is null
      */
     public int lastIndexOfSlice(Iterable<? extends T> that) {
@@ -1626,6 +1663,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOfSlice(Iterable)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as {@link #lastIndexOfSlice(Iterable)}.
      *
      * @param that the slice to find
      * @return {@code Some(index)} of its last occurrence, or {@code None}
@@ -1637,6 +1676,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexOfSlice(Iterable, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n * m) for a slice of m elements, as
+     * {@link #lastIndexOfSlice(Iterable, int)}.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1657,7 +1699,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code predicate} is null
      */
     public int lastIndexWhere(Predicate<? super T> predicate) {
-        return lastIndexWhere(predicate, length() - 1);
+        return lastIndexWhere(predicate, size() - 1);
     }
 
     /**
@@ -1673,7 +1715,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public int lastIndexWhere(Predicate<? super T> predicate, int end) {
         Objects.requireNonNull(predicate, "predicate is null");
-        int i = Math.max(-1, Math.min(end, length() - 1));
+        int i = Math.max(-1, Math.min(end, size() - 1));
         while (i >= 0 && !predicate.test(get(i))) {
             i--;
         }
@@ -1682,6 +1724,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexWhere(Predicate)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexWhere(Predicate)}.
      *
      * @param predicate the condition
      * @return {@code Some(index)} of the last satisfying element, or {@code None}
@@ -1693,6 +1737,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #lastIndexWhere(Predicate, int)} as an {@link Option}: {@code None} for -1.
+     * <p>
+     * Complexity: O(n), as {@link #lastIndexWhere(Predicate, int)}.
      *
      * @param predicate the condition
      * @param end       the last position to look at
@@ -1703,16 +1749,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return com.guizmaii.zazr.collection.internal.Collections.indexOption(lastIndexWhere(predicate, end));
     }
 
-    /**
-     * Returns the number of elements in this Vector.
-     * <p>
-     * Equivalent to {@link #size()}.
-     * <p>
-     * Complexity: O(1); the length is a field of the tree.
-     *
-     * @return the number of elements
-     */
-    public int length() { return trie.length(); }
 
     public <U extends @Nullable Object> Vector<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1737,10 +1773,30 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return map(ignored -> value);
     }
 
+    /**
+     * This Vector if it is not empty, otherwise the elements of {@code other}.
+     * <p>
+     * Complexity: O(m) for m elements of {@code other} when this Vector is empty and {@code other} is not a Vector:
+     * they are copied. O(1) otherwise.
+     *
+     * @param other the elements to use when this Vector is empty
+     * @return this Vector, or a Vector of the elements of {@code other}
+     * @throws NullPointerException if this Vector is empty and {@code other} is null
+     */
     public Vector<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
 
+    /**
+     * This Vector if it is not empty, otherwise the elements {@code supplier} gives, which is called only then.
+     * <p>
+     * Complexity: O(m) for m supplied elements when this Vector is empty and they are not a Vector: they are copied.
+     * O(1) otherwise.
+     *
+     * @param supplier gives the elements to use when this Vector is empty
+     * @return this Vector, or a Vector of the supplied elements
+     * @throws NullPointerException if this Vector is empty and {@code supplier} is null or gives null
+     */
     public Vector<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
         return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "Vector.orElse: supplier returned null")) : this;
@@ -1757,7 +1813,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code element} is null and padding is needed
      */
     public Vector<T> padTo(int length, T element) {
-        final int actualLength = length();
+        final int actualLength = size();
         return (length <= actualLength)
                ? this
                : appendAll(Iterator.continually(element)
@@ -1775,10 +1831,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code element} is null and padding is needed
      */
     public Vector<T> leftPadTo(int length, T element) {
-        if (length <= length()) {
+        if (length <= size()) {
             return this;
         } else {
-            final Iterator<T> prefix = Iterator.continually(element).take(length - length());
+            final Iterator<T> prefix = Iterator.continually(element).take(length - size());
             return prependAll(prefix);
         }
     }
@@ -1787,7 +1843,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Replaces the {@code replaced} elements from {@code from} on by the elements of {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0; a {@code from} beyond the end appends.
      * <p>
-     * Complexity: O(n + m) for m elements of {@code that}.
+     * Complexity: O(n + m) for m elements of {@code that}: {@code that} is copied, and the rest is joined as
+     * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter side. A patch near either end is O(m) plus
+     * a few small arrays.
      *
      * @param from     the first position to replace
      * @param that     the replacement elements
@@ -1806,10 +1864,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return take(from).appendAll(that).appendAll(drop(end));
     }
 
+    /**
+     * Splits the elements into those that satisfy {@code predicate} and those that do not, each in order.
+     * <p>
+     * Complexity: O(n), one pass.
+     *
+     * @param predicate the condition
+     * @return the elements that satisfy it, and those that do not
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Tuple2<Vector<T>, Vector<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         final ArrayList<T> left = new ArrayList<>(), right = new ArrayList<>();
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0; i < size(); i++) {
             final T t = get(i);
             (predicate.test(t) ? left : right).add(t);
         }
@@ -1820,7 +1887,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
      * generalisation of {@link #partition(Predicate)}. Two builders, one pass, no intermediate list.
      * <p>
-     * Complexity: O(n), one builder append per element.
+     * Complexity: O(n), one pass.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -1850,14 +1917,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * All distinct permutations of the elements, in the order the distinct elements first occur.
      * <p>
-     * Complexity: O(n! * n) in the worst case (all elements distinct).
+     * Complexity: O(n! * n^2) in the worst case (all elements distinct): there are n! permutations of n elements, and
+     * every partial permutation is copied into a new Vector at each of the n levels of the recursion.
      *
      * @return the permutations; none for the empty Vector
      */
     public Vector<Vector<T>> permutations() {
         if (isEmpty()) {
             return empty();
-        } else if (length() == 1) {
+        } else if (size() == 1) {
             return of(this);
         } else {
             Vector<Vector<T>> results = empty();
@@ -1886,8 +1954,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends an element.
      * <p>
-     * Complexity: effectively O(1): the first leaf, at most 32 elements, is copied, and the arrays above it only once it
-     * is full, once every 32 prepends (amortised O(1)).
+     * Complexity: effectively O(1): the first array, at most 32 elements, is copied; once every 32 prepends, a few
+     * arrays above it are copied too.
      *
      * @param element the element to prepend
      * @return a new Vector starting with {@code element}
@@ -1900,9 +1968,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Prepends all elements of the given iterable, keeping their order.
      * <p>
-     * Complexity: O(m) for m prepended elements; O(min(n, m)) when {@code iterable} is a Vector: the arrays of the
-     * longer side are reused whole and only the shorter side is copied, element by element or leaf by leaf, plus
-     * O(log n) arrays. O(1) when this Vector is empty and {@code iterable} is a Vector, which is returned as is.
+     * Complexity: O(m) for m prepended elements; O(min(n, m)) when {@code iterable} is a Vector: the longer side is
+     * shared and only the shorter one is copied. O(1) when this Vector is empty and {@code iterable} is a Vector, which
+     * is returned as is.
      *
      * @param iterable the elements to prepend
      * @return a new Vector starting with the given elements, or this Vector if there are none
@@ -1931,7 +1999,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector without that occurrence, or this Vector if the element is absent
      */
     public Vector<T> remove(T element) {
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0; i < size(); i++) {
             if (Objects.equals(get(i), element)) {
                 return removeAt(i);
             }
@@ -1950,7 +2018,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> removeFirst(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0; i < size(); i++) {
             if (predicate.test(get(i))) {
                 return removeAt(i);
             }
@@ -1969,7 +2037,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> removeLast(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = length() - 1; i >= 0; i--) {
+        for (int i = size() - 1; i >= 0; i--) {
             if (predicate.test(get(i))) {
                 return removeAt(i);
             }
@@ -1980,9 +2048,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Removes the element at {@code index}; the elements after it shift left by one.
      * <p>
-     * Complexity: O(min(i, n - i)): the shorter side is added to the longer one, element by element or leaf by leaf.
+     * Complexity: O(min(i, n - i)): the elements on the shorter side of i are copied, those on the longer side are
+     * shared.
      *
-     * @param index a position, {@code 0 <= index < length()}
+     * @param index a position, {@code 0 <= index < size()}
      * @return a new Vector without the element at {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is out of range
      */
@@ -2013,7 +2082,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Removes every occurrence of every given element.
      * <p>
-     * Complexity: O(n + m) for m given elements.
+     * Complexity: O(n + m) for an argument of m elements: they are hashed once, then one filter pass.
      *
      * @param elements the elements to remove
      * @return a new Vector without them, or this Vector if none is present
@@ -2078,7 +2147,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Retains only the elements from this Vector that are contained in the given {@code elements}.
      * <p>
-     * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     * Complexity: O(n + m) for an argument of m elements: they are hashed once, then one filter pass.
      *
      * @param elements the elements to keep
      * @return a new Vector containing only the elements present in {@code elements}, in their original order
@@ -2096,7 +2165,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector, or this Vector if it has fewer than two elements
      */
     public Vector<T> reverse() {
-        return (length() <= 1) ? this : ofAll(reverseIterator());
+        return (size() <= 1) ? this : ofAll(reverseIterator());
     }
 
     /**
@@ -2108,7 +2177,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     private Iterator<T> reverseIterator() {
         return new AbstractIterator<T>() {
-            private int i = Vector.this.length();
+            private int i = Vector.this.size();
 
             @Override
             public boolean hasNext() {
@@ -2126,7 +2195,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Rotates the elements {@code n} positions to the left: {@code Vector(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code Vector(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(k) for the k = n mod length elements moved to the end.
+     * Complexity: O(min(k, n - k)), where k is the distance modulo the size: the two parts are joined as
+     * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter one.
      *
      * @param n the distance
      * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
@@ -2135,7 +2205,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2143,7 +2213,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Rotates the elements {@code n} positions to the right: {@code Vector(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Vector(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(length - k) for k = n mod length: the elements before the moved suffix are re-appended.
+     * Complexity: O(min(k, n - k)), where k is the distance modulo the size: the two parts are joined as
+     * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter one.
      *
      * @param n the distance
      * @return the rotated Vector, or this Vector if the rotation is a multiple of the length
@@ -2152,7 +2223,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, length());
+        final int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2250,7 +2321,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public int segmentLength(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int len = length();
+        final int len = size();
         final int start = Math.max(from, 0);
         int i = start;
         while (i < len && predicate.test(get(i))) {
@@ -2275,8 +2346,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * clamped, and an empty or reversed range gives the empty Vector: {@code Vector(1, 2).slice(-10, 10)} is the
      * whole Vector, {@code slice(1, 0)} is empty. {@link #subSequence(int, int)} throws instead of clamping.
      * <p>
-     * Complexity: effectively O(1) (the arrays along the two cuts are copied, O(log32 n) of them; the others are
-     * shared).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param beginIndex the first position (inclusive)
      * @param endIndex   the last position (exclusive)
@@ -2289,7 +2360,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted in natural order (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and copied into leaves.
+     * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @return a new sorted Vector, or this Vector if it is empty
      * @throws ClassCastException if the elements are not {@link Comparable}
@@ -2308,7 +2379,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted by {@code comparator} (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the elements are copied to an array, sorted there and copied into leaves.
+     * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @param comparator the order
      * @return a new sorted Vector, or this Vector if it is empty
@@ -2328,7 +2399,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted by the natural order of the key {@code mapper} computes (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     * Complexity: O(n log n) comparisons; {@code mapper} is called again for both elements at every comparison.
      *
      * @param mapper computes the sort key
      * @param <U>    the key type
@@ -2342,7 +2413,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements sorted by {@code comparator} applied to the key {@code mapper} computes (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the key is recomputed at every comparison.
+     * Complexity: O(n log n) comparisons; {@code mapper} is called again for both elements at every comparison.
      *
      * @param comparator the order of the keys
      * @param mapper     computes the sort key
@@ -2376,9 +2447,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Splits at {@code n}: {@code (take(n), drop(n))}.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: effectively O(1): one {@link #take(int)} and one {@link #drop(int)}; both parts share their
+     * elements with this Vector.
      *
-     * @param n the split position; clamped to {@code [0, length()]}
+     * @param n the split position; clamped to {@code [0, size()]}
      * @return the first {@code n} elements and the rest
      */
     public Tuple2<Vector<T>, Vector<T>> splitAt(int n) {
@@ -2412,10 +2484,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Tuple2<Vector<T>, Vector<T>> splitAtInclusive(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0; i < size(); i++) {
             final T value = get(i);
             if (predicate.test(value)) {
-                return (i == (length() - 1)) ? Tuple.of(this, empty())
+                return (i == (size() - 1)) ? Tuple.of(this, empty())
                                              : Tuple.of(take(i + 1), drop(i + 1));
             }
         }
@@ -2452,11 +2524,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (offset < 0) {
             return false;
         }
-        final int thisLength = length();
+        final int thisLength = size();
         if (that instanceof Vector<?> vector) {
             @SuppressWarnings("unchecked")
             final Vector<? extends T> thatVector = (Vector<? extends T>) vector;
-            final int thatLength = thatVector.length();
+            final int thatLength = thatVector.size();
             if (thatLength == 0) {
                 return true; // an empty prefix starts anywhere, even past the end
             }
@@ -2484,14 +2556,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The elements from {@code beginIndex} on. Unlike {@link #drop(int)}, an out-of-range index throws.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: effectively O(1), as {@link #drop(int)}.
      *
-     * @param beginIndex the first position, {@code 0 <= beginIndex <= length()}
+     * @param beginIndex the first position, {@code 0 <= beginIndex <= size()}
      * @return the elements from {@code beginIndex} on; this Vector when it is 0
      * @throws IndexOutOfBoundsException if {@code beginIndex} is out of range
      */
     public Vector<T> subSequence(int beginIndex) {
-        if ((beginIndex >= 0) && (beginIndex <= length())) {
+        if ((beginIndex >= 0) && (beginIndex <= size())) {
             return drop(beginIndex);
         } else {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
@@ -2502,24 +2574,24 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * The elements from {@code beginIndex} (inclusive) to {@code endIndex} (exclusive). Unlike
      * {@link #slice(int, int)}, out-of-range or reversed indices throw.
      * <p>
-     * Complexity: effectively O(1).
+     * Complexity: effectively O(1), as {@link #slice(int, int)}.
      *
      * @param beginIndex the first position (inclusive), {@code >= 0}
-     * @param endIndex   the last position (exclusive), {@code <= length()}
+     * @param endIndex   the last position (exclusive), {@code <= size()}
      * @return the elements in the range; this Vector when it covers everything
-     * @throws IndexOutOfBoundsException if {@code beginIndex < 0} or {@code endIndex > length()}
+     * @throws IndexOutOfBoundsException if {@code beginIndex < 0} or {@code endIndex > size()}
      * @throws IllegalArgumentException  if {@code beginIndex > endIndex}
      */
     public Vector<T> subSequence(int beginIndex, int endIndex) {
-        Collections.subSequenceRangeCheck(beginIndex, endIndex, length());
+        Collections.subSequenceRangeCheck(beginIndex, endIndex, size());
         return slice(beginIndex, endIndex);
     }
 
     /**
      * Returns a new {@code Vector} without its first element.
      * <p>
-     * Complexity: effectively O(1): the first leaf, at most 32 elements, is copied without its first element; the arrays
-     * above it change only when that leaf held one element (amortised O(1)).
+     * Complexity: effectively O(1): the first array, at most 32 elements, is copied without its first element; the
+     * few arrays above it change only when it held one element.
      *
      * @return a new {@code Vector} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Vector} is empty
@@ -2535,7 +2607,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns a new {@code Vector} without its first element as an {@code Option}.
      * <p>
-     * Complexity: effectively O(1) (one {@code tail}).
+     * Complexity: effectively O(1), as {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -2544,9 +2616,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns the first {@code n} elements of this {@code Vector}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
-     * Complexity: effectively O(1) (the arrays along the cut are copied, O(log32 n) of them; the others are shared).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to take
      * @return a new {@code Vector} containing the first {@code n} elements
@@ -2569,7 +2642,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int length = length();
+        final int length = size();
         for (int i = 0; i < length; i++) {
             if (predicate.test(get(i))) {
                 return take(i);
@@ -2596,16 +2669,17 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Returns the last {@code n} elements of this {@code Vector}, or all elements if {@code n} exceeds the length.
      * <p>
-     * If {@code n < 0}, an empty instance is returned. If {@code n > length()}, the full instance is returned.
+     * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
-     * Complexity: effectively O(1) (the arrays along the cut are copied, O(log32 n) of them; the others are shared).
+     * Complexity: effectively O(1): the result shares its elements with this Vector; only the few small arrays along
+     * the cut are copied.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code Vector} containing the last {@code n} elements
      */
     public Vector<T> takeRight(int n) {
-        // n <= 0 first: length() - n overflows for Integer.MIN_VALUE
-        return n <= 0 ? empty() : drop(length() - n);
+        // n <= 0 first: size() - n overflows for Integer.MIN_VALUE
+        return n <= 0 ? empty() : drop(size() - n);
     }
 
     /**
@@ -2619,7 +2693,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        for (int i = length() - 1; i >= 0; i--) {
+        for (int i = size() - 1; i >= 0; i--) {
             if (predicate.test(get(i))) {
                 return drop(i + 1);
             }
@@ -2654,8 +2728,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Vector<T1>, Vector<T2>> unzip(Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Builder<T1> xs = newBuilder(length());
-        final Builder<T2> ys = newBuilder(length());
+        final Builder<T1> xs = newBuilder(size());
+        final Builder<T2> ys = newBuilder(size());
         for (T element : this) {
             final Tuple2<? extends T1, ? extends T2> t = Objects.requireNonNull(unzipper.apply(element), "Vector.unzip: unzipper returned null");
             xs.add(t._1());
@@ -2678,9 +2752,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Vector<T1>, Vector<T2>, Vector<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Builder<T1> xs = newBuilder(length());
-        final Builder<T2> ys = newBuilder(length());
-        final Builder<T3> zs = newBuilder(length());
+        final Builder<T1> xs = newBuilder(size());
+        final Builder<T2> ys = newBuilder(size());
+        final Builder<T3> zs = newBuilder(size());
         for (T element : this) {
             final Tuple3<? extends T1, ? extends T2, ? extends T3> t = Objects.requireNonNull(unzipper.apply(element), "Vector.unzip3: unzipper returned null");
             xs.add(t._1());
@@ -2693,10 +2767,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index}.
      * <p>
-     * Complexity: effectively O(1) (the leaf holding the element is copied, with the arrays above it, at most six arrays
-     * of 32 entries; only the leaf itself in the first and the last leaf).
+     * Complexity: effectively O(1): the array of 32 elements that holds it is copied, with at most five arrays above
+     * it; the rest is shared.
      *
-     * @param index   a position, {@code 0 <= index < length()}
+     * @param index   a position, {@code 0 <= index < size()}
      * @param element the new element
      * @return a new Vector with {@code element} at {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is out of range
@@ -2713,9 +2787,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Replaces the element at {@code index} by {@code updater} applied to it.
      * <p>
-     * Complexity: effectively O(1) (one access and one {@code update}).
+     * Complexity: effectively O(1): one {@link #get(int)} and one {@link #update(int, Object)}.
      *
-     * @param index   a position, {@code 0 <= index < length()}
+     * @param index   a position, {@code 0 <= index < size()}
      * @param updater computes the new element from the current one
      * @return a new Vector with the updated element at {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is out of range
@@ -2820,6 +2894,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * Whether {@code o} is a sequence with equal elements in the same order: another Vector or one of the other
      * ordered sequence types.
+     * <p>
+     * Complexity: O(n + m) for a sequence of m elements: the sizes are compared first (a {@link List}, a
+     * {@link Queue} or a {@link Stream} counts its elements to answer), then the elements in order, up to the first
+     * difference. So it does not terminate when compared with an infinite {@link Stream}. O(1) for an object that is
+     * not a sequence.
      *
      * @param o any object
      * @return true if {@code o} is an ordered sequence of the same elements
@@ -2829,6 +2908,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return com.guizmaii.zazr.collection.internal.Collections.equals(this, o);
     }
 
+    /**
+     * The hash of the elements in order, the same as that of an equal List, Queue or Stream.
+     * <p>
+     * Complexity: O(n), computed again at every call: nothing is cached, which matters for a Vector used as a key of
+     * a {@link HashMap} or an element of a {@link HashSet}.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return com.guizmaii.zazr.collection.internal.Collections.hashOrdered(this);
@@ -2941,7 +3028,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@code Vector(Vector(1, 2), Vector(3, 4), Vector(5))}; the last block is smaller when {@code size} does not
      * divide the length. The same as {@code sliding(size, size)}.
      * <p>
-     * Complexity: O(n / size) blocks, each an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n / size): one effectively O(1) {@link #slice(int, int)} per block; each block shares its elements
+     * with this Vector.
      *
      * @param size the block size, positive
      * @return the blocks, in order; empty if this Vector is empty
@@ -2956,7 +3044,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@code Vector.of(1, 2, 3, 4).sliding(3)} is {@code Vector(Vector(1, 2, 3), Vector(2, 3, 4))}. A Vector
      * shorter than {@code size} is one window. The same as {@code sliding(size, 1)}.
      * <p>
-     * Complexity: O(n) windows, each an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n): one effectively O(1) {@link #slice(int, int)} per window; each window shares its elements with
+     * this Vector, so no element is copied.
      *
      * @param size the window size, positive
      * @return the windows, in order; empty if this Vector is empty
@@ -2974,7 +3063,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * produced, so {@code Vector.of(1, 2, 3, 4).sliding(3)} has two windows. A Vector shorter than {@code size} is
      * one window; an empty Vector has none.
      * <p>
-     * Complexity: O(n / step) windows, each an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n / step): one effectively O(1) {@link #slice(int, int)} per window; each window shares its
+     * elements with this Vector, so no element is copied.
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -2983,7 +3073,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<Vector<T>> sliding(int size, int step) {
         com.guizmaii.zazr.collection.internal.Collections.checkWindow(size, step);
-        final int length = length();
+        final int length = size();
         if (length == 0) {
             return empty();
         }
@@ -3001,7 +3091,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@code Vector(Vector(1, 2, 3), Vector(10, 12), Vector(5, 7), Vector(20, 29))}. The runs concatenate back to
      * this Vector.
      * <p>
-     * Complexity: O(n); each run is an effectively O(1) slice sharing this Vector's leaves.
+     * Complexity: O(n): one key per element, and one effectively O(1) {@link #slice(int, int)} per run; each run
+     * shares its elements with this Vector.
      *
      * @param classifier the key of an element; two consecutive elements are in the same run when their keys are
      *                   equal
@@ -3046,7 +3137,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * The Cartesian power of this Vector: every Vector of {@code power} elements drawn from this one, in
      * lexicographic position order. {@code power == 0} gives one empty Vector; a negative power gives no result.
      * <p>
-     * Complexity: O(n^power) Vectors of size {@code power}, built now.
+     * Complexity: O(power * n^power): n^power Vectors of {@code power} elements each, built now.
      *
      * @param power the size of each result
      * @return the Vectors
@@ -3095,8 +3186,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             throw new NoSuchElementException("reduceRight on empty Vector");
         }
-        T xs = get(length() - 1);
-        for (int i = length() - 2; i >= 0; i--) {
+        T xs = get(size() - 1);
+        for (int i = size() - 2; i >= 0; i--) {
             xs = op.apply(get(i), xs);
         }
         return xs;
@@ -3218,6 +3309,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     * <p>
+     * Complexity: O(n), as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines two elements
      * @return {@code Some(result)}, or {@code None} if this Vector is empty
@@ -3324,7 +3417,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The first element as an {@code Option}.
      * <p>
-     * Complexity: O(1), that of {@link #head()}.
+     * Complexity: O(1), as {@link #head()}.
      *
      * @return {@code Some(head)}, or {@code None} if this Vector is empty
      */
@@ -3335,7 +3428,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * The last element as an {@code Option}.
      * <p>
-     * Complexity: O(1), that of {@link #last()}.
+     * Complexity: O(1), as {@link #last()}.
      *
      * @return {@code Some(last)}, or {@code None} if this Vector is empty
      */
@@ -3359,6 +3452,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #reduceLeft(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     * <p>
+     * Complexity: O(n), as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines the result so far and the next element
      * @return {@code Some(result)}, or {@code None} if this Vector is empty
@@ -3370,6 +3465,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty Vector.
+     * <p>
+     * Complexity: O(n), as {@link #reduceRight(BiFunction)}.
      *
      * @param op combines the next element and the result so far
      * @return {@code Some(result)}, or {@code None} if this Vector is empty
@@ -3381,15 +3478,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * The number of elements; the same as {@link #length()}.
+     * The number of elements.
      * <p>
-     * Complexity: O(1), that of {@link #length()}.
+     * Complexity: O(1): the size is stored.
      *
      * @return the number of elements
      */
     @Override
     public int size() {
-        return length();
+        return trie.length();
     }
 
     /**

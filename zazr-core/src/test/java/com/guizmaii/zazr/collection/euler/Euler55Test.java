@@ -46,7 +46,7 @@ public class Euler55Test {
     private static int solve() {
         return Stream.range(1, 10_000)
                 .filter(Euler55Test::isLychrel)
-                .length();
+                .size();
     }
 
     private static boolean isLychrel(int n) {

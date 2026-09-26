@@ -23,7 +23,7 @@ public interface VectorModule {
             if (source.isEmpty()) {
                 return from == 0 && _slice.isEmpty() ? 0 : -1;
             }
-            final int maxIndex = source.length() - _slice.length();
+            final int maxIndex = source.size() - _slice.size();
             return findSlice(source, _slice, Math.max(from, 0), maxIndex);
         }
 
@@ -35,12 +35,12 @@ public interface VectorModule {
             if (source.isEmpty()) {
                 return _slice.isEmpty() ? 0 : -1;
             } else if (_slice.isEmpty()) {
-                final int len = source.length();
+                final int len = source.size();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
-            final int maxIndex = source.length() - _slice.length();
+            final int maxIndex = source.size() - _slice.size();
             while (index <= maxIndex) {
                 int indexOfSlice = findSlice(source, _slice, index, maxIndex);
                 if (indexOfSlice < 0) {
@@ -72,7 +72,7 @@ public interface VectorModule {
 
         public static int binarySearch(Vector<?> vector, IntUnaryOperator comparison) {
             int low = 0;
-            int high = vector.length() - 1;
+            int high = vector.size() - 1;
             while (low <= high) {
                 final int mid = (low + high) >>> 1;
                 final int cmp = comparison.applyAsInt(mid);

@@ -2,9 +2,9 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashMap#get(Object).">effectively O(1)</abbr> | effectively O(1), that of HashMap#get(Object). |
-| `containsKey` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashMap#containsKey(Object).">effectively O(1)</abbr> | effectively O(1), that of HashMap#containsKey(Object). |
-| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashMap#put(Object, Object).">effectively O(1)</abbr> | effectively O(1), that of HashMap#put(Object, Object). |
-| `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashMap#remove(Object).">effectively O(1)</abbr> | effectively O(1), that of HashMap#remove(Object). |
-| `keySet` | <abbr class="cx cx-linear" title="O(n), the keys copied into a new set, that of HashMap#keySet().">O(n)</abbr> | O(n), the keys copied into a new set, that of HashMap#keySet(). |
-| `values` | <abbr class="cx cx-linear" title="O(n), that of HashMap#values().">O(n)</abbr> | O(n), that of HashMap#values(). |
+| `get` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.get.">effectively O(1)</abbr> | effectively O(1), as HashMap.get. |
+| `containsKey` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.containsKey.">effectively O(1)</abbr> | effectively O(1), as HashMap.containsKey. |
+| `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.put.">effectively O(1)</abbr> | effectively O(1), as HashMap.put. |
+| `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.remove.">effectively O(1)</abbr> | effectively O(1), as HashMap.remove. |
+| `keySet` | <abbr class="cx cx-linear" title="O(n), the keys copied into a new set, as HashMap.keySet.">O(n)</abbr> | O(n), the keys copied into a new set, as HashMap.keySet. |
+| `values` | <abbr class="cx cx-linear" title="O(n), as HashMap.values.">O(n)</abbr> | O(n), as HashMap.values. |

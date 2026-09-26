@@ -240,7 +240,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     // -- returns NonEmptyMap: at least one entry is left
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#put(Object, Object)}.
+     * Complexity: effectively O(1), as {@link HashMap#put(Object, Object)}.
      *
      * @param key   A key
      * @param value Its value
@@ -254,7 +254,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#put(Tuple2)}.
+     * Complexity: effectively O(1), as {@link HashMap#put(Tuple2)}.
      *
      * @param entry An entry
      * @return this map with {@code entry}
@@ -266,7 +266,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#put(Object, Object, BiFunction)}.
+     * Complexity: effectively O(1), as {@link HashMap#put(Object, Object, BiFunction)}.
      *
      * @param key   A key
      * @param value A value
@@ -282,7 +282,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#put(Tuple2, BiFunction)}.
+     * Complexity: effectively O(1), as {@link HashMap#put(Tuple2, BiFunction)}.
      *
      * @param entry An entry
      * @param merge Combines the current value of the entry's key, if any, with the entry's value
@@ -416,7 +416,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#replace(Tuple2, Tuple2)}.
+     * Complexity: effectively O(1), as {@link HashMap#replace(Tuple2, Tuple2)}.
      *
      * @param currentElement An entry
      * @param newElement     Its replacement
@@ -432,7 +432,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
+     * Complexity: effectively O(1), as {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
      *
      * @param currentElement An entry
      * @param newElement     Its replacement
@@ -442,7 +442,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public NonEmptyMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) { return replace(currentElement, newElement); }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#replace(Object, Object, Object)}.
+     * Complexity: effectively O(1), as {@link HashMap#replace(Object, Object, Object)}.
      *
      * @param key      A key
      * @param oldValue Its expected value
@@ -456,7 +456,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: O(n), that of {@link HashMap#replaceAll(BiFunction)}.
+     * Complexity: O(n), as {@link HashMap#replaceAll(BiFunction)}.
      *
      * @param function Computes the new value of a key from its current value
      * @return the same keys, with the new values
@@ -488,7 +488,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: O(n), the keys copied into a new set, that of {@link HashMap#keySet()}.
+     * Complexity: O(n), the keys copied into a new set, as {@link HashMap#keySet()}.
      *
      * @return the keys, a non-empty set
      */
@@ -498,7 +498,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: O(n), that of {@link HashMap#values()}.
+     * Complexity: O(n), as {@link HashMap#values()}.
      *
      * @return the values, one per entry, in iteration order
      */
@@ -619,7 +619,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#remove(Object)}.
+     * Complexity: effectively O(1), as {@link HashMap#remove(Object)}.
      *
      * @param key A key
      * @return this map without {@code key}
@@ -627,7 +627,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public HashMap<K, V> remove(K key) { return map.remove(key); }
 
     /**
-     * Complexity: O(m) for m given keys, that of {@link HashMap#removeAll(Iterable)}.
+     * Complexity: O(m) for m given keys, as {@link HashMap#removeAll(Iterable)}.
      *
      * @param keys Keys
      * @return this map without {@code keys}
@@ -636,7 +636,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public HashMap<K, V> removeAll(Iterable<? extends K> keys) { return map.removeAll(keys); }
 
     /**
-     * Complexity: O(m) for m given entries, that of {@link HashMap#retainAll(Iterable)}.
+     * Complexity: O(m) for m given entries, as {@link HashMap#retainAll(Iterable)}.
      *
      * @param elements Entries
      * @return the entries of this map that are among {@code elements}
@@ -744,12 +744,16 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public Tuple2<K, V> single() { return map.single(); }
 
     /**
+     * The number of entries.
+     * <p>
+     * Complexity: O(1): the size is stored.
+     *
      * @return the number of entries, at least 1
      */
     public int size() { return map.size(); }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#get(Object)}.
+     * Complexity: effectively O(1), as {@link HashMap#get(Object)}.
      *
      * @param key A key
      * @return the value of {@code key}, if present
@@ -764,7 +768,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public V getOrElse(K key, V defaultValue) { return map.getOrElse(key, defaultValue); }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#containsKey(Object)}.
+     * Complexity: effectively O(1), as {@link HashMap#containsKey(Object)}.
      *
      * @param key A key
      * @return whether {@code key} is present
@@ -778,7 +782,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public boolean containsValue(V value) { return map.containsValue(value); }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashMap#contains(Tuple2)}.
+     * Complexity: effectively O(1), as {@link HashMap#contains(Tuple2)}.
      *
      * @param element An entry
      * @return whether this map has {@code element}'s key mapped to {@code element}'s value
@@ -886,7 +890,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; a whole walk is O(n), that of {@link HashMap#iterator()}.
+     * Complexity: O(1) to create; a whole walk is O(n), as {@link HashMap#iterator()}.
      */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() { return map.iterator(); }

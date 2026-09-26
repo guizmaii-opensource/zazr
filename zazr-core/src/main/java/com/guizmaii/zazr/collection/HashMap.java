@@ -24,6 +24,11 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Of two equal keys, {@link #put(Object, Object)} keeps the one put last, key and value; the factories, the collector
  * and the {@link Builder} do as successive puts. {@link #merge(Map)} keeps the entries of this map.
+ * <p>
+ * Complexity: lookups, insertions and removals by key are effectively O(1); an insertion or a removal copies a few
+ * small arrays and shares the rest with the original map. The methods without a note of their own (map, filter,
+ * the folds, the conversions) walk the entries once, O(n), and those that build a new map insert each kept entry in
+ * effectively O(1).
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -524,11 +529,21 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return HashMap.ofEntries(entries);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is absent.
+     */
     @Override
     public Tuple2<V, HashMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         return Maps.computeIfAbsent(this, key, mappingFunction);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is present.
+     */
     @Override
     public Tuple2<Option<V>, HashMap<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         return Maps.computeIfPresent(this, key, remappingFunction);
@@ -537,7 +552,17 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup).
+     * Complexity: effectively O(1): one lookup of the key, then its value is compared.
+     */
+    @Override
+    public boolean contains(Tuple2<K, V> element) {
+        return Map.super.contains(element);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup.
      */
     @Override
     public boolean containsKey(K key) {
@@ -547,7 +572,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
@@ -558,7 +583,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> reject(BiPredicate<? super K, ? super V> predicate) {
@@ -569,7 +594,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate) {
@@ -580,7 +605,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> reject(Predicate<? super Tuple2<K, V>> predicate) {
@@ -591,7 +616,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> filterKeys(Predicate<? super K> predicate) {
@@ -602,7 +627,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> rejectKeys(Predicate<? super K> predicate) {
@@ -613,7 +638,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> filterValues(Predicate<? super V> predicate) {
@@ -624,7 +649,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), one call of the predicate per entry; the subtrees the filter keeps whole are shared, not copied.
+     * Complexity: O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.
      */
     @Override
     public HashMap<K, V> rejectValues(Predicate<? super V> predicate) {
@@ -641,7 +666,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), a walk of the trie with no {@code Tuple2} per entry.
+     * Complexity: O(n): one walk over the entries, with no {@code Tuple2} made for each.
      */
     @Override
     public void forEach(BiConsumer<K, V> action) {
@@ -663,7 +688,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup).
+     * Complexity: effectively O(1): one hash lookup.
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -677,6 +702,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return entry == null ? Option.none() : Option.some(entry);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup.
+     */
     @Override
     public V getOrElse(K key, V defaultValue) {
         return trie.getOrElse(key, defaultValue);
@@ -687,6 +717,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.groupBy(this, this::createFromEntries, classifier, "HashMap.groupBy: classifier returned null");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1).
+     */
     @Override
     public boolean isEmpty() {
         return trie.size() == 0;
@@ -705,7 +740,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n) (the keys are copied into a new HashSet).
+     * Complexity: O(n): the keys are copied into a new HashSet.
      */
     @Override
     public Set<K> keySet() {
@@ -752,8 +787,10 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for m entries of {@code that}, each an effectively O(1) lookup and insertion; when {@code that}
-     * is a HashMap, the two tries are merged node by node, sharing the subtrees one side does not touch.
+     * Complexity: O(n + m) for a map of m entries. When that map is a HashMap, the two maps are merged part by part,
+     * and a part only one of them holds is shared without being walked. For another map, O(m): one lookup and at most
+     * one {@link #put(Object, Object)} per entry. O(1) when that map is empty, or when this map is empty and that map
+     * is a HashMap, which is returned as is.
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -768,6 +805,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.merge(this, this::createFromEntries, that);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for a map of m entries, one lookup and one {@link #put(Object, Object)} each; O(1) when that
+     * map is empty, or when this map is empty and that map is a HashMap, which is returned as is.
+     */
     @Override
     public <U extends V> HashMap<K, V> merge(Map<? extends K, U> that,
                                              BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
@@ -798,7 +841,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one lookup and one {@link #put(Object, Object)}).
+     * Complexity: effectively O(1): one lookup and one {@link #put(Object, Object)}.
      */
     @Override
     public <U extends V> HashMap<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
@@ -808,7 +851,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (a path copy of the trie).
+     * Complexity: effectively O(1): one hash lookup, then a copy of a few small arrays; the rest is shared with this
+     * map.
      */
     @Override
     public HashMap<K, V> put(K key, V value) {
@@ -819,7 +863,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1), that of {@link #put(Object, Object)}.
+     * Complexity: effectively O(1), as {@link #put(Object, Object)}.
      */
     @Override
     public HashMap<K, V> put(Tuple2<? extends K, ? extends V> entry) {
@@ -829,7 +873,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one lookup and one {@link #put(Object, Object)}).
+     * Complexity: effectively O(1): one lookup and one {@link #put(Object, Object)}.
      */
     @Override
     public <U extends V> HashMap<K, V> put(Tuple2<? extends K, U> entry,
@@ -840,7 +884,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (a path copy of the trie).
+     * Complexity: effectively O(1): one hash lookup, then a copy of a few small arrays; the rest is shared with this
+     * map.
      */
     @Override
     public HashMap<K, V> remove(K key) {
@@ -851,7 +896,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n) (one filter pass).
+     * Complexity: O(n): every entry is tested, and the kept ones are put in a new map.
      */
     @Override
     @Deprecated
@@ -899,7 +944,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one lookup, one removal and one insertion).
+     * Complexity: effectively O(1): one lookup, one removal and one insertion.
      */
     @Override
     public HashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
@@ -909,13 +954,18 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1), that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
+     * Complexity: effectively O(1), as {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
      */
     @Override
     public HashMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
         return Maps.replaceAll(this, currentElement, newElement);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is present.
+     */
     @Override
     public HashMap<K, V> replaceValue(K key, V value) {
         return Maps.replaceValue(this, key, value);
@@ -924,7 +974,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one lookup and one insertion).
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key maps to
+     * {@code oldValue}.
      */
     @Override
     public HashMap<K, V> replace(K key, V oldValue, V newValue) {
@@ -934,7 +985,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n) (every entry mapped into a new map).
+     * Complexity: O(n): every entry is mapped and put in a new map.
      */
     @Override
     public HashMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
@@ -952,7 +1003,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for m given entries (one lookup, and one insertion into a new map, per entry).
+     * Complexity: O(m) for m given entries: each is looked up in this map and, when present, put in a new map.
      */
     @Override
     public HashMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
@@ -966,6 +1017,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return wrap(tree);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the size is stored, not counted.
+     */
     @Override
     public int size() {
         return trie.size();
@@ -979,7 +1035,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@code new java.util.HashMap<>(map.asJavaMap())}; {@code HashMap.ofAll} given the view returns this map without
      * copying.
      * <p>
-     * Complexity: O(1); {@code get} and {@code containsKey} on the view are effectively O(1).
+     * Complexity: O(1): nothing is copied. {@code get} and {@code containsKey} on the view are effectively O(1).
      *
      * @return an unmodifiable {@code java.util.Map} view
      */
@@ -991,7 +1047,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n): the values are copied into a new Vector.
      */
     @Override
     public Vector<V> values() {
@@ -1011,8 +1067,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n); with another HashMap, the two tries are compared node by node, which answers a different
-     * size, bitmap or hash without looking at a key.
+     * Complexity: O(n log n) against a TreeMap, O(n) against a HashMap or a LinkedHashMap: each entry of this map is
+     * looked up in the other one. O(1) when the sizes differ. Against another HashMap, the two are compared part by
+     * part, and a part of a different size or shape answers without looking at a key.
      */
     @Override
     public boolean equals(@Nullable Object o) {
@@ -1026,6 +1083,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Collections.equals(this, o);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n): computed from every entry on each call; it is not cached.
+     */
     @Override
     public int hashCode() {
         return Collections.hashUnordered(this);

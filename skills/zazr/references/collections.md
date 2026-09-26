@@ -29,12 +29,12 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 |---|---|---|---|---|
 | `head`, `prepend` | effectively O(1) | O(1) | O(1) | O(1) |
 | `tail` | effectively O(1) | O(1) | amortised O(1) | O(1) |
-| `append` | effectively O(1) | O(n) | amortised O(1) | O(1), lazy |
+| `append` | effectively O(1) | O(n) | O(1) | O(1), lazy |
 | `get(i)` | effectively O(1) | O(i) | O(i) to O(n) | O(i) |
 | `update(i, v)` | effectively O(1) | O(i) | O(n) | O(i) |
 | `last`, `init` | effectively O(1) | O(n) | O(n) / amortised O(1) | O(n) / lazy |
 | `take`, `drop` | effectively O(1) | O(k) | O(n) | lazy / O(k) |
-| `length()` | O(1) | O(n) | O(n) | O(n), forces all |
+| `size()` | O(1) | O(n) | O(n) | O(n), forces all |
 
 | Operation | `HashSet` / `HashMap` | `LinkedHashSet` / `LinkedHashMap` | `TreeSet` / `TreeMap` |
 |---|---|---|---|
@@ -77,7 +77,7 @@ A loop of `append` or `put` copies part of the structure on every call. Build on
 - `Vector.newBuilder()`, and the builders of `HashMap`, `HashSet`, `TreeMap` and `TreeSet` (maps use `put` and
   `putAll`). A builder is mutable, single-use and not thread-safe: after `result()` it throws.
 - `collector()` on every collection, for `java.util.stream.Stream.collect`.
-- `ofAll(iterable)` or `ofAll(javaStream)`; `Vector.range`, `Vector.ofAll(int...)` store primitives unboxed.
+- `ofAll(iterable)` or `ofAll(javaStream)`; `Vector.range` and `Vector.ofAll(int...)` box their elements, like every other factory.
 - `map`, `flatMap`, `collect`, `filter` on an existing collection.
 
 ```java
@@ -107,7 +107,7 @@ A sequence with at least one element, backed by a `Vector`. Parse into it instea
   `Vector`.
 - `flatMap` takes a function returning a `NonEmptyVector`; `flatMapAll` takes any `Iterable` and returns a
   `Vector`.
-- It has `size()` but no `length()`, no `isEmpty()` and no `headOption()`.
+- It has `size()` but no `isEmpty()` and no `headOption()`.
 - It is `Iterable` but not a `Traversable`, and it is not equal to a `Vector` with the same elements; use
   `toVector()`.
 
@@ -151,12 +151,12 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2)); // Vector<Integer>
 - `max()` and `min()` on a set walk every element in natural order, even on a `TreeSet`; its own least and greatest
   are `head()` and `last()`.
 - `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`.
-- `Stream`: the first element is computed when the `Stream` is built; `size`, `length`, `last`, `reverse`,
+- `Stream`: the first element is computed when the `Stream` is built; `size`, `last`, `reverse`,
   `sorted`, `foldLeft`, `mkString` and `toVector` never return on an infinite one; it keeps every element it
   computed.
 - `Queue`'s amortised cost holds only when each `dequeue` works on the queue the previous one returned.
   `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
-- `List.length()` and `List.size()` are O(n).
+- `List.size()` and `Queue.size()` are O(n); `isEmpty()` is O(1).
 - `grouped`, `sliding` and `crossProduct` return a collection, not an iterator. On `Vector`, `List`, `Queue` and
   `Stream` it is of the receiver's type (`List<List<T>>`). On `LinkedHashSet`, `TreeSet`, `LinkedHashMap`, `TreeMap`
   and `NonEmptyVector`, `grouped` and `sliding` return a `Vector` of the receiver's type (`Vector<TreeSet<T>>`).

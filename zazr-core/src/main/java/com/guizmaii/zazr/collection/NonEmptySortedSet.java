@@ -222,7 +222,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     /**
      * The union of a non-empty set of non-empty sets, in natural order.
      * <p>
-     * Complexity: O(n log n) comparisons for n inner elements in total, that of {@link TreeSet#flatten(Iterable)}.
+     * Complexity: O(n log n) comparisons for n inner elements in total, as {@link TreeSet#flatten(Iterable)}.
      *
      * @param nested Non-empty sorted sets
      * @param <A>    Component type of the inner sets
@@ -263,7 +263,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     // -- returns NonEmptySortedSet: at least one element is left
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#add(Object)}.
+     * Complexity: O(log n), as {@link TreeSet#add(Object)}.
      *
      * @param element An element
      * @return this set with {@code element}
@@ -277,7 +277,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     /**
      * Accepts the possibly empty type and returns the non-empty one; a non-empty set is an {@code Iterable} too.
      * <p>
-     * Complexity: O(m log(n + m)) for m elements, that of {@link TreeSet#addAll(Iterable)}.
+     * Complexity: O(m log(n + m)) for m elements, as {@link TreeSet#addAll(Iterable)}.
      *
      * @param elements Elements to add, possibly none, read once
      * @return this set with {@code elements}
@@ -286,7 +286,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public NonEmptySortedSet<A> addAll(Iterable<? extends A> elements) { return wrap(set.addAll(elements)); }
 
     /**
-     * Complexity: O(m log(n + m)) for a set of m elements, that of {@link TreeSet#union(Set)}.
+     * Complexity: O(m log(n + m)) for a set of m elements, as {@link TreeSet#union(Set)}.
      *
      * @param elements A set, possibly empty
      * @return the elements of both sets, with this set's comparator
@@ -361,7 +361,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#replace(Object, Object)}.
+     * Complexity: O(log n), as {@link TreeSet#replace(Object, Object)}.
      *
      * @param currentElement An element
      * @param newElement     Its replacement
@@ -376,7 +376,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(log n), that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: O(log n), as {@link #replace(Object, Object)}: a set holds an element once.
      *
      * @param currentElement An element
      * @param newElement     Its replacement
@@ -415,7 +415,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O((n / size) log n), that of {@link TreeSet#grouped(int)}.
+     * Complexity: O((n / size) log n), as {@link TreeSet#grouped(int)}.
      *
      * @param size The block size
      * @return the blocks of {@code size} consecutive elements, each non-empty; only the last may be smaller
@@ -424,7 +424,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public Vector<NonEmptySortedSet<A>> grouped(int size) { return set.grouped(size).map(NonEmptySortedSet::new); }
 
     /**
-     * Complexity: O(n log n), that of {@link TreeSet#sliding(int)}.
+     * Complexity: O(n log n), as {@link TreeSet#sliding(int)}.
      *
      * @param size The window size
      * @return the windows of {@code size} consecutive elements, each non-empty
@@ -433,7 +433,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public Vector<NonEmptySortedSet<A>> sliding(int size) { return set.sliding(size).map(NonEmptySortedSet::new); }
 
     /**
-     * Complexity: O((n / step) log n), that of {@link TreeSet#sliding(int, int)}.
+     * Complexity: O((n / step) log n), as {@link TreeSet#sliding(int, int)}.
      *
      * @param size The window size
      * @param step The distance between two window starts
@@ -443,7 +443,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public Vector<NonEmptySortedSet<A>> sliding(int size, int step) { return set.sliding(size, step).map(NonEmptySortedSet::new); }
 
     /**
-     * Complexity: O(n + r log n) for r runs, that of {@link TreeSet#slideBy(Function)}.
+     * Complexity: O(n + k log n) for k runs, as {@link TreeSet#slideBy(Function)}.
      *
      * @param classifier The key of an element
      * @return the maximal runs of consecutive elements with the same key, each non-empty
@@ -454,7 +454,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(n), that of {@link TreeSet#zipWithIndex()}.
+     * Complexity: O(n), as {@link TreeSet#zipWithIndex()}.
      *
      * @return the elements paired with their rank in the comparator's order, from 0
      */
@@ -542,7 +542,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#remove(Object)}.
+     * Complexity: O(log n), as {@link TreeSet#remove(Object)}.
      *
      * @param element An element
      * @return this set without {@code element}
@@ -550,7 +550,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> remove(A element) { return set.remove(element); }
 
     /**
-     * Complexity: O(m + n log n) for m given elements, that of {@link TreeSet#removeAll(Iterable)}.
+     * Complexity: O(n + m) for m given elements, as {@link TreeSet#removeAll(Iterable)}.
      *
      * @param elements Elements
      * @return this set without {@code elements}
@@ -559,7 +559,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> removeAll(Iterable<? extends A> elements) { return set.removeAll(elements); }
 
     /**
-     * Complexity: O(m + n log n) for m given elements, that of {@link TreeSet#retainAll(Iterable)}.
+     * Complexity: O(n + m) for m given elements, as {@link TreeSet#retainAll(Iterable)}.
      *
      * @param elements Elements
      * @return the elements of this set that are among {@code elements}
@@ -568,7 +568,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> retainAll(Iterable<? extends A> elements) { return set.retainAll(elements); }
 
     /**
-     * Complexity: O((n + m) log n) for a set of m elements, that of {@link TreeSet#intersect(Set)}.
+     * Complexity: O(n + m) for a set of m elements, as {@link TreeSet#intersect(Set)}.
      *
      * @param elements A set
      * @return the elements in both sets
@@ -577,7 +577,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> intersect(Set<? extends A> elements) { return set.intersect(elements); }
 
     /**
-     * Complexity: O((n + m) log n) for a set of m elements, that of {@link TreeSet#diff(Set)}.
+     * Complexity: O(n + m) for a set of m elements, as {@link TreeSet#diff(Set)}.
      *
      * @param elements A set
      * @return the elements of this set that are not in {@code elements}
@@ -593,21 +593,21 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public Tuple2<TreeSet<A>, TreeSet<A>> partition(Predicate<? super A> predicate) { return set.partition(predicate); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#tail()}.
+     * Complexity: O(log n), as {@link TreeSet#tail()}.
      *
      * @return all elements but the first; empty when {@code size()} is 1. See {@link #tailNonEmpty()}.
      */
     public TreeSet<A> tail() { return set.tail(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#init()}.
+     * Complexity: O(log n), as {@link TreeSet#init()}.
      *
      * @return all elements but the last; empty when {@code size()} is 1. See {@link #initNonEmpty()}.
      */
     public TreeSet<A> init() { return set.init(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#take(int)}.
+     * Complexity: O(log n), as {@link TreeSet#take(int)}.
      *
      * @param n A count
      * @return the {@code n} smallest elements; none if {@code n <= 0}
@@ -615,7 +615,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> take(int n) { return set.take(n); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#takeRight(int)}.
+     * Complexity: O(log n), as {@link TreeSet#takeRight(int)}.
      *
      * @param n A count
      * @return the {@code n} largest elements; none if {@code n <= 0}
@@ -623,7 +623,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> takeRight(int n) { return set.takeRight(n); }
 
     /**
-     * Complexity: O(k + log n) for a prefix of k elements, that of {@link TreeSet#takeWhile(Predicate)}.
+     * Complexity: O(k + log n) for a prefix of k elements, as {@link TreeSet#takeWhile(Predicate)}.
      *
      * @param predicate A test
      * @return the leading elements that pass {@code predicate}
@@ -632,7 +632,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> takeWhile(Predicate<? super A> predicate) { return set.takeWhile(predicate); }
 
     /**
-     * Complexity: O(k + log n) for a prefix of k elements, that of {@link TreeSet#takeUntil(Predicate)}.
+     * Complexity: O(k + log n) for a prefix of k elements, as {@link TreeSet#takeUntil(Predicate)}.
      *
      * @param predicate A test
      * @return the leading elements that fail {@code predicate}
@@ -641,7 +641,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> takeUntil(Predicate<? super A> predicate) { return set.takeUntil(predicate); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#drop(int)}.
+     * Complexity: O(log n), as {@link TreeSet#drop(int)}.
      *
      * @param n A count
      * @return all elements but the {@code n} smallest; all of them if {@code n <= 0}
@@ -649,7 +649,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> drop(int n) { return set.drop(n); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#dropRight(int)}.
+     * Complexity: O(log n), as {@link TreeSet#dropRight(int)}.
      *
      * @param n A count
      * @return all elements but the {@code n} largest; all of them if {@code n <= 0}
@@ -657,7 +657,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> dropRight(int n) { return set.dropRight(n); }
 
     /**
-     * Complexity: O(k + log n) for k dropped elements, that of {@link TreeSet#dropWhile(Predicate)}.
+     * Complexity: O(k + log n) for k dropped elements, as {@link TreeSet#dropWhile(Predicate)}.
      *
      * @param predicate A test
      * @return the elements from the first one that fails {@code predicate} on
@@ -666,7 +666,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public TreeSet<A> dropWhile(Predicate<? super A> predicate) { return set.dropWhile(predicate); }
 
     /**
-     * Complexity: O(k + log n) for k dropped elements, that of {@link TreeSet#dropUntil(Predicate)}.
+     * Complexity: O(k + log n) for k dropped elements, as {@link TreeSet#dropUntil(Predicate)}.
      *
      * @param predicate A test
      * @return the elements from the first one that passes {@code predicate} on
@@ -677,14 +677,14 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     // -- total: what is partial on a TreeSet
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#head()}.
+     * Complexity: O(log n), as {@link TreeSet#head()}.
      *
      * @return the least element in the comparator's order
      */
     public A head() { return set.head(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#last()}.
+     * Complexity: O(log n), as {@link TreeSet#last()}.
      *
      * @return the greatest element in the comparator's order
      */
@@ -798,12 +798,16 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public A single() { return set.single(); }
 
     /**
+     * The number of elements.
+     * <p>
+     * Complexity: O(1): the size is stored.
+     *
      * @return the number of elements, at least 1
      */
     public int size() { return set.size(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#contains(Object)}.
+     * Complexity: O(log n), as {@link TreeSet#contains(Object)}.
      *
      * @param element An element
      * @return whether {@code element} is in this set
@@ -1096,7 +1100,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#tail()}.
+     * Complexity: O(log n), as {@link TreeSet#tail()}.
      *
      * @return all elements but the first, if there are any
      */
@@ -1105,7 +1109,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeSet#init()}.
+     * Complexity: O(log n), as {@link TreeSet#init()}.
      *
      * @return all elements but the last, if there are any
      */

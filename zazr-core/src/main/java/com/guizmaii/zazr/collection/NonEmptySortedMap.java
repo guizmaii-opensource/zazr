@@ -305,7 +305,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     // -- returns NonEmptySortedMap: at least one entry is left
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#put(Object, Object)}.
+     * Complexity: O(log n), as {@link TreeMap#put(Object, Object)}.
      *
      * @param key   A key
      * @param value Its value
@@ -319,7 +319,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#put(Tuple2)}.
+     * Complexity: O(log n), as {@link TreeMap#put(Tuple2)}.
      *
      * @param entry An entry
      * @return this map with {@code entry}
@@ -331,7 +331,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#put(Object, Object, BiFunction)}.
+     * Complexity: O(log n), as {@link TreeMap#put(Object, Object, BiFunction)}.
      *
      * @param key   A key
      * @param value A value
@@ -347,7 +347,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#put(Tuple2, BiFunction)}.
+     * Complexity: O(log n), as {@link TreeMap#put(Tuple2, BiFunction)}.
      *
      * @param entry An entry
      * @param merge Combines the current value of the entry's key, if any, with the entry's value
@@ -526,7 +526,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#replace(Tuple2, Tuple2)}.
+     * Complexity: O(log n), as {@link TreeMap#replace(Tuple2, Tuple2)}.
      *
      * @param currentElement An entry
      * @param newElement     Its replacement
@@ -542,7 +542,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
+     * Complexity: O(log n), as {@link #replace(Tuple2, Tuple2)}: a map holds an entry once.
      *
      * @param currentElement An entry
      * @param newElement     Its replacement
@@ -552,7 +552,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public NonEmptySortedMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) { return replace(currentElement, newElement); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#replace(Object, Object, Object)}.
+     * Complexity: O(log n), as {@link TreeMap#replace(Object, Object, Object)}.
      *
      * @param key      A key
      * @param oldValue Its expected value
@@ -566,7 +566,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(n), with no key comparison, that of {@link TreeMap#replaceAll(BiFunction)}.
+     * Complexity: O(n), with no key comparison, as {@link TreeMap#replaceAll(BiFunction)}.
      *
      * @param function Computes the new value of a key from its current value
      * @return the same keys, with the new values
@@ -598,7 +598,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(n), with no key comparison, that of {@link TreeMap#keySet()}.
+     * Complexity: O(n), with no key comparison, as {@link TreeMap#keySet()}.
      *
      * @return the keys, a non-empty set with this map's comparator
      */
@@ -608,7 +608,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(n), that of {@link TreeMap#values()}.
+     * Complexity: O(n), as {@link TreeMap#values()}.
      *
      * @return the values, one per entry, in the order of their keys
      */
@@ -764,7 +764,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#remove(Object)}.
+     * Complexity: O(log n), as {@link TreeMap#remove(Object)}.
      *
      * @param key A key
      * @return this map without {@code key}
@@ -772,7 +772,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> remove(K key) { return map.remove(key); }
 
     /**
-     * Complexity: O(m log n) for m given keys, that of {@link TreeMap#removeAll(Iterable)}.
+     * Complexity: O(m log n) for m given keys, as {@link TreeMap#removeAll(Iterable)}.
      *
      * @param keys Keys
      * @return this map without {@code keys}
@@ -781,7 +781,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> removeAll(Iterable<? extends K> keys) { return map.removeAll(keys); }
 
     /**
-     * Complexity: O(m log n) for m given entries, that of {@link TreeMap#retainAll(Iterable)}.
+     * Complexity: O(m log n) for m given entries, as {@link TreeMap#retainAll(Iterable)}.
      *
      * @param elements Entries
      * @return the entries of this map that are among {@code elements}
@@ -797,21 +797,21 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) { return map.partition(predicate); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#tail()}.
+     * Complexity: O(log n), as {@link TreeMap#tail()}.
      *
      * @return all entries but the first; empty when {@code size()} is 1. See {@link #tailNonEmpty()}.
      */
     public TreeMap<K, V> tail() { return map.tail(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#init()}.
+     * Complexity: O(log n), as {@link TreeMap#init()}.
      *
      * @return all entries but the last; empty when {@code size()} is 1. See {@link #initNonEmpty()}.
      */
     public TreeMap<K, V> init() { return map.init(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#take(int)}.
+     * Complexity: O(log n), as {@link TreeMap#take(int)}.
      *
      * @param n A count
      * @return the entries of the {@code n} smallest keys; none if {@code n <= 0}
@@ -819,7 +819,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> take(int n) { return map.take(n); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#takeRight(int)}.
+     * Complexity: O(log n), as {@link TreeMap#takeRight(int)}.
      *
      * @param n A count
      * @return the entries of the {@code n} largest keys; none if {@code n <= 0}
@@ -827,7 +827,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> takeRight(int n) { return map.takeRight(n); }
 
     /**
-     * Complexity: O(k + log n) for a prefix of k entries, that of {@link TreeMap#takeWhile(Predicate)}.
+     * Complexity: O(k + log n) for a prefix of k entries, as {@link TreeMap#takeWhile(Predicate)}.
      *
      * @param predicate A test
      * @return the leading entries that pass {@code predicate}
@@ -836,7 +836,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) { return map.takeWhile(predicate); }
 
     /**
-     * Complexity: O(k + log n) for a prefix of k entries, that of {@link TreeMap#takeUntil(Predicate)}.
+     * Complexity: O(k + log n) for a prefix of k entries, as {@link TreeMap#takeUntil(Predicate)}.
      *
      * @param predicate A test
      * @return the leading entries that fail {@code predicate}
@@ -845,7 +845,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) { return map.takeUntil(predicate); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#drop(int)}.
+     * Complexity: O(log n), as {@link TreeMap#drop(int)}.
      *
      * @param n A count
      * @return all entries but those of the {@code n} smallest keys; all of them if {@code n <= 0}
@@ -853,7 +853,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> drop(int n) { return map.drop(n); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#dropRight(int)}.
+     * Complexity: O(log n), as {@link TreeMap#dropRight(int)}.
      *
      * @param n A count
      * @return all entries but those of the {@code n} largest keys; all of them if {@code n <= 0}
@@ -861,7 +861,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> dropRight(int n) { return map.dropRight(n); }
 
     /**
-     * Complexity: O(k + log n) for k dropped entries, that of {@link TreeMap#dropWhile(Predicate)}.
+     * Complexity: O(k + log n) for k dropped entries, as {@link TreeMap#dropWhile(Predicate)}.
      *
      * @param predicate A test
      * @return the entries from the first one that fails {@code predicate} on
@@ -870,7 +870,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) { return map.dropWhile(predicate); }
 
     /**
-     * Complexity: O(k + log n) for k dropped entries, that of {@link TreeMap#dropUntil(Predicate)}.
+     * Complexity: O(k + log n) for k dropped entries, as {@link TreeMap#dropUntil(Predicate)}.
      *
      * @param predicate A test
      * @return the entries from the first one that passes {@code predicate} on
@@ -879,7 +879,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public TreeMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) { return map.dropUntil(predicate); }
 
     /**
-     * Complexity: O((n / size) log n), that of {@link TreeMap#grouped(int)}.
+     * Complexity: O((n / size) log n), as {@link TreeMap#grouped(int)}.
      *
      * @param size The block size
      * @return the blocks of {@code size} consecutive entries, each non-empty; only the last may be smaller
@@ -888,7 +888,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public Vector<NonEmptySortedMap<K, V>> grouped(int size) { return map.grouped(size).map(NonEmptySortedMap::new); }
 
     /**
-     * Complexity: O(n log n), that of {@link TreeMap#sliding(int)}.
+     * Complexity: O(n log n), as {@link TreeMap#sliding(int)}.
      *
      * @param size The window size
      * @return the windows of {@code size} consecutive entries, each non-empty
@@ -897,7 +897,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public Vector<NonEmptySortedMap<K, V>> sliding(int size) { return map.sliding(size).map(NonEmptySortedMap::new); }
 
     /**
-     * Complexity: O((n / step) log n), that of {@link TreeMap#sliding(int, int)}.
+     * Complexity: O((n / step) log n), as {@link TreeMap#sliding(int, int)}.
      *
      * @param size The window size
      * @param step The distance between two window starts
@@ -907,7 +907,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public Vector<NonEmptySortedMap<K, V>> sliding(int size, int step) { return map.sliding(size, step).map(NonEmptySortedMap::new); }
 
     /**
-     * Complexity: O(n + r log n) for r runs, that of {@link TreeMap#slideBy(Function)}.
+     * Complexity: O(n + k log n) for k runs, as {@link TreeMap#slideBy(Function)}.
      *
      * @param classifier The key of an entry
      * @return the maximal runs of consecutive entries with the same key, each non-empty
@@ -918,7 +918,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(n), that of {@link TreeMap#zipWithIndex()}.
+     * Complexity: O(n), as {@link TreeMap#zipWithIndex()}.
      *
      * @return the entries paired with their rank in the comparator's order, from 0
      */
@@ -927,14 +927,14 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     // -- total: what is partial on a TreeMap
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#head()}.
+     * Complexity: O(log n), as {@link TreeMap#head()}.
      *
      * @return the entry of the least key in the comparator's order
      */
     public Tuple2<K, V> head() { return map.head(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#last()}.
+     * Complexity: O(log n), as {@link TreeMap#last()}.
      *
      * @return the entry of the greatest key in the comparator's order
      */
@@ -1032,12 +1032,16 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public Tuple2<K, V> single() { return map.single(); }
 
     /**
+     * The number of entries.
+     * <p>
+     * Complexity: O(1): the size is stored.
+     *
      * @return the number of entries, at least 1
      */
     public int size() { return map.size(); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#get(Object)}.
+     * Complexity: O(log n), as {@link TreeMap#get(Object)}.
      *
      * @param key A key
      * @return the value of {@code key}, if present
@@ -1052,7 +1056,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public V getOrElse(K key, V defaultValue) { return map.getOrElse(key, defaultValue); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#containsKey(Object)}.
+     * Complexity: O(log n), as {@link TreeMap#containsKey(Object)}.
      *
      * @param key A key
      * @return whether {@code key} is present
@@ -1066,7 +1070,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public boolean containsValue(V value) { return map.containsValue(value); }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#contains(Tuple2)}.
+     * Complexity: O(log n), as {@link TreeMap#contains(Tuple2)}.
      *
      * @param element An entry
      * @return whether this map has {@code element}'s key mapped to {@code element}'s value
@@ -1174,7 +1178,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) to create; a whole walk is O(n), in the comparator's order, that of {@link TreeMap#iterator()}.
+     * Complexity: O(log n) to create; a whole walk is O(n), in the comparator's order, as {@link TreeMap#iterator()}.
      */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() { return map.iterator(); }
@@ -1382,7 +1386,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#tail()}.
+     * Complexity: O(log n), as {@link TreeMap#tail()}.
      *
      * @return all entries but the first, if there are any
      */
@@ -1391,7 +1395,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * Complexity: O(log n), that of {@link TreeMap#init()}.
+     * Complexity: O(log n), as {@link TreeMap#init()}.
      *
      * @return all entries but the last, if there are any
      */

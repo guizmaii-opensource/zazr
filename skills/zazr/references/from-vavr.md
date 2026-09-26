@@ -59,4 +59,4 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
   top.
 - **Two `Try.Failure`s are equal only when they hold the same `Throwable` instance.**
 - **No type is `Serializable`.**
-- **`NonEmptyVector` has no `length()`**: use `size()`.
+- **No collection has `length()`**: use `size()`.

@@ -51,6 +51,6 @@ public class Euler12Test {
     }
 
     private static long divisorCount(long number) {
-        return factors(number).length();
+        return factors(number).size();
     }
 }

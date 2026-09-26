@@ -39,7 +39,7 @@ val documented: Set[String] = Set(
   "removeLast", "replace", "replaceAll", "leftPadTo", "asJava",
   "span", "retainAll", "transpose", "tailOption", "initOption", "iterator",
   // the same, under the names the cons list, the queue, the lazy list and the maps give them
-  "asJavaMap", "length", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
+  "asJavaMap", "size", "reverseIterator", "containsSlice", "indexOfSlice", "lastIndexOfSlice", "prefixLength",
   "segmentLength", "splitAtInclusive", "distinctByKeepLast", "dropRightUntil", "dropRightWhile", "takeRightUntil",
   "takeRightWhile", "duplicates", "duplicatesBy",
   "peek", "peekOption", "pop", "popOption", "pop2", "pop2Option", "push", "pushAll",
@@ -52,18 +52,18 @@ val documented: Set[String] = Set(
 
 /** The complexity classes of the legend, cheapest first. */
 enum Cost(val label: String, val scala: String, val meaning: String) {
-  case Constant extends Cost("constant", "C", "a fixed number of steps, whatever the size")
+  case Constant extends Cost("constant", "C", "the same few steps, whatever the size")
   case EffectivelyConstant extends Cost("effectively constant", "eC",
-    "a walk down a tree of 32-wide nodes, a handful of levels deep at any size (Vector, HashSet, HashMap)")
+    "grows with the size, but so slowly that it stays a handful of steps")
   case AmortisedConstant extends Cost("amortised constant", "aC",
-    "constant on average over a series of calls; now and then one call takes O(n) (Queue)")
-  case Logarithmic extends Cost("logarithmic", "Log", "O(log n): one walk from the root of a balanced tree")
-  case Lazy extends Cost("lazy", "",
-    "nothing is computed now; each element is computed when it is read (the note says what is computed at once)")
-  case Linear extends Cost("linear", "L", "proportional to the number of elements named in the expression")
+    "constant on average over a chain of calls; now and then one call costs O(n)")
+  case Logarithmic extends Cost("logarithmic", "Log", "one walk down a balanced tree: a few dozen steps for a million elements")
+  case Lazy extends Cost("lazy", "", "almost nothing now: the elements are computed when the result is read")
+  case Linear extends Cost("linear", "L", "proportional to the sizes in the expression")
   case Linearithmic extends Cost("n log n", "", "a sort, or one tree operation per element")
-  case Polynomial extends Cost("polynomial", "", "a product of sizes: a slice search, a matrix, a cartesian product")
-  case Combinatorial extends Cost("combinatorial", "", "one result per permutation or combination")
+  case Polynomial extends Cost("polynomial", "",
+    "a product of sizes: searching for a slice, sliding windows, a cartesian product")
+  case Combinatorial extends Cost("combinatorial", "", "one result per combination or permutation")
 }
 
 /** The accepted leading expressions of a note. A new one is added here, with its class, before it is used. */
@@ -77,42 +77,41 @@ val vocabulary: Map[String, Cost] = Map(
   "O(k)" -> Cost.Linear,
   "O(m)" -> Cost.Linear,
   "O(n + m)" -> Cost.Linear,
-  "O(m + n)" -> Cost.Linear,
   "O(n + k)" -> Cost.Linear,
-  "O(index)" -> Cost.Linear,
-  "O(index + m)" -> Cost.Linear,
-  "O(offset + m)" -> Cost.Linear,
-  "O(from + k)" -> Cost.Linear,
-  "O(beginIndex)" -> Cost.Linear,
-  "O(endIndex)" -> Cost.Linear,
-  "O(length - k)" -> Cost.Linear,
+  "O(k + m)" -> Cost.Linear,
   "O(min(n, m))" -> Cost.Linear,
   "O(max(n, m))" -> Cost.Linear,
   "O(min(i, n - i))" -> Cost.Linear,
   "O(m + min(i, n - i))" -> Cost.Linear,
-  "effectively O(min(n, size - n))" -> Cost.Linear,
   "O(n / step)" -> Cost.Linear,
   "O(n / size)" -> Cost.Linear,
   "O(k + log n)" -> Cost.Linear,
+  "O(i)" -> Cost.Linear,
+  "O(j)" -> Cost.Linear,
+  "O(i + m)" -> Cost.Linear,
+  "O(i + k)" -> Cost.Linear,
+  "O(min(k, n - k))" -> Cost.Linear,
   "O(n log n)" -> Cost.Linearithmic,
   "O(m log(n + m))" -> Cost.Linearithmic,
-  "O((n + m) log n)" -> Cost.Linearithmic,
   "O(m log n)" -> Cost.Linearithmic,
-  "O(m + n log n)" -> Cost.Linearithmic,
-  "O(n + r log n)" -> Cost.Linearithmic,
   "O((n / step) log n)" -> Cost.Linearithmic,
   "O((n / size) log n)" -> Cost.Linearithmic,
+  "O(n + k log n)" -> Cost.Linearithmic,
+  "O(m log m)" -> Cost.Linearithmic,
+  "O(n + k log k)" -> Cost.Linearithmic,
   "O(n * m)" -> Cost.Polynomial,
   "O(n * size)" -> Cost.Polynomial,
-  "O(n * size / step)" -> Cost.Polynomial,
   "O(rows * columns)" -> Cost.Polynomial,
   "O(n^2)" -> Cost.Polynomial,
   "O(n^power)" -> Cost.Polynomial,
   "O(n + (n / step) * min(size, n - size))" -> Cost.Polynomial,
-  "O(2^n)" -> Cost.Combinatorial,
-  "O(n!)" -> Cost.Combinatorial,
-  "O(n! * n)" -> Cost.Combinatorial,
-  "O(C(n, k))" -> Cost.Combinatorial
+  "O(n + (n / step) * size)" -> Cost.Polynomial,
+  "O(power * n^power)" -> Cost.Polynomial,
+  "O(n + n * min(size, n - size))" -> Cost.Polynomial,
+  "O(n! * n^2)" -> Cost.Combinatorial,
+  "O(k * C(n, k))" -> Cost.Combinatorial,
+  "O(n * 2^n)" -> Cost.Combinatorial,
+  "O(k * C(n, k) + C(n, 0) + ... + C(n, k))" -> Cost.Combinatorial
 )
 
 final case class Decl(
@@ -124,10 +123,12 @@ final case class Decl(
     note: Option[String],
     file: String,
     line: Int,
-    isStatic: Boolean
+    isStatic: Boolean,
+    hasBody: Boolean
 )
 
-final case class TypeInfo(name: String, supers: List[String], decls: List[Decl], checked: Boolean)
+/** A parsed top-level type; `note` is the "Complexity:" paragraph of its own javadoc, which covers its other methods. */
+final case class TypeInfo(name: String, supers: List[String], decls: List[Decl], checked: Boolean, note: Option[String])
 
 /** The erased shape of a parameter type: no type arguments, no annotations, a type variable as Object. */
 def erase(tpe: String): String = {
@@ -141,20 +142,20 @@ def erase(tpe: String): String = {
   if (s.matches("[A-Z][0-9]?(\\[\\])*")) s.replaceAll("^[A-Z][0-9]?", "Object") else s
 }
 
+/** A paragraph that starts with "Complexity:", at the start of a line, optionally after `<p>`. */
+val notePattern = "(?m)^\\s*(?:<p>\\s*)?Complexity:".r
+
 /** The "Complexity:" paragraph of a doc comment, on one line. */
-def noteOf(doc: String): Option[String] = {
-  val start = doc.indexOf("Complexity:")
-  if (start < 0) None
-  else {
-    val rest = doc.substring(start + "Complexity:".length)
+def noteOf(doc: String): Option[String] =
+  notePattern.findFirstMatchIn(doc).map { m =>
+    val rest = doc.substring(m.end)
     val lines = rest.linesIterator.toList
     val kept = lines.head :: lines.tail.takeWhile { l =>
       val t = l.trim
       t.nonEmpty && !t.startsWith("<p>") && !t.startsWith("@") && !t.startsWith("<")
     }
-    Some(kept.map(_.trim).mkString(" ").replaceAll("\\s+", " ").trim)
+    kept.map(_.trim).mkString(" ").replaceAll("\\s+", " ").trim
   }
-}
 
 /** The leading expression of a note and its class, if the note starts with one of the vocabulary. */
 def classify(note: String): Option[(String, Cost)] =
@@ -200,15 +201,18 @@ def parse(files: Seq[String], checked: Set[String]): List[TypeInfo] = {
       def docOf(m: MethodTree): Option[String] =
         Option(docs.getDocComment(new TreePath(new TreePath(new TreePath(unit), cls), m)))
       val decls = cls.getMembers.asScala.toList.collect {
-        case m: MethodTree if isApi(m) && (documented(m.getName.toString) || docOf(m).exists(_.contains("Complexity:"))) =>
+        case m: MethodTree if isApi(m) && (documented(m.getName.toString) || docOf(m).exists(d => noteOf(d).isDefined)) =>
         val doc = docOf(m)
         val params = m.getParameters.asScala.toList.map(p => erase(p.getType.toString))
         val line = unit.getLineMap.getLineNumber(docs.getSourcePositions.getStartPosition(unit, m)).toInt
         val signature = s"${m.getName}(${m.getParameters.asScala.map(p => simpleType(p.getType.toString)).mkString(", ")})"
         val isStatic = m.getModifiers.getFlags.contains(Modifier.STATIC)
-        Decl(cls.getSimpleName.toString, m.getName.toString, params, signature, doc, doc.flatMap(noteOf), file, line, isStatic)
+        val hasBody = m.getBody != null
+        Decl(cls.getSimpleName.toString, m.getName.toString, params, signature, doc, doc.flatMap(noteOf), file, line,
+          isStatic, hasBody)
       }
-      TypeInfo(cls.getSimpleName.toString, supers, decls, checked(file))
+      val classDoc = Option(docs.getDocComment(new TreePath(new TreePath(unit), cls)))
+      TypeInfo(cls.getSimpleName.toString, supers, decls, checked(file), classDoc.flatMap(noteOf))
     }
   } finally {
     fileManager.close()
@@ -219,21 +223,48 @@ def parse(files: Seq[String], checked: Set[String]): List[TypeInfo] = {
 def simpleType(tpe: String): String =
   tpe.replaceAll("@[A-Za-z.]+\\s*", "").replaceAll("\\b(?:[a-z]+\\.)+([A-Z])", "$1").trim
 
-/** The note of `decl`, its own or the one of the method it overrides in the nearest supertype that documents it. */
+/**
+ * Whether a method with the erased parameters `sub` overrides one with the erased parameters `sup`. A parameter
+ * erased to `Object` in the supertype is a type variable there, which a subtype may fix: `Map.contains(Tuple2)`
+ * overrides `Traversable.contains(T)`.
+ */
+def overrides(sub: List[String], sup: List[String]): Boolean =
+  sub.size == sup.size && sub.lazyZip(sup).forall((a, b) => a == b || b == "Object")
+
+/** The declaration of `decl` in the nearest supertype of its owner, if one declares it. */
+def overridden(types: Map[String, TypeInfo], decl: Decl): Option[Decl] =
+  types.get(decl.owner).toList.flatMap(_.supers).iterator
+    .flatMap(s => lookup(types, s, decl.name, decl.params))
+    .nextOption()
+
+/**
+ * The note of `decl`: its own, or the one of the method it overrides in the nearest supertype that documents it. A
+ * method with a body does not take the note of a supertype method that has a body too: that note describes another
+ * implementation (see `stolenNote`).
+ */
 def resolve(types: Map[String, TypeInfo], decl: Decl): Option[Decl] =
   if (decl.note.isDefined) Some(decl)
-  else {
-    val owner = types(decl.owner)
-    owner.supers.iterator
-      .flatMap(types.get)
-      .flatMap(t => t.decls.find(d => d.name == decl.name && d.params == decl.params).flatMap(resolve(types, _)))
-      .nextOption()
+  else overridden(types, decl).flatMap(resolve(types, _)).filterNot(src => decl.hasBody && src.hasBody)
+
+/** The note a method with a body but no note would wrongly show: that of a supertype method with a body. */
+def stolenNote(types: Map[String, TypeInfo], decl: Decl): Option[Decl] =
+  if (decl.note.isDefined || !decl.hasBody) None
+  else overridden(types, decl).flatMap(resolve(types, _)).filter(_.hasBody)
+
+/** The declaration whose note the page shows for `decl`; fails when there is none, or only a stolen one. */
+def noteSource(types: Map[String, TypeInfo], d: Decl): Decl = {
+  stolenNote(types, d).foreach { src =>
+    sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) overrides ${src.owner}.${src.signature} without a " +
+      "'Complexity:' note of its own")
   }
+  resolve(types, d).getOrElse(sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) has no 'Complexity:' note"))
+}
 
 /** The declaration a type uses for `name(params)`: its own, or the nearest supertype's. */
 def lookup(types: Map[String, TypeInfo], typeName: String, name: String, params: List[String]): Option[Decl] =
   types.get(typeName).flatMap { t =>
     t.decls.find(d => d.name == name && d.params == params)
+      .orElse(t.decls.find(d => d.name == name && overrides(params, d.params)))
       .orElse(t.supers.iterator.flatMap(s => lookup(types, s, name, params)).nextOption())
   }
 
@@ -241,7 +272,8 @@ def lookup(types: Map[String, TypeInfo], typeName: String, name: String, params:
 def overloads(types: Map[String, TypeInfo], typeName: String, name: String): List[Decl] =
   types.get(typeName).toList.flatMap { t =>
     val own = t.decls.filter(d => d.name == name && !d.isStatic)
-    val inherited = t.supers.flatMap(s => overloads(types, s, name)).filterNot(d => own.exists(_.params == d.params))
+    val inherited = t.supers.flatMap(s => overloads(types, s, name))
+      .filterNot(d => own.exists(o => overrides(o.params, d.params)))
     (own ++ inherited).distinctBy(_.params)
   }
 
@@ -250,8 +282,26 @@ final case class Problem(file: String, line: Int, message: String)
 def check(types: List[TypeInfo]): (Int, List[Problem]) = {
   val byName = types.map(t => t.name -> t).toMap
   val decls = types.filter(_.checked).flatMap(_.decls)
-  val problems = decls.flatMap { d =>
-    if (d.note.isEmpty && documented(d.name) && resolve(byName, d).isEmpty) {
+  // a context type is not checked, but an override of its own that hides the note of the method it overrides would
+  // put that note on the page of every type inheriting it
+  val contextStolen = types.filterNot(_.checked).flatMap(_.decls).flatMap { d =>
+    stolenNote(byName, d).map { src =>
+      Problem(d.file, d.line, s"${d.name}() overrides ${src.owner}.${src.signature}, whose 'Complexity:' note " +
+        "describes that implementation, not this one: give it its own note")
+    }
+  }
+  // every expression of the vocabulary is used by a note, so that the legend lists only what the page shows
+  val used = types.flatMap(_.decls).flatMap(_.note).flatMap(classify).map(_._1).toSet
+  val unused = vocabulary.keySet.diff(used).toList.sorted.map { e =>
+    Problem("scripts/check-complexity.scala", 0, s"the vocabulary expression '$e' is used by no note: remove it")
+  }
+  val problems = unused ++ contextStolen ++ decls.flatMap { d =>
+    val stolen = stolenNote(byName, d)
+    if (stolen.isDefined) {
+      val src = stolen.get
+      List(Problem(d.file, d.line, s"${d.name}() overrides ${src.owner}.${src.signature}, whose 'Complexity:' note " +
+        "describes that implementation, not this one: give it its own note"))
+    } else if (d.note.isEmpty && documented(d.name) && resolve(byName, d).isEmpty) {
       List(Problem(d.file, d.line, s"${d.name}() has no 'Complexity:' line in its javadoc"))
     } else if (d.note.exists(n => classify(n).isEmpty)) {
       List(Problem(d.file, d.line,
@@ -270,11 +320,11 @@ final case class Family(title: String, intro: String, columns: List[String], row
 val families: List[Family] = List(
   Family(
     "Sequences",
-    "`NonEmptyVector` wraps a `Vector`, so its costs are `Vector`'s; `Stream` is lazy, so most of its operations are " +
-      "deferred until the result is read.",
+    "`NonEmptyVector` wraps a `Vector`, so its costs are those of `Vector`. `Stream` is lazy: most of its " +
+      "operations compute their result as it is read.",
     List("Vector", "List", "Queue", "Stream", "NonEmptyVector"),
     List("head", "tail", "last", "init", "get", "update", "prepend", "append", "prependAll", "appendAll", "insert",
-      "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "length", "contains", "indexOf",
+      "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "size", "contains", "indexOf",
       "zip", "sliding", "grouped", "distinct", "concat")
   ),
   Family(
@@ -294,12 +344,23 @@ val families: List[Family] = List(
   )
 )
 
-/** Javadoc inline tags to Markdown-free text: `{@code x}`, `{@link #m(int)}` and `{@link T#m(int, Object)}` become `x`, `m(int)` and `T#m(int, Object)`. */
-def plain(note: String): String =
-  note
-    .replaceAll("\\{@(?:code|literal) ([^{}]*)\\}", "$1")
-    .replaceAll("\\{@link(?:plain)? #?([^{}\\s(]*(?:\\([^)]*\\))?)(?:\\s+([^{}]*))?\\}", "$1")
-    .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+/**
+ * Javadoc inline tags to plain text: `{@code x}` becomes `x`; a link shows its label when it has one, else the method
+ * without its parameter types, so `{@link #put(Object, Object)}` and `{@link Vector#tail()}` become `put` and
+ * `Vector.tail`.
+ */
+def plain(note: String): String = {
+  val link = "\\{@link(?:plain)?\\s+([^{}\\s(]*)(\\([^)]*\\))?(?:\\s+([^{}]*))?\\}".r
+  val linked = link.replaceAllIn(
+    note.replaceAll("\\{@(?:code|literal) ([^{}]*)\\}", "$1"),
+    m => {
+      val label = Option(m.group(3)).map(_.trim).filter(_.nonEmpty)
+      val target = m.group(1).stripPrefix("#").replace('#', '.')
+      scala.util.matching.Regex.quoteReplacement(label.getOrElse(target))
+    }
+  )
+  linked.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+}
 
 def html(s: String): String =
   s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
@@ -312,8 +373,7 @@ def cell(d: Decl): String = {
 
 /** The rows of a family's matrix: one per operation, split by overload only where some type's overloads differ. */
 def familyRows(byName: Map[String, TypeInfo], f: Family): List[(String, List[Option[Decl]])] = {
-  def resolved(d: Decl): Decl =
-    resolve(byName, d).getOrElse(sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) has no 'Complexity:' note"))
+  def resolved(d: Decl): Decl = noteSource(byName, d)
   f.rows.flatMap { op =>
     val perType = f.columns.map(t => t -> overloads(byName, t, op).map(resolved)).toMap
     val splits = f.columns.exists(t => perType(t).map(d => classify(d.note.get).get._1).distinct.size > 1)
@@ -350,29 +410,49 @@ def glances(types: List[TypeInfo]): List[(String, String)] = {
 
 def page(types: List[TypeInfo]): String = {
   val byName = types.map(t => t.name -> t).toMap
-  def resolved(d: Decl): Decl =
-    resolve(byName, d).getOrElse(sys.error(s"${d.owner}.${d.signature} (${d.file}:${d.line}) has no 'Complexity:' note"))
+  def resolved(d: Decl): Decl = noteSource(byName, d)
   val out = new StringBuilder
   out ++= "<!-- Generated by scripts/check-complexity.scala (make docs-complexity) from the 'Complexity:' javadoc notes. Do not edit. -->\n\n"
   out ++= "# Complexity\n\n"
-  out ++= "Every method of a collection whose cost depends on the size documents that cost in its javadoc. This page " +
-    "is generated from the javadoc, so it matches the code. Hover a cell to read the whole note.\n\n"
-  out ++= "## Legend\n\n"
-  out ++= "n is the size of the receiver, m the size of the argument, k the number of elements taken, dropped or " +
-    "skipped, i an index. The Scala column gives the abbreviation Scala's collections documentation uses for the " +
-    "same class, where there is one.\n\n"
+  out ++= "Every Zazr collection states the cost of its methods in their javadoc. This page gathers those notes, so it " +
+    "always matches the code.\n\n"
+  out ++= "## How to read a cost\n\n"
+  out ++= "A cost is the worst case of one call, in big-O notation, unless its note says otherwise. The letters mean:\n\n" +
+    "- n: the number of elements of the collection you call the method on.\n" +
+    "- m: the number of elements of the argument.\n" +
+    "- k: a count the note names, such as the elements taken or dropped.\n" +
+    "- i and j: index arguments; a slice runs from i to j.\n" +
+    "- size and step: the window size and the step of `sliding` and `grouped`.\n\n" +
+    "In the tables, hover a cost to read its whole note.\n\n"
+  out ++= "## Classes of cost\n\n"
+  out ++= "Each cost falls in one of these classes, cheapest first. The Scala column gives the abbreviation of the same " +
+    "class in Scala's collections documentation, for readers who know it.\n\n"
   out ++= "| Class | Scala | Meaning | Expressions |\n|---|---|---|---|\n"
   Cost.values.foreach { c =>
     val exprs = vocabulary.toList.filter(_._2 == c).map(_._1).sortBy(e => (e.length, e)).map(e => s"`$e`").mkString(", ")
     val scala = if (c.scala.isEmpty) "" else s"`${c.scala}`"
     out ++= s"""| <span class="cx cx-${c.toString.toLowerCase}">${c.label}</span> | $scala | ${c.meaning} | $exprs |\n"""
   }
-  out ++= "\n\"Effectively\" and \"amortised\" are not the same promise:\n\n" +
-    "- Effectively constant is a worst case: it grows with the size, but so slowly that it stays a handful of steps.\n" +
-    "- Amortised constant is an average: most calls are constant, and an occasional call pays for the others.\n\n" +
-    "A lazy note describes what the call itself does; reading the result costs more.\n\n"
-  out ++= "`n/a` means the type does not have the operation: `HashSet` and `HashMap` have no positional methods, " +
-    "because their order is not defined.\n"
+  out ++= "\n## Effectively constant\n\n" +
+    "`Vector`, `HashSet` and `HashMap` keep their elements in wide, shallow trees of small arrays, 32 slots each. A " +
+    "lookup reads one array per level: four levels hold a million elements, seven hold the largest possible " +
+    "collection. An update copies those few arrays and shares the rest.\n\n" +
+    "This is a worst case, not an average: every call costs a handful of steps.\n"
+  out ++= "\n## Amortised constant\n\n" +
+    "An amortised cost is an average. Most calls are O(1), and now and then one call pays O(n) for the work the " +
+    "others skipped.\n\n" +
+    "The average holds over a chain of calls, each made on the result of the previous one. A Zazr collection never " +
+    "changes, so you can also call the method again on an older version: each such call may pay the O(n) step " +
+    "again. The note of each amortised method says when that happens.\n"
+  out ++= "\n## Lazy\n\n" +
+    "A `Stream` computes its elements when they are read, and keeps each one once computed. A lazy call returns a " +
+    "`Stream` without walking this one: its note says what is computed now, and the rest is computed as you read " +
+    "the result.\n\n" +
+    "\"Now\" can still be more than one element. A call that keeps only some elements, such as `filter`, reads " +
+    "until its first kept element; on an infinite `Stream` where none is kept, it never returns.\n"
+  out ++= "\n## Missing operations\n\n" +
+    "`n/a` in a table means that the type has no such method. `HashSet` and `HashMap` have no positional methods " +
+    "(`head`, `take`, `drop`), because their order is not defined.\n"
   families.foreach { f =>
     out ++= s"\n## ${f.title}\n\n${f.intro}\n\n"
     val rows = familyRows(byName, f)
@@ -382,18 +462,24 @@ def page(types: List[TypeInfo]): String = {
       out ++= s"| $label | ${cells.map(_.map(cell).getOrElse("n/a")).mkString(" | ")} |\n"
     }
   }
-  out ++= "\n## Every documented method\n\n"
-  out ++= "The notes as the javadoc states them, per type, in declaration order. A type that inherits a note says so.\n"
+  out ++= "\n## Every method, per type\n\n"
+  out ++= "Each type lists its methods that have a cost note, in the order of its source. A method inherited from " +
+    "an interface says so. The paragraph under each type covers its other methods.\n"
   val detailed = families.flatMap(_.columns).distinct
   detailed.foreach { t =>
     val info = byName(t)
     val own = info.decls
     def ancestors(name: String): List[TypeInfo] =
       byName.get(name).toList.flatMap(a => a :: a.supers.flatMap(ancestors))
-    val inherited = info.supers.flatMap(ancestors).distinctBy(_.name).flatMap(_.decls)
-      .filter(_.note.isDefined)
-      .filterNot(d => own.exists(o => o.name == d.name && o.params == d.params))
-    out ++= s"\n### `$t`\n\n| Method | Cost | Note |\n|---|---|---|\n"
+    // the nearest declaration of each inherited method: one a nearer type overrides is not listed
+    val inherited = info.supers.flatMap(ancestors).distinctBy(_.name).flatMap(_.decls).filterNot(_.isStatic)
+      .foldLeft(List.empty[Decl]) { (kept, d) =>
+        if ((own ++ kept).exists(o => o.name == d.name && overrides(o.params, d.params))) kept else kept :+ d
+      }
+      .filter(d => resolve(byName, d).isDefined || stolenNote(byName, d).isDefined)
+    out ++= s"\n### `$t`\n\n"
+    info.note.foreach(n => out ++= s"${html(plain(n).capitalize)}\n\n")
+    out ++= "| Method | Cost | Note |\n|---|---|---|\n"
     (own ++ inherited).distinctBy(d => (d.name, d.params)).foreach { d =>
       val src = resolved(d)
       val from = if (src.owner != t) s" (from `${src.owner}`)" else ""

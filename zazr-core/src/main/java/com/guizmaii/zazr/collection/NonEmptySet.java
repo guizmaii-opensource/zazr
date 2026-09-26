@@ -199,7 +199,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     // -- returns NonEmptySet: at least one element is left
 
     /**
-     * Complexity: effectively O(1), that of {@link HashSet#add(Object)}.
+     * Complexity: effectively O(1), as {@link HashSet#add(Object)}.
      *
      * @param element An element
      * @return this set with {@code element}
@@ -213,7 +213,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     /**
      * Accepts the possibly empty type and returns the non-empty one; a {@code NonEmptySet} is an {@code Iterable} too.
      * <p>
-     * Complexity: O(m) for m elements, each an effectively O(1) insertion, that of {@link HashSet#addAll(Iterable)}.
+     * Complexity: O(m) for m elements, each an effectively O(1) insertion, as {@link HashSet#addAll(Iterable)}.
      *
      * @param elements Elements to add, possibly none, read once
      * @return this set with {@code elements}
@@ -222,7 +222,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public NonEmptySet<A> addAll(Iterable<? extends A> elements) { return wrap(set.addAll(elements)); }
 
     /**
-     * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion, that of {@link HashSet#union(Set)}.
+     * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion, as {@link HashSet#union(Set)}.
      *
      * @param elements A set, possibly empty
      * @return the elements of both sets
@@ -270,7 +270,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashSet#replace(Object, Object)}.
+     * Complexity: effectively O(1), as {@link HashSet#replace(Object, Object)}.
      *
      * @param currentElement An element
      * @param newElement     Its replacement
@@ -285,7 +285,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: effectively O(1), as {@link #replace(Object, Object)}: a set holds an element once.
      *
      * @param currentElement An element
      * @param newElement     Its replacement
@@ -377,7 +377,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashSet#remove(Object)}.
+     * Complexity: effectively O(1), as {@link HashSet#remove(Object)}.
      *
      * @param element An element
      * @return this set without {@code element}
@@ -385,7 +385,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public HashSet<A> remove(A element) { return set.remove(element); }
 
     /**
-     * Complexity: O(n + m) for m given elements, that of {@link HashSet#removeAll(Iterable)}.
+     * Complexity: O(n + m) for m given elements, as {@link HashSet#removeAll(Iterable)}.
      *
      * @param elements Elements
      * @return this set without {@code elements}
@@ -394,7 +394,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public HashSet<A> removeAll(Iterable<? extends A> elements) { return set.removeAll(elements); }
 
     /**
-     * Complexity: O(n + m) for m given elements, that of {@link HashSet#retainAll(Iterable)}.
+     * Complexity: O(n + m) for m given elements, as {@link HashSet#retainAll(Iterable)}.
      *
      * @param elements Elements
      * @return the elements of this set that are among {@code elements}
@@ -403,7 +403,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public HashSet<A> retainAll(Iterable<? extends A> elements) { return set.retainAll(elements); }
 
     /**
-     * Complexity: O(n + m) for a set of m elements, that of {@link HashSet#intersect(Set)}.
+     * Complexity: O(n + m) for a set of m elements, as {@link HashSet#intersect(Set)}.
      *
      * @param elements A set
      * @return the elements in both sets
@@ -412,7 +412,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public HashSet<A> intersect(Set<? extends A> elements) { return set.intersect(elements); }
 
     /**
-     * Complexity: O(n + m) for a set of m elements, that of {@link HashSet#diff(Set)}.
+     * Complexity: O(n + m) for a set of m elements, as {@link HashSet#diff(Set)}.
      *
      * @param elements A set
      * @return the elements of this set that are not in {@code elements}
@@ -557,12 +557,16 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public A single() { return set.single(); }
 
     /**
+     * The number of elements.
+     * <p>
+     * Complexity: O(1): the size is stored.
+     *
      * @return the number of elements, at least 1
      */
     public int size() { return set.size(); }
 
     /**
-     * Complexity: effectively O(1), that of {@link HashSet#contains(Object)}.
+     * Complexity: effectively O(1), as {@link HashSet#contains(Object)}.
      *
      * @param element An element
      * @return whether {@code element} is in this set
@@ -662,7 +666,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; a whole walk is O(n), that of {@link HashSet#iterator()}.
+     * Complexity: O(1) to create; a whole walk is O(n), as {@link HashSet#iterator()}.
      */
     @Override
     public java.util.Iterator<A> iterator() { return set.iterator(); }

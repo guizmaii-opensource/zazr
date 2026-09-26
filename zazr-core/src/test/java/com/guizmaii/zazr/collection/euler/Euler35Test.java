@@ -30,7 +30,7 @@ public class Euler35Test {
                 .filter(memoizedIsPrime)
                 .map(Euler35Test::rotations)
                 .filter(list -> list.forAll(memoizedIsPrime))
-                .length();
+                .size();
     }
 
     private static boolean isPrime(int n) {
@@ -42,7 +42,7 @@ public class Euler35Test {
 
     private static List<Integer> rotations(int n) {
         final Vector<Character> seq = Vector.ofAll(String.valueOf(n).toCharArray());
-        return Stream.range(0, seq.length())
+        return Stream.range(0, seq.size())
                 .map(i -> seq.drop(i).appendAll(seq.take(i)))
                 .map(s -> Integer.valueOf(s.mkString()))
                 .toList();

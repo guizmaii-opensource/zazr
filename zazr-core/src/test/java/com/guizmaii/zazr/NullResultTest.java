@@ -211,23 +211,23 @@ public class NullResultTest {
         cases.add(throwing("Queue.unzip3(java.util.function.Function)", "Queue.unzip3: unzipper returned null", () -> Queue.of(1).unzip3(x -> null)));
 
         // a Stream is lazy: the null is rejected when the element is reached
-        cases.add(throwing("Stream.appendSelf(java.util.function.Function)", "Stream.appendSelf: mapper returned null", () -> Stream.of(1).appendSelf(s -> null).length()));
-        cases.add(throwing("Stream.collect(java.util.function.Function)", "Stream.collect: mapper returned null", () -> Stream.of(1).collect(x -> null).length()));
+        cases.add(throwing("Stream.appendSelf(java.util.function.Function)", "Stream.appendSelf: mapper returned null", () -> Stream.of(1).appendSelf(s -> null).size()));
+        cases.add(throwing("Stream.collect(java.util.function.Function)", "Stream.collect: mapper returned null", () -> Stream.of(1).collect(x -> null).size()));
         cases.add(throwing("Stream.cons(java.lang.Object, java.util.function.Supplier)", "Stream.cons: tailSupplier returned null", () -> Stream.cons(1, () -> null).tail()));
-        cases.add(throwing("Stream.flatMap(java.util.function.Function)", "Stream.flatMap: mapper returned null", () -> Stream.of(1).flatMap(x -> null).length()));
+        cases.add(throwing("Stream.flatMap(java.util.function.Function)", "Stream.flatMap: mapper returned null", () -> Stream.of(1).flatMap(x -> null).size()));
         cases.add(throwing("Stream.groupBy", "Stream.groupBy: classifier returned null", () -> Stream.of(1).groupBy(x -> null)));
-        cases.add(throwing("Stream.iterate(java.util.function.Supplier)", "Stream.iterate: supplier returned null", () -> Stream.iterate(() -> null).length()));
+        cases.add(throwing("Stream.iterate(java.util.function.Supplier)", "Stream.iterate: supplier returned null", () -> Stream.iterate(() -> null).size()));
         cases.add(throwing("Stream.orElse(java.util.function.Supplier)", "Stream.orElse: supplier returned null", () -> Stream.empty().orElse((Supplier<Iterable<Object>>) () -> null)));
-        cases.add(throwing("Stream.partitionMap(java.util.function.Function)", "Stream.partitionMap: f returned null", () -> Stream.of(1).partitionMap(x -> null)._1().length()));
+        cases.add(throwing("Stream.partitionMap(java.util.function.Function)", "Stream.partitionMap: f returned null", () -> Stream.of(1).partitionMap(x -> null)._1().size()));
         cases.add(throwing("Stream.toLinkedMap(java.util.function.Function)", "Stream.toLinkedMap: f returned null", () -> Stream.of(1).toLinkedMap(x -> null)));
         cases.add(throwing("Stream.toMap(java.util.function.Function)", "Stream.toMap: f returned null", () -> Stream.of(1).toMap(x -> null)));
         cases.add(throwing("Stream.toSortedMap(java.util.function.Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(x -> (Tuple2<Integer, Integer>) null)));
         cases.add(throwing("Stream.toSortedMap(java.util.Comparator, java.util.function.Function)", "Stream.toSortedMap: f returned null", () -> Stream.of(1).toSortedMap(Comparator.<Integer> naturalOrder(), x -> null)));
-        cases.add(throwing("Stream.unfold(java.lang.Object, java.util.function.Function)", "Stream.unfold: f returned null", () -> Stream.unfold(1, x -> null).length()));
-        cases.add(throwing("Stream.unfoldLeft(java.lang.Object, java.util.function.Function)", "Stream.unfoldLeft: f returned null", () -> Stream.unfoldLeft(1, x -> null).length()));
-        cases.add(throwing("Stream.unfoldRight(java.lang.Object, java.util.function.Function)", "Stream.unfoldRight: f returned null", () -> Stream.unfoldRight(1, x -> null).length()));
-        cases.add(throwing("Stream.unzip(java.util.function.Function)", "Stream.unzip: unzipper returned null", () -> Stream.of(1).unzip(x -> null)._1().length()));
-        cases.add(throwing("Stream.unzip3(java.util.function.Function)", "Stream.unzip3: unzipper returned null", () -> Stream.of(1).unzip3(x -> null)._1().length()));
+        cases.add(throwing("Stream.unfold(java.lang.Object, java.util.function.Function)", "Stream.unfold: f returned null", () -> Stream.unfold(1, x -> null).size()));
+        cases.add(throwing("Stream.unfoldLeft(java.lang.Object, java.util.function.Function)", "Stream.unfoldLeft: f returned null", () -> Stream.unfoldLeft(1, x -> null).size()));
+        cases.add(throwing("Stream.unfoldRight(java.lang.Object, java.util.function.Function)", "Stream.unfoldRight: f returned null", () -> Stream.unfoldRight(1, x -> null).size()));
+        cases.add(throwing("Stream.unzip(java.util.function.Function)", "Stream.unzip: unzipper returned null", () -> Stream.of(1).unzip(x -> null)._1().size()));
+        cases.add(throwing("Stream.unzip3(java.util.function.Function)", "Stream.unzip3: unzipper returned null", () -> Stream.of(1).unzip3(x -> null)._1().size()));
 
         cases.add(throwing("NonEmptyVector.collect(java.util.function.Function)", "NonEmptyVector.collect: mapper returned null", () -> NonEmptyVector.of(1).collect(x -> null)));
         cases.add(throwing("NonEmptyVector.flatMap(java.util.function.Function)", "NonEmptyVector.flatMap: mapper returned null", () -> NonEmptyVector.of(1).flatMap(x -> null)));
@@ -412,8 +412,8 @@ public class NullResultTest {
     public void shouldReportTheSameFailureWhenALazyResultIsForcedAgain() {
         final Stream<Object> flatMapped = Stream.of(1, 2).flatMap(x -> x == 2 ? null : List.of(x));
         assertThat(flatMapped.head()).isEqualTo(1);
-        assertThatNullPointerException().isThrownBy(flatMapped::length).withMessage("Stream.flatMap: mapper returned null");
-        assertThatNullPointerException().isThrownBy(flatMapped::length).withMessage("Stream.flatMap: mapper returned null");
+        assertThatNullPointerException().isThrownBy(flatMapped::size).withMessage("Stream.flatMap: mapper returned null");
+        assertThatNullPointerException().isThrownBy(flatMapped::size).withMessage("Stream.flatMap: mapper returned null");
 
         // a stateful supplier: forcing again must not ask it for the value after the null and drop the rejected one
         final java.util.Iterator<Option<Integer>> supplied = java.util.Arrays.asList(Option.some(1), null, Option.some(3), Option.<Integer> none()).iterator();

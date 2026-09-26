@@ -2,11 +2,11 @@
 
 | Operation | Cost | Note |
 |---|---|---|
-| `contains` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashSet#contains(Object).">effectively O(1)</abbr> | effectively O(1), that of HashSet#contains(Object). |
-| `add` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashSet#add(Object).">effectively O(1)</abbr> | effectively O(1), that of HashSet#add(Object). |
-| `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), that of HashSet#remove(Object).">effectively O(1)</abbr> | effectively O(1), that of HashSet#remove(Object). |
-| `union` | <abbr class="cx cx-linear" title="O(m) for a set of m elements, each an effectively O(1) insertion, that of HashSet#union(Set).">O(m)</abbr> | O(m) for a set of m elements, each an effectively O(1) insertion, that of HashSet#union(Set). |
-| `intersect` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, that of HashSet#intersect(Set).">O(n + m)</abbr> | O(n + m) for a set of m elements, that of HashSet#intersect(Set). |
-| `diff` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, that of HashSet#diff(Set).">O(n + m)</abbr> | O(n + m) for a set of m elements, that of HashSet#diff(Set). |
+| `contains` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashSet.contains.">effectively O(1)</abbr> | effectively O(1), as HashSet.contains. |
+| `add` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashSet.add.">effectively O(1)</abbr> | effectively O(1), as HashSet.add. |
+| `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashSet.remove.">effectively O(1)</abbr> | effectively O(1), as HashSet.remove. |
+| `union` | <abbr class="cx cx-linear" title="O(m) for a set of m elements, each an effectively O(1) insertion, as HashSet.union.">O(m)</abbr> | O(m) for a set of m elements, each an effectively O(1) insertion, as HashSet.union. |
+| `intersect` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, as HashSet.intersect.">O(n + m)</abbr> | O(n + m) for a set of m elements, as HashSet.intersect. |
+| `diff` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, as HashSet.diff.">O(n + m)</abbr> | O(n + m) for a set of m elements, as HashSet.diff. |
 | `min` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `max` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |

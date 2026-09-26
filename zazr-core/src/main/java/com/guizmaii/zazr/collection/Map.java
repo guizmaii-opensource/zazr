@@ -75,6 +75,15 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
+    /**
+     * Whether this map holds the key of {@code element}, associated with a value equal to that of {@code element}.
+     * <p>
+     * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, then its
+     * value is compared. Each of them states its own cost.
+     *
+     * @param element the entry to look for
+     * @return {@code true} if the key is present with an equal value, {@code false} otherwise
+     */
     @Override
     default boolean contains(Tuple2<K, V> element) {
         // getOrElse via the ABSENT sentinel, not get: avoids allocating a Some just to test isDefined()
@@ -116,7 +125,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Returns <code>true</code> if this map maps one or more keys to the
-     * specified value. This operation will require time linear in the map size.
+     * specified value.
+     * <p>
+     * Complexity: O(n): the entries are walked until the value is found; values are not indexed.
      *
      * @param value value whose presence in this map is to be tested
      * @return <code>true</code> if this map maps one or more keys to the
@@ -594,6 +605,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     /**
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
+     * <p>
+     * Complexity: O(n): every entry is compared in the natural order of its key, then of its value.
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -631,6 +644,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * The least element in the natural order of the elements, which must be {@link Comparable}; the sort order of
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
+     * <p>
+     * Complexity: O(n): every entry is compared in the natural order of its key, then of its value.
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
