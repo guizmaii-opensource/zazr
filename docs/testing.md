@@ -73,6 +73,8 @@ Four types, all in `dev.zazr.test`:
 | `CheckResult` | the outcome: `Satisfied`, `Falsified` or `Erroneous` |
 | `CheckConfig` | the number of samples, the size, the seed and the discard budget |
 
+If your tests use Java modules, add `requires dev.zazr.test;` to their `module-info.java`: it reads `dev.zazr` too.
+
 ## A first property
 
 `Check.check` takes the generators and the property. The property returns `true` when it holds.

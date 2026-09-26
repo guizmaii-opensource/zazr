@@ -1966,7 +1966,7 @@ unreleased).
   | module | artifact | content |
   |---|---|---|
   | `zazr-core` | `dev.zazr:zazr-core` | everything in this document |
-  | `zazr-test` | `dev.zazr:zazr-test` | property-based testing (`Gen`, `Check`, 3.15) + law suites (below); depends on `zazr-core`. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
+  | `zazr-test` | `dev.zazr:zazr-test` | property-based testing (`Gen`, `Check`, 3.15) + law suites (below); depends on `zazr-core`. JPMS module `dev.zazr.test`, a real `module-info.java` (decided 2026-09-26, #182): `requires transitive dev.zazr`, exports `dev.zazr.test` and `dev.zazr.test.laws`; its tests run on the module path with `--add-opens` of `dev.zazr`'s collection packages, to look at the layouts they generate. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
 
   Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
