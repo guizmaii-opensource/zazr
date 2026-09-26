@@ -15,6 +15,7 @@ import dev.zazr.test.laws.MapSubject;
 import java.time.DayOfWeek;
 import java.util.EnumSet;
 import java.util.function.Function;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +28,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * states in its comments, and the text blocks of the page.
  */
 public class DocsTestingExamplesTest {
+
+    /// The example of "Running in your test suite": an ordinary JUnit test class, run here as a nested test class.
+    @Nested
+    class ListReverseTest {
+
+        @Test
+        void reversingTwiceGivesTheListBack() {
+            var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
+            Check.check(lists, list -> list.reverse().reverse().equals(list)).assertIsSatisfied();
+        }
+    }
+
+    @Test
+    void aFailingCheckIsAnAssertionErrorWithTheCounterexampleTheSampleNumberAndTheSeed() {
+        // the failure the page shows in Maven's output, after "ListShortTest.everyListIsShort:13 "
+        assertThatThrownBy(() -> Check.check(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5)
+            .assertIsSatisfied())
+            .isExactlyInstanceOf(AssertionError.class)
+            .hasMessage("falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42)");
+    }
 
     @Test
     void aFirstProperty() {
