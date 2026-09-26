@@ -9,7 +9,7 @@
     <artifactId>zazr-test</artifactId>
     <packaging>jar</packaging>
     <name>Zazr test</name>
-    <description>A property check framework for zazr.</description>
+    <description>Zazr test: property-based testing and law suites for Zazr types.</description>
     <url>https://github.com/guizmaii-opensource/zazr</url>
     <licenses>
         <license>

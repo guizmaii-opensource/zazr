@@ -9,16 +9,21 @@ new map.
 
 | Type | Representation | Iteration order | Positional methods |
 |---|---|---|---|
-| `HashMap` | a hash-based tree | not defined | none |
+| `HashMap` | a compressed hash trie (CHAMP) | not defined | none |
 | `LinkedHashMap` | a hash-based map that also records the insertion order | insertion order | yes |
 | `TreeMap` | a sorted, balanced tree of entries | the key comparator's | yes |
+
+`HashMap` is the structure of Scala's immutable `HashMap`: a tree of nodes with up to 32 slots each, where five bits
+of a mix of the key's hash code pick the slot at each level. A node stores its entries inline, keys and values side by side in one
+array, so an entry costs no object of its own. Removing an entry folds the tree back, so equal maps have the same
+shape whatever order their entries came in.
 
 ## When to choose which
 
 - `HashMap` by default.
 - `LinkedHashMap` when the order the keys were inserted in matters. Overwriting a key keeps its position. A key
   repeated in `of`, `ofEntries` or a collector does the same: it stays where it first appeared, with its last value.
-- `TreeMap` for keys in sorted order, ranges, or the least and the greatest key.
+- `TreeMap` for keys in sorted order, or the least and the greatest key.
 
 ```java
 var stock     = HashMap.of("apple", 3, "pear", 0);
@@ -58,8 +63,11 @@ Every method: [complexity page](complexity.md#maps).
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashMap`: it depends on the hashes and may change between versions.
-- `LinkedHashMap.remove` is amortised: most calls are effectively O(1), and now and then one pays O(n) to
-  clean up the insertion order.
+- `LinkedHashMap.remove` is amortised: most calls are effectively O(1), and now and then one pays O(n) to close
+  the gaps that earlier removals left in the insertion order. The average holds over a chain of removals, each on
+  the result of the previous one; removing again from an older map can pay O(n) every time.
+- After removals, `tail`, `init`, `take`, `drop` and a single step of the iterator can cost O(n): they skip past
+  the gaps first.
 - `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries; the `java.util.Map` view is `asJavaMap()`
   ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`.

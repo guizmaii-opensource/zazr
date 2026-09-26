@@ -12,12 +12,12 @@ the whole list.
 ## When to choose it
 
 When you take a sequence apart from the front, recursively or with pattern matching, or need a stack (`push`, `pop`,
-`peek`). For access by index, adding at the end or `length`, choose [`Vector`](vector.md).
+`peek`). For access by index, adding at the end or `size`, choose [`Vector`](vector.md).
 
 ```java
 var list = List.of(1, 2, 3);
 var first = switch (list) {
-    case Cons(var head, var tail) -> "head " + head + ", then " + tail.length() + " more";
+    case Cons(var head, var tail) -> "head " + head + ", then " + tail.size() + " more";
     case Nil() -> "empty";
 };
 // "head 1, then 2 more"
@@ -38,6 +38,11 @@ Every method: [complexity page](complexity.md#list).
 
 ## Sharp edges
 
-- `length()` is O(n): the list does not store its length.
-- `append`, `appendAll`, `get(i)`, `update`, `last` and `init` walk or copy the list up to the position.
+- `size()` is O(n): the list does not store its size. `equals`, `toArray()` and `stream()` count
+  the elements first too.
+- `append`, `appendAll`, `last`, `init`, `takeRight` and `dropRight` walk the whole list, and all but `last` copy it.
+- `get(i)` walks the list up to position i; `update`, `insert` and `removeAt` also copy the elements before it.
+- `take`, `drop`, `slice` and `splitAt` walk only the elements they take or skip, never the rest of the list.
+- A loop by index over `asJava()` is O(n^2), because each `get(i)` walks the list: use its iterator.
+- `containsAll` is O(n * m): each element of the argument is looked for by a walk.
 - `push` is `prepend` under its stack name.

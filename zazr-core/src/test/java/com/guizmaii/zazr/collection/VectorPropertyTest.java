@@ -2,8 +2,6 @@ package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple2;
-import com.guizmaii.zazr.collection.internal.ArrayType;
-import com.guizmaii.zazr.collection.internal.BitMappedTrie;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -16,6 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class VectorPropertyTest {
 
+    /* the width of a leaf */
+    private static final int WIDTH = 32;
+
     @Test
     public void shouldCreateAndGet() {
         for (int i = 0; i < 500; i++) {
@@ -25,53 +26,43 @@ public class VectorPropertyTest {
                 assertThat(expected.get(j)).isEqualTo(actual.get(j));
             }
 
-            assert (i == 0) || !actual.trie.type.type().isPrimitive();
-
             /* boolean */
             final com.guizmaii.zazr.collection.List<Boolean> expectedBoolean = expected.map(v -> v > 0);
-            final Vector<Boolean> actualBoolean = Vector.ofAll(ArrayType.<boolean[]> asPrimitives(boolean.class, expectedBoolean));
-            assert (i == 0) || (actualBoolean.trie.type.type() == boolean.class);
+            final Vector<Boolean> actualBoolean = Vector.ofAll(booleans(expectedBoolean));
             assertAreEqual(expectedBoolean, actualBoolean);
 
             /* byte */
             final com.guizmaii.zazr.collection.List<Byte> expectedByte = expected.map(Integer::byteValue);
-            final Vector<Byte> actualByte = Vector.ofAll(ArrayType.<byte[]> asPrimitives(byte.class, expectedByte));
-            assert (i == 0) || (actualByte.trie.type.type() == byte.class);
+            final Vector<Byte> actualByte = Vector.ofAll(bytes(expectedByte));
             assertAreEqual(expectedByte, actualByte);
 
             /* char */
             final com.guizmaii.zazr.collection.List<Character> expectedChar = expected.map(v -> (char) v.intValue());
-            final Vector<Character> actualChar = Vector.ofAll(ArrayType.<char[]> asPrimitives(char.class, expectedChar));
-            assert (i == 0) || (actualChar.trie.type.type() == char.class);
+            final Vector<Character> actualChar = Vector.ofAll(chars(expectedChar));
             assertAreEqual(expectedChar, actualChar);
 
             /* double */
             final com.guizmaii.zazr.collection.List<Double> expectedDouble = expected.map(Integer::doubleValue);
-            final Vector<Double> actualDouble = Vector.ofAll(ArrayType.<double[]> asPrimitives(double.class, expectedDouble));
-            assert (i == 0) || (actualDouble.trie.type.type() == double.class);
+            final Vector<Double> actualDouble = Vector.ofAll(doubles(expectedDouble));
             assertAreEqual(expectedDouble, actualDouble);
 
             /* float */
             final com.guizmaii.zazr.collection.List<Float> expectedFloat = expected.map(Integer::floatValue);
-            final Vector<Float> actualFloat = Vector.ofAll(ArrayType.<float[]> asPrimitives(float.class, expectedFloat));
-            assert (i == 0) || (actualFloat.trie.type.type() == float.class);
+            final Vector<Float> actualFloat = Vector.ofAll(floats(expectedFloat));
             assertAreEqual(expectedFloat, actualFloat);
 
             /* int */
-            final Vector<Integer> actualInt = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
-            assert (i == 0) || (actualInt.trie.type.type() == int.class);
+            final Vector<Integer> actualInt = Vector.ofAll(ints(expected));
             assertAreEqual(expected, actualInt);
 
             /* long */
             final com.guizmaii.zazr.collection.List<Long> expectedLong = expected.map(Integer::longValue);
-            final Vector<Long> actualLong = Vector.ofAll(ArrayType.<long[]> asPrimitives(long.class, expectedLong));
-            assert (i == 0) || (actualLong.trie.type.type() == long.class);
+            final Vector<Long> actualLong = Vector.ofAll(longs(expectedLong));
             assertAreEqual(expectedLong, actualLong);
 
             /* short */
             final com.guizmaii.zazr.collection.List<Short> expectedShort = expected.map(Integer::shortValue);
-            final Vector<Short> actualShort = Vector.ofAll(ArrayType.<short[]> asPrimitives(short.class, expectedShort));
-            assert (i == 0) || (actualShort.trie.type.type() == short.class);
+            final Vector<Short> actualShort = Vector.ofAll(shorts(expectedShort));
             assertAreEqual(expectedShort, actualShort);
         }
     }
@@ -87,15 +78,9 @@ public class VectorPropertyTest {
         }
 
         com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, 1000);
-        Vector<Integer> actual = Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected));
-        for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
-            final java.util.Iterator<Integer> expectedIterator = expected.iterator();
-            actual.trie.<int[]> visit((index, leaf, start, end) -> {
-                for (int i = start; i < end; i++) {
-                    assertThat(leaf[i]).isEqualTo(expectedIterator.next());
-                }
-                return -1;
-            });
+        Vector<Integer> actual = Vector.ofAll(ints(expected));
+        for (int drop = 0; drop <= (WIDTH + 1); drop++) {
+            assertAreEqual(actual, expected);
 
             expected = expected.tail().init();
             actual = actual.tail().init();
@@ -107,7 +92,7 @@ public class VectorPropertyTest {
         com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.empty();
         Vector<Integer> actual = Vector.empty();
 
-        for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
+        for (int drop = 0; drop <= (WIDTH + 1); drop++) {
             for (Integer value : Iterator.range(0, 1000)) {
                 expected = expected.drop(drop);
                 actual = assertAreEqual(actual, drop, Vector::drop, expected);
@@ -123,7 +108,7 @@ public class VectorPropertyTest {
         com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.empty();
         Vector<Integer> actual = Vector.empty();
 
-        for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
+        for (int drop = 0; drop <= (WIDTH + 1); drop++) {
             for (Integer value : Iterator.range(0, 500)) {
                 expected = expected.drop(drop);
                 actual = assertAreEqual(actual, drop, Vector::drop, expected);
@@ -141,14 +126,14 @@ public class VectorPropertyTest {
         for (byte depth = 0; depth <= 2; depth++) {
             final int length = 10_000;
 
-            for (int drop = 0; drop <= (BitMappedTrie.BRANCHING_FACTOR + 1); drop++) {
+            for (int drop = 0; drop <= (WIDTH + 1); drop++) {
                 com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
                 Vector<Integer> actual = Vector.ofAll(expected);
 
                 expected = expected.drop(drop); // test the `trailing` drops and the internal tree offset
                 actual = assertAreEqual(actual, drop, Vector::drop, expected);
 
-                for (int i = 0; i < actual.length(); i++) {
+                for (int i = 0; i < actual.size(); i++) {
                     final Integer newValue = mapper.apply(actual.get(i));
                     actual = actual.update(i, newValue);
                 }
@@ -164,7 +149,7 @@ public class VectorPropertyTest {
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
-        for (int i = 0; i <= expected.length(); i++) {
+        for (int i = 0; i <= expected.size(); i++) {
             final com.guizmaii.zazr.collection.List<Integer> expectedDrop = expected.drop(i);
 
             assertAreEqual(actual, i, Vector::drop, expectedDrop);
@@ -180,7 +165,7 @@ public class VectorPropertyTest {
         final Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
-        for (int i = 0; i <= expected.length(); i++) {
+        for (int i = 0; i <= expected.size(); i++) {
             final com.guizmaii.zazr.collection.List<Integer> expectedDrop = expected.dropRight(i);
 
             assertAreEqual(actual, i, Vector::dropRight, expectedDrop);
@@ -196,7 +181,7 @@ public class VectorPropertyTest {
             com.guizmaii.zazr.collection.List<Integer> expected = com.guizmaii.zazr.collection.List.range(0, length);
             Vector<Integer> actual = Vector.ofAll(expected);
 
-            for (int i = 0; i <= expected.length(); i++) {
+            for (int i = 0; i <= expected.size(); i++) {
                 expected = expected.slice(1, expected.size() - 1);
                 actual = assertAreEqual(actual, i, (a, p) -> a.slice(1, a.size() - 1), expected);
             }
@@ -215,7 +200,7 @@ public class VectorPropertyTest {
 
                 if (percent(random) < 20) {
                     expected = com.guizmaii.zazr.collection.List.ofAll(Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
-                    actual = (percent(random) < 30) ? Vector.narrow(Vector.ofAll(ArrayType.<int[]> asPrimitives(int.class, expected))) : Vector.ofAll(expected);
+                    actual = (percent(random) < 30) ? Vector.narrow(Vector.ofAll(ints(expected))) : Vector.ofAll(expected);
                     assertAreEqual(expected, actual);
                     history = history.append(Tuple.of(expected, actual));
                 }
@@ -227,7 +212,7 @@ public class VectorPropertyTest {
                     history = history.append(Tuple.of(expected, actual));
                 }
                 if (percent(random) < 10) {
-                    Iterable<Object> values = randomValues(random, random.nextInt(2 * BitMappedTrie.BRANCHING_FACTOR));
+                    Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.appendAll(values);
 
                     values = (percent(random) < 50) ? Iterator.ofAll(values.iterator()) : values;  /* not traversable again */
@@ -242,7 +227,7 @@ public class VectorPropertyTest {
                     history = history.append(Tuple.of(expected, actual));
                 }
                 if (percent(random) < 10) {
-                    Iterable<Object> values = randomValues(random, random.nextInt(2 * BitMappedTrie.BRANCHING_FACTOR));
+                    Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.prependAll(values);
 
                     values = (percent(random) < 50) ? Iterator.ofAll(values) : values;  /* not traversable again */
@@ -259,7 +244,7 @@ public class VectorPropertyTest {
 
                 if (percent(random) < 10) {
                     final int index = random.nextInt(expected.size() + 1);
-                    Iterable<Object> values = randomValues(random, random.nextInt(2 * BitMappedTrie.BRANCHING_FACTOR));
+                    Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.insertAll(index, values);
 
                     values = (percent(random) < 50) ? Iterator.ofAll(values) : values;  /* not traversable again */
@@ -356,5 +341,77 @@ public class VectorPropertyTest {
         final java.util.List<?> actualList = new java.util.ArrayList<>(actual.asJava());
         final java.util.List<?> expectedList = new java.util.ArrayList<>(expected.asJava());
         assertThat(actualList).isEqualTo(expectedList); // a lot faster than `hasSameElementsAs`
+    }
+
+    private static boolean[] booleans(com.guizmaii.zazr.collection.List<?> values) {
+        final boolean[] array = new boolean[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Boolean) value;
+        }
+        return array;
+    }
+
+    private static byte[] bytes(com.guizmaii.zazr.collection.List<?> values) {
+        final byte[] array = new byte[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Byte) value;
+        }
+        return array;
+    }
+
+    private static char[] chars(com.guizmaii.zazr.collection.List<?> values) {
+        final char[] array = new char[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Character) value;
+        }
+        return array;
+    }
+
+    private static double[] doubles(com.guizmaii.zazr.collection.List<?> values) {
+        final double[] array = new double[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Double) value;
+        }
+        return array;
+    }
+
+    private static float[] floats(com.guizmaii.zazr.collection.List<?> values) {
+        final float[] array = new float[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Float) value;
+        }
+        return array;
+    }
+
+    private static int[] ints(com.guizmaii.zazr.collection.List<?> values) {
+        final int[] array = new int[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Integer) value;
+        }
+        return array;
+    }
+
+    private static long[] longs(com.guizmaii.zazr.collection.List<?> values) {
+        final long[] array = new long[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Long) value;
+        }
+        return array;
+    }
+
+    private static short[] shorts(com.guizmaii.zazr.collection.List<?> values) {
+        final short[] array = new short[values.size()];
+        int i = 0;
+        for (Object value : values) {
+            array[i++] = (Short) value;
+        }
+        return array;
     }
 }

@@ -26,7 +26,7 @@ public interface StreamModule {
             }
             // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
             final Stream<T> _slice = toStream(slice);
-            _slice.length();
+            _slice.size();
             if (_slice.isEmpty()) {
                 // the last position at or before end: the length when this Stream is shorter; no cell past end - 1 is
                 // forced
@@ -116,6 +116,9 @@ public interface StreamModule {
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Cons<T> self;
+        // set once mapper returned null: the tail is not memoised on a failure, so every later force fails the same
+        // way instead of calling mapper again
+        private boolean failed;
 
         public AppendSelf(Cons<T> self, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
             this.self = appendAll(self, mapper);
@@ -124,7 +127,15 @@ public interface StreamModule {
         private Cons<T> appendAll(Cons<T> stream, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
             return (Cons<T>) Stream.cons(stream.head(), () -> {
                 final Stream<T> tail = stream.tail();
-                return tail.isEmpty() ? mapper.apply(self) : appendAll((Cons<T>) tail, mapper);
+                if (!tail.isEmpty()) {
+                    return appendAll((Cons<T>) tail, mapper);
+                }
+                final Stream<T> mapped = failed ? null : mapper.apply(self);
+                if (mapped == null) {
+                    failed = true;
+                    throw new NullPointerException("Stream.appendSelf: mapper returned null");
+                }
+                return mapped;
             });
         }
 
@@ -206,18 +217,36 @@ public interface StreamModule {
 
         final Function<? super T, ? extends Iterable<? extends U>> mapper;
         final Iterator<? extends T> inputs;
+        final String nullResult;
+        // set once mapper returned null: its input is consumed, so every later call fails the same way instead of
+        // going on with the next input
+        boolean failed;
         java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
 
+        // for a mapper that never returns null, such as the identity over inputs that reject null
         public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
+            this(inputs, mapper, "FlatMapIterator: mapper returned null");
+        }
+
+        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper, String nullResult) {
             this.inputs = inputs;
+            this.nullResult = nullResult;
             this.mapper = mapper;
         }
 
         @Override
         public boolean hasNext() {
+            if (failed) {
+                throw new NullPointerException(nullResult);
+            }
             boolean currentHasNext;
             while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
-                current = mapper.apply(inputs.next()).iterator();
+                final Iterable<? extends U> mapped = mapper.apply(inputs.next());
+                if (mapped == null) {
+                    failed = true;
+                    throw new NullPointerException(nullResult);
+                }
+                current = mapped.iterator();
             }
             return currentHasNext;
         }

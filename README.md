@@ -21,7 +21,8 @@
   <a href="https://zazr.dev/"><b>Website</b></a> ·
   <a href="https://zazr.dev/getting-started/">Getting started</a> ·
   <a href="https://zazr.dev/collections/complexity/">Complexity</a> ·
-  <a href="https://zazr.dev/principles/">Design</a>
+  <a href="https://zazr.dev/principles/">Design</a> ·
+  <a href="https://github.com/guizmaii-opensource/zazr/releases">Releases</a>
 </p>
 
 > [!WARNING]
@@ -54,6 +55,8 @@ API, not an afterthought. Its design comes from modern Scala's collections and f
   constant time, and the way back does not copy either.
 - **Names that say what happens.** `zip`, `collectAll`, `catchAll`, `mapBoth`: the vocabulary of ZIO, with no theory
   to learn first.
+- **[AI ready.](https://zazr.dev/ai-assistant/)** An [Agent Skill](skills/zazr) teaches your coding assistant to
+  write idiomatic Zazr code instead of Vavr from memory.
 
 ## Installation
 
@@ -90,7 +93,7 @@ dependencies {
 }
 ```
 
-`com.guizmaii:zazr-test` adds property-based testing (`Arbitrary`, `Gen`, `Checkable`).
+`com.guizmaii:zazr-test` adds property-based testing (`Gen`, `Check`) and ready-made laws.
 
 ## A short tour
 
@@ -132,4 +135,5 @@ make test-one TEST=VectorTest MODULE=zazr-core
 ## License
 
 Apache License 2.0. Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr), copyright its authors; see
-[NOTICE](NOTICE). Coming from Vavr? [This page](https://zazr.dev/vavr/) lists what changed.
+[NOTICE](NOTICE). Coming from Vavr? [This page](https://zazr.dev/vavr/) lists what changed, and the
+[release notes](https://github.com/guizmaii-opensource/zazr/releases) list what each release changes.

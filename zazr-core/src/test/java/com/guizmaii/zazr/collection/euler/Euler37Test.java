@@ -44,7 +44,7 @@ public class Euler37Test {
             return false;
         }
         final Vector<Character> primeSeq = Vector.ofAll(Integer.toString(prime).toCharArray());
-        return List.rangeClosed(1, primeSeq.length() - 1)
+        return List.rangeClosed(1, primeSeq.size() - 1)
                 .flatMap(i -> List.of(primeSeq.drop(i), primeSeq.dropRight(i)))
                 .map(Vector::mkString)
                 .map(Long::valueOf)

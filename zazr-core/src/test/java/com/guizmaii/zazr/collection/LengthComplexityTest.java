@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /**
- * {@code List.Cons.length()} walks the list (a record has no field for a cached length), so every caller
+ * {@code List.Cons.size()} walks the list (a record has no field for a cached size), so every caller
  * must measure a length once, never per element. Each case below is milliseconds when linear and times out
  * when quadratic. The class runs alone, so that the time bound does not measure the other test classes running in
  * parallel.
@@ -24,17 +24,17 @@ public class LengthComplexityTest {
     @Test
     public void shouldDropRightAndTakeRightOfListInLinearTime() {
         assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(List.range(0, N).dropRight(K).length()).isEqualTo(N - K);
-            assertThat(List.range(0, N).takeRight(K).length()).isEqualTo(K);
+            assertThat(List.range(0, N).dropRight(K).size()).isEqualTo(N - K);
+            assertThat(List.range(0, N).takeRight(K).size()).isEqualTo(K);
         });
     }
 
     @Test
     public void shouldDropRightAndTakeRightOfQueueInLinearTime() {
         assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(Queue.ofAll(List.range(0, N)).dropRight(K).length()).isEqualTo(N - K);
-            assertThat(Queue.ofAll(List.range(0, N)).takeRight(K).length()).isEqualTo(K);
-            assertThat(Queue.<Integer>empty().enqueueAll(List.range(0, N)).dropRight(K).length()).isEqualTo(N - K);
+            assertThat(Queue.ofAll(List.range(0, N)).dropRight(K).size()).isEqualTo(N - K);
+            assertThat(Queue.ofAll(List.range(0, N)).takeRight(K).size()).isEqualTo(K);
+            assertThat(Queue.<Integer>empty().enqueueAll(List.range(0, N)).dropRight(K).size()).isEqualTo(N - K);
         });
     }
 
@@ -96,7 +96,7 @@ public class LengthComplexityTest {
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
             assertThat(ones.lastIndexOfSlice(List.of(1))).isEqualTo(size - 1);
             assertThat(ones.lastIndexOfSlice(List.of(1), size / 2)).isEqualTo(size / 2);
-            assertThat(range.combinations(1).length()).isEqualTo(size);
+            assertThat(range.combinations(1).size()).isEqualTo(size);
         });
     }
 
@@ -110,7 +110,7 @@ public class LengthComplexityTest {
             for (int i = 0; i < 100; i++) {
                 assertThat(queue.startsWith(one)).isTrue();
                 assertThat(queue.startsWith(one, 0)).isTrue();
-                assertThat(queue.zip(one).length()).isEqualTo(1);
+                assertThat(queue.zip(one).size()).isEqualTo(1);
                 assertThat(queue.zipWith(one, Integer::sum).head()).isEqualTo(0);
                 assertThat(queue.prefixLength(x -> false)).isEqualTo(0);
                 assertThat(queue.segmentLength(x -> false, 0)).isEqualTo(0);
@@ -128,7 +128,7 @@ public class LengthComplexityTest {
             for (int i = 0; i < 6_000; i++) {
                 queue = queue.init();
             }
-            assertThat(queue.length()).isEqualTo(MILLION - 6_000);
+            assertThat(queue.size()).isEqualTo(MILLION - 6_000);
             assertThat(queue.last()).isEqualTo(MILLION - 6_001);
         });
     }

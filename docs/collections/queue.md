@@ -1,11 +1,11 @@
 ---
-description: Queue, a first-in, first-out sequence - amortised O(1) enqueue and dequeue.
+description: Queue, a first-in, first-out sequence - O(1) enqueue, amortised O(1) dequeue.
 ---
 
 # `Queue`
 
-A first-in, first-out sequence. `enqueue` adds at the end and `dequeue` takes from the front, both in amortised O(1):
-most calls are O(1), and now and then a `dequeue` pays O(n) to reorder the queue.
+A first-in, first-out sequence. `enqueue` adds at the end in O(1). `dequeue` takes from the front in amortised O(1):
+most calls are O(1), and now and then one pays O(n) to put the elements added at the end in order.
 
 ## When to choose it
 
@@ -40,4 +40,5 @@ Every method: [complexity page](complexity.md#queue).
 - `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
 - The amortised cost holds when each `dequeue` works on the queue the previous one returned. Calling `dequeue`
   again and again on the same old queue can pay the O(n) step every time.
-- Creating an `iterator()` can cost O(n).
+- Creating an `iterator()` can cost O(n), and so can `get(i)` for a small `i`: on a queue built by `enqueue`, most
+  elements are still waiting at the end, in reverse order. `size()` counts the elements; `isEmpty()` is O(1).

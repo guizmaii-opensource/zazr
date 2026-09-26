@@ -58,6 +58,6 @@ public class Euler27Test {
         return Stream.from(0L)
                 .map(n -> (long) Math.pow(n, 2) + a * n + b)
                 .takeWhile(Utils.MEMOIZED_IS_PRIME::apply)
-                .length();
+                .size();
     }
 }

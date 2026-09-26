@@ -41,7 +41,7 @@ public class Euler18Test {
     private final static Function3<Vector<Vector<Integer>>, Integer, Integer, Integer> naive = Function3.of(
             (Vector<Vector<Integer>> tr, Integer row, Integer col) -> {
                 int value = tr.get(row).get(col);
-                if (row == tr.length() - 1) {
+                if (row == tr.size() - 1) {
                     return tr.get(row).get(col);
                 } else {
                     return value + Math.max(Euler18Test.naive.apply(tr, row + 1, col), Euler18Test.naive.apply(tr, row + 1, col + 1));

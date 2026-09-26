@@ -7,8 +7,8 @@ description: Which Zazr collection to choose, and what the collections have in c
 Every Zazr collection is immutable. An operation returns a new collection and shares what it can with the old
 one, which is never modified.
 
-Each type declares its own methods, with its own return types, and every positional method documents its cost. The
-[complexity page](complexity.md) lists them all.
+Each type declares its own methods, with its own return types, and every method whose cost depends on the size
+documents it. The [complexity page](complexity.md) lists them all.
 
 ## Which one to choose
 
@@ -17,18 +17,21 @@ Each type declares its own methods, with its own return types, and every positio
 | a sequence, by default | [`Vector`](vector.md) | effectively O(1) `get`, `update`, `append`, `prepend`, `take`, `drop` |
 | a sequence that has at least one element | [`NonEmptyVector`](../non-empty-vector.md) | `head`, `max`, `reduce` cannot fail |
 | to take a sequence apart head first, or a stack | [`List`](list.md) | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
-| first in, first out | [`Queue`](queue.md) | amortised O(1) `enqueue` and `dequeue` |
-| a sequence computed on demand, possibly infinite | [`Stream`](stream.md) | lazy and memoised |
+| first in, first out | [`Queue`](queue.md) | O(1) `enqueue`, amortised O(1) `dequeue` |
+| a sequence computed on demand, possibly infinite | [`Stream`](stream.md) | each element computed once, when first read |
 | a set, by default | [`HashSet`](sets.md) | effectively O(1) `contains`, `add`, `remove` |
 | a set in insertion order | [`LinkedHashSet`](sets.md) | a `HashSet` plus the insertion order, with positional methods |
 | a sorted set | [`TreeSet`](sets.md) | O(log n) lookups and updates, positional methods in comparator order |
+| a set that has at least one element | [`NonEmptySet`, `NonEmptySortedSet`](../non-empty-set-map.md) | `max`, `reduce` (and `head` on the sorted one) cannot fail |
 | a map, by default | [`HashMap`](maps.md) | effectively O(1) `get`, `put`, `remove` |
 | a map in insertion order | [`LinkedHashMap`](maps.md) | a `HashMap` plus the insertion order, with positional methods |
 | a sorted map | [`TreeMap`](maps.md) | O(log n) lookups and updates, positional methods in key order |
+| a map that has at least one entry | [`NonEmptyMap`, `NonEmptySortedMap`](../non-empty-set-map.md) | `keySet` and `values` stay non-empty, `max` and `reduce` cannot fail |
 
 ## What they share
 
-Every collection except `NonEmptyVector` implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`,
+Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their sorted variants)
+implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`,
 `contains`, `find`, `foldLeft`, `mkString`, the conversions such as `toVector` and `stream()`, and the
 [`asJava()` view](../java-interop.md).
 
@@ -56,7 +59,8 @@ var same       = Vector.of(1, 2, 3).equals(sortedList);
 ```
 
 A `Vector`, `List`, `Queue` or `Stream` equals another of these four when they hold equal elements in the same
-order. Sets equal sets and maps equal maps. A `NonEmptyVector` equals only another `NonEmptyVector`.
+order. Sets equal sets and maps equal maps. A `NonEmptyVector` equals only another `NonEmptyVector`; a non-empty set
+equals only a non-empty set, and a non-empty map only a non-empty map.
 
 ## Nulls
 
@@ -68,6 +72,12 @@ var missing   = HashMap.of("a", 1).get("b");               // Option<Integer>
 var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);  // Option<Integer>
 // None, Some(4)
 ```
+
+A function that returns `null` where a collection needs an `Option`, a tuple or an iterable, such as the mapper of
+`flatMap` or the function of `toMap`, throws a `NullPointerException` naming the method:
+`Vector.flatMap: mapper returned null`. So does a `groupBy` classifier. A function that returns a plain element, such
+as the mapper of `map`, is rejected like any other `null` element: `Vector: element is null`. A `Stream` throws when
+it reaches that element.
 
 ## Complexity
 

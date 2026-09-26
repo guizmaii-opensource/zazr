@@ -1,11 +1,12 @@
 package com.guizmaii.zazr.collection;
 
 import com.guizmaii.zazr.*;
+import com.guizmaii.zazr.collection.internal.BitmapIndexedSetNode;
 import com.guizmaii.zazr.collection.internal.Collections;
-import com.guizmaii.zazr.collection.internal.HashArrayMappedTrie;
-import com.guizmaii.zazr.collection.internal.HashArrayMappedTrieBuilder;
+import com.guizmaii.zazr.collection.internal.HashSetBuilder;
 import com.guizmaii.zazr.collection.internal.Iterator;
 import com.guizmaii.zazr.collection.internal.JavaConverters;
+import com.guizmaii.zazr.collection.internal.SetNode;
 import com.guizmaii.zazr.collection.internal.SetViews;
 import com.guizmaii.zazr.control.Either;
 import com.guizmaii.zazr.control.Option;
@@ -16,18 +17,30 @@ import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code HashSet} implementation.
+ * An immutable {@code HashSet} implementation based on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer
+ * and Vinju, <em>Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections</em>, OOPSLA 2015),
+ * ported from the {@code HashSet} of the Scala 3 standard library. Each node keeps its elements inline, with no object
+ * per element.
+ * <p>
+ * Of two equal elements, a HashSet keeps the one it received first: {@link #add(Object)}, {@link #addAll(Iterable)},
+ * {@link #union(Set)}, the factories, the collector and the {@link Builder} never replace an element already there,
+ * and {@link #intersect(Set)} keeps the elements of this set.
+ * <p>
+ * Complexity: lookups, insertions and removals are effectively O(1); an insertion or a removal copies a few small
+ * arrays and shares the rest with the original set. The methods without a note of their own (map, filter, the folds,
+ * the conversions) walk the elements once, O(n), and those that build a new set insert each kept element in
+ * effectively O(1).
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
  */
 public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
-    private static final HashSet<?> EMPTY = new HashSet<>(HashArrayMappedTrie.empty());
+    private static final HashSet<?> EMPTY = new HashSet<>(SetNode.empty());
 
-    private final HashArrayMappedTrie<T, T> tree;
+    private final BitmapIndexedSetNode<T> tree;
 
-    private HashSet(HashArrayMappedTrie<T, T> tree) {
+    private HashSet(BitmapIndexedSetNode<T> tree) {
         this.tree = tree;
     }
 
@@ -106,12 +119,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @SafeVarargs
     public static <T extends @Nullable Object> HashSet<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        HashArrayMappedTrie<T, T> tree = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<T> tree = SetNode.empty();
         for (T element : elements) {
             Objects.requireNonNull(element, "HashSet.of: element is null");
-            tree = tree.put(element, element);
+            tree = tree.updated(element, false);
         }
-        return tree.isEmpty() ? empty() : new HashSet<>(tree);
+        return wrap(tree);
     }
 
     /**
@@ -161,13 +174,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         } else if (JavaConverters.underlying(elements) instanceof HashSet<?> underlying) {
             return (HashSet<T>) underlying;
         } else {
-            final HashArrayMappedTrieBuilder<T, T> builder = new HashArrayMappedTrieBuilder<>("HashSet.Builder");
+            final HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
             for (T element : elements) {
                 Objects.requireNonNull(element, "HashSet: element is null");
-                builder.put(element, element);
+                builder.add(element);
             }
-            final HashArrayMappedTrie<T, T> tree = builder.result();
-            return tree.isEmpty() ? empty() : new HashSet<>(tree);
+            return wrap(builder.result());
         }
     }
 
@@ -188,7 +200,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * instance method that the receiver's element type be a collection. The outer iterable and each inner one are
      * iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: O(n) for n inner elements in total, one effectively O(1) insertion each.
+     * Complexity: O(m) for m inner elements in total, one effectively O(1) insertion each.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -197,11 +209,11 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public static <T extends @Nullable Object> HashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        HashArrayMappedTrie<T, T> all = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<T> all = SetNode.empty();
         for (Iterable<? extends T> inner : nested) {
             all = addAll(all, inner);
         }
-        return all.isEmpty() ? empty() : new HashSet<>(all);
+        return wrap(all);
     }
 
     /**
@@ -631,19 +643,22 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup, then a path copy of the trie when the element is new).
+     * Complexity: effectively O(1): one hash lookup; a new element also costs a copy of a few small arrays, the rest
+     * is shared with this set.
      */
     @Override
     public HashSet<T> add(T element) {
         Objects.requireNonNull(element, "HashSet.add: element is null");
-        return contains(element) ? this : new HashSet<>(tree.put(element, element));
+        final BitmapIndexedSetNode<T> result = tree.updated(element, false);
+        return result == tree ? this : new HashSet<>(result);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for m elements, each an effectively O(1) insertion; O(1) when this set is empty and {@code
-     * elements} is a HashSet, which is returned as is.
+     * Complexity: O(n + m) for m elements. A HashSet is merged with this set part by part, and a part only one of them
+     * holds is shared without being walked; other elements cost O(m), one effectively O(1) insertion each. O(1) when
+     * this set is empty and {@code elements} is a HashSet, which is returned as is.
      */
     @Override
     public HashSet<T> addAll(Iterable<? extends T> elements) {
@@ -652,8 +667,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             @SuppressWarnings("unchecked")
             final HashSet<T> set = (HashSet<T>) elements;
             return set;
+        } else if (elements instanceof HashSet<?> set) {
+            @SuppressWarnings("unchecked")
+            final HashSet<T> that = (HashSet<T>) set;
+            return concat(that);
         }
-        final HashArrayMappedTrie<T, T> that = addAll(tree, elements);
+        final BitmapIndexedSetNode<T> that = addAll(tree, elements);
         if (that.size() == tree.size()) {
             return this;
         } else {
@@ -664,17 +683,20 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup).
+     * Complexity: effectively O(1): one hash lookup.
      */
     @Override
     public boolean contains(T element) {
-        return tree.containsKey(element);
+        return tree.contains(element);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for a set of m elements (a hash set of them, then one filter pass).
+     * Complexity: O(n + m) for a set of m elements; O(n) when it is a HashSet. Another kind of set is put in a hash
+     * set, then every element of this set is checked against it: the whole set is walked even to remove one element,
+     * which {@link #remove(Object)} does in effectively O(1). A HashSet is compared with this set part by part, and a
+     * part of this set that the argument does not reach is kept whole, not walked.
      */
     @Override
     public HashSet<T> diff(Set<? extends T> elements) {
@@ -686,24 +708,59 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per element; the parts that lose no element are shared, not copied.
+     */
     @Override
     public HashSet<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final HashSet<T> filtered = HashSet.ofAll(Iterator.ofAll(this).filter(predicate));
-
-        if (filtered.isEmpty()) {
-            return empty();
-        } else if (filtered.size() == size()) {
-            return this;
-        } else {
-            return filtered;
-        }
+        return filtered(predicate, true);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per element; the parts that lose no element are shared, not copied.
+     */
     @Override
     public HashSet<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return filter(predicate.negate());
+        return filtered(predicate, false);
+    }
+
+    // the elements for which the predicate answers `keep`, filtered node by node; this set when that is all of them
+    private HashSet<T> filtered(Predicate<? super T> predicate, boolean keep) {
+        final BitmapIndexedSetNode<T> result = tree.filter(predicate, keep);
+        return (result == tree && result.size() != 0) ? this : wrap(result);
+    }
+
+    // the union with a HashSet, node by node: of equal elements, the one of this set is kept, as additions keep it
+    // (this set is the right side of the concatenation, whose elements win); this set when no element is new
+    private HashSet<T> concat(HashSet<T> that) {
+        if (that.isEmpty()) {
+            return this;
+        }
+        final BitmapIndexedSetNode<T> result = that.tree.concat(tree, 0);
+        return result.size() == tree.size() ? this : new HashSet<>(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m) for m elements, each an effectively O(1) lookup; a HashSet is compared with this set part by
+     * part.
+     */
+    @Override
+    public boolean containsAll(Iterable<? extends T> elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        if (elements instanceof HashSet<?> set) {
+            @SuppressWarnings("unchecked")
+            final HashSet<T> that = (HashSet<T>) set;
+            return that.isEmpty() || (that.size() <= size() && that.tree.subsetOf(tree, 0));
+        }
+        return Set.super.containsAll(elements);
     }
 
     @Override
@@ -712,21 +769,22 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final HashArrayMappedTrie<U, U> that = foldLeft(HashArrayMappedTrie.empty(),
-                    (tree, t) -> addAll(tree, mapper.apply(t)));
+            final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(),
+                    (tree, t) -> addAll(tree, Objects.requireNonNull(mapper.apply(t), "HashSet.flatMap: mapper returned null")));
             return new HashSet<>(that);
         }
     }
 
     @Override
     public <C extends @Nullable Object> Map<C, HashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, HashSet::ofAll);
+        return Collections.groupBy(this, classifier, HashSet::ofAll, "HashSet.groupBy: classifier returned null");
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for a set of m elements (the smaller set is filtered against a hash set of the larger one).
+     * Complexity: O(m) for a set of m elements; O(min(n, m)) when it is a HashSet: the elements of the smaller set are
+     * checked against the larger one. Another kind of set is first copied into a hash set.
      */
     @Override
     public HashSet<T> intersect(Set<? extends T> elements) {
@@ -738,17 +796,35 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             if (size <= elements.size()) {
                 return retainAll(elements);
             } else {
-                final HashSet<T> results = HashSet.<T> ofAll(elements).retainAll(this);
-                return (size == results.size()) ? this : results;
+                // the smaller side is walked, and the element of this set kept for each of its elements
+                final HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
+                for (T element : elements) {
+                    final T kept = tree.find(element);
+                    if (kept != null) {
+                        builder.add(kept);
+                    }
+                }
+                final BitmapIndexedSetNode<T> result = builder.result();
+                return (size == result.size()) ? this : wrap(result);
             }
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1).
+     */
     @Override
     public boolean isEmpty() {
-        return tree.isEmpty();
+        return tree.size() == 0;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the size is stored, not counted.
+     */
     @Override
     public int size() {
         return tree.size();
@@ -761,7 +837,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public java.util.Iterator<T> iterator() {
-        return tree.keysIterator();
+        return tree.iterator();
     }
 
     /**
@@ -771,7 +847,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * copy is {@code new java.util.HashSet<>(set.asJava())}; {@code HashSet.ofAll} given the view returns this set
      * without copying.
      * <p>
-     * Complexity: O(1); {@code contains} on the view is effectively O(1).
+     * Complexity: O(1): nothing is copied. {@code contains} on the view is effectively O(1).
      *
      * @return an unmodifiable {@code java.util.Set} view
      */
@@ -786,9 +862,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final HashArrayMappedTrie<U, U> that = foldLeft(HashArrayMappedTrie.empty(), (tree, t) -> {
+            final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(), (tree, t) -> {
                 final U u = mapper.apply(t);
-                return tree.put(u, u);
+                return put(tree, u);
             });
             return new HashSet<>(that);
         }
@@ -800,12 +876,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         }
-        HashArrayMappedTrie<U, U> that = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<U> that = SetNode.empty();
         for (T t : this) {
             final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "HashSet.collect: mapper returned null");
             if (collected.isDefined()) {
                 final U u = collected.get();
-                that = that.put(u, u);
+                that = put(that, u);
             }
         }
         return new HashSet<>(that);
@@ -823,7 +899,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     @Override
     public HashSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "HashSet.orElse: supplier returned null")) : this;
     }
 
     @Override
@@ -836,7 +913,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * generalisation of {@link #partition(Predicate)}. One pass, {@code f} called once per element, no intermediate
      * collection of {@code Either}s. Values equal on one side are kept once.
      * <p>
-     * Complexity: O(n), one effectively O(1) insertion per element.
+     * Complexity: O(n): one effectively O(1) insertion per element.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -846,15 +923,15 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
-        HashArrayMappedTrie<L, L> lefts = HashArrayMappedTrie.empty();
-        HashArrayMappedTrie<R, R> rights = HashArrayMappedTrie.empty();
+        BitmapIndexedSetNode<L> lefts = SetNode.empty();
+        BitmapIndexedSetNode<R> rights = SetNode.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "HashSet.partitionMap: f returned null")) {
-                case Either.Left(var left) -> lefts = lefts.put(left, left);
-                case Either.Right(var right) -> rights = rights.put(right, right);
+                case Either.Left(var left) -> lefts = put(lefts, left);
+                case Either.Right(var right) -> rights = put(rights, right);
             }
         }
-        return Tuple.of(lefts.isEmpty() ? empty() : new HashSet<>(lefts), rights.isEmpty() ? empty() : new HashSet<>(rights));
+        return Tuple.of(wrap(lefts), wrap(rights));
     }
 
     @Override
@@ -867,32 +944,43 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one hash lookup and a path copy of the trie).
+     * Complexity: effectively O(1): one hash lookup, then a copy of a few small arrays; the rest is shared with this
+     * set.
      */
     @Override
     public HashSet<T> remove(T element) {
-        final HashArrayMappedTrie<T, T> newTree = tree.remove(element);
-        return (newTree == tree) ? this : new HashSet<>(newTree);
+        final BitmapIndexedSetNode<T> newTree = tree.removed(element);
+        return (newTree == tree) ? this : wrap(newTree);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for m given elements (a hash set of them, then one filter pass).
+     * Complexity: O(n + m) for m given elements; O(n) when they are a HashSet. Other elements are put in a hash set,
+     * then every element of this set is checked against it: the whole set is walked even to remove one element,
+     * which {@link #remove(Object)} does in effectively O(1). A HashSet is compared with this set part by part, and a
+     * part of this set that the argument does not reach is kept whole, not walked.
      */
     @Override
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
+        if (elements instanceof HashSet<?> set && !isEmpty()) {
+            @SuppressWarnings("unchecked")
+            final HashSet<T> that = (HashSet<T>) set;
+            // node by node: each subtree of this set against the one at the same place in `that`
+            final BitmapIndexedSetNode<T> result = that.isEmpty() ? tree : tree.diff(that.tree, 0);
+            return result == tree ? this : wrap(result);
+        }
         return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1) (one lookup, one removal and one insertion).
+     * Complexity: effectively O(1): one lookup, one removal and one insertion.
      */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
-        if (tree.containsKey(currentElement)) {
+        if (tree.contains(currentElement)) {
             return remove(currentElement).add(newElement);
         } else {
             return this;
@@ -902,7 +990,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(1), that of {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: effectively O(1), as {@link #replace(Object, Object)}: a set holds an element once.
      */
     @Override
     public HashSet<T> replaceAll(T currentElement, T newElement) {
@@ -912,7 +1000,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for m given elements (a hash set of them, then one filter pass).
+     * Complexity: O(n + m) for m given elements; O(n) when they are a HashSet. The m elements are put in a hash set
+     * (unless they already are one), then every element of this set is checked against it.
      */
     @Override
     public HashSet<T> retainAll(Iterable<? extends T> elements) {
@@ -922,8 +1011,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion; this set or a HashSet argument is
-     * returned as is when the other side is empty.
+     * Complexity: O(n + m) for a set of m elements. A HashSet is merged with this set part by part, and a part only
+     * one of them holds is shared without being walked; another kind of set costs O(m), one effectively O(1)
+     * insertion per element. This set, or a HashSet argument, is returned as is when the other side is empty.
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -937,8 +1027,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             }
         } else if (elements.isEmpty()) {
             return this;
+        } else if (elements instanceof HashSet<?> set) {
+            return concat((HashSet<T>) set);
         } else {
-            final HashArrayMappedTrie<T, T> that = addAll(tree, elements);
+            final BitmapIndexedSetNode<T> that = addAll(tree, elements);
             if (that.size() == tree.size()) {
                 return this;
             } else {
@@ -947,16 +1039,46 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * Narrows to a {@link NonEmptySet}, whose operations that cannot empty it keep that type and whose {@code max},
+     * {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1).
+     *
+     * @return {@code Some(nonEmptySet)} sharing this set's elements, or {@code None} if this set is empty
+     */
+    public Option<NonEmptySet<T>> toNonEmptySet() { return NonEmptySet.fromSet(this); }
+
     // -- Object
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n log n) against a TreeSet, O(n) against a HashSet or a LinkedHashSet: each element of this set is
+     * looked up in the other one. O(1) when the sizes differ. Against another HashSet, the two are compared part by
+     * part, and a part of a different size or shape answers without looking at an element.
+     */
     @Override
     public boolean equals(@Nullable Object o) {
+        if (o instanceof HashSet<?> other) {
+            try {
+                return this == other || SetNode.sameElements(tree, other.tree);
+            } catch (ClassCastException e) {
+                return false;
+            }
+        }
         return Collections.equals(this, o);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the sum of the hashes of the elements is stored.
+     */
     @Override
     public int hashCode() {
-        return Collections.hashUnordered(this);
+        // the hash of every set: 1 plus the sum of the hashes of the elements
+        return 1 + tree.keyHashSum();
     }
 
     @Override
@@ -966,13 +1088,13 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     /**
      * A mutable, single-use accumulator that builds a {@link HashSet}. It is a transient trie: the internal nodes it
-     * creates are updated in place while it is open, so an addition allocates the new leaf and little else, where a
-     * persistent addition copies every node on the path from the root. The nodes of a set passed to
+     * creates are updated in place while it is open, so an addition allocates little more than the grown node array,
+     * where a persistent addition copies every node on the path from the root. The nodes of a set passed to
      * {@link #addAll(Iterable)} are shared, not copied, and copied only when a later addition goes through them: that
      * set never changes. The HashSet returned by {@link #result()} is the one {@link HashSet#ofAll(Iterable)} of the
      * same elements gives, and never changes either.
      * <p>
-     * Of equal elements, the one added last is kept, as with {@link HashSet#ofAll(Iterable)}. Not thread-safe. After
+     * Of equal elements, the one added first is kept, as with {@link HashSet#add(Object)}. Not thread-safe. After
      * {@link #result()} has been called, every method throws {@link IllegalStateException}; create a new builder
      * instead.
      *
@@ -980,13 +1102,13 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public static final class Builder<T extends @Nullable Object> {
 
-        private final HashArrayMappedTrieBuilder<T, T> trie = new HashArrayMappedTrieBuilder<>("HashSet.Builder");
+        private final HashSetBuilder<T> trie = new HashSetBuilder<>("HashSet.Builder");
 
         private Builder() {
         }
 
         /**
-         * Adds one element, replacing an equal one.
+         * Adds one element, unless an equal one is already there: that one is kept.
          *
          * @param element the element, never null
          * @return this builder
@@ -996,7 +1118,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         public Builder<T> add(T element) {
             trie.checkOpen();
             Objects.requireNonNull(element, "HashSet.Builder.add: element is null");
-            trie.put(element, element);
+            trie.add(element);
             return this;
         }
 
@@ -1016,9 +1138,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             trie.checkOpen();
             Objects.requireNonNull(elements, "elements is null");
             if (elements instanceof HashSet<?> set) {
-                trie.putAll(((HashSet<T>) set).tree);
+                trie.addAll(((HashSet<T>) set).tree);
             } else if (JavaConverters.underlying(elements) instanceof HashSet<?> set) {
-                trie.putAll(((HashSet<T>) set).tree);
+                trie.addAll(((HashSet<T>) set).tree);
             } else {
                 for (T element : elements) {
                     add(element);
@@ -1042,19 +1164,29 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public HashSet<T> result() {
-            final HashArrayMappedTrie<T, T> tree = trie.result();
-            return tree.isEmpty() ? empty() : new HashSet<>(tree);
+            return wrap(trie.result());
         }
     }
 
-    private static <T extends @Nullable Object> HashArrayMappedTrie<T, T> addAll(HashArrayMappedTrie<T, T> initial,
+    // persistent additions, each keeping an equal element already there
+    private static <T extends @Nullable Object> BitmapIndexedSetNode<T> addAll(BitmapIndexedSetNode<T> initial,
             Iterable<? extends T> additional) {
-        HashArrayMappedTrie<T, T> that = initial;
+        BitmapIndexedSetNode<T> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "HashSet: element is null");
-            that = that.put(t, t);
+            that = that.updated(t, false);
         }
         return that;
+    }
+
+    // a persistent addition keeping an equal element already there, with the null check of every addition
+    private static <T extends @Nullable Object> BitmapIndexedSetNode<T> put(BitmapIndexedSetNode<T> tree, T element) {
+        Objects.requireNonNull(element, "HashSet: element is null");
+        return tree.updated(element, false);
+    }
+
+    private static <T extends @Nullable Object> HashSet<T> wrap(BitmapIndexedSetNode<T> tree) {
+        return tree.size() == 0 ? empty() : new HashSet<>(tree);
     }
 
 }

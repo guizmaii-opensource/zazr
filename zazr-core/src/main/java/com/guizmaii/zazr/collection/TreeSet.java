@@ -18,6 +18,14 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * SortedSet implementation, backed by a Red/Black Tree.
+ * <p>
+ * Complexity: the methods without a note of their own are O(n) at most, one walk over the elements (the folds,
+ * {@code find}, {@code count}, {@code tap}, {@code hashCode}, {@code toString}, {@code toList}), except
+ * {@code size}, {@code isEmpty} and {@code comparator}, O(1), and {@code containsAll}, one lookup per element,
+ * O(m log n). {@code toSortedMap} and {@code toSortedSet(Comparator)} sort, then build the new tree in one pass:
+ * O(n log n), O(n) when the new order agrees with this one. The factories {@code ofAll}, {@code range},
+ * {@code collector} and {@code newBuilder} do the same: O(m log m) for m elements, O(m) when they come sorted;
+ * {@code of}, {@code tabulate} and {@code fill} insert the elements one by one, O(m log m) even when sorted.
  *
  * @param <T> Component type
  * @author Daniel Dietrich
@@ -202,10 +210,35 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return fill(Comparators.naturalComparator(), n, s);
     }
 
+    /**
+     * Creates a TreeSet of the given elements, in their natural order.
+     * <p>
+     * Complexity: O(m log m) for m elements: they are sorted, then the tree is built in one pass; O(m) when they come
+     * sorted, and O(1) when {@code values} is a TreeSet created without a comparator, or its {@link #asJava()} view:
+     * that set is returned as is.
+     *
+     * @param values the elements
+     * @param <T>    Component type
+     * @return a TreeSet of the distinct elements of {@code values}
+     * @throws NullPointerException if {@code values} or an element is null
+     */
     public static <T extends Comparable<? super T>> TreeSet<T> ofAll(Iterable<? extends T> values) {
         return ofAll(Comparators.naturalComparator(), values);
     }
 
+    /**
+     * Creates a TreeSet of the given elements, ordered by {@code comparator}.
+     * <p>
+     * Complexity: O(m log m) for m elements: they are sorted, then the tree is built in one pass; O(m) when they come
+     * sorted, and O(1) when {@code values} is a TreeSet, or its {@link #asJava()} view, ordered by the same comparator
+     * object: that set is returned as is.
+     *
+     * @param comparator the order of the elements
+     * @param values     the elements
+     * @param <T>        Component type
+     * @return a TreeSet of the distinct elements of {@code values}
+     * @throws NullPointerException if an argument or an element is null
+     */
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> TreeSet<T> ofAll(Comparator<? super T> comparator, Iterable<? extends T> values) {
         Objects.requireNonNull(comparator, "comparator is null");
@@ -236,7 +269,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * Java cannot demand of an instance method that the receiver's element type be a collection. The outer iterable
      * and each inner one are iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: O(n log n) comparisons for n inner elements in total.
+     * Complexity: O(m log m) for m inner elements in total: each one is inserted into the tree, even when they come
+     * sorted.
      *
      * @param comparator the order of the result
      * @param nested     Iterables of elements
@@ -247,13 +281,15 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     public static <T extends @Nullable Object> TreeSet<T> flatten(Comparator<? super T> comparator, Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(nested, "nested is null");
-        // the insertions of ofAll, inlined so that a null element is reported under this type's name
-        RedBlackTree<T> tree = RedBlackTree.empty(comparator);
+        // the builder of ofAll, inlined so that a null element is reported under this type's name; of equal elements,
+        // the last one is kept
+        final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder");
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
-                tree = tree.insert(Objects.requireNonNull(element, "TreeSet.flatten: element is null"));
+                builder.add(Objects.requireNonNull(element, "TreeSet.flatten: element is null"));
             }
         }
+        final RedBlackTree<T> tree = builder.result();
         return tree.isEmpty() ? empty(comparator) : new TreeSet<>(tree);
     }
 
@@ -261,7 +297,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * The union of nested iterables, in natural order: {@link #flatten(Comparator, Iterable)} with the natural
      * comparator, as {@link #ofAll(Iterable)} is {@link #ofAll(Comparator, Iterable)}.
      * <p>
-     * Complexity: O(n log n) comparisons for n inner elements in total.
+     * Complexity: O(m log m) for m inner elements in total: each one is inserted into the tree, even when they come
+     * sorted.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -698,22 +735,43 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> add(T element) {
+        Objects.requireNonNull(element, "TreeSet: element is null");
         return contains(element) ? this : new TreeSet<>(tree.insert(element));
     }
 
     @Override
     public TreeSet<T> addAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
+        if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
+            // many elements: sorted into a tree, the first of equal ones kept, then united with this tree, whose
+            // elements win over equal given ones; the same set as adding them one by one below
+            final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);
+            for (T element : elements) {
+                builder.add(Objects.requireNonNull(element, "TreeSet: element is null"));
+            }
+            final RedBlackTree<T> added = builder.result().union(tree);
+            return (added.size() == tree.size()) ? this : new TreeSet<>(added);
+        }
+        // a few elements: each one not present yet is inserted, so of equal elements the one already here, or else
+        // the first given, is kept
         RedBlackTree<T> that = tree;
         for (T element : elements) {
+            Objects.requireNonNull(element, "TreeSet: element is null");
             if (!that.contains(element)) {
                 that = that.insert(element);
             }
         }
-        if (tree == that) {
-            return this;
+        return (that == tree) ? this : new TreeSet<>(that);
+    }
+
+    // the number of elements of `elements` when a collection answers it in O(1) without walking them, otherwise -1
+    private static int knownSize(Iterable<?> elements) {
+        if (elements instanceof java.util.Collection<?> collection) {
+            return collection.size();
+        } else if (elements instanceof Set<?> || elements instanceof Vector<?> || elements instanceof NonEmptyVector<?>) {
+            return ((Traversable<?>) elements).size();
         } else {
-            return new TreeSet<>(that);
+            return -1;
         }
     }
 
@@ -727,9 +785,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * {@code new java.util.TreeSet<>(set.asJava())}; {@code TreeSet.ofAll} given the view and this set's comparator
      * returns this set without copying.
      * <p>
-     * Complexity: O(1); {@code contains}, {@code size}, {@code first}, {@code last}, {@code ceiling}, {@code floor},
-     * {@code higher} and {@code lower} on the view and on its sub-views are O(log n), an iterator is O(log n) to create
-     * and amortized O(1) per step.
+     * Complexity: O(1): nothing is copied. On the view and on its sub-views, {@code contains}, {@code size},
+     * {@code first}, {@code last}, {@code ceiling}, {@code floor}, {@code higher} and {@code lower} are O(log n); an
+     * iterator is O(log n) to create, then O(1) per step on average.
      *
      * @return an unmodifiable {@code java.util.NavigableSet} view
      */
@@ -769,7 +827,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * Whether {@code null} is accepted depends on the comparator: the natural comparator throws
      * {@code NullPointerException} for {@code null}.
      * <p>
-     * Complexity: O(log n) comparisons.
+     * Complexity: O(log n): one walk down the tree, comparing with the comparator, not with {@code equals}.
      *
      * @param element the element to check
      * @return true, if element is contained, false otherwise.
@@ -779,24 +837,44 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.contains(element);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per element, in the comparator's order. The result shares with this set every
+     * subtree whose elements are all kept, and is this set itself when every element is kept.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeSet<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final TreeSet<T> treeSet = TreeSet.ofAll(tree.comparator(), Iterator.ofAll(this).filter(predicate));
-        return (treeSet.size() == size()) ? this : treeSet;
+        return withTree(RedBlackTreeModule.Node.filter(tree, predicate));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * {@code predicate} is called once per element, in the comparator's order. The result shares with this set every
+     * subtree whose elements are all kept, and is this set itself when no element is rejected.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public TreeSet<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(predicate.negate());
     }
 
+    // this set when `that` is its own tree, otherwise a set of `that`
+    private TreeSet<T> withTree(RedBlackTree<T> that) {
+        return (that == tree) ? this : new TreeSet<>(that);
+    }
+
     @Override
     public <U extends @Nullable Object> TreeSet<U> flatMap(Comparator<? super U> comparator,
                                   Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return TreeSet.ofAll(comparator, Iterator.ofAll(this).flatMap(mapper));
+        return TreeSet.ofAll(comparator, Iterator.ofAll(this).flatMap(t -> Objects.requireNonNull(mapper.apply(t), "TreeSet.flatMap: mapper returned null")));
     }
 
     /**
@@ -814,7 +892,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public <C extends @Nullable Object> Map<C, TreeSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, elements -> ofAll(comparator(), elements));
+        return Collections.groupBy(this, classifier, elements -> ofAll(comparator(), elements), "TreeSet.groupBy: classifier returned null");
     }
 
     @SuppressWarnings("unchecked")
@@ -836,6 +914,11 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(1): the size is stored.
+     */
     @Override
     public int size() {
         return tree.size();
@@ -844,7 +927,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n) to create (the path to the least element); a whole walk is O(n).
+     * Complexity: O(log n) to create, then O(1) per step on average; a whole walk is O(n).
      */
     @Override
     public java.util.Iterator<T> iterator() {
@@ -873,6 +956,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     /**
      * Matches and transforms the elements in one pass into a {@code TreeSet} ordered by {@code comparator}; see
      * {@link #collect(Function)}.
+     * <p>
+     * Complexity: O(n log n): the collected elements are sorted, then the new tree is built in one pass; O(n) when
+     * they come out in order.
      *
      * @param comparator the order of the collected elements
      * @param mapper     a function from an element to {@code Some} of its replacement or {@code None}; it must
@@ -936,12 +1022,23 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      */
     @Override
     public TreeSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
-        return isEmpty() ? ofAll(tree.comparator(), supplier.get()) : this;
+        Objects.requireNonNull(supplier, "supplier is null");
+        return isEmpty() ? ofAll(tree.comparator(), Objects.requireNonNull(supplier.get(), "TreeSet.orElse: supplier returned null")) : this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * One walk: {@code predicate} is called once per element, in the comparator's order. Each side shares with this set
+     * every subtree whose elements all go to it, and is this set itself when it gets every element.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
     @Override
     public Tuple2<TreeSet<T>, TreeSet<T>> partition(Predicate<? super T> predicate) {
-        return Collections.partition(this, values -> TreeSet.ofAll(tree.comparator(), values), predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        final Tuple2<RedBlackTree<T>, RedBlackTree<T>> trees = RedBlackTreeModule.Node.partition(tree, predicate);
+        return Tuple.of(withTree(trees._1()), withTree(trees._2()));
     }
 
     @Override
@@ -963,6 +1060,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> replace(T currentElement, T newElement) {
+        Objects.requireNonNull(newElement, "TreeSet: element is null");
         if (tree.contains(currentElement)) {
             return new TreeSet<>(tree.delete(currentElement).insert(newElement));
         } else {
@@ -1198,8 +1296,29 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
     }
 
+    /**
+     * Narrows to a {@link NonEmptySortedSet}, whose operations that cannot empty it keep that type and whose
+     * {@code head}, {@code last}, {@code max}, {@code min} and {@code reduce} are total.
+     * <p>
+     * Complexity: O(1).
+     *
+     * @return {@code Some(nonEmptySortedSet)} sharing this set's elements and comparator, or {@code None} if this set
+     *         is empty
+     */
+    public Option<NonEmptySortedSet<T>> toNonEmptySortedSet() { return NonEmptySortedSet.fromSortedSet(this); }
+
     // -- Object
 
+    /**
+     * Whether {@code o} is a Set with the same elements, in any order: another TreeSet, a HashSet or a
+     * LinkedHashSet. Each element of this set is looked up in {@code o} with {@code o}'s own {@code contains}.
+     * <p>
+     * Complexity: O(n log n) against another TreeSet: one lookup in it per element; O(n) against a HashSet or a
+     * LinkedHashSet, and O(1) when the sizes differ.
+     *
+     * @param o any object
+     * @return true if {@code o} is a Set of the same elements
+     */
     @Override
     public boolean equals(@Nullable Object o) {
         return Collections.equals(this, o);

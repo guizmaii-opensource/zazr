@@ -1,13 +1,17 @@
 package com.guizmaii.zazr.docs;
 
 import com.guizmaii.zazr.Lazy;
+import com.guizmaii.zazr.Tuple;
 import com.guizmaii.zazr.Tuple0;
 import com.guizmaii.zazr.collection.HashMap;
 import com.guizmaii.zazr.collection.HashSet;
+import com.guizmaii.zazr.collection.LinkedHashMap;
 import com.guizmaii.zazr.collection.LinkedHashSet;
 import com.guizmaii.zazr.collection.List;
 import com.guizmaii.zazr.collection.List.Cons;
 import com.guizmaii.zazr.collection.List.Nil;
+import com.guizmaii.zazr.collection.NonEmptySet;
+import com.guizmaii.zazr.collection.NonEmptySortedMap;
 import com.guizmaii.zazr.collection.NonEmptyVector;
 import com.guizmaii.zazr.collection.Queue;
 import com.guizmaii.zazr.collection.Stream;
@@ -1049,6 +1053,57 @@ public class DocsExamplesTest {
     }
 
     @Nested
+    class NonEmptySetMapPage {
+
+        @Test
+        void totalOperations() {
+            var tags = NonEmptySet.of("java", "scala", "java");
+            var longest = tags.maxBy(String::length); // String
+            var total = NonEmptySet.of(1, 2, 3).reduce(Integer::sum); // Integer
+            // scala, 6
+
+            assertThat(longest).isEqualTo("scala");
+            assertThat(total).isEqualTo(6);
+            assertThat(tags.size()).isEqualTo(2);
+        }
+
+        @Test
+        void returnTypeContract() {
+            var prices = NonEmptySortedMap.of(Tuple.of("pear", 3), Tuple.of("apple", 2));
+            var first = prices.head(); // Tuple2<String, Integer>
+            var names = prices.keySet(); // NonEmptySortedSet<String>
+            var cheap = prices.filterValues(price -> price < 3); // TreeMap<String, Integer>
+            // (apple, 2), NonEmptySortedSet(apple, pear), TreeMap((apple, 2))
+
+            assertThat(first).isEqualTo(Tuple.of("apple", 2));
+            assertThat(names).hasToString("NonEmptySortedSet(apple, pear)");
+            assertThat(cheap).hasToString("TreeMap((apple, 2))");
+        }
+
+        @Test
+        void groupingAndConverting() {
+            var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length); // NonEmptyMap<Integer, NonEmptySet<String>>
+            var index = NonEmptyVector.of("a", "bb").toMap(String::length, word -> word); // NonEmptyMap<Integer, String>
+            // byLength maps 1 to a set of a, and 2 to a set of bb and cc; index is NonEmptyMap((1, a), (2, bb))
+
+            assertThat(byLength.get(1).map(NonEmptySet::toSet)).isEqualTo(Option.some(HashSet.of("a")));
+            assertThat(byLength.get(2).map(NonEmptySet::toSet)).isEqualTo(Option.some(HashSet.of("bb", "cc")));
+            assertThat(index).hasToString("NonEmptyMap((1, a), (2, bb))");
+        }
+
+        @Test
+        void construction() {
+            var fromInput = HashMap.of("a", 1).toNonEmptyMap(); // Option<NonEmptyMap<String, Integer>>
+            var fromNothing = HashSet.<String>empty().toNonEmptySet(); // Option<NonEmptySet<String>>
+            // Some(NonEmptyMap((a, 1))), None
+
+            assertThat(fromInput).hasToString("Some(NonEmptyMap((a, 1)))");
+            assertThat(fromNothing).hasToString("None");
+            assertThat(NonEmptySet.of(1, 2)).isNotEqualTo(HashSet.of(1, 2));
+        }
+    }
+
+    @Nested
     class CollectionsOverview {
 
         @Test
@@ -1115,7 +1170,7 @@ public class DocsExamplesTest {
         void whenToChooseIt() {
             var list = List.of(1, 2, 3);
             var first = switch (list) {
-                case Cons(var head, var tail) -> "head " + head + ", then " + tail.length() + " more";
+                case Cons(var head, var tail) -> "head " + head + ", then " + tail.size() + " more";
                 case Nil() -> "empty";
             };
             // "head 1, then 2 more"
@@ -1270,6 +1325,38 @@ public class DocsExamplesTest {
             // TreeSet(pear, fig, apple)
 
             assertThat(sorted).hasToString("TreeSet(pear, fig, apple)");
+        }
+
+        @Test
+        void insertionOrderedBuilders() {
+            var firstSeen = LinkedHashSet.<String>newBuilder()
+                .addAll(List.of("b", "a", "b", "c"))
+                .result(); // LinkedHashSet<String>
+            var latest = LinkedHashMap.<String, Integer>newBuilder()
+                .put("b", 1).put("a", 2).put("b", 3)
+                .result(); // LinkedHashMap<String, Integer>
+            // LinkedHashSet(b, a, c), LinkedHashMap((b, 3), (a, 2))
+
+            assertThat(firstSeen).hasToString("LinkedHashSet(b, a, c)");
+            assertThat(latest).hasToString("LinkedHashMap((b, 3), (a, 2))");
+        }
+
+        @Test
+        void listBuilder() {
+            var builder = List.<Integer>newBuilder(); // List.Builder<Integer>
+            for (int i = 1; i <= 3; i++) {
+                builder.add(i * i);
+            }
+            var squares = builder.result(); // List<Integer>
+            // List(1, 4, 9)
+
+            var tail = List.of(8, 9);
+            var whole = List.<Integer>newBuilder().add(7).addAll(tail).result(); // List<Integer>
+            // List(7, 8, 9); whole.tail() is tail itself
+
+            assertThat(squares).hasToString("List(1, 4, 9)");
+            assertThat(whole).hasToString("List(7, 8, 9)");
+            assertThat(whole.tail()).isSameAs(tail);
         }
 
         @Test

@@ -12,12 +12,12 @@ To pass one to Java code, `asJava()` (`asJavaMap()` for a map) gives a read-only
 | Receiver | Method | Returns |
 |---|---|---|
 | `Vector`, `List`, `Queue`, `Stream`, `NonEmptyVector` | `asJava()` | `java.util.List` |
-| `HashSet` | `asJava()` | `java.util.Set` |
+| `HashSet`, `NonEmptySet` | `asJava()` | `java.util.Set` |
 | `LinkedHashSet` | `asJava()` | `SequencedSet` |
-| `TreeSet` | `asJava()` | `NavigableSet` |
-| `HashMap` | `asJavaMap()` | `java.util.Map` |
+| `TreeSet`, `NonEmptySortedSet` | `asJava()` | `NavigableSet` |
+| `HashMap`, `NonEmptyMap` | `asJavaMap()` | `java.util.Map` |
 | `LinkedHashMap` | `asJavaMap()` | `SequencedMap` |
-| `TreeMap` | `asJavaMap()` | `NavigableMap` |
+| `TreeMap`, `NonEmptySortedMap` | `asJavaMap()` | `NavigableMap` |
 
 Every view is O(1) to create. Reads go through to the Zazr value, which never changes, so a view never goes stale.
 

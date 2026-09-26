@@ -122,11 +122,11 @@ public record Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T
      * @param <U2> new type of the 2nd component
      * @param <U3> new type of the 3rd component
      * @return the result of applying {@code mapper} to the components of this tuple
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <U1 extends @Nullable Object, U2 extends @Nullable Object, U3 extends @Nullable Object> Tuple3<U1, U2, U3> map(Function3<? super T1, ? super T2, ? super T3, Tuple3<U1, U2, U3>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return mapper.apply(_1, _2, _3);
+        return Objects.requireNonNull(mapper.apply(_1, _2, _3), "Tuple3.map: mapper returned null");
     }
 
     /**

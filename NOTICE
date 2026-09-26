@@ -5,3 +5,27 @@ This product is a fork of Vavr (https://vavr.io), Copyright 2014-2026 Vavr,
 licensed under the Apache License, Version 2.0 (see LICENSE). The per-file
 copyright and license notices of the original Vavr sources have been
 consolidated into this NOTICE file.
+
+Vavr was created by Daniel Dietrich and is maintained by Grzegorz Piwowarek,
+with its contributors (https://github.com/vavr-io/vavr/graphs/contributors).
+
+Portions of this software are derived from the Scala standard library
+(https://github.com/scala/scala), Copyright (c) 2002-2026 EPFL and
+Copyright (c) 2011-2026 Lightbend, Inc. dba Akka, licensed under the Apache
+License 2.0. Each ported class cites its Scala source in its documentation.
+The Scala NOTICE reads:
+
+    Scala
+    Copyright (c) 2002-2026 EPFL
+    Copyright (c) 2011-2026 Lightbend, Inc. dba Akka
+
+    Scala includes software developed at
+    LAMP/EPFL (https://lamp.epfl.ch/) and
+    Akka (https://akka.io/).
+
+    Licensed under the Apache License, Version 2.0 (the "License").
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.

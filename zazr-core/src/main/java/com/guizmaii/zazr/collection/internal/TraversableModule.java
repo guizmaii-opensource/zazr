@@ -46,9 +46,9 @@ public interface TraversableModule {
     }
 
     static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, E extends Tuple2<? extends K, ? extends V>, R extends Map<K, V>> R toMap(
-            Traversable<T> traversable, R empty, Function<Iterable<E>, R> ofAll, Function<? super T, ? extends E> f) {
+            Traversable<T> traversable, R empty, Function<Iterable<E>, R> ofAll, Function<? super T, ? extends E> f, String nullResult) {
         Objects.requireNonNull(f, "f is null");
-        return traversable.isEmpty() ? empty : ofAll.apply(Iterator.ofAll(traversable).map(f));
+        return traversable.isEmpty() ? empty : ofAll.apply(Iterator.ofAll(traversable).map(t -> Objects.requireNonNull(f.apply(t), nullResult)));
     }
 
     static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> Function<T, Tuple2<K, V>> entryMapper(

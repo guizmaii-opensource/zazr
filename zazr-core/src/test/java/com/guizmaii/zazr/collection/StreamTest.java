@@ -395,7 +395,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldAppendMillionTimes() {
             final int bigNum = 1_000_000;
-            assertThat(Stream.range(0, bigNum).foldLeft(Stream.empty(), Stream::append).length()).isEqualTo(bigNum);
+            assertThat(Stream.range(0, bigNum).foldLeft(Stream.empty(), Stream::append).size()).isEqualTo(bigNum);
         }
     }
 
@@ -2214,7 +2214,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateLeftForPositiveModuloLen() {
             Stream<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateLeft(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateLeft(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -2283,7 +2283,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateRightForPositiveModuloLen() {
             Stream<Integer> seq = of(1, 2, 3, 4, 5);
-            assertThat(seq.rotateRight(seq.length() * 3)).isSameAs(seq);
+            assertThat(seq.rotateRight(seq.size() * 3)).isSameAs(seq);
         }
     }
 
@@ -3168,7 +3168,7 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(empty.crossProduct().isEmpty()).isTrue();
             final Stream<Integer> one = Stream.of(1);
             assertThat(one.reverse().toList()).isEqualTo(List.of(1));
-            assertThat(one.crossProduct().toList().length()).isEqualTo(1);
+            assertThat(one.crossProduct().toList().size()).isEqualTo(1);
             assertThat(one.endsWith(Stream.of(1))).isTrue();
             assertThat(one.endsWith(Stream.of(0, 1))).isFalse();
             assertThat(one.lastIndexOfSlice(Stream.of(1))).isEqualTo(0);
@@ -3921,12 +3921,12 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeLengthOfNil() {
-        assertThat(empty().length()).isEqualTo(0);
+        assertThat(empty().size()).isEqualTo(0);
     }
 
     @TestTemplate
     public void shouldComputeLengthOfNonNil() {
-        assertThat(of(1, 2, 3).length()).isEqualTo(3);
+        assertThat(of(1, 2, 3).size()).isEqualTo(3);
     }
 
     // -- max
@@ -4618,7 +4618,7 @@ public class StreamTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -4628,7 +4628,7 @@ public class StreamTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     @TestTemplate
@@ -4638,7 +4638,7 @@ public class StreamTest extends AbstractTraversableTest {
         final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
-        assertThat(actual.length()).isEqualTo(expected.length());
+        assertThat(actual.size()).isEqualTo(expected.size());
     }
 
     // -- slideBy(classifier)
@@ -6223,9 +6223,9 @@ public class StreamTest extends AbstractTraversableTest {
                     return i % 2 == 0 ? Either.left(i) : Either.right(i);
                 });
                 // both sides forced to the end, each in turn: every element was classified once, in order
-                sides._1().length();
-                sides._2().length();
-                sides._1().length();
+                sides._1().size();
+                sides._2().size();
+                sides._1().size();
                 assertThat(List.ofAll(seen)).isEqualTo(List.range(0, n));
             }
         }
@@ -6455,7 +6455,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void sliceStartsDeepWithoutOverflow() {
             assertThat(longStream().slice(START, START + 3)).isEqualTo(Stream.of(START, START + 1, START + 2));
-            assertThat(longStream().slice(START, SIZE + 10).length()).isEqualTo(SIZE - START);
+            assertThat(longStream().slice(START, SIZE + 10).size()).isEqualTo(SIZE - START);
         }
 
         @Test
@@ -6468,20 +6468,20 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void subSequenceFromStartsDeepWithoutOverflow() {
             final Stream<Integer> actual = longStream().subSequence(START);
-            assertThat(actual.length()).isEqualTo(SIZE - START);
+            assertThat(actual.size()).isEqualTo(SIZE - START);
             assertThat(actual.head()).isEqualTo(START);
         }
 
         @Test
         public void subSequenceFromToStartsDeepWithoutOverflow() {
             assertThat(longStream().subSequence(START, START + 3)).isEqualTo(Stream.of(START, START + 1, START + 2));
-            assertThat(longStream().subSequence(START, SIZE).length()).isEqualTo(SIZE - START);
+            assertThat(longStream().subSequence(START, SIZE).size()).isEqualTo(SIZE - START);
         }
 
         @Test
         public void subSequenceFromToPastTheEndThrowsOnTraversalAfterADeepStart() {
             final Stream<Integer> actual = longStream().subSequence(START, SIZE + 1);
-            assertThatThrownBy(actual::length).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+            assertThatThrownBy(actual::size).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
         }
 
         @Test
@@ -6494,7 +6494,7 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(longStream().removeAt(START).drop(START).head()).isEqualTo(START + 1);
             assertThat(longStream().splitAt(START)._2().head()).isEqualTo(START);
             assertThat(longStream().patch(START, List.of(-1), 2).drop(START).take(2)).isEqualTo(Stream.of(-1, START + 2));
-            assertThat(longStream().dropRight(START).length()).isEqualTo(SIZE - START);
+            assertThat(longStream().dropRight(START).size()).isEqualTo(SIZE - START);
             assertThat(longStream().takeRight(SIZE - START).head()).isEqualTo(START);
         }
     }

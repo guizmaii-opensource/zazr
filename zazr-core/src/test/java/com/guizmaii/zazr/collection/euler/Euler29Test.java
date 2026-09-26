@@ -37,6 +37,6 @@ public class Euler29Test {
                 .map(BigInteger::valueOf)
                 .flatMap(a -> Stream.rangeClosed(2, max).map(a::pow))
                 .distinct()
-                .length();
+                .size();
     }
 }

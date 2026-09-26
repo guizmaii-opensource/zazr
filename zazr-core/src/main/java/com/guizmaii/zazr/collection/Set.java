@@ -110,7 +110,8 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * never changes, and every mutator of the view throws {@link UnsupportedOperationException}. The view equals any
      * {@code java.util.Set} with the same elements. A mutable copy is {@code new java.util.HashSet<>(set.asJava())}.
      * <p>
-     * Complexity: O(1).
+     * Complexity: O(1): nothing is copied. On the view, {@code contains} costs what this set's own {@code contains}
+     * costs.
      *
      * @return an unmodifiable {@code java.util.Set} view
      */
@@ -231,7 +232,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param supplier provides the elements to fall back on
      * @return this set if non-empty, otherwise a set of {@code supplier.get()}
-     * @throws NullPointerException if this set is empty and {@code supplier} is null
+     * @throws NullPointerException if {@code supplier} is null, or if this set is empty and {@code supplier} returns null
      */
     Set<T> orElse(Supplier<? extends Iterable<? extends T>> supplier);
 
@@ -289,8 +290,8 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
      * <p>
-     * Complexity: O(n), every element compared once in natural order; on a TreeSet the greatest element in the
-     * comparator's order is {@code last()}, O(log n).
+     * Complexity: O(n): every element is compared in its natural order. On a TreeSet, {@code last()} gives the
+     * greatest element in the set's own order in O(log n).
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -329,8 +330,8 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
      * <p>
-     * Complexity: O(n), every element compared once in natural order; on a TreeSet the least element in the
-     * comparator's order is {@code head()}, O(log n).
+     * Complexity: O(n): every element is compared in its natural order. On a TreeSet, {@code head()} gives the
+     * least element in the set's own order in O(log n).
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -432,7 +433,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(getKey));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Set.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -521,11 +522,11 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Set.toMap: f returned null");
     }
 
     /**
@@ -553,11 +554,11 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f);
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Set.toLinkedMap: f returned null");
     }
 
     /**
@@ -584,7 +585,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
      * @param <K> the key type
      * @param <V> the value type
      * @return the new map
-     * @throws NullPointerException if {@code f} is null
+     * @throws NullPointerException if {@code f} is null or returns null
      */
     default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
@@ -622,7 +623,7 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f);
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Set.toSortedMap: f returned null");
     }
 
     /**
