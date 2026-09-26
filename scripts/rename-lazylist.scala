@@ -24,8 +24,11 @@
 // Deliberately kept: `java.util.stream.*` (`Stream`, `IntStream`, `LongStream`, `DoubleStream`, `StreamSupport`,
 // `Collector`), `stream()` and `parallelStream()` (the JDK conversion) and the variables and parameters named `stream`,
 // the identifiers that take a JDK stream (`javaStream`, `ofJavaStream`, `Maps.ofStream`, the `should...JavaStream`,
-// `should...IntStream`, `shouldStream...` tests), the JDK I/O types (`PrintStream`, `InputStream`, ...), and the test
-// method names that mention the lazy list in their words (`shouldCycleEmptyStream`, ...).
+// `should...IntStream`, `shouldStream...` tests), the JDK I/O types (`PrintStream`, `InputStream`, ...), and the
+// inherited test names outside `LazyListTest` that use the word loosely (`IteratorTest.shouldGenerateInfiniteStream...`,
+// `TreeSetTest.shouldConstructStreamFrom...JavaStream`). Inside `LazyList.java` and `LazyListTest.java`, a `Stream` in
+// an identifier is the lazy list unless a JDK word precedes it (`shouldCycleEmptyStream` becomes
+// `shouldCycleEmptyLazyList`, `shouldGenerateIntStream` stays).
 
 import java.nio.charset.{CharacterCodingException, CodingErrorAction, StandardCharsets}
 import java.nio.ByteBuffer
