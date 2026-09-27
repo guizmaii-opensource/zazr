@@ -1609,10 +1609,10 @@ public final class Gen<A> {
             if (sampling.draw().nextBoolean()) {
                 return values.run(sampling, size, a -> sink.accept(Validation.valid(a)));
             }
+            // the first error is drawn before the number of the others, as the replay of a seed expects
+            NonEmptyVector<E> first = NonEmptyVector.single(errors.draw(sampling, size));
             NonEmptyVector<E> drawn = Vector.range(0, sampling.draw().nextInt(3))
-                    .foldLeft(
-                            NonEmptyVector.single(errors.draw(sampling, size)),
-                            (acc, extra) -> acc.append(errors.draw(sampling, size)));
+                    .foldLeft(first, (acc, extra) -> acc.append(errors.draw(sampling, size)));
             return sink.accept(
                     drawn.size() == 1 && sampling.draw().nextBoolean()
                             ? Validation.invalid(drawn.head())

@@ -226,24 +226,26 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
                     + ": " + cause + replay(seed);
         }
 
+        // a loop, not a recursion: a cause chain can be deeper than the stack
         private static boolean sameCauses(Throwable t1, Throwable t2) {
-            if (t1 == null || t2 == null) {
-                return t1 == null && t2 == null;
+            for (Throwable a = t1, b = t2; ; a = a.getCause(), b = b.getCause()) {
+                if (a == null || b == null) {
+                    return a == null && b == null;
+                }
+                if (a.getClass() != b.getClass() || !Objects.equals(a.getMessage(), b.getMessage())) {
+                    return false;
+                }
             }
-            return t1.getClass() == t2.getClass()
-                    && Objects.equals(t1.getMessage(), t2.getMessage())
-                    && sameCauses(t1.getCause(), t2.getCause());
         }
 
+        // a loop, not a recursion: a cause chain can be deeper than the stack
         private static int causesHashCode(Throwable t) {
-            return causesHashCode(t, 0);
-        }
-
-        // the hash of the chain from `t` down, after the causes above it gave `hash`
-        private static int causesHashCode(Throwable t, int hash) {
-            return t == null
-                    ? hash
-                    : causesHashCode(t.getCause(), 31 * hash + Objects.hash(t.getClass(), t.getMessage()));
+            @SuppressWarnings("Var") // the hash of the causes walked so far
+            int hash = 0;
+            for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+                hash = 31 * hash + Objects.hash(cause.getClass(), cause.getMessage());
+            }
+            return hash;
         }
     }
 

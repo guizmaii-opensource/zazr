@@ -44,8 +44,31 @@ class GenTest {
         assertThat(gen.runCollect(config(7))).isEqualTo(gen.runCollect(config(7)));
     }
 
+    // the values of a fixed seed, pinned: a change in the order of the random draws breaks the replay of the seeds
+    // that failing checks reported
+    @Test
+    void aSeedGivesThePinnedValidations() {
+        assertThat(Gen.validation(Gen.integers(0, 99), Gen.integers(0, 99))
+                        .runCollectN(12, config(7))
+                        .map(Object::toString))
+                .isEqualTo(List.of(
+                        "Valid(73)",
+                        "Invalid(99, 0, 41)",
+                        "Invalid(72)",
+                        "Invalid(99)",
+                        "Valid(99)",
+                        "Invalid(99)",
+                        "Invalid(99, 0, 98)",
+                        "Invalid(1, 99)",
+                        "Valid(75)",
+                        "Valid(98)",
+                        "Invalid(99)",
+                        "Invalid(0, 1)"));
+    }
+
     @Test
     void anotherSeedGivesOtherValues() {
+
         assertThat(Gen.integers().runCollectN(50, config(7)))
                 .isNotEqualTo(Gen.integers().runCollectN(50, config(8)));
     }

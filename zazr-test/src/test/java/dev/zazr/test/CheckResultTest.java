@@ -1,6 +1,7 @@
 package dev.zazr.test;
 
 import dev.zazr.Tuple;
+import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import org.junit.jupiter.api.Test;
 
@@ -185,5 +186,24 @@ class CheckResultTest {
         CheckResult otherChain = new CheckResult.Erroneous(
                 1, 1L, new RuntimeException("a", new IllegalStateException("c")), Option.none());
         assertThat(chained).isEqualTo(sameChain).hasSameHashCodeAs(sameChain).isNotEqualTo(otherChain);
+    }
+
+    // equals and hashCode walk the cause chain without recursing: a chain deeper than the stack still compares
+    @Test
+    void erroneousComparesCauseChainsDeeperThanTheStack() {
+        CheckResult deep = new CheckResult.Erroneous(5, -7L, chain(100_000, "last"), Option.none());
+        CheckResult same = new CheckResult.Erroneous(5, -7L, chain(100_000, "last"), Option.none());
+        CheckResult other = new CheckResult.Erroneous(5, -7L, chain(100_000, "other"), Option.none());
+        CheckResult shorter = new CheckResult.Erroneous(5, -7L, chain(99_999, "last"), Option.none());
+        assertThat(deep).isEqualTo(same).hasSameHashCodeAs(same);
+        assertThat(deep).isNotEqualTo(other).isNotEqualTo(shorter);
+    }
+
+    // `depth` exceptions, each caused by the next, the deepest with the message `last`
+    private static Throwable chain(int depth, String last) {
+        return Vector.range(1, depth)
+                .foldLeft(
+                        (Throwable) new IllegalStateException(last),
+                        (cause, i) -> new IllegalStateException("level", cause));
     }
 }
