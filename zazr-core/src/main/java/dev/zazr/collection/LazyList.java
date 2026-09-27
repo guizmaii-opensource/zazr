@@ -428,13 +428,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Creates a LazyList that contains the elements of the given {@link java.util.stream.Stream}.
      *
-     * @param javaLazyList A {@link java.util.stream.Stream}
+     * @param javaStream A {@link java.util.stream.Stream}
      * @param <T>        Component type of the LazyList.
      * @return A LazyList containing the given elements in the same order.
      */
-    static <T extends @Nullable Object> LazyList<T> ofAll(java.util.stream.Stream<? extends T> javaLazyList) {
-        Objects.requireNonNull(javaLazyList, "javaLazyList is null");
-        return LazyListFactory.create(javaLazyList.iterator());
+    static <T extends @Nullable Object> LazyList<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
+        Objects.requireNonNull(javaStream, "javaStream is null");
+        return LazyListFactory.create(javaStream.iterator());
     }
 
     /**

@@ -66,8 +66,8 @@ public class LazyListTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> LazyList<T> ofJavaStream(java.util.stream.Stream<? extends T> javaLazyList) {
-        return LazyList.ofAll(javaLazyList);
+    protected <T extends Comparable<? super T>> LazyList<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+        return LazyList.ofAll(javaStream);
     }
 
     @Override
@@ -259,6 +259,16 @@ public class LazyListTest extends AbstractTraversableTest {
         @Test
         public void shouldConcatNonEmptyArrayIterable() {
             assertThat(concat(List.of(1, 2), List.of(3))).isEqualTo(of(1, 2, 3));
+        }
+    }
+
+    @Nested
+    class StaticOfAllJavaStreamTests {
+        @Test
+        public void shouldNameTheJavaStreamParameterWhenItIsNull() {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LazyList.ofAll((java.util.stream.Stream<Integer>) null))
+                    .withMessage("javaStream is null");
         }
     }
 
