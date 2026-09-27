@@ -2,8 +2,8 @@ package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
 import dev.zazr.collection.HashMap;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Set;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeSet;
 
 final class PrimeNumbers {
@@ -13,8 +13,8 @@ final class PrimeNumbers {
     private PrimeNumbers() {
     }
 
-    static Stream<Integer> primes() {
-        return Stream.ofAll(PRIMES_2_000_000);
+    static LazyList<Integer> primes() {
+        return LazyList.ofAll(PRIMES_2_000_000);
     }
 
     static HashMap<Long, Long> factorization(long num) {
@@ -29,10 +29,10 @@ final class PrimeNumbers {
         }
     }
 
-    static Stream<Long> primeFactors(long num) {
-        return Stream.rangeClosed(2L, (int) Math.sqrt(num))
+    static LazyList<Long> primeFactors(long num) {
+        return LazyList.rangeClosed(2L, (int) Math.sqrt(num))
                 .find(d -> num % d == 0)
-                .map(d -> Stream.cons(d, () -> primeFactors(num / d)))
-                .getOrElse(() -> Stream.of(num));
+                .map(d -> LazyList.cons(d, () -> primeFactors(num / d)))
+                .getOrElse(() -> LazyList.of(num));
     }
 }

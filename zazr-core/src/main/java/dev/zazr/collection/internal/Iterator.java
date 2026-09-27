@@ -1,9 +1,9 @@
 package dev.zazr.collection.internal;
 
 import dev.zazr.*;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import dev.zazr.collection.internal.IteratorModule.ConcatIterator;
@@ -1387,7 +1387,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      */
     static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f, String nullResult) {
         Objects.requireNonNull(f, "f is null");
-        return Iterator.ofAll(Stream.<U> ofAll(
+        return Iterator.ofAll(LazyList.<U> ofAll(
                 unfoldRight(seed, f.andThen(tupleOpt -> Objects.requireNonNull(tupleOpt, nullResult).map(t -> Tuple.of(t._2(), t._1()))), nullResult))
                 .reverse());
     }
@@ -1727,8 +1727,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         return hasNext() ? Queue.ofAll(this) : Queue.empty();
     }
 
-    default Stream<T> toStream() {
-        return hasNext() ? Stream.ofAll(this) : Stream.empty();
+    default LazyList<T> toLazyList() {
+        return hasNext() ? LazyList.ofAll(this) : LazyList.empty();
     }
 
     default Vector<T> toVector() {
@@ -1910,7 +1910,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return Tuple.of(empty(), empty());
         } else {
-            final Stream<T> that = Stream.ofAll(this);
+            final LazyList<T> that = LazyList.ofAll(this);
             return Tuple.of(Iterator.ofAll(that).takeWhile(predicate), Iterator.ofAll(that).dropWhile(predicate));
         }
     }

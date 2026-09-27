@@ -53,7 +53,7 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 - **Sets and maps have no positional methods** (`head`, `take`, `sliding`...), except `LinkedHashSet`,
   `LinkedHashMap`, `TreeSet` and `TreeMap`.
 - **`grouped`, `sliding` and `crossProduct` return a collection**, not an `Iterator`: of the receiver's type on
-  `Vector`, `List`, `Queue` and `Stream` (`List<List<T>>`), a `Vector` of the receiver's type for `grouped` and
+  `Vector`, `List`, `Queue` and `LazyList` (`List<List<T>>`), a `Vector` of the receiver's type for `grouped` and
   `sliding` on the ordered sets and maps and on `NonEmptyVector` (`Vector<TreeSet<T>>`).
 - **`tap` on a collection runs on every element**; Vavr's `peek` ran on the first one. `List.peek()` is the stack
   top.

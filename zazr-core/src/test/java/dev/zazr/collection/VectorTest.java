@@ -340,8 +340,8 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(List.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
             assertThat(Queue.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
             assertThat(Queue.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
-            assertThat(Stream.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
-            assertThat(Stream.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
+            assertThat(LazyList.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
+            assertThat(LazyList.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
         }
     }
 
@@ -2258,12 +2258,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldSortByFunctionWhenElementsAreInfiniteStreams() {
-        final Stream<Integer> stream1 = Stream.continually(1);
-        final Stream<Integer> stream2 = Stream.continually(2);
-        final Vector<Stream<Integer>> testee = of(stream2, stream1);
-        final Vector<Stream<Integer>> actual = testee.sortBy(Stream::head);
-        final Vector<Stream<Integer>> expected = of(stream1, stream2);
+    public void shouldSortByFunctionWhenElementsAreInfiniteLazyLists() {
+        final LazyList<Integer> stream1 = LazyList.continually(1);
+        final LazyList<Integer> stream2 = LazyList.continually(2);
+        final Vector<LazyList<Integer>> testee = of(stream2, stream1);
+        final Vector<LazyList<Integer>> actual = testee.sortBy(LazyList::head);
+        final Vector<LazyList<Integer>> expected = of(stream1, stream2);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2579,12 +2579,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowOnSubVectoruenceWhenEndIndexExceedsUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2, 3).subSequence(1, 4).mkString()); // force computation of last element, e.g. because Stream is lazy
+        assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2, 3).subSequence(1, 4).mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
     public void shouldThrowOnSubVectoruenceWhenBeginIndexIsGreaterThanEndIndex() {
-        assertThrows(IllegalArgumentException.class, () -> of(1, 2, 3).subSequence(2, 1).mkString()); // force computation of last element, e.g. because Stream is lazy
+        assertThrows(IllegalArgumentException.class, () -> of(1, 2, 3).subSequence(2, 1).mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
@@ -2732,15 +2732,15 @@ public class VectorTest extends AbstractTraversableTest {
     class NonVectorArgumentTests {
         @Test
         public void shouldStartWithANonVectorIterable() {
-            assertThat(of(1, 3, 4).startsWith(Stream.of(1, 3))).isTrue();
-            assertThat(of(1, 2, 3, 4).startsWith(Stream.of(1, 2, 4))).isFalse();
-            assertThat(of(1, 2).startsWith(Stream.of(1, 2, 4))).isFalse();
+            assertThat(of(1, 3, 4).startsWith(LazyList.of(1, 3))).isTrue();
+            assertThat(of(1, 2, 3, 4).startsWith(LazyList.of(1, 2, 4))).isFalse();
+            assertThat(of(1, 2).startsWith(LazyList.of(1, 2, 4))).isFalse();
         }
 
         @Test
         public void shouldEndWithANonVectorIterable() {
-            assertThat(of(1, 3, 4).endsWith(Stream.of(3, 4))).isTrue();
-            assertThat(of(1, 2, 3, 4).endsWith(Stream.of(2, 3, 5))).isFalse();
+            assertThat(of(1, 3, 4).endsWith(LazyList.of(3, 4))).isTrue();
+            assertThat(of(1, 2, 3, 4).endsWith(LazyList.of(2, 3, 5))).isFalse();
         }
     }
 
@@ -3009,8 +3009,8 @@ public class VectorTest extends AbstractTraversableTest {
                             continue;
                         }
                         final Vector<Integer> slice = vector.slice(k, k + 3);
-                        // a Vector, a JDK list (traversable again), a lazy Stream and a one-shot Iterator
-                        for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>> of(slice, new java.util.ArrayList<>(slice.asJava()), Stream.ofAll(slice))) {
+                        // a Vector, a JDK list (traversable again), a lazy LazyList and a one-shot Iterator
+                        for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>> of(slice, new java.util.ArrayList<>(slice.asJava()), LazyList.ofAll(slice))) {
                             assertThat(vector.indexOfSlice(shape)).isEqualTo(k);
                             assertThat(vector.indexOfSliceOption(shape)).isEqualTo(Option.some(k));
                             assertThat(vector.lastIndexOfSlice(shape)).isEqualTo(k);
@@ -3093,17 +3093,17 @@ public class VectorTest extends AbstractTraversableTest {
                     for (int k : positions(n)) {
                         final Vector<Integer> prefix = vector.take(k);
                         final Vector<Integer> suffix = vector.drop(k);
-                        // a Vector (compared by index), a JDK list, a Stream and a one-shot Iterator (walked once)
+                        // a Vector (compared by index), a JDK list, a LazyList and a one-shot Iterator (walked once)
                         assertThat(vector.startsWith(prefix)).isTrue();
                         assertThat(vector.startsWith(new java.util.ArrayList<>(prefix.asJava()))).isTrue();
-                        assertThat(vector.startsWith(Stream.ofAll(prefix))).isTrue();
+                        assertThat(vector.startsWith(LazyList.ofAll(prefix))).isTrue();
                         assertThat(vector.startsWith(Iterator.ofAll(prefix))).isTrue();
                         assertThat(vector.startsWith(suffix, k)).isTrue();
                         assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.asJava()), k)).isTrue();
                         assertThat(vector.startsWith(Iterator.ofAll(suffix), k)).isTrue();
                         assertThat(vector.endsWith(suffix)).isTrue();
                         assertThat(vector.endsWith(new java.util.ArrayList<>(suffix.asJava()))).isTrue();
-                        assertThat(vector.endsWith(Stream.ofAll(suffix))).isTrue();
+                        assertThat(vector.endsWith(LazyList.ofAll(suffix))).isTrue();
                         assertThat(vector.endsWith(Iterator.ofAll(suffix))).isTrue();
                         // one element too many, or one element wrong, in either shape
                         assertThat(vector.startsWith(prefix.append(-1))).isFalse();
@@ -3223,7 +3223,7 @@ public class VectorTest extends AbstractTraversableTest {
             final List<Tuple2<Integer, Character>> expected = List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b'), Tuple.of(3, 'a'), Tuple.of(3, 'b'));
             assertThat(vector.crossProduct(Vector.of('a', 'b')).toList()).isEqualTo(expected);
             assertThat(vector.crossProduct(java.util.List.of('a', 'b')).toList()).isEqualTo(expected);
-            assertThat(vector.crossProduct(Stream.of('a', 'b')).toList()).isEqualTo(expected);
+            assertThat(vector.crossProduct(LazyList.of('a', 'b')).toList()).isEqualTo(expected);
             assertThat(vector.crossProduct(Iterator.of('a', 'b')).toList()).isEqualTo(expected);
             assertThat(vector.crossProduct(Vector.range(0, 33)).size()).isEqualTo(99);
             assertThat(Vector.range(0, 33).crossProduct(vector).size()).isEqualTo(99);
@@ -3543,7 +3543,7 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldEqualEveryOrderedSequenceWithTheSameElementsInBothDirections() {
             final Vector<Integer> vector = of(1, 2, 3);
-            for (Traversable<Integer> other : java.util.List.of(Vector.of(1, 2, 3), List.of(1, 2, 3), Queue.of(1, 2, 3), Stream.of(1, 2, 3))) {
+            for (Traversable<Integer> other : java.util.List.of(Vector.of(1, 2, 3), List.of(1, 2, 3), Queue.of(1, 2, 3), LazyList.of(1, 2, 3))) {
                 assertThat(vector.equals(other)).isTrue();
                 assertThat(other.equals(vector)).isTrue();
                 assertThat(vector.hashCode()).isEqualTo(other.hashCode());
@@ -5753,9 +5753,9 @@ public class VectorTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThat(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- the range factories

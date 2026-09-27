@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import org.junit.jupiter.api.Test;
 
 import static dev.zazr.collection.euler.Utils.factors;
@@ -46,8 +46,8 @@ public class Euler12Test {
                 .get();
     }
 
-    private static Stream<Long> triangleNumbers() {
-        return Stream.from(1L).scanLeft(0L, (a, l) -> a + l);
+    private static LazyList<Long> triangleNumbers() {
+        return LazyList.from(1L).scanLeft(0L, (a, l) -> a + l);
     }
 
     private static long divisorCount(long number) {

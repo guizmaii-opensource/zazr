@@ -1036,7 +1036,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     /**
      * Converts this {@code Option} to a sequential {@link java.util.stream.Stream} of zero or one element.
      *
-     * @return {@code Stream.of(value)} for {@code Some}, an empty {@code Stream} for {@code None}
+     * @return {@code LazyList.of(value)} for {@code Some}, an empty {@code LazyList} for {@code None}
      */
     default java.util.stream.Stream<T> stream() {
         return isEmpty() ? java.util.stream.Stream.empty() : java.util.stream.Stream.of(get());

@@ -950,11 +950,11 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     }
 
     /**
-     * The elements as a {@link Stream}, in this Map's order.
+     * The elements as a {@link LazyList}, in this Map's order.
      *
-     * @return a {@code Stream} of the elements
+     * @return a {@code LazyList} of the elements
      */
-    default Stream<Tuple2<K, V>> toStream() {
-        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    default LazyList<Tuple2<K, V>> toLazyList() {
+        return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
 }

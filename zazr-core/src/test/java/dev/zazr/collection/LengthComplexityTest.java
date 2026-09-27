@@ -141,7 +141,7 @@ public class LengthComplexityTest {
                 List.range(0, MILLION).asJava(),
                 Queue.ofAll(List.range(0, MILLION)).asJava(),
                 Queue.<Integer> empty().enqueueAll(List.range(0, MILLION)).asJava(),
-                Stream.range(0, MILLION).asJava(),
+                LazyList.range(0, MILLION).asJava(),
                 List.range(0, MILLION).asJava().reversed());
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
             for (java.util.List<Integer> view : views) {

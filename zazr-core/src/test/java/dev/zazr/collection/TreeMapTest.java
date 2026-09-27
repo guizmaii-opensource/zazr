@@ -247,7 +247,7 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream()
+        assertThat(mapOf(LazyList.range(0, 4).stream()
                 , i -> Math.max(1, Math.min(i, 2))
                 , i -> String.valueOf(i + 1)
         ))
@@ -264,7 +264,7 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i ->
+        assertThat(mapOf(LazyList.range(0, 4).stream(), i ->
                 Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))
         ))
                 .hasSize(2)
@@ -2021,9 +2021,9 @@ public class TreeMapTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldConvertToStream() {
-        assertThat(entries(1, 2, 3).toStream()).isEqualTo(Stream.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-        assertThat(emptyMap().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(entries(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(entry(0, 1), entry(1, 2), entry(2, 3)));
+        assertThat(emptyMap().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- values

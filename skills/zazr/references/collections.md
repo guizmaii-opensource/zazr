@@ -13,7 +13,7 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | a set or map with at least one element | `NonEmptySet`, `NonEmptyMap` and their `Sorted` variants | `max`, `reduce` (and `head` when sorted) cannot fail |
 | to take a sequence apart from the front, a stack | `List` | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
 | first in, first out | `Queue` | amortised O(1) `enqueue` and `dequeue` |
-| a sequence computed on demand, maybe infinite | `Stream` | lazy and memoised |
+| a sequence computed on demand, maybe infinite | `LazyList` | lazy and memoised |
 | a set, by default | `HashSet` | effectively O(1) `contains`, `add`, `remove` |
 | a set in insertion order | `LinkedHashSet` | a `HashSet` plus the order, with positional methods |
 | a sorted set | `TreeSet` | O(log n) lookups and updates, positional methods in comparator order |
@@ -25,7 +25,7 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 
 ## Costs that decide the choice
 
-| Operation | `Vector` | `List` | `Queue` | `Stream` |
+| Operation | `Vector` | `List` | `Queue` | `LazyList` |
 |---|---|---|---|---|
 | `head`, `prepend` | effectively O(1) | O(1) | O(1) | O(1) |
 | `tail` | effectively O(1) | O(1) | amortised O(1) | O(1) |
@@ -142,7 +142,7 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
 // view.get(1) is "Grace", back == names, fromJdk is Vector(3, 1, 2)
 ```
 
-`List` and `Stream` clash with `java.util.List` and `java.util.stream.Stream`: import Zazr's, spell the JDK ones out.
+`List` clashes with `java.util.List`: import Zazr's, spell the JDK one out.
 
 ## Sharp edges
 
@@ -152,15 +152,15 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
 - `max()` and `min()` on a set walk every element in natural order, even on a `TreeSet`; its own least and greatest
   are `head()` and `last()`.
 - `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`.
-- `Stream`: the first element is computed when the `Stream` is built; `size`, `last`, `reverse`,
+- `LazyList`: the first element is computed when the `LazyList` is built; `size`, `last`, `reverse`,
   `sorted`, `foldLeft`, `mkString` and `toVector` never return on an infinite one; it keeps every element it
   computed.
 - `Queue`'s amortised cost holds only when each `dequeue` works on the queue the previous one returned.
   `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
 - `List.size()` and `Queue.size()` are O(n); `isEmpty()` is O(1).
 - `grouped`, `sliding` and `crossProduct` return a collection, not an iterator. On `Vector`, `List`, `Queue` and
-  `Stream` it is of the receiver's type (`List<List<T>>`). On `LinkedHashSet`, `TreeSet`, `LinkedHashMap`, `TreeMap`
+  `LazyList` it is of the receiver's type (`List<List<T>>`). On `LinkedHashSet`, `TreeSet`, `LinkedHashMap`, `TreeMap`
   and `NonEmptyVector`, `grouped` and `sliding` return a `Vector` of the receiver's type (`Vector<TreeSet<T>>`).
 - `tap` on a collection runs on every element.
-- Equality: a `Vector`, `List`, `Queue` or `Stream` equals another of these four with the same elements in the same
+- Equality: a `Vector`, `List`, `Queue` or `LazyList` equals another of these four with the same elements in the same
   order; sets equal sets and maps equal maps; a `NonEmptyVector` equals only a `NonEmptyVector`.

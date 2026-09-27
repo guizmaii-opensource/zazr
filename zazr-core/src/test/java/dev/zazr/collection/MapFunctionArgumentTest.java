@@ -84,7 +84,7 @@ public class MapFunctionArgumentTest {
                 () -> Vector.<Integer> empty().orElse(none), () -> Vector.of(1).orElse(none),
                 () -> List.<Integer> empty().orElse(none), () -> List.of(1).orElse(none),
                 () -> Queue.<Integer> empty().orElse(none), () -> Queue.of(1).orElse(none),
-                () -> Stream.<Integer> empty().orElse(none), () -> Stream.of(1).orElse(none),
+                () -> LazyList.<Integer> empty().orElse(none), () -> LazyList.of(1).orElse(none),
                 () -> HashSet.<Integer> empty().orElse(none), () -> HashSet.of(1).orElse(none),
                 () -> LinkedHashSet.<Integer> empty().orElse(none), () -> LinkedHashSet.of(1).orElse(none),
                 () -> TreeSet.<Integer> empty().orElse(none), () -> TreeSet.of(1).orElse(none));

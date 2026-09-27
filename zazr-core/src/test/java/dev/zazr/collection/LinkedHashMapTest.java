@@ -263,7 +263,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream()
+        assertThat(mapOf(LazyList.range(0, 4).stream()
                 , i -> Math.max(1, Math.min(i, 2))
                 , i -> String.valueOf(i + 1)
         ))
@@ -280,7 +280,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i ->
+        assertThat(mapOf(LazyList.range(0, 4).stream(), i ->
                 Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))
         ))
                 .hasSize(2)
@@ -486,8 +486,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapBothNonEmpty() {
-        final Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        final Stream<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").mapBoth(i -> i + 1, s -> s + "!").toStream();
+        final LazyList<Tuple2<Integer, String>> expected = LazyList.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
+        final LazyList<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").mapBoth(i -> i + 1, s -> s + "!").toLazyList();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2022,9 +2022,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldConvertToStream() {
-        assertThat(entries(1, 2, 3).toStream()).isEqualTo(Stream.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-        assertThat(emptyMap().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(entries(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(entry(0, 1), entry(1, 2), entry(2, 3)));
+        assertThat(emptyMap().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- values

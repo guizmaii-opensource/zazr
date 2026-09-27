@@ -24,7 +24,7 @@ class JavaListViewTest {
             "Vector", elements -> Vector.ofAll(elements).asJava(),
             "List", elements -> List.ofAll(elements).asJava(),
             "Queue", elements -> Queue.ofAll(elements).asJava(),
-            "Stream", elements -> Stream.ofAll(elements).asJava(),
+            "LazyList", elements -> LazyList.ofAll(elements).asJava(),
             "NonEmptyVector", elements -> elements.isEmpty() ? Vector.<Integer> empty().asJava() : NonEmptyVector.fromIterable(elements).get().asJava());
 
     @TestFactory
@@ -39,11 +39,11 @@ class JavaListViewTest {
     }
 
     @Nested
-    class StreamLaziness {
+    class LazyListLaziness {
 
-        /** An infinite Stream counting the elements it computes. */
-        private Stream<Integer> counted(AtomicInteger forced) {
-            return Stream.iterate(0, i -> {
+        /** An infinite LazyList counting the elements it computes. */
+        private LazyList<Integer> counted(AtomicInteger forced) {
+            return LazyList.iterate(0, i -> {
                 forced.incrementAndGet();
                 return i + 1;
             });
@@ -78,8 +78,8 @@ class JavaListViewTest {
         }
 
         @Test
-        void shouldCheckTheSubListBoundsOfAFiniteStreamWithoutTheWholeLength() {
-            final java.util.List<Integer> view = Stream.of(0, 1, 2).asJava();
+        void shouldCheckTheSubListBoundsOfAFiniteLazyListWithoutTheWholeLength() {
+            final java.util.List<Integer> view = LazyList.of(0, 1, 2).asJava();
             assertThatThrownBy(() -> view.subList(0, 4)).isInstanceOf(IndexOutOfBoundsException.class);
             assertThatThrownBy(() -> view.listIterator(4)).isInstanceOf(IndexOutOfBoundsException.class);
             assertThat(view.subList(1, 3)).containsExactly(1, 2);

@@ -5,8 +5,8 @@ functional code to write instead.
 
 The ideas are explained for a human reader at https://zazr.dev/new-to-fp/. Follow the same rules here.
 
-Imports: Zazr's `List`, `Stream`, `Map`, `Set` and `Queue` share their names with JDK types. Import Zazr's and write
-the JDK ones in full (`java.util.List`, `java.util.stream.Stream`). Pattern matching on Zazr values needs the case
+Imports: Zazr's `List`, `Map`, `Set` and `Queue` share their names with JDK types. Import Zazr's and write the JDK
+ones in full (`java.util.List`, `java.util.Map`). Pattern matching on Zazr values needs the case
 records imported: `Option.Some`, `Option.None`, `Either.Left`, `Either.Right`, `Try.Success`, `Try.Failure`,
 `Validation.Valid`, `Validation.Invalid`.
 
@@ -420,7 +420,7 @@ final class LazyCatalogue {
 `Lazy` computes on the first `get()`, caches the result, and is safe to share between threads. A computation that
 throws is not cached; the next `get()` retries. See https://zazr.dev/control/lazy/.
 
-For a sequence computed on demand, possibly infinite, use Zazr's `Stream` instead of a `while` loop with a counter.
+For a sequence computed on demand, possibly infinite, use Zazr's `LazyList` instead of a `while` loop with a counter.
 The two snippets below use a static `isPrime(int)` method.
 
 ```java
@@ -437,13 +437,13 @@ while (found.size() < 5) {
 
 ```java
 // after
-var primes = Stream.from(2).filter(n -> isPrime(n)).take(5).toVector(); // Vector<Integer>
+var primes = LazyList.from(2).filter(n -> isPrime(n)).take(5).toVector(); // Vector<Integer>
 // Vector(2, 3, 5, 7, 11)
 ```
 
-Zazr's `Stream` is a lazy list that keeps what it computed, so it can be read many times; `java.util.stream.Stream`
-is a one-shot pipeline. On an infinite `Stream`, call `take` or `takeWhile` before anything that reads every
-element (`toVector`, `foldLeft`, `size`). See https://zazr.dev/collections/stream/.
+Zazr's `LazyList` keeps what it computed, so it can be read many times; `java.util.stream.Stream`
+is a one-shot pipeline. On an infinite `LazyList`, call `take` or `takeWhile` before anything that reads every
+element (`toVector`, `foldLeft`, `size`). See https://zazr.dev/collections/lazy-list/.
 
 ## Java 25 features to use
 

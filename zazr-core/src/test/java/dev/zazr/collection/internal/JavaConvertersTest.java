@@ -1,8 +1,8 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import java.util.*;
 import java.util.function.Function;
@@ -37,7 +37,7 @@ public class JavaConvertersTest {
           new Data("java.util.Arrays$ArrayList", new ListFactory(java.util.Arrays::asList), IMMUTABLE, GENERIC, NULLABLE),
           new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
           new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
-          new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
+          new Data(LazyList.class.getName(), new ListFactory(ts -> LazyList.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
           new Data(Vector.class.getName(), new ListFactory(ts -> Vector.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE)
         );
     }

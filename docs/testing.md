@@ -369,7 +369,7 @@ build passes it to the test JVM. Maven does; a Gradle build needs `systemPropert
 |---|---|
 | Control types | `option`, `some`, `none`, `either`, `tryOf`, `validation`, `lazy` |
 | Tuples | `tuple2` to `tuple8` |
-| Sequences | `vector`, `vectorN`, `nonEmptyVector`, `list`, `queue`, `stream` |
+| Sequences | `vector`, `vectorN`, `nonEmptyVector`, `list`, `queue`, `lazyList` |
 | Sets | `hashSet`, `linkedHashSet`, `treeSet` |
 | Maps | `hashMap`, `linkedHashMap`, `treeMap` |
 
@@ -388,7 +388,7 @@ collection generators build each value in several ways, so your properties meet 
 
 - a `Vector` built by dropping a prefix, by prepending, or as a slice, not only by `ofAll`;
 - a `Queue` whose elements sit in both of its internal lists;
-- a `Stream` whose tail is not evaluated yet;
+- a `LazyList` whose tail is not evaluated yet;
 - sets and maps that went through removals, or keys overwritten with new values.
 
 ## Laws

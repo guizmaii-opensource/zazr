@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  * What every persistent collection can do in one pass over its elements, whatever its shape.
  * <p>
  * A {@code Traversable} is an {@link Iterable} whose iteration order is the type's own: positional on the sequences
- * ({@link Vector}, {@link List}, {@link Queue}, {@link Stream}), insertion order on {@link LinkedHashSet} and
+ * ({@link Vector}, {@link List}, {@link Queue}, {@link LazyList}), insertion order on {@link LinkedHashSet} and
  * {@link LinkedHashMap}, comparator order on {@link TreeSet} and {@link TreeMap}, and unspecified on {@link HashSet}
  * and {@link HashMap}. The operations declared here are the ones whose result does not depend on that order (or,
  * for {@code foldLeft}, {@code mkString}, {@code forEach} and the conversions, that simply follow it) and whose cost
@@ -356,7 +356,7 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * A {@link Spliterator} over the elements that reports what this collection guarantees: {@code IMMUTABLE},
-     * {@code SIZED} and {@code SUBSIZED} unless the size is not known without a walk ({@link Stream}),
+     * {@code SIZED} and {@code SUBSIZED} unless the size is not known without a walk ({@link LazyList}),
      * {@code DISTINCT} on the sets and the maps, {@code ORDERED} where the iteration order is defined, and
      * {@code SORTED} on a {@link SortedSet}, whose {@link Spliterator#getComparator() comparator} the spliterator
      * reports ({@code null} for the natural order). A {@link SortedMap} orders its keys, not its entries, so it

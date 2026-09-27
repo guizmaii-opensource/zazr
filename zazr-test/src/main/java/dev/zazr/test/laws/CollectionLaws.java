@@ -3,16 +3,15 @@ package dev.zazr.test.laws;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import dev.zazr.test.Check;
-
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -98,7 +97,7 @@ public final class CollectionLaws {
     }
 
     /**
-     * A sequence equals a {@code Vector}, a {@code List}, a {@code Queue} and a {@code Stream} of the same elements
+     * A sequence equals a {@code Vector}, a {@code List}, a {@code Queue} and a {@code LazyList} of the same elements
      * in the same order, both ways, with the same hash code, and never equals a set.
      *
      * @param <T> the element type
@@ -108,7 +107,7 @@ public final class CollectionLaws {
     public static <T, F extends Iterable<T>> Law<CollectionSubject<T, F>> sequenceEqualsAcrossTypes() {
         return Law.of("sequenceEqualsAcrossTypes", (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
             final ArrayList<T> xs = elements(fa);
-            return allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), Stream.ofAll(xs))
+            return allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), LazyList.ofAll(xs))
                     && noneEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs));
         }));
     }

@@ -54,11 +54,11 @@ without a `module-info.java` need nothing more.
 | Package | Types |
 |---|---|
 | `dev.zazr.control` | `Option`, `Either`, `Try`, `Validation` |
-| `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap` |
+| `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `LazyList`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap` |
 | `dev.zazr` | `Lazy`, `Tuple` and `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
-`List` and `Stream` share their names with `java.util.List` and `java.util.stream.Stream`: import the Zazr ones and
-spell the JDK ones out, as the examples on this site do.
+`List` shares its name with `java.util.List`: import the Zazr one and spell the JDK one out, as the examples on this
+site do.
 
 ## Five minutes of Zazr
 

@@ -18,11 +18,11 @@ class JavaViewOfAllTest {
         final Vector<Integer> vector = Vector.of(1, 2, 3);
         final List<Integer> list = List.of(1, 2, 3);
         final Queue<Integer> queue = Queue.of(1, 2, 3);
-        final Stream<Integer> stream = Stream.of(1, 2, 3);
+        final LazyList<Integer> stream = LazyList.of(1, 2, 3);
         assertThat(Vector.ofAll(vector.asJava())).isSameAs(vector);
         assertThat(List.ofAll(list.asJava())).isSameAs(list);
         assertThat(Queue.ofAll(queue.asJava())).isSameAs(queue);
-        assertThat(Stream.ofAll(stream.asJava())).isSameAs(stream);
+        assertThat(LazyList.ofAll(stream.asJava())).isSameAs(stream);
         final NonEmptyVector<Integer> nonEmpty = NonEmptyVector.of(1, 2, 3);
         assertThat(Vector.ofAll(nonEmpty.asJava())).isSameAs(nonEmpty.toVector());
     }
@@ -33,7 +33,7 @@ class JavaViewOfAllTest {
         assertThat(Vector.ofAll(vector.asJava().reversed())).isEqualTo(Vector.of(3, 2, 1));
         assertThat(List.ofAll(List.of(1, 2, 3).asJava().reversed())).isEqualTo(List.of(3, 2, 1));
         assertThat(Queue.ofAll(Queue.of(1, 2, 3).asJava().reversed())).isEqualTo(Queue.of(3, 2, 1));
-        assertThat(Stream.ofAll(Stream.of(1, 2, 3).asJava().reversed())).isEqualTo(Stream.of(3, 2, 1));
+        assertThat(LazyList.ofAll(LazyList.of(1, 2, 3).asJava().reversed())).isEqualTo(LazyList.of(3, 2, 1));
         assertThat(Vector.ofAll(vector.asJava().reversed().reversed())).isSameAs(vector);
     }
 

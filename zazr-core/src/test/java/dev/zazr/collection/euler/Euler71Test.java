@@ -2,7 +2,7 @@ package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple4;
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +31,7 @@ public class Euler71Test {
     }
 
     private static int left37(int maxDenominator) {
-        return Stream.iterate(Tuple.of(0, 1, 1, 1), (Tuple4<Integer, Integer, Integer, Integer> t) -> {
+        return LazyList.iterate(Tuple.of(0, 1, 1, 1), (Tuple4<Integer, Integer, Integer, Integer> t) -> {
             final int m1 = t._1() + t._3();
             final int m2 = t._2() + t._4();
             if (m1 * 7 >= m2 * 3) {

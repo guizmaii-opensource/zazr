@@ -1,6 +1,6 @@
 package dev.zazr.collection;
 
-/// Run in a JVM of its own with a small heap by `StreamTest`: fills the heap, forces a tail whose supplier throws while
+/// Run in a JVM of its own with a small heap by `LazyListTest`: fills the heap, forces a tail whose supplier throws while
 /// no memory is left, then frees the heap and forces it again. Prints what the next two forces threw.
 public final class FailedTailOutOfMemoryProbe {
 
@@ -9,7 +9,7 @@ public final class FailedTailOutOfMemoryProbe {
     private FailedTailOutOfMemoryProbe() {
     }
 
-    private static Throwable failure(Stream<Integer> stream) {
+    private static Throwable failure(LazyList<Integer> stream) {
         try {
             stream.tail();
             return null;
@@ -19,7 +19,7 @@ public final class FailedTailOutOfMemoryProbe {
     }
 
     public static void main(String[] args) {
-        final Stream<Integer> stream = Stream.cons(1, () -> {
+        final LazyList<Integer> stream = LazyList.cons(1, () -> {
             throw BOOM;
         });
         java.util.ArrayList<Object> keep = new java.util.ArrayList<>(1 << 20);

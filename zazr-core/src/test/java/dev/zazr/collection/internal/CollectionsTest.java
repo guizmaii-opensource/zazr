@@ -3,11 +3,11 @@ package dev.zazr.collection.internal;
 import dev.zazr.Tuple;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Traversable;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
@@ -24,7 +24,7 @@ public class CollectionsTest {
     @Test
     public void shouldNameTheEmptySourceWhenLastOfEmptyThrows() {
         assertThatThrownBy(() -> List.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty List()");
-        assertThatThrownBy(() -> Stream.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty Stream()");
+        assertThatThrownBy(() -> LazyList.empty().last()).isInstanceOf(java.util.NoSuchElementException.class).hasMessage("last of empty LazyList()");
     }
 
     @Test
@@ -43,7 +43,7 @@ public class CollectionsTest {
     @Test
     public void shouldBeEqualSeqs() throws Exception {
         forAll(List.of(Vector.ofAll(1, 2, 3),
-                Stream.ofAll(1, 2, 3),
+                LazyList.ofAll(1, 2, 3),
                 List.ofAll(1, 2, 3),
                 Queue.ofAll(1, 2, 3)), true);
     }

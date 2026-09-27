@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 
@@ -33,9 +33,9 @@ public class Euler29Test {
     }
 
     private static int cnt(int max) {
-        return Stream.rangeClosed(2, max)
+        return LazyList.rangeClosed(2, max)
                 .map(BigInteger::valueOf)
-                .flatMap(a -> Stream.rangeClosed(2, max).map(a::pow))
+                .flatMap(a -> LazyList.rangeClosed(2, max).map(a::pow))
                 .distinct()
                 .size();
     }

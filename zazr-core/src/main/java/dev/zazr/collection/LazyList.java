@@ -1,14 +1,14 @@
 package dev.zazr.collection;
 
 import dev.zazr.*;
-import dev.zazr.collection.Stream.Cons;
-import dev.zazr.collection.Stream.Empty;
+import dev.zazr.collection.LazyList.Cons;
+import dev.zazr.collection.LazyList.Empty;
 import dev.zazr.collection.internal.AbstractIterator;
 import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
-import dev.zazr.collection.internal.StreamModule;
-import dev.zazr.collection.internal.StreamModule.*;
+import dev.zazr.collection.internal.LazyListModule;
+import dev.zazr.collection.internal.LazyListModule.*;
 import dev.zazr.collection.internal.TraversableModule;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
@@ -20,38 +20,38 @@ import org.jspecify.annotations.Nullable;
 
 
 /**
- * An immutable {@code Stream} is lazy sequence of elements which may be infinitely long.
+ * An immutable {@code LazyList} is lazy sequence of elements which may be infinitely long.
  * Its immutability makes it suitable for concurrent programming.
  * <p>
- * A {@code Stream} is composed of a {@code head} element and a lazy evaluated {@code tail} {@code Stream}.
+ * A {@code LazyList} is composed of a {@code head} element and a lazy evaluated {@code tail} {@code LazyList}.
  * <p>
- * There are two implementations of the {@code Stream} interface:
+ * There are two implementations of the {@code LazyList} interface:
  *
  * <ul>
- * <li>{@link Empty}, which represents the empty {@code Stream}.</li>
- * <li>{@link Cons}, which represents a {@code Stream} containing one or more elements.</li>
+ * <li>{@link Empty}, which represents the empty {@code LazyList}.</li>
+ * <li>{@link Cons}, which represents a {@code LazyList} containing one or more elements.</li>
  * </ul>
  *
- * Methods to obtain a {@code Stream}:
+ * Methods to obtain a {@code LazyList}:
  *
  * <pre>
  * {@code
  * // factory methods
- * Stream.empty()                  // = Stream.of() = Empty.instance()
- * Stream.of(x)                    // = Stream.cons(x, Stream::empty)
- * Stream.of(Object...)            // e.g. Stream.of(1, 2, 3)
- * Stream.ofAll(Iterable)          // e.g. Stream.ofAll(List.of(1, 2, 3)) = 1, 2, 3
- * Stream.ofAll(<primitive array>) // e.g. Stream.ofAll(1, 2, 3) = 1, 2, 3
+ * LazyList.empty()                  // = LazyList.of() = Empty.instance()
+ * LazyList.of(x)                    // = LazyList.cons(x, LazyList::empty)
+ * LazyList.of(Object...)            // e.g. LazyList.of(1, 2, 3)
+ * LazyList.ofAll(Iterable)          // e.g. LazyList.ofAll(List.of(1, 2, 3)) = 1, 2, 3
+ * LazyList.ofAll(<primitive array>) // e.g. LazyList.ofAll(1, 2, 3) = 1, 2, 3
  *
  * // int sequences
- * Stream.from(0)                  // = 0, 1, 2, 3, ...
- * Stream.range(0, 3)              // = 0, 1, 2
- * Stream.rangeClosed(0, 3)        // = 0, 1, 2, 3
+ * LazyList.from(0)                  // = 0, 1, 2, 3, ...
+ * LazyList.range(0, 3)              // = 0, 1, 2
+ * LazyList.rangeClosed(0, 3)        // = 0, 1, 2, 3
  *
  * // generators
- * Stream.cons(Object, Supplier)   // e.g. Stream.cons(current, () -> next(current));
- * Stream.continually(Supplier)    // e.g. Stream.continually(Math::random);
- * Stream.iterate(Object, Function)// e.g. Stream.iterate(1, i -> i * 2);
+ * LazyList.cons(Object, Supplier)   // e.g. LazyList.cons(current, () -> next(current));
+ * LazyList.continually(Supplier)    // e.g. LazyList.continually(Math::random);
+ * LazyList.iterate(Object, Function)// e.g. LazyList.iterate(1, i -> i * 2);
  * }
  * </pre>
  *
@@ -59,18 +59,18 @@ import org.jspecify.annotations.Nullable;
  *
  * <pre>
  * {@code
- * Stream<Integer>       s1 = Stream.of(1);
- * Stream<Integer>       s2 = Stream.of(1, 2, 3);
- *                       // = Stream.of(new Integer[] {1, 2, 3});
+ * LazyList<Integer>       s1 = LazyList.of(1);
+ * LazyList<Integer>       s2 = LazyList.of(1, 2, 3);
+ *                       // = LazyList.of(new Integer[] {1, 2, 3});
  *
- * Stream<int[]>         s3 = Stream.of(new int[] {1, 2, 3});
- * Stream<List<Integer>> s4 = Stream.of(List.of(1, 2, 3));
+ * LazyList<int[]>         s3 = LazyList.of(new int[] {1, 2, 3});
+ * LazyList<List<Integer>> s4 = LazyList.of(List.of(1, 2, 3));
  *
- * Stream<Integer>       s5 = Stream.ofAll(1, 2, 3);
- * Stream<Integer>       s6 = Stream.ofAll(List.of(1, 2, 3));
+ * LazyList<Integer>       s5 = LazyList.ofAll(1, 2, 3);
+ * LazyList<Integer>       s6 = LazyList.ofAll(List.of(1, 2, 3));
  *
  * // cuckoo's egg
- * Stream<Integer[]>     s7 = Stream.<Integer[]> of(new Integer[] {1, 2, 3});
+ * LazyList<Integer[]>     s7 = LazyList.<Integer[]> of(new Integer[] {1, 2, 3});
  * }
  * </pre>
  *
@@ -78,17 +78,17 @@ import org.jspecify.annotations.Nullable;
  *
  * <pre>
  * {@code
- * // = Stream(2L, 3L, 5L, 7L, ...)
- * Stream.iterate(2L, PrimeNumbers::nextPrimeFrom)
+ * // = LazyList(2L, 3L, 5L, 7L, ...)
+ * LazyList.iterate(2L, PrimeNumbers::nextPrimeFrom)
  *
  * // helpers
  *
  * static long nextPrimeFrom(long num) {
- *     return Stream.from(num + 1).find(PrimeNumbers::isPrime).get();
+ *     return LazyList.from(num + 1).find(PrimeNumbers::isPrime).get();
  * }
  *
  * static boolean isPrime(long num) {
- *     return !Stream.rangeClosed(2L, (long) Math.sqrt(num)).exists(d -> num % d == 0);
+ *     return !LazyList.rangeClosed(2L, (long) Math.sqrt(num)).exists(d -> num % d == 0);
  * }
  * }
  * </pre>
@@ -98,45 +98,45 @@ import org.jspecify.annotations.Nullable;
  * Complexity: a lazy call computes now only what its note says, and each further element when the result reaches it.
  * The methods without a note of their own that read every element (the folds, {@code reduce}, {@code count},
  * {@code sum}, {@code mkString}, {@code forEach}, the conversions to other collections and {@code hashCode}) are O(n)
- * and never return on an infinite Stream; {@code equals} compares the elements in order and stops at the first
+ * and never return on an infinite LazyList; {@code equals} compares the elements in order and stops at the first
  * difference or at the end of the shorter side, so it returns when either side is finite, but never on two infinite
- * Streams with the same elements; {@code exists}, {@code forAll}, {@code find} and
+ * LazyLists with the same elements; {@code exists}, {@code forAll}, {@code find} and
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
  * {@code ...Option} variant costs what the method it wraps costs. {@code toString} shows only the elements already
  * computed.
  * <p>
- * A Stream never changes its contents. Each element is computed once and kept; when computing one throws, the
+ * A LazyList never changes its contents. Each element is computed once and kept; when computing one throws, the
  * exception is kept in its place, and every later read of that place throws the same exception instead of computing
- * it again, so a Stream read from a one-shot source never skips or reorders an element. Only a
+ * it again, so a LazyList read from a one-shot source never skips or reorders an element. Only a
  * {@link VirtualMachineError}, such as a stack overflow, is not kept.
  *
- * @param <T> component type of this Stream
+ * @param <T> component type of this LazyList
  * @author Daniel Dietrich, Jörgen Andersson, Ruslan Sennov
  */
-public interface Stream<T extends @Nullable Object> extends Traversable<T> {
+public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Returns a {@link java.util.stream.Collector} which may be used in conjunction with
-     * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link Stream}.
+     * {@link java.util.stream.Stream#collect(java.util.stream.Collector)} to obtain a {@link LazyList}.
      *
-     * @param <T> Component type of the Stream.
-     * @return A dev.zazr.collection.Stream Collector.
+     * @param <T> Component type of the LazyList.
+     * @return A dev.zazr.collection.LazyList Collector.
      */
-    static <T extends @Nullable Object> Collector<T, ArrayList<T>, Stream<T>> collector() {
+    static <T extends @Nullable Object> Collector<T, ArrayList<T>, LazyList<T>> collector() {
         final Supplier<ArrayList<T>> supplier = ArrayList::new;
         final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
         final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
             left.addAll(right);
             return left;
         };
-        final Function<ArrayList<T>, Stream<T>> finisher = Stream::ofAll;
+        final Function<ArrayList<T>, LazyList<T>> finisher = LazyList::ofAll;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
     /**
-     * Creates a Stream which traverses along the concatenation of the given iterables.
+     * Creates a LazyList which traverses along the concatenation of the given iterables.
      * <p>
-     * Building the Stream is O(k) in the number of given iterables, since an iterator is eagerly
+     * Building the LazyList is O(k) in the number of given iterables, since an iterator is eagerly
      * obtained from every one of them up front; only the traversal of the elements is lazy.
      * <p>
      * Complexity: O(k) for k iterables: their iterators are taken, and the first element is computed now (past any
@@ -144,16 +144,16 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param iterables The iterables
      * @param <T>       Component type.
-     * @return A new {@code Stream}
+     * @return A new {@code LazyList}
      */
     @SuppressWarnings("varargs")
     @SafeVarargs
-    static <T extends @Nullable Object> Stream<T> concat(Iterable<? extends T> ... iterables) {
-        return Iterator.concat(iterables).toStream();
+    static <T extends @Nullable Object> LazyList<T> concat(Iterable<? extends T> ... iterables) {
+        return Iterator.concat(iterables).toLazyList();
     }
 
     /**
-     * Creates a Stream which traverses along the concatenation of the given iterables.
+     * Creates a LazyList which traverses along the concatenation of the given iterables.
      * <p>
      * The outer iterable is fully traversed and an iterator is eagerly obtained from every element
      * up front, so it must be finite (an infinite outer iterable causes this call to never return);
@@ -164,14 +164,14 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param iterables The iterable of iterables
      * @param <T>       Component type.
-     * @return A new {@code Stream}
+     * @return A new {@code LazyList}
      */
-    static <T extends @Nullable Object> Stream<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
-        return Iterator.concat(iterables).toStream();
+    static <T extends @Nullable Object> LazyList<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
+        return Iterator.concat(iterables).toLazyList();
     }
 
     /**
-     * Concatenates nested iterables into one lazy Stream. Static, like every {@code flatten} in Zazr, because Java
+     * Concatenates nested iterables into one lazy LazyList. Static, like every {@code flatten} in Zazr, because Java
      * cannot demand of an instance method that the receiver's element type be a collection. Unlike
      * {@link #concat(Iterable)}, the outer iterable is read lazily too: an inner iterable is opened only when the
      * result reaches it, so an infinite outer iterable, or an infinite inner one, is accepted. The outer iterable and
@@ -187,177 +187,177 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code nested} is null, or when the result reaches a null inner iterable or a
      *                              null element
      */
-    static <T extends @Nullable Object> Stream<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+    static <T extends @Nullable Object> LazyList<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        return StreamFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity()));
+        return LazyListFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity()));
     }
 
     /**
-     * Returns an infinitely long Stream of {@code int} values starting from {@code value}.
+     * Returns an infinitely long LazyList of {@code int} values starting from {@code value}.
      * <p>
-     * The {@code Stream} extends to {@code Integer.MIN_VALUE} when passing {@code Integer.MAX_VALUE}.
+     * The {@code LazyList} extends to {@code Integer.MIN_VALUE} when passing {@code Integer.MAX_VALUE}.
      *
      * @param value a start int value
-     * @return a new Stream of int values starting from {@code value}
+     * @return a new LazyList of int values starting from {@code value}
      */
-    static Stream<Integer> from(int value) {
-        return Stream.ofAll(Iterator.from(value));
+    static LazyList<Integer> from(int value) {
+        return LazyList.ofAll(Iterator.from(value));
     }
 
     /**
-     * Returns an infinite long Stream of {@code int} values starting from {@code value} and spaced by {@code step}.
+     * Returns an infinite long LazyList of {@code int} values starting from {@code value} and spaced by {@code step}.
      * <p>
-     * The {@code Stream} extends to {@code Integer.MIN_VALUE} when passing {@code Integer.MAX_VALUE}.
+     * The {@code LazyList} extends to {@code Integer.MIN_VALUE} when passing {@code Integer.MAX_VALUE}.
      *
      * @param value a start int value
      * @param step  the step by which to advance on each next value
-     * @return a new {@code Stream} of int values starting from {@code value}
+     * @return a new {@code LazyList} of int values starting from {@code value}
      */
-    static Stream<Integer> from(int value, int step) {
-        return Stream.ofAll(Iterator.from(value, step));
+    static LazyList<Integer> from(int value, int step) {
+        return LazyList.ofAll(Iterator.from(value, step));
     }
 
     /**
-     * Returns an infinitely long Stream of {@code long} values starting from {@code value}.
+     * Returns an infinitely long LazyList of {@code long} values starting from {@code value}.
      * <p>
-     * The {@code Stream} extends to {@code Long.MIN_VALUE} when passing {@code Long.MAX_VALUE}.
+     * The {@code LazyList} extends to {@code Long.MIN_VALUE} when passing {@code Long.MAX_VALUE}.
      *
      * @param value a start long value
-     * @return a new Stream of long values starting from {@code value}
+     * @return a new LazyList of long values starting from {@code value}
      */
-    static Stream<Long> from(long value) {
-        return Stream.ofAll(Iterator.from(value));
+    static LazyList<Long> from(long value) {
+        return LazyList.ofAll(Iterator.from(value));
     }
 
     /**
-     * Returns an infinite long Stream of {@code long} values starting from {@code value} and spaced by {@code step}.
+     * Returns an infinite long LazyList of {@code long} values starting from {@code value} and spaced by {@code step}.
      * <p>
-     * The {@code Stream} extends to {@code Long.MIN_VALUE} when passing {@code Long.MAX_VALUE}.
+     * The {@code LazyList} extends to {@code Long.MIN_VALUE} when passing {@code Long.MAX_VALUE}.
      *
      * @param value a start long value
      * @param step  the step by which to advance on each next value
-     * @return a new {@code Stream} of long values starting from {@code value}
+     * @return a new {@code LazyList} of long values starting from {@code value}
      */
-    static Stream<Long> from(long value, long step) {
-        return Stream.ofAll(Iterator.from(value, step));
+    static LazyList<Long> from(long value, long step) {
+        return LazyList.ofAll(Iterator.from(value, step));
     }
 
     /**
-     * Generates a (theoretically) infinitely long Stream using a value Supplier.
+     * Generates a (theoretically) infinitely long LazyList using a value Supplier.
      *
-     * @param supplier A Supplier of Stream values
+     * @param supplier A Supplier of LazyList values
      * @param <T>      value type
-     * @return A new Stream
+     * @return A new LazyList
      */
-    static <T extends @Nullable Object> Stream<T> continually(Supplier<? extends T> supplier) {
+    static <T extends @Nullable Object> LazyList<T> continually(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return Stream.ofAll(Iterator.continually(supplier));
+        return LazyList.ofAll(Iterator.continually(supplier));
     }
 
     /**
-     * Generates a (theoretically) infinitely long Stream using a function to calculate the next value
+     * Generates a (theoretically) infinitely long LazyList using a function to calculate the next value
      * based on the previous.
      *
-     * @param seed The first value in the Stream
+     * @param seed The first value in the LazyList
      * @param f    A function to calculate the next value based on the previous
      * @param <T>  value type
-     * @return A new Stream
+     * @return A new LazyList
      */
-    static <T extends @Nullable Object> Stream<T> iterate(T seed, Function<? super T, ? extends T> f) {
+    static <T extends @Nullable Object> LazyList<T> iterate(T seed, Function<? super T, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return Stream.ofAll(Iterator.iterate(seed, f));
+        return LazyList.ofAll(Iterator.iterate(seed, f));
     }
 
     /**
-     * Generates a (theoretically) infinitely long Stream using a repeatedly invoked supplier
+     * Generates a (theoretically) infinitely long LazyList using a repeatedly invoked supplier
      * that provides a {@code Some} for each next value and a {@code None} for the end.
      * The {@code Supplier} will be invoked only that many times until it returns {@code None},
-     * and repeated iteration over the stream will produce the same values in the same order,
+     * and repeated iteration over the lazy list will produce the same values in the same order,
      * without any further invocations to the {@code Supplier}.
      *
      * @param supplier A Supplier of iterator values
      * @param <T> value type
-     * @return A new Stream
-     * @throws NullPointerException if {@code supplier} is null, or, when the stream reaches it, returns null
+     * @return A new LazyList
+     * @throws NullPointerException if {@code supplier} is null, or, when the lazy list reaches it, returns null
      */
-    static <T extends @Nullable Object> Stream<T> iterate(Supplier<? extends Option<? extends T>> supplier) {
+    static <T extends @Nullable Object> LazyList<T> iterate(Supplier<? extends Option<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return Stream.ofAll(Iterator.iterate(supplier, "Stream.iterate: supplier returned null"));
+        return LazyList.ofAll(Iterator.iterate(supplier, "LazyList.iterate: supplier returned null"));
     }
 
     /**
-     * Constructs a Stream of a head element and a tail supplier.
+     * Constructs a LazyList of a head element and a tail supplier.
      *
-     * @param head         The head element of the Stream
-     * @param tailSupplier A supplier of the tail values. To end the stream, return {@link Stream#empty}.
+     * @param head         The head element of the LazyList
+     * @param tailSupplier A supplier of the tail values. To end the lazy list, return {@link LazyList#empty}.
      * @param <T>          value type
-     * @return A new Stream
+     * @return A new LazyList
      * @throws NullPointerException if {@code head} or {@code tailSupplier} is null; {@code tail()} throws it when
      *                              {@code tailSupplier} returns null
      */
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> Stream<T> cons(T head, Supplier<? extends Stream<? extends T>> tailSupplier) {
-        Objects.requireNonNull(head, "Stream: element is null");
+    static <T extends @Nullable Object> LazyList<T> cons(T head, Supplier<? extends LazyList<? extends T>> tailSupplier) {
+        Objects.requireNonNull(head, "LazyList: element is null");
         Objects.requireNonNull(tailSupplier, "tailSupplier is null");
-        return new Cons.ConsImpl<>(head, (Supplier<Stream<T>>) tailSupplier);
+        return new Cons.ConsImpl<>(head, (Supplier<LazyList<T>>) tailSupplier);
     }
 
     /**
      * Returns the single instance of Empty. Convenience method for {@code Empty.instance()}.
      * <p>
-     * Note: this method intentionally returns type {@code Stream} and not {@code Empty}. This comes in handy when folding.
+     * Note: this method intentionally returns type {@code LazyList} and not {@code Empty}. This comes in handy when folding.
      * If you explicitly need type {@code Empty} use {@linkplain Empty#instance()}.
      *
      * @param <T> Component type of Empty, determined by type inference in the particular context.
      * @return The empty list.
      */
-    static <T extends @Nullable Object> Stream<T> empty() {
+    static <T extends @Nullable Object> LazyList<T> empty() {
         return Empty.instance();
     }
 
     /**
-     * Narrows a widened {@code Stream<? extends T>} to {@code Stream<T>}
+     * Narrows a widened {@code LazyList<? extends T>} to {@code LazyList<T>}
      * by performing a type-safe cast. This is eligible because immutable/read-only
      * collections are covariant.
      *
-     * @param stream A {@code Stream}.
-     * @param <T>    Component type of the {@code Stream}.
-     * @return the given {@code stream} instance as narrowed type {@code Stream<T>}.
+     * @param stream A {@code LazyList}.
+     * @param <T>    Component type of the {@code LazyList}.
+     * @return the given {@code stream} instance as narrowed type {@code LazyList<T>}.
      */
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> Stream<T> narrow(Stream<? extends T> stream) {
-        return (Stream<T>) stream;
+    static <T extends @Nullable Object> LazyList<T> narrow(LazyList<? extends T> stream) {
+        return (LazyList<T>) stream;
     }
 
     /**
-     * Returns a singleton {@code Stream}, i.e. a {@code Stream} of one element.
+     * Returns a singleton {@code LazyList}, i.e. a {@code LazyList} of one element.
      *
      * @param element An element.
      * @param <T>     The component type
-     * @return A new Stream instance containing the given element
+     * @return A new LazyList instance containing the given element
      */
-    static <T extends @Nullable Object> Stream<T> of(T element) {
+    static <T extends @Nullable Object> LazyList<T> of(T element) {
         return cons(element, Empty::instance);
     }
 
     /**
-     * Creates a Stream of the given elements.
+     * Creates a LazyList of the given elements.
      *
-     * <pre>{@code  Stream.of(1, 2, 3, 4)
+     * <pre>{@code  LazyList.of(1, 2, 3, 4)
      * = Empty.instance().prepend(4).prepend(3).prepend(2).prepend(1)
-     * = Stream.cons(1, () -> Stream.cons(2, () -> Stream.cons(3, () -> Stream.cons(4, Stream::empty))))}</pre>
+     * = LazyList.cons(1, () -> LazyList.cons(2, () -> LazyList.cons(3, () -> LazyList.cons(4, LazyList::empty))))}</pre>
      *
-     * @param <T>      Component type of the Stream.
+     * @param <T>      Component type of the LazyList.
      * @param elements Zero or more elements.
      * @return A list containing the given elements in the same order.
      */
     @SafeVarargs
-    static <T extends @Nullable Object> Stream<T> of(T ... elements) {
+    static <T extends @Nullable Object> LazyList<T> of(T ... elements) {
         Objects.requireNonNull(elements, "elements is null");
         for (T element : elements) {
-            Objects.requireNonNull(element, "Stream.of: element is null");
+            Objects.requireNonNull(element, "LazyList.of: element is null");
         }
-        return Stream.ofAll(new Iterator<T>() {
+        return LazyList.ofAll(new Iterator<T>() {
             int i = 0;
 
             @Override
@@ -373,490 +373,490 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns a Stream containing {@code n} values of a given Function {@code f}
+     * Returns a LazyList containing {@code n} values of a given Function {@code f}
      * over a range of integer values from 0 to {@code n - 1}.
      *
-     * @param <T> Component type of the Stream
-     * @param n   The number of elements in the Stream
+     * @param <T> Component type of the LazyList
+     * @param n   The number of elements in the LazyList
      * @param f   The Function computing element values
-     * @return A Stream consisting of elements {@code f(0),f(1), ..., f(n - 1)}
+     * @return A LazyList consisting of elements {@code f(0),f(1), ..., f(n - 1)}
      * @throws NullPointerException if {@code f} is null
      */
-    static <T extends @Nullable Object> Stream<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
+    static <T extends @Nullable Object> LazyList<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return Stream.ofAll(dev.zazr.collection.internal.Collections.tabulate(n, f));
+        return LazyList.ofAll(dev.zazr.collection.internal.Collections.tabulate(n, f));
     }
 
     /**
-     * Returns a Stream containing {@code n} values supplied by a given Supplier {@code s}.
+     * Returns a LazyList containing {@code n} values supplied by a given Supplier {@code s}.
      *
-     * @param <T> Component type of the Stream
-     * @param n   The number of elements in the Stream
+     * @param <T> Component type of the LazyList
+     * @param n   The number of elements in the LazyList
      * @param s   The Supplier computing element values
-     * @return A Stream of size {@code n}, where each element contains the result supplied by {@code s}.
+     * @return A LazyList of size {@code n}, where each element contains the result supplied by {@code s}.
      * @throws NullPointerException if {@code s} is null
      */
-    static <T extends @Nullable Object> Stream<T> fill(int n, Supplier<? extends T> s) {
+    static <T extends @Nullable Object> LazyList<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        return Stream.ofAll(dev.zazr.collection.internal.Collections.fill(n, s));
+        return LazyList.ofAll(dev.zazr.collection.internal.Collections.fill(n, s));
     }
 
     /**
-     * Returns a Stream containing {@code n} times the given {@code element}
+     * Returns a LazyList containing {@code n} times the given {@code element}
      *
-     * @param <T>     Component type of the Stream
-     * @param n       The number of elements in the Stream
+     * @param <T>     Component type of the LazyList
+     * @param n       The number of elements in the LazyList
      * @param element The element
-     * @return A Stream of size {@code n}, where each element is the given {@code element}.
+     * @return A LazyList of size {@code n}, where each element is the given {@code element}.
      */
-    static <T extends @Nullable Object> Stream<T> fill(int n, T element) {
-        return Stream.ofAll(dev.zazr.collection.internal.Collections.fillObject(n, element));
+    static <T extends @Nullable Object> LazyList<T> fill(int n, T element) {
+        return LazyList.ofAll(dev.zazr.collection.internal.Collections.fillObject(n, element));
     }
 
     /**
-     * Creates a Stream of the given elements.
+     * Creates a LazyList of the given elements.
      *
-     * @param <T>      Component type of the Stream.
+     * @param <T>      Component type of the LazyList.
      * @param elements An Iterable of elements.
-     * @return A Stream containing the given elements in the same order.
+     * @return A LazyList containing the given elements in the same order.
      */
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> Stream<T> ofAll(Iterable<? extends T> elements) {
+    static <T extends @Nullable Object> LazyList<T> ofAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (elements instanceof Stream) {
-            return (Stream<T>) elements;
-        } else if (JavaConverters.underlying(elements) instanceof Stream<?> underlying) {
-            return (Stream<T>) underlying;
+        if (elements instanceof LazyList) {
+            return (LazyList<T>) elements;
+        } else if (JavaConverters.underlying(elements) instanceof LazyList<?> underlying) {
+            return (LazyList<T>) underlying;
         } else {
-            return StreamFactory.create(elements.iterator());
+            return LazyListFactory.create(elements.iterator());
         }
     }
 
     /**
-     * Creates a Stream that contains the elements of the given {@link java.util.stream.Stream}.
+     * Creates a LazyList that contains the elements of the given {@link java.util.stream.Stream}.
      *
      * @param javaStream A {@link java.util.stream.Stream}
-     * @param <T>        Component type of the Stream.
-     * @return A Stream containing the given elements in the same order.
+     * @param <T>        Component type of the LazyList.
+     * @return A LazyList containing the given elements in the same order.
      */
-    static <T extends @Nullable Object> Stream<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
+    static <T extends @Nullable Object> LazyList<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
-        return StreamFactory.create(javaStream.iterator());
+        return LazyListFactory.create(javaStream.iterator());
     }
 
     /**
-     * Creates a Stream from boolean values.
+     * Creates a LazyList from boolean values.
      *
      * @param elements boolean values
-     * @return A new Stream of Boolean values
+     * @return A new LazyList of Boolean values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Boolean> ofAll(boolean ... elements) {
+    static LazyList<Boolean> ofAll(boolean ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream from byte values.
+     * Creates a LazyList from byte values.
      *
      * @param elements byte values
-     * @return A new Stream of Byte values
+     * @return A new LazyList of Byte values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Byte> ofAll(byte ... elements) {
+    static LazyList<Byte> ofAll(byte ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream from char values.
+     * Creates a LazyList from char values.
      *
      * @param elements char values
-     * @return A new Stream of Character values
+     * @return A new LazyList of Character values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Character> ofAll(char ... elements) {
+    static LazyList<Character> ofAll(char ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream values double values.
+     * Creates a LazyList values double values.
      *
      * @param elements double values
-     * @return A new Stream of Double values
+     * @return A new LazyList of Double values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Double> ofAll(double ... elements) {
+    static LazyList<Double> ofAll(double ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream from float values.
+     * Creates a LazyList from float values.
      *
      * @param elements float values
-     * @return A new Stream of Float values
+     * @return A new LazyList of Float values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Float> ofAll(float ... elements) {
+    static LazyList<Float> ofAll(float ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream from int values.
+     * Creates a LazyList from int values.
      *
      * @param elements int values
-     * @return A new Stream of Integer values
+     * @return A new LazyList of Integer values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Integer> ofAll(int ... elements) {
+    static LazyList<Integer> ofAll(int ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream from long values.
+     * Creates a LazyList from long values.
      *
      * @param elements long values
-     * @return A new Stream of Long values
+     * @return A new LazyList of Long values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Long> ofAll(long ... elements) {
+    static LazyList<Long> ofAll(long ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream from short values.
+     * Creates a LazyList from short values.
      *
      * @param elements short values
-     * @return A new Stream of Short values
+     * @return A new LazyList of Short values
      * @throws NullPointerException if elements is null
      */
-    static Stream<Short> ofAll(short ... elements) {
+    static LazyList<Short> ofAll(short ... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return Stream.ofAll(Iterator.ofAll(elements));
+        return LazyList.ofAll(Iterator.ofAll(elements));
     }
 
     /**
-     * Creates a Stream of char numbers starting from {@code from}, extending to {@code toExclusive - 1}.
+     * Creates a LazyList of char numbers starting from {@code from}, extending to {@code toExclusive - 1}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.range('a', 'a')  // = Stream()
-     * Stream.range('c', 'a')  // = Stream()
-     * Stream.range('a', 'd')  // = Stream('a', 'b', 'c')
+     * LazyList.range('a', 'a')  // = LazyList()
+     * LazyList.range('c', 'a')  // = LazyList()
+     * LazyList.range('a', 'd')  // = LazyList('a', 'b', 'c')
      * }
      * </pre>
      *
      * @param from        the first char
      * @param toExclusive the last char + 1
-     * @return a range of char values as specified or the empty Stream if {@code from >= toExclusive}
+     * @return a range of char values as specified or the empty LazyList if {@code from >= toExclusive}
      */
-    static Stream<Character> range(char from, char toExclusive) {
-        return Stream.ofAll(Iterator.range(from, toExclusive));
+    static LazyList<Character> range(char from, char toExclusive) {
+        return LazyList.ofAll(Iterator.range(from, toExclusive));
     }
 
     /**
-     * Creates a Stream of char numbers starting from {@code from}, extending to {@code toExclusive - 1},
+     * Creates a LazyList of char numbers starting from {@code from}, extending to {@code toExclusive - 1},
      * with {@code step}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeBy('a', 'c', 1)  // = Stream('a', 'b')
-     * Stream.rangeBy('a', 'd', 2)  // = Stream('a', 'c')
-     * Stream.rangeBy('d', 'a', -2) // = Stream('d', 'b')
-     * Stream.rangeBy('d', 'a', 2)  // = Stream()
+     * LazyList.rangeBy('a', 'c', 1)  // = LazyList('a', 'b')
+     * LazyList.rangeBy('a', 'd', 2)  // = LazyList('a', 'c')
+     * LazyList.rangeBy('d', 'a', -2) // = LazyList('d', 'b')
+     * LazyList.rangeBy('d', 'a', 2)  // = LazyList()
      * }
      * </pre>
      *
      * @param from        the first char
      * @param toExclusive the last char + 1
      * @param step        the step
-     * @return a range of char values as specified or the empty Stream if<br>
+     * @return a range of char values as specified or the empty LazyList if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero
      */
-    static Stream<Character> rangeBy(char from, char toExclusive, int step) {
-        return Stream.ofAll(Iterator.rangeBy(from, toExclusive, step));
+    static LazyList<Character> rangeBy(char from, char toExclusive, int step) {
+        return LazyList.ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
-     * Creates a Stream of double numbers starting from {@code from}, extending up to but not including {@code toExclusive},
+     * Creates a LazyList of double numbers starting from {@code from}, extending up to but not including {@code toExclusive},
      * with {@code step}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeBy(1.0, 3.0, 1.0)  // = Stream(1.0, 2.0)
-     * Stream.rangeBy(1.0, 4.0, 2.0)  // = Stream(1.0, 3.0)
-     * Stream.rangeBy(4.0, 1.0, -2.0) // = Stream(4.0, 2.0)
-     * Stream.rangeBy(4.0, 1.0, 2.0)  // = Stream()
+     * LazyList.rangeBy(1.0, 3.0, 1.0)  // = LazyList(1.0, 2.0)
+     * LazyList.rangeBy(1.0, 4.0, 2.0)  // = LazyList(1.0, 3.0)
+     * LazyList.rangeBy(4.0, 1.0, -2.0) // = LazyList(4.0, 2.0)
+     * LazyList.rangeBy(4.0, 1.0, 2.0)  // = LazyList()
      * }
      * </pre>
      *
      * @param from        the first double
      * @param toExclusive the upper bound (exclusive)
      * @param step        the step
-     * @return a range of double values as specified or the empty Stream if<br>
+     * @return a range of double values as specified or the empty LazyList if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero
      */
-    static Stream<Double> rangeBy(double from, double toExclusive, double step) {
-        return Stream.ofAll(Iterator.rangeBy(from, toExclusive, step));
+    static LazyList<Double> rangeBy(double from, double toExclusive, double step) {
+        return LazyList.ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
-     * Creates a Stream of int numbers starting from {@code from}, extending to {@code toExclusive - 1}.
+     * Creates a LazyList of int numbers starting from {@code from}, extending to {@code toExclusive - 1}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.range(0, 0)  // = Stream()
-     * Stream.range(2, 0)  // = Stream()
-     * Stream.range(-2, 2) // = Stream(-2, -1, 0, 1)
+     * LazyList.range(0, 0)  // = LazyList()
+     * LazyList.range(2, 0)  // = LazyList()
+     * LazyList.range(-2, 2) // = LazyList(-2, -1, 0, 1)
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toExclusive the last number + 1
-     * @return a range of int values as specified or the empty Stream if {@code from >= toExclusive}
+     * @return a range of int values as specified or the empty LazyList if {@code from >= toExclusive}
      */
-    static Stream<Integer> range(int from, int toExclusive) {
-        return Stream.ofAll(Iterator.range(from, toExclusive));
+    static LazyList<Integer> range(int from, int toExclusive) {
+        return LazyList.ofAll(Iterator.range(from, toExclusive));
     }
 
     /**
-     * Creates a Stream of int numbers starting from {@code from}, extending to {@code toExclusive - 1},
+     * Creates a LazyList of int numbers starting from {@code from}, extending to {@code toExclusive - 1},
      * with {@code step}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeBy(1, 3, 1)  // = Stream(1, 2)
-     * Stream.rangeBy(1, 4, 2)  // = Stream(1, 3)
-     * Stream.rangeBy(4, 1, -2) // = Stream(4, 2)
-     * Stream.rangeBy(4, 1, 2)  // = Stream()
+     * LazyList.rangeBy(1, 3, 1)  // = LazyList(1, 2)
+     * LazyList.rangeBy(1, 4, 2)  // = LazyList(1, 3)
+     * LazyList.rangeBy(4, 1, -2) // = LazyList(4, 2)
+     * LazyList.rangeBy(4, 1, 2)  // = LazyList()
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toExclusive the last number + 1
      * @param step        the step
-     * @return a range of int values as specified or the empty Stream if<br>
+     * @return a range of int values as specified or the empty LazyList if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero
      */
-    static Stream<Integer> rangeBy(int from, int toExclusive, int step) {
-        return Stream.ofAll(Iterator.rangeBy(from, toExclusive, step));
+    static LazyList<Integer> rangeBy(int from, int toExclusive, int step) {
+        return LazyList.ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
-     * Creates a Stream of long numbers starting from {@code from}, extending to {@code toExclusive - 1}.
+     * Creates a LazyList of long numbers starting from {@code from}, extending to {@code toExclusive - 1}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.range(0L, 0L)  // = Stream()
-     * Stream.range(2L, 0L)  // = Stream()
-     * Stream.range(-2L, 2L) // = Stream(-2L, -1L, 0L, 1L)
+     * LazyList.range(0L, 0L)  // = LazyList()
+     * LazyList.range(2L, 0L)  // = LazyList()
+     * LazyList.range(-2L, 2L) // = LazyList(-2L, -1L, 0L, 1L)
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toExclusive the last number + 1
-     * @return a range of long values as specified or the empty Stream if {@code from >= toExclusive}
+     * @return a range of long values as specified or the empty LazyList if {@code from >= toExclusive}
      */
-    static Stream<Long> range(long from, long toExclusive) {
-        return Stream.ofAll(Iterator.range(from, toExclusive));
+    static LazyList<Long> range(long from, long toExclusive) {
+        return LazyList.ofAll(Iterator.range(from, toExclusive));
     }
 
     /**
-     * Creates a Stream of long numbers starting from {@code from}, extending to {@code toExclusive - 1},
+     * Creates a LazyList of long numbers starting from {@code from}, extending to {@code toExclusive - 1},
      * with {@code step}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeBy(1L, 3L, 1L)  // = Stream(1L, 2L)
-     * Stream.rangeBy(1L, 4L, 2L)  // = Stream(1L, 3L)
-     * Stream.rangeBy(4L, 1L, -2L) // = Stream(4L, 2L)
-     * Stream.rangeBy(4L, 1L, 2L)  // = Stream()
+     * LazyList.rangeBy(1L, 3L, 1L)  // = LazyList(1L, 2L)
+     * LazyList.rangeBy(1L, 4L, 2L)  // = LazyList(1L, 3L)
+     * LazyList.rangeBy(4L, 1L, -2L) // = LazyList(4L, 2L)
+     * LazyList.rangeBy(4L, 1L, 2L)  // = LazyList()
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toExclusive the last number + 1
      * @param step        the step
-     * @return a range of long values as specified or the empty Stream if<br>
+     * @return a range of long values as specified or the empty LazyList if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero
      */
-    static Stream<Long> rangeBy(long from, long toExclusive, long step) {
-        return Stream.ofAll(Iterator.rangeBy(from, toExclusive, step));
+    static LazyList<Long> rangeBy(long from, long toExclusive, long step) {
+        return LazyList.ofAll(Iterator.rangeBy(from, toExclusive, step));
     }
 
     /**
-     * Creates a Stream of char numbers starting from {@code from}, extending to {@code toInclusive}.
+     * Creates a LazyList of char numbers starting from {@code from}, extending to {@code toInclusive}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeClosed('a', 'a')  // = Stream('a')
-     * Stream.rangeClosed('c', 'a')  // = Stream()
-     * Stream.rangeClosed('a', 'd')  // = Stream('a', 'b', 'c', 'd')
+     * LazyList.rangeClosed('a', 'a')  // = LazyList('a')
+     * LazyList.rangeClosed('c', 'a')  // = LazyList()
+     * LazyList.rangeClosed('a', 'd')  // = LazyList('a', 'b', 'c', 'd')
      * }
      * </pre>
      *
      * @param from        the first char
      * @param toInclusive the last char
-     * @return a range of char values as specified or the empty Stream if {@code from > toInclusive}
+     * @return a range of char values as specified or the empty LazyList if {@code from > toInclusive}
      */
-    static Stream<Character> rangeClosed(char from, char toInclusive) {
-        return Stream.ofAll(Iterator.rangeClosed(from, toInclusive));
+    static LazyList<Character> rangeClosed(char from, char toInclusive) {
+        return LazyList.ofAll(Iterator.rangeClosed(from, toInclusive));
     }
 
-    static Stream<Character> rangeClosedBy(char from, char toInclusive, int step) {
-        return Stream.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+    static LazyList<Character> rangeClosedBy(char from, char toInclusive, int step) {
+        return LazyList.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
-    static Stream<Double> rangeClosedBy(double from, double toInclusive, double step) {
-        return Stream.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+    static LazyList<Double> rangeClosedBy(double from, double toInclusive, double step) {
+        return LazyList.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
-     * Creates a Stream of int numbers starting from {@code from}, extending to {@code toInclusive}.
+     * Creates a LazyList of int numbers starting from {@code from}, extending to {@code toInclusive}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeClosed(0, 0)  // = Stream(0)
-     * Stream.rangeClosed(2, 0)  // = Stream()
-     * Stream.rangeClosed(-2, 2) // = Stream(-2, -1, 0, 1, 2)
+     * LazyList.rangeClosed(0, 0)  // = LazyList(0)
+     * LazyList.rangeClosed(2, 0)  // = LazyList()
+     * LazyList.rangeClosed(-2, 2) // = LazyList(-2, -1, 0, 1, 2)
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toInclusive the last number
-     * @return a range of int values as specified or the empty Stream if {@code from > toInclusive}
+     * @return a range of int values as specified or the empty LazyList if {@code from > toInclusive}
      */
-    static Stream<Integer> rangeClosed(int from, int toInclusive) {
-        return Stream.ofAll(Iterator.rangeClosed(from, toInclusive));
+    static LazyList<Integer> rangeClosed(int from, int toInclusive) {
+        return LazyList.ofAll(Iterator.rangeClosed(from, toInclusive));
     }
 
     /**
-     * Creates a Stream of int numbers starting from {@code from}, extending to {@code toInclusive},
+     * Creates a LazyList of int numbers starting from {@code from}, extending to {@code toInclusive},
      * with {@code step}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeClosedBy(1, 3, 1)  // = Stream(1, 2, 3)
-     * Stream.rangeClosedBy(1, 4, 2)  // = Stream(1, 3)
-     * Stream.rangeClosedBy(4, 1, -2) // = Stream(4, 2)
-     * Stream.rangeClosedBy(4, 1, 2)  // = Stream()
+     * LazyList.rangeClosedBy(1, 3, 1)  // = LazyList(1, 2, 3)
+     * LazyList.rangeClosedBy(1, 4, 2)  // = LazyList(1, 3)
+     * LazyList.rangeClosedBy(4, 1, -2) // = LazyList(4, 2)
+     * LazyList.rangeClosedBy(4, 1, 2)  // = LazyList()
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toInclusive the last number
      * @param step        the step
-     * @return a range of int values as specified or the empty Stream if<br>
+     * @return a range of int values as specified or the empty LazyList if<br>
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero
      */
-    static Stream<Integer> rangeClosedBy(int from, int toInclusive, int step) {
-        return Stream.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+    static LazyList<Integer> rangeClosedBy(int from, int toInclusive, int step) {
+        return LazyList.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
-     * Creates a Stream of long numbers starting from {@code from}, extending to {@code toInclusive}.
+     * Creates a LazyList of long numbers starting from {@code from}, extending to {@code toInclusive}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeClosed(0L, 0L)  // = Stream(0L)
-     * Stream.rangeClosed(2L, 0L)  // = Stream()
-     * Stream.rangeClosed(-2L, 2L) // = Stream(-2L, -1L, 0L, 1L, 2L)
+     * LazyList.rangeClosed(0L, 0L)  // = LazyList(0L)
+     * LazyList.rangeClosed(2L, 0L)  // = LazyList()
+     * LazyList.rangeClosed(-2L, 2L) // = LazyList(-2L, -1L, 0L, 1L, 2L)
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toInclusive the last number
-     * @return a range of long values as specified or the empty Stream if {@code from > toInclusive}
+     * @return a range of long values as specified or the empty LazyList if {@code from > toInclusive}
      */
-    static Stream<Long> rangeClosed(long from, long toInclusive) {
-        return Stream.ofAll(Iterator.rangeClosed(from, toInclusive));
+    static LazyList<Long> rangeClosed(long from, long toInclusive) {
+        return LazyList.ofAll(Iterator.rangeClosed(from, toInclusive));
     }
 
     /**
-     * Creates a Stream of long numbers starting from {@code from}, extending to {@code toInclusive},
+     * Creates a LazyList of long numbers starting from {@code from}, extending to {@code toInclusive},
      * with {@code step}.
      * <p>
      * Examples:
      * <pre>
      * {@code
-     * Stream.rangeClosedBy(1L, 3L, 1L)  // = Stream(1L, 2L, 3L)
-     * Stream.rangeClosedBy(1L, 4L, 2L)  // = Stream(1L, 3L)
-     * Stream.rangeClosedBy(4L, 1L, -2L) // = Stream(4L, 2L)
-     * Stream.rangeClosedBy(4L, 1L, 2L)  // = Stream()
+     * LazyList.rangeClosedBy(1L, 3L, 1L)  // = LazyList(1L, 2L, 3L)
+     * LazyList.rangeClosedBy(1L, 4L, 2L)  // = LazyList(1L, 3L)
+     * LazyList.rangeClosedBy(4L, 1L, -2L) // = LazyList(4L, 2L)
+     * LazyList.rangeClosedBy(4L, 1L, 2L)  // = LazyList()
      * }
      * </pre>
      *
      * @param from        the first number
      * @param toInclusive the last number
      * @param step        the step
-     * @return a range of long values as specified or the empty Stream if<br>
+     * @return a range of long values as specified or the empty LazyList if<br>
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero
      */
-    static Stream<Long> rangeClosedBy(long from, long toInclusive, long step) {
-        return Stream.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+    static LazyList<Long> rangeClosedBy(long from, long toInclusive, long step) {
+        return LazyList.ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
     }
 
     /**
-     * Transposes the rows and columns of a {@link Stream} matrix.
+     * Transposes the rows and columns of a {@link LazyList} matrix.
      * <p>
      * Complexity: O(rows * columns); the whole matrix is computed now.
      *
      * @param <T> matrix element type
      * @param matrix to be transposed.
-     * @return a transposed {@link Stream} matrix.
+     * @return a transposed {@link LazyList} matrix.
      * @throws IllegalArgumentException if the row lengths of {@code matrix} differ.
      * <p>
      * ex: {@code
-     * Stream.transpose(Stream(Stream(1,2,3), Stream(4,5,6))) → Stream(Stream(1,4), Stream(2,5), Stream(3,6))
+     * LazyList.transpose(LazyList(LazyList(1,2,3), LazyList(4,5,6))) → LazyList(LazyList(1,4), LazyList(2,5), LazyList(3,6))
      * }
      */
-    static <T extends @Nullable Object> Stream<Stream<T>> transpose(Stream<Stream<T>> matrix) {
-        return dev.zazr.collection.internal.Collections.transpose(matrix, Stream::ofAll, Stream::of);
+    static <T extends @Nullable Object> LazyList<LazyList<T>> transpose(LazyList<LazyList<T>> matrix) {
+        return dev.zazr.collection.internal.Collections.transpose(matrix, LazyList::ofAll, LazyList::of);
     }
 
     /**
-     * Creates a Stream from a seed value and a function.
+     * Creates a LazyList from a seed value and a function.
      * The function takes the seed at first.
      * The function should return {@code None} when it's
-     * done generating the Stream, otherwise {@code Some} {@code Tuple}
+     * done generating the LazyList, otherwise {@code Some} {@code Tuple}
      * of the element for the next call and the value to add to the
-     * resulting Stream.
+     * resulting LazyList.
      * <p>
      * Example:
      * <pre>
      * {@code
-     * Stream.unfoldRight(10, x -> x == 0
+     * LazyList.unfoldRight(10, x -> x == 0
      *             ? Option.none()
      *             : Option.some(new Tuple2<>(x, x-1)));
-     * // Stream(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
+     * // LazyList(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
      * }
      * </pre>
      *
@@ -864,28 +864,28 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param <U>  type of unfolded values
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
-     * @return a Stream with the values built up by the iteration
+     * @return a LazyList with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Stream<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f, "Stream.unfoldRight: f returned null").toStream();
+    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
+        return Iterator.unfoldRight(seed, f, "LazyList.unfoldRight: f returned null").toLazyList();
     }
 
     /**
-     * Creates a Stream from a seed value and a function.
+     * Creates a LazyList from a seed value and a function.
      * The function takes the seed at first.
      * The function should return {@code None} when it's
-     * done generating the Stream, otherwise {@code Some} {@code Tuple}
-     * of the value to add to the resulting Stream and
+     * done generating the LazyList, otherwise {@code Some} {@code Tuple}
+     * of the value to add to the resulting LazyList and
      * the element for the next call.
      * <p>
      * Example:
      * <pre>
      * {@code
-     * Stream.unfoldLeft(10, x -> x == 0
+     * LazyList.unfoldLeft(10, x -> x == 0
      *             ? Option.none()
      *             : Option.some(new Tuple2<>(x-1, x)));
-     * // Stream(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+     * // LazyList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
      *
@@ -893,39 +893,39 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param <U>  type of unfolded values
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
-     * @return a Stream with the values built up by the iteration
+     * @return a LazyList with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Stream<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldLeft(seed, f, "Stream.unfoldLeft: f returned null").toStream();
+    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
+        return Iterator.unfoldLeft(seed, f, "LazyList.unfoldLeft: f returned null").toLazyList();
     }
 
     /**
-     * Creates a Stream from a seed value and a function.
+     * Creates a LazyList from a seed value and a function.
      * The function takes the seed at first.
      * The function should return {@code None} when it's
-     * done generating the Stream, otherwise {@code Some} {@code Tuple}
-     * of the value to add to the resulting Stream and
+     * done generating the LazyList, otherwise {@code Some} {@code Tuple}
+     * of the value to add to the resulting LazyList and
      * the element for the next call.
      * <p>
      * Example:
      * <pre>
      * {@code
-     * Stream.unfold(10, x -> x == 0
+     * LazyList.unfold(10, x -> x == 0
      *             ? Option.none()
      *             : Option.some(new Tuple2<>(x-1, x)));
-     * // Stream(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+     * // LazyList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
      * }
      * </pre>
      *
      * @param <T>  type of seeds and unfolded values
      * @param seed the start value for the iteration
      * @param f    the function to get the next step of the iteration
-     * @return a Stream with the values built up by the iteration
+     * @return a LazyList with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    static <T extends @Nullable Object> Stream<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
-        return Iterator.unfold(seed, f, "Stream.unfold: f returned null").toStream();
+    static <T extends @Nullable Object> LazyList<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
+        return Iterator.unfold(seed, f, "LazyList.unfold: f returned null").toLazyList();
     }
 
     /**
@@ -933,19 +933,19 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param t   An element
      * @param <T> Element type
-     * @return A new Stream containing infinite {@code t}'s.
+     * @return A new LazyList containing infinite {@code t}'s.
      */
-    static <T extends @Nullable Object> Stream<T> continually(T t) {
-        return Stream.ofAll(Iterator.continually(t));
+    static <T extends @Nullable Object> LazyList<T> continually(T t) {
+        return LazyList.ofAll(Iterator.continually(t));
     }
 
     /**
-     * Whether {@code that} occurs in this Stream as a contiguous slice.
+     * Whether {@code that} occurs in this LazyList as a contiguous slice.
      * <p>
      * Complexity: O(n * m) for a slice of m elements; the elements are computed up to one past the first match.
      *
      * @param that the slice to look for
-     * @return true if {@code that} occurs contiguously in this Stream (an empty slice always does)
+     * @return true if {@code that} occurs contiguously in this LazyList (an empty slice always does)
      * @throws NullPointerException if {@code that} is null, or if the search reaches a null element of {@code that};
      *                              the slice is read only as far as the comparisons go, so a null past them is not seen
      */
@@ -955,9 +955,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Whether this Stream ends with {@code that}.
+     * Whether this LazyList ends with {@code that}.
      * <p>
-     * Complexity: O(n + m) for m elements of {@code that}; the whole Stream is computed.
+     * Complexity: O(n + m) for m elements of {@code that}; the whole LazyList is computed.
      *
      * @param that the suffix to test
      * @return true if the last {@code m} elements equal {@code that} (an empty {@code that} is always a suffix)
@@ -965,7 +965,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
-        final Stream<? extends T> suffix = Stream.ofAll(that);
+        final LazyList<? extends T> suffix = LazyList.ofAll(that);
         final int skipped = size() - suffix.size();
         if (skipped < 0) {
             return false;
@@ -1019,7 +1019,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default int indexOfSlice(Iterable<? extends T> that, int from) {
         Objects.requireNonNull(that, "that is null");
-        return StreamModule.Slice.indexOfSlice(this, that, from);
+        return LazyListModule.Slice.indexOfSlice(this, that, from);
     }
 
     /**
@@ -1049,7 +1049,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default int indexWhere(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
         int i = Math.max(from, 0);
-        Stream<T> these = drop(i);
+        LazyList<T> these = drop(i);
         while (!these.isEmpty()) {
             if (predicate.test(these.head())) {
                 return i;
@@ -1063,7 +1063,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The index of the last occurrence of {@code element}, or -1.
      * <p>
-     * Complexity: O(n); the whole Stream is computed.
+     * Complexity: O(n); the whole LazyList is computed.
      *
      * @param element the element to find
      * @return the index of its last occurrence, or -1 if absent
@@ -1075,7 +1075,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The last index at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
-     * Complexity: O(n * m) for a slice of m elements; the whole Stream is computed.
+     * Complexity: O(n * m) for a slice of m elements; the whole LazyList is computed.
      *
      * @param that the slice to find
      * @return the index of its last occurrence, or -1
@@ -1089,7 +1089,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The last index at or before {@code end} at which {@code that} occurs as a contiguous slice, or -1.
      * <p>
      * Complexity: O(n * m) for a slice of m elements; the walk stops at most m elements past {@code end}, so it works
-     * on an infinite Stream.
+     * on an infinite LazyList.
      *
      * @param that the slice to find
      * @param end  the last position to look at
@@ -1098,13 +1098,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default int lastIndexOfSlice(Iterable<? extends T> that, int end) {
         Objects.requireNonNull(that, "that is null");
-        return StreamModule.Slice.lastIndexOfSlice(this, that, end);
+        return LazyListModule.Slice.lastIndexOfSlice(this, that, end);
     }
 
     /**
      * The index of the last element satisfying {@code predicate}, or -1.
      * <p>
-     * Complexity: O(n); the whole Stream is computed.
+     * Complexity: O(n); the whole LazyList is computed.
      *
      * @param predicate the condition
      * @return the last index of a satisfying element, or -1
@@ -1117,7 +1117,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The index of the last element at or before {@code end} satisfying {@code predicate}, or -1.
      * <p>
-     * Complexity: O(n); the elements up to one past {@code end} are computed, so it works on an infinite Stream.
+     * Complexity: O(n); the elements up to one past {@code end} are computed, so it works on an infinite LazyList.
      *
      * @param predicate the condition
      * @param end       the last position to look at
@@ -1127,7 +1127,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default int lastIndexWhere(Predicate<? super T> predicate, int end) {
         Objects.requireNonNull(predicate, "predicate is null");
         int i = 0;
-        Stream<T> these = this;
+        LazyList<T> these = this;
         int last = -1;
         while (!these.isEmpty() && i <= end) {
             if (predicate.test(these.head())) {
@@ -1153,8 +1153,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The position of {@code element} in this Stream, which must already be sorted in ascending natural order; the
-     * result is undefined otherwise. The search is linear, as a Stream has no indexed access.
+     * The position of {@code element} in this LazyList, which must already be sorted in ascending natural order; the
+     * result is undefined otherwise. The search is linear, as a LazyList has no indexed access.
      * <p>
      * Complexity: O(n); the elements are computed until one is not smaller than {@code element}.
      *
@@ -1166,17 +1166,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     @SuppressWarnings("unchecked")
     default int search(T element) {
         final ToIntFunction<T> comparison = ((Comparable<T>) element)::compareTo;
-        return StreamModule.Search.linearSearch(this, comparison);
+        return LazyListModule.Search.linearSearch(this, comparison);
     }
 
     /**
-     * The position of {@code element} in this Stream, which must already be sorted in ascending order according to
-     * {@code comparator}; the result is undefined otherwise. The search is linear, as a Stream has no indexed access.
+     * The position of {@code element} in this LazyList, which must already be sorted in ascending order according to
+     * {@code comparator}; the result is undefined otherwise. The search is linear, as a LazyList has no indexed access.
      * <p>
      * Complexity: O(n); the elements are computed until one is not smaller than {@code element}.
      *
      * @param element    the element to find
-     * @param comparator the order this Stream is sorted by
+     * @param comparator the order this LazyList is sorted by
      * @return the index of the element if it is present; otherwise {@code (-(insertion point) - 1)}, the insertion
      *         point being the index at which the element would be inserted
      * @throws NullPointerException if {@code comparator} is null
@@ -1184,7 +1184,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default int search(T element, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         final ToIntFunction<T> comparison = current -> comparator.compare(element, current);
-        return StreamModule.Search.linearSearch(this, comparison);
+        return LazyListModule.Search.linearSearch(this, comparison);
     }
 
     /**
@@ -1201,7 +1201,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default int segmentLength(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
         int i = 0;
-        Stream<T> these = this.drop(from);
+        LazyList<T> these = this.drop(from);
         while (!these.isEmpty() && predicate.test(these.head())) {
             i++;
             these = these.tail();
@@ -1210,7 +1210,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Whether this Stream starts with {@code that}: {@code startsWith(that, 0)}.
+     * Whether this LazyList starts with {@code that}: {@code startsWith(that, 0)}.
      * <p>
      * Complexity: O(m) for m elements of {@code that}; at most the first m + 1 elements are computed.
      *
@@ -1230,7 +1230,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * computed.
      *
      * @param that   the prefix to test
-     * @param offset the position in this Stream at which the prefix should start
+     * @param offset the position in this LazyList at which the prefix should start
      * @return false if {@code offset} is negative; otherwise true if {@code that} equals the {@code m} elements from
      *         {@code offset} on (an empty {@code that} is always a prefix, even beyond the end)
      * @throws NullPointerException if {@code that} is null
@@ -1394,10 +1394,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * List.of('4', '2').foldRight(0, (x, acc) -> acc * 10 + x - '0');
      * }</pre>
      * <p>
-     * The elements are folded from the end: this Stream is reversed first, which computes all of it, then folded from
+     * The elements are folded from the end: this LazyList is reversed first, which computes all of it, then folded from
      * the left, so the recursion depth does not grow with the length.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now and copied in reverse before the fold.
+     * Complexity: O(n); the whole LazyList is computed now and copied in reverse before the fold.
      *
      * @param <U>  the type of the accumulator
      * @param zero the initial accumulator
@@ -1411,34 +1411,34 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns a new Stream with the given element appended at the end.
+     * Returns a new LazyList with the given element appended at the end.
      * <p>
-     * Complexity: O(1); nothing is computed now, and the element comes after the last one of this Stream. Appending in
+     * Complexity: O(1); nothing is computed now, and the element comes after the last one of this LazyList. Appending in
      * a loop stays O(1) per call, and reading the result back costs O(1) per element, however many calls built it.
      *
      * @param element the element to append
-     * @return a new Stream ending with the given element
+     * @return a new LazyList ending with the given element
      */
-    default Stream<T> append(T element) {
-        return isEmpty() ? Stream.of(element) : new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(Stream.of(element)));
+    default LazyList<T> append(T element) {
+        return isEmpty() ? LazyList.of(element) : new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(LazyList.of(element)));
     }
 
     /**
-     * Returns a new Stream with the given elements appended at the end, in iteration order.
+     * Returns a new LazyList with the given elements appended at the end, in iteration order.
      * <p>
      * Complexity: O(1); only the first of the given elements is read now, the others when the result reaches them, so
-     * an infinite argument is fine. The elements are read once, into a Stream that every result built from this one
+     * an infinite argument is fine. The elements are read once, into a LazyList that every result built from this one
      * shares. Calling appendAll or {@link #append(Object)} in a loop stays O(1) per call, and reading the result back
      * costs O(1) per element, however many calls built it.
      *
      * @param elements the elements to append
-     * @return a new Stream ending with the given elements, or this Stream if there are none
+     * @return a new LazyList ending with the given elements, or this LazyList if there are none
      * @throws NullPointerException if {@code elements} is null
      */
-    default Stream<T> appendAll(Iterable<? extends T> elements) {
-        // the elements are read into a memoising Stream, which reads only the first now and is shared by every Stream
+    default LazyList<T> appendAll(Iterable<? extends T> elements) {
+        // the elements are read into a memoising LazyList, which reads only the first now and is shared by every LazyList
         // built from the result
-        final Stream<T> that = Stream.ofAll(elements);
+        final LazyList<T> that = LazyList.ofAll(elements);
         if (that.isEmpty()) {
             return this;
         } else if (isEmpty()) {
@@ -1449,45 +1449,45 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Appends itself to the end of stream with {@code mapper} function.
+     * Appends itself to the end of lazy list with {@code mapper} function.
      * <p>
      * <strong>Example:</strong>
      * <p>
      * Well known Scala code for Fibonacci infinite sequence
      * <pre>
      * {@code
-     * val fibs:Stream[Int] = 0 #:: 1 #:: (fibs zip fibs.tail).map{ t => t._1() + t._2() }
+     * val fibs:LazyList[Int] = 0 #:: 1 #:: (fibs zip fibs.tail).map{ t => t._1() + t._2() }
      * }
      * </pre>
      * can be transformed to
      * <pre>
      * {@code
-     * Stream.of(0, 1).appendSelf(self -> self.zip(self.tail()).map(t -> t._1() + t._2()));
+     * LazyList.of(0, 1).appendSelf(self -> self.zip(self.tail()).map(t -> t._1() + t._2()));
      * }
      * </pre>
      * <p>
      * Complexity: O(1); nothing is computed now, each element when the result reaches it.
      *
      * @param mapper an mapper
-     * @return this Stream if it is empty, otherwise a new Stream obtained by appending this Stream, mapped by {@code mapper}, to itself
-     * @throws NullPointerException if {@code mapper} is null, or, when the stream reaches it, returns null
+     * @return this LazyList if it is empty, otherwise a new LazyList obtained by appending this LazyList, mapped by {@code mapper}, to itself
+     * @throws NullPointerException if {@code mapper} is null, or, when the lazy list reaches it, returns null
      */
-    default Stream<T> appendSelf(Function<? super Stream<T>, ? extends Stream<T>> mapper) {
+    default LazyList<T> appendSelf(Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return isEmpty() ? this : new AppendSelf<>((Cons<T>) this, mapper).stream();
     }
 
     /**
-     * An unmodifiable {@link java.util.List} view of this Stream, in its order: nothing is copied, reads go through
-     * to this Stream, which never changes, and every mutator of the view (including those of its iterators and
+     * An unmodifiable {@link java.util.List} view of this LazyList, in its order: nothing is copied, reads go through
+     * to this LazyList, which never changes, and every mutator of the view (including those of its iterators and
      * sub-lists) throws {@link UnsupportedOperationException}. {@code reversed()} and {@code subList} are views too.
-     * A mutable copy is {@code new java.util.ArrayList<>(stream.asJava())}; {@code Stream.ofAll} given the view
-     * returns this Stream without copying.
+     * A mutable copy is {@code new java.util.ArrayList<>(stream.asJava())}; {@code LazyList.ofAll} given the view
+     * returns this LazyList without copying.
      * <p>
      * Complexity: O(1); the view computes no element before a read needs it: {@code get(i)} computes the first
      * {@code i + 1} elements, the iterator one element per step, and {@code size()}, {@code lastIndexOf},
-     * {@code hashCode}, {@code getLast} and every read of {@code reversed()} compute the whole Stream (they never
-     * return on an infinite Stream). The view counts the size once and keeps it.
+     * {@code hashCode}, {@code getLast} and every read of {@code reversed()} compute the whole LazyList (they never
+     * return on an infinite LazyList). The view counts the size once and keeps it.
      *
      * @return an unmodifiable {@code java.util.List} view
      */
@@ -1498,12 +1498,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * All combinations of the elements, for every size from 0 to {@code size()}, by position.
      * <p>
-     * Complexity: O(n * 2^n) to read the 2^n combinations; the whole Stream is computed now.
+     * Complexity: O(n * 2^n) to read the 2^n combinations; the whole LazyList is computed now.
      *
      * @return the combinations, shortest first
      */
-    default Stream<Stream<T>> combinations() {
-        return Stream.rangeClosed(0, size()).map(this::combinations).flatMap(Function.identity());
+    default LazyList<LazyList<T>> combinations() {
+        return LazyList.rangeClosed(0, size()).map(this::combinations).flatMap(Function.identity());
     }
 
     /**
@@ -1512,48 +1512,48 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: lazy; the first k + 1 elements are computed now. Reading every combination costs O(n * C(n, k)) for a
      * small k, but the search explores every run of up to k positions, so it grows to O(n * 2^n) as k nears n, even
-     * though few combinations remain. A k greater than the length pays all of it now, to return an empty Stream.
+     * though few combinations remain. A k greater than the length pays all of it now, to return an empty LazyList.
      *
      * @param k the size of each combination
      * @return the combinations
      */
-    default Stream<Stream<T>> combinations(int k) {
+    default LazyList<LazyList<T>> combinations(int k) {
         return Combinations.apply(this, Math.max(k, 0));
     }
 
     /**
-     * Repeat the elements of this Stream infinitely.
+     * Repeat the elements of this LazyList infinitely.
      * <p>
      * Example:
      * <pre>
      * {@code
      * // = 1, 2, 3, 1, 2, 3, 1, 2, 3, ...
-     * Stream.of(1, 2, 3).cycle();
+     * LazyList.of(1, 2, 3).cycle();
      * }
      * </pre>
      * <p>
      * Complexity: O(1); nothing is computed now, and the result is infinite.
      *
-     * @return this Stream if it is empty, otherwise a new Stream containing this elements cycled.
+     * @return this LazyList if it is empty, otherwise a new LazyList containing this elements cycled.
      */
-    default Stream<T> cycle() {
+    default LazyList<T> cycle() {
         return isEmpty() ? this : appendSelf(Function.identity());
     }
 
     /**
-     * Repeat the elements of this Stream {@code count} times.
+     * Repeat the elements of this LazyList {@code count} times.
      * <p>
      * Example:
      * <pre>
      * {@code
      * // = empty
-     * Stream.of(1, 2, 3).cycle(0);
+     * LazyList.of(1, 2, 3).cycle(0);
      *
      * // = 1, 2, 3
-     * Stream.of(1, 2, 3).cycle(1);
+     * LazyList.of(1, 2, 3).cycle(1);
      *
      * // = 1, 2, 3, 1, 2, 3, 1, 2, 3
-     * Stream.of(1, 2, 3).cycle(3);
+     * LazyList.of(1, 2, 3).cycle(3);
      * }
      * </pre>
      * <p>
@@ -1561,15 +1561,15 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * now.
      *
      * @param count the number of cycles to be performed
-     * @return A new Stream containing this elements cycled {@code count} times.
+     * @return A new LazyList containing this elements cycled {@code count} times.
      */
-    default Stream<T> cycle(int count) {
+    default LazyList<T> cycle(int count) {
         if (count <= 0 || isEmpty()) {
             return empty();
         } else {
-            final Stream<T> self = this;
-            return Stream.ofAll(new Iterator<T>() {
-                Stream<T> stream = self;
+            final LazyList<T> self = this;
+            return LazyList.ofAll(new Iterator<T>() {
+                LazyList<T> stream = self;
                 int i = count - 1;
 
                 @Override
@@ -1592,37 +1592,37 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns a new {@code Stream} containing the elements of this instance
+     * Returns a new {@code LazyList} containing the elements of this instance
      * with all duplicates removed. Element equality is determined using {@code equals}.
      * <p>
      * Complexity: lazy; nothing is computed now. Moving to the next element skips and hashes the repeated ones before
-     * it, which never ends on an infinite Stream with no further new element.
+     * it, which never ends on an infinite LazyList with no further new element.
      *
-     * @return a new {@code Stream} without duplicate elements
+     * @return a new {@code LazyList} without duplicate elements
      */
-    default Stream<T> distinct() {
+    default LazyList<T> distinct() {
         return distinctBy(Function.identity());
     }
 
     /**
-     * Returns a new {@code Stream} containing the elements of this instance
+     * Returns a new {@code LazyList} containing the elements of this instance
      * without duplicates, as determined by the given {@code comparator}; the first of two equal elements is kept.
      * <p>
      * Complexity: lazy; O(log n) comparisons per element read. Moving to the next element skips the repeated ones, as
      * {@link #distinct()} does.
      *
      * @param comparator a comparator used to determine equality of elements
-     * @return a new {@code Stream} with duplicates removed
+     * @return a new {@code LazyList} with duplicates removed
      * @throws NullPointerException if {@code comparator} is null
      */
-    default Stream<T> distinctBy(Comparator<? super T> comparator) {
+    default LazyList<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         final java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
         return filter(seen::add);
     }
 
     /**
-     * Returns a new {@code Stream} containing the elements of this instance
+     * Returns a new {@code LazyList} containing the elements of this instance
      * without duplicates, based on keys extracted from elements using {@code keyExtractor}.
      * <p>
      * The first occurrence of each key is retained in the resulting sequence.
@@ -1632,10 +1632,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param keyExtractor a function to extract keys for determining uniqueness
      * @param <U>          the type of key
-     * @return a new {@code Stream} with duplicates removed based on keys
+     * @return a new {@code LazyList} with duplicates removed based on keys
      * @throws NullPointerException if {@code keyExtractor} is null
      */
-    default <U extends @Nullable Object> Stream<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
+    default <U extends @Nullable Object> LazyList<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         final java.util.Set<U> seen = new java.util.HashSet<>();
         return filter(t -> seen.add(keyExtractor.apply(t)));
@@ -1643,15 +1643,15 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The complement of {@link #distinct()}: the elements occurring more than once, each once, in order of first
-     * occurrence. {@code Stream.of(3, 1, 3, 2, 1, 3).duplicates()} is {@code Stream.of(3, 1)}. {@code isEmpty()} on
+     * occurrence. {@code LazyList.of(3, 1, 3, 2, 1, 3).duplicates()} is {@code LazyList.of(3, 1)}. {@code isEmpty()} on
      * the result is the "all distinct" test.
      * <p>
-     * Complexity: O(n), one hash lookup per element; the whole Stream is computed now, because whether an element
+     * Complexity: O(n), one hash lookup per element; the whole LazyList is computed now, because whether an element
      * repeats is known only at the end.
      *
-     * @return a new Stream of the repeated elements
+     * @return a new LazyList of the repeated elements
      */
-    default Stream<T> duplicates() {
+    default LazyList<T> duplicates() {
         return duplicatesBy(Function.identity());
     }
 
@@ -1659,14 +1659,14 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
      * occurrence. One pass, the key computed once per element.
      * <p>
-     * Complexity: O(n), one key and one hash lookup per element; the whole Stream is computed now.
+     * Complexity: O(n), one key and one hash lookup per element; the whole LazyList is computed now.
      *
      * @param keyExtractor computes the key an element is compared by
      * @param <U>          the key type
-     * @return a new Stream of the first element of each repeated key
+     * @return a new LazyList of the first element of each repeated key
      * @throws NullPointerException if {@code keyExtractor} is null
      */
-    default <U extends @Nullable Object> Stream<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
+    default <U extends @Nullable Object> LazyList<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         final java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
         return duplicated.isEmpty() ? empty() : ofAll(duplicated);
@@ -1676,13 +1676,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
      * equal, in the order of those last occurrences.
      * <p>
-     * Complexity: O(n log n) comparisons; the whole Stream is computed now, because the last occurrence decides.
+     * Complexity: O(n log n) comparisons; the whole LazyList is computed now, because the last occurrence decides.
      *
      * @param comparator decides which elements are duplicates
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code comparator} is null
      */
-    default Stream<T> distinctByKeepLast(Comparator<? super T> comparator) {
+    default LazyList<T> distinctByKeepLast(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         return ofAll(Iterator.ofAll(this).distinctByKeepLast(comparator));
     }
@@ -1691,20 +1691,20 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements without duplicates, keeping the last occurrence of each key, in the order of those last
      * occurrences.
      * <p>
-     * Complexity: O(n), one key per element; the whole Stream is computed now, because the last occurrence decides.
+     * Complexity: O(n), one key per element; the whole LazyList is computed now, because the last occurrence decides.
      *
      * @param keyExtractor computes the key an element is deduplicated by
      * @param <U>          the key type
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code keyExtractor} is null
      */
-    default <U extends @Nullable Object> Stream<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
+    default <U extends @Nullable Object> LazyList<T> distinctByKeepLast(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         return ofAll(Iterator.ofAll(this).distinctByKeepLast(keyExtractor));
     }
 
     /**
-     * Returns a new {@code Stream} without the first {@code n} elements,
+     * Returns a new {@code LazyList} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
@@ -1713,8 +1713,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
      */
-    default Stream<T> drop(int n) {
-        Stream<T> stream = this;
+    default LazyList<T> drop(int n) {
+        LazyList<T> stream = this;
         while (n-- > 0 && !stream.isEmpty()) {
             stream = stream.tail();
         }
@@ -1722,7 +1722,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns a new {@code Stream} starting from the first element
+     * Returns a new {@code LazyList} starting from the first element
      * that satisfies the given {@code predicate}, dropping all preceding elements.
      * <p>
      * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
@@ -1732,13 +1732,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new instance starting from the first element matching the predicate
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> dropUntil(Predicate<? super T> predicate) {
+    default LazyList<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropWhile(predicate.negate());
     }
 
     /**
-     * Returns a new {@code Stream} starting from the first element
+     * Returns a new {@code LazyList} starting from the first element
      * that does not satisfy the given {@code predicate}, dropping all preceding elements.
      * <p>
      * This is equivalent to {@code dropUntil(predicate.negate())}, which is useful
@@ -1751,9 +1751,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new instance starting from the first element not matching the predicate
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> dropWhile(Predicate<? super T> predicate) {
+    default LazyList<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        Stream<T> stream = this;
+        LazyList<T> stream = this;
         while (!stream.isEmpty() && predicate.test(stream.head())) {
             stream = stream.tail();
         }
@@ -1761,16 +1761,16 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns a new {@code Stream} without the last {@code n} elements,
+     * Returns a new {@code LazyList} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(k) for k dropped elements: the first k + 1 elements are computed now. The result then reads k
-     * elements ahead of what it returns, so it works on an infinite Stream.
+     * elements ahead of what it returns, so it works on an infinite LazyList.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
      */
-    default Stream<T> dropRight(int n) {
+    default LazyList<T> dropRight(int n) {
         if (n <= 0) {
             return this;
         } else {
@@ -1781,13 +1781,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the last matching element decides.
+     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
      *
      * @param predicate the condition, tested from the end
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> dropRightUntil(Predicate<? super T> predicate) {
+    default LazyList<T> dropRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reverse().dropUntil(predicate).reverse();
     }
@@ -1796,13 +1796,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements up to and including the last one not satisfying {@code predicate}, that is
      * {@code dropRightUntil(predicate.negate())}.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the last matching element decides.
+     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
      *
      * @param predicate the condition, tested from the end
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> dropRightWhile(Predicate<? super T> predicate) {
+    default LazyList<T> dropRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return dropRightUntil(predicate.negate());
     }
@@ -1811,24 +1811,24 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new traversable containing only the elements that satisfy the given predicate.
      * <p>
      * Complexity: lazy; the elements up to the first match are computed now. Moving to the next element skips every
-     * element that does not match, which never ends on an infinite Stream with no further match.
+     * element that does not match, which never ends on an infinite LazyList with no further match.
      *
      * @param predicate the condition to test elements
      * @return a traversable with elements matching the predicate
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> filter(Predicate<? super T> predicate) {
+    default LazyList<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (isEmpty()) {
             return this;
         } else {
-            Stream<T> stream = this;
+            LazyList<T> stream = this;
             while (!stream.isEmpty() && !predicate.test(stream.head())) {
                 stream = stream.tail();
             }
-            final Stream<T> finalStream = stream;
-            return stream.isEmpty() ? Stream.empty()
-                                    : cons(stream.head(), () -> finalStream.tail().filter(predicate));
+            final LazyList<T> finalLazyList = stream;
+            return stream.isEmpty() ? LazyList.empty()
+                                    : cons(stream.head(), () -> finalLazyList.tail().filter(predicate));
         }
     }
 
@@ -1836,32 +1836,32 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
      * <p>
      * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept are computed now. Moving
-     * to the next element skips every element that satisfies the predicate, which never ends on an infinite Stream with
+     * to the next element skips every element that satisfies the predicate, which never ends on an infinite LazyList with
      * nothing left to keep.
      *
      * @param predicate the condition of the elements left out
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> reject(Predicate<? super T> predicate) {
+    default LazyList<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Collections.reject(this, predicate, kept -> filter(kept));
     }
 
     /**
-     * The elements of the iterables {@code mapper} returns for the elements of this Stream, in order.
+     * The elements of the iterables {@code mapper} returns for the elements of this LazyList, in order.
      * <p>
      * Complexity: lazy; the elements are computed now until {@code mapper} returns a non-empty result. Moving on skips
-     * the empty results, which never ends on an infinite Stream whose results are all empty from some point on.
+     * the empty results, which never ends on an infinite LazyList whose results are all empty from some point on.
      *
      * @param mapper maps an element to the elements that replace it
      * @param <U>    the element type of the result
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code mapper} is null
      */
-    default <U extends @Nullable Object> Stream<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+    default <U extends @Nullable Object> LazyList<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? Empty.instance() : Stream.ofAll(new FlatMapIterator<>(Iterator.ofAll(this), mapper, "Stream.flatMap: mapper returned null"));
+        return isEmpty() ? Empty.instance() : LazyList.ofAll(new FlatMapIterator<>(Iterator.ofAll(this), mapper, "LazyList.flatMap: mapper returned null"));
     }
 
     /**
@@ -1880,11 +1880,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
-        Stream<T> stream = this;
+        LazyList<T> stream = this;
         for (int i = index - 1; i >= 0; i--) {
             stream = stream.tail();
             if (stream.isEmpty()) {
-                throw new IndexOutOfBoundsException("get(" + index + ") on Stream of size " + (index - i));
+                throw new IndexOutOfBoundsException("get(" + index + ") on LazyList of size " + (index - i));
             }
         }
         return stream.head();
@@ -1892,17 +1892,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The elements grouped by the key {@code classifier} computes, in a map ordered by the first occurrence of each
-     * key; each group keeps the order of this Stream.
+     * key; each group keeps the order of this LazyList.
      * <p>
-     * Complexity: O(n), one key and one hash lookup per element; the whole Stream is computed now.
+     * Complexity: O(n), one key and one hash lookup per element; the whole LazyList is computed now.
      *
      * @param classifier the key of an element
      * @param <C>        the key type
      * @return the groups by key
      * @throws NullPointerException if {@code classifier} is null, or returns null
      */
-    default <C extends @Nullable Object> Map<C, Stream<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return dev.zazr.collection.internal.Collections.groupBy(this, classifier, Stream::ofAll, "Stream.groupBy: classifier returned null");
+    default <C extends @Nullable Object> Map<C, LazyList<T>> groupBy(Function<? super T, ? extends C> classifier) {
+        return dev.zazr.collection.internal.Collections.groupBy(this, classifier, LazyList::ofAll, "LazyList.groupBy: classifier returned null");
     }
 
     /**
@@ -1917,7 +1917,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default int indexOf(T element, int from) {
         int index = 0;
-        for (Stream<T> stream = this; !stream.isEmpty(); stream = stream.tail(), index++) {
+        for (LazyList<T> stream = this; !stream.isEmpty(); stream = stream.tail(), index++) {
             if (index >= from && Objects.equals(stream.head(), element)) {
                 return index;
             }
@@ -1926,7 +1926,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns all elements of this Stream except the last one.
+     * Returns all elements of this LazyList except the last one.
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
@@ -1934,13 +1934,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * now.
      *
      * @return a new instance containing all elements except the last
-     * @throws UnsupportedOperationException if this Stream is empty
+     * @throws UnsupportedOperationException if this LazyList is empty
      */
-    default Stream<T> init() {
+    default LazyList<T> init() {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty stream");
         } else {
-            final Stream<T> tail = tail();
+            final LazyList<T> tail = tail();
             if (tail.isEmpty()) {
                 return Empty.instance();
             } else {
@@ -1950,28 +1950,28 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns all elements of this Stream except the last one, wrapped in an {@code Option}.
+     * Returns all elements of this LazyList except the last one, wrapped in an {@code Option}.
      * <p>
      * This is the dual of {@link #tailOption()}.
      * <p>
      * Complexity: lazy, as {@link #init()}.
      *
-     * @return {@code Some(traversable)} if non-empty, or {@code None} if this Stream is empty
+     * @return {@code Some(traversable)} if non-empty, or {@code None} if this LazyList is empty
      */
-    default Option<Stream<T>> initOption() {
+    default Option<LazyList<T>> initOption() {
         return isEmpty() ? Option.none() : Option.some(init());
     }
 
     /**
-     * Because {@code Stream} is lazy, only {@code index < 0} (and {@code index > 0} on an empty Stream)
+     * Because {@code LazyList} is lazy, only {@code index < 0} (and {@code index > 0} on an empty LazyList)
      * is detected when this method is called; for {@code index > size()} the
-     * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
+     * {@code IndexOutOfBoundsException} is thrown only once the returned LazyList is traversed as far
      * as the offending position.
      * <p>
      * Complexity: lazy; nothing is computed now. The result copies the elements before index i as it reaches them, and
      * shares the rest.
      */
-    default Stream<T> insert(int index, T element) {
+    default LazyList<T> insert(int index, T element) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insert(" + index + ", e)");
         } else if (index == 0) {
@@ -1984,21 +1984,21 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Because {@code Stream} is lazy, only {@code index < 0} (and {@code index > 0} on an empty Stream)
+     * Because {@code LazyList} is lazy, only {@code index < 0} (and {@code index > 0} on an empty LazyList)
      * is detected when this method is called; for {@code index > size()} the
-     * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
+     * {@code IndexOutOfBoundsException} is thrown only once the returned LazyList is traversed as far
      * as the offending position.
      * <p>
      * Complexity: lazy; only the first of {@code elements} is read now when i is 0, nothing otherwise. The result
      * copies the elements before index i as it reaches them, then reads {@code elements} and shares the rest of this
-     * Stream, as {@link #prependAll(Iterable)} does.
+     * LazyList, as {@link #prependAll(Iterable)} does.
      */
-    default Stream<T> insertAll(int index, Iterable<? extends T> elements) {
+    default LazyList<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (index < 0) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements)");
         } else if (index == 0) {
-            return isEmpty() ? Stream.ofAll(elements) : Stream.<T> ofAll(elements).appendAll(this);
+            return isEmpty() ? LazyList.ofAll(elements) : LazyList.<T> ofAll(elements).appendAll(this);
         } else if (isEmpty()) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on Nil");
         } else {
@@ -2012,26 +2012,26 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; nothing is computed now, and reaching a separator computes the element after it.
      *
      * @param element the separator
-     * @return a new Stream, or this Stream if it is empty
+     * @return a new LazyList, or this LazyList if it is empty
      */
-    default Stream<T> intersperse(T element) {
+    default LazyList<T> intersperse(T element) {
         if (isEmpty()) {
             return this;
         } else {
             return cons(head(), () -> {
-                final Stream<T> tail = tail();
+                final LazyList<T> tail = tail();
                 return tail.isEmpty() ? tail : cons(element, () -> tail.intersperse(element));
             });
         }
     }
 
     /**
-     * Returns the last element of this Stream.
+     * Returns the last element of this LazyList.
      * <p>
-     * Complexity: O(n); the whole Stream is computed.
+     * Complexity: O(n); the whole LazyList is computed.
      *
      * @return the last element
-     * @throws NoSuchElementException if this Stream is empty
+     * @throws NoSuchElementException if this LazyList is empty
      */
     default T last() {
         return Collections.last(this);
@@ -2040,7 +2040,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The index of the last occurrence of {@code element} at or before {@code end}, or -1.
      * <p>
-     * Complexity: O(n); the elements up to one past {@code end} are computed, so it works on an infinite Stream.
+     * Complexity: O(n); the elements up to one past {@code end} are computed, so it works on an infinite LazyList.
      *
      * @param element the element to find
      * @param end     the last position to look at
@@ -2048,7 +2048,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default int lastIndexOf(T element, int end) {
         int result = -1, index = 0;
-        for (Stream<T> stream = this; index <= end && !stream.isEmpty(); stream = stream.tail(), index++) {
+        for (LazyList<T> stream = this; index <= end && !stream.isEmpty(); stream = stream.tail(), index++) {
             if (Objects.equals(stream.head(), element)) {
                 result = index;
             }
@@ -2064,10 +2064,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param mapper transforms an element
      * @param <U>    the element type of the result
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code mapper} is null
      */
-    default <U extends @Nullable Object> Stream<U> map(Function<? super T, ? extends U> mapper) {
+    default <U extends @Nullable Object> LazyList<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return Empty.instance();
@@ -2082,22 +2082,22 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept, and the one after it,
      * are computed now. Moving to the next element skips every element {@code mapper} drops, which never ends on an
-     * infinite Stream with nothing left to keep.
+     * infinite LazyList with nothing left to keep.
      *
      * @param mapper the value of an element, or {@code None} to drop it
      * @param <U>    the element type of the result
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code mapper} is null, or returns null for an element
      */
-    default <U extends @Nullable Object> Stream<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+    default <U extends @Nullable Object> LazyList<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // walk to the first kept element now, the rest lazily; the Option found on the way is the head, so the
         // mapper never runs twice for an element
-        Stream<T> stream = this;
+        LazyList<T> stream = this;
         while (!stream.isEmpty()) {
-            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(stream.head()), "Stream.collect: mapper returned null");
+            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(stream.head()), "LazyList.collect: mapper returned null");
             if (collected.isDefined()) {
-                final Stream<T> tail = stream.tail();
+                final LazyList<T> tail = stream.tail();
                 return cons(collected.get(), () -> tail.collect(mapper));
             }
             stream = stream.tail();
@@ -2105,58 +2105,58 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         return Empty.instance();
     }
 
-    default <U extends @Nullable Object> Stream<U> as(U value) {
+    default <U extends @Nullable Object> LazyList<U> as(U value) {
         return map(ignored -> value);
     }
 
     /**
-     * This Stream padded on the right with {@code element} until it is {@code length} long.
+     * This LazyList padded on the right with {@code element} until it is {@code length} long.
      * <p>
      * Complexity: lazy; nothing is computed now, each element when the result reaches it.
      *
      * @param length  the target length
      * @param element the padding element
-     * @return a new Stream, or this Stream if {@code length} is not positive
+     * @return a new LazyList, or this LazyList if {@code length} is not positive
      */
-    default Stream<T> padTo(int length, T element) {
+    default LazyList<T> padTo(int length, T element) {
         if (length <= 0) {
             return this;
         } else if (isEmpty()) {
-            return Stream.continually(element).take(length);
+            return LazyList.continually(element).take(length);
         } else {
             return cons(head(), () -> tail().padTo(length - 1, element));
         }
     }
 
     /**
-     * This Stream padded on the left with {@code element} until it is {@code length} long.
+     * This LazyList padded on the left with {@code element} until it is {@code length} long.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because its length decides how much padding is needed.
+     * Complexity: O(n); the whole LazyList is computed now, because its length decides how much padding is needed.
      *
      * @param length  the target length
      * @param element the padding element
-     * @return a new Stream, or this Stream if it is already at least {@code length} long
+     * @return a new LazyList, or this LazyList if it is already at least {@code length} long
      */
-    default Stream<T> leftPadTo(int length, T element) {
+    default LazyList<T> leftPadTo(int length, T element) {
         final int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
-            return Stream.continually(element).take(length - actualLength).appendAll(this);
+            return LazyList.continually(element).take(length - actualLength).appendAll(this);
         }
     }
 
-    default Stream<T> orElse(Iterable<? extends T> other) {
+    default LazyList<T> orElse(Iterable<? extends T> other) {
         return isEmpty() ? ofAll(other) : this;
     }
 
-    default Stream<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
+    default LazyList<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "Stream.orElse: supplier returned null")) : this;
+        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "LazyList.orElse: supplier returned null")) : this;
     }
 
     /**
-     * This Stream with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
+     * This LazyList with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0.
      * <p>
      * Complexity: lazy; each element is computed when the result reaches it, and the replaced ones are skipped then.
@@ -2166,19 +2166,19 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param from     the first replaced position
      * @param that     the replacement elements
      * @param replaced how many elements are replaced
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code that} is null
      */
-    default Stream<T> patch(int from, Iterable<? extends T> that, int replaced) {
+    default LazyList<T> patch(int from, Iterable<? extends T> that, int replaced) {
         Objects.requireNonNull(that, "that is null");
-        // Stream.ofAll takes the replacement's iterator now and reads its first element (a Stream is used as is); its
-        // other elements and the cells of this Stream are read as the result reaches them
-        return patchFrom(this, Math.max(from, 0), Stream.ofAll(that), Math.max(replaced, 0));
+        // LazyList.ofAll takes the replacement's iterator now and reads its first element (a LazyList is used as is); its
+        // other elements and the cells of this LazyList are read as the result reaches them
+        return patchFrom(this, Math.max(from, 0), LazyList.ofAll(that), Math.max(replaced, 0));
     }
 
     // The elements of stream before position `from`, then the replacement, then stream without the `replaced` elements
     // from `from` on; each cell is built when the result reaches it.
-    private static <T extends @Nullable Object> Stream<T> patchFrom(Stream<T> stream, int from, Stream<T> replacement, int replaced) {
+    private static <T extends @Nullable Object> LazyList<T> patchFrom(LazyList<T> stream, int from, LazyList<T> replacement, int replaced) {
         if (from > 0 && !stream.isEmpty()) {
             return cons(stream.head(), () -> patchFrom(stream.tail(), from - 1, replacement, replaced));
         } else {
@@ -2186,8 +2186,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         }
     }
 
-    // The elements of first, then those of the Stream the supplier gives, asked for only when first is exhausted.
-    private static <T extends @Nullable Object> Stream<T> concatThen(Stream<T> first, Supplier<Stream<T>> rest) {
+    // The elements of first, then those of the LazyList the supplier gives, asked for only when first is exhausted.
+    private static <T extends @Nullable Object> LazyList<T> concatThen(LazyList<T> first, Supplier<LazyList<T>> rest) {
         if (first.isEmpty()) {
             return rest.get();
         } else {
@@ -2199,27 +2199,27 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements that satisfy {@code predicate} and those that do not, each in order.
      * <p>
      * Complexity: lazy; each side computes the elements up to its first one now, as {@link #filter(Predicate)} does, so
-     * the call never returns on an infinite Stream when one side stays empty. The predicate runs twice per element,
+     * the call never returns on an infinite LazyList when one side stays empty. The predicate runs twice per element,
      * once for each side.
      *
      * @param predicate the condition
      * @return the matching elements and the others
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Tuple2<Stream<T>, Stream<T>> partition(Predicate<? super T> predicate) {
+    default Tuple2<LazyList<T>, LazyList<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Tuple.of(filter(predicate), filter(predicate.negate()));
     }
 
     /**
      * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each: the
-     * generalisation of {@link #partition(Predicate)}. Lazy like {@code partition}: both sides are Streams read from
-     * one Stream of the results of {@code f}, each computed once and kept, so {@code f} is called once per element,
+     * generalisation of {@link #partition(Predicate)}. Lazy like {@code partition}: both sides are LazyLists read from
+     * one LazyList of the results of {@code f}, each computed once and kept, so {@code f} is called once per element,
      * in order, when either side first reaches that element, and never again.
      * <p>
      * Complexity: lazy; each side computes the elements up to its first one now, the others when that side reaches
      * them, and {@code f} runs once per element. The values one side has passed are kept until the other side passes
-     * them too. On an infinite Stream whose elements all go to one side, the call never returns.
+     * them too. On an infinite LazyList whose elements all go to one side, the call never returns.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -2227,19 +2227,19 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the left values and the right values, each in the order of the elements they come from
      * @throws NullPointerException if {@code f} is null, or when it returns null for an element a side reaches
      */
-    default <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Stream<L>, Stream<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+    default <L extends @Nullable Object, R extends @Nullable Object> Tuple2<LazyList<L>, LazyList<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
-        final Stream<Either<? extends L, ? extends R>> results =
-                this.<Either<? extends L, ? extends R>> map(element -> Objects.requireNonNull(f.apply(element), "Stream.partitionMap: f returned null"));
+        final LazyList<Either<? extends L, ? extends R>> results =
+                this.<Either<? extends L, ? extends R>> map(element -> Objects.requireNonNull(f.apply(element), "LazyList.partitionMap: f returned null"));
         return Tuple.of(lefts(results), rights(results));
     }
 
-    // the left values of a Stream of results, found lazily: skips the Rights to the next Left, now, the rest on demand
-    private static <L extends @Nullable Object> Stream<L> lefts(Stream<? extends Either<? extends L, ?>> results) {
-        Stream<? extends Either<? extends L, ?>> stream = results;
+    // the left values of a LazyList of results, found lazily: skips the Rights to the next Left, now, the rest on demand
+    private static <L extends @Nullable Object> LazyList<L> lefts(LazyList<? extends Either<? extends L, ?>> results) {
+        LazyList<? extends Either<? extends L, ?>> stream = results;
         while (!stream.isEmpty()) {
             if (stream.head() instanceof Either.Left<? extends L, ?>(var left)) {
-                final Stream<? extends Either<? extends L, ?>> rest = stream;
+                final LazyList<? extends Either<? extends L, ?>> rest = stream;
                 return cons(left, () -> lefts(rest.tail()));
             }
             stream = stream.tail();
@@ -2247,12 +2247,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         return empty();
     }
 
-    // the right values of a Stream of results, found lazily: skips the Lefts to the next Right, now, the rest on demand
-    private static <R extends @Nullable Object> Stream<R> rights(Stream<? extends Either<?, ? extends R>> results) {
-        Stream<? extends Either<?, ? extends R>> stream = results;
+    // the right values of a LazyList of results, found lazily: skips the Lefts to the next Right, now, the rest on demand
+    private static <R extends @Nullable Object> LazyList<R> rights(LazyList<? extends Either<?, ? extends R>> results) {
+        LazyList<? extends Either<?, ? extends R>> stream = results;
         while (!stream.isEmpty()) {
             if (stream.head() instanceof Either.Right<?, ? extends R>(var right)) {
-                final Stream<? extends Either<?, ? extends R>> rest = stream;
+                final LazyList<? extends Either<?, ? extends R>> rest = stream;
                 return cons(right, () -> rights(rest.tail()));
             }
             stream = stream.tail();
@@ -2268,11 +2268,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; the action runs on the first element now, and on each other one when the result reaches it.
      *
      * @param action what to do with each element
-     * @return this Stream if it is empty; otherwise a new, structurally equal Stream whose elements are handed to
+     * @return this LazyList if it is empty; otherwise a new, structurally equal LazyList whose elements are handed to
      *         {@code action} lazily as they are traversed
      * @throws NullPointerException if {@code action} is null
      */
-    default Stream<T> tap(Consumer<? super T> action) {
+    default LazyList<T> tap(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
         if (isEmpty()) {
             return this;
@@ -2287,21 +2287,21 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * All distinct permutations of the elements.
      * <p>
      * Complexity: O(n! * n^2) to read every permutation of n distinct elements (fewer permutations when some are
-     * equal). The whole Stream is computed now, and O(n!) of the work is done before the call returns.
+     * equal). The whole LazyList is computed now, and O(n!) of the work is done before the call returns.
      *
      * @return the permutations
      */
-    default Stream<Stream<T>> permutations() {
+    default LazyList<LazyList<T>> permutations() {
         if (isEmpty()) {
             return Empty.instance();
         } else {
-            final Stream<T> tail = tail();
+            final LazyList<T> tail = tail();
             if (tail.isEmpty()) {
-                return Stream.of(this);
+                return LazyList.of(this);
             } else {
-                final Stream<Stream<T>> zero = Empty.instance();
+                final LazyList<LazyList<T>> zero = Empty.instance();
                 return distinct().foldLeft(zero, (xs, x) -> {
-                    final Function<Stream<T>, Stream<T>> prepend = l -> l.prepend(x);
+                    final Function<LazyList<T>, LazyList<T>> prepend = l -> l.prepend(x);
                     return xs.appendAll(remove(x).permutations().map(prepend));
                 });
             }
@@ -2309,53 +2309,53 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * A new Stream with {@code element} in front of this one.
+     * A new LazyList with {@code element} in front of this one.
      * <p>
      * Complexity: O(1); nothing is computed.
      *
      * @param element the new head
-     * @return a new Stream starting with the given element
+     * @return a new LazyList starting with the given element
      */
-    default Stream<T> prepend(T element) {
+    default LazyList<T> prepend(T element) {
         return cons(element, () -> this);
     }
 
     /**
-     * A new Stream with {@code elements} in front of this one, in iteration order.
+     * A new LazyList with {@code elements} in front of this one, in iteration order.
      * <p>
      * Complexity: O(1); only the first of the given elements is read now, the others when the result reaches them,
-     * and this Stream is shared, not read. Calling prependAll in a loop stays O(1) per call, and reading the result
+     * and this LazyList is shared, not read. Calling prependAll in a loop stays O(1) per call, and reading the result
      * back costs O(1) per element, however many calls built it.
      *
      * @param elements the elements to prepend
-     * @return a new Stream starting with the given elements, or this Stream if there are none
+     * @return a new LazyList starting with the given elements, or this LazyList if there are none
      * @throws NullPointerException if {@code elements} is null
      */
-    default Stream<T> prependAll(Iterable<? extends T> elements) {
+    default LazyList<T> prependAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (isEmpty()) {
-            if (elements instanceof Stream) {
+            if (elements instanceof LazyList) {
                 @SuppressWarnings("unchecked")
-                final Stream<T> stream = (Stream<T>) elements;
+                final LazyList<T> stream = (LazyList<T>) elements;
                 return stream;
             } else {
-                return Stream.ofAll(elements);
+                return LazyList.ofAll(elements);
             }
         } else {
-            return Stream.<T> ofAll(elements).appendAll(this);
+            return LazyList.<T> ofAll(elements).appendAll(this);
         }
     }
 
     /**
-     * This Stream without the first occurrence of {@code element}.
+     * This LazyList without the first occurrence of {@code element}.
      * <p>
      * Complexity: lazy; each element is compared when the result reaches it, and the elements after the removed one are
      * shared. When the first element is the one removed, the second is computed now.
      *
      * @param element the element to remove
-     * @return a new Stream, or this Stream if it is empty
+     * @return a new LazyList, or this LazyList if it is empty
      */
-    default Stream<T> remove(T element) {
+    default LazyList<T> remove(T element) {
         if (isEmpty()) {
             return this;
         } else {
@@ -2365,16 +2365,16 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * This Stream without the first element satisfying {@code predicate}.
+     * This LazyList without the first element satisfying {@code predicate}.
      * <p>
      * Complexity: lazy; each element is tested when the result reaches it, and the elements after the removed one are
      * shared. When the first element is the one removed, the second is computed now.
      *
      * @param predicate the condition
-     * @return a new Stream, or this Stream if it is empty
+     * @return a new LazyList, or this LazyList if it is empty
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> removeFirst(Predicate<T> predicate) {
+    default LazyList<T> removeFirst(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (isEmpty()) {
             return this;
@@ -2385,28 +2385,28 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * This Stream without the last element satisfying {@code predicate}.
+     * This LazyList without the last element satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the last match decides.
+     * Complexity: O(n); the whole LazyList is computed now, because the last match decides.
      *
      * @param predicate the condition
-     * @return a new Stream, or this Stream if it is empty
+     * @return a new LazyList, or this LazyList if it is empty
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> removeLast(Predicate<T> predicate) {
+    default LazyList<T> removeLast(Predicate<T> predicate) {
         return isEmpty() ? this : reverse().removeFirst(predicate).reverse();
     }
 
     /**
-     * Because {@code Stream} is lazy, only {@code index < 0} and an empty Stream are detected when
-     * this method is called; for {@code index >= size()} on a non-empty Stream the
-     * {@code IndexOutOfBoundsException} is thrown only once the returned Stream is traversed as far
+     * Because {@code LazyList} is lazy, only {@code index < 0} and an empty LazyList are detected when
+     * this method is called; for {@code index >= size()} on a non-empty LazyList the
+     * {@code IndexOutOfBoundsException} is thrown only once the returned LazyList is traversed as far
      * as the offending position.
      * <p>
      * Complexity: lazy; nothing is computed now (the second element when i is 0). The result copies the elements before
      * index i as it reaches them, and shares the rest.
      */
-    default Stream<T> removeAt(int index) {
+    default LazyList<T> removeAt(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("removeAt(" + index + ")");
         } else if (isEmpty()) {
@@ -2419,48 +2419,48 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * This Stream without any occurrence of {@code element}.
+     * This LazyList without any occurrence of {@code element}.
      * <p>
      * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept are computed now. Moving
-     * to the next element skips every occurrence of {@code element}, which never ends on an infinite Stream with
+     * to the next element skips every occurrence of {@code element}, which never ends on an infinite LazyList with
      * nothing left to keep.
      *
      * @param element the element to remove
-     * @return a new Stream
+     * @return a new LazyList
      */
-    default Stream<T> removeAll(T element) {
+    default LazyList<T> removeAll(T element) {
         return dev.zazr.collection.internal.Collections.removeAll(this, element, kept -> filter(kept));
     }
 
     /**
-     * This Stream without any occurrence of any of {@code elements}.
+     * This LazyList without any occurrence of any of {@code elements}.
      * <p>
      * Complexity: lazy, like {@link #filter(Predicate)}: the m given elements are hashed now, and the elements up to
      * the first one kept are computed. Moving to the next element skips every removed element, which never ends on an
-     * infinite Stream with nothing left to keep.
+     * infinite LazyList with nothing left to keep.
      *
      * @param elements the elements to remove
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code elements} is null
      */
-    default Stream<T> removeAll(Iterable<? extends T> elements) {
+    default LazyList<T> removeAll(Iterable<? extends T> elements) {
         return dev.zazr.collection.internal.Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
     /**
-     * This Stream without the elements satisfying {@code predicate}.
+     * This LazyList without the elements satisfying {@code predicate}.
      * <p>
      * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept are computed now. Moving
-     * to the next element skips every element that satisfies the predicate, which never ends on an infinite Stream with
+     * to the next element skips every element that satisfies the predicate, which never ends on an infinite LazyList with
      * nothing left to keep.
      *
      * @deprecated use {@link #reject(Predicate)}
      * @param predicate the condition
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code predicate} is null
      */
     @Deprecated
-    default Stream<T> removeAll(Predicate<? super T> predicate) {
+    default LazyList<T> removeAll(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reject(predicate);
     }
@@ -2473,9 +2473,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
-     * @return a new Stream with the first occurrence of {@code currentElement} replaced by {@code newElement}
+     * @return a new LazyList with the first occurrence of {@code currentElement} replaced by {@code newElement}
      */
-    default Stream<T> replace(T currentElement, T newElement) {
+    default LazyList<T> replace(T currentElement, T newElement) {
         if (isEmpty()) {
             return this;
         } else {
@@ -2495,9 +2495,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
-     * @return a new Stream with all occurrences of {@code currentElement} replaced by {@code newElement}
+     * @return a new LazyList with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
-    default Stream<T> replaceAll(T currentElement, T newElement) {
+    default LazyList<T> replaceAll(T currentElement, T newElement) {
         if (isEmpty()) {
             return this;
         } else {
@@ -2508,42 +2508,42 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Retains only the elements from this Stream that are contained in the given {@code elements}.
+     * Retains only the elements from this LazyList that are contained in the given {@code elements}.
      * <p>
      * Complexity: lazy, like {@link #filter(Predicate)}: the m given elements are hashed now, and the elements up to
      * the first one kept are computed. Moving to the next element skips every element that is not among them, which
-     * never ends on an infinite Stream with nothing left to keep.
+     * never ends on an infinite LazyList with nothing left to keep.
      *
      * @param elements the elements to keep
-     * @return a new Stream containing only the elements present in {@code elements}, in their original order
+     * @return a new LazyList containing only the elements present in {@code elements}, in their original order
      * @throws NullPointerException if {@code elements} is null
      */
-    default Stream<T> retainAll(Iterable<? extends T> elements) {
+    default LazyList<T> retainAll(Iterable<? extends T> elements) {
         return dev.zazr.collection.internal.Collections.retainAll(this, elements, kept -> filter(kept));
     }
 
     /**
      * The elements in reverse order.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now.
+     * Complexity: O(n); the whole LazyList is computed now.
      *
-     * @return a new Stream, or this Stream if it is empty
+     * @return a new LazyList, or this LazyList if it is empty
      */
-    default Stream<T> reverse() {
-        return isEmpty() ? this : foldLeft(Stream.empty(), Stream::prepend);
+    default LazyList<T> reverse() {
+        return isEmpty() ? this : foldLeft(LazyList.empty(), LazyList::prepend);
     }
 
     /**
-     * Rotates the elements {@code n} positions to the left: {@code Stream(1, 2, 3, 4, 5).rotateLeft(2)} is
-     * {@code Stream(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
+     * Rotates the elements {@code n} positions to the left: {@code LazyList(1, 2, 3, 4, 5).rotateLeft(2)} is
+     * {@code LazyList(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because its length decides the rotation. A rotation by 0 is
-     * O(1) and works on an infinite Stream.
+     * Complexity: O(n); the whole LazyList is computed now, because its length decides the rotation. A rotation by 0 is
+     * O(1) and works on an infinite LazyList.
      *
      * @param n the distance
-     * @return the rotated Stream, or this Stream if the rotation is a multiple of the length
+     * @return the rotated LazyList, or this LazyList if the rotation is a multiple of the length
      */
-    default Stream<T> rotateLeft(int n) {
+    default LazyList<T> rotateLeft(int n) {
         // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
@@ -2553,16 +2553,16 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Rotates the elements {@code n} positions to the right: {@code Stream(1, 2, 3, 4, 5).rotateRight(2)} is
-     * {@code Stream(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
+     * Rotates the elements {@code n} positions to the right: {@code LazyList(1, 2, 3, 4, 5).rotateRight(2)} is
+     * {@code LazyList(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because its length decides the rotation. A rotation by 0 is
-     * O(1) and works on an infinite Stream.
+     * Complexity: O(n); the whole LazyList is computed now, because its length decides the rotation. A rotation by 0 is
+     * O(1) and works on an infinite LazyList.
      *
      * @param n the distance
-     * @return the rotated Stream, or this Stream if the rotation is a multiple of the length
+     * @return the rotated LazyList, or this LazyList if the rotation is a multiple of the length
      */
-    default Stream<T> rotateRight(int n) {
+    default LazyList<T> rotateRight(int n) {
         // n == 0 before size(): a no-op rotation must not walk the elements, let alone force a lazy sequence
         if (n == 0 || isEmpty()) {
             return this;
@@ -2572,7 +2572,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Computes a prefix scan of the elements of this Stream.
+     * Computes a prefix scan of the elements of this LazyList.
      * <p>
      * The neutral element {@code zero} may be applied more than once.
      * <p>
@@ -2580,10 +2580,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param zero      the neutral element for the operator
      * @param operation an associative binary operator
-     * @return a new Stream containing the prefix scan of the elements
+     * @return a new LazyList containing the prefix scan of the elements
      * @throws NullPointerException if {@code operation} is null
      */
-    default Stream<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
+    default LazyList<T> scan(T zero, BiFunction<? super T, ? super T, ? extends T> operation) {
         return scanLeft(zero, operation);
     }
 
@@ -2591,20 +2591,20 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Produces a collection containing cumulative results of applying the operator from left to right.
      * <p>
      * The results are produced as the underlying elements are consumed, so {@code scanLeft} terminates even for
-     * an infinite Stream as long as only a finite prefix of the result is consumed. Contrast with
-     * {@link #scanRight}, which is not lazy and will not terminate for an infinite Stream.
+     * an infinite LazyList as long as only a finite prefix of the result is consumed. Contrast with
+     * {@link #scanRight}, which is not lazy and will not terminate for an infinite LazyList.
      * <p>
      * Complexity: lazy; nothing is computed now, each element when the result reaches it.
      *
      * @param <U>       the type of the resulting elements
      * @param zero      the initial value
      * @param operation a binary operator applied to the intermediate result and each element
-     * @return a new Stream containing the cumulative results
+     * @return a new LazyList containing the cumulative results
      * @throws NullPointerException if {@code operation} is null
      */
-    default <U extends @Nullable Object> Stream<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
+    default <U extends @Nullable Object> LazyList<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         // lazily streams the elements of an iterator
-        return dev.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toStream);
+        return dev.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toLazyList);
     }
 
     // not lazy!
@@ -2613,41 +2613,41 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * The head of the result is the last cumulative result.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the fold starts at the end.
+     * Complexity: O(n); the whole LazyList is computed now, because the fold starts at the end.
      *
      * @param <U>       the type of the resulting elements
      * @param zero      the initial value
      * @param operation a binary operator applied to each element and the intermediate result
-     * @return a new Stream containing the cumulative results
+     * @return a new LazyList containing the cumulative results
      * @throws NullPointerException if {@code operation} is null
      */
-    default <U extends @Nullable Object> Stream<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
-        return dev.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toStream);
+    default <U extends @Nullable Object> LazyList<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
+        return dev.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toLazyList);
     }
 
     /**
      * The elements in a random order, drawn from a default source of randomness.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now.
+     * Complexity: O(n); the whole LazyList is computed now.
      *
-     * @return a new Stream, or this Stream if it has fewer than two elements
+     * @return a new LazyList, or this LazyList if it has fewer than two elements
      */
-    default Stream<T> shuffle() {
-        return dev.zazr.collection.internal.Collections.shuffle(this, Stream::ofAll);
+    default LazyList<T> shuffle() {
+        return dev.zazr.collection.internal.Collections.shuffle(this, LazyList::ofAll);
     }
 
     /**
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive, both clamped to the bounds of
-     * this Stream.
+     * this LazyList.
      * <p>
      * Complexity: O(i); the first i + 1 elements are computed now, the rest up to index j when the result reaches them,
-     * so it works on an infinite Stream.
+     * so it works on an infinite LazyList.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
-     * @return a new Stream, empty if the range is empty
+     * @return a new LazyList, empty if the range is empty
      */
-    default Stream<T> slice(int beginIndex, int endIndex) {
+    default LazyList<T> slice(int beginIndex, int endIndex) {
         final int lowerBound = Math.max(beginIndex, 0);
         if (lowerBound >= endIndex) {
             return empty();
@@ -2660,64 +2660,64 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements in ascending natural order (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the whole Stream is computed now.
+     * Complexity: O(n log n) comparisons; the whole LazyList is computed now.
      *
-     * @return a new sorted Stream, or this Stream if it is empty
+     * @return a new sorted LazyList, or this LazyList if it is empty
      * @throws ClassCastException if {@code T} is not {@code Comparable}
      */
-    default Stream<T> sorted() {
-        return isEmpty() ? this : stream().sorted().collect(Stream.collector());
+    default LazyList<T> sorted() {
+        return isEmpty() ? this : stream().sorted().collect(LazyList.collector());
     }
 
     /**
      * The elements in the order of {@code comparator} (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the whole Stream is computed now.
+     * Complexity: O(n log n) comparisons; the whole LazyList is computed now.
      *
      * @param comparator the order
-     * @return a new sorted Stream, or this Stream if it is empty
+     * @return a new sorted LazyList, or this LazyList if it is empty
      * @throws NullPointerException if {@code comparator} is null
      */
-    default Stream<T> sorted(Comparator<? super T> comparator) {
+    default LazyList<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return isEmpty() ? this : stream().sorted(comparator).collect(Stream.collector());
+        return isEmpty() ? this : stream().sorted(comparator).collect(LazyList.collector());
     }
 
     /**
      * The elements sorted by the natural order of the key {@code mapper} computes (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the whole Stream is computed now. The key is computed again at every
+     * Complexity: O(n log n) comparisons; the whole LazyList is computed now. The key is computed again at every
      * comparison.
      *
      * @param mapper computes the sort key
      * @param <U>    the key type
-     * @return a new sorted Stream, or this Stream if it is empty
+     * @return a new sorted LazyList, or this LazyList if it is empty
      * @throws NullPointerException if {@code mapper} is null
      */
-    default <U extends Comparable<? super U>> Stream<T> sortBy(Function<? super T, ? extends U> mapper) {
+    default <U extends Comparable<? super U>> LazyList<T> sortBy(Function<? super T, ? extends U> mapper) {
         return sortBy(U::compareTo, mapper);
     }
 
     /**
      * The elements sorted by {@code comparator} applied to the key {@code mapper} computes (a stable sort).
      * <p>
-     * Complexity: O(n log n) comparisons; the whole Stream is computed now. The key is computed again at every
+     * Complexity: O(n log n) comparisons; the whole LazyList is computed now. The key is computed again at every
      * comparison.
      *
      * @param comparator the order of the keys
      * @param mapper     computes the sort key
      * @param <U>        the key type
-     * @return a new sorted Stream, or this Stream if it is empty
+     * @return a new sorted LazyList, or this LazyList if it is empty
      * @throws NullPointerException if {@code comparator} or {@code mapper} is null
      */
-    default <U extends @Nullable Object> Stream<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
+    default <U extends @Nullable Object> LazyList<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
     }
 
     /**
-     * Splits this {@code Stream} into a prefix and remainder according to the given {@code predicate}.
+     * Splits this {@code LazyList} into a prefix and remainder according to the given {@code predicate}.
      * <p>
      * The first element of the returned {@code Tuple} is the longest prefix of elements satisfying {@code predicate},
      * and the second element is the remaining elements.
@@ -2729,13 +2729,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a {@code Tuple} containing the prefix and remainder
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Tuple2<Stream<T>, Stream<T>> span(Predicate<? super T> predicate) {
+    default Tuple2<LazyList<T>, LazyList<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Tuple.of(takeWhile(predicate), dropWhile(predicate));
     }
 
     /**
-     * This Stream split in two at position {@code n}: the first {@code n} elements and the rest.
+     * This LazyList split in two at position {@code n}: the first {@code n} elements and the rest.
      * <p>
      * Complexity: O(k) for a split after k elements; the first k + 1 elements are computed now, the rest of the suffix
      * when it is read.
@@ -2743,13 +2743,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param n the position of the split
      * @return the prefix and the suffix
      */
-    default Tuple2<Stream<T>, Stream<T>> splitAt(int n) {
+    default Tuple2<LazyList<T>, LazyList<T>> splitAt(int n) {
         return Tuple.of(take(n), drop(n));
     }
 
     /**
-     * This Stream split in two before the first element satisfying {@code predicate}. If no element satisfies it, the
-     * whole Stream is the first part.
+     * This LazyList split in two before the first element satisfying {@code predicate}. If no element satisfies it, the
+     * whole LazyList is the first part.
      * <p>
      * Complexity: O(k) for k elements before the split; they and the matching element are computed now, the rest of the
      * suffix when it is read.
@@ -2757,14 +2757,14 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param predicate the condition
      * @return the prefix and the suffix
      */
-    default Tuple2<Stream<T>, Stream<T>> splitAt(Predicate<? super T> predicate) {
+    default Tuple2<LazyList<T>, LazyList<T>> splitAt(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Tuple.of(takeWhile(predicate.negate()), dropWhile(predicate.negate()));
     }
 
     /**
-     * This Stream split in two after the first element satisfying {@code predicate}. If no element satisfies it, the
-     * whole Stream is the first part.
+     * This LazyList split in two after the first element satisfying {@code predicate}. If no element satisfies it, the
+     * whole LazyList is the first part.
      * <p>
      * Complexity: O(k) for k elements up to and including the match; they and the element after the match are computed
      * now, the rest of the suffix when it is read.
@@ -2772,8 +2772,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param predicate the condition
      * @return the prefix including the matching element, and the suffix
      */
-    default Tuple2<Stream<T>, Stream<T>> splitAtInclusive(Predicate<? super T> predicate) {
-        final Tuple2<Stream<T>, Stream<T>> split = splitAt(predicate);
+    default Tuple2<LazyList<T>, LazyList<T>> splitAtInclusive(Predicate<? super T> predicate) {
+        final Tuple2<LazyList<T>, LazyList<T>> split = splitAt(predicate);
         if (split._2().isEmpty()) {
             return split;
         } else {
@@ -2787,17 +2787,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(i); the first i + 1 elements are computed now, the rest when the result reaches them.
      *
      * @param beginIndex the first position
-     * @return a new Stream
+     * @return a new LazyList
      * @throws IndexOutOfBoundsException if {@code beginIndex} is negative or greater than {@code size()}
      */
-    default Stream<T> subSequence(int beginIndex) {
+    default LazyList<T> subSequence(int beginIndex) {
         if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
         }
-        Stream<T> result = this;
+        LazyList<T> result = this;
         for (int i = 0; i < beginIndex; i++, result = result.tail()) {
             if (result.isEmpty()) {
-                throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ") on Stream of size " + i);
+                throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ") on LazyList of size " + i);
             }
         }
         return result;
@@ -2807,30 +2807,30 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
      * Complexity: O(i); the first i + 1 elements are computed now, the rest up to index j when the result reaches them.
-     * An empty range computes its first i elements too, to check that it is within this Stream, and a reversed range
+     * An empty range computes its first i elements too, to check that it is within this LazyList, and a reversed range
      * its first j.
      * <p>
      * The bounds are those of {@link Vector#subSequence(int, int)}: {@code IndexOutOfBoundsException} when
      * {@code beginIndex < 0} or {@code endIndex > size()}, otherwise {@code IllegalArgumentException} when
      * {@code beginIndex > endIndex}. Every such call throws when it is made, with one exception: because
-     * {@code Stream} is lazy, when {@code beginIndex < size() < endIndex} the {@code IndexOutOfBoundsException} is
-     * thrown once the returned Stream is traversed past its last element, not when this method is called.
+     * {@code LazyList} is lazy, when {@code beginIndex < size() < endIndex} the {@code IndexOutOfBoundsException} is
+     * thrown once the returned LazyList is traversed past its last element, not when this method is called.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
-     * @return a new Stream
+     * @return a new LazyList
      * @throws IndexOutOfBoundsException if {@code beginIndex} is negative; if {@code endIndex} is past the end and
      *                                   {@code beginIndex} is not before the end, a reversed range included; or, when
      *                                   {@code beginIndex < size() < endIndex}, once the traversal passes the end
      * @throws IllegalArgumentException  if {@code beginIndex} is greater than {@code endIndex} and {@code endIndex} is
-     *                                   within this Stream
+     *                                   within this LazyList
      */
-    default Stream<T> subSequence(int beginIndex, int endIndex) {
+    default LazyList<T> subSequence(int beginIndex, int endIndex) {
         if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ", " + endIndex + ")");
         }
         if (beginIndex > endIndex) {
-            // as in Vector, an end past the end of this Stream is reported before the reversed range
+            // as in Vector, an end past the end of this LazyList is reported before the reversed range
             if (!hasAtLeast(this, endIndex)) {
                 throw new IndexOutOfBoundsException("subSequence of Nil");
             }
@@ -2842,7 +2842,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             }
             return Empty.instance();
         }
-        Stream<T> start = this;
+        LazyList<T> start = this;
         for (int i = 0; i < beginIndex && !start.isEmpty(); i++) {
             start = start.tail();
         }
@@ -2853,17 +2853,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     // Whether stream has at least n elements; forces at most its first n.
-    private static <T extends @Nullable Object> boolean hasAtLeast(Stream<T> stream, int n) {
+    private static <T extends @Nullable Object> boolean hasAtLeast(LazyList<T> stream, int n) {
         return n <= 0 || !stream.drop(n - 1).isEmpty();
     }
 
     // The first n > 0 elements of a non-empty stream, lazily; throws once the traversal passes the end of the stream.
-    private static <T extends @Nullable Object> Stream<T> takeExactly(Stream<T> stream, int n) {
+    private static <T extends @Nullable Object> LazyList<T> takeExactly(LazyList<T> stream, int n) {
         if (n == 1) {
-            return cons(stream.head(), Stream::empty);
+            return cons(stream.head(), LazyList::empty);
         } else {
             return cons(stream.head(), () -> {
-                final Stream<T> tail = stream.tail();
+                final LazyList<T> tail = stream.tail();
                 if (tail.isEmpty()) {
                     throw new IndexOutOfBoundsException("subSequence of Nil");
                 }
@@ -2873,52 +2873,52 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns a new {@code Stream} without its first element.
+     * Returns a new {@code LazyList} without its first element.
      * <p>
-     * Complexity: O(k) for k elements computed. On a Stream returned by filter, reject, retainAll, removeAll,
+     * Complexity: O(k) for k elements computed. On a LazyList returned by filter, reject, retainAll, removeAll,
      * distinct, distinctBy, collect or flatMap, the first call computes the elements up to the next one kept, and
-     * never returns on an infinite Stream with no further match. Every later call is O(1): the result is kept, and so
-     * is an exception the first call threw. On a Stream built by append or appendAll, the first call to reach the
+     * never returns on an infinite LazyList with no further match. Every later call is O(1): the result is kept, and so
+     * is an exception the first call threw. On a LazyList built by append or appendAll, the first call to reach the
      * appended elements may put the p appended parts in order, O(p) once for the whole walk. O(1) otherwise.
      *
-     * @return a new {@code Stream} containing all elements except the first
-     * @throws UnsupportedOperationException if this {@code Stream} is empty
+     * @return a new {@code LazyList} containing all elements except the first
+     * @throws UnsupportedOperationException if this {@code LazyList} is empty
      */
-    Stream<T> tail();
+    LazyList<T> tail();
 
     /**
-     * Returns a new {@code Stream} without its first element as an {@code Option}.
+     * Returns a new {@code LazyList} without its first element as an {@code Option}.
      * <p>
      * Complexity: O(k) for k elements computed, as {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
-    default Option<Stream<T>> tailOption() {
+    default Option<LazyList<T>> tailOption() {
         return isEmpty() ? Option.none() : Option.some(tail());
     }
 
     /**
-     * Returns the first {@code n} elements of this {@code Stream}, or all elements if {@code n} exceeds the length.
+     * Returns the first {@code n} elements of this {@code LazyList}, or all elements if {@code n} exceeds the length.
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: lazy; nothing is computed now, each element when the result reaches it.
      *
      * @param n the number of elements to take
-     * @return a new {@code Stream} containing the first {@code n} elements
+     * @return a new {@code LazyList} containing the first {@code n} elements
      */
-    default Stream<T> take(int n) {
+    default LazyList<T> take(int n) {
         if (n < 1 || isEmpty()) {
             return empty();
         } else if (n == 1) {
-            return cons(head(), Stream::empty);
+            return cons(head(), LazyList::empty);
         } else {
             return cons(head(), () -> tail().take(n - 1));
         }
     }
 
     /**
-     * Takes elements from this {@code Stream} until the given predicate holds for an element.
+     * Takes elements from this {@code LazyList} until the given predicate holds for an element.
      * <p>
      * Equivalent to {@code takeWhile(predicate.negate())}, but useful when using method references
      * that cannot be negated directly.
@@ -2926,25 +2926,25 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; nothing is computed now, and each element is tested when the result reaches it.
      *
      * @param predicate a condition tested sequentially on the elements
-     * @return a new {@code Stream} containing all elements before the first one that satisfies the predicate
+     * @return a new {@code LazyList} containing all elements before the first one that satisfies the predicate
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> takeUntil(Predicate<? super T> predicate) {
+    default LazyList<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeWhile(predicate.negate());
     }
 
     /**
-     * Takes elements from this {@code Stream} while the given predicate holds.
+     * Takes elements from this {@code LazyList} while the given predicate holds.
      * <p>
      * Complexity: lazy; nothing is computed now, and each element is tested when the result reaches it.
      *
      * @param predicate a condition tested sequentially on the elements
-     * @return a new {@code Stream} containing all elements up to (but not including) the first one
+     * @return a new {@code LazyList} containing all elements up to (but not including) the first one
      *         that does not satisfy the predicate
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> takeWhile(Predicate<? super T> predicate) {
+    default LazyList<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (isEmpty()) {
             return Empty.instance();
@@ -2959,18 +2959,18 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns the last {@code n} elements of this {@code Stream}, or all elements if {@code n} exceeds the length.
+     * Returns the last {@code n} elements of this {@code LazyList}, or all elements if {@code n} exceeds the length.
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the last elements are found by walking to the end.
+     * Complexity: O(n); the whole LazyList is computed now, because the last elements are found by walking to the end.
      *
      * @param n the number of elements to take from the end
-     * @return a new {@code Stream} containing the last {@code n} elements
+     * @return a new {@code LazyList} containing the last {@code n} elements
      */
-    default Stream<T> takeRight(int n) {
-        Stream<T> right = this;
-        Stream<T> remaining = drop(n);
+    default LazyList<T> takeRight(int n) {
+        LazyList<T> right = this;
+        LazyList<T> remaining = drop(n);
         while (!remaining.isEmpty()) {
             right = right.tail();
             remaining = remaining.tail();
@@ -2981,13 +2981,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the last matching element decides.
+     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
      *
      * @param predicate the condition, tested from the end
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> takeRightUntil(Predicate<? super T> predicate) {
+    default LazyList<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return reverse().takeUntil(predicate).reverse();
     }
@@ -2995,13 +2995,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now, because the last matching element decides.
+     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
      *
      * @param predicate the condition, tested from the end
-     * @return a new Stream
+     * @return a new LazyList
      * @throws NullPointerException if {@code predicate} is null
      */
-    default Stream<T> takeRightWhile(Predicate<? super T> predicate) {
+    default LazyList<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return takeRightUntil(predicate.negate());
     }
@@ -3018,12 +3018,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the first parts and the second parts
      * @throws NullPointerException if {@code unzipper} is null
      */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Stream<T1>, Stream<T2>> unzip(
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<LazyList<T1>, LazyList<T2>> unzip(
       Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Stream<Tuple2<? extends T1, ? extends T2>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "Stream.unzip: unzipper returned null"));
-        final Stream<T1> stream1 = stream.map(t -> t._1());
-        final Stream<T2> stream2 = stream.map(t -> t._2());
+        final LazyList<Tuple2<? extends T1, ? extends T2>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip: unzipper returned null"));
+        final LazyList<T1> stream1 = stream.map(t -> t._1());
+        final LazyList<T2> stream2 = stream.map(t -> t._2());
         return Tuple.of(stream1, stream2);
     }
 
@@ -3040,36 +3040,36 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the first, the second and the third parts
      * @throws NullPointerException if {@code unzipper} is null
      */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Stream<T1>, Stream<T2>, Stream<T3>> unzip3(
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<LazyList<T1>, LazyList<T2>, LazyList<T3>> unzip3(
       Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Stream<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "Stream.unzip3: unzipper returned null"));
-        final Stream<T1> stream1 = stream.map(t -> t._1());
-        final Stream<T2> stream2 = stream.map(t -> t._2());
-        final Stream<T3> stream3 = stream.map(t -> t._3());
+        final LazyList<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip3: unzipper returned null"));
+        final LazyList<T1> stream1 = stream.map(t -> t._1());
+        final LazyList<T2> stream2 = stream.map(t -> t._2());
+        final LazyList<T3> stream3 = stream.map(t -> t._3());
         return Tuple.of(stream1, stream2, stream3);
     }
 
     /**
-     * This Stream with the element at {@code index} replaced by {@code element}.
+     * This LazyList with the element at {@code index} replaced by {@code element}.
      * <p>
      * Complexity: O(i); the first i + 2 elements are computed now (the one after the replaced element too). The result
      * copies the elements before index i and shares those after it.
      *
      * @param index   the position to update
      * @param element the new element
-     * @return a new Stream
+     * @return a new LazyList
      * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
-    default Stream<T> update(int index, T element) {
+    default LazyList<T> update(int index, T element) {
         if (isEmpty()) {
             throw new IndexOutOfBoundsException("update(" + index + ", e) on Nil");
         }
         if (index < 0) {
             throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
-        Stream<T> preceding = Empty.instance();
-        Stream<T> tail = this;
+        LazyList<T> preceding = Empty.instance();
+        LazyList<T> tail = this;
         for (int i = index; i > 0; i--, tail = tail.tail()) {
             if (tail.isEmpty()) {
                 throw new IndexOutOfBoundsException("update at " + index);
@@ -3084,159 +3084,159 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * This Stream with the element at {@code index} replaced by what {@code updater} computes from it.
+     * This LazyList with the element at {@code index} replaced by what {@code updater} computes from it.
      * <p>
      * Complexity: O(i), as {@link #update(int, Object)}, after one {@link #get(int)}.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one
-     * @return a new Stream
+     * @return a new LazyList
      * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      * @throws NullPointerException      if {@code updater} is null
      */
-    default Stream<T> update(int index, Function<? super T, ? extends T> updater) {
+    default LazyList<T> update(int index, Function<? super T, ? extends T> updater) {
         Objects.requireNonNull(updater, "updater is null");
         return update(index, updater.apply(get(index)));
     }
 
     /**
-     * Returns a {@code Stream} formed by pairing elements of this {@code Stream} with elements of another
+     * Returns a {@code LazyList} formed by pairing elements of this {@code LazyList} with elements of another
      * {@code Iterable}. Pairing stops when either collection runs out of elements; any remaining elements in the longer
      * collection are ignored.
      * <p>
-     * The length of the resulting {@code Stream} is the minimum of the lengths of this {@code Stream} and
+     * The length of the resulting {@code LazyList} is the minimum of the lengths of this {@code LazyList} and
      * {@code that}.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every pair costs O(min(n, m)).
      *
      * @param <U>  the type of elements in the second half of each pair
      * @param that an {@code Iterable} providing the second element of each pair
-     * @return a new {@code Stream} containing pairs of corresponding elements
+     * @return a new {@code LazyList} containing pairs of corresponding elements
      * @throws NullPointerException if {@code that} is null
      */
-    default <U extends @Nullable Object> Stream<Tuple2<T, U>> zip(Iterable<? extends U> that) {
+    default <U extends @Nullable Object> LazyList<Tuple2<T, U>> zip(Iterable<? extends U> that) {
         return zipWith(that, Tuple::of);
     }
 
     /**
-     * Returns a {@code Stream} by combining elements of this {@code Stream} with elements of another
+     * Returns a {@code LazyList} by combining elements of this {@code LazyList} with elements of another
      * {@code Iterable} using a mapping function. Pairing stops when either collection runs out of elements.
      * <p>
-     * The length of the resulting {@code Stream} is the minimum of the lengths of this {@code Stream} and
+     * The length of the resulting {@code LazyList} is the minimum of the lengths of this {@code LazyList} and
      * {@code that}.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every result costs O(min(n, m)).
      *
      * @param <U>    the type of elements in the second parameter of the mapper
-     * @param <R>    the type of elements in the resulting {@code Stream}
+     * @param <R>    the type of elements in the resulting {@code LazyList}
      * @param that   an {@code Iterable} providing the second parameter of the mapper
      * @param mapper a function that combines elements from this and {@code that} into a new element
-     * @return a new {@code Stream} containing mapped elements
+     * @return a new {@code LazyList} containing mapped elements
      * @throws NullPointerException if {@code that} or {@code mapper} is null
      */
-    default <U extends @Nullable Object, R extends @Nullable Object> Stream<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+    default <U extends @Nullable Object, R extends @Nullable Object> LazyList<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return Stream.ofAll(Iterator.ofAll(this).zipWith(that, mapper));
+        return LazyList.ofAll(Iterator.ofAll(this).zipWith(that, mapper));
     }
 
     /**
-     * Returns a {@code Stream} formed by pairing elements of this {@code Stream} with elements of another
+     * Returns a {@code LazyList} formed by pairing elements of this {@code LazyList} with elements of another
      * {@code Iterable}, filling in placeholder elements when one collection is shorter than the other.
      * <p>
-     * The length of the resulting {@code Stream} is the maximum of the lengths of this {@code Stream} and
+     * The length of the resulting {@code LazyList} is the maximum of the lengths of this {@code LazyList} and
      * {@code that}.
      * <p>
-     * If this {@code Stream} is shorter than {@code that}, {@code thisElem} is used as a filler. Conversely, if
+     * If this {@code LazyList} is shorter than {@code that}, {@code thisElem} is used as a filler. Conversely, if
      * {@code that} is shorter, {@code thatElem} is used.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every pair costs O(max(n, m)).
      *
      * @param <U>      the type of elements in the second half of each pair
      * @param iterable an {@code Iterable} providing the second element of each pair
-     * @param thisElem the element used to fill missing values if this {@code Stream} is shorter than {@code iterable}
-     * @param thatElem the element used to fill missing values if {@code iterable} is shorter than this {@code Stream}
-     * @return a new {@code Stream} containing pairs of elements, including fillers as needed
+     * @param thisElem the element used to fill missing values if this {@code LazyList} is shorter than {@code iterable}
+     * @param thatElem the element used to fill missing values if {@code iterable} is shorter than this {@code LazyList}
+     * @return a new {@code LazyList} containing pairs of elements, including fillers as needed
      * @throws NullPointerException if {@code iterable} is null
      */
-    default <U extends @Nullable Object> Stream<Tuple2<T, U>> zipAll(Iterable<? extends U> iterable, T thisElem, U thatElem) {
+    default <U extends @Nullable Object> LazyList<Tuple2<T, U>> zipAll(Iterable<? extends U> iterable, T thisElem, U thatElem) {
         Objects.requireNonNull(iterable, "iterable is null");
-        return Stream.ofAll(Iterator.ofAll(this).zipAll(iterable, thisElem, thatElem));
+        return LazyList.ofAll(Iterator.ofAll(this).zipAll(iterable, thisElem, thatElem));
     }
 
     /**
-     * Zips this {@code Stream} with its indices, starting at 0.
+     * Zips this {@code LazyList} with its indices, starting at 0.
      * <p>
      * Complexity: lazy; nothing is computed now, each element when the result reaches it.
      *
-     * @return a new {@code Stream} containing each element paired with its index
+     * @return a new {@code LazyList} containing each element paired with its index
      */
-    default Stream<Tuple2<T, Integer>> zipWithIndex() {
+    default LazyList<Tuple2<T, Integer>> zipWithIndex() {
         return zipWithIndex(Tuple::of);
     }
 
     /**
-     * Zips this {@code Stream} with its indices and maps the resulting pairs using the provided mapper.
+     * Zips this {@code LazyList} with its indices and maps the resulting pairs using the provided mapper.
      * <p>
      * Complexity: lazy; nothing is computed now, each element when the result reaches it.
      *
-     * @param <U>    the type of elements in the resulting {@code Stream}
+     * @param <U>    the type of elements in the resulting {@code LazyList}
      * @param mapper a function mapping an element and its index to a new element
-     * @return a new {@code Stream} containing the mapped elements
+     * @return a new {@code LazyList} containing the mapped elements
      * @throws NullPointerException if {@code mapper} is null
      */
-    default <U extends @Nullable Object> Stream<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+    default <U extends @Nullable Object> LazyList<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return Stream.ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
+        return LazyList.ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
     }
 
     /**
-     * Extends (continues) this {@code Stream} with a constantly repeated value.
+     * Extends (continues) this {@code LazyList} with a constantly repeated value.
      * <p>
      * Complexity: O(1); nothing is computed now, and the result is infinite.
      *
-     * @param next value with which the stream should be extended
-     * @return new {@code Stream} composed from this stream extended with a Stream of provided value
+     * @param next value with which the lazy list should be extended
+     * @return new {@code LazyList} composed from this lazy list extended with a LazyList of provided value
      */
-    default Stream<T> extend(T next) {
-        return Stream.ofAll(this.appendAll(Stream.continually(next)));
+    default LazyList<T> extend(T next) {
+        return LazyList.ofAll(this.appendAll(LazyList.continually(next)));
     }
 
     /**
-     * Extends (continues) this {@code Stream} with values provided by a {@code Supplier}
+     * Extends (continues) this {@code LazyList} with values provided by a {@code Supplier}
      * <p>
      * Complexity: O(1); nothing is computed now, and the result is infinite.
      *
-     * @param nextSupplier a supplier which will provide values for extending a stream
-     * @return new {@code Stream} composed from this stream extended with values provided by the supplier
+     * @param nextSupplier a supplier which will provide values for extending a lazy list
+     * @return new {@code LazyList} composed from this lazy list extended with values provided by the supplier
      */
-    default Stream<T> extend(Supplier<? extends T> nextSupplier) {
+    default LazyList<T> extend(Supplier<? extends T> nextSupplier) {
         Objects.requireNonNull(nextSupplier, "nextSupplier is null");
-        return Stream.ofAll(appendAll(Stream.continually(nextSupplier)));
+        return LazyList.ofAll(appendAll(LazyList.continually(nextSupplier)));
     }
 
     /**
-     * Extends (continues) this {@code Stream} with a Stream of values created by applying
-     * consecutively provided {@code Function} to the last element of the original Stream.
+     * Extends (continues) this {@code LazyList} with a LazyList of values created by applying
+     * consecutively provided {@code Function} to the last element of the original LazyList.
      * <p>
-     * If this Stream is empty, it is returned unchanged (there is no last element to seed the
-     * function); use {@link #extend(Object)} or {@link #extend(Supplier)} to extend an empty Stream.
+     * If this LazyList is empty, it is returned unchanged (there is no last element to seed the
+     * function); use {@link #extend(Object)} or {@link #extend(Supplier)} to extend an empty LazyList.
      * <p>
      * Complexity: O(1); the result reads one element ahead of what it returns, so the first two elements are computed
      * now. The result is infinite.
      *
      * @param nextFunction a function which calculates the next value based on the previous value
-     * @return new {@code Stream} composed from this stream extended with values calculated by the provided function
+     * @return new {@code LazyList} composed from this lazy list extended with values calculated by the provided function
      */
-    default Stream<T> extend(Function<? super T, ? extends T> nextFunction) {
+    default LazyList<T> extend(Function<? super T, ? extends T> nextFunction) {
         Objects.requireNonNull(nextFunction, "nextFunction is null");
         if (isEmpty()) {
             return this;
         } else {
-            final Stream<T> that = this;
-            return Stream.ofAll(new AbstractIterator<T>() {
+            final LazyList<T> that = this;
+            return LazyList.ofAll(new AbstractIterator<T>() {
 
-                Stream<T> stream = that;
+                LazyList<T> stream = that;
                 @Nullable T last = null;
 
                 @Override
@@ -3244,7 +3244,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
                 @SuppressWarnings("NullAway")
                 protected T getNext() {
                     if (stream.isEmpty()) {
-                        stream = Stream.iterate(nextFunction.apply(last), nextFunction);
+                        stream = LazyList.iterate(nextFunction.apply(last), nextFunction);
                     }
                     last = stream.head();
                     stream = stream.tail();
@@ -3260,13 +3260,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The empty Stream.
+     * The empty LazyList.
      * <p>
      * This is a singleton, i.e. not Cloneable.
      *
-     * @param <T> Component type of the Stream.
+     * @param <T> Component type of the LazyList.
      */
-    final class Empty<T extends @Nullable Object> implements Stream<T> {
+    final class Empty<T extends @Nullable Object> implements LazyList<T> {
 
         private static final Empty<?> INSTANCE = new Empty<>();
 
@@ -3275,10 +3275,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         }
 
         /**
-         * Returns the singleton empty Stream instance.
+         * Returns the singleton empty LazyList instance.
          *
-         * @param <T> Component type of the Stream
-         * @return The empty Stream
+         * @param <T> Component type of the LazyList
+         * @return The empty LazyList
          */
         @SuppressWarnings("unchecked")
         public static <T extends @Nullable Object> Empty<T> instance() {
@@ -3301,7 +3301,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         }
 
         @Override
-        public Stream<T> tail() {
+        public LazyList<T> tail() {
             throw new UnsupportedOperationException("tail of empty stream");
         }
 
@@ -3317,17 +3317,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         @Override
         public String toString() {
-            return "Stream()";
+            return "LazyList()";
         }
 
     }
 
     /**
-     * Non-empty {@code Stream}, consisting of a {@code head}, and {@code tail}.
+     * Non-empty {@code LazyList}, consisting of a {@code head}, and {@code tail}.
      *
-     * @param <T> Component type of the Stream.
+     * @param <T> Component type of the LazyList.
      */
-    abstract class Cons<T extends @Nullable Object> implements Stream<T> {
+    abstract class Cons<T extends @Nullable Object> implements LazyList<T> {
 
         // the state of a tail being computed: seeing it again on the thread computing it means the tail needs itself
         private static final Object EVALUATING = new Object();
@@ -3335,7 +3335,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         final T head;
 
         // null until the tail is computed; then the tail, or the Throwable computing it threw. Written only under the
-        // lock of this cell, and never changed once it is a Stream or a Throwable.
+        // lock of this cell, and never changed once it is a LazyList or a Throwable.
         private volatile @Nullable Object tail;
 
         Cons(T head) {
@@ -3344,34 +3344,34 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         /// Computes the tail. Called under the lock of this cell, once, or again only after a
         /// [VirtualMachineError] left the cell as it was.
-        abstract Stream<T> computeTail();
+        abstract LazyList<T> computeTail();
 
         /// Lets go of what [#computeTail()] needed, once its result or failure is kept.
         void release() {
         }
 
         /// The tail, computed on the first call and kept. A failure is kept too: every later call throws the same
-        /// exception, so a Stream built from a one-shot source never skips or reorders elements after a failed call.
+        /// exception, so a LazyList built from a one-shot source never skips or reorders elements after a failed call.
         /// Only a [VirtualMachineError] (such as a stack overflow) is not kept: the next call computes the tail again.
         @Override
         @SuppressWarnings("unchecked")
-        public final Stream<T> tail() {
+        public final LazyList<T> tail() {
             final Object state = tail;
-            return state instanceof Stream<?> ? (Stream<T>) state : evaluateTail();
+            return state instanceof LazyList<?> ? (LazyList<T>) state : evaluateTail();
         }
 
         final boolean isTailComputed() {
             final Object state = tail;
-            return state instanceof Stream<?> || state instanceof Throwable;
+            return state instanceof LazyList<?> || state instanceof Throwable;
         }
 
         @SuppressWarnings("unchecked")
-        private Stream<T> evaluateTail() {
+        private LazyList<T> evaluateTail() {
             Object state;
             synchronized (this) {
                 state = tail;
                 if (state == EVALUATING) {
-                    throw new IllegalStateException("Stream: computing this tail needs the tail itself");
+                    throw new IllegalStateException("LazyList: computing this tail needs the tail itself");
                 } else if (state == null) {
                     tail = EVALUATING;
                     // Nothing that can allocate or throw runs between the computation and the write of its outcome,
@@ -3394,7 +3394,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             if (state instanceof Throwable failure) {
                 throw Cons.<RuntimeException> rethrow(failure);
             }
-            return (Stream<T>) state;
+            return (LazyList<T>) state;
         }
 
         // throws the kept failure itself, whatever its type
@@ -3415,7 +3415,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         @Override
         public java.util.Iterator<T> iterator() {
-            return new StreamIterator<>(this);
+            return new LazyListIterator<>(this);
         }
 
         @Override
@@ -3430,12 +3430,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         @Override
         public String toString() {
-            final StringBuilder builder = new StringBuilder("Stream(");
-            Stream<T> stream = this;
+            final StringBuilder builder = new StringBuilder("LazyList(");
+            LazyList<T> stream = this;
             while (stream != null && !stream.isEmpty()) {
                 final Cons<T> cons = (Cons<T>) stream;
                 builder.append(cons.head);
-                if (cons.tail instanceof Stream<?>) {
+                if (cons.tail instanceof LazyList<?>) {
                     stream = stream.tail();
                     if (!stream.isEmpty()) {
                         builder.append(", ");
@@ -3451,17 +3451,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         private static final class ConsImpl<T extends @Nullable Object> extends Cons<T> {
 
             // null once the tail is computed or has failed
-            private @Nullable Supplier<Stream<T>> supplier;
+            private @Nullable Supplier<LazyList<T>> supplier;
 
-            ConsImpl(T head, Supplier<Stream<T>> supplier) {
+            ConsImpl(T head, Supplier<LazyList<T>> supplier) {
                 super(head);
                 this.supplier = Objects.requireNonNull(supplier, "tail is null");
             }
 
             @Override
             @SuppressWarnings("NullAway") // computeTail() runs only while the tail is not kept, so supplier is set
-            Stream<T> computeTail() {
-                return Objects.requireNonNull(supplier.get(), "Stream.cons: tailSupplier returned null");
+            LazyList<T> computeTail() {
+                return Objects.requireNonNull(supplier.get(), "LazyList.cons: tailSupplier returned null");
             }
 
             @Override
@@ -3470,41 +3470,41 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             }
         }
 
-        // The elements of prefix, a non-empty Stream whose head is this one's, then those of each Stream in pending, in
-        // order; the pending Streams are never empty. append and appendAll add one Stream to the queue, so a loop of them
-        // keeps every element one step away. Only the Streams waiting in a queue may be AppendElements with an
+        // The elements of prefix, a non-empty LazyList whose head is this one's, then those of each LazyList in pending, in
+        // order; the pending LazyLists are never empty. append and appendAll add one LazyList to the queue, so a loop of them
+        // keeps every element one step away. Only the LazyLists waiting in a queue may be AppendElements with an
         // AppendElements prefix: join unwraps them, without recursion, before one becomes a prefix, so computing a tail
         // never goes through more than one AppendElements.
         private static final class AppendElements<T extends @Nullable Object> extends Cons<T> {
 
-            private final Stream<T> prefix;
-            private final dev.zazr.collection.Queue<Stream<T>> pending;
+            private final LazyList<T> prefix;
+            private final dev.zazr.collection.Queue<LazyList<T>> pending;
 
-            AppendElements(Stream<T> prefix, dev.zazr.collection.Queue<Stream<T>> pending) {
+            AppendElements(LazyList<T> prefix, dev.zazr.collection.Queue<LazyList<T>> pending) {
                 super(prefix.head());
                 this.prefix = prefix;
                 this.pending = pending;
             }
 
             @Override
-            public Stream<T> append(T element) {
-                return new AppendElements<>(prefix, pending.append(Stream.of(element)));
+            public LazyList<T> append(T element) {
+                return new AppendElements<>(prefix, pending.append(LazyList.of(element)));
             }
 
             @Override
-            public Stream<T> appendAll(Iterable<? extends T> elements) {
-                final Stream<T> that = Stream.ofAll(elements);
+            public LazyList<T> appendAll(Iterable<? extends T> elements) {
+                final LazyList<T> that = LazyList.ofAll(elements);
                 return that.isEmpty() ? this : new AppendElements<>(prefix, pending.append(that));
             }
 
             @Override
-            Stream<T> computeTail() {
-                final Stream<T> rest = prefix.tail();
+            LazyList<T> computeTail() {
+                final LazyList<T> rest = prefix.tail();
                 return rest.isEmpty() ? join(pending.head(), pending.tail()) : join(rest, pending);
             }
 
-            // The elements of first, non-empty, then those of pending, as a Stream whose prefix is not an AppendElements.
-            private static <T extends @Nullable Object> Stream<T> join(Stream<T> first, dev.zazr.collection.Queue<Stream<T>> pending) {
+            // The elements of first, non-empty, then those of pending, as a LazyList whose prefix is not an AppendElements.
+            private static <T extends @Nullable Object> LazyList<T> join(LazyList<T> first, dev.zazr.collection.Queue<LazyList<T>> pending) {
                 while (first instanceof AppendElements<T> appended) {
                     pending = pending.isEmpty() ? appended.pending : appended.pending.append(joinLater(pending));
                     first = appended.prefix;
@@ -3512,10 +3512,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
                 return pending.isEmpty() ? first : new AppendElements<>(first, pending);
             }
 
-            // The elements of the non-empty pending as one Stream, built in O(1): its prefix may be an AppendElements,
+            // The elements of the non-empty pending as one LazyList, built in O(1): its prefix may be an AppendElements,
             // so it only waits in a queue until join unwraps it.
-            private static <T extends @Nullable Object> Stream<T> joinLater(dev.zazr.collection.Queue<Stream<T>> pending) {
-                final dev.zazr.collection.Queue<Stream<T>> others = pending.tail();
+            private static <T extends @Nullable Object> LazyList<T> joinLater(dev.zazr.collection.Queue<LazyList<T>> pending) {
+                final dev.zazr.collection.Queue<LazyList<T>> others = pending.tail();
                 return others.isEmpty() ? pending.head() : new AppendElements<>(pending.head(), others);
             }
         }
@@ -3526,112 +3526,112 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: O(1): the first element is always already computed.
      *
-     * @return the head of this Stream
-     * @throws NoSuchElementException if this Stream is empty
+     * @return the head of this LazyList
+     * @throws NoSuchElementException if this LazyList is empty
      */
     T head();
 
     // -- windows and products
 
     /**
-     * The elements in consecutive blocks of {@code size}: {@code Stream.of(1, 2, 3, 4, 5).grouped(2)} is
-     * {@code Stream(Stream(1, 2), Stream(3, 4), Stream(5))}; the last block is smaller when {@code size} does not
+     * The elements in consecutive blocks of {@code size}: {@code LazyList.of(1, 2, 3, 4, 5).grouped(2)} is
+     * {@code LazyList(LazyList(1, 2), LazyList(3, 4), LazyList(5))}; the last block is smaller when {@code size} does not
      * divide the length. The same as {@code sliding(size, size)}.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every block costs O(n). Moving to the next block computes
-     * the elements of the current one and one more, so an infinite Stream can be grouped.
+     * the elements of the current one and one more, so an infinite LazyList can be grouped.
      *
      * @param size the block size, positive
-     * @return the blocks, in order; empty if this Stream is empty
+     * @return the blocks, in order; empty if this LazyList is empty
      * @throws IllegalArgumentException if {@code size} is not positive
      */
-    default Stream<Stream<T>> grouped(int size) {
+    default LazyList<LazyList<T>> grouped(int size) {
         return sliding(size, size);
     }
 
     /**
      * The windows of {@code size} consecutive elements, each starting one element after the previous:
-     * {@code Stream.of(1, 2, 3, 4).sliding(3)} is {@code Stream(Stream(1, 2, 3), Stream(2, 3, 4))}. A Stream
+     * {@code LazyList.of(1, 2, 3, 4).sliding(3)} is {@code LazyList(LazyList(1, 2, 3), LazyList(2, 3, 4))}. A LazyList
      * shorter than {@code size} is one window. The same as {@code sliding(size, 1)}.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every window costs O(n * size). Moving to the next window
-     * computes the elements of the current one and one more, so an infinite Stream can be windowed.
+     * computes the elements of the current one and one more, so an infinite LazyList can be windowed.
      *
      * @param size the window size, positive
-     * @return the windows, in order; empty if this Stream is empty
+     * @return the windows, in order; empty if this LazyList is empty
      * @throws IllegalArgumentException if {@code size} is not positive
      */
-    default Stream<Stream<T>> sliding(int size) {
+    default LazyList<LazyList<T>> sliding(int size) {
         return sliding(size, 1);
     }
 
     /**
      * The windows of {@code size} consecutive elements, each starting {@code step} elements after the previous:
-     * {@code Stream.of(1, 2, 3, 4, 5).sliding(2, 3)} is {@code Stream(Stream(1, 2), Stream(4, 5))} and
-     * {@code sliding(2, 4)} is {@code Stream(Stream(1, 2), Stream(5))}. The last window is shorter than
+     * {@code LazyList.of(1, 2, 3, 4, 5).sliding(2, 3)} is {@code LazyList(LazyList(1, 2), LazyList(4, 5))} and
+     * {@code sliding(2, 4)} is {@code LazyList(LazyList(1, 2), LazyList(5))}. The last window is shorter than
      * {@code size} when it reaches the end; a window whose elements all belong to the previous one is not
-     * produced, so {@code Stream.of(1, 2, 3, 4).sliding(3)} has two windows. A Stream shorter than {@code size}
-     * is one window; an empty Stream has none.
+     * produced, so {@code LazyList.of(1, 2, 3, 4).sliding(3)} has two windows. A LazyList shorter than {@code size}
+     * is one window; an empty LazyList has none.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every window costs O(n + (n / step) * size). Moving to the
      * next window computes the elements up to max(size, step) positions after the start of the current one, so an
-     * infinite Stream can be windowed.
+     * infinite LazyList can be windowed.
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
      * @return the windows, in order
      * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
      */
-    default Stream<Stream<T>> sliding(int size, int step) {
+    default LazyList<LazyList<T>> sliding(int size, int step) {
         dev.zazr.collection.internal.Collections.checkWindow(size, step);
         return isEmpty() ? empty() : Windows.apply(this, size, step);
     }
 
     /**
      * The elements in maximal runs of consecutive elements with the same key, computed once per element by
-     * {@code classifier}: {@code Stream.of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10)} is
-     * {@code Stream(Stream(1, 2, 3), Stream(10, 12), Stream(5, 7), Stream(20, 29))}. The runs concatenate back
-     * to this Stream.
+     * {@code classifier}: {@code LazyList.of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10)} is
+     * {@code LazyList(LazyList(1, 2, 3), LazyList(10, 12), LazyList(5, 7), LazyList(20, 29))}. The runs concatenate back
+     * to this LazyList.
      * <p>
      * Complexity: lazy; the first run is computed now, with the first element of the next one; each further run when
      * the result reaches it.
      *
      * @param classifier the key of an element; two consecutive elements are in the same run when their keys are
      *                   equal
-     * @return the runs, in order; empty if this Stream is empty
+     * @return the runs, in order; empty if this LazyList is empty
      * @throws NullPointerException if {@code classifier} is null
      */
-    default Stream<Stream<T>> slideBy(Function<? super T, ?> classifier) {
+    default LazyList<LazyList<T>> slideBy(Function<? super T, ?> classifier) {
         Objects.requireNonNull(classifier, "classifier is null");
-        return Stream.ofAll(Iterator.ofAll(this).slideBy(classifier).map(Stream::ofAll));
+        return LazyList.ofAll(Iterator.ofAll(this).slideBy(classifier).map(LazyList::ofAll));
     }
 
     /**
-     * The Cartesian square of this Stream: every pair {@code (a, b)} of elements, {@code a} varying slowest.
+     * The Cartesian square of this LazyList: every pair {@code (a, b)} of elements, {@code a} varying slowest.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading every pair costs O(n^2).
      *
      * @return the pairs
      */
-    default Stream<Tuple2<T, T>> crossProduct() {
+    default LazyList<Tuple2<T, T>> crossProduct() {
         return crossProduct(this);
     }
 
     /**
-     * The Cartesian power of this Stream: every Stream of {@code power} elements drawn from this one, in
-     * lexicographic position order. {@code power == 0} gives one empty Stream; a negative power gives no result.
+     * The Cartesian power of this LazyList: every LazyList of {@code power} elements drawn from this one, in
+     * lexicographic position order. {@code power == 0} gives one empty LazyList; a negative power gives no result.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading the n^power results of {@code power} elements each costs
      * O(power * n^power).
      *
      * @param power the size of each result
-     * @return the Streams
+     * @return the LazyLists
      */
-    default Stream<Stream<T>> crossProduct(int power) {
+    default LazyList<LazyList<T>> crossProduct(int power) {
         if (power < 0) {
             return empty();
         }
-        Stream<Stream<T>> product = Stream.of(Stream.<T> empty());
+        LazyList<LazyList<T>> product = LazyList.of(LazyList.<T> empty());
         for (int i = 0; i < power; i++) {
             product = product.flatMap(el -> map(el::append));
         }
@@ -3639,22 +3639,22 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The Cartesian product of this Stream and {@code that}: every pair {@code (a, b)} with {@code a} from this
-     * Stream and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is read lazily and
+     * The Cartesian product of this LazyList and {@code that}: every pair {@code (a, b)} with {@code a} from this
+     * LazyList and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is read lazily and
      * each of its elements kept once read, so an infinite {@code that} works with {@code take}.
      * <p>
      * Complexity: lazy; nothing is computed now but the first element of {@code that}, and reading every pair costs O(n
-     * * m). An empty {@code that} computes the whole Stream now, so it never returns on an infinite one.
+     * * m). An empty {@code that} computes the whole LazyList now, so it never returns on an infinite one.
      *
      * @param that the right-hand elements
      * @param <U>  their type
      * @return the pairs
      * @throws NullPointerException if {@code that} is null
      */
-    default <U extends @Nullable Object> Stream<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
+    default <U extends @Nullable Object> LazyList<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
-        // a lazy, memoising Stream: the result is lazy, so the argument stays lazy too
-        final Stream<U> other = Stream.ofAll(that);
+        // a lazy, memoising LazyList: the result is lazy, so the argument stays lazy too
+        final LazyList<U> other = LazyList.ofAll(that);
         return flatMap(a -> other.map(b -> Tuple.of(a, b)));
     }
 
@@ -3662,17 +3662,17 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * Combines the elements from the right: the last with the one before it, the result with the one before that,
      * and so on.
      * <p>
-     * Complexity: O(n); the whole Stream is computed now and copied in reverse.
+     * Complexity: O(n); the whole LazyList is computed now and copied in reverse.
      *
      * @param op combines the next element and the result so far
      * @return the combined result
-     * @throws NoSuchElementException if this Stream is empty
+     * @throws NoSuchElementException if this LazyList is empty
      * @throws NullPointerException   if {@code op} is null
      */
     default T reduceRight(BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
         if (isEmpty()) {
-            throw new NoSuchElementException("reduceRight on empty Stream");
+            throw new NoSuchElementException("reduceRight on empty LazyList");
         }
         return reverse().reduceLeft((xs, x) -> op.apply(x, xs));
     }
@@ -3692,7 +3692,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The greatest element in the natural order of the elements, which must be {@link Comparable}; the sort order
      * of a sorted collection is not consulted. {@code NaN} compares as the greatest {@code Double} or {@code Float}.
      * <p>
-     * Complexity: O(n), every element compared once; the whole Stream is computed.
+     * Complexity: O(n), every element compared once; the whole LazyList is computed.
      *
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -3703,7 +3703,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The greatest element according to {@code comparator}; of equal greatest elements, the first in this
-     * Stream's order.
+     * LazyList's order.
      *
      * @param comparator the order
      * @return {@code Some(maximum)} if there is an element, {@code None} otherwise
@@ -3715,7 +3715,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The element whose key, computed once by {@code f}, is the greatest; of equal greatest keys, the first
-     * element in this Stream's order.
+     * element in this LazyList's order.
      *
      * @param f   the key of an element
      * @param <U> the key type
@@ -3731,7 +3731,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * a sorted collection is not consulted. Among {@code Double}s or {@code Float}s, a {@code NaN} is the result
      * whenever one is present.
      * <p>
-     * Complexity: O(n), every element compared once; the whole Stream is computed.
+     * Complexity: O(n), every element compared once; the whole LazyList is computed.
      *
      * @return {@code Some(minimum)} if there is an element, {@code None} otherwise
      * @throws ClassCastException if two or more elements are not {@code Comparable}
@@ -3741,7 +3741,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The least element according to {@code comparator}; of equal least elements, the first in this Stream's
+     * The least element according to {@code comparator}; of equal least elements, the first in this LazyList's
      * order.
      *
      * @param comparator the order
@@ -3754,7 +3754,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The element whose key, computed once by {@code f}, is the least; of equal least keys, the first element in
-     * this Stream's order.
+     * this LazyList's order.
      *
      * @param f   the key of an element
      * @param <U> the key type
@@ -3771,7 +3771,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param zero    the neutral element of {@code combine}
      * @param combine combines two elements
-     * @return the folded result, {@code zero} on an empty Stream
+     * @return the folded result, {@code zero} on an empty LazyList
      * @throws NullPointerException if {@code combine} is null
      */
     default T fold(T zero, BiFunction<? super T, ? super T, ? extends T> combine) {
@@ -3784,7 +3784,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param op combines two elements
      * @return the combined result
-     * @throws NoSuchElementException if this Stream is empty
+     * @throws NoSuchElementException if this LazyList is empty
      * @throws NullPointerException   if {@code op} is null
      */
     default T reduce(BiFunction<? super T, ? super T, ? extends T> op) {
@@ -3792,10 +3792,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty Stream.
+     * {@link #reduce(BiFunction)} as an {@code Option}: {@code None} on an empty LazyList.
      *
      * @param op combines two elements
-     * @return {@code Some(result)}, or {@code None} if this Stream is empty
+     * @return {@code Some(result)}, or {@code None} if this LazyList is empty
      * @throws NullPointerException if {@code op} is null
      */
     default Option<T> reduceOption(BiFunction<? super T, ? super T, ? extends T> op) {
@@ -3806,7 +3806,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The only element.
      *
      * @return the element
-     * @throws NoSuchElementException if this Stream is empty or has more than one element
+     * @throws NoSuchElementException if this LazyList is empty or has more than one element
      */
     default T single() {
         return TraversableModule.single(this);
@@ -3826,7 +3826,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * or {@code None} as soon as two elements share a key. The same as {@code groupBy(getKey)} when every group is
      * a singleton.
      * <p>
-     * Complexity: O(n), as {@link #groupBy(Function)}; the whole Stream is computed now.
+     * Complexity: O(n), as {@link #groupBy(Function)}; the whole LazyList is computed now.
      *
      * @param getKey the key of an element
      * @param <K>  the key type
@@ -3835,14 +3835,14 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Stream.arrangeBy: getKey returned null")));
+        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "LazyList.arrangeBy: getKey returned null")));
     }
 
     /**
      * The sum of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
      * {@code Long} are summed as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
      * arithmetic, any other {@code Number} as a {@code double} with Neumaier compensation. The arithmetic is chosen
-     * from the first element. {@code 0} on an empty Stream.
+     * from the first element. {@code 0} on an empty LazyList.
      *
      * @return the sum
      * @throws UnsupportedOperationException if an element is not a {@code Number}
@@ -3855,7 +3855,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * The product of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
      * {@code Long} are multiplied as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
      * arithmetic, any other {@code Number} as a {@code double}. The arithmetic is chosen from the first element.
-     * {@code 1} on an empty Stream.
+     * {@code 1} on an empty LazyList.
      *
      * @return the product
      * @throws UnsupportedOperationException if an element is not a {@code Number}
@@ -3878,7 +3878,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The last element, in order, that satisfies {@code predicate}.
      * <p>
-     * Complexity: O(n); every element is tested, so the whole Stream is computed.
+     * Complexity: O(n); every element is tested, so the whole LazyList is computed.
      *
      * @param predicate the condition to test
      * @return {@code Some(element)} of the last match, or {@code None} if no element matches
@@ -3903,7 +3903,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: O(1), as {@link #head()}.
      *
-     * @return {@code Some(head)}, or {@code None} if this Stream is empty
+     * @return {@code Some(head)}, or {@code None} if this LazyList is empty
      */
     default Option<T> headOption() {
         return isEmpty() ? Option.none() : Option.some(head());
@@ -3914,7 +3914,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: O(n), as {@link #last()}.
      *
-     * @return {@code Some(last)}, or {@code None} if this Stream is empty
+     * @return {@code Some(last)}, or {@code None} if this LazyList is empty
      */
     default Option<T> lastOption() {
         return isEmpty() ? Option.none() : Option.some(last());
@@ -3923,11 +3923,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Combines the elements from the left: the first with the second, the result with the third, and so on.
      * <p>
-     * Complexity: O(n); the whole Stream is computed.
+     * Complexity: O(n); the whole LazyList is computed.
      *
      * @param op combines the result so far and the next element
      * @return the combined result
-     * @throws NoSuchElementException if this Stream is empty
+     * @throws NoSuchElementException if this LazyList is empty
      * @throws NullPointerException   if {@code op} is null
      */
     default T reduceLeft(BiFunction<? super T, ? super T, ? extends T> op) {
@@ -3935,10 +3935,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * {@link #reduceLeft(BiFunction)} as an {@code Option}: {@code None} on an empty Stream.
+     * {@link #reduceLeft(BiFunction)} as an {@code Option}: {@code None} on an empty LazyList.
      *
      * @param op combines the result so far and the next element
-     * @return {@code Some(result)}, or {@code None} if this Stream is empty
+     * @return {@code Some(result)}, or {@code None} if this LazyList is empty
      * @throws NullPointerException if {@code op} is null
      */
     default Option<T> reduceLeftOption(BiFunction<? super T, ? super T, ? extends T> op) {
@@ -3946,10 +3946,10 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty Stream.
+     * {@link #reduceRight(BiFunction)} as an {@code Option}: {@code None} on an empty LazyList.
      *
      * @param op combines the next element and the result so far
-     * @return {@code Some(result)}, or {@code None} if this Stream is empty
+     * @return {@code Some(result)}, or {@code None} if this LazyList is empty
      * @throws NullPointerException if {@code op} is null
      */
     default Option<T> reduceRightOption(BiFunction<? super T, ? super T, ? extends T> op) {
@@ -3960,8 +3960,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The number of elements.
      * <p>
-     * Complexity: O(n): the whole Stream is computed and walked at each call, so it never returns on an infinite
-     * Stream.
+     * Complexity: O(n): the whole LazyList is computed and walked at each call, so it never returns on an infinite
+     * LazyList.
      *
      * @return the number of elements
      */
@@ -3998,7 +3998,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The elements as the entries of a new {@link HashMap}, each mapped to a key by {@code keyMapper} and to a
-     * value by {@code valueMapper}; of two entries with the same key, the later one in this Stream's order wins.
+     * value by {@code valueMapper}; of two entries with the same key, the later one in this LazyList's order wins.
      *
      * @param keyMapper   the key of an element
      * @param valueMapper the value of an element
@@ -4013,7 +4013,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The elements as the entries of a new {@link HashMap}, each mapped to a key and a value by {@code f}; of two
-     * entries with the same key, the later one in this Stream's order wins.
+     * entries with the same key, the later one in this LazyList's order wins.
      *
      * @param f   the entry an element becomes
      * @param <K> the key type
@@ -4023,11 +4023,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
-        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Stream.toMap: f returned null");
+        return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "LazyList.toMap: f returned null");
     }
 
     /**
-     * The elements as the entries of a new {@link LinkedHashMap}, in this Stream's order, each mapped to a key by
+     * The elements as the entries of a new {@link LinkedHashMap}, in this LazyList's order, each mapped to a key by
      * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
      * wins the value and the earlier one the position.
      *
@@ -4043,7 +4043,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The elements as the entries of a new {@link LinkedHashMap}, in this Stream's order, each mapped to a key
+     * The elements as the entries of a new {@link LinkedHashMap}, in this LazyList's order, each mapped to a key
      * and a value by {@code f}; of two entries with the same key, the later one wins the value and the earlier one
      * the position.
      *
@@ -4055,13 +4055,13 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
-        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Stream.toLinkedMap: f returned null");
+        return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "LazyList.toLinkedMap: f returned null");
     }
 
     /**
      * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
      * by {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one
-     * in this Stream's order wins.
+     * in this LazyList's order wins.
      *
      * @param keyMapper   the key of an element
      * @param valueMapper the value of an element
@@ -4076,7 +4076,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The elements as the entries of a new {@link TreeMap} in the natural order of the keys, each mapped to a key
-     * and a value by {@code f}; of two entries with the same key, the later one in this Stream's order wins.
+     * and a value by {@code f}; of two entries with the same key, the later one in this LazyList's order wins.
      *
      * @param f   the entry an element becomes
      * @param <K> the key type
@@ -4092,7 +4092,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key by
      * {@code keyMapper} and to a value by {@code valueMapper}; of two entries with the same key, the later one in
-     * this Stream's order wins.
+     * this LazyList's order wins.
      *
      * @param comparator  the order of the keys
      * @param keyMapper   the key of an element
@@ -4108,7 +4108,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The elements as the entries of a new {@link TreeMap} ordered by {@code comparator}, each mapped to a key and
-     * a value by {@code f}; of two entries with the same key, the later one in this Stream's order wins.
+     * a value by {@code f}; of two entries with the same key, the later one in this LazyList's order wins.
      *
      * @param comparator the order of the keys
      * @param f          the entry an element becomes
@@ -4120,11 +4120,11 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
         final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Stream.toSortedMap: f returned null");
+        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "LazyList.toSortedMap: f returned null");
     }
 
     /**
-     * The elements as a {@link Queue}, in this Stream's order.
+     * The elements as a {@link Queue}, in this LazyList's order.
      *
      * @return a {@code Queue} of the elements
      */
@@ -4133,7 +4133,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The distinct elements as a {@link LinkedHashSet}, in this Stream's order.
+     * The distinct elements as a {@link LinkedHashSet}, in this LazyList's order.
      *
      * @return a {@code LinkedHashSet} of the elements
      */
@@ -4164,12 +4164,12 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The elements as a {@link Stream}, in this Stream's order.
+     * The elements as a {@link LazyList}, in this LazyList's order.
      *
-     * @return a {@code Stream} of the elements
+     * @return a {@code LazyList} of the elements
      */
-    default Stream<T> toStream() {
-        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    default LazyList<T> toLazyList() {
+        return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
 
 }

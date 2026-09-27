@@ -3,7 +3,7 @@ name: zazr
 description: >-
   Writes idiomatic Java 25 code with Zazr (package dev.zazr, Maven artifact dev.zazr:zazr-core), a
   library of immutable collections and functional types forked from Vavr: Option, Either, Try, Validation, Lazy,
-  Using, Vector, NonEmptyVector, List, Queue, Stream, HashSet, TreeSet, HashMap, TreeMap. Use it when the code
+  Using, Vector, NonEmptyVector, List, Queue, LazyList, HashSet, TreeSet, HashMap, TreeMap. Use it when the code
   imports dev.zazr, when porting Vavr code to Zazr, or when the user asks for immutable or persistent
   collections, Option, Either or Validation, errors as values, or functional-style code in Java 25.
 license: Apache-2.0
@@ -26,7 +26,7 @@ matching. Its names come from ZIO and its collections from Scala's. Website: htt
 | Package | Types |
 |---|---|
 | `dev.zazr.control` | `Option` (`Some`, `None`), `Either` (`Left`, `Right`), `Try` (`Success`, `Failure`), `Validation` (`Valid`, `Invalid`), `Using` |
-| `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List` (`Cons`, `Nil`), `Queue`, `Stream`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap`, `Traversable` |
+| `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List` (`Cons`, `Nil`), `Queue`, `LazyList`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap`, `Traversable` |
 | `dev.zazr` | `Lazy`, `Tuple`, `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 
 The cases are nested records: `import dev.zazr.control.Option.Some;`. With a `module-info.java`, add
@@ -57,8 +57,8 @@ The cases are nested records: `import dev.zazr.control.Option.Some;`. With a `mo
    `mapBoth`, `tap`, `catchAll`, `flip`, `fromPredicate`. No `Match`, no `Seq`, no `Function1`. No
    category-theory words (`ap`, `pure`, `traverse`, `sequence`) in names or comments.
 9. **Cross to the JDK with views.** `asJava()` (`asJavaMap()` for a map) gives a read-only `java.util` view in
-   O(1); `ofAll` and `collector()` come back. `List` and `Stream` clash with the JDK names: import Zazr's and write
-   `java.util.List` and `java.util.stream.Stream` in full. The number of elements is `size()`, on every collection;
+   O(1); `ofAll` and `collector()` come back. `List` clashes with `java.util.List`: import Zazr's and write the JDK
+   one in full. The number of elements is `size()`, on every collection;
    there is no `length()`.
 10. **Write functional Java.** Records and persistent collections instead of setters, expressions instead of
     statements that assign, effects at the edges. Locals are `var`, with the type in a comment when it is not

@@ -1263,6 +1263,30 @@ Decided as above: `Queue` survives; `Array`, `CharSeq`, `Tree`, `BitSet`, `Prior
 family are deleted from `zazr-core`. Nothing that survives depends on anything deleted, so any of them can
 come back later as a file or a module without touching the core.
 
+**Decided while implementing #28 (`Stream` renamed `LazyList`):**
+
+- **What is renamed.** The type and its cases (`LazyList`, `LazyList.Cons`, `LazyList.Empty`), its internals
+  (`LazyListModule` with `LazyListFactory` and `LazyListIterator`, `JavaConverters.LazyListListView`), the conversion
+  `toStream()` (now `toLazyList()`, on every collection, `Iterator` and the non-empty types), the tests
+  (`LazyListTest`, `LazyListLawsTest`), and zazr-test's generator (`Gen.stream` is `Gen.lazyList`). No behaviour
+  changes, except the text the type prints: `toString` gives `LazyList(1, 2, ?)` and the null-check messages name
+  `LazyList.of`, `LazyList.ofAll`, ..., since both spell the class name.
+- **The site page** moves to `collections/lazy-list.md`; the old address redirects to it (`mkdocs-redirects`). The
+  complexity page's section is `#lazylist`. The notes on the name clash with `java.util.stream.Stream` are gone from
+  the site and the skill; `List` is the one Zazr name left that clashes with a common JDK type.
+- **What keeps the word `stream`**: everything that is the JDK's, `java.util.stream.*` (`Stream`, `IntStream`,
+  `LongStream`, `DoubleStream`, `StreamSupport`, `Collector`), `stream()` and `parallelStream()` on every
+  collection, the `ofAll(java.util.stream.Stream)` factories and their `javaStream`/`stream` parameters,
+  `Maps.ofStream` (it reads a JDK stream), the tests whose names are about a JDK stream (`shouldConstructFromJavaStream`,
+  `shouldStreamSequentially`, ...), the local variables named `stream` in the internals and the tests, and a few
+  inherited test names outside `LazyListTest` that use the word loosely (`IteratorTest.shouldGenerateInfiniteStream...`,
+  `TreeSetTest.shouldConstructStreamFrom...JavaStream`, `AbstractTraversableTest.shouldCreateStreamFrom...JavaUtilStream`,
+  `LazyListTest.shouldGenerateIntStream`/`LongStream`). The entries of this log written before the rename keep `Stream`.
+- **How.** `scripts/rename-lazylist.scala` (scala-cli) does the `git mv`s and the replacements, and is idempotent, so
+  code written against `Stream` that lands later is renamed by running it again (then `make fmt`,
+  `make docs-complexity`, `make docs-align`). It leaves this log alone. It can be deleted once nothing in flight uses
+  the old name.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.

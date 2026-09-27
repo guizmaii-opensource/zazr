@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,13 +25,13 @@ public class Euler05Test {
     }
 
     private static long smallestPositiveNumberEvenlyDivisibleByAllNumbersFrom1To(int max) {
-        return Stream.rangeClosed(2, max)
+        return LazyList.rangeClosed(2, max)
                 .map(PrimeNumbers::factorization)
                 .reduce((m1, m2) -> m1.merge(m2, Math::max))
                 .foldLeft(1L, (xs, x) -> xs * pow(x._1(), x._2()));
     }
 
     private static long pow(long a, long p) {
-        return Stream.rangeClosed(1, p).fold(1L, (xs, x) -> xs * a);
+        return LazyList.rangeClosed(1, p).fold(1L, (xs, x) -> xs * a);
     }
 }

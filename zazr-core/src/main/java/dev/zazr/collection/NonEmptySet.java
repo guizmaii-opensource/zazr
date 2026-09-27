@@ -720,9 +720,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public Queue<A> toQueue() { return set.toQueue(); }
 
     /**
-     * @return the elements as a {@link Stream}, in iteration order
+     * @return the elements as a {@link LazyList}, in iteration order
      */
-    public Stream<A> toStream() { return set.toStream(); }
+    public LazyList<A> toLazyList() { return set.toLazyList(); }
 
     /**
      * @return the elements as a {@link LinkedHashSet}, in iteration order

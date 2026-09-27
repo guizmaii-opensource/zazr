@@ -2,8 +2,8 @@ package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Map;
-import dev.zazr.collection.Stream;
 import dev.zazr.control.Option;
 import java.util.Objects;
 import java.util.function.*;
@@ -130,7 +130,7 @@ public final class Maps {
         Objects.requireNonNull(stream, "stream is null");
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        return Stream.ofAll(stream).foldLeft(map, (m, el) -> (M) m.put(keyMapper.apply(el), valueMapper.apply(el)));
+        return LazyList.ofAll(stream).foldLeft(map, (m, el) -> (M) m.put(keyMapper.apply(el), valueMapper.apply(el)));
     }
 
     @SuppressWarnings("unchecked")
@@ -138,7 +138,7 @@ public final class Maps {
             Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper, String nullResult) {
         Objects.requireNonNull(stream, "stream is null");
         Objects.requireNonNull(entryMapper, "entryMapper is null");
-        return Stream.ofAll(stream).foldLeft(map, (m, el) -> (M) m.put(Objects.requireNonNull(entryMapper.apply(el), nullResult)));
+        return LazyList.ofAll(stream).foldLeft(map, (m, el) -> (M) m.put(Objects.requireNonNull(entryMapper.apply(el), nullResult)));
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> partition(M map, OfEntries<K, V, M> ofEntries,

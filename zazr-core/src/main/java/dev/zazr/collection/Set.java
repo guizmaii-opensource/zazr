@@ -667,11 +667,11 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * The elements as a {@link Stream}, in this Set's order.
+     * The elements as a {@link LazyList}, in this Set's order.
      *
-     * @return a {@code Stream} of the elements
+     * @return a {@code LazyList} of the elements
      */
-    default Stream<T> toStream() {
-        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    default LazyList<T> toLazyList() {
+        return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
 }

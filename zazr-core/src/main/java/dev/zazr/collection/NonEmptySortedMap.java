@@ -1241,9 +1241,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public Queue<Tuple2<K, V>> toQueue() { return map.toQueue(); }
 
     /**
-     * @return the entries as a {@link Stream}, in the order of the keys
+     * @return the entries as a {@link LazyList}, in the order of the keys
      */
-    public Stream<Tuple2<K, V>> toStream() { return map.toStream(); }
+    public LazyList<Tuple2<K, V>> toLazyList() { return map.toLazyList(); }
 
     /**
      * @return the entries as a {@link HashSet}
