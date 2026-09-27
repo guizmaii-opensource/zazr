@@ -1,9 +1,6 @@
 # Commits that git blame skips: whole-tree mechanical changes.
 # git config blame.ignoreRevsFile .git-blame-ignore-revs (GitHub reads this file on its own).
 
-# Format the sources with the Palantir Java Format
-0fee2f5b1f7acf44f9df313829092301d57f2161
-# Drop the redundant `final` of local variables and parameters
-612dec7bf0ed4bc4ebcc190733f74ffe00c11e1d
-# The merge of main that formatted the code it brought in and removed its redundant `final`s
-6e209cc778dbecca43698be8a5caa5736522f6e2
+# Format with the Palantir Java Format; no reassigned locals (#189, squash-merged: the reformat, the removal of
+# redundant `final`s and the few rewrites that avoid reassigned locals)
+9c5ff408058a9f65df9133a42b7a182a9b0bdfe4
