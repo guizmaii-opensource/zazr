@@ -537,7 +537,11 @@ public class NullResultTest {
         cases.add(throwing(
                 "LazyList.cons(java.lang.Object, java.util.function.Supplier)",
                 "LazyList.cons: tailSupplier returned null",
-                () -> LazyList.cons(1, () -> null).tail()));
+                () -> LazyList.cons(1, () -> null).tail().isEmpty()));
+        cases.add(throwing(
+                "LazyList.defer(java.util.function.Supplier)",
+                "LazyList.defer: supplier returned null",
+                () -> LazyList.defer(() -> null).isEmpty()));
         cases.add(throwing(
                 "LazyList.flatMap(java.util.function.Function)",
                 "LazyList.flatMap: mapper returned null",
@@ -1263,10 +1267,10 @@ public class NullResultTest {
         LazyList<Integer> consed = LazyList.cons(1, () -> null);
         assertThat(consed.head()).isEqualTo(1);
         assertThatNullPointerException()
-                .isThrownBy(consed::tail)
+                .isThrownBy(() -> consed.tail().isEmpty())
                 .withMessage("LazyList.cons: tailSupplier returned null");
         assertThatNullPointerException()
-                .isThrownBy(consed::tail)
+                .isThrownBy(() -> consed.tail().isEmpty())
                 .withMessage("LazyList.cons: tailSupplier returned null");
 
         Lazy<Object> lazy = Lazy.of(() -> 1).flatMap(x -> null);

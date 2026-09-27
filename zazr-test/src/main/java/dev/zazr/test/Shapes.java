@@ -37,7 +37,7 @@ final class Shapes {
     static final int VECTOR_LAYOUTS = 6;
     static final int LIST_LAYOUTS = 3;
     static final int QUEUE_LAYOUTS = 4;
-    static final int LAZY_LIST_LAYOUTS = 5;
+    static final int LAZY_LIST_LAYOUTS = 6;
     static final int NON_EMPTY_VECTOR_LAYOUTS = 3;
     static final int SET_LAYOUTS = 4;
     static final int MAP_LAYOUTS = 4;
@@ -179,9 +179,10 @@ final class Shapes {
         });
     }
 
-    /// `ofAll`, a chain of lazy tails, the same chain with a prefix already evaluated, an eager prefix with a
-    /// lazy suffix appended, and the rest of a longer lazy chain after `drop`. Always finite; every element is
-    /// drawn before the lazy list is built, so evaluating a tail later draws nothing.
+    /// `ofAll`, a chain of lazy tails, the same chain with a prefix already evaluated, a prefix with a
+    /// lazy suffix appended, the rest of a longer lazy chain after `drop`, and a chain of deferred cells
+    /// whose head is lazy too. Always finite; every element is drawn before the lazy list is built, so
+    /// evaluating a cell later draws nothing.
     static <T> LazyList<T> lazyList(int layout, ArrayList<T> xs, Gen<T> gen, Sampling sampling, int size) {
         return switch (layout) {
             case 0 -> LazyList.ofAll(xs);
@@ -197,11 +198,17 @@ final class Shapes {
                 int split = sampling.draw().nextInt(xs.size() + 1);
                 yield LazyList.ofAll(xs.subList(0, split)).appendAll(lazyChain(xs, split));
             }
-            default -> {
+            case 4 -> {
                 ArrayList<T> prefix = extra(gen, sampling, size);
                 yield lazyChain(concat(prefix, xs), 0).drop(prefix.size());
             }
+            default -> deferredChain(xs, 0);
         };
+    }
+
+    private static <T> LazyList<T> deferredChain(java.util.List<T> xs, int from) {
+        return LazyList.defer(() ->
+                from == xs.size() ? LazyList.empty() : LazyList.cons(xs.get(from), () -> deferredChain(xs, from + 1)));
     }
 
     private static <T> LazyList<T> lazyChain(java.util.List<T> xs, int from) {

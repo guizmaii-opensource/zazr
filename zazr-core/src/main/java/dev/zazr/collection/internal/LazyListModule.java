@@ -1,14 +1,75 @@
 package dev.zazr.collection.internal;
 
 import dev.zazr.collection.LazyList;
-import dev.zazr.collection.LazyList.Cons;
-import dev.zazr.collection.LazyList.Empty;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
 
 public interface LazyListModule {
+
+    // whether elements is known to be empty without reading anything: an evaluated empty LazyList, or an empty
+    // collection whose emptiness is stored (Scala's knownSize == 0)
+    static boolean knownIsEmpty(Iterable<?> elements) {
+        if (elements instanceof LazyList<?> list) {
+            return LazyCell.knownIsEmpty(list);
+        } else if (elements instanceof java.util.Collection<?> collection) {
+            return collection.isEmpty();
+        } else {
+            return elements instanceof dev.zazr.collection.Traversable<?> traversable
+                    && !(elements instanceof java.util.Iterator)
+                    && traversable.isEmpty();
+        }
+    }
+
+    // acc, then the result of operation on acc and each element of list in turn, each computed when it is read
+    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> scanned(
+            LazyList<T> list, U acc, java.util.function.BiFunction<? super U, ? super T, ? extends U> operation) {
+        return LazyCell.cons(
+                acc,
+                LazyList.defer(() -> list.isEmpty()
+                        ? LazyList.empty()
+                        : scanned(list.tail(), operation.apply(acc, list.head()), operation)));
+    }
+
+    // the list without its first n > 0 elements, evaluating them now
+    @SuppressWarnings("Var")
+    static <T extends @Nullable Object> LazyList<T> dropNow(LazyList<T> list, int n) {
+        LazyList<T> rest = list;
+        for (int i = 0; i < n && !rest.isEmpty(); i++) {
+            rest = rest.tail();
+        }
+        return rest;
+    }
+
+    // the elements of the non-empty list but its last one, each evaluated when the result reaches it
+    static <T extends @Nullable Object> LazyList<T> initOf(LazyList<T> list) {
+        return LazyList.defer(() -> {
+            LazyList<T> tail = list.tail();
+            return tail.isEmpty() ? LazyList.empty() : LazyCell.cons(list.head(), initOf(tail));
+        });
+    }
+
+    // each element of list preceded by element
+    static <T extends @Nullable Object> LazyList<T> separated(LazyList<T> list, T element) {
+        return LazyList.defer(() -> list.isEmpty()
+                ? LazyList.empty()
+                : LazyCell.cons(element, LazyCell.cons(list.head(), separated(list.tail(), element))));
+    }
+
+    // list with the element at index replaced by what updater computes from it; original is the index of the call
+    static <T extends @Nullable Object> LazyList<T> updated(
+            LazyList<T> list, int index, int original, Function<? super T, ? extends T> updater) {
+        return LazyList.defer(() -> {
+            if (list.isEmpty()) {
+                throw new IndexOutOfBoundsException(
+                        index == original ? "update(" + original + ", e) on Nil" : "update at " + original);
+            } else if (index == 0) {
+                return LazyCell.cons(updater.apply(list.head()), list.tail());
+            } else {
+                return LazyCell.cons(list.head(), updated(list.tail(), index - 1, original, updater));
+            }
+        });
+    }
 
     /** Slice searches over a lazy cons stream: the candidate start positions are the successive tails. */
     interface Slice {
@@ -119,27 +180,40 @@ public interface LazyListModule {
         }
     }
 
+    /// The elements of a list, then those of the list a mapper computes from the result itself: the mapper is called
+    /// once, when a read reaches the end of the list, and not at all when the list is empty.
     final class AppendSelf<T extends @Nullable Object> {
 
-        private final Cons<T> self;
+        private final Function<? super LazyList<T>, ? extends LazyList<T>> mapper;
+        // the result, set once built: the mapper is called with it
+        private @Nullable LazyList<T> self;
 
-        public AppendSelf(Cons<T> self, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
-            this.self = appendAll(self, mapper);
+        private AppendSelf(Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
+            this.mapper = mapper;
         }
 
-        private Cons<T> appendAll(Cons<T> stream, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
-            return (Cons<T>) LazyList.cons(stream.head(), () -> {
-                LazyList<T> tail = stream.tail();
-                if (!tail.isEmpty()) {
-                    return appendAll((Cons<T>) tail, mapper);
-                }
-                return java.util.Objects.requireNonNull(
-                        mapper.apply(self), "LazyList.appendSelf: mapper returned null");
-            });
+        public static <T extends @Nullable Object> LazyList<T> apply(
+                LazyList<T> list, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
+            AppendSelf<T> appendSelf = new AppendSelf<>(mapper);
+            LazyList<T> result = appendSelf.copy(list, true);
+            appendSelf.self = result;
+            return result;
         }
 
-        public Cons<T> stream() {
-            return self;
+        private LazyList<T> copy(LazyList<T> list, boolean start) {
+            return LazyCell.defer(
+                    () -> {
+                        if (!list.isEmpty()) {
+                            return LazyCell.cons(list.head(), copy(list.tail(), false));
+                        } else if (start) {
+                            return LazyCell.empty();
+                        } else {
+                            return java.util.Objects.requireNonNull(
+                                    mapper.apply(java.util.Objects.requireNonNull(self)),
+                                    "LazyList.appendSelf: mapper returned null");
+                        }
+                    },
+                    "LazyList.appendSelf: null list");
         }
     }
 
@@ -188,29 +262,30 @@ public interface LazyListModule {
     interface LazyListFactory {
 
         static <T extends @Nullable Object> LazyList<T> create(java.util.Iterator<? extends T> iterator) {
-            return iterator.hasNext() ? LazyList.cons(iterator.next(), () -> create(iterator)) : Empty.instance();
+            return LazyCell.ofIterator(iterator);
         }
     }
 
+    /// Reads a list one cell at a time: [#hasNext()] evaluates the current cell, [#next()] moves to its tail without
+    /// evaluating it.
     final class LazyListIterator<T extends @Nullable Object> extends AbstractIterator<T> {
 
-        private Supplier<LazyList<T>> current;
+        private LazyList<T> current;
 
-        public LazyListIterator(Cons<T> stream) {
-            this.current = () -> stream;
+        public LazyListIterator(LazyList<T> list) {
+            this.current = list;
         }
 
         @Override
         public boolean hasNext() {
-            return !current.get().isEmpty();
+            return !current.isEmpty();
         }
 
         @Override
         public T getNext() {
-            LazyList<T> stream = current.get();
-            // DEV-NOTE: we make the stream even more lazy because the next head must not be evaluated on hasNext()
-            current = stream::tail;
-            return stream.head();
+            T head = current.head();
+            current = current.tail();
+            return head;
         }
     }
 

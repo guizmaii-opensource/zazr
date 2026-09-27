@@ -1746,7 +1746,7 @@ class IteratorTest {
     public void shouldConvertToLazyListLazily() {
         AtomicInteger pulled = new AtomicInteger();
         LazyList<Integer> stream = Iterator.continually(pulled::incrementAndGet).toLazyList();
-        assertThat(pulled.get()).isEqualTo(1);
+        assertThat(pulled.get()).isZero();
         assertThat(stream.take(3)).isEqualTo(LazyList.of(1, 2, 3));
     }
 
