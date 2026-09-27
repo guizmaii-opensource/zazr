@@ -10,7 +10,8 @@ import java.util.Objects;
  *
  * <ul>
  * <li>{@link Satisfied}: every sample passed;</li>
- * <li>{@link Falsified}: a sample made the check return {@code false} or throw an {@link AssertionError};</li>
+ * <li>{@link Falsified}: a sample made the check return {@code false} or a failed {@link TestResult}, or throw an
+ * {@link AssertionError};</li>
  * <li>{@link Erroneous}: a generator threw, or the check threw something other than an {@link AssertionError}.</li>
  * </ul>
  *
@@ -65,9 +66,10 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
     }
 
     /**
-     * The message of the {@link AssertionError} that falsified the check.
+     * Why the sample falsified the check: the explanation of a failed {@link TestResult}, or the message of the
+     * {@link AssertionError} the check threw.
      *
-     * @return the message of a falsified result when the check threw one with a message, none otherwise
+     * @return the explanation of a falsified result, when there is one; none otherwise
      */
     default Option<String> message() {
         return Option.none();
@@ -134,12 +136,13 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
     }
 
     /**
-     * A sample made the check return {@code false} or throw an {@link AssertionError}.
+     * A sample made the check return {@code false} or a failed {@link TestResult}, or throw an {@link AssertionError}.
      *
      * @param sampleNumber   the number of the sample, from 1
      * @param seed           the seed of the run
      * @param counterexample the values of the sample
-     * @param message        the message of the {@link AssertionError}, if the check threw one with a message
+     * @param message        the explanation of the failed {@link TestResult}, or the message of the
+     *                       {@link AssertionError}, if there is one
      */
     record Falsified(int sampleNumber, long seed, Tuple counterexample, Option<String> message) implements CheckResult {
 
@@ -149,7 +152,7 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
          * @param sampleNumber   the number of the sample, from 1
          * @param seed           the seed of the run
          * @param counterexample the values of the sample
-         * @param message        the message of the {@link AssertionError}, if any
+         * @param message        the explanation of the failure, if any
          * @throws NullPointerException     if {@code counterexample} or {@code message} is null
          * @throws IllegalArgumentException if {@code sampleNumber} is below 1
          */
@@ -170,8 +173,14 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
         }
 
         String describe() {
-            return "falsified at sample " + sampleNumber + " by " + counterexample
-                    + message.map(m -> ": " + m).getOrElse("") + replay(seed);
+            final String head = "falsified at sample " + sampleNumber + " by " + counterexample;
+            // blank lines around a message (AssertJ starts and ends its own with one) are left out
+            final String explanation = message.map(String::strip).getOrElse("");
+            if (explanation.contains("\n")) {
+                // an explanation on several lines comes after the seed, one level in
+                return head + replay(seed) + ":\n  " + explanation.replace("\n", "\n  ");
+            }
+            return head + (explanation.isEmpty() ? "" : ": " + explanation) + replay(seed);
         }
     }
 

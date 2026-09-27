@@ -97,11 +97,18 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Complexity: a lazy call computes now only what its note says, and each further element when the result reaches it.
  * The methods without a note of their own that read every element (the folds, {@code reduce}, {@code count},
- * {@code sum}, {@code mkString}, {@code forEach}, the conversions to other collections, {@code equals} and
- * {@code hashCode}) are O(n) and never return on an infinite LazyList; {@code exists}, {@code forAll}, {@code find} and
+ * {@code sum}, {@code mkString}, {@code forEach}, the conversions to other collections and {@code hashCode}) are O(n)
+ * and never return on an infinite LazyList; {@code equals} compares the elements in order and stops at the first
+ * difference or at the end of the shorter side, so it returns when either side is finite, but never on two infinite
+ * LazyLists with the same elements; {@code exists}, {@code forAll}, {@code find} and
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
  * {@code ...Option} variant costs what the method it wraps costs. {@code toString} shows only the elements already
  * computed.
+ * <p>
+ * A LazyList never changes its contents. Each element is computed once and kept; when computing one throws, the
+ * exception is kept in its place, and every later read of that place throws the same exception instead of computing
+ * it again, so a LazyList read from a one-shot source never skips or reorders an element. Only a
+ * {@link VirtualMachineError}, such as a stack overflow, is not kept.
  *
  * @param <T> component type of this LazyList
  * @author Daniel Dietrich, Jörgen Andersson, Ruslan Sennov
@@ -1407,40 +1414,37 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new LazyList with the given element appended at the end.
      * <p>
      * Complexity: O(1); nothing is computed now, and the element comes after the last one of this LazyList. Appending in
-     * a loop stays O(1) per call.
+     * a loop stays O(1) per call, and reading the result back costs O(1) per element, however many calls built it.
      *
      * @param element the element to append
      * @return a new LazyList ending with the given element
      */
     default LazyList<T> append(T element) {
-        return isEmpty() ? LazyList.of(element) : new Cons.AppendElements<>(head(), dev.zazr.collection.Queue.of(element), this::tail);
+        return isEmpty() ? LazyList.of(element) : new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(LazyList.of(element)));
     }
 
     /**
      * Returns a new LazyList with the given elements appended at the end, in iteration order.
      * <p>
-     * Complexity: O(m) for m elements on a LazyList built by {@link #append(Object)}, or a tail of one (the prefix of
-     * {@link #splitAtInclusive(Predicate)} and the results of {@link #crossProduct(int)} are such LazyLists): the
-     * elements are read now, so an infinite argument never returns. Otherwise O(1): nothing is computed now, but each
-     * appendAll adds one step to reading every element of the result, so appendAll in a loop is quadratic: use append,
-     * or build a Vector.
+     * Complexity: O(1); only the first of the given elements is read now, the others when the result reaches them, so
+     * an infinite argument is fine. The elements are read once, into a LazyList that every result built from this one
+     * shares. Calling appendAll or {@link #append(Object)} in a loop stays O(1) per call, and reading the result back
+     * costs O(1) per element, however many calls built it.
      *
      * @param elements the elements to append
      * @return a new LazyList ending with the given elements, or this LazyList if there are none
      * @throws NullPointerException if {@code elements} is null
      */
     default LazyList<T> appendAll(Iterable<? extends T> elements) {
-        Objects.requireNonNull(elements, "elements is null");
-        if (!Collections.isTraversableAgain(elements)) {
-            // a one-shot source is read exactly once, into a memoising LazyList that also answers whether it is empty
-            final LazyList<T> that = LazyList.ofAll(elements);
-            return that.isEmpty() ? this : appendAll(that);
-        } else if (Collections.isEmpty(elements)) {
+        // the elements are read into a memoising LazyList, which reads only the first now and is shared by every LazyList
+        // built from the result
+        final LazyList<T> that = LazyList.ofAll(elements);
+        if (that.isEmpty()) {
             return this;
         } else if (isEmpty()) {
-            return LazyList.ofAll(elements);
+            return that;
         } else {
-            return LazyList.ofAll(Iterator.concat(this, elements));
+            return new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(that));
         }
     }
 
@@ -1703,9 +1707,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code LazyList} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(k + m) for k dropped elements; they and the first element kept are computed now, the rest when
-     * the result reaches them. On a LazyList built by append, dropping into the m appended elements rebuilds them, at
-     * every call. O(k) otherwise.
+     * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
+     * result reaches them.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1864,8 +1867,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The element at {@code index}.
      * <p>
-     * Complexity: O(i + m); the first i + 1 elements are computed. On a LazyList built by append, reaching the m
-     * appended elements rebuilds them, at every call. O(i) otherwise.
+     * Complexity: O(i); the first i + 1 elements are computed.
      *
      * @param index the position
      * @return the element at that position
@@ -1987,10 +1989,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * {@code IndexOutOfBoundsException} is thrown only once the returned LazyList is traversed as far
      * as the offending position.
      * <p>
-     * Complexity: O(n) when {@code elements} is a LazyList built by {@link #append(Object)}, or a tail of one (see
-     * {@link #appendAll(Iterable)}): the rest of this LazyList is then read when the result reaches index i, now when i
-     * is 0, so an infinite one never returns. Otherwise lazy: nothing is computed now, and the result copies the
-     * elements before index i as it reaches them, then joins {@code elements} and the rest as appendAll does.
+     * Complexity: lazy; only the first of {@code elements} is read now when i is 0, nothing otherwise. The result
+     * copies the elements before index i as it reaches them, then reads {@code elements} and shares the rest of this
+     * LazyList, as {@link #prependAll(Iterable)} does.
      */
     default LazyList<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -2322,10 +2323,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * A new LazyList with {@code elements} in front of this one, in iteration order.
      * <p>
-     * Complexity: O(n) when {@code elements} is a LazyList built by {@link #append(Object)}, or a tail of one (see
-     * {@link #appendAll(Iterable)}): this whole LazyList is then read now, so an infinite one never returns. Otherwise
-     * O(1): nothing is computed now, but each prependAll adds one step to reading every element of the result, so
-     * prependAll in a loop is quadratic.
+     * Complexity: O(1); only the first of the given elements is read now, the others when the result reaches them,
+     * and this LazyList is shared, not read. Calling prependAll in a loop stays O(1) per call, and reading the result
+     * back costs O(1) per element, however many calls built it.
      *
      * @param elements the elements to prepend
      * @return a new LazyList starting with the given elements, or this LazyList if there are none
@@ -2875,11 +2875,11 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new {@code LazyList} without its first element.
      * <p>
-     * Complexity: O(k) for k elements computed or rebuilt. On a LazyList returned by filter, reject, retainAll,
-     * removeAll, distinct, distinctBy, collect or flatMap, the first call computes the elements up to the next one
-     * kept, and never returns on an infinite LazyList with no further match; later calls are O(1): the result is kept.
-     * On a LazyList built by append, a call at the first appended element rebuilds the k appended elements, and nothing
-     * is kept, so every such call pays it again. O(1) otherwise.
+     * Complexity: O(k) for k elements computed. On a LazyList returned by filter, reject, retainAll, removeAll,
+     * distinct, distinctBy, collect or flatMap, the first call computes the elements up to the next one kept, and
+     * never returns on an infinite LazyList with no further match. Every later call is O(1): the result is kept, and so
+     * is an exception the first call threw. On a LazyList built by append or appendAll, the first call to reach the
+     * appended elements may put the p appended parts in order, O(p) once for the whole walk. O(1) otherwise.
      *
      * @return a new {@code LazyList} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code LazyList} is empty
@@ -2889,7 +2889,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new {@code LazyList} without its first element as an {@code Option}.
      * <p>
-     * Complexity: O(k) for k elements computed or rebuilt, as {@link #tail()}.
+     * Complexity: O(k) for k elements computed, as {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -3054,8 +3054,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * This LazyList with the element at {@code index} replaced by {@code element}.
      * <p>
      * Complexity: O(i); the first i + 2 elements are computed now (the one after the replaced element too). The result
-     * joins its two parts as {@link #appendAll(Iterable)} does, so each update adds one step to reading the elements
-     * after index i.
+     * copies the elements before index i and shares those after it.
      *
      * @param index   the position to update
      * @param element the new element
@@ -3194,9 +3193,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Extends (continues) this {@code LazyList} with a constantly repeated value.
      * <p>
-     * Complexity: O(1); nothing is computed now, and the result is infinite. On a LazyList built by
-     * {@link #append(Object)}, or a tail of one, the call never returns: it reads the infinite extension now, as
-     * {@link #appendAll(Iterable)} does.
+     * Complexity: O(1); nothing is computed now, and the result is infinite.
      *
      * @param next value with which the lazy list should be extended
      * @return new {@code LazyList} composed from this lazy list extended with a LazyList of provided value
@@ -3208,9 +3205,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Extends (continues) this {@code LazyList} with values provided by a {@code Supplier}
      * <p>
-     * Complexity: O(1); nothing is computed now, and the result is infinite. On a LazyList built by
-     * {@link #append(Object)}, or a tail of one, the call never returns: it reads the infinite extension now, as
-     * {@link #appendAll(Iterable)} does.
+     * Complexity: O(1); nothing is computed now, and the result is infinite.
      *
      * @param nextSupplier a supplier which will provide values for extending a lazy list
      * @return new {@code LazyList} composed from this lazy list extended with values provided by the supplier
@@ -3334,17 +3329,78 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     abstract class Cons<T extends @Nullable Object> implements LazyList<T> {
 
-        final T head;
-        final Lazy<LazyList<T>> tail;
+        // the state of a tail being computed: seeing it again on the thread computing it means the tail needs itself
+        private static final Object EVALUATING = new Object();
 
-        Cons(T head, Supplier<LazyList<T>> tail) {
-            this(head, Lazy.of(Objects.requireNonNull(tail, "tail is null")));
+        final T head;
+
+        // null until the tail is computed; then the tail, or the Throwable computing it threw. Written only under the
+        // lock of this cell, and never changed once it is a LazyList or a Throwable.
+        private volatile @Nullable Object tail;
+
+        Cons(T head) {
+            this.head = head;
         }
 
-        // shares an already memoized tail instead of wrapping it in a second Lazy
-        Cons(T head, Lazy<LazyList<T>> tail) {
-            this.head = head;
-            this.tail = tail;
+        /// Computes the tail. Called under the lock of this cell, once, or again only after a
+        /// [VirtualMachineError] left the cell as it was.
+        abstract LazyList<T> computeTail();
+
+        /// Lets go of what [#computeTail()] needed, once its result or failure is kept.
+        void release() {
+        }
+
+        /// The tail, computed on the first call and kept. A failure is kept too: every later call throws the same
+        /// exception, so a LazyList built from a one-shot source never skips or reorders elements after a failed call.
+        /// Only a [VirtualMachineError] (such as a stack overflow) is not kept: the next call computes the tail again.
+        @Override
+        @SuppressWarnings("unchecked")
+        public final LazyList<T> tail() {
+            final Object state = tail;
+            return state instanceof LazyList<?> ? (LazyList<T>) state : evaluateTail();
+        }
+
+        final boolean isTailComputed() {
+            final Object state = tail;
+            return state instanceof LazyList<?> || state instanceof Throwable;
+        }
+
+        @SuppressWarnings("unchecked")
+        private LazyList<T> evaluateTail() {
+            Object state;
+            synchronized (this) {
+                state = tail;
+                if (state == EVALUATING) {
+                    throw new IllegalStateException("LazyList: computing this tail needs the tail itself");
+                } else if (state == null) {
+                    tail = EVALUATING;
+                    // Nothing that can allocate or throw runs between the computation and the write of its outcome,
+                    // not even a type check, which may resolve a class: the cell is never left EVALUATING, even when
+                    // the heap or the stack is exhausted. Without an outcome, it is put back as it was.
+                    try {
+                        state = computeTail();
+                    } catch (Throwable failure) {
+                        state = failure;
+                    } finally {
+                        tail = state;
+                    }
+                    if (state instanceof VirtualMachineError) {
+                        tail = null;
+                    } else {
+                        release();
+                    }
+                }
+            }
+            if (state instanceof Throwable failure) {
+                throw Cons.<RuntimeException> rethrow(failure);
+            }
+            return (LazyList<T>) state;
+        }
+
+        // throws the kept failure itself, whatever its type
+        @SuppressWarnings("unchecked")
+        private static <E extends Throwable> E rethrow(Throwable failure) throws E {
+            throw (E) failure;
         }
 
         @Override
@@ -3379,7 +3435,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             while (stream != null && !stream.isEmpty()) {
                 final Cons<T> cons = (Cons<T>) stream;
                 builder.append(cons.head);
-                if (cons.tail.isEvaluated()) {
+                if (cons.tail instanceof LazyList<?>) {
                     stream = stream.tail();
                     if (!stream.isEmpty()) {
                         builder.append(", ");
@@ -3394,57 +3450,74 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
         private static final class ConsImpl<T extends @Nullable Object> extends Cons<T> {
 
-            ConsImpl(T head, Supplier<LazyList<T>> tail) {
-                super(head, tail);
+            // null once the tail is computed or has failed
+            private @Nullable Supplier<LazyList<T>> supplier;
+
+            ConsImpl(T head, Supplier<LazyList<T>> supplier) {
+                super(head);
+                this.supplier = Objects.requireNonNull(supplier, "tail is null");
             }
 
             @Override
-            public LazyList<T> tail() {
-                return Objects.requireNonNull(tail.get(), "LazyList.cons: tailSupplier returned null");
+            @SuppressWarnings("NullAway") // computeTail() runs only while the tail is not kept, so supplier is set
+            LazyList<T> computeTail() {
+                return Objects.requireNonNull(supplier.get(), "LazyList.cons: tailSupplier returned null");
             }
 
+            @Override
+            void release() {
+                supplier = null;
+            }
         }
 
+        // The elements of prefix, a non-empty LazyList whose head is this one's, then those of each LazyList in pending, in
+        // order; the pending LazyLists are never empty. append and appendAll add one LazyList to the queue, so a loop of them
+        // keeps every element one step away. Only the LazyLists waiting in a queue may be AppendElements with an
+        // AppendElements prefix: join unwraps them, without recursion, before one becomes a prefix, so computing a tail
+        // never goes through more than one AppendElements.
         private static final class AppendElements<T extends @Nullable Object> extends Cons<T> {
 
-            private final dev.zazr.collection.Queue<T> queue;
+            private final LazyList<T> prefix;
+            private final dev.zazr.collection.Queue<LazyList<T>> pending;
 
-            AppendElements(T head, dev.zazr.collection.Queue<T> queue, Supplier<LazyList<T>> tail) {
-                this(head, queue, Lazy.of(tail));
-            }
-
-            AppendElements(T head, dev.zazr.collection.Queue<T> queue, Lazy<LazyList<T>> tail) {
-                super(head, tail);
-                this.queue = queue;
+            AppendElements(LazyList<T> prefix, dev.zazr.collection.Queue<LazyList<T>> pending) {
+                super(prefix.head());
+                this.prefix = prefix;
+                this.pending = pending;
             }
 
             @Override
             public LazyList<T> append(T element) {
-                return new AppendElements<>(head, queue.append(element), tail);
+                return new AppendElements<>(prefix, pending.append(LazyList.of(element)));
             }
 
             @Override
             public LazyList<T> appendAll(Iterable<? extends T> elements) {
-                Objects.requireNonNull(elements, "elements is null");
-                return isEmpty() ? LazyList.ofAll(queue) : new AppendElements<>(head, queue.appendAll(elements), tail);
+                final LazyList<T> that = LazyList.ofAll(elements);
+                return that.isEmpty() ? this : new AppendElements<>(prefix, pending.append(that));
             }
 
             @Override
-            public LazyList<T> tail() {
-                final LazyList<T> t = tail.get();
-                if (t.isEmpty()) {
-                    return LazyList.ofAll(queue);
-                } else {
-                    if (t instanceof ConsImpl) {
-                        final ConsImpl<T> c = (ConsImpl<T>) t;
-                        return new AppendElements<>(c.head(), queue, c.tail);
-                    } else {
-                        final AppendElements<T> a = (AppendElements<T>) t;
-                        return new AppendElements<>(a.head(), a.queue.appendAll(queue), a.tail);
-                    }
-                }
+            LazyList<T> computeTail() {
+                final LazyList<T> rest = prefix.tail();
+                return rest.isEmpty() ? join(pending.head(), pending.tail()) : join(rest, pending);
             }
 
+            // The elements of first, non-empty, then those of pending, as a LazyList whose prefix is not an AppendElements.
+            private static <T extends @Nullable Object> LazyList<T> join(LazyList<T> first, dev.zazr.collection.Queue<LazyList<T>> pending) {
+                while (first instanceof AppendElements<T> appended) {
+                    pending = pending.isEmpty() ? appended.pending : appended.pending.append(joinLater(pending));
+                    first = appended.prefix;
+                }
+                return pending.isEmpty() ? first : new AppendElements<>(first, pending);
+            }
+
+            // The elements of the non-empty pending as one LazyList, built in O(1): its prefix may be an AppendElements,
+            // so it only waits in a queue until join unwraps it.
+            private static <T extends @Nullable Object> LazyList<T> joinLater(dev.zazr.collection.Queue<LazyList<T>> pending) {
+                final dev.zazr.collection.Queue<LazyList<T>> others = pending.tail();
+                return others.isEmpty() ? pending.head() : new AppendElements<>(pending.head(), others);
+            }
         }
     }
 

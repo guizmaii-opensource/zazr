@@ -560,8 +560,8 @@ class GenTypesTest {
     @Test
     void lazyListReachesEvaluatedAndUnevaluatedTails() {
         final List<LazyList<Integer>> streams = samples(Gen.lazyList(Gen.integers()));
-        assertSome(streams, s -> !s.isEmpty() && !((Lazy<?>) field(s, LazyList.Cons.class, "tail")).isEvaluated(), "an unevaluated tail");
-        assertSome(streams, s -> !s.isEmpty() && ((Lazy<?>) field(s, LazyList.Cons.class, "tail")).isEvaluated(), "an evaluated tail");
+        assertSome(streams, s -> !s.isEmpty() && !(field(s, LazyList.Cons.class, "tail") instanceof LazyList<?>), "an unevaluated tail");
+        assertSome(streams, s -> !s.isEmpty() && field(s, LazyList.Cons.class, "tail") instanceof LazyList<?>, "an evaluated tail");
     }
 
     @Test

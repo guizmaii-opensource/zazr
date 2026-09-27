@@ -229,10 +229,6 @@ public final class Maps {
         return (M) map.map((k, v) -> Tuple.of(k, function.apply(k, v)));
     }
 
-    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(M map, Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
-        return replace(map, currentElement, newElement);
-    }
-
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceValue(M map, K key, V value) {
         return map.containsKey(key) ? (M) map.put(key, value) : map;

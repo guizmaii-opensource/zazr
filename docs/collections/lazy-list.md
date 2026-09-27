@@ -42,8 +42,10 @@ Every method: [complexity page](complexity.md#lazylist).
 ## Sharp edges
 
 - Operations that need the whole sequence compute it and never return on an infinite `LazyList`: `size`,
-  `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `lastIndexOfSlice(that)`, `equals` and
-  `hashCode`, and anything else that reads every element, such as `foldLeft`, `mkString` or `toVector`.
+  `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `lastIndexOfSlice(that)` and `hashCode`, and
+  anything else that reads every element, such as `foldLeft`, `mkString` or `toVector`.
+- `equals` stops at the first difference or at the end of the shorter side, so an infinite `LazyList` compared with a
+  finite `List`, `Vector`, `Queue` or `LazyList` returns. Two infinite `LazyList`s with the same elements never do.
 - `filter` and the calls like it (`reject`, `retainAll`, `removeAll`, `collect`, `flatMap`, `distinct`) compute
   elements until they find one to keep, when they are called and each time the result moves on. On an infinite
   `LazyList` with nothing more to keep, that search never ends.
@@ -51,11 +53,8 @@ Every method: [complexity page](complexity.md#lazylist).
   elements all go to one side, they never return.
 - The first element is never lazy: building a `LazyList` computes it, and `map`, `tap` and the others compute the first
   element of their result.
-- Each `appendAll` or `prependAll` adds a step to reading every element of its result, so calling them in a loop is
-  quadratic. `append` in a loop stays cheap; or build a `Vector`.
-- On a `LazyList` built by `append`, or a tail of one (the first part of `splitAtInclusive` and the results of
-  `crossProduct(power)` are such LazyLists), `appendAll` and `extend` with a value or a supplier read their whole
-  argument right away, so an infinite one never returns. Likewise, `s.prependAll(t)` and `s.insertAll(i, t)` with
-  such a `t` read all of `s`.
+- When computing an element throws, the `LazyList` keeps the exception in its place: reading that element again throws
+  the same exception, and never skips to the next one. Only a `VirtualMachineError`, such as a stack overflow, lets a
+  later read try again.
 - A `LazyList` keeps every element it computed. Holding on to the start of a long `LazyList` while walking it keeps all
   of it in memory.

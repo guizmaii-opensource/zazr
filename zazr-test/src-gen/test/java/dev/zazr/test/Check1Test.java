@@ -8,6 +8,7 @@ package dev.zazr.test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.zazr.CheckedFunction1;
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
 import java.util.ArrayList;
@@ -107,15 +108,135 @@ class Check1Test {
                 .hasMessage("erroneous at sample 1 with (1): java.lang.IllegalStateException: boom (seed 42, replay with -Dzazr.check.seed=42)");
     }
 
+    /// A property of the right arity that holds, for the method references.
+    static boolean holds(Integer v1) {
+        return true;
+    }
+
+    @Test
+    void everyEntryPointTakesBooleanAndTestResultBodies() {
+        // implicitly typed lambdas: an expression and a block returning a boolean, the same returning a
+        // TestResult, and a method reference; none of them is ambiguous
+        Check.check(Gen.constant(1), (v1) -> true);
+        Check.check(Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.check(Gen.constant(1), (v1) -> {
+            return true;
+        });
+        Check.check(Gen.constant(1), (v1) -> {
+            return TestResult.succeed();
+        });
+        Check.check(Gen.constant(1), Check1Test::holds);
+        Check.check(CONFIG, Gen.constant(1), (v1) -> true);
+        Check.check(CONFIG, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.check(CONFIG, Gen.constant(1), (v1) -> {
+            return true;
+        });
+        Check.check(CONFIG, Gen.constant(1), (v1) -> {
+            return TestResult.succeed();
+        });
+        Check.check(CONFIG, Gen.constant(1), Check1Test::holds);
+        Check.checkN(3, Gen.constant(1), (v1) -> true);
+        Check.checkN(3, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.checkN(3, Gen.constant(1), (v1) -> {
+            return true;
+        });
+        Check.checkN(3, Gen.constant(1), (v1) -> {
+            return TestResult.succeed();
+        });
+        Check.checkN(3, Gen.constant(1), Check1Test::holds);
+        Check.checkAll(Gen.constant(1), (v1) -> true);
+        Check.checkAll(Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.checkAll(Gen.constant(1), (v1) -> {
+            return true;
+        });
+        Check.checkAll(Gen.constant(1), (v1) -> {
+            return TestResult.succeed();
+        });
+        Check.checkAll(Gen.constant(1), Check1Test::holds);
+        Check.checkAll(CONFIG, Gen.constant(1), (v1) -> true);
+        Check.checkAll(CONFIG, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.checkAll(CONFIG, Gen.constant(1), (v1) -> {
+            return true;
+        });
+        Check.checkAll(CONFIG, Gen.constant(1), (v1) -> {
+            return TestResult.succeed();
+        });
+        Check.checkAll(CONFIG, Gen.constant(1), Check1Test::holds);
+        assertThat(Check.evaluate(Gen.constant(1), (v1) -> true).isSatisfied()).isTrue();
+        assertThat(Check.evaluate(Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1))).isSatisfied()).isTrue();
+        assertThat(Check.evaluate(Gen.constant(1), (v1) -> {
+            return false;
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluate(Gen.constant(1), (v1) -> {
+            return TestResult.fail("no");
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluate(Gen.constant(1), Check1Test::holds).isSatisfied()).isTrue();
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> true).isSatisfied()).isTrue();
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1))).isSatisfied()).isTrue();
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> {
+            return false;
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> {
+            return TestResult.fail("no");
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Check1Test::holds).isSatisfied()).isTrue();
+        assertThat(Check.evaluateN(3, Gen.constant(1), (v1) -> true).isSatisfied()).isTrue();
+        assertThat(Check.evaluateN(3, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1))).isSatisfied()).isTrue();
+        assertThat(Check.evaluateN(3, Gen.constant(1), (v1) -> {
+            return false;
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluateN(3, Gen.constant(1), (v1) -> {
+            return TestResult.fail("no");
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluateN(3, Gen.constant(1), Check1Test::holds).isSatisfied()).isTrue();
+        assertThat(Check.evaluateAll(Gen.constant(1), (v1) -> true).isSatisfied()).isTrue();
+        assertThat(Check.evaluateAll(Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1))).isSatisfied()).isTrue();
+        assertThat(Check.evaluateAll(Gen.constant(1), (v1) -> {
+            return false;
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluateAll(Gen.constant(1), (v1) -> {
+            return TestResult.fail("no");
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluateAll(Gen.constant(1), Check1Test::holds).isSatisfied()).isTrue();
+        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), (v1) -> true).isSatisfied()).isTrue();
+        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(1))).isSatisfied()).isTrue();
+        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), (v1) -> {
+            return false;
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), (v1) -> {
+            return TestResult.fail("no");
+        }).isFalsified()).isTrue();
+        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), Check1Test::holds).isSatisfied()).isTrue();
+    }
+
+    @Test
+    void aFailedTestResultFalsifiesTheCheckWithItsExplanation() {
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(0))))
+                .isEqualTo(new CheckResult.Falsified(1, 42L, Tuple.of(1), Option.some("1 is not equal to 0")));
+        assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), (v1) -> Assertion.assertThat(v1, Assertion.equalTo(0))))
+                .isExactlyInstanceOf(AssertionError.class)
+                .hasMessage("falsified at sample 1 by (1): 1 is not equal to 0 (seed 42, replay with -Dzazr.check.seed=42)");
+    }
+
+    @Test
+    void aResultThatIsNeitherABooleanNorATestResultPassesWhenTheBodyCompletes() {
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> "yes")).isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> assertThat(v1).isPositive())).isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), (v1) -> assertThat(v1).isNegative()).isFalsified()).isTrue();
+        final CheckResult nothing = Check.evaluate(CONFIG, Gen.constant(1), (v1) -> null);
+        assertThat(nothing.isErroneous()).isTrue();
+        assertThat(nothing.error().get()).isInstanceOf(NullPointerException.class).hasMessage("the check returned null");
+    }
+
     @Test
     void rejectsNulls() {
         assertThatThrownBy(() -> Check.evaluate((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.evaluateAll((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.checkAll(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), (CheckedFunction1<Integer, Boolean>) null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), (CheckedFunction1<Integer, Boolean>) null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.checkAll(CONFIG, Gen.constant(1), (CheckedFunction1<Integer, Boolean>) null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.check((CheckConfig) null, Gen.constant(1), (v1) -> true)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), (CheckedFunction1<Integer, Boolean>) null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.evaluate(CONFIG, null, (v1) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
         assertThatThrownBy(() -> Check.evaluateAll(CONFIG, null, (v1) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
     }

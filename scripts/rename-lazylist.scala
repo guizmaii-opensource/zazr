@@ -82,7 +82,7 @@ val Rules: List[Rule] = List(
   Rule("""\blazyStream\b""".r, "lazyChain"),
   Rule("""\bSTREAM_LAYOUTS\b""".r, "LAZY_LIST_LAYOUTS"),
   Rule("""\bStream(?=[A-Z])(?!Support)""".r, "LazyList"),
-  Rule("""(?<=[A-Za-z0-9])(?<!java)(?<!Java)(?<!Util)(?<!Int)(?<!Long)(?<!Double)(?<!arallel)(?<!should)(?<!\bof)Stream""".r, "LazyList", LazyListFiles),
+  Rule("""(?<=[A-Za-z0-9])(?<!java)(?<!Java)(?<!Util)(?<!Int)(?<!Long)(?<!Double)(?<!Error)(?<!Input)(?<!Output)(?<!Print)(?<!arallel)(?<!should)(?<!\bof)Stream""".r, "LazyList", LazyListFiles),
   Rule("""\b(\w*(?:ElementsAreInfinite|OfAFinite|WhenThe))Stream""".r, "$1LazyList"),
   // the zazr-test generator
   Rule("""\b(Gen|Shapes)\.stream\(""".r, "$1.lazyList("),

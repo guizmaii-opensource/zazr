@@ -116,9 +116,6 @@ public interface LazyListModule {
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Cons<T> self;
-        // set once mapper returned null: the tail is not memoised on a failure, so every later force fails the same
-        // way instead of calling mapper again
-        private boolean failed;
 
         public AppendSelf(Cons<T> self, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
             this.self = appendAll(self, mapper);
@@ -130,12 +127,7 @@ public interface LazyListModule {
                 if (!tail.isEmpty()) {
                     return appendAll((Cons<T>) tail, mapper);
                 }
-                final LazyList<T> mapped = failed ? null : mapper.apply(self);
-                if (mapped == null) {
-                    failed = true;
-                    throw new NullPointerException("LazyList.appendSelf: mapper returned null");
-                }
-                return mapped;
+                return java.util.Objects.requireNonNull(mapper.apply(self), "LazyList.appendSelf: mapper returned null");
             });
         }
 
