@@ -469,8 +469,8 @@
         </profile>
 
         <!-- The formatting of the Java sources: Palantir Java Format (120 columns), then the import order. `make fmt`
-             applies it to src/ and `make fmt-check` checks it; the build checks it at compile and formats the
-             generated sources (src-gen) once the generator has written them. Not on JDK 27 and later:
+             applies it and `make fmt-check` checks it, on src/ and on the generated sources (src-gen); the build
+             formats src-gen once the generator has written them, and checks everything at compile. Not on JDK 27 and later:
              palantir-java-format reads a javac field that JDK 27 removed, and fails on every file. -->
         <profile>
             <id>spotless</id>
@@ -485,6 +485,11 @@
                         <version>${spotless.version}</version>
                         <configuration>
                             <java>
+                                <includes>
+                                    <include>src/main/java/**/*.java</include>
+                                    <include>src/test/java/**/*.java</include>
+                                    <include>src-gen/**/*.java</include>
+                                </includes>
                                 <palantirJavaFormat>
                                     <version>${palantir.java.format.version}</version>
                                     <style>PALANTIR</style>
@@ -514,7 +519,7 @@
                                 <phase>process-sources</phase>
                                 <configuration>
                                     <java>
-                                        <includes>
+                                        <includes combine.self="override">
                                             <include>src-gen/**/*.java</include>
                                         </includes>
                                     </java>
