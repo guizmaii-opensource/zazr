@@ -23,7 +23,16 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
  */
 class JUnitReportTest {
 
-    /// The tests the launcher runs; skipped by the build's own run, which runs only top-level test classes.
+    /// Set while this test runs the failing tests through the launcher.
+    static volatile boolean launched;
+
+    /// Whether the failing tests run: only when this test launches them, not in a run that selects nested classes.
+    static boolean launched() {
+        return launched;
+    }
+
+    /// The tests the launcher runs; they fail on purpose, so they are disabled in every other run.
+    @org.junit.jupiter.api.condition.EnabledIf("dev.zazr.test.JUnitReportTest#launched")
     static class Failing {
 
         @Test
@@ -41,7 +50,12 @@ class JUnitReportTest {
         final LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request().selectors(selectClass(type)).build();
         final Launcher launcher = LauncherFactory.create();
         final SummaryGeneratingListener listener = new SummaryGeneratingListener();
-        launcher.execute(request, listener);
+        launched = true;
+        try {
+            launcher.execute(request, listener);
+        } finally {
+            launched = false;
+        }
         return listener.getSummary();
     }
 
@@ -58,6 +72,11 @@ class JUnitReportTest {
                         "aBodyWithTwoResults() -> java.lang.AssertionError: falsified at sample 1 by (5) (seed 42, replay with -Dzazr.check.seed=42):\n"
                                 + "  5 is not equal to 4\n"
                                 + "  10 is not equal to 11");
+    }
+
+    @Test
+    void theFailingTestsAreDisabledOutsideTheLauncher() {
+        assertThat(launched()).isFalse();
     }
 
     @Test

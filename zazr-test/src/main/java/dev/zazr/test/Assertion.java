@@ -80,7 +80,9 @@ public final class Assertion<A> {
 
     /**
      * Tests {@code value} against every assertion. The result fails when one of them fails, and its explanation
-     * lists every failing assertion, in order.
+     * lists every failing assertion, in order. Every assertion is tested, even after one failed: an assertion that
+     * throws on a value that failed an earlier one ends the check as erroneous, so a guard such as
+     * {@code isNonEmpty()} does not protect the assertions after it (use {@link #or(Assertion)} or nest them).
      *
      * @param value      the value
      * @param assertions the assertions, at least one
@@ -132,27 +134,37 @@ public final class Assertion<A> {
     // -- composition
 
     /**
-     * An assertion that holds when both hold. A failure explains every failing side.
+     * An assertion that holds when both hold. Both sides are tested, so that a failure explains every failing side:
+     * {@code that} does not rely on this assertion holding, and an exception it throws on a value that fails this one
+     * ends the check as erroneous.
      *
-     * @param that the other assertion
+     * @param that the other assertion, possibly on a narrower type
+     * @param <B>  the type of the values the combined assertion tests: {@code A}, or a narrower type that
+     *             {@code that} needs, such as a {@code List} after an assertion on any {@code Iterable}
      * @return a new assertion
      * @throws NullPointerException if {@code that} is null
      */
-    public Assertion<A> and(Assertion<? super A> that) {
+    public <B extends A> Assertion<B> and(Assertion<? super B> that) {
         Objects.requireNonNull(that, "that is null");
-        return new Assertion<>("(" + name + " and " + that.name + ")", value -> test(value).and(that.test(value)));
+        return new Assertion<B>("(" + name + " and " + that.name + ")", value -> test(value).and(that.test(value)));
     }
 
     /**
-     * An assertion that holds when either holds. A failure explains both sides.
+     * An assertion that holds when either holds. {@code that} is tested only when this assertion fails, so it may
+     * rely on this one having failed; a failure explains both sides.
      *
-     * @param that the other assertion
+     * @param that the other assertion, possibly on a narrower type
+     * @param <B>  the type of the values the combined assertion tests: {@code A}, or a narrower type that
+     *             {@code that} needs
      * @return a new assertion
      * @throws NullPointerException if {@code that} is null
      */
-    public Assertion<A> or(Assertion<? super A> that) {
+    public <B extends A> Assertion<B> or(Assertion<? super B> that) {
         Objects.requireNonNull(that, "that is null");
-        return new Assertion<>("(" + name + " or " + that.name + ")", value -> test(value).or(that.test(value)));
+        return new Assertion<B>("(" + name + " or " + that.name + ")", value -> {
+            final TestResult left = test(value);
+            return left.isSuccess() ? left : left.or(that.test(value));
+        });
     }
 
     /**
@@ -195,14 +207,15 @@ public final class Assertion<A> {
     }
 
     /**
-     * An assertion that holds for a value equal to {@code expected}.
+     * An assertion that holds for a value equal to {@code expected}, as {@link Objects#deepEquals(Object, Object)}:
+     * arrays are equal when their elements are.
      *
      * @param expected the expected value
      * @param <A>      the type of the values it tests
      * @return the assertion
      */
     public static <A> Assertion<A> equalTo(A expected) {
-        return leaf("equalTo(" + show(expected) + ")", value -> Objects.equals(value, expected),
+        return leaf("equalTo(" + show(expected) + ")", value -> Objects.deepEquals(value, expected),
                 value -> show(value) + " is not equal to " + show(expected));
     }
 
@@ -554,7 +567,7 @@ public final class Assertion<A> {
      */
     public static <A> Assertion<Iterable<? extends A>> isSorted(Comparator<? super A> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return isSorted("isSorted(" + comparator + ")", comparator);
+        return isSorted("isSorted(a comparator)", comparator);
     }
 
     private static <A> Assertion<Iterable<? extends A>> isSorted(String name, Comparator<? super A> comparator) {
@@ -687,11 +700,16 @@ public final class Assertion<A> {
      * @return the assertion
      * @throws NullPointerException if {@code assertion} is null
      */
-    public static <E> Assertion<Validation<E, ?>> isInvalid(Assertion<? super NonEmptyVector<E>> assertion) {
+    public static <E> Assertion<Validation<? extends E, ?>> isInvalid(Assertion<? super NonEmptyVector<E>> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
         return new Assertion<>("isInvalid(" + assertion.name + ")", value -> switch (value) {
-            case Validation.Invalid<E, ?>(var errors) -> nested(show(value) + " holds " + show(errors), assertion.test(errors));
-            case Validation.Valid<E, ?> ignored -> TestResult.fail(show(value) + " is not Invalid");
+            case Validation.Invalid<? extends E, ?> invalid -> {
+                // an immutable vector of a subtype of E is a vector of E
+                @SuppressWarnings("unchecked")
+                final NonEmptyVector<E> errors = (NonEmptyVector<E>) invalid.errors();
+                yield nested(show(value) + " holds " + show(errors), assertion.test(errors));
+            }
+            case Validation.Valid<? extends E, ?> ignored -> TestResult.fail(show(value) + " is not Invalid");
         });
     }
 
@@ -745,14 +763,23 @@ public final class Assertion<A> {
                 : inner;
     }
 
-    /// A value as the explanations show it: strings and characters quoted.
+    /// A value as the explanations show it: strings and characters quoted, arrays by their elements, code that is
+    /// run as "the code" (its `toString` changes from one run to the next).
     static String show(Object value) {
         return switch (value) {
             case null -> "null";
             case String s -> "\"" + s + "\"";
             case Character c -> "'" + c + "'";
+            case CheckedRunnable ignored -> "the code";
+            case Object array when array.getClass().isArray() -> arrayString(array);
             default -> String.valueOf(value);
         };
+    }
+
+    /// The elements of an array of objects or of primitives, as `Arrays.deepToString` writes them.
+    private static String arrayString(Object array) {
+        final String wrapped = java.util.Arrays.deepToString(new Object[] { array });
+        return wrapped.substring(1, wrapped.length() - 1);
     }
 
     private static int count(Iterable<?> iterable) {

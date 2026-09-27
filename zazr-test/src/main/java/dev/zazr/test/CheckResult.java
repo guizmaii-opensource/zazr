@@ -174,11 +174,13 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
 
         String describe() {
             final String head = "falsified at sample " + sampleNumber + " by " + counterexample;
-            if (message instanceof Option.Some<String>(var m) && m.contains("\n")) {
+            // blank lines around a message (AssertJ starts and ends its own with one) are left out
+            final String explanation = message.map(String::strip).getOrElse("");
+            if (explanation.contains("\n")) {
                 // an explanation on several lines comes after the seed, one level in
-                return head + replay(seed) + ":\n  " + m.replace("\n", "\n  ");
+                return head + replay(seed) + ":\n  " + explanation.replace("\n", "\n  ");
             }
-            return head + message.map(m -> ": " + m).getOrElse("") + replay(seed);
+            return head + (explanation.isEmpty() ? "" : ": " + explanation) + replay(seed);
         }
     }
 

@@ -149,14 +149,15 @@ public class DocsTestingExamplesTest {
     @Test
     void assertionsInTheProperty() {
         var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
-        var result = Check.evaluate(CheckConfig.defaults().withSeed(42), digits, vector -> {
-            assertThat(vector.distinct()).isEqualTo(vector);
-            return true;
-        }); // CheckResult
+        var config = CheckConfig.defaults().withSeed(42); // CheckConfig
+        // CheckResult
+        var result = Check.evaluate(config, digits, vector -> assertThat(vector.distinct()).isEqualTo(vector));
         var message = result.message(); // Option<String>
         // Some("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)"), AssertJ's message on three lines
 
         Gen<Vector<Integer>> typedDigits = digits;
+        CheckConfig typedConfig = config;
+        assertThat(typedConfig.seed()).isEqualTo(42L);
         CheckResult typedResult = result;
         Option<String> typedMessage = message;
         assertThat(typedDigits).isNotNull();

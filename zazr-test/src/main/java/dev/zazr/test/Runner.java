@@ -104,7 +104,8 @@ final class Runner {
         CheckResult failure;
     }
 
-    /// The failure of one sample, or null when it passed. The body returns a `Boolean` or a `TestResult`.
+    /// The failure of one sample, or null when it passed. A `Boolean` or a `TestResult` is judged; any other value
+    /// passes, since the body completed without throwing (an AssertJ chain returns its `Assert`); `null` is erroneous.
     private static <T extends Tuple> CheckResult evaluate(int sampleNumber, long seed, T sample, CheckedFunction1<? super T, ?> body) {
         try {
             return switch (body.apply(sample)) {
@@ -112,8 +113,7 @@ final class Runner {
                 case TestResult.Success ignored -> null;
                 case TestResult.Failure(var explanation) -> new CheckResult.Falsified(sampleNumber, seed, sample, Option.some(explanation));
                 case null -> new CheckResult.Erroneous(sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
-                case Object other -> new CheckResult.Erroneous(sampleNumber, seed, new ClassCastException("the check returned a "
-                        + other.getClass().getName() + ", not a boolean or a TestResult"), Option.some(sample));
+                case Object completed -> null;
             };
         } catch (AssertionError failure) {
             return new CheckResult.Falsified(sampleNumber, seed, sample, Option.ofNullable(failure.getMessage()));

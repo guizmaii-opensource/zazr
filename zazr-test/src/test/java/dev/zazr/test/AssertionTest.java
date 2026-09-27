@@ -196,6 +196,9 @@ class AssertionTest {
         assertThat(explain(List.of(1, 3, 2), isSorted())).isEqualTo("List(1, 3, 2) is not sorted: 3 comes before 2");
         assertThat(explain(List.of(3, 2, 1), isSorted(Comparator.<Integer>reverseOrder()))).isEqualTo("passed");
         assertThat(explain(List.of(1, 2), isSorted(Comparator.<Integer>reverseOrder()))).isEqualTo("List(1, 2) is not sorted: 1 comes before 2");
+        // the name does not depend on the comparator's toString, which holds a hash code
+        assertThat(isSorted(Comparator.<Integer>reverseOrder())).hasToString("isSorted(a comparator)");
+        assertThat(isSorted()).hasToString("isSorted");
     }
 
     // -- Zazr types
@@ -295,6 +298,57 @@ class AssertionTest {
         assertThat(explain(7, equalTo(5).or(equalTo(6))))
                 .isEqualTo("neither of these holds:\n  7 is not equal to 5\n  7 is not equal to 6");
         assertThat(equalTo(5).or(equalTo(6))).hasToString("(equalTo(5) or equalTo(6))");
+    }
+
+    @Test
+    void orTestsItsRightSideOnlyWhenItsLeftSideFails() {
+        // the right side fails with an AssertJ AssertionError, or throws, on the value the left side accepts
+        final Assertion<Integer> positive = Assertion.of("positive", x -> {
+            assertThat(x).isPositive();
+            return TestResult.succeed();
+        });
+        final Assertion<Integer> boom = Assertion.of("boom", x -> {
+            throw new ArithmeticException("evaluated");
+        });
+        assertThat(explain(0, equalTo(0).or(positive))).isEqualTo("passed");
+        assertThat(explain(0, equalTo(0).or(boom))).isEqualTo("passed");
+        assertThat(Check.evaluate(CheckConfig.defaults().withSeed(7), Gen.constant(0), equalTo(0).or(positive)))
+                .isEqualTo(new CheckResult.Satisfied(200));
+        assertThat(explain(5, equalTo(0).or(positive))).isEqualTo("passed");
+        assertThatThrownBy(() -> explain(0, equalTo(1).or(boom))).isInstanceOf(ArithmeticException.class);
+    }
+
+    @Test
+    void andTestsBothSidesSoAThrowingSideAfterAFailedGuardThrows() {
+        final Assertion<List<Integer>> headIsPositive = Assertion.of("headIsPositive", l -> Assertion.assertThat(l.head(), isGreaterThan(0)));
+        assertThatThrownBy(() -> Assertion.assertThat(List.<Integer>empty(), isNonEmpty(), headIsPositive))
+                .isInstanceOf(java.util.NoSuchElementException.class);
+        assertThat(Check.evaluate(CheckConfig.defaults().withSeed(7), Gen.constant(List.<Integer>empty()), isNonEmpty(), headIsPositive)
+                .isErroneous()).isTrue();
+        // behind the guard with or, the second assertion is not tested; the wider assertion may come first
+        assertThat(explain(List.<Integer>empty(), isEmpty().or(headIsPositive))).isEqualTo("passed");
+        assertThat(explain(List.of(3), isEmpty().or(headIsPositive))).isEqualTo("passed");
+        assertThat(explain(List.of(-3), isEmpty().or(headIsPositive)))
+                .isEqualTo("neither of these holds:\n  List(-3) is not empty\n  -3 is not greater than 0");
+        assertThat(explain(List.of(3), isNonEmpty().and(headIsPositive))).isEqualTo("passed");
+    }
+
+    @Test
+    void explanationsDoNotDependOnTheRun() {
+        final Assertion<CheckedRunnable> mustNotThrow = not(throwsA(Exception.class));
+        assertThat(explainCode(() -> Integer.parseInt("x"), mustNotThrow))
+                .isEqualTo("the code satisfies throwsA(java.lang.Exception), but must not");
+        assertThat(explain(new int[] { 1, 2 }, equalTo(new int[] { 1, 2 }))).isEqualTo("passed");
+        assertThat(explain(new int[] { 1, 2 }, equalTo(new int[] { 1, 3 }))).isEqualTo("[1, 2] is not equal to [1, 3]");
+        assertThat(explain(new String[][] { { "a" } }, equalTo(new String[][] { { "b" } }))).isEqualTo("[[a]] is not equal to [[b]]");
+        assertThat(equalTo(new long[] { 1L })).hasToString("equalTo([1])");
+    }
+
+    @Test
+    void validationAssertionsCombineInEitherOrder() {
+        assertThat(explain(Validation.<String, Integer>invalid("e"), isValid(equalTo(1)).or(isInvalid(hasSize(equalTo(1)))))).isEqualTo("passed");
+        assertThat(explain(Validation.<String, Integer>valid(1), isInvalid(hasSize(equalTo(1))).or(isValid(equalTo(1))))).isEqualTo("passed");
+        assertThat(isValid(equalTo(1)).or(isInvalid(hasSize(equalTo(1))))).hasToString("(isValid(equalTo(1)) or isInvalid(hasSize(equalTo(1))))");
     }
 
     @Test

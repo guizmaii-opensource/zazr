@@ -82,4 +82,34 @@ class CheckAssertionTest {
             return true;
         })).isExactlyInstanceOf(AssertionError.class).hasMessageStartingWith("falsified at sample 1 by (5)");
     }
+
+    @Test
+    void anAssertJChainBodyIsCheckedByItsAssertions() {
+        Check.check(Gen.integers(1, 9), n -> assertThat(n).isPositive());
+        assertThat(Check.evaluate(CONFIG, Gen.integers(1, 9), n -> assertThat(n).isPositive())).isEqualTo(new CheckResult.Satisfied(50));
+        final CheckResult failing = Check.evaluate(CONFIG, FIVE, n -> assertThat(n).isNegative());
+        assertThat(failing.isFalsified()).isTrue();
+        // AssertJ's blank first and last lines are left out of the report
+        assertThatThrownBy(() -> Check.check(CONFIG, FIVE, n -> assertThat(n).isNegative()))
+                .hasMessage("falsified at sample 1 by (5) (seed 7, replay with -Dzazr.check.seed=7):\n"
+                        + "  Expecting actual:\n"
+                        + "    5\n"
+                        + "  to be less than:\n"
+                        + "    0");
+    }
+
+    @Test
+    void anyOtherResultPassesAndNullIsErroneous() {
+        assertThat(Check.evaluate(CONFIG, FIVE, n -> "done")).isEqualTo(new CheckResult.Satisfied(50));
+        assertThat(Check.evaluate(CONFIG, FIVE, n -> Option.none())).isEqualTo(new CheckResult.Satisfied(50));
+        final CheckResult nothing = Check.evaluate(CONFIG, FIVE, n -> null);
+        assertThat(nothing.isErroneous()).isTrue();
+        assertThat(nothing.error().get()).hasMessage("the check returned null");
+    }
+
+    @Test
+    void anEmptyExplanationLeavesTheReportClean() {
+        assertThatThrownBy(() -> Check.check(CONFIG, FIVE, n -> TestResult.fail("")))
+                .hasMessage("falsified at sample 1 by (5) (seed 7, replay with -Dzazr.check.seed=7)");
+    }
 }

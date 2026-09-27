@@ -49,7 +49,7 @@ def generateMainClasses(): Unit = {
         val typeParams = (1 to i).gen(j => s"* @param <T$j> the type of the ${j.ordinal} value")(using "\n")
         val requireGens = (1 to i).gen(j => s"""$objects.requireNonNull(g$j, "g$j is null");""")(using "\n")
         val bodyDoc = (if (i == 1) "the property of a value" else s"the property of $i values") +
-          ": {@code true} or a successful {@link TestResult} when it holds"
+          ": {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw"
         xs"""
           /$javadoc
            * Checks {@code body} against {@link CheckConfig#defaults()}, 200 samples unless configured otherwise, and fails
@@ -269,9 +269,11 @@ def generateMainClasses(): Unit = {
          * The property is a function of the generated values. It returns {@code true} when it holds, or the
          * {@link TestResult} of {@link Assertion#assertThat}, whose explanation the report of a failing sample keeps.
          * It may also throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies
-         * the sample like {@code false} and keeps its message; any other exception, or a result that is neither a
-         * boolean nor a {@code TestResult}, makes the check {@link CheckResult.Erroneous}. One body type takes both
-         * results, because Java cannot tell two implicitly typed lambdas apart by what they return.
+         * the sample like {@code false} and keeps its message; any other exception, or a {@code null} result, makes
+         * the check {@link CheckResult.Erroneous}. Any other result passes, since the body completed without throwing:
+         * a body that ends with an AssertJ chain, which returns its {@code Assert}, is checked by its assertions. One
+         * body type takes every result, because Java cannot tell two implicitly typed lambdas apart by what they
+         * return.
          * <p>
          * With one generator, {@code check(gen, assertions...)} checks that every value satisfies the assertions.
          * <p>
@@ -469,12 +471,13 @@ def generateTestClasses(): Unit = {
               }
 
               @$test
-              void aResultThatIsNeitherABooleanNorATestResultMakesTheCheckErroneous() {
-                  final CheckResult result = Check.evaluate(CONFIG, $constants, ($params) -> "yes");
-                  $assertThat(result.isErroneous()).isTrue();
-                  $assertThat(result.error().get()).isInstanceOf(ClassCastException.class)
-                          .hasMessage("the check returned a java.lang.String, not a boolean or a TestResult");
-                  $assertThat(result.sample()).isEqualTo($option.some($tuple.of($ones)));
+              void aResultThatIsNeitherABooleanNorATestResultPassesWhenTheBodyCompletes() {
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> "yes")).isEqualTo(new CheckResult.Satisfied(20));
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> $assertThat(v1).isPositive())).isEqualTo(new CheckResult.Satisfied(20));
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> $assertThat(v1).isNegative()).isFalsified()).isTrue();
+                  final CheckResult nothing = Check.evaluate(CONFIG, $constants, ($params) -> null);
+                  $assertThat(nothing.isErroneous()).isTrue();
+                  $assertThat(nothing.error().get()).isInstanceOf(NullPointerException.class).hasMessage("the check returned null");
               }
 
               @$test

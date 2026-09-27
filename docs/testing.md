@@ -173,7 +173,8 @@ The assertions are static methods of `Assertion`. If your test also imports Asse
 
 ### Combining assertions
 
-`and`, `or` and `not` combine assertions, and `label` names one in its explanation.
+`and`, `or` and `not` combine assertions, and `label` names one in its explanation. `or` tests its right side only when
+its left side fails.
 
 ```java
 var digit  = isGreaterThanOrEqualTo(0).and(isLessThan(10)).label("a digit");  // Assertion<Integer>
@@ -184,6 +185,9 @@ var result = assertThat(12, digit);                                           //
 ### Several assertions at once
 
 `assertThat` and `check` take several assertions. A failure lists every one that fails, not only the first.
+
+Every assertion is tested, even after one failed. So `isNonEmpty()` does not guard the assertions after it: one that
+throws on an empty list makes the check `Erroneous`. Put such an assertion behind `isEmpty().or(...)` instead.
 
 ```java
 var result = assertThat(15, isLessThan(10), not(equalTo(15))); // TestResult
@@ -211,14 +215,16 @@ var result = assertThat(() -> Integer.parseInt("x"), throwsA(NumberFormatExcepti
 ## JUnit and AssertJ assertions
 
 The property may also use JUnit or AssertJ assertions. A failed assertion falsifies the sample, and its message is kept
-in the result. A block body still ends with `return true`.
+in the result.
+
+A property that ends with an AssertJ chain works as it is: a body that returns something other than a `boolean` or a
+`TestResult` passes when it completes without throwing. A `null` result makes the check `Erroneous`.
 
 ```java
-var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
-var result = Check.evaluate(CheckConfig.defaults().withSeed(42), digits, vector -> {
-    assertThat(vector.distinct()).isEqualTo(vector);
-    return true;
-}); // CheckResult
+var digits = Gen.vector(Gen.integers(0, 9));       // Gen<Vector<Integer>>
+var config = CheckConfig.defaults().withSeed(42);  // CheckConfig
+// CheckResult
+var result  = Check.evaluate(config, digits, vector -> assertThat(vector.distinct()).isEqualTo(vector));
 var message = result.message(); // Option<String>
 // Some("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)"), AssertJ's message on three lines
 ```

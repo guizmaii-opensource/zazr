@@ -14,9 +14,11 @@ import java.util.Objects;
  * The property is a function of the generated values. It returns {@code true} when it holds, or the
  * {@link TestResult} of {@link Assertion#assertThat}, whose explanation the report of a failing sample keeps.
  * It may also throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies
- * the sample like {@code false} and keeps its message; any other exception, or a result that is neither a
- * boolean nor a {@code TestResult}, makes the check {@link CheckResult.Erroneous}. One body type takes both
- * results, because Java cannot tell two implicitly typed lambdas apart by what they return.
+ * the sample like {@code false} and keeps its message; any other exception, or a {@code null} result, makes
+ * the check {@link CheckResult.Erroneous}. Any other result passes, since the body completed without throwing:
+ * a body that ends with an AssertJ chain, which returns its {@code Assert}, is checked by its assertions. One
+ * body type takes every result, because Java cannot tell two implicitly typed lambdas apart by what they
+ * return.
  * <p>
  * With one generator, {@code check(gen, assertions...)} checks that every value satisfies the assertions.
  * <p>
@@ -39,7 +41,7 @@ public final class Check {
      * the test when a sample breaks it, as {@link #check(CheckConfig, Gen, CheckedFunction1)}.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              sample breaks the property or something throws
@@ -56,7 +58,7 @@ public final class Check {
      *
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              sample breaks the property or something throws
@@ -72,7 +74,7 @@ public final class Check {
      *
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError           with the counterexample or the error, the sample number and the seed,
      *                                  when a sample breaks the property or something throws
@@ -88,7 +90,7 @@ public final class Check {
      * and fails the test when a value breaks it.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              value breaks the property or something throws
@@ -105,7 +107,7 @@ public final class Check {
      *
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              value breaks the property or something throws
@@ -120,7 +122,7 @@ public final class Check {
      * {@link #evaluate(CheckConfig, Gen, CheckedFunction1)}.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
@@ -136,7 +138,7 @@ public final class Check {
      *
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
@@ -154,7 +156,7 @@ public final class Check {
      *
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException     if a generator or {@code body} is null
@@ -169,7 +171,7 @@ public final class Check {
      * {@link CheckConfig#defaults()}.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
@@ -186,7 +188,7 @@ public final class Check {
      *
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
@@ -369,7 +371,7 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -388,7 +390,7 @@ public final class Check {
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -406,7 +408,7 @@ public final class Check {
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError           with the counterexample or the error, the sample number and the seed,
@@ -424,7 +426,7 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -443,7 +445,7 @@ public final class Check {
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -460,7 +462,7 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -478,7 +480,7 @@ public final class Check {
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -499,7 +501,7 @@ public final class Check {
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -516,7 +518,7 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -535,7 +537,7 @@ public final class Check {
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -556,7 +558,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -577,7 +579,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -597,7 +599,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -617,7 +619,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -638,7 +640,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -657,7 +659,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -677,7 +679,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -701,7 +703,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -720,7 +722,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -741,7 +743,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -765,7 +767,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -788,7 +790,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -810,7 +812,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -832,7 +834,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -855,7 +857,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -876,7 +878,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -898,7 +900,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -925,7 +927,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -946,7 +948,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -969,7 +971,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -996,7 +998,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1021,7 +1023,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1045,7 +1047,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1069,7 +1071,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1094,7 +1096,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1117,7 +1119,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1141,7 +1143,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1171,7 +1173,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1194,7 +1196,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1219,7 +1221,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1249,7 +1251,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1276,7 +1278,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1302,7 +1304,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1328,7 +1330,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1355,7 +1357,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1380,7 +1382,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1406,7 +1408,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1439,7 +1441,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1464,7 +1466,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1491,7 +1493,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1524,7 +1526,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1553,7 +1555,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1581,7 +1583,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1609,7 +1611,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1638,7 +1640,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1665,7 +1667,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1693,7 +1695,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1729,7 +1731,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1756,7 +1758,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1785,7 +1787,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1821,7 +1823,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1852,7 +1854,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1882,7 +1884,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1912,7 +1914,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1943,7 +1945,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1972,7 +1974,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2002,7 +2004,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2041,7 +2043,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2070,7 +2072,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2101,7 +2103,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value

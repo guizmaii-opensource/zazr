@@ -223,12 +223,13 @@ class Check3Test {
     }
 
     @Test
-    void aResultThatIsNeitherABooleanNorATestResultMakesTheCheckErroneous() {
-        final CheckResult result = Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), (v1, v2, v3) -> "yes");
-        assertThat(result.isErroneous()).isTrue();
-        assertThat(result.error().get()).isInstanceOf(ClassCastException.class)
-                .hasMessage("the check returned a java.lang.String, not a boolean or a TestResult");
-        assertThat(result.sample()).isEqualTo(Option.some(Tuple.of(1, 2, 3)));
+    void aResultThatIsNeitherABooleanNorATestResultPassesWhenTheBodyCompletes() {
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), (v1, v2, v3) -> "yes")).isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), (v1, v2, v3) -> assertThat(v1).isPositive())).isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), (v1, v2, v3) -> assertThat(v1).isNegative()).isFalsified()).isTrue();
+        final CheckResult nothing = Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), (v1, v2, v3) -> null);
+        assertThat(nothing.isErroneous()).isTrue();
+        assertThat(nothing.error().get()).isInstanceOf(NullPointerException.class).hasMessage("the check returned null");
     }
 
     @Test

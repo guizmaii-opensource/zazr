@@ -229,12 +229,13 @@ class Check6Test {
     }
 
     @Test
-    void aResultThatIsNeitherABooleanNorATestResultMakesTheCheckErroneous() {
-        final CheckResult result = Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), (v1, v2, v3, v4, v5, v6) -> "yes");
-        assertThat(result.isErroneous()).isTrue();
-        assertThat(result.error().get()).isInstanceOf(ClassCastException.class)
-                .hasMessage("the check returned a java.lang.String, not a boolean or a TestResult");
-        assertThat(result.sample()).isEqualTo(Option.some(Tuple.of(1, 2, 3, 4, 5, 6)));
+    void aResultThatIsNeitherABooleanNorATestResultPassesWhenTheBodyCompletes() {
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), (v1, v2, v3, v4, v5, v6) -> "yes")).isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), (v1, v2, v3, v4, v5, v6) -> assertThat(v1).isPositive())).isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), (v1, v2, v3, v4, v5, v6) -> assertThat(v1).isNegative()).isFalsified()).isTrue();
+        final CheckResult nothing = Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), (v1, v2, v3, v4, v5, v6) -> null);
+        assertThat(nothing.isErroneous()).isTrue();
+        assertThat(nothing.error().get()).isInstanceOf(NullPointerException.class).hasMessage("the check returned null");
     }
 
     @Test
