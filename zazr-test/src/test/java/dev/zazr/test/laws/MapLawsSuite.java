@@ -65,9 +65,13 @@ abstract class MapLawsSuite<F, C extends Iterable<Tuple2<Integer, Integer>>> {
 
     /// Equality modelled by the elements: a JDK list for a sequence, a JDK set otherwise.
     private EqualitySubject<C> equality() {
-        final CollectionSubject<Tuple2<Integer, Integer>, C> collection = collection();
-        return new EqualitySubject<>(collection.values(), c -> collection.ofAll().apply(collection.toList().apply(c)),
-                c -> collection.ordered() ? CollectionLaws.elements(c) : new java.util.HashSet<>(CollectionLaws.elements(c)));
+        CollectionSubject<Tuple2<Integer, Integer>, C> collection = collection();
+        return new EqualitySubject<>(
+                collection.values(),
+                c -> collection.ofAll().apply(collection.toList().apply(c)),
+                c -> collection.ordered()
+                        ? CollectionLaws.elements(c)
+                        : new java.util.HashSet<>(CollectionLaws.elements(c)));
     }
 
     @Test

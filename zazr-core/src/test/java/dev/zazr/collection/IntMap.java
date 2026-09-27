@@ -1,7 +1,6 @@
 package dev.zazr.collection;
 
 import dev.zazr.collection.internal.Collections;
-
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
@@ -17,8 +16,7 @@ public final class IntMap<T> implements Traversable<T> {
 
     @SuppressWarnings("unchecked")
     public static <T> IntMap<T> of(Map<Integer, T> original) {
-        return original.isEmpty() ? (IntMap<T>) EMPTY
-                                  : new IntMap<>(original);
+        return original.isEmpty() ? (IntMap<T>) EMPTY : new IntMap<>(original);
     }
 
     private IntMap(Map<Integer, T> original) {
@@ -31,7 +29,7 @@ public final class IntMap<T> implements Traversable<T> {
 
     @Override
     public boolean equals(Object o) {
-        final Object that = (o instanceof IntMap) ? ((IntMap<?>) o).original : o;
+        Object that = (o instanceof IntMap) ? ((IntMap<?>) o).original : o;
         return Collections.equals(original, that);
     }
 
@@ -88,11 +86,11 @@ public final class IntMap<T> implements Traversable<T> {
 
             @Override
             public int characteristics() {
-                int characteristics = Spliterator.IMMUTABLE | Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.DISTINCT;
-                if (original instanceof SortedMap || original instanceof LinkedHashMap) {
-                    characteristics |= Spliterator.ORDERED; // the values follow the key order, they are not sorted themselves
-                }
-                return characteristics;
+                int characteristics =
+                        Spliterator.IMMUTABLE | Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.DISTINCT;
+                // the values follow the key order, they are not sorted themselves
+                boolean ordered = original instanceof SortedMap || original instanceof LinkedHashMap;
+                return ordered ? characteristics | Spliterator.ORDERED : characteristics;
             }
         };
     }

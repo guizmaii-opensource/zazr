@@ -40,7 +40,8 @@ class TestResultTest {
         assertThat(A.or(OK)).isEqualTo(OK);
         assertThat(OK.or(OK)).isEqualTo(OK);
         assertThat(A.or(B)).isEqualTo(TestResult.fail("neither of these holds:\n  a failed\n  b failed"));
-        assertThat(A.and(B).or(B)).isEqualTo(TestResult.fail("neither of these holds:\n  a failed\n  b failed\n  b failed"));
+        assertThat(A.and(B).or(B))
+                .isEqualTo(TestResult.fail("neither of these holds:\n  a failed\n  b failed\n  b failed"));
         assertThatThrownBy(() -> OK.or(null)).isInstanceOf(NullPointerException.class);
     }
 

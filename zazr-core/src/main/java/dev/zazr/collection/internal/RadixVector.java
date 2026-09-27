@@ -76,11 +76,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /** A vector of the elements of {@code elements}, which is copied (never adopted: the caller may reuse it). */
     public static <T extends @Nullable Object> RadixVector<T> ofAll(@Nullable Object[] elements) {
-        final int n = elements.length;
+        int n = elements.length;
         if (n == 0) {
             return empty();
         } else if (n <= WIDTH) {
-            final Object[] a1 = Arrays.copyOf(elements, n, Object[].class);
+            Object[] a1 = Arrays.copyOf(elements, n, Object[].class);
             for (Object element : a1) {
                 Objects.requireNonNull(element, "Vector: element is null");
             }
@@ -185,7 +185,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /** @throws NoSuchElementException if this vector is empty */
     @SuppressWarnings("unchecked")
     public final T last() {
-        final Object[] a = (this instanceof BigVector<?> big) ? big.suffix1 : prefix1;
+        Object[] a = (this instanceof BigVector<?> big) ? big.suffix1 : prefix1;
         if (a.length == 0) {
             throw new NoSuchElementException("last of empty Vector");
         }
@@ -197,8 +197,8 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /** The elements in {@code [max(from, 0), min(until, length()))}; this vector when that is all of it. */
     public final RadixVector<T> slice(int from, int until) {
-        final int lo = Math.max(from, 0);
-        final int hi = Math.min(until, length());
+        int lo = Math.max(from, 0);
+        int hi = Math.min(until, length());
         if (hi <= lo) {
             return empty();
         } else if (hi - lo == length()) {
@@ -246,7 +246,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      */
     public final RadixVector<T> appendedAll(Iterable<? extends T> suffix) {
         Objects.requireNonNull(suffix, "suffix is null");
-        final int k = knownSize(suffix);
+        int k = knownSize(suffix);
         if (k == 0) {
             return this;
         } else if ((long) length() + k > Integer.MAX_VALUE) {
@@ -268,7 +268,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      */
     public final RadixVector<T> prependedAll(Iterable<? extends T> prefix) {
         Objects.requireNonNull(prefix, "prefix is null");
-        final int k = knownSize(prefix);
+        int k = knownSize(prefix);
         if (k == 0) {
             return this;
         } else if ((long) length() + k > Integer.MAX_VALUE) {
@@ -292,27 +292,38 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /* k = knownSize(prefix) > 0; the shapes first try to fit prefix in prefix1 */
     @SuppressWarnings("unchecked")
     RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-        final long total = (long) length() + k;
-        final int tinyAppendLimit = 4 + vectorSliceCount();
+        long total = (long) length() + k;
+        int tinyAppendLimit = 4 + vectorSliceCount();
         if (k < tinyAppendLimit && total <= FAR_FROM_THE_LIMIT) {
-            final Object[] elements = new Object[k];
+            Object[] elements = new Object[k];
             VectorStatics.copyToArray(prefix, k, elements, 0);
+            @SuppressWarnings("Var")
             RadixVector<T> v = this;
             for (int i = k - 1; i >= 0; i--) {
                 v = v.prepended0(elements[i]);
             }
             return v;
-        } else if (length() < (k >>> LOG2_CONCAT_FASTER) && total <= FAR_FROM_THE_LIMIT && prefix instanceof RadixVector<?> pv) {
+        } else if (length() < (k >>> LOG2_CONCAT_FASTER)
+                && total <= FAR_FROM_THE_LIMIT
+                && prefix instanceof RadixVector<?> pv) {
+            @SuppressWarnings("Var")
             RadixVector<T> v = (RadixVector<T>) pv;
-            final int len = length();
+            int len = length();
             for (int i = 0; i < len; i++) {
                 v = v.appended0(get(i));
             }
             return v;
         } else if (k < length() - ALIGN_TO_FASTER) {
-            return new VectorBuilder<T>().alignTo(k, this).addAll(prefix).addAll(this).result();
+            return new VectorBuilder<T>()
+                    .alignTo(k, this)
+                    .addAll(prefix)
+                    .addAll(this)
+                    .result();
         } else if (prefix instanceof RadixVector<?> pv) {
-            return new VectorBuilder<T>().addAllFirst((RadixVector<? extends T>) pv, total).addAll(this).result();
+            return new VectorBuilder<T>()
+                    .addAllFirst((RadixVector<? extends T>) pv, total)
+                    .addAll(this)
+                    .result();
         } else {
             return new VectorBuilder<T>().addAll(prefix).addAll(this).result();
         }
@@ -321,23 +332,30 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /* k = knownSize(suffix) > 0; the shapes first try to fit suffix in suffix1 */
     @SuppressWarnings("unchecked")
     RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-        final int tinyAppendLimit = 4 + vectorSliceCount();
+        int tinyAppendLimit = 4 + vectorSliceCount();
         if (k < tinyAppendLimit && (long) length() + k <= FAR_FROM_THE_LIMIT) {
+            @SuppressWarnings("Var")
             RadixVector<T> v = this;
             for (T element : suffix) {
                 v = v.appended(element);
             }
             return v;
-        } else if (length() < (k >>> LOG2_CONCAT_FASTER) && (long) length() + k <= FAR_FROM_THE_LIMIT
-                   && suffix instanceof RadixVector<?> sv) {
+        } else if (length() < (k >>> LOG2_CONCAT_FASTER)
+                && (long) length() + k <= FAR_FROM_THE_LIMIT
+                && suffix instanceof RadixVector<?> sv) {
+            @SuppressWarnings("Var")
             RadixVector<T> v = (RadixVector<T>) sv;
             for (int i = length() - 1; i >= 0; i--) {
                 v = v.prepended0(get(i));
             }
             return v;
         } else if (length() < k - ALIGN_TO_FASTER && suffix instanceof RadixVector<?> sv) {
-            final RadixVector<T> v = (RadixVector<T>) sv;
-            return new VectorBuilder<T>().alignTo(length(), v).addAll(this).addAll(v).result();
+            RadixVector<T> v = (RadixVector<T>) sv;
+            return new VectorBuilder<T>()
+                    .alignTo(length(), v)
+                    .addAll(this)
+                    .addAll(v)
+                    .result();
         } else {
             return new VectorBuilder<T>().addAll(this).addAll(suffix).result();
         }
@@ -359,7 +377,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     @Override
     public final void forEach(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        final int c = vectorSliceCount();
+        int c = vectorSliceCount();
         for (int i = 0; i < c; i++) {
             foreachRec(vectorSliceDim(c, i) - 1, vectorSlice(i), action);
         }
@@ -375,17 +393,19 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /* copies the first n elements into dest from index start, one whole-leaf copy at a time */
     final void copyToArray(Object[] dest, int start, int n) {
-        final int end = start + n;
+        int end = start + n;
+        @SuppressWarnings("Var")
         int pos = start;
-        final int c = vectorSliceCount();
+        int c = vectorSliceCount();
         for (int i = 0; i < c && pos < end; i++) {
             pos = copyRec(vectorSliceDim(c, i) - 1, vectorSlice(i), dest, pos, end);
         }
     }
 
+    @SuppressWarnings("Var")
     private static int copyRec(int level, Object[] a, Object[] dest, int pos, int end) {
         if (level == 0) {
-            final int k = Math.min(a.length, end - pos);
+            int k = Math.min(a.length, end - pos);
             System.arraycopy(a, 0, dest, pos, k);
             return pos + k;
         }
@@ -415,7 +435,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         final RadixVector<T> sliceWith(VectorSliceBuilder b) {
-            final int c = vectorSliceCount();
+            int c = vectorSliceCount();
             for (int i = 0; i < c; i++) {
                 b.consider(vectorSliceDim(c, i), vectorSlice(i));
             }
@@ -524,7 +544,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> appended0(Object element) {
-            final int len1 = prefix1.length;
+            int len1 = prefix1.length;
             if (len1 < WIDTH) {
                 return new Vector1<>(copyAppend(prefix1, element));
             } else {
@@ -534,7 +554,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prepended0(Object element) {
-            final int len1 = prefix1.length;
+            int len1 = prefix1.length;
             if (len1 < WIDTH) {
                 return new Vector1<>(copyPrepend(element, prefix1));
             } else {
@@ -579,13 +599,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] data1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] data1b = prepend1IfSpace(prefix1, prefix, k);
             return (data1b == null) ? super.prependedAll0(prefix, k) : new Vector1<>(data1b);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] data1b = append1IfSpace(prefix1, suffix, k);
+            Object[] data1b = append1IfSpace(prefix1, suffix, k);
             return (data1b == null) ? super.appendedAll0(suffix, k) : new Vector1<>(data1b);
         }
     }
@@ -606,10 +626,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len1;
+                int io = index - len1;
                 if (io >= 0) {
-                    final int i2 = io >>> BITS;
-                    final int i1 = io & MASK;
+                    int i2 = io >>> BITS;
+                    int i1 = io & MASK;
                     if (i2 < data2.length) {
                         return (T) ((Object[]) data2[i2])[i1];
                     } else {
@@ -626,9 +646,9 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len1) {
-                    final int io = index - len1;
-                    final int i2 = io >>> BITS;
-                    final int i1 = io & MASK;
+                    int io = index - len1;
+                    int i2 = io >>> BITS;
+                    int i1 = io & MASK;
                     if (i2 < data2.length) {
                         return new Vector2<>(prefix1, len1, copyUpdate(data2, i2, i1, elem), suffix1, length0);
                     } else {
@@ -648,7 +668,15 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
             } else if (data2.length < WIDTH - 2) {
                 return new Vector2<>(prefix1, len1, copyAppend(data2, suffix1), wrap1(elem), length0 + 1);
             } else {
-                return new Vector3<>(prefix1, len1, data2, WIDTH * (WIDTH - 2) + len1, EMPTY, wrap1(suffix1), wrap1(elem), length0 + 1);
+                return new Vector3<>(
+                        prefix1,
+                        len1,
+                        data2,
+                        WIDTH * (WIDTH - 2) + len1,
+                        EMPTY,
+                        wrap1(suffix1),
+                        wrap1(elem),
+                        length0 + 1);
             }
         }
 
@@ -675,12 +703,16 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         public RadixVector<T> tail() {
-            return (len1 > 1) ? new Vector2<>(copyTail(prefix1), len1 - 1, data2, suffix1, length0 - 1) : slice0(1, length0);
+            return (len1 > 1)
+                    ? new Vector2<>(copyTail(prefix1), len1 - 1, data2, suffix1, length0 - 1)
+                    : slice0(1, length0);
         }
 
         @Override
         public RadixVector<T> init() {
-            return (suffix1.length > 1) ? new Vector2<>(prefix1, len1, data2, copyInit(suffix1), length0 - 1) : slice0(0, length0 - 1);
+            return (suffix1.length > 1)
+                    ? new Vector2<>(prefix1, len1, data2, copyInit(suffix1), length0 - 1)
+                    : slice0(0, length0 - 1);
         }
 
         @Override
@@ -710,17 +742,17 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector2<>(prefix1b, len1 + diff, data2, suffix1, length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
@@ -737,7 +769,15 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         final Object[] data3;
         final Object[] suffix2;
 
-        Vector3(Object[] prefix1, int len1, Object[] prefix2, int len12, Object[] data3, Object[] suffix2, Object[] suffix1, int length0) {
+        Vector3(
+                Object[] prefix1,
+                int len1,
+                Object[] prefix2,
+                int len12,
+                Object[] data3,
+                Object[] suffix2,
+                Object[] suffix1,
+                int length0) {
             super(prefix1, suffix1, length0);
             this.len1 = len1;
             this.prefix2 = prefix2;
@@ -750,11 +790,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len12;
+                int io = index - len12;
                 if (io >= 0) {
-                    final int i3 = io >>> BITS2;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i3 = io >>> BITS2;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i3 < data3.length) {
                         return (T) ((Object[]) ((Object[]) data3[i3])[i2])[i1];
                     } else if (i2 < suffix2.length) {
@@ -763,7 +803,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -776,22 +816,48 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len12) {
-                    final int io = index - len12;
-                    final int i3 = io >>> BITS2;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len12;
+                    int i3 = io >>> BITS2;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i3 < data3.length) {
-                        return new Vector3<>(prefix1, len1, prefix2, len12, copyUpdate(data3, i3, i2, i1, elem), suffix2, suffix1, length0);
+                        return new Vector3<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                copyUpdate(data3, i3, i2, i1, elem),
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i2 < suffix2.length) {
-                        return new Vector3<>(prefix1, len1, prefix2, len12, data3, copyUpdate(suffix2, i2, i1, elem), suffix1, length0);
+                        return new Vector3<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                data3,
+                                copyUpdate(suffix2, i2, i1, elem),
+                                suffix1,
+                                length0);
                     } else {
-                        return new Vector3<>(prefix1, len1, prefix2, len12, data3, suffix2, copyUpdate(suffix1, i1, elem), length0);
+                        return new Vector3<>(
+                                prefix1, len1, prefix2, len12, data3, suffix2, copyUpdate(suffix1, i1, elem), length0);
                     }
                 } else if (index >= len1) {
-                    final int io = index - len1;
-                    return new Vector3<>(prefix1, len1, copyUpdate(prefix2, io >>> BITS, io & MASK, elem), len12, data3, suffix2, suffix1, length0);
+                    int io = index - len1;
+                    return new Vector3<>(
+                            prefix1,
+                            len1,
+                            copyUpdate(prefix2, io >>> BITS, io & MASK, elem),
+                            len12,
+                            data3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else {
-                    return new Vector3<>(copyUpdate(prefix1, index, elem), len1, prefix2, len12, data3, suffix2, suffix1, length0);
+                    return new Vector3<>(
+                            copyUpdate(prefix1, index, elem), len1, prefix2, len12, data3, suffix2, suffix1, length0);
                 }
             }
             throw ioob("update", index);
@@ -800,35 +866,82 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         RadixVector<T> appended0(Object elem) {
             if (suffix1.length < WIDTH) {
-                return new Vector3<>(prefix1, len1, prefix2, len12, data3, suffix2, copyAppend(suffix1, elem), length0 + 1);
+                return new Vector3<>(
+                        prefix1, len1, prefix2, len12, data3, suffix2, copyAppend(suffix1, elem), length0 + 1);
             } else if (suffix2.length < WIDTH - 1) {
-                return new Vector3<>(prefix1, len1, prefix2, len12, data3, copyAppend(suffix2, suffix1), wrap1(elem), length0 + 1);
+                return new Vector3<>(
+                        prefix1, len1, prefix2, len12, data3, copyAppend(suffix2, suffix1), wrap1(elem), length0 + 1);
             } else if (data3.length < WIDTH - 2) {
-                return new Vector3<>(prefix1, len1, prefix2, len12, copyAppend(data3, copyAppend(suffix2, suffix1)), EMPTY, wrap1(elem), length0 + 1);
+                return new Vector3<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        copyAppend(data3, copyAppend(suffix2, suffix1)),
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else {
-                return new Vector4<>(prefix1, len1, prefix2, len12, data3, (WIDTH - 2) * WIDTH2 + len12, EMPTY,
-                    wrap1(copyAppend(suffix2, suffix1)), EMPTY, wrap1(elem), length0 + 1);
+                return new Vector4<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        data3,
+                        (WIDTH - 2) * WIDTH2 + len12,
+                        EMPTY,
+                        wrap1(copyAppend(suffix2, suffix1)),
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             }
         }
 
         @Override
         RadixVector<T> prepended0(Object elem) {
             if (len1 < WIDTH) {
-                return new Vector3<>(copyPrepend(elem, prefix1), len1 + 1, prefix2, len12 + 1, data3, suffix2, suffix1, length0 + 1);
+                return new Vector3<>(
+                        copyPrepend(elem, prefix1), len1 + 1, prefix2, len12 + 1, data3, suffix2, suffix1, length0 + 1);
             } else if (len12 < WIDTH2) {
-                return new Vector3<>(wrap1(elem), 1, copyPrepend(prefix1, prefix2), len12 + 1, data3, suffix2, suffix1, length0 + 1);
+                return new Vector3<>(
+                        wrap1(elem), 1, copyPrepend(prefix1, prefix2), len12 + 1, data3, suffix2, suffix1, length0 + 1);
             } else if (data3.length < WIDTH - 2) {
-                return new Vector3<>(wrap1(elem), 1, EMPTY, 1, copyPrepend(copyPrepend(prefix1, prefix2), data3), suffix2, suffix1, length0 + 1);
+                return new Vector3<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(prefix1, prefix2), data3),
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else {
-                return new Vector4<>(wrap1(elem), 1, EMPTY, 1, wrap1(copyPrepend(prefix1, prefix2)), len12 + 1, EMPTY, data3,
-                    suffix2, suffix1, length0 + 1);
+                return new Vector4<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        wrap1(copyPrepend(prefix1, prefix2)),
+                        len12 + 1,
+                        EMPTY,
+                        data3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             }
         }
 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector3<>(mapElems1(prefix1, f), len1, mapElems(2, prefix2, f), len12, mapElems(3, data3, f),
-                mapElems(2, suffix2, f), mapElems1(suffix1, f), length0);
+            return new Vector3<>(
+                    mapElems1(prefix1, f),
+                    len1,
+                    mapElems(2, prefix2, f),
+                    len12,
+                    mapElems(3, data3, f),
+                    mapElems(2, suffix2, f),
+                    mapElems1(suffix1, f),
+                    length0);
         }
 
         @Override
@@ -839,15 +952,16 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public RadixVector<T> tail() {
             return (len1 > 1)
-                   ? new Vector3<>(copyTail(prefix1), len1 - 1, prefix2, len12 - 1, data3, suffix2, suffix1, length0 - 1)
-                   : slice0(1, length0);
+                    ? new Vector3<>(
+                            copyTail(prefix1), len1 - 1, prefix2, len12 - 1, data3, suffix2, suffix1, length0 - 1)
+                    : slice0(1, length0);
         }
 
         @Override
         public RadixVector<T> init() {
             return (suffix1.length > 1)
-                   ? new Vector3<>(prefix1, len1, prefix2, len12, data3, suffix2, copyInit(suffix1), length0 - 1)
-                   : slice0(0, length0 - 1);
+                    ? new Vector3<>(prefix1, len1, prefix2, len12, data3, suffix2, copyInit(suffix1), length0 - 1)
+                    : slice0(0, length0 - 1);
         }
 
         @Override
@@ -881,21 +995,29 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector3<>(prefix1b, len1 + diff, prefix2, len12 + diff, data3, suffix2, suffix1, length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
-            return new Vector3<>(prefix1, len1, prefix2, len12, data3, suffix2, suffix1b, length0 - suffix1.length + suffix1b.length);
+            return new Vector3<>(
+                    prefix1,
+                    len1,
+                    prefix2,
+                    len12,
+                    data3,
+                    suffix2,
+                    suffix1b,
+                    length0 - suffix1.length + suffix1b.length);
         }
     }
 
@@ -911,8 +1033,18 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         final Object[] suffix3;
         final Object[] suffix2;
 
-        Vector4(Object[] prefix1, int len1, Object[] prefix2, int len12, Object[] prefix3, int len123, Object[] data4,
-                Object[] suffix3, Object[] suffix2, Object[] suffix1, int length0) {
+        Vector4(
+                Object[] prefix1,
+                int len1,
+                Object[] prefix2,
+                int len12,
+                Object[] prefix3,
+                int len123,
+                Object[] data4,
+                Object[] suffix3,
+                Object[] suffix2,
+                Object[] suffix1,
+                int length0) {
             super(prefix1, suffix1, length0);
             this.len1 = len1;
             this.prefix2 = prefix2;
@@ -928,12 +1060,12 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len123;
+                int io = index - len123;
                 if (io >= 0) {
-                    final int i4 = io >>> BITS3;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i4 = io >>> BITS3;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i4 < data4.length) {
                         return (T) ((Object[]) ((Object[]) ((Object[]) data4[i4])[i3])[i2])[i1];
                     } else if (i3 < suffix3.length) {
@@ -944,10 +1076,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len12) {
-                    final int io3 = index - len12;
+                    int io3 = index - len12;
                     return (T) ((Object[]) ((Object[]) prefix3[io3 >>> BITS2])[(io3 >>> BITS) & MASK])[io3 & MASK];
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -960,28 +1092,105 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len123) {
-                    final int io = index - len123;
-                    final int i4 = io >>> BITS3;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len123;
+                    int i4 = io >>> BITS3;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i4 < data4.length) {
-                        return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, copyUpdate(data4, i4, i3, i2, i1, elem), suffix3, suffix2, suffix1, length0);
+                        return new Vector4<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                copyUpdate(data4, i4, i3, i2, i1, elem),
+                                suffix3,
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i3 < suffix3.length) {
-                        return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, copyUpdate(suffix3, i3, i2, i1, elem), suffix2, suffix1, length0);
+                        return new Vector4<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                data4,
+                                copyUpdate(suffix3, i3, i2, i1, elem),
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i2 < suffix2.length) {
-                        return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, copyUpdate(suffix2, i2, i1, elem), suffix1, length0);
+                        return new Vector4<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                data4,
+                                suffix3,
+                                copyUpdate(suffix2, i2, i1, elem),
+                                suffix1,
+                                length0);
                     } else {
-                        return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, copyUpdate(suffix1, i1, elem), length0);
+                        return new Vector4<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                data4,
+                                suffix3,
+                                suffix2,
+                                copyUpdate(suffix1, i1, elem),
+                                length0);
                     }
                 } else if (index >= len12) {
-                    final int io = index - len12;
-                    return new Vector4<>(prefix1, len1, prefix2, len12, copyUpdate(prefix3, io >>> BITS2, (io >>> BITS) & MASK, io & MASK, elem), len123, data4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len12;
+                    return new Vector4<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            copyUpdate(prefix3, io >>> BITS2, (io >>> BITS) & MASK, io & MASK, elem),
+                            len123,
+                            data4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else if (index >= len1) {
-                    final int io = index - len1;
-                    return new Vector4<>(prefix1, len1, copyUpdate(prefix2, io >>> BITS, io & MASK, elem), len12, prefix3, len123, data4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len1;
+                    return new Vector4<>(
+                            prefix1,
+                            len1,
+                            copyUpdate(prefix2, io >>> BITS, io & MASK, elem),
+                            len12,
+                            prefix3,
+                            len123,
+                            data4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else {
-                    return new Vector4<>(copyUpdate(prefix1, index, elem), len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, suffix1, length0);
+                    return new Vector4<>(
+                            copyUpdate(prefix1, index, elem),
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            data4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 }
             }
             throw ioob("update", index);
@@ -990,39 +1199,163 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         RadixVector<T> appended0(Object elem) {
             if (suffix1.length < WIDTH) {
-                return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, copyAppend(suffix1, elem), length0 + 1);
+                return new Vector4<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        data4,
+                        suffix3,
+                        suffix2,
+                        copyAppend(suffix1, elem),
+                        length0 + 1);
             } else if (suffix2.length < WIDTH - 1) {
-                return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, copyAppend(suffix2, suffix1), wrap1(elem), length0 + 1);
+                return new Vector4<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        data4,
+                        suffix3,
+                        copyAppend(suffix2, suffix1),
+                        wrap1(elem),
+                        length0 + 1);
             } else if (suffix3.length < WIDTH - 1) {
-                return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, copyAppend(suffix3, copyAppend(suffix2, suffix1)), EMPTY, wrap1(elem), length0 + 1);
+                return new Vector4<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        data4,
+                        copyAppend(suffix3, copyAppend(suffix2, suffix1)),
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else if (data4.length < WIDTH - 2) {
-                return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, copyAppend(data4, copyAppend(suffix3, copyAppend(suffix2, suffix1))), EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector4<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        copyAppend(data4, copyAppend(suffix3, copyAppend(suffix2, suffix1))),
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else {
-                return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, (WIDTH - 2) * WIDTH3 + len123, EMPTY,
-                    wrap1(copyAppend(suffix3, copyAppend(suffix2, suffix1))), EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector5<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        data4,
+                        (WIDTH - 2) * WIDTH3 + len123,
+                        EMPTY,
+                        wrap1(copyAppend(suffix3, copyAppend(suffix2, suffix1))),
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             }
         }
 
         @Override
         RadixVector<T> prepended0(Object elem) {
             if (len1 < WIDTH) {
-                return new Vector4<>(copyPrepend(elem, prefix1), len1 + 1, prefix2, len12 + 1, prefix3, len123 + 1, data4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector4<>(
+                        copyPrepend(elem, prefix1),
+                        len1 + 1,
+                        prefix2,
+                        len12 + 1,
+                        prefix3,
+                        len123 + 1,
+                        data4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len12 < WIDTH2) {
-                return new Vector4<>(wrap1(elem), 1, copyPrepend(prefix1, prefix2), len12 + 1, prefix3, len123 + 1, data4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector4<>(
+                        wrap1(elem),
+                        1,
+                        copyPrepend(prefix1, prefix2),
+                        len12 + 1,
+                        prefix3,
+                        len123 + 1,
+                        data4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len123 < WIDTH3) {
-                return new Vector4<>(wrap1(elem), 1, EMPTY, 1, copyPrepend(copyPrepend(prefix1, prefix2), prefix3), len123 + 1, data4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector4<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(prefix1, prefix2), prefix3),
+                        len123 + 1,
+                        data4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (data4.length < WIDTH - 2) {
-                return new Vector4<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), data4), suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector4<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), data4),
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else {
-                return new Vector5<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, wrap1(copyPrepend(copyPrepend(prefix1, prefix2), prefix3)), len123 + 1, EMPTY, data4,
-                    suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector5<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        wrap1(copyPrepend(copyPrepend(prefix1, prefix2), prefix3)),
+                        len123 + 1,
+                        EMPTY,
+                        data4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             }
         }
 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector4<>(mapElems1(prefix1, f), len1, mapElems(2, prefix2, f), len12, mapElems(3, prefix3, f), len123,
-                mapElems(4, data4, f), mapElems(3, suffix3, f), mapElems(2, suffix2, f), mapElems1(suffix1, f), length0);
+            return new Vector4<>(
+                    mapElems1(prefix1, f),
+                    len1,
+                    mapElems(2, prefix2, f),
+                    len12,
+                    mapElems(3, prefix3, f),
+                    len123,
+                    mapElems(4, data4, f),
+                    mapElems(3, suffix3, f),
+                    mapElems(2, suffix2, f),
+                    mapElems1(suffix1, f),
+                    length0);
         }
 
         @Override
@@ -1033,15 +1366,37 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public RadixVector<T> tail() {
             return (len1 > 1)
-                   ? new Vector4<>(copyTail(prefix1), len1 - 1, prefix2, len12 - 1, prefix3, len123 - 1, data4, suffix3, suffix2, suffix1, length0 - 1)
-                   : slice0(1, length0);
+                    ? new Vector4<>(
+                            copyTail(prefix1),
+                            len1 - 1,
+                            prefix2,
+                            len12 - 1,
+                            prefix3,
+                            len123 - 1,
+                            data4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0 - 1)
+                    : slice0(1, length0);
         }
 
         @Override
         public RadixVector<T> init() {
             return (suffix1.length > 1)
-                   ? new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, copyInit(suffix1), length0 - 1)
-                   : slice0(0, length0 - 1);
+                    ? new Vector4<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            data4,
+                            suffix3,
+                            suffix2,
+                            copyInit(suffix1),
+                            length0 - 1)
+                    : slice0(0, length0 - 1);
         }
 
         @Override
@@ -1079,21 +1434,43 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
-            return new Vector4<>(prefix1b, len1 + diff, prefix2, len12 + diff, prefix3, len123 + diff, data4, suffix3, suffix2, suffix1, length0 + diff);
+            int diff = prefix1b.length - prefix1.length;
+            return new Vector4<>(
+                    prefix1b,
+                    len1 + diff,
+                    prefix2,
+                    len12 + diff,
+                    prefix3,
+                    len123 + diff,
+                    data4,
+                    suffix3,
+                    suffix2,
+                    suffix1,
+                    length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
-            return new Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, suffix1b, length0 - suffix1.length + suffix1b.length);
+            return new Vector4<>(
+                    prefix1,
+                    len1,
+                    prefix2,
+                    len12,
+                    prefix3,
+                    len123,
+                    data4,
+                    suffix3,
+                    suffix2,
+                    suffix1b,
+                    length0 - suffix1.length + suffix1b.length);
         }
     }
 
@@ -1112,8 +1489,21 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         final Object[] suffix3;
         final Object[] suffix2;
 
-        Vector5(Object[] prefix1, int len1, Object[] prefix2, int len12, Object[] prefix3, int len123, Object[] prefix4, int len1234,
-                Object[] data5, Object[] suffix4, Object[] suffix3, Object[] suffix2, Object[] suffix1, int length0) {
+        Vector5(
+                Object[] prefix1,
+                int len1,
+                Object[] prefix2,
+                int len12,
+                Object[] prefix3,
+                int len123,
+                Object[] prefix4,
+                int len1234,
+                Object[] data5,
+                Object[] suffix4,
+                Object[] suffix3,
+                Object[] suffix2,
+                Object[] suffix1,
+                int length0) {
             super(prefix1, suffix1, length0);
             this.len1 = len1;
             this.prefix2 = prefix2;
@@ -1132,13 +1522,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len1234;
+                int io = index - len1234;
                 if (io >= 0) {
-                    final int i5 = io >>> BITS4;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i5 = io >>> BITS4;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i5 < data5.length) {
                         return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) data5[i5])[i4])[i3])[i2])[i1];
                     } else if (i4 < suffix4.length) {
@@ -1151,13 +1541,15 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len123) {
-                    final int io4 = index - len123;
-                    return (T) ((Object[]) ((Object[]) ((Object[]) prefix4[io4 >>> BITS3])[(io4 >>> BITS2) & MASK])[(io4 >>> BITS) & MASK])[io4 & MASK];
+                    int io4 = index - len123;
+                    return (T) ((Object[]) ((Object[]) ((Object[]) prefix4[io4 >>> BITS3])[(io4 >>> BITS2) & MASK])
+                                    [(io4 >>> BITS) & MASK])
+                            [io4 & MASK];
                 } else if (index >= len12) {
-                    final int io3 = index - len12;
+                    int io3 = index - len12;
                     return (T) ((Object[]) ((Object[]) prefix3[io3 >>> BITS2])[(io3 >>> BITS) & MASK])[io3 & MASK];
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -1170,34 +1562,166 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len1234) {
-                    final int io = index - len1234;
-                    final int i5 = io >>> BITS4;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len1234;
+                    int i5 = io >>> BITS4;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i5 < data5.length) {
-                        return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, copyUpdate(data5, i5, i4, i3, i2, i1, elem), suffix4, suffix3, suffix2, suffix1, length0);
+                        return new Vector5<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                copyUpdate(data5, i5, i4, i3, i2, i1, elem),
+                                suffix4,
+                                suffix3,
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i4 < suffix4.length) {
-                        return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, copyUpdate(suffix4, i4, i3, i2, i1, elem), suffix3, suffix2, suffix1, length0);
+                        return new Vector5<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                data5,
+                                copyUpdate(suffix4, i4, i3, i2, i1, elem),
+                                suffix3,
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i3 < suffix3.length) {
-                        return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, copyUpdate(suffix3, i3, i2, i1, elem), suffix2, suffix1, length0);
+                        return new Vector5<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                data5,
+                                suffix4,
+                                copyUpdate(suffix3, i3, i2, i1, elem),
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i2 < suffix2.length) {
-                        return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, copyUpdate(suffix2, i2, i1, elem), suffix1, length0);
+                        return new Vector5<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                data5,
+                                suffix4,
+                                suffix3,
+                                copyUpdate(suffix2, i2, i1, elem),
+                                suffix1,
+                                length0);
                     } else {
-                        return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, copyUpdate(suffix1, i1, elem), length0);
+                        return new Vector5<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                data5,
+                                suffix4,
+                                suffix3,
+                                suffix2,
+                                copyUpdate(suffix1, i1, elem),
+                                length0);
                     }
                 } else if (index >= len123) {
-                    final int io = index - len123;
-                    return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, copyUpdate(prefix4, io >>> BITS3, (io >>> BITS2) & MASK, (io >>> BITS) & MASK, io & MASK, elem), len1234, data5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len123;
+                    return new Vector5<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            copyUpdate(
+                                    prefix4,
+                                    io >>> BITS3,
+                                    (io >>> BITS2) & MASK,
+                                    (io >>> BITS) & MASK,
+                                    io & MASK,
+                                    elem),
+                            len1234,
+                            data5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else if (index >= len12) {
-                    final int io = index - len12;
-                    return new Vector5<>(prefix1, len1, prefix2, len12, copyUpdate(prefix3, io >>> BITS2, (io >>> BITS) & MASK, io & MASK, elem), len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len12;
+                    return new Vector5<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            copyUpdate(prefix3, io >>> BITS2, (io >>> BITS) & MASK, io & MASK, elem),
+                            len123,
+                            prefix4,
+                            len1234,
+                            data5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else if (index >= len1) {
-                    final int io = index - len1;
-                    return new Vector5<>(prefix1, len1, copyUpdate(prefix2, io >>> BITS, io & MASK, elem), len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len1;
+                    return new Vector5<>(
+                            prefix1,
+                            len1,
+                            copyUpdate(prefix2, io >>> BITS, io & MASK, elem),
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            data5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else {
-                    return new Vector5<>(copyUpdate(prefix1, index, elem), len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, suffix1, length0);
+                    return new Vector5<>(
+                            copyUpdate(prefix1, index, elem),
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            data5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 }
             }
             throw ioob("update", index);
@@ -1206,44 +1730,228 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         RadixVector<T> appended0(Object elem) {
             if (suffix1.length < WIDTH) {
-                return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, copyAppend(suffix1, elem), length0 + 1);
+                return new Vector5<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        copyAppend(suffix1, elem),
+                        length0 + 1);
             } else if (suffix2.length < WIDTH - 1) {
-                return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, copyAppend(suffix2, suffix1), wrap1(elem), length0 + 1);
+                return new Vector5<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        copyAppend(suffix2, suffix1),
+                        wrap1(elem),
+                        length0 + 1);
             } else if (suffix3.length < WIDTH - 1) {
-                return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)), EMPTY, wrap1(elem), length0 + 1);
+                return new Vector5<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        data5,
+                        suffix4,
+                        copyAppend(suffix3, copyAppend(suffix2, suffix1)),
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else if (suffix4.length < WIDTH - 1) {
-                return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1))), EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector5<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        data5,
+                        copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1))),
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else if (data5.length < WIDTH - 2) {
-                return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, copyAppend(data5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)))), EMPTY, EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector5<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        copyAppend(data5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)))),
+                        EMPTY,
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, (WIDTH - 2) * WIDTH4 + len1234, EMPTY,
-                    wrap1(copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)))), EMPTY, EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        data5,
+                        (WIDTH - 2) * WIDTH4 + len1234,
+                        EMPTY,
+                        wrap1(copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)))),
+                        EMPTY,
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             }
         }
 
         @Override
         RadixVector<T> prepended0(Object elem) {
             if (len1 < WIDTH) {
-                return new Vector5<>(copyPrepend(elem, prefix1), len1 + 1, prefix2, len12 + 1, prefix3, len123 + 1, prefix4, len1234 + 1, data5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector5<>(
+                        copyPrepend(elem, prefix1),
+                        len1 + 1,
+                        prefix2,
+                        len12 + 1,
+                        prefix3,
+                        len123 + 1,
+                        prefix4,
+                        len1234 + 1,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len12 < WIDTH2) {
-                return new Vector5<>(wrap1(elem), 1, copyPrepend(prefix1, prefix2), len12 + 1, prefix3, len123 + 1, prefix4, len1234 + 1, data5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector5<>(
+                        wrap1(elem),
+                        1,
+                        copyPrepend(prefix1, prefix2),
+                        len12 + 1,
+                        prefix3,
+                        len123 + 1,
+                        prefix4,
+                        len1234 + 1,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len123 < WIDTH3) {
-                return new Vector5<>(wrap1(elem), 1, EMPTY, 1, copyPrepend(copyPrepend(prefix1, prefix2), prefix3), len123 + 1, prefix4, len1234 + 1, data5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector5<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(prefix1, prefix2), prefix3),
+                        len123 + 1,
+                        prefix4,
+                        len1234 + 1,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len1234 < WIDTH4) {
-                return new Vector5<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), len1234 + 1, data5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector5<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4),
+                        len1234 + 1,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (data5.length < WIDTH - 2) {
-                return new Vector5<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, EMPTY, 1, copyPrepend(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), data5), suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector5<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), data5),
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else {
-                return new Vector6<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, EMPTY, 1, wrap1(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4)), len1234 + 1, EMPTY, data5,
-                    suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        wrap1(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4)),
+                        len1234 + 1,
+                        EMPTY,
+                        data5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             }
         }
 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector5<>(mapElems1(prefix1, f), len1, mapElems(2, prefix2, f), len12, mapElems(3, prefix3, f), len123,
-                mapElems(4, prefix4, f), len1234, mapElems(5, data5, f),
-                mapElems(4, suffix4, f), mapElems(3, suffix3, f), mapElems(2, suffix2, f), mapElems1(suffix1, f), length0);
+            return new Vector5<>(
+                    mapElems1(prefix1, f),
+                    len1,
+                    mapElems(2, prefix2, f),
+                    len12,
+                    mapElems(3, prefix3, f),
+                    len123,
+                    mapElems(4, prefix4, f),
+                    len1234,
+                    mapElems(5, data5, f),
+                    mapElems(4, suffix4, f),
+                    mapElems(3, suffix3, f),
+                    mapElems(2, suffix2, f),
+                    mapElems1(suffix1, f),
+                    length0);
         }
 
         @Override
@@ -1254,15 +1962,43 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public RadixVector<T> tail() {
             return (len1 > 1)
-                   ? new Vector5<>(copyTail(prefix1), len1 - 1, prefix2, len12 - 1, prefix3, len123 - 1, prefix4, len1234 - 1, data5, suffix4, suffix3, suffix2, suffix1, length0 - 1)
-                   : slice0(1, length0);
+                    ? new Vector5<>(
+                            copyTail(prefix1),
+                            len1 - 1,
+                            prefix2,
+                            len12 - 1,
+                            prefix3,
+                            len123 - 1,
+                            prefix4,
+                            len1234 - 1,
+                            data5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0 - 1)
+                    : slice0(1, length0);
         }
 
         @Override
         public RadixVector<T> init() {
             return (suffix1.length > 1)
-                   ? new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, copyInit(suffix1), length0 - 1)
-                   : slice0(0, length0 - 1);
+                    ? new Vector5<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            data5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            copyInit(suffix1),
+                            length0 - 1)
+                    : slice0(0, length0 - 1);
         }
 
         @Override
@@ -1304,23 +2040,49 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
-            return new Vector5<>(prefix1b, len1 + diff, prefix2, len12 + diff, prefix3, len123 + diff, prefix4, len1234 + diff, data5,
-                suffix4, suffix3, suffix2, suffix1, length0 + diff);
+            int diff = prefix1b.length - prefix1.length;
+            return new Vector5<>(
+                    prefix1b,
+                    len1 + diff,
+                    prefix2,
+                    len12 + diff,
+                    prefix3,
+                    len123 + diff,
+                    prefix4,
+                    len1234 + diff,
+                    data5,
+                    suffix4,
+                    suffix3,
+                    suffix2,
+                    suffix1,
+                    length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
-            return new Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3, suffix2, suffix1b,
-                length0 - suffix1.length + suffix1b.length);
+            return new Vector5<>(
+                    prefix1,
+                    len1,
+                    prefix2,
+                    len12,
+                    prefix3,
+                    len123,
+                    prefix4,
+                    len1234,
+                    data5,
+                    suffix4,
+                    suffix3,
+                    suffix2,
+                    suffix1b,
+                    length0 - suffix1.length + suffix1b.length);
         }
     }
 
@@ -1342,9 +2104,24 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         final Object[] suffix3;
         final Object[] suffix2;
 
-        Vector6(Object[] prefix1, int len1, Object[] prefix2, int len12, Object[] prefix3, int len123, Object[] prefix4, int len1234,
-                Object[] prefix5, int len12345, Object[] data6, Object[] suffix5, Object[] suffix4, Object[] suffix3, Object[] suffix2,
-                Object[] suffix1, int length0) {
+        Vector6(
+                Object[] prefix1,
+                int len1,
+                Object[] prefix2,
+                int len12,
+                Object[] prefix3,
+                int len123,
+                Object[] prefix4,
+                int len1234,
+                Object[] prefix5,
+                int len12345,
+                Object[] data6,
+                Object[] suffix5,
+                Object[] suffix4,
+                Object[] suffix3,
+                Object[] suffix2,
+                Object[] suffix1,
+                int length0) {
             super(prefix1, suffix1, length0);
             this.len1 = len1;
             this.prefix2 = prefix2;
@@ -1366,16 +2143,18 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len12345;
+                int io = index - len12345;
                 if (io >= 0) {
-                    final int i6 = io >>> BITS5;
-                    final int i5 = (io >>> BITS4) & MASK;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i6 = io >>> BITS5;
+                    int i5 = (io >>> BITS4) & MASK;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i6 < data6.length) {
-                        return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) ((Object[]) data6[i6])[i5])[i4])[i3])[i2])[i1];
+                        return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) ((Object[]) data6[i6])[i5])[i4])[i3])
+                                        [i2])
+                                [i1];
                     } else if (i5 < suffix5.length) {
                         return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) suffix5[i5])[i4])[i3])[i2])[i1];
                     } else if (i4 < suffix4.length) {
@@ -1388,16 +2167,22 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len1234) {
-                    final int io5 = index - len1234;
-                    return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) prefix5[io5 >>> BITS4])[(io5 >>> BITS3) & MASK])[(io5 >>> BITS2) & MASK])[(io5 >>> BITS) & MASK])[io5 & MASK];
+                    int io5 = index - len1234;
+                    return (T) ((Object[]) ((Object[])
+                                            ((Object[]) ((Object[]) prefix5[io5 >>> BITS4])[(io5 >>> BITS3) & MASK])
+                                                    [(io5 >>> BITS2) & MASK])
+                                    [(io5 >>> BITS) & MASK])
+                            [io5 & MASK];
                 } else if (index >= len123) {
-                    final int io4 = index - len123;
-                    return (T) ((Object[]) ((Object[]) ((Object[]) prefix4[io4 >>> BITS3])[(io4 >>> BITS2) & MASK])[(io4 >>> BITS) & MASK])[io4 & MASK];
+                    int io4 = index - len123;
+                    return (T) ((Object[]) ((Object[]) ((Object[]) prefix4[io4 >>> BITS3])[(io4 >>> BITS2) & MASK])
+                                    [(io4 >>> BITS) & MASK])
+                            [io4 & MASK];
                 } else if (index >= len12) {
-                    final int io3 = index - len12;
+                    int io3 = index - len12;
                     return (T) ((Object[]) ((Object[]) prefix3[io3 >>> BITS2])[(io3 >>> BITS) & MASK])[io3 & MASK];
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -1410,40 +2195,240 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len12345) {
-                    final int io = index - len12345;
-                    final int i6 = io >>> BITS5;
-                    final int i5 = (io >>> BITS4) & MASK;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len12345;
+                    int i6 = io >>> BITS5;
+                    int i5 = (io >>> BITS4) & MASK;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i6 < data6.length) {
-                        return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, copyUpdate(data6, i6, i5, i4, i3, i2, i1, elem), suffix5, suffix4, suffix3, suffix2, suffix1, length0);
+                        return new Vector6<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                prefix5,
+                                len12345,
+                                copyUpdate(data6, i6, i5, i4, i3, i2, i1, elem),
+                                suffix5,
+                                suffix4,
+                                suffix3,
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i5 < suffix5.length) {
-                        return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, copyUpdate(suffix5, i5, i4, i3, i2, i1, elem), suffix4, suffix3, suffix2, suffix1, length0);
+                        return new Vector6<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                prefix5,
+                                len12345,
+                                data6,
+                                copyUpdate(suffix5, i5, i4, i3, i2, i1, elem),
+                                suffix4,
+                                suffix3,
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i4 < suffix4.length) {
-                        return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, copyUpdate(suffix4, i4, i3, i2, i1, elem), suffix3, suffix2, suffix1, length0);
+                        return new Vector6<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                prefix5,
+                                len12345,
+                                data6,
+                                suffix5,
+                                copyUpdate(suffix4, i4, i3, i2, i1, elem),
+                                suffix3,
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i3 < suffix3.length) {
-                        return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, copyUpdate(suffix3, i3, i2, i1, elem), suffix2, suffix1, length0);
+                        return new Vector6<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                prefix5,
+                                len12345,
+                                data6,
+                                suffix5,
+                                suffix4,
+                                copyUpdate(suffix3, i3, i2, i1, elem),
+                                suffix2,
+                                suffix1,
+                                length0);
                     } else if (i2 < suffix2.length) {
-                        return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, copyUpdate(suffix2, i2, i1, elem), suffix1, length0);
+                        return new Vector6<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                prefix5,
+                                len12345,
+                                data6,
+                                suffix5,
+                                suffix4,
+                                suffix3,
+                                copyUpdate(suffix2, i2, i1, elem),
+                                suffix1,
+                                length0);
                     } else {
-                        return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, copyUpdate(suffix1, i1, elem), length0);
+                        return new Vector6<>(
+                                prefix1,
+                                len1,
+                                prefix2,
+                                len12,
+                                prefix3,
+                                len123,
+                                prefix4,
+                                len1234,
+                                prefix5,
+                                len12345,
+                                data6,
+                                suffix5,
+                                suffix4,
+                                suffix3,
+                                suffix2,
+                                copyUpdate(suffix1, i1, elem),
+                                length0);
                     }
                 } else if (index >= len1234) {
-                    final int io = index - len1234;
-                    return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, copyUpdate(prefix5, io >>> BITS4, (io >>> BITS3) & MASK, (io >>> BITS2) & MASK, (io >>> BITS) & MASK, io & MASK, elem), len12345, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len1234;
+                    return new Vector6<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            copyUpdate(
+                                    prefix5,
+                                    io >>> BITS4,
+                                    (io >>> BITS3) & MASK,
+                                    (io >>> BITS2) & MASK,
+                                    (io >>> BITS) & MASK,
+                                    io & MASK,
+                                    elem),
+                            len12345,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else if (index >= len123) {
-                    final int io = index - len123;
-                    return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, copyUpdate(prefix4, io >>> BITS3, (io >>> BITS2) & MASK, (io >>> BITS) & MASK, io & MASK, elem), len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len123;
+                    return new Vector6<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            copyUpdate(
+                                    prefix4,
+                                    io >>> BITS3,
+                                    (io >>> BITS2) & MASK,
+                                    (io >>> BITS) & MASK,
+                                    io & MASK,
+                                    elem),
+                            len1234,
+                            prefix5,
+                            len12345,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else if (index >= len12) {
-                    final int io = index - len12;
-                    return new Vector6<>(prefix1, len1, prefix2, len12, copyUpdate(prefix3, io >>> BITS2, (io >>> BITS) & MASK, io & MASK, elem), len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len12;
+                    return new Vector6<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            copyUpdate(prefix3, io >>> BITS2, (io >>> BITS) & MASK, io & MASK, elem),
+                            len123,
+                            prefix4,
+                            len1234,
+                            prefix5,
+                            len12345,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else if (index >= len1) {
-                    final int io = index - len1;
-                    return new Vector6<>(prefix1, len1, copyUpdate(prefix2, io >>> BITS, io & MASK, elem), len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0);
+                    int io = index - len1;
+                    return new Vector6<>(
+                            prefix1,
+                            len1,
+                            copyUpdate(prefix2, io >>> BITS, io & MASK, elem),
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            prefix5,
+                            len12345,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 } else {
-                    return new Vector6<>(copyUpdate(prefix1, index, elem), len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0);
+                    return new Vector6<>(
+                            copyUpdate(prefix1, index, elem),
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            prefix5,
+                            len12345,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0);
                 }
             }
             throw ioob("update", index);
@@ -1454,17 +2439,123 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
             if (length0 == Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
             } else if (suffix1.length < WIDTH) {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, copyAppend(suffix1, elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        prefix5,
+                        len12345,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        copyAppend(suffix1, elem),
+                        length0 + 1);
             } else if (suffix2.length < WIDTH - 1) {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, copyAppend(suffix2, suffix1), wrap1(elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        prefix5,
+                        len12345,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        copyAppend(suffix2, suffix1),
+                        wrap1(elem),
+                        length0 + 1);
             } else if (suffix3.length < WIDTH - 1) {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)), EMPTY, wrap1(elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        prefix5,
+                        len12345,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        copyAppend(suffix3, copyAppend(suffix2, suffix1)),
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else if (suffix4.length < WIDTH - 1) {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1))), EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        prefix5,
+                        len12345,
+                        data6,
+                        suffix5,
+                        copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1))),
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else if (suffix5.length < WIDTH - 1) {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, copyAppend(suffix5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)))), EMPTY, EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        prefix5,
+                        len12345,
+                        data6,
+                        copyAppend(suffix5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1)))),
+                        EMPTY,
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else if (data6.length < LASTWIDTH - 2) {
-                return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, copyAppend(data6, copyAppend(suffix5, copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1))))), EMPTY, EMPTY, EMPTY, EMPTY, wrap1(elem), length0 + 1);
+                return new Vector6<>(
+                        prefix1,
+                        len1,
+                        prefix2,
+                        len12,
+                        prefix3,
+                        len123,
+                        prefix4,
+                        len1234,
+                        prefix5,
+                        len12345,
+                        copyAppend(
+                                data6,
+                                copyAppend(
+                                        suffix5,
+                                        copyAppend(suffix4, copyAppend(suffix3, copyAppend(suffix2, suffix1))))),
+                        EMPTY,
+                        EMPTY,
+                        EMPTY,
+                        EMPTY,
+                        wrap1(elem),
+                        length0 + 1);
             } else {
                 throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
             }
@@ -1475,17 +2566,123 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
             if (length0 == Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
             } else if (len1 < WIDTH) {
-                return new Vector6<>(copyPrepend(elem, prefix1), len1 + 1, prefix2, len12 + 1, prefix3, len123 + 1, prefix4, len1234 + 1, prefix5, len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        copyPrepend(elem, prefix1),
+                        len1 + 1,
+                        prefix2,
+                        len12 + 1,
+                        prefix3,
+                        len123 + 1,
+                        prefix4,
+                        len1234 + 1,
+                        prefix5,
+                        len12345 + 1,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len12 < WIDTH2) {
-                return new Vector6<>(wrap1(elem), 1, copyPrepend(prefix1, prefix2), len12 + 1, prefix3, len123 + 1, prefix4, len1234 + 1, prefix5, len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        wrap1(elem),
+                        1,
+                        copyPrepend(prefix1, prefix2),
+                        len12 + 1,
+                        prefix3,
+                        len123 + 1,
+                        prefix4,
+                        len1234 + 1,
+                        prefix5,
+                        len12345 + 1,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len123 < WIDTH3) {
-                return new Vector6<>(wrap1(elem), 1, EMPTY, 1, copyPrepend(copyPrepend(prefix1, prefix2), prefix3), len123 + 1, prefix4, len1234 + 1, prefix5, len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(prefix1, prefix2), prefix3),
+                        len123 + 1,
+                        prefix4,
+                        len1234 + 1,
+                        prefix5,
+                        len12345 + 1,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len1234 < WIDTH4) {
-                return new Vector6<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), len1234 + 1, prefix5, len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4),
+                        len1234 + 1,
+                        prefix5,
+                        len12345 + 1,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (len12345 < WIDTH5) {
-                return new Vector6<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, EMPTY, 1, copyPrepend(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), prefix5), len12345 + 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), prefix5),
+                        len12345 + 1,
+                        data6,
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else if (data6.length < LASTWIDTH - 2) {
-                return new Vector6<>(wrap1(elem), 1, EMPTY, 1, EMPTY, 1, EMPTY, 1, EMPTY, 1, copyPrepend(copyPrepend(copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4), prefix5), data6), suffix5, suffix4, suffix3, suffix2, suffix1, length0 + 1);
+                return new Vector6<>(
+                        wrap1(elem),
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        EMPTY,
+                        1,
+                        copyPrepend(
+                                copyPrepend(
+                                        copyPrepend(copyPrepend(copyPrepend(prefix1, prefix2), prefix3), prefix4),
+                                        prefix5),
+                                data6),
+                        suffix5,
+                        suffix4,
+                        suffix3,
+                        suffix2,
+                        suffix1,
+                        length0 + 1);
             } else {
                 throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
             }
@@ -1493,9 +2690,24 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector6<>(mapElems1(prefix1, f), len1, mapElems(2, prefix2, f), len12, mapElems(3, prefix3, f), len123,
-                mapElems(4, prefix4, f), len1234, mapElems(5, prefix5, f), len12345, mapElems(6, data6, f),
-                mapElems(5, suffix5, f), mapElems(4, suffix4, f), mapElems(3, suffix3, f), mapElems(2, suffix2, f), mapElems1(suffix1, f), length0);
+            return new Vector6<>(
+                    mapElems1(prefix1, f),
+                    len1,
+                    mapElems(2, prefix2, f),
+                    len12,
+                    mapElems(3, prefix3, f),
+                    len123,
+                    mapElems(4, prefix4, f),
+                    len1234,
+                    mapElems(5, prefix5, f),
+                    len12345,
+                    mapElems(6, data6, f),
+                    mapElems(5, suffix5, f),
+                    mapElems(4, suffix4, f),
+                    mapElems(3, suffix3, f),
+                    mapElems(2, suffix2, f),
+                    mapElems1(suffix1, f),
+                    length0);
         }
 
         @Override
@@ -1506,15 +2718,49 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public RadixVector<T> tail() {
             return (len1 > 1)
-                   ? new Vector6<>(copyTail(prefix1), len1 - 1, prefix2, len12 - 1, prefix3, len123 - 1, prefix4, len1234 - 1, prefix5, len12345 - 1, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 - 1)
-                   : slice0(1, length0);
+                    ? new Vector6<>(
+                            copyTail(prefix1),
+                            len1 - 1,
+                            prefix2,
+                            len12 - 1,
+                            prefix3,
+                            len123 - 1,
+                            prefix4,
+                            len1234 - 1,
+                            prefix5,
+                            len12345 - 1,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            suffix1,
+                            length0 - 1)
+                    : slice0(1, length0);
         }
 
         @Override
         public RadixVector<T> init() {
             return (suffix1.length > 1)
-                   ? new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5, suffix4, suffix3, suffix2, copyInit(suffix1), length0 - 1)
-                   : slice0(0, length0 - 1);
+                    ? new Vector6<>(
+                            prefix1,
+                            len1,
+                            prefix2,
+                            len12,
+                            prefix3,
+                            len123,
+                            prefix4,
+                            len1234,
+                            prefix5,
+                            len12345,
+                            data6,
+                            suffix5,
+                            suffix4,
+                            suffix3,
+                            suffix2,
+                            copyInit(suffix1),
+                            length0 - 1)
+                    : slice0(0, length0 - 1);
         }
 
         @Override
@@ -1551,7 +2797,12 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                 case 5 -> len12345 + data6.length * WIDTH5;
                 case 6 -> len12345 + data6.length * WIDTH5 + suffix5.length * WIDTH4;
                 case 7 -> len12345 + data6.length * WIDTH5 + suffix5.length * WIDTH4 + suffix4.length * WIDTH3;
-                case 8 -> len12345 + data6.length * WIDTH5 + suffix5.length * WIDTH4 + suffix4.length * WIDTH3 + suffix3.length * WIDTH2;
+                case 8 ->
+                    len12345
+                            + data6.length * WIDTH5
+                            + suffix5.length * WIDTH4
+                            + suffix4.length * WIDTH3
+                            + suffix3.length * WIDTH2;
                 case 9 -> length0 - suffix1.length;
                 case 10 -> length0;
                 default -> throw new IndexOutOfBoundsException(idx);
@@ -1560,25 +2811,57 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
-            return new Vector6<>(prefix1b, len1 + diff, prefix2, len12 + diff, prefix3, len123 + diff, prefix4, len1234 + diff, prefix5,
-                len12345 + diff, data6, suffix5, suffix4, suffix3, suffix2, suffix1, length0 + diff);
+            int diff = prefix1b.length - prefix1.length;
+            return new Vector6<>(
+                    prefix1b,
+                    len1 + diff,
+                    prefix2,
+                    len12 + diff,
+                    prefix3,
+                    len123 + diff,
+                    prefix4,
+                    len1234 + diff,
+                    prefix5,
+                    len12345 + diff,
+                    data6,
+                    suffix5,
+                    suffix4,
+                    suffix3,
+                    suffix2,
+                    suffix1,
+                    length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
             // near the limit, suffix1's room may reach the tree's last position, which the builder does not use: the
             // builder decides, for every kind of argument (see FAR_FROM_THE_LIMIT)
-            final Object[] suffix1b = ((long) length0 + k <= FAR_FROM_THE_LIMIT) ? append1IfSpace(suffix1, suffix, k) : null;
+            Object[] suffix1b = ((long) length0 + k <= FAR_FROM_THE_LIMIT) ? append1IfSpace(suffix1, suffix, k) : null;
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
-            return new Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6, suffix5,
-                suffix4, suffix3, suffix2, suffix1b, length0 - suffix1.length + suffix1b.length);
+            return new Vector6<>(
+                    prefix1,
+                    len1,
+                    prefix2,
+                    len12,
+                    prefix3,
+                    len123,
+                    prefix4,
+                    len1234,
+                    prefix5,
+                    len12345,
+                    data6,
+                    suffix5,
+                    suffix4,
+                    suffix3,
+                    suffix2,
+                    suffix1b,
+                    length0 - suffix1.length + suffix1b.length);
         }
     }
 

@@ -47,7 +47,7 @@ public interface CheckedConsumer<T extends @Nullable Object> {
     void accept(T t) throws Exception;
 
     /**
-     * Returns a composed {@code CheckedConsumer} that performs, in sequence, 
+     * Returns a composed {@code CheckedConsumer} that performs, in sequence,
      * {@code this.accept(t)} followed by {@code after.accept(t)} for the same input {@code t}.
      *
      * @param after the action to execute after this action
@@ -56,11 +56,14 @@ public interface CheckedConsumer<T extends @Nullable Object> {
      */
     default CheckedConsumer<T> andThen(CheckedConsumer<? super T> after) {
         Objects.requireNonNull(after, "after is null");
-        return (T t) -> { accept(t); after.accept(t); };
+        return (T t) -> {
+            accept(t);
+            after.accept(t);
+        };
     }
 
     /**
-     * Returns an unchecked {@link Consumer} that <em>sneakily throws</em> any exception 
+     * Returns an unchecked {@link Consumer} that <em>sneakily throws</em> any exception
      * encountered while accepting a value.
      *
      * @return a {@link Consumer} that may throw any {@link Throwable} without declaring it
@@ -69,7 +72,7 @@ public interface CheckedConsumer<T extends @Nullable Object> {
         return t -> {
             try {
                 accept(t);
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 sneakyThrow(x);
             }
         };

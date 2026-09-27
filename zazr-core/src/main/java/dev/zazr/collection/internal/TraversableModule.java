@@ -41,24 +41,38 @@ public interface TraversableModule {
         if (traversable instanceof TreeSet<?> treeSet) {
             return (TreeSet<T>) treeSet;
         }
-        final Comparator<T> comparator = comparatorOf(traversable);
+        Comparator<T> comparator = comparatorOf(traversable);
         return toTraversable(traversable, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
     }
 
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, E extends Tuple2<? extends K, ? extends V>, R extends Map<K, V>> R toMap(
-            Traversable<T> traversable, R empty, Function<Iterable<E>, R> ofAll, Function<? super T, ? extends E> f, String nullResult) {
+    static <
+                    T extends @Nullable Object,
+                    K extends @Nullable Object,
+                    V extends @Nullable Object,
+                    E extends Tuple2<? extends K, ? extends V>,
+                    R extends Map<K, V>>
+            R toMap(
+                    Traversable<T> traversable,
+                    R empty,
+                    Function<Iterable<E>, R> ofAll,
+                    Function<? super T, ? extends E> f,
+                    String nullResult) {
         Objects.requireNonNull(f, "f is null");
-        return traversable.isEmpty() ? empty : ofAll.apply(Iterator.ofAll(traversable).map(t -> Objects.requireNonNull(f.apply(t), nullResult)));
+        return traversable.isEmpty()
+                ? empty
+                : ofAll.apply(Iterator.ofAll(traversable).map(t -> Objects.requireNonNull(f.apply(t), nullResult)));
     }
 
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> Function<T, Tuple2<K, V>> entryMapper(
-            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object>
+            Function<T, Tuple2<K, V>> entryMapper(
+                    Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         return t -> Tuple.of(keyMapper.apply(t), valueMapper.apply(t));
     }
 
-    static <K extends @Nullable Object, T extends @Nullable Object> Option<Map<K, T>> arrangeBy(Map<K, ? extends Traversable<T>> groups) {
+    static <K extends @Nullable Object, T extends @Nullable Object> Option<Map<K, T>> arrangeBy(
+            Map<K, ? extends Traversable<T>> groups) {
         for (Tuple2<K, ? extends Traversable<T>> group : groups) {
             if (group._2().size() != 1) {
                 return Option.none();
@@ -69,6 +83,7 @@ public interface TraversableModule {
 
     static <T extends @Nullable Object> boolean existsUnique(Iterable<T> elements, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         boolean exists = false;
         for (T t : elements) {
             if (predicate.test(t)) {
@@ -86,7 +101,10 @@ public interface TraversableModule {
     @SuppressWarnings("NullAway")
     static <T extends @Nullable Object> Option<T> findLast(Iterable<T> elements, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        @Nullable T last = null;
+        @SuppressWarnings("Var")
+        @Nullable
+        T last = null;
+        @SuppressWarnings("Var")
         boolean found = false;
         for (T t : elements) {
             if (predicate.test(t)) {
@@ -99,18 +117,22 @@ public interface TraversableModule {
 
     static <T extends @Nullable Object> void forEachWithIndex(Iterable<T> elements, ObjIntConsumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
+        @SuppressWarnings("Var")
         int index = 0;
         for (T t : elements) {
             action.accept(t, index++);
         }
     }
 
-    static <T extends @Nullable Object> T reduceLeft(Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
+    static <T extends @Nullable Object> T reduceLeft(
+            Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
-        final java.util.Iterator<T> iterator = traversable.iterator();
+        java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
-            throw new NoSuchElementException("reduceLeft on empty " + traversable.getClass().getSimpleName());
+            throw new NoSuchElementException(
+                    "reduceLeft on empty " + traversable.getClass().getSimpleName());
         }
+        @SuppressWarnings("Var")
         T xs = iterator.next();
         while (iterator.hasNext()) {
             xs = op.apply(xs, iterator.next());
@@ -118,21 +140,23 @@ public interface TraversableModule {
         return xs;
     }
 
-    static <T extends @Nullable Object> Option<T> reduceLeftOption(Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
+    static <T extends @Nullable Object> Option<T> reduceLeftOption(
+            Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
         return traversable.isEmpty() ? Option.none() : Option.some(reduceLeft(traversable, op));
     }
 
     static <T extends @Nullable Object> T single(Traversable<T> traversable) {
-        return singleOption(traversable).getOrElseThrow(() -> new NoSuchElementException("Does not contain a single value"));
+        return singleOption(traversable)
+                .getOrElseThrow(() -> new NoSuchElementException("Does not contain a single value"));
     }
 
     static <T extends @Nullable Object> Option<T> singleOption(Traversable<T> traversable) {
-        final java.util.Iterator<T> it = traversable.iterator();
+        java.util.Iterator<T> it = traversable.iterator();
         if (!it.hasNext()) {
             return Option.none();
         }
-        final T first = it.next();
+        T first = it.next();
         return it.hasNext() ? Option.none() : Option.some(first);
     }
 
@@ -142,13 +166,14 @@ public interface TraversableModule {
 
     static <T extends @Nullable Object> Option<T> maxBy(Traversable<T> traversable, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Iterator<T> iterator = traversable.iterator();
+        java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T max = iterator.next();
         while (iterator.hasNext()) {
-            final T t = iterator.next();
+            T t = iterator.next();
             if (comparator.compare(t, max) > 0) {
                 max = t;
             }
@@ -156,17 +181,20 @@ public interface TraversableModule {
         return Option.some(max);
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> maxBy(Traversable<T> traversable, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> maxBy(
+            Traversable<T> traversable, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
-        final java.util.Iterator<T> iterator = traversable.iterator();
+        java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T tm = iterator.next();
+        @SuppressWarnings("Var")
         U um = f.apply(tm);
         while (iterator.hasNext()) {
-            final T t = iterator.next();
-            final U u = f.apply(t);
+            T t = iterator.next();
+            U u = f.apply(t);
             if (u.compareTo(um) > 0) {
                 um = u;
                 tm = t;
@@ -176,13 +204,13 @@ public interface TraversableModule {
     }
 
     // minBy(naturalComparator) would not handle (Double/Float) NaN as min() promises
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Var"})
     static <T extends @Nullable Object> Option<T> min(Traversable<T> traversable) {
-        final java.util.Iterator<T> iterator = traversable.iterator();
+        java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return Option.none();
         }
-        final T head = iterator.next();
+        T head = iterator.next();
         if (head instanceof Double) {
             double min = (Double) head;
             while (iterator.hasNext()) {
@@ -196,10 +224,10 @@ public interface TraversableModule {
             }
             return Option.some((T) (Float) min);
         } else {
-            final Comparator<T> comparator = Comparators.naturalComparator();
+            Comparator<T> comparator = Comparators.naturalComparator();
             T min = head;
             while (iterator.hasNext()) {
-                final T t = iterator.next();
+                T t = iterator.next();
                 if (comparator.compare(t, min) < 0) {
                     min = t;
                 }
@@ -210,13 +238,14 @@ public interface TraversableModule {
 
     static <T extends @Nullable Object> Option<T> minBy(Traversable<T> traversable, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Iterator<T> iterator = traversable.iterator();
+        java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T min = iterator.next();
         while (iterator.hasNext()) {
-            final T t = iterator.next();
+            T t = iterator.next();
             if (comparator.compare(t, min) < 0) {
                 min = t;
             }
@@ -224,17 +253,20 @@ public interface TraversableModule {
         return Option.some(min);
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> minBy(Traversable<T> traversable, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> minBy(
+            Traversable<T> traversable, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
-        final java.util.Iterator<T> iterator = traversable.iterator();
+        java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T tm = iterator.next();
+        @SuppressWarnings("Var")
         U um = f.apply(tm);
         while (iterator.hasNext()) {
-            final T t = iterator.next();
-            final U u = f.apply(t);
+            T t = iterator.next();
+            U u = f.apply(t);
             if (u.compareTo(um) < 0) {
                 um = u;
                 tm = t;
@@ -245,21 +277,22 @@ public interface TraversableModule {
 
     static Option<Double> average(Traversable<?> traversable) {
         try {
-            final double[] sum = neumaierSum(traversable, t -> ((Number) t).doubleValue());
-            final double count = sum[1];
+            double[] sum = neumaierSum(traversable, t -> ((Number) t).doubleValue());
+            double count = sum[1];
             return (count == 0) ? Option.none() : Option.some(sum[0] / count);
         } catch (ClassCastException x) {
             throw new UnsupportedOperationException("Elements are not numeric", x);
         }
     }
 
+    @SuppressWarnings("Var")
     static Number product(Traversable<?> traversable) {
-        final java.util.Iterator<?> iterator = traversable.iterator();
+        java.util.Iterator<?> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return 1;
         }
         try {
-            final Object o = iterator.next();
+            Object o = iterator.next();
             if (o instanceof Integer || o instanceof Long || o instanceof Byte || o instanceof Short) {
                 long product = ((Number) o).longValue();
                 while (iterator.hasNext()) {
@@ -290,13 +323,14 @@ public interface TraversableModule {
         }
     }
 
+    @SuppressWarnings("Var")
     static Number sum(Traversable<?> traversable) {
-        final java.util.Iterator<?> iterator = traversable.iterator();
+        java.util.Iterator<?> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
             return 0;
         }
         try {
-            final Object o = iterator.next();
+            Object o = iterator.next();
             if (o instanceof Integer || o instanceof Long || o instanceof Byte || o instanceof Short) {
                 long sum = ((Number) o).longValue();
                 while (iterator.hasNext()) {
@@ -334,14 +368,15 @@ public interface TraversableModule {
      * @param toDouble function which maps elements to {@code double} values
      * @return A pair {@code [sum, size]}, where {@code sum} is the compensated sum and {@code size} is the number of elements which were summed.
      */
+    @SuppressWarnings("Var")
     static <T extends @Nullable Object> double[] neumaierSum(Iterable<T> ts, ToDoubleFunction<T> toDouble) {
         double simpleSum = 0.0;
         double sum = 0.0;
         double compensation = 0.0;
         int size = 0;
         for (T t : ts) {
-            final double d = toDouble.applyAsDouble(t);
-            final double tmp = sum + d;
+            double d = toDouble.applyAsDouble(t);
+            double tmp = sum + d;
             compensation += (Math.abs(sum) >= Math.abs(d)) ? (sum - tmp) + d : (d - tmp) + sum;
             sum = tmp;
             simpleSum += d;
@@ -351,6 +386,6 @@ public interface TraversableModule {
         if (size > 0 && Double.isNaN(sum) && Double.isInfinite(simpleSum)) {
             sum = simpleSum;
         }
-        return new double[] { sum, size };
+        return new double[] {sum, size};
     }
 }

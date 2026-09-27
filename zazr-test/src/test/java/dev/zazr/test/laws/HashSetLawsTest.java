@@ -38,7 +38,8 @@ class HashSetLawsTest extends SetLawsSuite<HashSet<?>, HashSet<Integer>> {
 
     @Override
     CollectionSubject<Integer, HashSet<Integer>> collection() {
-        return new CollectionSubject<>(Gen.hashSet(Values.integers()), HashSet::ofAll, HashSet::size, HashSet::toList, false);
+        return new CollectionSubject<>(
+                Gen.hashSet(Values.integers()), HashSet::ofAll, HashSet::size, HashSet::toList, false);
     }
 
     @Override
@@ -48,9 +49,18 @@ class HashSetLawsTest extends SetLawsSuite<HashSet<?>, HashSet<Integer>> {
 
     @Test
     void setLawsWithCollidingHashCodes() {
-        final CollectionSubject<Collider, HashSet<Collider>> colliders = new CollectionSubject<>(
-                Gen.hashSet(Values.integers().map(Collider::new)), HashSet::ofAll, HashSet::size, HashSet::toList, false);
+        CollectionSubject<Collider, HashSet<Collider>> colliders = new CollectionSubject<>(
+                Gen.hashSet(Values.integers().map(Collider::new)),
+                HashSet::ofAll,
+                HashSet::size,
+                HashSet::toList,
+                false);
         LawChecks.check(CollectionLaws.<Collider, HashSet<Collider>>set(), colliders);
-        LawChecks.check(EqualityLaws.<HashSet<Collider>>all(), new EqualitySubject<>(colliders.values(), s -> HashSet.ofAll(s.toList()), c -> new java.util.HashSet<>(CollectionLaws.elements(c))));
+        LawChecks.check(
+                EqualityLaws.<HashSet<Collider>>all(),
+                new EqualitySubject<>(
+                        colliders.values(),
+                        s -> HashSet.ofAll(s.toList()),
+                        c -> new java.util.HashSet<>(CollectionLaws.elements(c))));
     }
 }

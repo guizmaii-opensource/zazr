@@ -29,5 +29,4 @@ public class IntMod2Test {
         assertThat(_1.compareTo(_2)).isEqualTo(1);
         assertThat(_2.compareTo(_3)).isEqualTo(-1);
     }
-
 }

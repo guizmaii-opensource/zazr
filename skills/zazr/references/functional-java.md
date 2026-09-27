@@ -452,7 +452,7 @@ element (`toVector`, `foldLeft`, `size`). See https://zazr.dev/collections/lazy-
 - Pattern matching with a `switch` expression; record patterns take a case apart in one step, nested as deep as
   needed.
 - `when` guards on a case.
-- The unnamed pattern `_` for a component you do not read, and for an unused lambda parameter.
+- An unnamed pattern variable `var _` for a record component you do not read, and `_` for an unused lambda parameter.
 - `var` for locals, with the type in a trailing comment when it is not obvious.
 
 Before, type tests, casts, `null` and a `throw` for the case nobody can check:
@@ -479,8 +479,8 @@ After, no cast and no `throw`, and the compiler checks that every case is covere
 static String summary(Option<Payment> payment) {
     return switch (payment) {
         case Some(Card(var number)) when number.startsWith("4") -> "Visa card";
-        case Some(Card(_)) -> "other card";
-        case Some(Transfer(_)) -> "bank transfer";
+        case Some(Card(var _)) -> "other card";
+        case Some(Transfer(var _)) -> "bank transfer";
         case None() -> "not paid yet";
     };
 }

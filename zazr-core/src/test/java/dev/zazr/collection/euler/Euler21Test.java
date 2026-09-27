@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Evaluate the sum of all the amicable numbers under 10000</p>
  * See also <a href="https://projecteuler.net/problem=21">projecteuler.net problem 21</a>.
  */
-
 public class Euler21Test {
 
     @Test
@@ -28,18 +27,19 @@ public class Euler21Test {
     }
 
     private static int sumOfDivisors(int n) {
-        return 1 + LazyList.rangeClosed(2, (int) Math.sqrt(n))
-                .map(d -> Tuple.of(d, n / d))
-                .filter(t -> t._1() * t._2() == n && !Objects.equals(t._1(), t._2()))
-                .map(t -> t._1() + t._2())
-                .foldLeft(0, (sum, x) -> sum + x);
+        return 1
+                + LazyList.rangeClosed(2, (int) Math.sqrt(n))
+                        .map(d -> Tuple.of(d, n / d))
+                        .filter(t -> t._1() * t._2() == n && !Objects.equals(t._1(), t._2()))
+                        .map(t -> t._1() + t._2())
+                        .foldLeft(0, (sum, x) -> sum + x);
     }
 
     private static int sumOfAmicablePairs(int n) {
-        final Function<Integer, Integer> mSumOfDivisors = Memoize.of(Euler21Test::sumOfDivisors);
+        Function<Integer, Integer> mSumOfDivisors = Memoize.of(Euler21Test::sumOfDivisors);
         return LazyList.range(1, n)
-                .filter(x -> mSumOfDivisors.apply(mSumOfDivisors.apply(x)).intValue() == x && mSumOfDivisors.apply(x) > x)
+                .filter(x ->
+                        mSumOfDivisors.apply(mSumOfDivisors.apply(x)).intValue() == x && mSumOfDivisors.apply(x) > x)
                 .foldLeft(0, (sum, x) -> sum + x + mSumOfDivisors.apply(x));
     }
-
 }

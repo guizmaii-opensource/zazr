@@ -65,7 +65,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Daniel Dietrich, Grzegorz Piwowarek, Adam Kopeć
  */
-public sealed interface Either<L extends @Nullable Object, R extends @Nullable Object> permits Either.Left, Either.Right {
+public sealed interface Either<L extends @Nullable Object, R extends @Nullable Object>
+        permits Either.Left, Either.Right {
 
     /**
      * Constructs a new {@link Right} instance containing the given value.
@@ -104,7 +105,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return the same {@code either} instance cast to {@code Either<L, R>}
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> narrow(Either<? extends L, ? extends R> either) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> narrow(
+            Either<? extends L, ? extends R> either) {
         return (Either<L, R>) either;
     }
 
@@ -120,7 +122,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if {@code nested} is null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> flatten(Either<? extends L, ? extends Either<? extends L, ? extends R>> nested) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> flatten(
+            Either<? extends L, ? extends Either<? extends L, ? extends R>> nested) {
         Objects.requireNonNull(nested, "nested is null");
         return switch (nested) {
             case Right(var inner) -> narrow(inner);
@@ -145,11 +148,14 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right(value)} if the predicate holds, otherwise {@code Left} of what {@code ifFalse} returned
      * @throws NullPointerException if any argument is null, or if {@code ifFalse} returns null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> fromPredicate(R value, Predicate<? super R> predicate, Function<? super R, ? extends L> ifFalse) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, R> fromPredicate(
+            R value, Predicate<? super R> predicate, Function<? super R, ? extends L> ifFalse) {
         Objects.requireNonNull(value, "value is null");
         Objects.requireNonNull(predicate, "predicate is null");
         Objects.requireNonNull(ifFalse, "ifFalse is null");
-        return predicate.test(value) ? right(value) : left(Objects.requireNonNull(ifFalse.apply(value), "Either.fromPredicate: ifFalse returned null"));
+        return predicate.test(value)
+                ? right(value)
+                : left(Objects.requireNonNull(ifFalse.apply(value), "Either.fromPredicate: ifFalse returned null"));
     }
 
     /**
@@ -187,13 +193,16 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return a {@code Left} or {@code Right} of the mapped value
      * @throws NullPointerException if a mapper is null
      */
-    default <X extends @Nullable Object, Y extends @Nullable Object> Either<X, Y> mapBoth(Function<? super L, ? extends X> leftMapper, Function<? super R, ? extends Y> rightMapper) {
+    default <X extends @Nullable Object, Y extends @Nullable Object> Either<X, Y> mapBoth(
+            Function<? super L, ? extends X> leftMapper, Function<? super R, ? extends Y> rightMapper) {
         Objects.requireNonNull(leftMapper, "leftMapper is null");
         Objects.requireNonNull(rightMapper, "rightMapper is null");
         if (isRight()) {
-            return new Right<>(Objects.requireNonNull(rightMapper.apply(get()), "Either.mapBoth: rightMapper returned null"));
+            return new Right<>(
+                    Objects.requireNonNull(rightMapper.apply(get()), "Either.mapBoth: rightMapper returned null"));
         } else {
-            return new Left<>(Objects.requireNonNull(leftMapper.apply(getLeft()), "Either.mapBoth: leftMapper returned null"));
+            return new Left<>(
+                    Objects.requireNonNull(leftMapper.apply(getLeft()), "Either.mapBoth: leftMapper returned null"));
         }
     }
 
@@ -209,7 +218,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @param <U>         the type of the resulting value
      * @return a value of type {@code U} obtained by applying the appropriate function
      */
-    default <U extends @Nullable Object> U fold(Function<? super L, ? extends U> leftMapper, Function<? super R, ? extends U> rightMapper) {
+    default <U extends @Nullable Object> U fold(
+            Function<? super L, ? extends U> leftMapper, Function<? super R, ? extends U> rightMapper) {
         Objects.requireNonNull(leftMapper, "leftMapper is null");
         Objects.requireNonNull(rightMapper, "rightMapper is null");
         if (isRight()) {
@@ -235,9 +245,10 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of all the right values, or the first {@code Left}
      * @throws NullPointerException if {@code eithers} is null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Vector<R>> collectAll(Iterable<? extends Either<? extends L, ? extends R>> eithers) {
+    static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Vector<R>> collectAll(
+            Iterable<? extends Either<? extends L, ? extends R>> eithers) {
         Objects.requireNonNull(eithers, "eithers is null");
-        final Vector.Builder<R> rightValues = Vector.newBuilder();
+        Vector.Builder<R> rightValues = Vector.newBuilder();
         for (Either<? extends L, ? extends R> either : eithers) {
             if (either.isRight()) {
                 rightValues.add(either.get());
@@ -264,12 +275,16 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of all the mapped values, or the first {@code Left}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object> Either<L, Vector<R>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
+    static <L extends @Nullable Object, R extends @Nullable Object, T extends @Nullable Object>
+            Either<L, Vector<R>> forEach(
+                    Iterable<? extends T> values,
+                    Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final Vector.Builder<R> rightValues = Vector.newBuilder();
+        Vector.Builder<R> rightValues = Vector.newBuilder();
         for (T value : values) {
-            final Either<? extends L, ? extends R> mapped = Objects.requireNonNull(mapper.apply(value), "Either.forEach: mapper returned null");
+            Either<? extends L, ? extends R> mapped =
+                    Objects.requireNonNull(mapper.apply(value), "Either.forEach: mapper returned null");
             if (mapped.isRight()) {
                 rightValues.add(mapped.get());
             } else {
@@ -402,7 +417,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     @SuppressWarnings("unchecked")
     default Either<L, R> orElse(Supplier<? extends Either<? extends L, ? extends R>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isRight() ? this : (Either<L, R>) Objects.requireNonNull(supplier.get(), "Either.orElse: supplier returned null");
+        return isRight()
+                ? this
+                : (Either<L, R>) Objects.requireNonNull(supplier.get(), "Either.orElse: supplier returned null");
     }
 
     /**
@@ -480,7 +497,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
     @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object> Either<L, U> flatMap(Function<? super R, ? extends Either<L, ? extends U>> mapper) {
+    default <U extends @Nullable Object> Either<L, U> flatMap(
+            Function<? super R, ? extends Either<L, ? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isRight()) {
             return (Either<L, U>) Objects.requireNonNull(mapper.apply(get()), "Either.flatMap: mapper returned null");
@@ -547,7 +565,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     default <U extends @Nullable Object> Either<U, R> mapLeft(Function<? super L, ? extends U> leftMapper) {
         Objects.requireNonNull(leftMapper, "leftMapper is null");
         if (isLeft()) {
-            return Either.left(Objects.requireNonNull(leftMapper.apply(getLeft()), "Either.mapLeft: leftMapper returned null"));
+            return Either.left(
+                    Objects.requireNonNull(leftMapper.apply(getLeft()), "Either.mapLeft: leftMapper returned null"));
         } else {
             return (Either<U, R>) this;
         }
@@ -654,7 +673,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object, V extends @Nullable Object> Either<L, V> zipWith(Either<? extends L, ? extends U> that, BiFunction<? super R, ? super U, ? extends V> f) {
+    default <U extends @Nullable Object, V extends @Nullable Object> Either<L, V> zipWith(
+            Either<? extends L, ? extends U> that, BiFunction<? super R, ? super U, ? extends V> f) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(f, "f is null");
         if (isLeft()) {
@@ -711,7 +731,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> Either<L, Tuple2<T1, T2>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2) {
+    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object>
+            Either<L, Tuple2<T1, T2>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2) {
         return zipWith(e1, e2, Tuple::of);
     }
 
@@ -732,7 +753,15 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, BiFunction<? super T1, ? super T2, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    BiFunction<? super T1, ? super T2, ? extends U> f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(f, "f is null");
@@ -760,7 +789,15 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Either<L, Tuple3<T1, T2, T3>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object>
+            Either<L, Tuple3<T1, T2, T3>> zip(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3) {
         return zipWith(e1, e2, e3, Tuple::of);
     }
 
@@ -783,7 +820,17 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Function3<? super T1, ? super T2, ? super T3, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Function3<? super T1, ? super T2, ? super T3, ? extends U> f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(e3, "e3 is null");
@@ -817,7 +864,17 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Either<L, Tuple4<T1, T2, T3, T4>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Either<L, Tuple4<T1, T2, T3, T4>> zip(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4) {
         return zipWith(e1, e2, e3, e4, Tuple::of);
     }
 
@@ -842,7 +899,19 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends U> f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(e3, "e3 is null");
@@ -860,7 +929,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         if (e4.isLeft()) {
             return (Either<L, U>) e4;
         }
-        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get()), "Either.zipWith: f returned null"));
+        return right(Objects.requireNonNull(
+                f.apply(e1.get(), e2.get(), e3.get(), e4.get()), "Either.zipWith: f returned null"));
     }
 
     /**
@@ -882,7 +952,19 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Either<L, Tuple5<T1, T2, T3, T4, T5>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Either<L, Tuple5<T1, T2, T3, T4, T5>> zip(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5) {
         return zipWith(e1, e2, e3, e4, e5, Tuple::of);
     }
 
@@ -909,7 +991,21 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends U> f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(e3, "e3 is null");
@@ -931,7 +1027,8 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         if (e5.isLeft()) {
             return (Either<L, U>) e5;
         }
-        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get()), "Either.zipWith: f returned null"));
+        return right(Objects.requireNonNull(
+                f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get()), "Either.zipWith: f returned null"));
     }
 
     /**
@@ -955,7 +1052,21 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Either<L, Tuple6<T1, T2, T3, T4, T5, T6>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Either<L, Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Either<? extends L, ? extends T6> e6) {
         return zipWith(e1, e2, e3, e4, e5, e6, Tuple::of);
     }
 
@@ -984,7 +1095,23 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Either<? extends L, ? extends T6> e6,
+                    Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends U> f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(e3, "e3 is null");
@@ -1010,7 +1137,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         if (e6.isLeft()) {
             return (Either<L, U>) e6;
         }
-        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get()), "Either.zipWith: f returned null"));
+        return right(Objects.requireNonNull(
+                f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get()),
+                "Either.zipWith: f returned null"));
     }
 
     /**
@@ -1036,7 +1165,23 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Either<L, Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Either<L, Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Either<? extends L, ? extends T6> e6,
+                    Either<? extends L, ? extends T7> e7) {
         return zipWith(e1, e2, e3, e4, e5, e6, e7, Tuple::of);
     }
 
@@ -1067,7 +1212,34 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Either<? extends L, ? extends T6> e6,
+                    Either<? extends L, ? extends T7> e7,
+                    Function7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? extends U>
+                            f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(e3, "e3 is null");
@@ -1097,7 +1269,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         if (e7.isLeft()) {
             return (Either<L, U>) e7;
         }
-        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get()), "Either.zipWith: f returned null"));
+        return right(Objects.requireNonNull(
+                f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get()),
+                "Either.zipWith: f returned null"));
     }
 
     /**
@@ -1125,7 +1299,25 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @return {@code Right} of the tuple of the values, or the first {@code Left}
      * @throws NullPointerException if any argument is null
      */
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Either<L, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7, Either<? extends L, ? extends T8> e8) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Either<L, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Either<? extends L, ? extends T6> e6,
+                    Either<? extends L, ? extends T7> e7,
+                    Either<? extends L, ? extends T8> e8) {
         return zipWith(e1, e2, e3, e4, e5, e6, e7, e8, Tuple::of);
     }
 
@@ -1158,7 +1350,37 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    static <L extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, U extends @Nullable Object> Either<L, U> zipWith(Either<? extends L, ? extends T1> e1, Either<? extends L, ? extends T2> e2, Either<? extends L, ? extends T3> e3, Either<? extends L, ? extends T4> e4, Either<? extends L, ? extends T5> e5, Either<? extends L, ? extends T6> e6, Either<? extends L, ? extends T7> e7, Either<? extends L, ? extends T8> e8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends U> f) {
+    static <
+                    L extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object,
+                    U extends @Nullable Object>
+            Either<L, U> zipWith(
+                    Either<? extends L, ? extends T1> e1,
+                    Either<? extends L, ? extends T2> e2,
+                    Either<? extends L, ? extends T3> e3,
+                    Either<? extends L, ? extends T4> e4,
+                    Either<? extends L, ? extends T5> e5,
+                    Either<? extends L, ? extends T6> e6,
+                    Either<? extends L, ? extends T7> e7,
+                    Either<? extends L, ? extends T8> e8,
+                    Function8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ? extends U>
+                            f) {
         Objects.requireNonNull(e1, "e1 is null");
         Objects.requireNonNull(e2, "e2 is null");
         Objects.requireNonNull(e3, "e3 is null");
@@ -1192,7 +1414,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
         if (e8.isLeft()) {
             return (Either<L, U>) e8;
         }
-        return right(Objects.requireNonNull(f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get(), e8.get()), "Either.zipWith: f returned null"));
+        return right(Objects.requireNonNull(
+                f.apply(e1.get(), e2.get(), e3.get(), e4.get(), e5.get(), e6.get(), e7.get(), e8.get()),
+                "Either.zipWith: f returned null"));
     }
 
     // -- conversions
@@ -1221,7 +1445,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
      */
     default Try<R> toTry(Function<? super L, ? extends Throwable> f) {
         Objects.requireNonNull(f, "f is null");
-        return isRight() ? Try.success(get()) : Try.failure(Objects.requireNonNull(f.apply(getLeft()), "Either.toTry: f returned null"));
+        return isRight()
+                ? Try.success(get())
+                : Try.failure(Objects.requireNonNull(f.apply(getLeft()), "Either.toTry: f returned null"));
     }
 
     /**

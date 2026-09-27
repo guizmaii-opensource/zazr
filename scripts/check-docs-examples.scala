@@ -9,11 +9,14 @@
 // Every Markdown file under each `--docs` directory is read, except the `--exclude` ones (docs/design.md is the
 // design record, not the user guide) and those under a hidden directory (the generated tables of
 // docs/collections/.costs). A block is a fence opened by ```java (indented or not, as inside an admonition or a
-// content tab) and closed by the next fence. Its normalised text, each line trimmed, every run of spaces or tabs
-// outside a string, char or text block literal collapsed to one space, and the blank lines dropped, must occur as whole
-// lines in the normalised text of one of the TEST_FILEs. Collapsing the runs of spaces lets the pages align their `=`
-// signs and type comments in columns (make docs-align) while the Java formatter lays out the test copies its own way;
-// the text inside a literal is what the snippet computes, so it must match exactly.
+// content tab) and closed by the next fence. Its normalised text must occur in the normalised text of one of the
+// TEST_FILEs, starting at the start of a statement. The normalised text is the sequence of tokens: the whitespace
+// outside the string, char and text block literals and the comments is dropped (one space is kept where it separates
+// two words or two operators), a line comment keeps its text with its runs of spaces collapsed, consecutive line
+// comments are joined into one, and a block comment has its runs of whitespace collapsed. So the pages align their `=`
+// signs and type comments in columns (make docs-align) while the Java formatter lays out the test copies its own way,
+// breaking lines, indenting them and rewrapping long comments; the text inside a literal is what the snippet computes,
+// so it must match exactly.
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -21,69 +24,123 @@ import scala.jdk.CollectionConverters.*
 
 final case class Block(file: Path, line: Int, text: String)
 
-// Collapses the runs of spaces and tabs of a line outside the literals; `textBlock` says whether the line starts inside
-// a text block, and the result says whether it ends inside one.
-def collapse(line: String, textBlock: Boolean): (String, Boolean) = {
-  val out = new StringBuilder
-  var open = textBlock
-  var i = 0
-  while (i < line.length) {
-    val c = line.charAt(i)
-    if (open) {
-      if (line.startsWith("\"\"\"", i)) {
-        out.append("\"\"\"")
-        open = false
-        i += 3
-      } else {
-        out.append(c)
-        if (c == '\\' && i + 1 < line.length) {
-          out.append(line.charAt(i + 1))
-          i += 1
-        }
-        i += 1
-      }
-    } else if (line.startsWith("\"\"\"", i)) {
-      out.append("\"\"\"")
-      open = true
-      i += 3
-    } else if (c == '"' || c == '\'') {
-      val start = i
-      i += 1
-      while (i < line.length && line.charAt(i) != c) {
-        if (line.charAt(i) == '\\') i += 1
-        i += 1
-      }
-      i = math.min(i + 1, line.length)
-      out.append(line.substring(start, i))
-    } else if (c == ' ' || c == '\t') {
-      while (i < line.length && (line.charAt(i) == ' ' || line.charAt(i) == '\t')) i += 1
-      out.append(' ')
-    } else {
-      out.append(c)
-      i += 1
-    }
+def isWord(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '_' || c == '$'
+
+def isOperator(c: Char): Boolean = "+-*/%&|^!<>=~?:".indexOf(c) >= 0
+
+// The end of the literal that starts at `start` (a string, a char or a text block), escapes included.
+def literalEnd(text: String, start: Int): Int = {
+  val quote = if (text.startsWith("\"\"\"", start)) "\"\"\"" else text.charAt(start).toString
+  var i = start + quote.length
+  while (i < text.length && !text.startsWith(quote, i)) {
+    if (text.charAt(i) == '\\') i += 1
+    i += 1
   }
-  (out.toString, open)
+  math.min(i + quote.length, text.length)
 }
 
-def normalise(lines: Seq[String]): String = {
-  var textBlock = false
-  lines.map { line =>
-    val (collapsed, open) = collapse(if (textBlock) line else line.trim, textBlock)
-    textBlock = open
-    collapsed.trim
-  }.filter(_.nonEmpty).mkString("\n")
+def collapseSpaces(s: String): String = s.trim.split("\\s+").mkString(" ")
+
+def normalise(text: String): String = {
+  val out = new StringBuilder
+  var space = false
+  // where the text of the line comment `out` ends with starts, while no token has followed it: the next line comment
+  // continues it
+  var comment = -1
+  var i = 0
+  while (i < text.length) {
+    val c = text.charAt(i)
+    if (text.startsWith("//", i)) {
+      val end = text.indexOf('\n', i) match {
+        case -1 => text.length
+        case n  => n
+      }
+      val body = text.substring(i + 2, end)
+      if (comment >= 0) {
+        val joined = collapseSpaces(out.substring(comment, out.length - 1) + " " + body)
+        out.setLength(comment)
+        out.append(joined).append('\n')
+      } else {
+        out.append("//")
+        comment = out.length
+        out.append(collapseSpaces(body)).append('\n')
+      }
+      space = false
+      i = end
+    } else if (Character.isWhitespace(c)) {
+      // a blank line ends a run of line comments
+      if (c == '\n') {
+        val previous = if (i == 0) -1 else text.lastIndexOf('\n', i - 1)
+        if (previous >= 0 && text.substring(previous, i).isBlank) comment = -1
+      }
+      space = true
+      i += 1
+    } else {
+      comment = -1
+      if (space && out.nonEmpty && ((isWord(out.last) && isWord(c)) || (isOperator(out.last) && isOperator(c)))) {
+        out.append(' ')
+      }
+      space = false
+      if (text.startsWith("/*", i)) {
+        val end = text.indexOf("*/", i + 2) match {
+          case -1 => text.length
+          case n  => n + 2
+        }
+        out.append(text.substring(i, end).split("\\s+").mkString(" "))
+        i = end
+      } else if (c == '"' || c == '\'') {
+        val end = literalEnd(text, i)
+        out.append(text.substring(i, end))
+        i = end
+      } else {
+        out.append(c)
+        i += 1
+      }
+    }
+  }
+  out.toString
+}
+
+// Whether the token before `index` is an annotation without arguments, as `@Nested` before a nested test class.
+def afterAnnotation(haystack: String, index: Int): Boolean = {
+  var i = index - 1
+  if (i < 0 || haystack.charAt(i) != ' ') false
+  else {
+    while (i > 0 && isWord(haystack.charAt(i - 1))) i -= 1
+    i > 0 && i < index - 1 && haystack.charAt(i - 1) == '@'
+  }
+}
+
+// Whether `needle` occurs in `haystack` at the start of a statement: after nothing, a line comment, or a character that
+// ends a statement, a block or a label, and not followed by a character that would continue its last word.
+def occurs(needle: String, haystack: String): Boolean = {
+  var from = haystack.indexOf(needle)
+  var found = false
+  while (!found && from >= 0) {
+    val end = from + needle.length
+    val starts = from == 0 || ";{}:\n".indexOf(haystack.charAt(from - 1)) >= 0 || afterAnnotation(haystack, from)
+    val ends = end == haystack.length || !isWord(haystack.charAt(end)) || !isWord(needle.last)
+    found = starts && ends
+    from = haystack.indexOf(needle, from + 1)
+  }
+  found
 }
 
 // The cases the comparison must get right, run before every check.
 def selfTest(): Unit = {
-  def same(a: String, b: String, expected: Boolean): Unit = {
-    val actual = normalise(a.split("\n", -1).toSeq) == normalise(b.split("\n", -1).toSeq)
-    if (actual != expected) {
-      val should = if (expected) "should" else "should not"
-      System.err.println(s"check-docs-examples self-test failed: [$a] and [$b] $should match")
+  def check(ok: Boolean, what: String): Unit = {
+    if (!ok) {
+      System.err.println(s"check-docs-examples self-test failed: $what")
       sys.exit(3)
     }
+  }
+  def same(a: String, b: String, expected: Boolean): Unit = {
+    val should = if (expected) "should" else "should not"
+    check((normalise(a) == normalise(b)) == expected, s"[$a] and [$b] $should match")
+  }
+  def within(needle: String, haystack: String, expected: Boolean): Unit = {
+    val should = if (expected) "should" else "should not"
+    check(occurs(normalise(needle), normalise(haystack)) == expected, s"[$needle] $should occur in [$haystack]")
   }
   same("var env   = Map.of(1, 2);  // Map", "var env = Map.of(1, 2); // Map", true)
   same("var a\t= 1;", "var a = 1;", true)
@@ -100,6 +157,21 @@ def selfTest(): Unit = {
     true
   )
   same("var x = y;", "var x = z;", false)
+  same("return x;", "returnx;", false)
+  same("var n = a - -b;", "var n = a--b;", false)
+  same("var s = f(a,\n        b); // T\n\nvar t = 1;", "var s =\n    f(a, b); // T\nvar t = 1;", true)
+  same("// a long comment\n// rewrapped\nvar x = 1;", "// a long\n// comment rewrapped\nvar x = 1;", true)
+  same("// a\nvar x = 1;", "var x = 1; // a", false)
+  same("/* a\n   b */ var x = 1;", "/* a b */\nvar x = 1;", true)
+  same("// a\n\n// b\nvar x = 1;", "// a\n// b\nvar x = 1;", false)
+  within("// b\nvar x = 1;", "// a\n\n// b\nvar x = 1;", true)
+  within("class T {}", "@Nested\nclass T {}", true)
+  within("class T {}", "final class T {}", false)
+  within("var x = 1;", "void f() {\n    var x = 1;\n}", true)
+  within("x = 1;", "int x = 1;", false)
+  within("x = 1;", "max = 1;", false)
+  within("var x = f(1);", "var x = f(1);\n", true)
+  within("var x = f;", "var x = foo;", false)
 }
 
 val opening = """^\s*```java(\s.*)?$""".r
@@ -122,7 +194,7 @@ def blocks(file: Path): List[Block] = {
         System.err.println(s"$file:${start + 1}: unclosed ```java fence")
         sys.exit(2)
       }
-      found += Block(file, start + 1, normalise(body.result()))
+      found += Block(file, start + 1, normalise(body.result().mkString("\n")))
     }
     i += 1
   }
@@ -161,8 +233,8 @@ def blocks(file: Path): List[Block] = {
       .sortBy(_.toString)
   }
   val all = markdown.flatMap(blocks)
-  val haystacks = tests.map(t => "\n" + normalise(Files.readAllLines(t, StandardCharsets.UTF_8).asScala.toSeq) + "\n")
-  val missing = all.filterNot(b => b.text.isEmpty || haystacks.exists(_.contains("\n" + b.text + "\n")))
+  val haystacks = tests.map(t => normalise(Files.readString(t, StandardCharsets.UTF_8)))
+  val missing = all.filterNot(b => b.text.isEmpty || haystacks.exists(h => occurs(b.text, h)))
   missing.foreach { b =>
     println(s"${b.file}:${b.line}: this java block is not in ${tests.mkString(" or ")}: ${b.text.linesIterator.next()}")
   }

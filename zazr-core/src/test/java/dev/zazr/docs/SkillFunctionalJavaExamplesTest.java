@@ -42,9 +42,9 @@ public class SkillFunctionalJavaExamplesTest {
     // after
     static Either<String, Integer> parsePort(String input) {
         return Try.of(() -> Integer.parseInt(input.trim()))
-            .toEither()
-            .mapLeft(e -> "not a number: " + input)
-            .filterOrElse(p -> p >= 1 && p <= 65_535, p -> "port out of range: " + p);
+                .toEither()
+                .mapLeft(e -> "not a number: " + input)
+                .filterOrElse(p -> p >= 1 && p <= 65_535, p -> "port out of range: " + p);
     }
 
     record ServerConfig(String host, int port) {}
@@ -55,7 +55,9 @@ public class SkillFunctionalJavaExamplesTest {
 
     // after
     sealed interface Payment {}
+
     record Card(String number) implements Payment {}
+
     record Transfer(String iban) implements Payment {}
 
     static String describe(Payment payment) {
@@ -127,7 +129,11 @@ public class SkillFunctionalJavaExamplesTest {
     class ExpressionsOverStatements {
 
         // before
-        enum Tier { BRONZE, SILVER, GOLD }
+        enum Tier {
+            BRONZE,
+            SILVER,
+            GOLD
+        }
 
         static int discountPercent(Tier tier) {
             int discount;
@@ -210,20 +216,18 @@ public class SkillFunctionalJavaExamplesTest {
         }
 
         static Vector<String> reminders(Vector<Invoice> invoices, LocalDate today) {
-            return invoices
-                .filter(i -> !i.paid() && i.due().isBefore(today))
-                .map(i -> "Reminder to " + i.customer());
+            return invoices.filter(i -> !i.paid() && i.due().isBefore(today)).map(i -> "Reminder to " + i.customer());
         }
 
         @Test
         void impure() {
             var outbox = new java.util.ArrayList<String>();
             remindLatePayers(
-                java.util.List.of(
-                    new Invoice("Ada", LocalDate.of(2000, 1, 1), false),
-                    new Invoice("Alan", LocalDate.of(2000, 1, 1), true),
-                    new Invoice("Grace", LocalDate.of(9999, 1, 1), false)),
-                outbox);
+                    java.util.List.of(
+                            new Invoice("Ada", LocalDate.of(2000, 1, 1), false),
+                            new Invoice("Alan", LocalDate.of(2000, 1, 1), true),
+                            new Invoice("Grace", LocalDate.of(9999, 1, 1), false)),
+                    outbox);
 
             assertThat(outbox).containsExactly("Reminder to Ada");
         }
@@ -231,9 +235,9 @@ public class SkillFunctionalJavaExamplesTest {
         @Test
         void pureAndEdge() {
             var invoices = Vector.of(
-                new Invoice("Ada", LocalDate.of(2026, 1, 10), false),
-                new Invoice("Alan", LocalDate.of(2026, 1, 10), true),
-                new Invoice("Grace", LocalDate.of(2026, 3, 1), false));
+                    new Invoice("Ada", LocalDate.of(2026, 1, 10), false),
+                    new Invoice("Alan", LocalDate.of(2026, 1, 10), true),
+                    new Invoice("Grace", LocalDate.of(2026, 3, 1), false));
             var late = reminders(invoices, LocalDate.of(2026, 2, 1)); // Vector<String>
             // Vector(Reminder to Ada), every time
 
@@ -257,8 +261,8 @@ public class SkillFunctionalJavaExamplesTest {
             assertThat(parsePortOrThrow(" 443 ")).isEqualTo(443);
             assertThatThrownBy(() -> parsePortOrThrow("http")).isInstanceOf(NumberFormatException.class);
             assertThatThrownBy(() -> parsePortOrThrow("80800"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("port out of range: 80800");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("port out of range: 80800");
         }
 
         @Test
@@ -278,13 +282,14 @@ public class SkillFunctionalJavaExamplesTest {
         @Test
         void validation() {
             var config = Validation.zipWith( // Validation<String, ServerConfig>
-                checkHost(" "), parsePort("http").toValidation(), ServerConfig::new);
+                    checkHost(" "), parsePort("http").toValidation(), ServerConfig::new);
             // Invalid(host is required, not a number: http)
 
             assertThat(config)
-                .isEqualTo(Validation.invalidAll(NonEmptyVector.of("host is required", "not a number: http")));
+                    .isEqualTo(Validation.invalidAll(NonEmptyVector.of("host is required", "not a number: http")));
             assertThat(config.toString()).isEqualTo("Invalid(host is required, not a number: http)");
-            var valid = Validation.zipWith(checkHost(" example.com "), parsePort("8080").toValidation(), ServerConfig::new);
+            var valid = Validation.zipWith(
+                    checkHost(" example.com "), parsePort("8080").toValidation(), ServerConfig::new);
             assertThat(valid).isEqualTo(Validation.valid(new ServerConfig("example.com", 8080)));
         }
     }
@@ -307,15 +312,15 @@ public class SkillFunctionalJavaExamplesTest {
             static Either<String, Sku> parse(String input) {
                 var normalised = input.trim().toUpperCase();
                 return normalised.matches("[A-Z]{3}-\\d{4}")
-                    ? Either.right(new Sku(normalised))
-                    : Either.left("not a SKU: " + input);
+                        ? Either.right(new Sku(normalised))
+                        : Either.left("not a SKU: " + input);
             }
         }
 
         @Test
         void parse() {
             var good = Sku.parse(" abc-1234 "); // Either<String, Sku>
-            var bad = Sku.parse("abc");         // Either<String, Sku>
+            var bad = Sku.parse("abc"); // Either<String, Sku>
             // Right(Sku[value=ABC-1234]), Left(not a SKU: abc)
 
             assertThat(isValidSku("ABC-1234")).isTrue();
@@ -333,9 +338,9 @@ public class SkillFunctionalJavaExamplesTest {
 
         // before
         final class Payment {
-            String method;     // "card" or "transfer"
+            String method; // "card" or "transfer"
             String cardNumber; // set when method is "card", hopefully
-            String iban;       // set when method is "transfer", hopefully
+            String iban; // set when method is "transfer", hopefully
         }
 
         @Test
@@ -375,17 +380,18 @@ public class SkillFunctionalJavaExamplesTest {
         void partial() {
             assertThat(highestScoreOrThrow(java.util.List.of(12, 40, 7))).isEqualTo(40);
             assertThatThrownBy(() -> highestScoreOrThrow(java.util.List.of()))
-                .isInstanceOf(java.util.NoSuchElementException.class);
+                    .isInstanceOf(java.util.NoSuchElementException.class);
         }
 
         @Test
         void total() {
             var scores = Vector.of(12, 40, 7).toNonEmptyVector(); // Option<NonEmptyVector<Integer>>
-            var best = scores.map(s -> highestScore(s));        // Option<Integer>
+            var best = scores.map(s -> highestScore(s)); // Option<Integer>
             // Some(40); an empty Vector gives None
 
             assertThat(best).isEqualTo(Option.some(40));
-            assertThat(Vector.<Integer>empty().toNonEmptyVector().map(s -> highestScore(s))).isEqualTo(Option.none());
+            assertThat(Vector.<Integer>empty().toNonEmptyVector().map(s -> highestScore(s)))
+                    .isEqualTo(Option.none());
         }
 
         @Test
@@ -398,7 +404,8 @@ public class SkillFunctionalJavaExamplesTest {
     class Composition {
 
         // before
-        static String greetingOrNull(java.util.Map<String, String> names, java.util.Map<String, String> languages, String id) {
+        static String greetingOrNull(
+                java.util.Map<String, String> names, java.util.Map<String, String> languages, String id) {
             var name = names.get(id);
             if (name == null) {
                 return null;
@@ -441,14 +448,15 @@ public class SkillFunctionalJavaExamplesTest {
         @Test
         void flatMapAndForEach() {
             var address = parsePort("8080") // Either<String, String>
-                .flatMap(p -> p < 1_024 ? Either.left("privileged port") : Either.right("localhost:" + p));
-            var ports = Either.forEach(Vector.of("80", "443", "x"), s -> parsePort(s)); // Either<String, Vector<Integer>>
+                    .flatMap(p -> p < 1_024 ? Either.left("privileged port") : Either.right("localhost:" + p));
+            var ports =
+                    Either.forEach(Vector.of("80", "443", "x"), s -> parsePort(s)); // Either<String, Vector<Integer>>
             // Right(localhost:8080), Left(not a number: x)
 
             assertThat(address).isEqualTo(Either.right("localhost:8080"));
             assertThat(ports).isEqualTo(Either.left("not a number: x"));
             assertThat(Either.forEach(Vector.of("80", "443"), s -> parsePort(s)))
-                .isEqualTo(Either.right(Vector.of(80, 443)));
+                    .isEqualTo(Either.right(Vector.of(80, 443)));
         }
     }
 
@@ -477,7 +485,9 @@ public class SkillFunctionalJavaExamplesTest {
         }
 
         static boolean isPrime(int n) {
-            return n > 1 && java.util.stream.IntStream.rangeClosed(2, (int) Math.sqrt(n)).noneMatch(d -> n % d == 0);
+            return n > 1
+                    && java.util.stream.IntStream.rangeClosed(2, (int) Math.sqrt(n))
+                            .noneMatch(d -> n % d == 0);
         }
 
         @Test
@@ -492,6 +502,7 @@ public class SkillFunctionalJavaExamplesTest {
             assertThat(lazy.items.isEvaluated()).isTrue();
         }
 
+        @SuppressWarnings("Var") // the snippet of the page reassigns a local, as user code may
         @Test
         void whileLoop() {
             // before
@@ -537,8 +548,8 @@ public class SkillFunctionalJavaExamplesTest {
         static String summary(Option<Payment> payment) {
             return switch (payment) {
                 case Some(Card(var number)) when number.startsWith("4") -> "Visa card";
-                case Some(Card(_)) -> "other card";
-                case Some(Transfer(_)) -> "bank transfer";
+                case Some(Card(var _)) -> "other card";
+                case Some(Transfer(var _)) -> "bank transfer";
                 case None() -> "not paid yet";
             };
         }

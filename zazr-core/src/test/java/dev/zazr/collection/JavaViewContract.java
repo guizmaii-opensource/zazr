@@ -41,8 +41,13 @@ final class JavaViewContract {
     static final int MAX_DEPTH = 2;
 
     private static final java.util.List<Class<? extends RuntimeException>> FAMILIES = java.util.List.of(
-            UnsupportedOperationException.class, NoSuchElementException.class, IndexOutOfBoundsException.class,
-            IllegalArgumentException.class, NullPointerException.class, ClassCastException.class, IllegalStateException.class);
+            UnsupportedOperationException.class,
+            NoSuchElementException.class,
+            IndexOutOfBoundsException.class,
+            IllegalArgumentException.class,
+            NullPointerException.class,
+            ClassCastException.class,
+            IllegalStateException.class);
 
     /** A probe of a type the elements are not, for {@code contains} and the lookups. */
     static final Object FOREIGN = "not an element";
@@ -90,8 +95,8 @@ final class JavaViewContract {
     /** The view and the reference give the same result, or fail with the same exception type. */
     void same(String path, String operation, Supplier<?> actual, Supplier<?> expected) {
         checks++;
-        final Outcome a = Outcome.of(actual, ordered);
-        final Outcome e = Outcome.of(expected, ordered);
+        Outcome a = Outcome.of(actual, ordered);
+        Outcome e = Outcome.of(expected, ordered);
         if (!Objects.equals(a, e)) {
             fail(path + "." + operation + ": expected " + describe(e) + " but was " + describe(a));
         }
@@ -112,7 +117,7 @@ final class JavaViewContract {
         if (outcome.failure() != null) {
             return "a " + outcome.failure();
         }
-        final String value = String.valueOf(outcome.value());
+        String value = String.valueOf(outcome.value());
         return value.length() > 300 ? value.substring(0, 300) + "..." : value;
     }
 
@@ -128,20 +133,18 @@ final class JavaViewContract {
         } else if (value instanceof java.util.Iterator<?> iterator) {
             return normalizeAll(iterator, ordered);
         } else if (value instanceof Object[] array) {
-            return Arrays.asList(array.getClass().getComponentType(), normalizeAll(Arrays.asList(array).iterator(), ordered));
+            return Arrays.asList(
+                    array.getClass().getComponentType(),
+                    normalizeAll(Arrays.asList(array).iterator(), ordered));
         } else {
             return value;
         }
     }
 
     private static Object normalizeAll(java.util.Iterator<?> iterator, boolean ordered) {
-        final Collection<Object> result = ordered ? new ArrayList<>() : new HashSet<>();
-        int count = 0;
-        while (iterator.hasNext()) {
-            result.add(normalize(iterator.next(), ordered));
-            count++;
-        }
-        return ordered ? result : Arrays.asList(count, result);
+        java.util.List<Object> all = new ArrayList<>();
+        iterator.forEachRemaining(element -> all.add(normalize(element, ordered)));
+        return ordered ? all : Arrays.asList(all.size(), new HashSet<>(all));
     }
 
     // -- java.util.Collection
@@ -154,57 +157,103 @@ final class JavaViewContract {
      * @param containsAllOfItself whether to check {@code containsAll} of every element, which is quadratic where
      *                            {@code contains} is linear (the values of a map)
      */
-    <E> void collection(String path, Collection<E> view, Collection<E> reference, java.util.List<Object> probes, boolean containsAllOfItself) {
+    <E> void collection(
+            String path,
+            Collection<E> view,
+            Collection<E> reference,
+            java.util.List<Object> probes,
+            boolean containsAllOfItself) {
         same(path, "size()", view::size, reference::size);
         same(path, "isEmpty()", view::isEmpty, reference::isEmpty);
         same(path, "iterator()", view::iterator, reference::iterator);
         same(path, "iterator() past the end", () -> exhaust(view.iterator()), () -> exhaust(reference.iterator()));
-        same(path, "forEach", () -> {
-            final java.util.List<E> seen = new ArrayList<>();
-            view.forEach(seen::add);
-            return seen;
-        }, () -> {
-            final java.util.List<E> seen = new ArrayList<>();
-            reference.forEach(seen::add);
-            return seen;
-        });
-        same(path, "iterator().forEachRemaining", () -> {
-            final java.util.List<E> seen = new ArrayList<>();
-            final java.util.Iterator<E> iterator = view.iterator();
-            // the element taken by next() is kept: an unordered view need not start with the reference's first
-            if (iterator.hasNext()) {
-                seen.add(iterator.next());
-            }
-            iterator.forEachRemaining(seen::add);
-            return seen;
-        }, () -> {
-            final java.util.List<E> seen = new ArrayList<>();
-            final java.util.Iterator<E> iterator = reference.iterator();
-            // the element taken by next() is kept: an unordered view need not start with the reference's first
-            if (iterator.hasNext()) {
-                seen.add(iterator.next());
-            }
-            iterator.forEachRemaining(seen::add);
-            return seen;
-        });
-        same(path, "stream()", () -> view.stream().toList(), () -> reference.stream().toList());
-        same(path, "parallelStream().count()", () -> view.parallelStream().count(), () -> reference.parallelStream().count());
-        same(path, "spliterator().getExactSizeIfKnown() or size", () -> sizeOf(view.spliterator()), () -> (long) reference.size());
+        same(
+                path,
+                "forEach",
+                () -> {
+                    java.util.List<E> seen = new ArrayList<>();
+                    view.forEach(seen::add);
+                    return seen;
+                },
+                () -> {
+                    java.util.List<E> seen = new ArrayList<>();
+                    reference.forEach(seen::add);
+                    return seen;
+                });
+        same(
+                path,
+                "iterator().forEachRemaining",
+                () -> {
+                    java.util.List<E> seen = new ArrayList<>();
+                    java.util.Iterator<E> iterator = view.iterator();
+                    // the element taken by next() is kept: an unordered view need not start with the reference's first
+                    if (iterator.hasNext()) {
+                        seen.add(iterator.next());
+                    }
+                    iterator.forEachRemaining(seen::add);
+                    return seen;
+                },
+                () -> {
+                    java.util.List<E> seen = new ArrayList<>();
+                    java.util.Iterator<E> iterator = reference.iterator();
+                    // the element taken by next() is kept: an unordered view need not start with the reference's first
+                    if (iterator.hasNext()) {
+                        seen.add(iterator.next());
+                    }
+                    iterator.forEachRemaining(seen::add);
+                    return seen;
+                });
+        same(
+                path,
+                "stream()",
+                () -> view.stream().toList(),
+                () -> reference.stream().toList());
+        same(
+                path,
+                "parallelStream().count()",
+                () -> view.parallelStream().count(),
+                () -> reference.parallelStream().count());
+        same(path, "spliterator().getExactSizeIfKnown() or size", () -> sizeOf(view.spliterator()), () ->
+                (long) reference.size());
         same(path, "toArray()", view::toArray, reference::toArray);
         same(path, "toArray(new Object[0])", () -> view.toArray(new Object[0]), () -> reference.toArray(new Object[0]));
         same(path, "toArray(Integer[0])", () -> view.toArray(new Integer[0]), () -> reference.toArray(new Integer[0]));
-        same(path, "toArray(bigger array)", () -> fillAndCopy(view, reference.size()), () -> fillAndCopy(reference, reference.size()));
-        same(path, "toArray(same size array)", () -> view.toArray(new Object[reference.size()]), () -> reference.toArray(new Object[reference.size()]));
+        same(
+                path,
+                "toArray(bigger array)",
+                () -> fillAndCopy(view, reference.size()),
+                () -> fillAndCopy(reference, reference.size()));
+        same(
+                path,
+                "toArray(same size array)",
+                () -> view.toArray(new Object[reference.size()]),
+                () -> reference.toArray(new Object[reference.size()]));
         same(path, "toArray(IntFunction)", () -> view.toArray(Object[]::new), () -> reference.toArray(Object[]::new));
-        same(path, "toArray((Object[]) null)", () -> view.toArray((Object[]) null), () -> reference.toArray((Object[]) null));
+        same(
+                path,
+                "toArray((Object[]) null)",
+                () -> view.toArray((Object[]) null),
+                () -> reference.toArray((Object[]) null));
         for (Object probe : probes) {
             same(path, "contains(" + probe + ")", () -> view.contains(probe), () -> reference.contains(probe));
         }
         if (containsAllOfItself) {
-            same(path, "containsAll(itself)", () -> view.containsAll(reference), () -> reference.containsAll(reference));
+            same(
+                    path,
+                    "containsAll(itself)",
+                    () -> view.containsAll(reference),
+                    () -> reference.containsAll(reference));
         }
-        same(path, "containsAll(empty)", () -> view.containsAll(java.util.List.of()), () -> reference.containsAll(java.util.List.of()));
-        same(path, "containsAll(probes)", () -> view.containsAll(nonNull(probes)), () -> reference.containsAll(nonNull(probes)));
+        same(
+                path,
+                "containsAll(empty)",
+                () -> view.containsAll(java.util.List.of()),
+                () -> reference.containsAll(java.util.List.of()));
+        same(
+                path,
+                "containsAll(probes)",
+                () -> view.containsAll(nonNull(probes)),
+                () -> reference.containsAll(nonNull(probes)));
         same(path, "containsAll(null)", () -> view.containsAll(null), () -> reference.containsAll(null));
         if (ordered) {
             same(path, "toString()", view::toString, reference::toString);
@@ -212,7 +261,7 @@ final class JavaViewContract {
     }
 
     private static java.util.List<Object> nonNull(java.util.List<Object> probes) {
-        final java.util.List<Object> result = new ArrayList<>();
+        java.util.List<Object> result = new ArrayList<>();
         for (Object probe : probes) {
             if (probe != null && probe != FOREIGN) {
                 result.add(probe);
@@ -222,11 +271,11 @@ final class JavaViewContract {
     }
 
     private static long sizeOf(Spliterator<?> spliterator) {
-        final long exact = spliterator.getExactSizeIfKnown();
+        long exact = spliterator.getExactSizeIfKnown();
         if (exact >= 0) {
             return exact;
         }
-        final long[] count = { 0 };
+        long[] count = {0};
         spliterator.forEachRemaining(ignored -> count[0]++);
         return count[0];
     }
@@ -244,17 +293,22 @@ final class JavaViewContract {
     }
 
     private static Object[] fillAndCopy(Collection<?> collection, int size) {
-        final Object[] array = new Object[size + 2];
+        Object[] array = new Object[size + 2];
         Arrays.fill(array, "sentinel");
         return collection.toArray(array);
     }
 
     // -- java.util.List
 
-    <E> void list(String path, java.util.List<E> view, java.util.List<E> reference, java.util.List<Object> probes, int depth) {
+    <E> void list(
+            String path,
+            java.util.List<E> view,
+            java.util.List<E> reference,
+            java.util.List<Object> probes,
+            int depth) {
         collection(path, view, reference, probes);
-        final int n = reference.size();
-        final int[] indexes = distinct(-1, 0, 1, n / 2, n - 1, n, n + 1);
+        int n = reference.size();
+        int[] indexes = distinct(-1, 0, 1, n / 2, n - 1, n, n + 1);
         for (int i : indexes) {
             same(path, "get(" + i + ")", () -> view.get(i), () -> reference.get(i));
         }
@@ -266,14 +320,29 @@ final class JavaViewContract {
         same(path, "getLast()", view::getLast, reference::getLast);
         same(path, "listIterator()", () -> walk(view.listIterator()), () -> walk(reference.listIterator()));
         for (int i : indexes) {
-            same(path, "listIterator(" + i + ")", () -> walk(view.listIterator(i)), () -> walk(reference.listIterator(i)));
+            same(
+                    path,
+                    "listIterator(" + i + ")",
+                    () -> walk(view.listIterator(i)),
+                    () -> walk(reference.listIterator(i)));
         }
         equality(path, view, reference, new LinkedList<>(reference), new LinkedHashSet<>(reference));
         for (int from : indexes) {
             for (int to : indexes) {
-                same(path, "subList(" + from + ", " + to + ")", () -> view.subList(from, to), () -> reference.subList(from, to));
-                if (depth < MAX_DEPTH && (depth == 0 || from == 1 || to == n - 1) && bothSucceed(() -> view.subList(from, to), () -> reference.subList(from, to))) {
-                    list(path + ".subList(" + from + ", " + to + ")", view.subList(from, to), reference.subList(from, to), probes, depth + 1);
+                same(
+                        path,
+                        "subList(" + from + ", " + to + ")",
+                        () -> view.subList(from, to),
+                        () -> reference.subList(from, to));
+                if (depth < MAX_DEPTH
+                        && (depth == 0 || from == 1 || to == n - 1)
+                        && bothSucceed(() -> view.subList(from, to), () -> reference.subList(from, to))) {
+                    list(
+                            path + ".subList(" + from + ", " + to + ")",
+                            view.subList(from, to),
+                            reference.subList(from, to),
+                            probes,
+                            depth + 1);
                 }
             }
         }
@@ -284,7 +353,7 @@ final class JavaViewContract {
 
     /** Every move of a list iterator, forward to the end and back to the start, with the indexes it reports. */
     private static java.util.List<Object> walk(ListIterator<?> iterator) {
-        final java.util.List<Object> steps = new ArrayList<>();
+        java.util.List<Object> steps = new ArrayList<>();
         steps.add(iterator.nextIndex());
         steps.add(iterator.previousIndex());
         while (iterator.hasNext()) {
@@ -339,7 +408,8 @@ final class JavaViewContract {
         equality(path, view, reference, new HashSet<>(reference), new ArrayList<>(reference));
     }
 
-    <E> void sequencedSet(String path, SequencedSet<E> view, SequencedSet<E> reference, java.util.List<Object> probes, int depth) {
+    <E> void sequencedSet(
+            String path, SequencedSet<E> view, SequencedSet<E> reference, java.util.List<Object> probes, int depth) {
         set(path, view, reference, probes);
         same(path, "getFirst()", view::getFirst, reference::getFirst);
         same(path, "getLast()", view::getLast, reference::getLast);
@@ -348,7 +418,13 @@ final class JavaViewContract {
         }
     }
 
-    <E> void navigableSet(String path, NavigableSet<E> view, NavigableSet<E> reference, java.util.List<Object> probes, java.util.List<Object> bounds, int depth) {
+    <E> void navigableSet(
+            String path,
+            NavigableSet<E> view,
+            NavigableSet<E> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> bounds,
+            int depth) {
         set(path, view, reference, probes);
         same(path, "comparator()", view::comparator, reference::comparator);
         same(path, "first()", view::first, reference::first);
@@ -358,7 +434,8 @@ final class JavaViewContract {
         same(path, "descendingIterator()", view::descendingIterator, reference::descendingIterator);
         spliteratorReportsTheComparator(path, view);
         for (Object probe : probes) {
-            @SuppressWarnings("unchecked") final E key = (E) probe;
+            @SuppressWarnings("unchecked")
+            E key = (E) probe;
             same(path, "lower(" + probe + ")", () -> view.lower(key), () -> reference.lower(key));
             same(path, "floor(" + probe + ")", () -> view.floor(key), () -> reference.floor(key));
             same(path, "ceiling(" + probe + ")", () -> view.ceiling(key), () -> reference.ceiling(key));
@@ -367,41 +444,80 @@ final class JavaViewContract {
         if (depth >= MAX_DEPTH) {
             return;
         }
-        navigableSet(path + ".descendingSet()", view.descendingSet(), reference.descendingSet(), probes, bounds, depth + 1);
+        navigableSet(
+                path + ".descendingSet()", view.descendingSet(), reference.descendingSet(), probes, bounds, depth + 1);
         same(path, "reversed()", view::reversed, reference::reversed);
-        final java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
+        java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
         for (Object from : subBounds) {
-            @SuppressWarnings("unchecked") final E lo = (E) from;
-            for (boolean fromInclusive : new boolean[] { true, false }) {
-                final String head = "headSet(" + from + ", " + fromInclusive + ")";
-                subSet(path, head, () -> view.headSet(lo, fromInclusive), () -> reference.headSet(lo, fromInclusive), probes, bounds, depth);
-                final String tail = "tailSet(" + from + ", " + fromInclusive + ")";
-                subSet(path, tail, () -> view.tailSet(lo, fromInclusive), () -> reference.tailSet(lo, fromInclusive), probes, bounds, depth);
+            @SuppressWarnings("unchecked")
+            E lo = (E) from;
+            for (boolean fromInclusive : new boolean[] {true, false}) {
+                String head = "headSet(" + from + ", " + fromInclusive + ")";
+                subSet(
+                        path,
+                        head,
+                        () -> view.headSet(lo, fromInclusive),
+                        () -> reference.headSet(lo, fromInclusive),
+                        probes,
+                        bounds,
+                        depth);
+                String tail = "tailSet(" + from + ", " + fromInclusive + ")";
+                subSet(
+                        path,
+                        tail,
+                        () -> view.tailSet(lo, fromInclusive),
+                        () -> reference.tailSet(lo, fromInclusive),
+                        probes,
+                        bounds,
+                        depth);
                 for (Object to : subBounds) {
-                    @SuppressWarnings("unchecked") final E hi = (E) to;
-                    for (boolean toInclusive : new boolean[] { true, false }) {
+                    @SuppressWarnings("unchecked")
+                    E hi = (E) to;
+                    for (boolean toInclusive : new boolean[] {true, false}) {
                         if (depth > 0 && toInclusive != fromInclusive) {
                             continue; // the nested sub-views take the two same-kind bound pairs only
                         }
-                        final String sub = "subSet(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
-                        subSet(path, sub, () -> view.subSet(lo, fromInclusive, hi, toInclusive), () -> reference.subSet(lo, fromInclusive, hi, toInclusive), probes, bounds, depth);
+                        String sub = "subSet(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
+                        subSet(
+                                path,
+                                sub,
+                                () -> view.subSet(lo, fromInclusive, hi, toInclusive),
+                                () -> reference.subSet(lo, fromInclusive, hi, toInclusive),
+                                probes,
+                                bounds,
+                                depth);
                     }
                 }
             }
             same(path, "headSet(" + from + ")", () -> view.headSet(lo), () -> reference.headSet(lo));
             same(path, "tailSet(" + from + ")", () -> view.tailSet(lo), () -> reference.tailSet(lo));
             for (Object to : subBounds) {
-                @SuppressWarnings("unchecked") final E hi = (E) to;
-                same(path, "subSet(" + from + ", " + to + ")", () -> view.subSet(lo, hi), () -> reference.subSet(lo, hi));
+                @SuppressWarnings("unchecked")
+                E hi = (E) to;
+                same(
+                        path,
+                        "subSet(" + from + ", " + to + ")",
+                        () -> view.subSet(lo, hi),
+                        () -> reference.subSet(lo, hi));
                 if (bothSucceed(() -> view.subSet(lo, hi), () -> reference.subSet(lo, hi))) {
-                    sortedSet(path + ".subSet(" + from + ", " + to + ")", view.subSet(lo, hi), reference.subSet(lo, hi), probes);
+                    sortedSet(
+                            path + ".subSet(" + from + ", " + to + ")",
+                            view.subSet(lo, hi),
+                            reference.subSet(lo, hi),
+                            probes);
                 }
             }
         }
     }
 
-    private <E> void subSet(String path, String operation, Supplier<NavigableSet<E>> view, Supplier<NavigableSet<E>> reference,
-                            java.util.List<Object> probes, java.util.List<Object> bounds, int depth) {
+    private <E> void subSet(
+            String path,
+            String operation,
+            Supplier<NavigableSet<E>> view,
+            Supplier<NavigableSet<E>> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> bounds,
+            int depth) {
         same(path, operation, view::get, reference::get);
         if (bothSucceed(view, reference)) {
             navigableSet(path + "." + operation, view.get(), reference.get(), probes, bounds, depth + 1);
@@ -418,8 +534,9 @@ final class JavaViewContract {
 
     private void spliteratorReportsTheComparator(String path, SortedSet<?> view) {
         checks++;
-        final Spliterator<?> spliterator = view.spliterator();
-        if (!spliterator.hasCharacteristics(Spliterator.SORTED) || !Objects.equals(spliterator.getComparator(), view.comparator())) {
+        Spliterator<?> spliterator = view.spliterator();
+        if (!spliterator.hasCharacteristics(Spliterator.SORTED)
+                || !Objects.equals(spliterator.getComparator(), view.comparator())) {
             fail(path + ".spliterator(): not SORTED by comparator() " + view.comparator());
         }
     }
@@ -427,47 +544,69 @@ final class JavaViewContract {
     // -- java.util.Map and its sequenced, sorted and navigable kinds
 
     @SuppressWarnings("unchecked")
-    <K, V> void map(String path, java.util.Map<K, V> view, java.util.Map<K, V> reference, java.util.List<Object> probes, java.util.List<Object> values) {
+    <K, V> void map(
+            String path,
+            java.util.Map<K, V> view,
+            java.util.Map<K, V> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> values) {
         same(path, "size()", view::size, reference::size);
         same(path, "isEmpty()", view::isEmpty, reference::isEmpty);
         same(path, "entrySet() iteration", view::entrySet, reference::entrySet);
         for (Object probe : probes) {
             same(path, "get(" + probe + ")", () -> view.get(probe), () -> reference.get(probe));
             same(path, "containsKey(" + probe + ")", () -> view.containsKey(probe), () -> reference.containsKey(probe));
-            same(path, "getOrDefault(" + probe + ")", () -> view.getOrDefault(probe, null), () -> reference.getOrDefault(probe, null));
-            same(path, "getOrDefault(" + probe + ", default)", () -> view.getOrDefault(probe, (V) "default"), () -> reference.getOrDefault(probe, (V) "default"));
+            same(
+                    path,
+                    "getOrDefault(" + probe + ")",
+                    () -> view.getOrDefault(probe, null),
+                    () -> reference.getOrDefault(probe, null));
+            same(
+                    path,
+                    "getOrDefault(" + probe + ", default)",
+                    () -> view.getOrDefault(probe, (V) "default"),
+                    () -> reference.getOrDefault(probe, (V) "default"));
         }
         for (Object value : values) {
-            same(path, "containsValue(" + value + ")", () -> view.containsValue(value), () -> reference.containsValue(value));
+            same(
+                    path,
+                    "containsValue(" + value + ")",
+                    () -> view.containsValue(value),
+                    () -> reference.containsValue(value));
         }
-        same(path, "forEach", () -> {
-            final java.util.List<Object> seen = new ArrayList<>();
-            view.forEach((k, v) -> seen.add(Arrays.asList(k, v)));
-            return seen;
-        }, () -> {
-            final java.util.List<Object> seen = new ArrayList<>();
-            reference.forEach((k, v) -> seen.add(Arrays.asList(k, v)));
-            return seen;
-        });
+        same(
+                path,
+                "forEach",
+                () -> {
+                    java.util.List<Object> seen = new ArrayList<>();
+                    view.forEach((k, v) -> seen.add(Arrays.asList(k, v)));
+                    return seen;
+                },
+                () -> {
+                    java.util.List<Object> seen = new ArrayList<>();
+                    reference.forEach((k, v) -> seen.add(Arrays.asList(k, v)));
+                    return seen;
+                });
         if (ordered) {
             same(path, "toString()", view::toString, reference::toString);
         }
         equality(path, view, reference, new java.util.HashMap<>(reference), new ArrayList<>(reference.entrySet()));
-        final java.util.List<Object> entryProbes = entryProbes(reference, probes);
+        java.util.List<Object> entryProbes = entryProbes(reference, probes);
         set(path + ".entrySet()", view.entrySet(), reference.entrySet(), entryProbes);
         set(path + ".keySet()", view.keySet(), reference.keySet(), probes);
         collection(path + ".values()", view.values(), reference.values(), values, reference.size() <= 64);
     }
 
     /** Entries of the map, entries with a present key and another value, with an absent key, and non-entries. */
-    private static <K, V> java.util.List<Object> entryProbes(java.util.Map<K, V> reference, java.util.List<Object> probes) {
-        final java.util.List<Object> result = new ArrayList<>();
+    private static <K, V> java.util.List<Object> entryProbes(
+            java.util.Map<K, V> reference, java.util.List<Object> probes) {
+        java.util.List<Object> result = new ArrayList<>();
         for (Object probe : probes) {
             result.add(new AbstractMap.SimpleImmutableEntry<>(probe, "v" + probe));
             result.add(new AbstractMap.SimpleImmutableEntry<>(probe, "other"));
         }
         if (!reference.isEmpty()) {
-            final java.util.Map.Entry<K, V> first = reference.entrySet().iterator().next();
+            java.util.Map.Entry<K, V> first = reference.entrySet().iterator().next();
             result.add(new AbstractMap.SimpleImmutableEntry<>(first.getKey(), first.getValue()));
             result.add(new AbstractMap.SimpleImmutableEntry<>(first.getKey(), null));
         }
@@ -476,45 +615,98 @@ final class JavaViewContract {
         return result;
     }
 
-    <K, V> void sequencedMap(String path, SequencedMap<K, V> view, SequencedMap<K, V> reference, java.util.List<Object> probes, java.util.List<Object> values, int depth) {
+    <K, V> void sequencedMap(
+            String path,
+            SequencedMap<K, V> view,
+            SequencedMap<K, V> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> values,
+            int depth) {
         map(path, view, reference, probes, values);
         sequencedReads(path, view, reference, probes, values, depth);
-        same(path, "values() is sequenced", () -> view.values() instanceof SequencedCollection, () -> reference.values() instanceof SequencedCollection);
+        same(
+                path,
+                "values() is sequenced",
+                () -> view.values() instanceof SequencedCollection,
+                () -> reference.values() instanceof SequencedCollection);
         if (depth < MAX_DEPTH) {
             sequencedMap(path + ".reversed()", view.reversed(), reference.reversed(), probes, values, depth + 1);
         }
     }
 
-    private <K, V> void sequencedReads(String path, SequencedMap<K, V> view, SequencedMap<K, V> reference, java.util.List<Object> probes, java.util.List<Object> values, int depth) {
+    private <K, V> void sequencedReads(
+            String path,
+            SequencedMap<K, V> view,
+            SequencedMap<K, V> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> values,
+            int depth) {
         same(path, "firstEntry()", view::firstEntry, reference::firstEntry);
         same(path, "lastEntry()", view::lastEntry, reference::lastEntry);
-        sequencedCollection(path + ".sequencedValues()", view.sequencedValues(), reference.sequencedValues(), values, depth, reference.size() <= 64);
-        sequencedCollection(path + ".sequencedKeySet()", view.sequencedKeySet(), reference.sequencedKeySet(), probes, depth, true);
-        sequencedCollection(path + ".sequencedEntrySet()", view.sequencedEntrySet(), reference.sequencedEntrySet(), entryProbes(reference, probes), depth, true);
-        same(path, "keySet() is sequenced", () -> view.keySet() instanceof SequencedSet, () -> reference.keySet() instanceof SequencedSet);
+        sequencedCollection(
+                path + ".sequencedValues()",
+                view.sequencedValues(),
+                reference.sequencedValues(),
+                values,
+                depth,
+                reference.size() <= 64);
+        sequencedCollection(
+                path + ".sequencedKeySet()", view.sequencedKeySet(), reference.sequencedKeySet(), probes, depth, true);
+        sequencedCollection(
+                path + ".sequencedEntrySet()",
+                view.sequencedEntrySet(),
+                reference.sequencedEntrySet(),
+                entryProbes(reference, probes),
+                depth,
+                true);
+        same(
+                path,
+                "keySet() is sequenced",
+                () -> view.keySet() instanceof SequencedSet,
+                () -> reference.keySet() instanceof SequencedSet);
     }
 
-    private <E> void sequencedCollection(String path, SequencedCollection<E> view, SequencedCollection<E> reference, java.util.List<Object> probes, int depth,
-                                         boolean containsAllOfItself) {
+    private <E> void sequencedCollection(
+            String path,
+            SequencedCollection<E> view,
+            SequencedCollection<E> reference,
+            java.util.List<Object> probes,
+            int depth,
+            boolean containsAllOfItself) {
         collection(path, view, reference, probes, containsAllOfItself);
         same(path, "getFirst()", view::getFirst, reference::getFirst);
         same(path, "getLast()", view::getLast, reference::getLast);
         if (depth < MAX_DEPTH) {
             collection(path + ".reversed()", view.reversed(), reference.reversed(), probes, containsAllOfItself);
-            same(path, "reversed().getFirst()", () -> view.reversed().getFirst(), () -> reference.reversed().getFirst());
-            same(path, "reversed().reversed()", () -> view.reversed().reversed(), () -> reference.reversed().reversed());
+            same(
+                    path,
+                    "reversed().getFirst()",
+                    () -> view.reversed().getFirst(),
+                    () -> reference.reversed().getFirst());
+            same(
+                    path,
+                    "reversed().reversed()",
+                    () -> view.reversed().reversed(),
+                    () -> reference.reversed().reversed());
         }
     }
 
-    <K, V> void navigableMap(String path, NavigableMap<K, V> view, NavigableMap<K, V> reference, java.util.List<Object> probes, java.util.List<Object> values,
-                             java.util.List<Object> bounds, int depth) {
+    <K, V> void navigableMap(
+            String path,
+            NavigableMap<K, V> view,
+            NavigableMap<K, V> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> values,
+            java.util.List<Object> bounds,
+            int depth) {
         map(path, view, reference, probes, values);
         sequencedReads(path, view, reference, probes, values, depth);
         same(path, "comparator()", view::comparator, reference::comparator);
         same(path, "firstKey()", view::firstKey, reference::firstKey);
         same(path, "lastKey()", view::lastKey, reference::lastKey);
         for (Object probe : probes) {
-            @SuppressWarnings("unchecked") final K key = (K) probe;
+            @SuppressWarnings("unchecked")
+            K key = (K) probe;
             same(path, "lowerEntry(" + probe + ")", () -> view.lowerEntry(key), () -> reference.lowerEntry(key));
             same(path, "lowerKey(" + probe + ")", () -> view.lowerKey(key), () -> reference.lowerKey(key));
             same(path, "floorEntry(" + probe + ")", () -> view.floorEntry(key), () -> reference.floorEntry(key));
@@ -528,52 +720,123 @@ final class JavaViewContract {
             return;
         }
         // the key sets share the map's tree range: their own sub-views are those of the sets, checked from depth 0 only
-        final int keySetDepth = depth == 0 ? depth + 1 : MAX_DEPTH;
-        navigableSet(path + ".navigableKeySet()", view.navigableKeySet(), reference.navigableKeySet(), probes, bounds, keySetDepth);
-        navigableSet(path + ".descendingKeySet()", view.descendingKeySet(), reference.descendingKeySet(), probes, bounds, keySetDepth);
-        same(path, "keySet() is navigable", () -> view.keySet() instanceof NavigableSet, () -> reference.keySet() instanceof NavigableSet);
-        navigableMap(path + ".descendingMap()", view.descendingMap(), reference.descendingMap(), probes, values, bounds, depth + 1);
+        int keySetDepth = depth == 0 ? depth + 1 : MAX_DEPTH;
+        navigableSet(
+                path + ".navigableKeySet()",
+                view.navigableKeySet(),
+                reference.navigableKeySet(),
+                probes,
+                bounds,
+                keySetDepth);
+        navigableSet(
+                path + ".descendingKeySet()",
+                view.descendingKeySet(),
+                reference.descendingKeySet(),
+                probes,
+                bounds,
+                keySetDepth);
+        same(
+                path,
+                "keySet() is navigable",
+                () -> view.keySet() instanceof NavigableSet,
+                () -> reference.keySet() instanceof NavigableSet);
+        navigableMap(
+                path + ".descendingMap()",
+                view.descendingMap(),
+                reference.descendingMap(),
+                probes,
+                values,
+                bounds,
+                depth + 1);
         same(path, "reversed()", view::reversed, reference::reversed);
-        final java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
+        java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
         for (Object from : subBounds) {
-            @SuppressWarnings("unchecked") final K lo = (K) from;
-            for (boolean fromInclusive : new boolean[] { true, false }) {
-                final String head = "headMap(" + from + ", " + fromInclusive + ")";
-                subMap(path, head, () -> view.headMap(lo, fromInclusive), () -> reference.headMap(lo, fromInclusive), probes, values, bounds, depth);
-                final String tail = "tailMap(" + from + ", " + fromInclusive + ")";
-                subMap(path, tail, () -> view.tailMap(lo, fromInclusive), () -> reference.tailMap(lo, fromInclusive), probes, values, bounds, depth);
+            @SuppressWarnings("unchecked")
+            K lo = (K) from;
+            for (boolean fromInclusive : new boolean[] {true, false}) {
+                String head = "headMap(" + from + ", " + fromInclusive + ")";
+                subMap(
+                        path,
+                        head,
+                        () -> view.headMap(lo, fromInclusive),
+                        () -> reference.headMap(lo, fromInclusive),
+                        probes,
+                        values,
+                        bounds,
+                        depth);
+                String tail = "tailMap(" + from + ", " + fromInclusive + ")";
+                subMap(
+                        path,
+                        tail,
+                        () -> view.tailMap(lo, fromInclusive),
+                        () -> reference.tailMap(lo, fromInclusive),
+                        probes,
+                        values,
+                        bounds,
+                        depth);
                 for (Object to : subBounds) {
-                    @SuppressWarnings("unchecked") final K hi = (K) to;
-                    for (boolean toInclusive : new boolean[] { true, false }) {
+                    @SuppressWarnings("unchecked")
+                    K hi = (K) to;
+                    for (boolean toInclusive : new boolean[] {true, false}) {
                         if (depth > 0 && toInclusive != fromInclusive) {
                             continue; // the nested sub-views take the two same-kind bound pairs only
                         }
-                        final String sub = "subMap(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
-                        subMap(path, sub, () -> view.subMap(lo, fromInclusive, hi, toInclusive), () -> reference.subMap(lo, fromInclusive, hi, toInclusive), probes, values, bounds, depth);
+                        String sub = "subMap(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
+                        subMap(
+                                path,
+                                sub,
+                                () -> view.subMap(lo, fromInclusive, hi, toInclusive),
+                                () -> reference.subMap(lo, fromInclusive, hi, toInclusive),
+                                probes,
+                                values,
+                                bounds,
+                                depth);
                     }
                 }
             }
             same(path, "headMap(" + from + ")", () -> view.headMap(lo), () -> reference.headMap(lo));
             same(path, "tailMap(" + from + ")", () -> view.tailMap(lo), () -> reference.tailMap(lo));
             for (Object to : subBounds) {
-                @SuppressWarnings("unchecked") final K hi = (K) to;
-                same(path, "subMap(" + from + ", " + to + ")", () -> view.subMap(lo, hi), () -> reference.subMap(lo, hi));
+                @SuppressWarnings("unchecked")
+                K hi = (K) to;
+                same(
+                        path,
+                        "subMap(" + from + ", " + to + ")",
+                        () -> view.subMap(lo, hi),
+                        () -> reference.subMap(lo, hi));
                 if (bothSucceed(() -> view.subMap(lo, hi), () -> reference.subMap(lo, hi))) {
-                    sortedMap(path + ".subMap(" + from + ", " + to + ")", view.subMap(lo, hi), reference.subMap(lo, hi), probes, values);
+                    sortedMap(
+                            path + ".subMap(" + from + ", " + to + ")",
+                            view.subMap(lo, hi),
+                            reference.subMap(lo, hi),
+                            probes,
+                            values);
                 }
             }
         }
     }
 
-    private <K, V> void subMap(String path, String operation, Supplier<NavigableMap<K, V>> view, Supplier<NavigableMap<K, V>> reference,
-                               java.util.List<Object> probes, java.util.List<Object> values, java.util.List<Object> bounds, int depth) {
+    private <K, V> void subMap(
+            String path,
+            String operation,
+            Supplier<NavigableMap<K, V>> view,
+            Supplier<NavigableMap<K, V>> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> values,
+            java.util.List<Object> bounds,
+            int depth) {
         same(path, operation, view::get, reference::get);
         if (bothSucceed(view, reference)) {
             navigableMap(path + "." + operation, view.get(), reference.get(), probes, values, bounds, depth + 1);
         }
     }
 
-    private <K, V> void sortedMap(String path, SortedMap<K, V> view, SortedMap<K, V> reference, java.util.List<Object> probes, java.util.List<Object> values) {
+    private <K, V> void sortedMap(
+            String path,
+            SortedMap<K, V> view,
+            SortedMap<K, V> reference,
+            java.util.List<Object> probes,
+            java.util.List<Object> values) {
         map(path, view, reference, probes, values);
         same(path, "comparator()", view::comparator, reference::comparator);
         same(path, "firstKey()", view::firstKey, reference::firstKey);
@@ -584,7 +847,7 @@ final class JavaViewContract {
 
     /** The keys of the set and map fixtures: the even numbers {@code 0, 2, ..., 2(n - 1)}. */
     static java.util.List<Integer> evens(int n) {
-        final java.util.List<Integer> result = new ArrayList<>();
+        java.util.List<Integer> result = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             result.add(2 * i);
         }
@@ -596,10 +859,11 @@ final class JavaViewContract {
      * below the smallest, the smallest, between two keys, the middle, the largest, above the largest.
      */
     static java.util.List<Object> keyProbes(int n) {
-        final int max = 2 * (n - 1);
-        final int middle = 2 * (n / 2);
-        final java.util.Set<Object> probes = new LinkedHashSet<>(java.util.List.of(-2, -1, 0, 1, 2, 3, middle - 1, middle, middle + 1, max - 1, max, max + 1, max + 2));
-        final java.util.List<Object> result = new ArrayList<>(probes);
+        int max = 2 * (n - 1);
+        int middle = 2 * (n / 2);
+        java.util.Set<Object> probes = new LinkedHashSet<>(
+                java.util.List.of(-2, -1, 0, 1, 2, 3, middle - 1, middle, middle + 1, max - 1, max, max + 1, max + 2));
+        java.util.List<Object> result = new ArrayList<>(probes);
         result.add(null);
         result.add(FOREIGN);
         return result;
@@ -607,14 +871,14 @@ final class JavaViewContract {
 
     /** Bounds for the sub-views: outside, on and between the keys. The first three serve the nested sub-views. */
     static java.util.List<Object> bounds(int n) {
-        final int max = 2 * (n - 1);
-        final int middle = 2 * (n / 2);
+        int max = 2 * (n - 1);
+        int middle = 2 * (n / 2);
         return new ArrayList<>(new LinkedHashSet<>(java.util.List.of(middle, -1, max + 1, 0, 1, max - 1, max)));
     }
 
     /** The values of the map fixtures, {@code "v" + key}, present and absent, and a {@code null}. */
     static java.util.List<Object> valueProbes(int n) {
-        final java.util.List<Object> result = new ArrayList<>();
+        java.util.List<Object> result = new ArrayList<>();
         for (Object key : keyProbes(n)) {
             if (key instanceof Integer) {
                 result.add("v" + key);
@@ -627,7 +891,7 @@ final class JavaViewContract {
 
     /** Elements with repeats, so that {@code indexOf} and {@code lastIndexOf} differ: {@code 0, 0, 1, 1, 2, ...}. */
     static java.util.List<Integer> pairs(int n) {
-        final java.util.List<Integer> result = new ArrayList<>();
+        java.util.List<Integer> result = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             result.add(i / 2);
         }
@@ -635,8 +899,9 @@ final class JavaViewContract {
     }
 
     static java.util.List<Object> elementProbes(int n) {
-        final int max = (n - 1) / 2;
-        final java.util.List<Object> result = new ArrayList<>(new LinkedHashSet<>(java.util.List.of(-1, 0, 1, max / 2, max, max + 1)));
+        int max = (n - 1) / 2;
+        java.util.List<Object> result =
+                new ArrayList<>(new LinkedHashSet<>(java.util.List.of(-1, 0, 1, max / 2, max, max + 1)));
         result.add(null);
         result.add(FOREIGN);
         return result;
@@ -647,5 +912,5 @@ final class JavaViewContract {
         return java.util.List.of(Comparator.naturalOrder(), Comparator.reverseOrder());
     }
 
-    static final int[] SIZES = { 0, 1, 32, 33, 1025 };
+    static final int[] SIZES = {0, 1, 32, 33, 1025};
 }

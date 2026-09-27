@@ -9,15 +9,14 @@ import dev.zazr.control.Option;
  */
 final class Runner {
 
-    private Runner() {
-    }
+    private Runner() {}
 
     /**
      * The size of the pass that starts after {@code done} samples: it grows linearly from 0 for the first sample to
      * the configured size for the last one.
      */
     static int size(CheckConfig config, int done) {
-        final int samples = config.samples();
+        int samples = config.samples();
         if (samples <= 1) {
             return config.size();
         }
@@ -34,14 +33,15 @@ final class Runner {
      * @throws IllegalStateException if the discard budget is exceeded before a sample
      */
     static <A> void passes(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
-        final int samples = config.samples();
-        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
-        final int[] delivered = { 0 };
+        int samples = config.samples();
+        Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
+        int[] delivered = {0};
+        @SuppressWarnings("Var") // the passes without a value since the last one, across the passes of this loop
         long emptyInARow = 0;
         while (delivered[0] < samples) {
-            final int before = delivered[0];
-            final int gaveUp = sampling.filtersGaveUp;
-            final boolean more = gen.run(sampling, sampling.grow(size(config, before), emptyInARow), value -> {
+            int before = delivered[0];
+            int gaveUp = sampling.filtersGaveUp;
+            boolean more = gen.run(sampling, sampling.grow(size(config, before), emptyInARow), value -> {
                 delivered[0]++;
                 sampling.delivered();
                 return sink.accept(value) && delivered[0] < samples;
@@ -64,8 +64,8 @@ final class Runner {
      *                               so a value is missing
      */
     static <A> void onePass(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
-        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
-        final boolean ended = gen.run(sampling, config.size(), value -> {
+        Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
+        boolean ended = gen.run(sampling, config.size(), value -> {
             sampling.discards = 0;
             return sink.accept(value);
         });
@@ -78,10 +78,11 @@ final class Runner {
      * Checks {@code body} against the samples of {@code gen}: {@code config.samples()} of them, or every value of
      * one pass at the configured size when {@code all} is true.
      */
-    static <T extends Tuple> CheckResult check(CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, ?> body, boolean all) {
-        final long seed = config.seed();
-        final State state = new State();
-        final Gen.Sink<T> sink = sample -> {
+    static <T extends Tuple> CheckResult check(
+            CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, ?> body, boolean all) {
+        long seed = config.seed();
+        State state = new State();
+        Gen.Sink<T> sink = sample -> {
             state.samples++;
             state.failure = evaluate(state.samples, seed, sample, body);
             return state.failure == null;
@@ -105,14 +106,23 @@ final class Runner {
     }
 
     /// The failure of one sample, or null when it passed. A `Boolean` or a `TestResult` is judged; any other value
-    /// passes, since the body completed without throwing (an AssertJ chain returns its `Assert`); `null` is erroneous.
-    private static <T extends Tuple> CheckResult evaluate(int sampleNumber, long seed, T sample, CheckedFunction1<? super T, ?> body) {
+    /// passes, since the body completed without throwing (an AssertJ chain returns its `Assert`); `null` is
+    /// erroneous.
+    private static <T extends Tuple> CheckResult evaluate(
+            int sampleNumber, long seed, T sample, CheckedFunction1<? super T, ?> body) {
         try {
             return switch (body.apply(sample)) {
-                case Boolean holds -> holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
+                case Boolean holds ->
+                    holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
                 case TestResult.Success ignored -> null;
-                case TestResult.Failure(var explanation) -> new CheckResult.Falsified(sampleNumber, seed, sample, Option.some(explanation));
-                case null -> new CheckResult.Erroneous(sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
+                case TestResult.Failure(var explanation) ->
+                    new CheckResult.Falsified(sampleNumber, seed, sample, Option.some(explanation));
+                case null ->
+                    new CheckResult.Erroneous(
+                            sampleNumber,
+                            seed,
+                            new NullPointerException("the check returned null"),
+                            Option.some(sample));
                 case Object completed -> null;
             };
         } catch (AssertionError failure) {

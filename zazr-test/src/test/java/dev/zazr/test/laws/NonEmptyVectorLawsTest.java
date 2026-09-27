@@ -86,8 +86,10 @@ class NonEmptyVectorLawsTest {
         LawChecks.check(NonEmptyVectorLaws.nonEmptyVectorEqualsVectorSymmetry(), SUBJECT.values());
     }
 
-    private static final EqualitySubject<NonEmptyVector<?>> EQUALITY = new EqualitySubject<>(SUBJECT.values(),
-            nev -> NonEmptyVector.fromVector(Vector.ofAll(nev.toList())).get(), CollectionLaws::elements);
+    private static final EqualitySubject<NonEmptyVector<?>> EQUALITY = new EqualitySubject<>(
+            SUBJECT.values(),
+            nev -> NonEmptyVector.fromVector(Vector.ofAll(nev.toList())).get(),
+            CollectionLaws::elements);
 
     @Test
     void equalsHashCodeConsistency() {

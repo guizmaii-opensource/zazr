@@ -76,7 +76,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * @param <U>        Type of flat-mapped values
      * @return A new Set instance containing mapped values
      */
-    <U extends @Nullable Object> SortedSet<U> flatMap(Comparator<? super U> comparator, Function<? super T, ? extends Iterable<? extends U>> mapper);
+    <U extends @Nullable Object> SortedSet<U> flatMap(
+            Comparator<? super U> comparator, Function<? super T, ? extends Iterable<? extends U>> mapper);
 
     /**
      * Same as {@link #map(Function)} but using a specific comparator for values of the codomain of the given
@@ -91,7 +92,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * @param <U>        Type of mapped values
      * @return A new Set instance containing mapped values
      */
-    <U extends @Nullable Object> SortedSet<U> map(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper);
+    <U extends @Nullable Object> SortedSet<U> map(
+            Comparator<? super U> comparator, Function<? super T, ? extends U> mapper);
 
     // -- Positional operations, in the comparator's order
 

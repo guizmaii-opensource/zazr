@@ -42,8 +42,7 @@ final class Shapes {
     static final int SET_LAYOUTS = 4;
     static final int MAP_LAYOUTS = 4;
 
-    private Shapes() {
-    }
+    private Shapes() {}
 
     // -- lengths and element draws
 
@@ -68,7 +67,7 @@ final class Shapes {
     }
 
     static <T> ArrayList<T> draw(Gen<T> gen, int count, Sampling sampling, int size) {
-        final ArrayList<T> elements = new ArrayList<>(count);
+        ArrayList<T> elements = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             elements.add(gen.draw(sampling, size));
         }
@@ -82,7 +81,7 @@ final class Shapes {
     }
 
     static <T> ArrayList<T> concat(java.util.List<T> first, java.util.List<T> second) {
-        final ArrayList<T> all = new ArrayList<>(first.size() + second.size());
+        ArrayList<T> all = new ArrayList<>(first.size() + second.size());
         all.addAll(first);
         all.addAll(second);
         return all;
@@ -92,7 +91,7 @@ final class Shapes {
 
     static <T> Gen<Vector<T>> vector(Gen<T> gen, Length length) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, length.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, length.draw(sampling, size), sampling, size);
             return sink.accept(vector(sampling.draw().nextInt(VECTOR_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -102,39 +101,33 @@ final class Shapes {
         return switch (layout) {
             case 0 -> Vector.ofAll(xs);
             case 1 -> {
-                final Vector.Builder<T> builder = Vector.newBuilder();
+                Vector.Builder<T> builder = Vector.newBuilder();
                 xs.forEach(builder::add);
                 yield builder.result();
             }
             case 2 -> {
-                Vector<T> vector = Vector.empty();
-                for (T x : xs) {
-                    vector = vector.append(x);
-                }
-                yield vector;
+                yield Vector.ofAll(xs).foldLeft(Vector.empty(), Vector::append);
             }
             case 3 -> {
-                Vector<T> vector = Vector.empty();
-                for (int i = xs.size() - 1; i >= 0; i--) {
-                    vector = vector.prepend(xs.get(i));
-                }
-                yield vector;
+                yield Vector.ofAll(xs).foldRight(Vector.empty(), (x, vector) -> vector.prepend(x));
             }
             case 4 -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield Vector.ofAll(concat(prefix, xs)).drop(prefix.size());
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
-                final ArrayList<T> suffix = extra(gen, sampling, size);
-                yield Vector.ofAll(concat(concat(prefix, xs), suffix)).drop(prefix.size()).dropRight(suffix.size());
+                ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> suffix = extra(gen, sampling, size);
+                yield Vector.ofAll(concat(concat(prefix, xs), suffix))
+                        .drop(prefix.size())
+                        .dropRight(suffix.size());
             }
         };
     }
 
     static <T> Gen<List<T>> list(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(list(sampling.draw().nextInt(LIST_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -144,14 +137,10 @@ final class Shapes {
         return switch (layout) {
             case 0 -> List.ofAll(xs);
             case 1 -> {
-                List<T> list = List.empty();
-                for (int i = xs.size() - 1; i >= 0; i--) {
-                    list = list.prepend(xs.get(i));
-                }
-                yield list;
+                yield Vector.ofAll(xs).foldRight(List.empty(), (x, list) -> list.prepend(x));
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield List.ofAll(concat(prefix, xs)).drop(prefix.size());
             }
         };
@@ -159,7 +148,7 @@ final class Shapes {
 
     static <T> Gen<Queue<T>> queue(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(queue(sampling.draw().nextInt(QUEUE_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -170,18 +159,14 @@ final class Shapes {
         return switch (layout) {
             case 0 -> Queue.ofAll(xs);
             case 1 -> {
-                Queue<T> queue = Queue.empty();
-                for (T x : xs) {
-                    queue = queue.enqueue(x);
-                }
-                yield queue;
+                yield Vector.ofAll(xs).foldLeft(Queue.empty(), Queue::enqueue);
             }
             case 2 -> {
-                final int split = xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
+                int split = xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
                 yield Queue.ofAll(xs.subList(0, split)).enqueueAll(new ArrayList<>(xs.subList(split, xs.size())));
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield Queue.ofAll(prefix).enqueueAll(xs).drop(prefix.size());
             }
         };
@@ -189,33 +174,31 @@ final class Shapes {
 
     static <T> Gen<LazyList<T>> lazyList(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(lazyList(sampling.draw().nextInt(LAZY_LIST_LAYOUTS), xs, gen, sampling, size));
         });
     }
 
     /// `ofAll`, a chain of lazy tails, the same chain with a prefix already evaluated, an eager prefix with a
-    /// lazy suffix appended, and the rest of a longer lazy chain after `drop`. Always finite; every element is drawn
-    /// before the lazy list is built, so evaluating a tail later draws nothing.
+    /// lazy suffix appended, and the rest of a longer lazy chain after `drop`. Always finite; every element is
+    /// drawn before the lazy list is built, so evaluating a tail later draws nothing.
     static <T> LazyList<T> lazyList(int layout, ArrayList<T> xs, Gen<T> gen, Sampling sampling, int size) {
         return switch (layout) {
             case 0 -> LazyList.ofAll(xs);
             case 1 -> lazyChain(xs, 0);
             case 2 -> {
-                final LazyList<T> stream = lazyChain(xs, 0);
-                final int evaluated = sampling.draw().nextInt(xs.size() + 1);
-                LazyList<T> cursor = stream;
-                for (int i = 0; i < evaluated && !cursor.isEmpty(); i++) {
-                    cursor = cursor.tail();
-                }
+                LazyList<T> stream = lazyChain(xs, 0);
+                int evaluated = sampling.draw().nextInt(xs.size() + 1);
+                // the first cells evaluated, and memoised
+                Vector.range(0, evaluated).foldLeft(stream, (cursor, i) -> cursor.isEmpty() ? cursor : cursor.tail());
                 yield stream;
             }
             case 3 -> {
-                final int split = sampling.draw().nextInt(xs.size() + 1);
+                int split = sampling.draw().nextInt(xs.size() + 1);
                 yield LazyList.ofAll(xs.subList(0, split)).appendAll(lazyChain(xs, split));
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield lazyChain(concat(prefix, xs), 0).drop(prefix.size());
             }
         };
@@ -227,9 +210,9 @@ final class Shapes {
 
     static <T> Gen<NonEmptyVector<T>> nonEmptyVector(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final T head = gen.draw(sampling, size);
-            final ArrayList<T> xs = draw(gen, Length.BELOW_SIZE.draw(sampling, size), sampling, size);
-            final Vector<T> tail = vector(sampling.draw().nextInt(VECTOR_LAYOUTS), xs, gen, sampling, size);
+            T head = gen.draw(sampling, size);
+            ArrayList<T> xs = draw(gen, Length.BELOW_SIZE.draw(sampling, size), sampling, size);
+            Vector<T> tail = vector(sampling.draw().nextInt(VECTOR_LAYOUTS), xs, gen, sampling, size);
             return sink.accept(nonEmptyVector(sampling.draw().nextInt(NON_EMPTY_VECTOR_LAYOUTS), head, tail));
         });
     }
@@ -240,35 +223,45 @@ final class Shapes {
         return switch (layout) {
             case 0 -> NonEmptyVector.single(head).appendAll(tail);
             case 1 -> NonEmptyVector.fromVector(tail.prepend(head)).get();
-            default -> tail.isEmpty()
-                    ? NonEmptyVector.single(head)
-                    : NonEmptyVector.fromVector(tail).get().prepend(head);
+            default ->
+                tail.isEmpty()
+                        ? NonEmptyVector.single(head)
+                        : NonEmptyVector.fromVector(tail).get().prepend(head);
         };
     }
 
     // -- sets
 
     /// The operations one set type offers to the set layouts.
-    record SetOps<T, S>(Supplier<S> empty, Function<Iterable<T>, S> ofAll, BiFunction<S, T, S> add,
-                        BiFunction<S, T, S> remove, BiPredicate<S, T> contains) {
-    }
+    record SetOps<T, S>(
+            Supplier<S> empty,
+            Function<Iterable<T>, S> ofAll,
+            BiFunction<S, T, S> add,
+            BiFunction<S, T, S> remove,
+            BiPredicate<S, T> contains) {}
 
     static <T> SetOps<T, HashSet<T>> hashSetOps() {
-        return new SetOps<T, HashSet<T>>(HashSet::empty, HashSet::ofAll, HashSet::add, HashSet::remove, HashSet::contains);
+        return new SetOps<T, HashSet<T>>(
+                HashSet::empty, HashSet::ofAll, HashSet::add, HashSet::remove, HashSet::contains);
     }
 
     static <T> SetOps<T, LinkedHashSet<T>> linkedHashSetOps() {
-        return new SetOps<T, LinkedHashSet<T>>(LinkedHashSet::empty, LinkedHashSet::ofAll, LinkedHashSet::add,
-                LinkedHashSet::remove, LinkedHashSet::contains);
+        return new SetOps<T, LinkedHashSet<T>>(
+                LinkedHashSet::empty,
+                LinkedHashSet::ofAll,
+                LinkedHashSet::add,
+                LinkedHashSet::remove,
+                LinkedHashSet::contains);
     }
 
     static <T extends Comparable<? super T>> SetOps<T, TreeSet<T>> treeSetOps() {
-        return new SetOps<T, TreeSet<T>>(TreeSet::empty, TreeSet::ofAll, TreeSet::add, TreeSet::remove, TreeSet::contains);
+        return new SetOps<T, TreeSet<T>>(
+                TreeSet::empty, TreeSet::ofAll, TreeSet::add, TreeSet::remove, TreeSet::contains);
     }
 
     static <T, S> Gen<S> set(Gen<T> gen, SetOps<T, S> ops) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(set(sampling.draw().nextInt(SET_LAYOUTS), xs, gen, ops, sampling, size));
         });
     }
@@ -278,36 +271,20 @@ final class Shapes {
         return switch (layout) {
             case 0 -> ops.ofAll().apply(xs);
             case 1 -> {
-                S set = ops.empty().get();
-                for (T x : xs) {
-                    set = ops.add().apply(set, x);
-                }
-                yield set;
+                yield Vector.ofAll(xs).foldLeft(ops.empty().get(), ops.add());
             }
             case 2 -> {
-                final S base = ops.ofAll().apply(xs);
-                final ArrayList<T> extra = extra(gen, sampling, size);
-                S set = base;
-                for (T x : extra) {
-                    set = ops.add().apply(set, x);
-                }
-                for (T x : extra) {
-                    if (!ops.contains().test(base, x)) {
-                        set = ops.remove().apply(set, x);
-                    }
-                }
-                yield set;
+                S base = ops.ofAll().apply(xs);
+                ArrayList<T> extra = extra(gen, sampling, size);
+                S added = Vector.ofAll(extra).foldLeft(base, ops.add());
+                yield Vector.ofAll(extra)
+                        .filter(x -> !ops.contains().test(base, x))
+                        .foldLeft(added, ops.remove());
             }
             default -> {
-                S set = ops.ofAll().apply(xs);
-                final int removed = sampling.draw().nextInt(xs.size() + 1);
-                for (int i = 0; i < removed; i++) {
-                    set = ops.remove().apply(set, xs.get(i));
-                }
-                for (int i = 0; i < removed; i++) {
-                    set = ops.add().apply(set, xs.get(i));
-                }
-                yield set;
+                int removed = sampling.draw().nextInt(xs.size() + 1);
+                Vector<T> first = Vector.ofAll(xs.subList(0, removed));
+                yield first.foldLeft(first.foldLeft(ops.ofAll().apply(xs), ops.remove()), ops.add());
             }
         };
     }
@@ -315,86 +292,94 @@ final class Shapes {
     // -- maps
 
     /// The operations one map type offers to the map layouts.
-    record MapOps<K, V, M>(Supplier<M> empty, Function<java.util.Map<K, V>, M> ofAll, Function3<M, K, V, M> put,
-                           BiFunction<M, K, M> remove, BiPredicate<M, K> containsKey) {
-    }
+    record MapOps<K, V, M>(
+            Supplier<M> empty,
+            Function<java.util.Map<K, V>, M> ofAll,
+            Function3<M, K, V, M> put,
+            BiFunction<M, K, M> remove,
+            BiPredicate<M, K> containsKey) {}
 
     static <K, V> MapOps<K, V, HashMap<K, V>> hashMapOps() {
-        return new MapOps<K, V, HashMap<K, V>>(HashMap::empty, HashMap::ofAll, HashMap::put, HashMap::remove,
-                HashMap::containsKey);
+        return new MapOps<K, V, HashMap<K, V>>(
+                HashMap::empty, HashMap::ofAll, HashMap::put, HashMap::remove, HashMap::containsKey);
     }
 
     static <K, V> MapOps<K, V, LinkedHashMap<K, V>> linkedHashMapOps() {
-        return new MapOps<K, V, LinkedHashMap<K, V>>(LinkedHashMap::empty, LinkedHashMap::ofAll, LinkedHashMap::put,
-                LinkedHashMap::remove, LinkedHashMap::containsKey);
+        return new MapOps<K, V, LinkedHashMap<K, V>>(
+                LinkedHashMap::empty,
+                LinkedHashMap::ofAll,
+                LinkedHashMap::put,
+                LinkedHashMap::remove,
+                LinkedHashMap::containsKey);
     }
 
     static <K extends Comparable<? super K>, V> MapOps<K, V, TreeMap<K, V>> treeMapOps() {
-        return new MapOps<K, V, TreeMap<K, V>>(TreeMap::empty, TreeMap::ofAll, TreeMap::put, TreeMap::remove,
-                TreeMap::containsKey);
+        return new MapOps<K, V, TreeMap<K, V>>(
+                TreeMap::empty, TreeMap::ofAll, TreeMap::put, TreeMap::remove, TreeMap::containsKey);
     }
 
     static <K, V, M> Gen<M> map(Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<Tuple2<K, V>> xs = entries(keys, values, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<Tuple2<K, V>> xs = entries(keys, values, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(map(sampling.draw().nextInt(MAP_LAYOUTS), xs, keys, values, ops, sampling, size));
         });
     }
 
     /// Each entry is a key then a value, each the first value of one pass of its generator.
     static <K, V> ArrayList<Tuple2<K, V>> entries(Gen<K> keys, Gen<V> values, int count, Sampling sampling, int size) {
-        final ArrayList<Tuple2<K, V>> entries = new ArrayList<>(count);
+        ArrayList<Tuple2<K, V>> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            final K key = keys.draw(sampling, size);
+            K key = keys.draw(sampling, size);
             entries.add(Tuple.of(key, values.draw(sampling, size)));
         }
         return entries;
     }
 
-    /// `ofAll` of a JDK map, one `put` at a time, extra keys the map does not hold put then removed again, and every key
-    /// first put with another value then overwritten.
-    static <K, V, M> M map(int layout, ArrayList<Tuple2<K, V>> xs, Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops,
-                           Sampling sampling, int size) {
+    /// `ofAll` of a JDK map, one `put` at a time, extra keys the map does not hold put then removed again, and every
+    /// key first put with another value then overwritten.
+    static <K, V, M> M map(
+            int layout,
+            ArrayList<Tuple2<K, V>> xs,
+            Gen<K> keys,
+            Gen<V> values,
+            MapOps<K, V, M> ops,
+            Sampling sampling,
+            int size) {
         return switch (layout) {
             case 0 -> {
-                final java.util.LinkedHashMap<K, V> javaMap = new java.util.LinkedHashMap<>();
+                java.util.LinkedHashMap<K, V> javaMap = new java.util.LinkedHashMap<>();
                 xs.forEach(entry -> javaMap.put(entry._1(), entry._2()));
                 yield ops.ofAll().apply(javaMap);
             }
             case 1 -> putAll(ops.empty().get(), xs, ops);
             case 2 -> {
-                final M base = putAll(ops.empty().get(), xs, ops);
-                final ArrayList<Tuple2<K, V>> drawn = size <= 0
+                M base = putAll(ops.empty().get(), xs, ops);
+                ArrayList<Tuple2<K, V>> drawn = size <= 0
                         ? new ArrayList<>()
                         : entries(keys, values, 1 + sampling.draw().nextInt(MAX_EXTRA), sampling, size);
                 // only the keys the map does not hold: putting a held key would replace its value
-                final ArrayList<Tuple2<K, V>> extra = new ArrayList<>(drawn.size());
+                ArrayList<Tuple2<K, V>> extra = new ArrayList<>(drawn.size());
                 for (Tuple2<K, V> entry : drawn) {
                     if (!ops.containsKey().test(base, entry._1())) {
                         extra.add(entry);
                     }
                 }
-                M map = putAll(base, extra, ops);
-                for (Tuple2<K, V> entry : extra) {
-                    map = ops.remove().apply(map, entry._1());
-                }
-                yield map;
+                yield Vector.ofAll(extra)
+                        .foldLeft(
+                                putAll(base, extra, ops),
+                                (map, entry) -> ops.remove().apply(map, entry._1()));
             }
             default -> {
-                M map = ops.empty().get();
-                for (Tuple2<K, V> entry : xs) {
-                    map = ops.put().apply(map, entry._1(), values.draw(sampling, size));
-                }
-                yield putAll(map, xs, ops);
+                M drawnValues = Vector.ofAll(xs)
+                        .foldLeft(
+                                ops.empty().get(),
+                                (map, entry) -> ops.put().apply(map, entry._1(), values.draw(sampling, size)));
+                yield putAll(drawnValues, xs, ops);
             }
         };
     }
 
     private static <K, V, M> M putAll(M map, java.util.List<Tuple2<K, V>> entries, MapOps<K, V, M> ops) {
-        M result = map;
-        for (Tuple2<K, V> entry : entries) {
-            result = ops.put().apply(result, entry._1(), entry._2());
-        }
-        return result;
+        return Vector.ofAll(entries).foldLeft(map, (result, entry) -> ops.put().apply(result, entry._1(), entry._2()));
     }
 }

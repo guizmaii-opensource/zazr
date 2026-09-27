@@ -66,7 +66,8 @@ public class VectorTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> Vector<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+    protected <T extends Comparable<? super T>> Vector<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream) {
         return Vector.ofAll(javaStream);
     }
 
@@ -188,9 +189,9 @@ public class VectorTest extends AbstractTraversableTest {
     class VectorStaticNarrowTests {
         @Test
         public void shouldNarrowVector() {
-            final Vector<Double> doubles = of(1.0d);
-            final Vector<Number> numbers = Vector.narrow(doubles);
-            final int actual = numbers.append(new BigDecimal("2.0")).sum().intValue();
+            Vector<Double> doubles = of(1.0d);
+            Vector<Number> numbers = Vector.narrow(doubles);
+            int actual = numbers.append(new BigDecimal("2.0")).sum().intValue();
             assertThat(actual).isEqualTo(3);
         }
     }
@@ -199,15 +200,15 @@ public class VectorTest extends AbstractTraversableTest {
     class StaticOfallTests {
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfVector() {
-            final Vector<Integer> source = ofAll(1, 2, 3);
-            final Vector<Integer> target = Vector.ofAll(source);
+            Vector<Integer> source = ofAll(1, 2, 3);
+            Vector<Integer> target = Vector.ofAll(source);
             assertThat(target).isSameAs(source);
         }
 
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfListView() {
-            final Vector<Integer> persistent = ofAll(1, 2, 3);
-            final Vector<Integer> target = Vector.ofAll(persistent.asJava());
+            Vector<Integer> persistent = ofAll(1, 2, 3);
+            Vector<Integer> target = Vector.ofAll(persistent.asJava());
             assertThat(target).isSameAs(persistent);
         }
     }
@@ -216,9 +217,9 @@ public class VectorTest extends AbstractTraversableTest {
     class PartitionTests {
         @Test
         public void shouldPartitionInOneIteration() {
-            final AtomicInteger count = new AtomicInteger(0);
-            final Vector<Integer> values = ofAll(1, 2, 3);
-            final Tuple2<Vector<Integer>, Vector<Integer>> results = values.partition(v -> {
+            AtomicInteger count = new AtomicInteger(0);
+            Vector<Integer> values = ofAll(1, 2, 3);
+            Tuple2<Vector<Integer>, Vector<Integer>> results = values.partition(v -> {
                 count.incrementAndGet();
                 return true;
             });
@@ -232,7 +233,7 @@ public class VectorTest extends AbstractTraversableTest {
     class PrimitivesTests {
         @Test
         public void shouldRejectNullOnPrimitiveVector() {
-            final Vector<Integer> primitives = rangeClosed(0, 2);
+            Vector<Integer> primitives = rangeClosed(0, 2);
 
             assertThatNullPointerException().isThrownBy(() -> primitives.append(null));
             assertThatNullPointerException().isThrownBy(() -> primitives.prepend(null));
@@ -241,8 +242,8 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldAddObjectToPrimitiveVector() {
-            final String object = "String";
-            final Vector<Object> primitives = Vector.narrow(rangeClosed(0, 2));
+            String object = "String";
+            Vector<Object> primitives = Vector.narrow(rangeClosed(0, 2));
 
             assertThat(primitives.append(object)).isEqualTo(of(0, 1, 2, object));
             assertThat(primitives.prepend(object)).isEqualTo(of(object, 0, 1, 2));
@@ -251,15 +252,18 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldConvertEveryLeafWhenAnotherClassIsWrittenAcrossLeaves() {
-            for (int n : new int[] { 31, 32, 33, 1023, 1024, 1025 }) {
-                final Vector<Number> primitives = Vector.narrow(Vector.range(0, n));
-                final java.util.List<Number> expected = new java.util.ArrayList<>(primitives.asJava());
-                final Vector<Number> appended = primitives.append(-1L);
+            for (int n : new int[] {31, 32, 33, 1023, 1024, 1025}) {
+                Vector<Number> primitives = Vector.narrow(Vector.range(0, n));
+                java.util.List<Number> expected = new java.util.ArrayList<>(primitives.asJava());
+                Vector<Number> appended = primitives.append(-1L);
                 expected.add(-1L);
                 assertThat(appended.asJava()).isEqualTo(expected);
                 // later writes, of either class, go on from the converted Vector
                 assertThat(appended.append(7).update(0, 5L).prepend(-2L).asJava())
-                        .isEqualTo(Vector.<Number> of(-2L, 5L).appendAll(Vector.range(1, n)).appendAll(List.of(-1L, 7)).asJava());
+                        .isEqualTo(Vector.<Number>of(-2L, 5L)
+                                .appendAll(Vector.range(1, n))
+                                .appendAll(List.of(-1L, 7))
+                                .asJava());
                 assertThat(primitives.update(n - 1, -1L).last()).isEqualTo(-1L);
                 assertThat(primitives.insert(n / 2, -1L).get(n / 2)).isEqualTo(-1L);
                 assertThat(primitives.padTo(n + 2, -1L).takeRight(2)).isEqualTo(Vector.of(-1L, -1L));
@@ -278,10 +282,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldUnfoldRightSimpleVector() {
-            assertThat(
-                    Vector.unfoldRight(10, x -> x == 0
-                                                ? Option.none()
-                                                : Option.some(new Tuple2<>(x, x - 1))))
+            assertThat(Vector.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -292,10 +293,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldUnfoldLeftSimpleVector() {
-            assertThat(
-                    Vector.unfoldLeft(10, x -> x == 0
-                                               ? Option.none()
-                                               : Option.some(new Tuple2<>(x - 1, x))))
+            assertThat(Vector.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -306,10 +304,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldUnfoldSimpleVector() {
-            assertThat(
-                    Vector.unfold(10, x -> x == 0
-                                           ? Option.none()
-                                           : Option.some(new Tuple2<>(x - 1, x))))
+            assertThat(Vector.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }
@@ -318,24 +313,24 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldClampTakeRightAndDropRightAtTheExtremes() {
-        final Vector<Integer> v = Vector.of(1, 2, 3);
-        for (int n : new int[] { Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -1, 0 }) {
+        Vector<Integer> v = Vector.of(1, 2, 3);
+        for (int n : new int[] {Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -1, 0}) {
             assertThat(v.takeRight(n)).isEqualTo(Vector.empty());
             assertThat(v.dropRight(n)).isSameAs(v);
         }
-        for (int n : new int[] { 3, 4, Integer.MAX_VALUE }) {
+        for (int n : new int[] {3, 4, Integer.MAX_VALUE}) {
             assertThat(v.takeRight(n)).isEqualTo(v);
             assertThat(v.dropRight(n)).isEqualTo(Vector.empty());
         }
-        assertThat(Vector.<Integer> empty().takeRight(Integer.MIN_VALUE)).isEqualTo(Vector.empty());
-        assertThat(Vector.<Integer> empty().dropRight(Integer.MIN_VALUE)).isEqualTo(Vector.empty());
+        assertThat(Vector.<Integer>empty().takeRight(Integer.MIN_VALUE)).isEqualTo(Vector.empty());
+        assertThat(Vector.<Integer>empty().dropRight(Integer.MIN_VALUE)).isEqualTo(Vector.empty());
     }
 
     @Test
     public void shouldClampTakeRightAndDropRightAtTheExtremesOnEverySequence() {
-        for (int n : new int[] { Integer.MIN_VALUE, -1, 0, 3, Integer.MAX_VALUE }) {
-            final Vector<Integer> expectedTake = Vector.of(1, 2, 3).takeRight(n);
-            final Vector<Integer> expectedDrop = Vector.of(1, 2, 3).dropRight(n);
+        for (int n : new int[] {Integer.MIN_VALUE, -1, 0, 3, Integer.MAX_VALUE}) {
+            Vector<Integer> expectedTake = Vector.of(1, 2, 3).takeRight(n);
+            Vector<Integer> expectedDrop = Vector.of(1, 2, 3).dropRight(n);
             assertThat(List.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
             assertThat(List.of(1, 2, 3).dropRight(n).toVector()).isEqualTo(expectedDrop);
             assertThat(Queue.of(1, 2, 3).takeRight(n).toVector()).isEqualTo(expectedTake);
@@ -347,7 +342,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldDropRightWhileCorrect() {
-        assertThat(ofAll("abc  ".toCharArray()).dropRightWhile(Character::isWhitespace)).isEqualTo(ofAll("abc".toCharArray()));
+        assertThat(ofAll("abc  ".toCharArray()).dropRightWhile(Character::isWhitespace))
+                .isEqualTo(ofAll("abc".toCharArray()));
     }
 
     @Nested
@@ -372,7 +368,7 @@ public class VectorTest extends AbstractTraversableTest {
     class TovectorTests {
         @Test
         public void shouldReturnSelfOnConvertToVector() {
-            final Traversable<Integer> value = of(1, 2, 3);
+            Traversable<Integer> value = of(1, 2, 3);
             assertThat(value.toVector()).isSameAs(value);
         }
     }
@@ -396,7 +392,7 @@ public class VectorTest extends AbstractTraversableTest {
     class CollectTests {
 
         // the 32-wide trie: empty, one leaf, a full leaf, one past it (a second level), and around the third level
-        private final int[] sizes = { 0, 1, 31, 32, 33, 1023, 1024, 1025 };
+        private final int[] sizes = {0, 1, 31, 32, 33, 1023, 1024, 1025};
 
         @Test
         public void shouldCollectNothingWhenEveryElementIsDroppedAtTheLeafBoundaries() {
@@ -408,7 +404,7 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldCollectEveryElementWhenEveryElementIsKeptAtTheLeafBoundaries() {
             for (int n : sizes) {
-                final Vector<Integer> actual = Vector.range(0, n).collect(i -> Option.some(i + 1));
+                Vector<Integer> actual = Vector.range(0, n).collect(i -> Option.some(i + 1));
                 assertThat(actual).isEqualTo(Vector.range(1, n + 1));
                 assertThat(actual.size()).isEqualTo(n);
             }
@@ -417,7 +413,7 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldCollectTheKeptElementsAtTheLeafBoundaries() {
             for (int n : sizes) {
-                final Vector<Integer> actual = Vector.range(0, n).collect(i -> i % 2 == 0 ? Option.some(i) : Option.none());
+                Vector<Integer> actual = Vector.range(0, n).collect(i -> i % 2 == 0 ? Option.some(i) : Option.none());
                 assertThat(actual).isEqualTo(Vector.range(0, n).filter(i -> i % 2 == 0));
                 assertThat(actual.size()).isEqualTo((n + 1) / 2);
             }
@@ -425,34 +421,37 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCollectTheSameFromObjectLeavesAndPrimitiveLeaves() {
-            final Function<Integer, Option<Integer>> mapper = i -> i % 3 == 0 ? Option.some(i * 2) : Option.none();
+            Function<Integer, Option<Integer>> mapper = i -> i % 3 == 0 ? Option.some(i * 2) : Option.none();
             for (int n : sizes) {
-                final Vector<Integer> primitive = Vector.range(0, n); // int[] leaves
-                final Vector<Integer> boxed = Vector.ofAll(new java.util.ArrayList<>(primitive.asJava())); // Object[] leaves
+                Vector<Integer> primitive = Vector.range(0, n); // int[] leaves
+                Vector<Integer> boxed = Vector.ofAll(new java.util.ArrayList<>(primitive.asJava())); // Object[] leaves
                 assertThat(boxed.collect(mapper)).isEqualTo(primitive.collect(mapper));
             }
         }
 
         @Test
         public void shouldCollectAcrossTheLeafBoundaryInOrder() {
-            assertThat(Vector.range(0, 33).collect(i -> i >= 31 ? Option.some(i) : Option.none())).isEqualTo(Vector.of(31, 32));
+            assertThat(Vector.range(0, 33).collect(i -> i >= 31 ? Option.some(i) : Option.none()))
+                    .isEqualTo(Vector.of(31, 32));
         }
 
         @Test
         public void shouldRejectANullOptionAtEveryPosition() {
-            for (int n : new int[] { 1, 32, 33 }) {
-                final int last = n - 1;
-                final NullPointerException e = assertThrows(NullPointerException.class,
-                  () -> Vector.range(0, n).collect(i -> i == last ? null : Option.some(i)));
+            for (int n : new int[] {1, 32, 33}) {
+                int last = n - 1;
+                NullPointerException e = assertThrows(
+                        NullPointerException.class,
+                        () -> Vector.range(0, n).collect(i -> i == last ? null : Option.some(i)));
                 assertThat(e.getMessage()).isEqualTo("Vector.collect: mapper returned null");
             }
         }
     }
 
-    // partitionMap, duplicates, duplicatesBy, flatten and toNonEmptyVector, at the empty/1/32/33/1023/1024/1025 boundaries and on both leaf representations
+    // partitionMap, duplicates, duplicatesBy, flatten and toNonEmptyVector, at the empty/1/32/33/1023/1024/1025
+    // boundaries and on both leaf representations
 
     static java.util.List<Vector<Integer>> bothRepresentations(int n) {
-        final Vector<Integer> primitive = Vector.range(0, n);
+        Vector<Integer> primitive = Vector.range(0, n);
         return java.util.List.of(primitive, Vector.ofAll(new java.util.ArrayList<>(primitive.asJava())));
     }
 
@@ -461,10 +460,11 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
+            for (int n : new int[] {0, 1, 32, 33, 1023, 1024, 1025}) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
-                    final Tuple2<Vector<String>, Vector<Integer>> actual = vector.partitionMap(i -> i % 2 == 0 ? Either.left("e" + i) : Either.right(i));
-                    final Tuple2<Vector<Integer>, Vector<Integer>> expected = vector.partition(i -> i % 2 == 0);
+                    Tuple2<Vector<String>, Vector<Integer>> actual =
+                            vector.partitionMap(i -> i % 2 == 0 ? Either.left("e" + i) : Either.right(i));
+                    Tuple2<Vector<Integer>, Vector<Integer>> expected = vector.partition(i -> i % 2 == 0);
                     assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                     assertThat(actual._2()).isEqualTo(expected._2());
                     assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
@@ -474,22 +474,31 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldLeaveOneSideEmpty() {
-            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
+            for (int n : new int[] {0, 1, 32, 33, 1023, 1024, 1025}) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
-                    assertThat(vector.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(vector, Vector.empty()));
-                    assertThat(vector.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(Vector.empty(), vector));
+                    assertThat(vector.partitionMap(i -> Either.<Integer, String>left(i)))
+                            .isEqualTo(Tuple.of(vector, Vector.empty()));
+                    assertThat(vector.partitionMap(i -> Either.<String, Integer>right(i)))
+                            .isEqualTo(Tuple.of(Vector.empty(), vector));
                 }
             }
-            assertThat(Vector.<Integer> empty().partitionMap(i -> Either.<Integer, Integer> left(i))._1()).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer>empty()
+                            .partitionMap(i -> Either.<Integer, Integer>left(i))
+                            ._1())
+                    .isSameAs(Vector.empty());
         }
 
         @Test
         public void shouldRejectNullFunctionAndNullEither() {
-            assertThatNullPointerException().isThrownBy(() -> Vector.of(1).partitionMap(null)).withMessage("f is null");
-            for (int n : new int[] { 1, 32, 33 }) {
-                final int last = n - 1;
-                final NullPointerException e = assertThrows(NullPointerException.class,
-                  () -> Vector.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Vector.of(1).partitionMap(null))
+                    .withMessage("f is null");
+            for (int n : new int[] {1, 32, 33}) {
+                int last = n - 1;
+                NullPointerException e = assertThrows(
+                        NullPointerException.class,
+                        () -> Vector.range(0, n)
+                                .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)));
                 assertThat(e.getMessage()).isEqualTo("Vector.partitionMap: f returned null");
             }
         }
@@ -504,34 +513,41 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(Vector.of(1, 2, 2, 1).duplicates()).isEqualTo(Vector.of(1, 2));
             assertThat(Vector.of("a", "b", "c").duplicates()).isEqualTo(Vector.empty());
             assertThat(Vector.of("a", "b", "c").duplicates()).isSameAs(Vector.empty());
-            assertThat(Vector.<Integer> empty().duplicates()).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer>empty().duplicates()).isSameAs(Vector.empty());
         }
 
         @Test
         public void shouldReturnTheFirstElementOfEachDuplicatedKey() {
-            assertThat(Vector.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length)).isEqualTo(Vector.of("aa", "b"));
-            assertThat(Vector.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length)).isEqualTo(Vector.of("aa"));
-            assertThat(Vector.of("b", "aa", "e", "cc").duplicatesBy(String::length)).isEqualTo(Vector.of("b", "aa"));
+            assertThat(Vector.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length))
+                    .isEqualTo(Vector.of("aa", "b"));
+            assertThat(Vector.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length))
+                    .isEqualTo(Vector.of("aa"));
+            assertThat(Vector.of("b", "aa", "e", "cc").duplicatesBy(String::length))
+                    .isEqualTo(Vector.of("b", "aa"));
             assertThat(Vector.of("a", "bb").duplicatesBy(String::length)).isEqualTo(Vector.empty());
-            assertThatNullPointerException().isThrownBy(() -> Vector.of(1).duplicatesBy(null)).withMessage("keyExtractor is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Vector.of(1).duplicatesBy(null))
+                    .withMessage("keyExtractor is null");
         }
 
         @Test
         public void shouldFindDuplicatesOfANullKey() {
             // a Vector never holds a null element, but a key extractor may return null for several of them
             assertThat(Vector.of("a", "b").duplicatesBy(s -> null)).isEqualTo(Vector.of("a"));
-            assertThat(Vector.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s)).isEqualTo(Vector.of("a"));
+            assertThat(Vector.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s))
+                    .isEqualTo(Vector.of("a"));
             assertThat(Vector.of("a").duplicatesBy(s -> null)).isEqualTo(Vector.empty());
         }
 
         @Test
         public void shouldFindDuplicatesAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
+            for (int n : new int[] {0, 1, 32, 33, 1023, 1024, 1025}) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
                     assertThat(vector.duplicates()).isEqualTo(Vector.empty());
                     assertThat(vector.appendAll(vector).duplicates()).isEqualTo(vector);
                     assertThat(vector.appendAll(vector.reverse()).duplicates()).isEqualTo(vector);
-                    assertThat(vector.duplicatesBy(i -> i % 5)).isEqualTo(vector.take(Math.max(n - 5, 0)).take(5));
+                    assertThat(vector.duplicatesBy(i -> i % 5))
+                            .isEqualTo(vector.take(Math.max(n - 5, 0)).take(5));
                     assertThat(vector.duplicatesBy(i -> i % 5).isEmpty()).isEqualTo(n <= 5);
                 }
             }
@@ -543,25 +559,31 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenNestedIterablesAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33, 1023, 1024, 1025 }) {
+            for (int n : new int[] {0, 1, 32, 33, 1023, 1024, 1025}) {
                 for (Vector<Integer> inner : bothRepresentations(n)) {
                     assertThat(Vector.flatten(Vector.of(inner, inner))).isEqualTo(inner.appendAll(inner));
-                    assertThat(Vector.flatten(java.util.List.of(new java.util.ArrayList<>(inner.asJava()), inner))).isEqualTo(inner.appendAll(inner));
-                    assertThat(Vector.flatten(Vector.of(Vector.<Integer> empty(), inner, Vector.<Integer> empty()))).isEqualTo(inner);
+                    assertThat(Vector.flatten(java.util.List.of(new java.util.ArrayList<>(inner.asJava()), inner)))
+                            .isEqualTo(inner.appendAll(inner));
+                    assertThat(Vector.flatten(Vector.of(Vector.<Integer>empty(), inner, Vector.<Integer>empty())))
+                            .isEqualTo(inner);
                     assertThat(Vector.flatten(Vector.of(inner))).isEqualTo(inner);
                 }
             }
-            assertThat(Vector.flatten(Vector.<Vector<Integer>> empty())).isSameAs(Vector.empty());
-            assertThat(Vector.flatten(Vector.of(Vector.<Integer> empty()))).isSameAs(Vector.empty());
-            final Vector<Number> numbers = Vector.flatten(Vector.of(Vector.of(1), Vector.of(2.0)));
-            assertThat(numbers).isEqualTo(Vector.<Number> of(1, 2.0));
+            assertThat(Vector.flatten(Vector.<Vector<Integer>>empty())).isSameAs(Vector.empty());
+            assertThat(Vector.flatten(Vector.of(Vector.<Integer>empty()))).isSameAs(Vector.empty());
+            Vector<Number> numbers = Vector.flatten(Vector.of(Vector.of(1), Vector.of(2.0)));
+            assertThat(numbers).isEqualTo(Vector.<Number>of(1, 2.0));
         }
 
         @Test
         public void shouldRejectNulls() {
-            assertThatNullPointerException().isThrownBy(() -> Vector.flatten(null)).withMessage("nested is null");
-            assertThatNullPointerException().isThrownBy(() -> Vector.flatten(java.util.Arrays.asList(Vector.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> Vector.flatten(Vector.of(java.util.Arrays.asList(1, null))));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Vector.flatten(null))
+                    .withMessage("nested is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Vector.flatten(java.util.Arrays.asList(Vector.of(1), null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Vector.flatten(Vector.of(java.util.Arrays.asList(1, null))));
         }
     }
 
@@ -569,7 +591,7 @@ public class VectorTest extends AbstractTraversableTest {
     class GroupedHugeSizeTests {
         @Test
         public void shouldGroupIntoOneGroupWhenSizeExceedsTheVector() {
-            for (int n : new int[] { 1, 32, 33, 1025 }) {
+            for (int n : new int[] {1, 32, 33, 1025}) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
                     assertThat(vector.grouped(Integer.MAX_VALUE).toList()).isEqualTo(List.of(vector));
                     assertThat(vector.sliding(Integer.MAX_VALUE).toList()).isEqualTo(List.of(vector));
@@ -580,10 +602,15 @@ public class VectorTest extends AbstractTraversableTest {
             }
             assertThat(Vector.empty().grouped(Integer.MAX_VALUE).isEmpty()).isTrue();
             // the first group grows past the initial capacity in every step configuration
-            assertThat(Vector.range(0, 100).grouped(40).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(40, 80), Vector.range(80, 100)));
-            assertThat(Vector.range(0, 100).sliding(40, 30).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(30, 70), Vector.range(60, 100)));
-            assertThat(Vector.range(0, 101).sliding(40, 30).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(30, 70), Vector.range(60, 100), Vector.range(90, 101)));
-            assertThat(Vector.range(0, 100).sliding(40, 50).toList()).isEqualTo(List.of(Vector.range(0, 40), Vector.range(50, 90)));
+            assertThat(Vector.range(0, 100).grouped(40).toList())
+                    .isEqualTo(List.of(Vector.range(0, 40), Vector.range(40, 80), Vector.range(80, 100)));
+            assertThat(Vector.range(0, 100).sliding(40, 30).toList())
+                    .isEqualTo(List.of(Vector.range(0, 40), Vector.range(30, 70), Vector.range(60, 100)));
+            assertThat(Vector.range(0, 101).sliding(40, 30).toList())
+                    .isEqualTo(List.of(
+                            Vector.range(0, 40), Vector.range(30, 70), Vector.range(60, 100), Vector.range(90, 101)));
+            assertThat(Vector.range(0, 100).sliding(40, 50).toList())
+                    .isEqualTo(List.of(Vector.range(0, 40), Vector.range(50, 90)));
         }
     }
 
@@ -592,10 +619,10 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldNarrowToNonEmptyVector() {
-            assertThat(Vector.<Integer> empty().toNonEmptyVector()).isEqualTo(Option.none());
-            for (int n : new int[] { 1, 32, 33, 1023, 1024, 1025 }) {
+            assertThat(Vector.<Integer>empty().toNonEmptyVector()).isEqualTo(Option.none());
+            for (int n : new int[] {1, 32, 33, 1023, 1024, 1025}) {
                 for (Vector<Integer> vector : bothRepresentations(n)) {
-                    final Option<NonEmptyVector<Integer>> actual = vector.toNonEmptyVector();
+                    Option<NonEmptyVector<Integer>> actual = vector.toNonEmptyVector();
                     assertThat(actual.isDefined()).isTrue();
                     assertThat(actual.get().toVector()).isSameAs(vector);
                     assertThat(actual.get().size()).isEqualTo(n);
@@ -610,9 +637,7 @@ public class VectorTest extends AbstractTraversableTest {
     class FillIntSupplierTests {
         @Test
         public void shouldReturnManyAfterFillWithConstantSupplier() {
-            assertThat(fill(17, () -> 7))
-                    .hasSize(17)
-                    .containsOnly(7);
+            assertThat(fill(17, () -> 7)).hasSize(17).containsOnly(7);
         }
     }
 
@@ -630,9 +655,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnManyAfterFillWithConstant() {
-            assertThat(fill(17, 7))
-                    .hasSize(17)
-                    .containsOnly(7);
+            assertThat(fill(17, 7)).hasSize(17).containsOnly(7);
         }
     }
 
@@ -640,20 +663,20 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendElementToNil() {
-        final Vector<Integer> actual = this.<Integer> empty().append(1);
-        final Vector<Integer> expected = of(1);
+        Vector<Integer> actual = this.<Integer>empty().append(1);
+        Vector<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldRejectAppendOfNullElement() {
-        assertThatNullPointerException().isThrownBy(() -> this.<Integer> empty().append(null));
+        assertThatNullPointerException().isThrownBy(() -> this.<Integer>empty().append(null));
     }
 
     @Test
     public void shouldAppendElementToNonNil() {
-        final Vector<Integer> actual = of(1, 2).append(3);
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = of(1, 2).append(3);
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -671,57 +694,57 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendAllNilToNil() {
-        final Vector<Object> actual = empty().appendAll(empty());
-        final Vector<Object> expected = empty();
+        Vector<Object> actual = empty().appendAll(empty());
+        Vector<Object> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNonNilToNil() {
-        final Vector<Integer> actual = this.<Integer> empty().appendAll(of(1, 2, 3));
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = this.<Integer>empty().appendAll(of(1, 2, 3));
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNilToNonNil() {
-        final Vector<Integer> actual = of(1, 2, 3).appendAll(empty());
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = of(1, 2, 3).appendAll(empty());
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNonNilToNonNil() {
-        final Vector<Integer> actual = of(1, 2, 3).appendAll(of(4, 5, 6));
-        final Vector<Integer> expected = of(1, 2, 3, 4, 5, 6);
+        Vector<Integer> actual = of(1, 2, 3).appendAll(of(4, 5, 6));
+        Vector<Integer> expected = of(1, 2, 3, 4, 5, 6);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllWhenUsedWithTypeHierarchy() {
-        final Vector<SomeInterface> empty = of();
-        final Vector<SomeInterface> all = empty
-          .appendAll(of(OneEnum.values()))
-          .appendAll(of(SecondEnum.values()));
+        Vector<SomeInterface> empty = of();
+        Vector<SomeInterface> all = empty.appendAll(of(OneEnum.values())).appendAll(of(SecondEnum.values()));
 
-        assertThat(all).isEqualTo(this.<SomeInterface>of(OneEnum.A1, OneEnum.A2, OneEnum.A3, SecondEnum.A1, SecondEnum.A2, SecondEnum.A3));
+        assertThat(all)
+                .isEqualTo(this.<SomeInterface>of(
+                        OneEnum.A1, OneEnum.A2, OneEnum.A3, SecondEnum.A1, SecondEnum.A2, SecondEnum.A3));
     }
 
     @Test
     public void shouldReturnSameVectorWhenEmptyAppendAllEmpty() {
-        final Vector<Integer> empty = empty();
+        Vector<Integer> empty = empty();
         assertThat(empty.appendAll(empty())).isSameAs(empty);
     }
 
     @Test
     public void shouldReturnSameVectorWhenEmptyAppendAllNonEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(empty().appendAll(seq)).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameVectorWhenNonEmptyAppendAllEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.appendAll(empty())).isSameAs(seq);
     }
 
@@ -744,7 +767,7 @@ public class VectorTest extends AbstractTraversableTest {
     class AsjavaTests {
         @Test
         public void shouldConvertAsJavaImmutable() {
-            final java.util.List<Integer> list = of(1, 2, 3).asJava();
+            java.util.List<Integer> list = of(1, 2, 3).asJava();
             assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
             assertThatThrownBy(() -> list.add(4)).isInstanceOf(UnsupportedOperationException.class);
         }
@@ -773,19 +796,19 @@ public class VectorTest extends AbstractTraversableTest {
     class ContainssliceTests {
         @Test
         public void shouldRecognizeNilNotContainsSlice() {
-            final boolean actual = empty().containsSlice(of(1, 2, 3));
+            boolean actual = empty().containsSlice(of(1, 2, 3));
             assertThat(actual).isFalse();
         }
 
         @Test
         public void shouldRecognizeNonNilDoesContainSlice() {
-            final boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 3));
+            boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 3));
             assertThat(actual).isTrue();
         }
 
         @Test
         public void shouldRecognizeNonNilDoesNotContainSlice() {
-            final boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 1, 4));
+            boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 1, 4));
             assertThat(actual).isFalse();
         }
     }
@@ -794,16 +817,24 @@ public class VectorTest extends AbstractTraversableTest {
     class CrossproductTests {
         @Test
         public void shouldCalculateCrossProductOfNil() {
-            final Vector<Tuple2<Object, Object>> actual = empty().crossProduct();
+            Vector<Tuple2<Object, Object>> actual = empty().crossProduct();
             assertThat(actual).isEmpty();
         }
 
         @SuppressWarnings("unchecked")
         @Test
         public void shouldCalculateCrossProductOfNonNil() {
-            final List<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct().toList();
-            final List<Tuple2<Integer, Integer>> expected = List.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3),
-                    Tuple.of(2, 1), Tuple.of(2, 2), Tuple.of(2, 3), Tuple.of(3, 1), Tuple.of(3, 2), Tuple.of(3, 3));
+            List<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct().toList();
+            List<Tuple2<Integer, Integer>> expected = List.of(
+                    Tuple.of(1, 1),
+                    Tuple.of(1, 2),
+                    Tuple.of(1, 3),
+                    Tuple.of(2, 1),
+                    Tuple.of(2, 2),
+                    Tuple.of(2, 3),
+                    Tuple.of(3, 1),
+                    Tuple.of(3, 2),
+                    Tuple.of(3, 3));
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -833,28 +864,35 @@ public class VectorTest extends AbstractTraversableTest {
     class CrossproductIterableTests {
         @Test
         public void shouldCalculateCrossProductOfNilAndNil() {
-            final Vector<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
+            Vector<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNilAndNonNil() {
-            final Vector<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
+            Vector<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNil() {
-            final Vector<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
+            Vector<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
         @SuppressWarnings("unchecked")
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNonNil() {
-            final List<Tuple2<Integer, Character>> actual = of(1, 2, 3).crossProduct(of('a', 'b')).toList();
-            final List<Tuple2<Integer, Character>> expected = of(Tuple.of(1, 'a'), Tuple.of(1, 'b'),
-                    Tuple.of(2, 'a'), Tuple.of(2, 'b'), Tuple.of(3, 'a'), Tuple.of(3, 'b')).toList();
+            List<Tuple2<Integer, Character>> actual =
+                    of(1, 2, 3).crossProduct(of('a', 'b')).toList();
+            List<Tuple2<Integer, Character>> expected = of(
+                            Tuple.of(1, 'a'),
+                            Tuple.of(1, 'b'),
+                            Tuple.of(2, 'a'),
+                            Tuple.of(2, 'b'),
+                            Tuple.of(3, 'a'),
+                            Tuple.of(3, 'b'))
+                    .toList();
             assertThat(actual).isEqualTo(expected);
         }
 
@@ -866,7 +904,7 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldCalculateCrossProductWithAOneShotArgument() {
             // a java.util.stream can be iterated once: the argument is read exactly once
-            final Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
+            Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
             assertThat(of(1, 2).crossProduct(oneShot).toList())
                     .isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b')));
         }
@@ -881,7 +919,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldDropRightUntilNoneIfPredicateIsTrue() {
-            final Vector<Integer> values = of(1, 2, 3);
+            Vector<Integer> values = of(1, 2, 3);
             assertThat(values.dropRightUntil(ignored -> true)).isEqualTo(values);
         }
 
@@ -905,7 +943,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldDropRightWhileNoneIfPredicateIsFalse() {
-        final Vector<Integer> values = of(1, 2, 3);
+        Vector<Integer> values = of(1, 2, 3);
         assertThat(values.dropRightWhile(ignored -> false)).isEqualTo(values);
     }
 
@@ -1118,8 +1156,10 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(2), -1)).isEqualTo(Option.none());
             assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(2), 2)).isEqualTo(Option.some(1));
             assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(2, 3), 2)).isEqualTo(Option.some(1));
-            assertThat(of(1, 2, 3, 1, 2, 3, 4).lastIndexOfSliceOption(of(2, 3), 2)).isEqualTo(Option.some(1));
-            assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(1, 2, 3), 2)).isEqualTo(Option.some(0));
+            assertThat(of(1, 2, 3, 1, 2, 3, 4).lastIndexOfSliceOption(of(2, 3), 2))
+                    .isEqualTo(Option.some(1));
+            assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(1, 2, 3), 2))
+                    .isEqualTo(Option.some(0));
         }
     }
 
@@ -1140,10 +1180,14 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 1)).isEqualTo(Option.some(1));
             assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 2)).isEqualTo(Option.some(2));
             assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 8)).isEqualTo(Option.none());
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 0, 3)).isEqualTo(Option.some(4));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 1, 3)).isEqualTo(Option.some(5));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 2, 3)).isEqualTo(Option.some(6));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 8, 3)).isEqualTo(Option.none());
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 0, 3))
+                    .isEqualTo(Option.some(4));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 1, 3))
+                    .isEqualTo(Option.some(5));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 2, 3))
+                    .isEqualTo(Option.some(6));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 8, 3))
+                    .isEqualTo(Option.none());
         }
 
         @Test
@@ -1178,14 +1222,22 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhere(i -> i == 2, 3)).isEqualTo(2);
             assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhere(i -> i == 8, 3)).isEqualTo(-1);
 
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0)).isEqualTo(Option.some(4));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1)).isEqualTo(Option.some(5));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2)).isEqualTo(Option.some(6));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8)).isEqualTo(Option.none());
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0, 3)).isEqualTo(Option.some(0));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1, 3)).isEqualTo(Option.some(1));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2, 3)).isEqualTo(Option.some(2));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8, 3)).isEqualTo(Option.none());
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0))
+                    .isEqualTo(Option.some(4));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1))
+                    .isEqualTo(Option.some(5));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2))
+                    .isEqualTo(Option.some(6));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8))
+                    .isEqualTo(Option.none());
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0, 3))
+                    .isEqualTo(Option.some(0));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1, 3))
+                    .isEqualTo(Option.some(1));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2, 3))
+                    .isEqualTo(Option.some(2));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8, 3))
+                    .isEqualTo(Option.none());
         }
 
         @Test
@@ -1248,29 +1300,29 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldInsertIntoNil() {
-        final Vector<Integer> actual = this.<Integer> empty().insert(0, 1);
-        final Vector<Integer> expected = of(1);
+        Vector<Integer> actual = this.<Integer>empty().insert(0, 1);
+        Vector<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertInFrontOfElement() {
-        final Vector<Integer> actual = of(4).insert(0, 1);
-        final Vector<Integer> expected = of(1, 4);
+        Vector<Integer> actual = of(4).insert(0, 1);
+        Vector<Integer> expected = of(1, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertBehindOfElement() {
-        final Vector<Integer> actual = of(4).insert(1, 5);
-        final Vector<Integer> expected = of(4, 5);
+        Vector<Integer> actual = of(4).insert(1, 5);
+        Vector<Integer> expected = of(4, 5);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertIntoVector() {
-        final Vector<Integer> actual = of(1, 2, 3).insert(2, 4);
-        final Vector<Integer> expected = of(1, 2, 4, 3);
+        Vector<Integer> actual = of(1, 2, 3).insert(2, 4);
+        Vector<Integer> expected = of(1, 2, 4, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1281,41 +1333,43 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenInsertOnNilWithNegativeIndex() {
-        assertThrows(IndexOutOfBoundsException.class, () -> this.<Integer> empty().insert(-1, 9));
+        assertThrows(
+                IndexOutOfBoundsException.class, () -> this.<Integer>empty().insert(-1, 9));
     }
 
     @Test
     public void shouldThrowOnInsertWhenExceedingUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> this.<Integer> empty().insert(1, 9));
+        assertThrows(
+                IndexOutOfBoundsException.class, () -> this.<Integer>empty().insert(1, 9));
     }
 
     // -- insertAll
 
     @Test
     public void shouldInsertAllIntoNil() {
-        final Vector<Integer> actual = this.<Integer> empty().insertAll(0, of(1, 2, 3));
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = this.<Integer>empty().insertAll(0, of(1, 2, 3));
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllInFrontOfElement() {
-        final Vector<Integer> actual = of(4).insertAll(0, of(1, 2, 3));
-        final Vector<Integer> expected = of(1, 2, 3, 4);
+        Vector<Integer> actual = of(4).insertAll(0, of(1, 2, 3));
+        Vector<Integer> expected = of(1, 2, 3, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllBehindOfElement() {
-        final Vector<Integer> actual = of(4).insertAll(1, of(1, 2, 3));
-        final Vector<Integer> expected = of(4, 1, 2, 3);
+        Vector<Integer> actual = of(4).insertAll(1, of(1, 2, 3));
+        Vector<Integer> expected = of(4, 1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllIntoVector() {
-        final Vector<Integer> actual = of(1, 2, 3).insertAll(2, of(4, 5));
-        final Vector<Integer> expected = of(1, 2, 4, 5, 3);
+        Vector<Integer> actual = of(1, 2, 3).insertAll(2, of(4, 5));
+        Vector<Integer> expected = of(1, 2, 4, 5, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1341,19 +1395,19 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameVectorWhenEmptyInsertAllEmpty() {
-        final Vector<Integer> empty = empty();
+        Vector<Integer> empty = empty();
         assertThat(empty.insertAll(0, empty())).isSameAs(empty);
     }
 
     @Test
     public void shouldReturnSameVectorWhenEmptyInsertAllNonEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(empty().insertAll(0, seq)).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameVectorWhenNonEmptyInsertAllEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.insertAll(0, empty())).isSameAs(seq);
     }
 
@@ -1361,7 +1415,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldIntersperseNil() {
-        assertThat(this.<Character> empty().intersperse(',')).isEmpty();
+        assertThat(this.<Character>empty().intersperse(',')).isEmpty();
     }
 
     @Test
@@ -1388,7 +1442,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPadNonEmptyZeroLen() {
-            final Vector<Integer> seq = of(1);
+            Vector<Integer> seq = of(1);
             assertThat(seq.padTo(0, 2)).isSameAs(seq);
         }
 
@@ -1414,7 +1468,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldLeftPadNonEmptyZeroLen() {
-            final Vector<Integer> seq = of(1);
+            Vector<Integer> seq = of(1);
             assertThat(seq.leftPadTo(0, 2)).isSameAs(seq);
         }
 
@@ -1439,7 +1493,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchEmptyByNonEmpty() {
-            final Vector<Character> s = of('1', '2', '3');
+            Vector<Character> s = of('1', '2', '3');
             assertThat(empty().patch(0, s, 0)).isEqualTo(s);
             assertThat(empty().patch(-1, s, -1)).isEqualTo(s);
             assertThat(empty().patch(-1, s, 1)).isEqualTo(s);
@@ -1449,7 +1503,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchNonEmptyByEmpty() {
-            final Vector<Character> s = of('1', '2', '3');
+            Vector<Character> s = of('1', '2', '3');
             assertThat(s.patch(-1, empty(), -1)).isEqualTo(of('1', '2', '3'));
             assertThat(s.patch(-1, empty(), 0)).isEqualTo(of('1', '2', '3'));
             assertThat(s.patch(-1, empty(), 1)).isEqualTo(of('2', '3'));
@@ -1470,8 +1524,8 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchNonEmptyByNonEmpty() {
-            final Vector<Character> s = of('1', '2', '3');
-            final Vector<Character> d = of('4', '5', '6');
+            Vector<Character> s = of('1', '2', '3');
+            Vector<Character> d = of('4', '5', '6');
             assertThat(s.patch(-1, d, -1)).isEqualTo(of('4', '5', '6', '1', '2', '3'));
             assertThat(s.patch(-1, d, 0)).isEqualTo(of('4', '5', '6', '1', '2', '3'));
             assertThat(s.patch(-1, d, 1)).isEqualTo(of('4', '5', '6', '2', '3'));
@@ -1522,10 +1576,18 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapTransformedVector() {
-        final Function<Integer, Integer> mapper = o -> o + 1;
-        assertThat(this.<Integer> empty().map(mapper)).isEmpty();
+        Function<Integer, Integer> mapper = o -> o + 1;
+        assertThat(this.<Integer>empty().map(mapper)).isEmpty();
         assertThat(of(3, 1, 4, 1, 5).map(mapper)).isEqualTo(of(4, 2, 5, 2, 6));
-        assertThat(of(3, 1, 4, 1, 5, 9, 2).sorted().distinct().drop(1).init().remove(5).map(mapper).tail()).isEqualTo(of(4, 5));
+        assertThat(of(3, 1, 4, 1, 5, 9, 2)
+                        .sorted()
+                        .distinct()
+                        .drop(1)
+                        .init()
+                        .remove(5)
+                        .map(mapper)
+                        .tail())
+                .isEqualTo(of(4, 5));
     }
 
     @Nested
@@ -1572,15 +1634,15 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependElementToNil() {
-        final Vector<Integer> actual = this.<Integer> empty().prepend(1);
-        final Vector<Integer> expected = of(1);
+        Vector<Integer> actual = this.<Integer>empty().prepend(1);
+        Vector<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependElementToNonNil() {
-        final Vector<Integer> actual = of(2, 3).prepend(1);
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = of(2, 3).prepend(1);
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1593,60 +1655,60 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependAllNilToNil() {
-        final Vector<Integer> actual = this.<Integer> empty().prependAll(empty());
-        final Vector<Integer> expected = empty();
+        Vector<Integer> actual = this.<Integer>empty().prependAll(empty());
+        Vector<Integer> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNilToNonNil() {
-        final Vector<Integer> actual = of(1, 2, 3).prependAll(empty());
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = of(1, 2, 3).prependAll(empty());
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNonNilToNil() {
-        final Vector<Integer> actual = this.<Integer> empty().prependAll(of(1, 2, 3));
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> actual = this.<Integer>empty().prependAll(of(1, 2, 3));
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNonNilToNonNil() {
-        final Vector<Integer> expected = range(0, 100);
+        Vector<Integer> expected = range(0, 100);
 
-        final Vector<Integer> actualFirstPartLarger = range(90, 100).prependAll(range(0, 90));
+        Vector<Integer> actualFirstPartLarger = range(90, 100).prependAll(range(0, 90));
         assertThat(actualFirstPartLarger).isEqualTo(expected);
 
-        final Vector<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
+        Vector<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
         assertThat(actualSecondPartLarger).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllAQueueWithFrontAndRear() {
         // appended elements land in the rear list, so both halves of the queue are read in reverse
-        final Queue<Integer> queue = Queue.of(0, 1, 2).appendAll(Queue.range(3, 40));
-        final Vector<Integer> expected = range(0, 50);
+        Queue<Integer> queue = Queue.of(0, 1, 2).appendAll(Queue.range(3, 40));
+        Vector<Integer> expected = range(0, 50);
         assertThat(range(40, 50).prependAll(queue)).isEqualTo(expected);
-        assertThat(this.<Integer> empty().prependAll(queue)).isEqualTo(range(0, 40));
+        assertThat(this.<Integer>empty().prependAll(queue)).isEqualTo(range(0, 40));
     }
 
     @Test
     public void shouldReturnSameVectorWhenEmptyPrependAllEmpty() {
-        final Vector<Integer> empty = empty();
+        Vector<Integer> empty = empty();
         assertThat(empty.prependAll(empty())).isSameAs(empty);
     }
 
     @Test
     public void shouldReturnSameVectorWhenEmptyPrependAllNonEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(empty().prependAll(seq)).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameVectorWhenNonEmptyPrependAllEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.prependAll(empty())).isSameAs(seq);
     }
 
@@ -1679,7 +1741,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveNonExistingElement() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.remove(4)).isSameAs(t);
     }
 
@@ -1717,7 +1779,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveFirstElementByPredicateNonExisting() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.removeFirst(v -> v == 4)).isSameAs(t);
     }
 
@@ -1755,7 +1817,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveLastElementByPredicateNonExisting() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.removeLast(v -> v == 4)).isSameAs(t);
     }
 
@@ -1773,19 +1835,19 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNotRemoveAllNonExistingElementsFromNonNil() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.removeAll(of(4, 5))).isSameAs(t);
     }
 
     @Test
     public void shouldReturnSameVectorWhenNonEmptyRemoveAllEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(empty())).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameVectorWhenEmptyRemoveAllNonEmpty() {
-        final Vector<Integer> empty = empty();
+        Vector<Integer> empty = empty();
         assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
     }
 
@@ -1794,7 +1856,7 @@ public class VectorTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldRemoveExistingElements() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(i -> i == 1)).isEqualTo(of(2, 3));
         assertThat(seq.removeAll(i -> i == 2)).isEqualTo(of(1, 3));
         assertThat(seq.removeAll(i -> i == 3)).isEqualTo(of(1, 2));
@@ -1805,7 +1867,7 @@ public class VectorTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldRemoveNonExistingElements() {
-        assertThat(this.<Integer> empty().removeAll(i -> i == 0)).isSameAs(empty());
+        assertThat(this.<Integer>empty().removeAll(i -> i == 0)).isSameAs(empty());
         assertThat(of(1, 2, 3).removeAll(i -> i != 0)).isSameAs(empty());
     }
 
@@ -1830,8 +1892,8 @@ public class VectorTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldNotRemoveAllNonMatchedElementsFromNonNil() {
-        final Vector<Integer> t = of(1, 2, 3);
-        final Predicate<Integer> isTooBig = i -> i >= 4;
+        Vector<Integer> t = of(1, 2, 3);
+        Predicate<Integer> isTooBig = i -> i >= 4;
         assertThat(t.removeAll(isTooBig)).isSameAs(t);
     }
 
@@ -1849,13 +1911,13 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNotRemoveAllNonObjectsElementsFromNonNil() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(4)).isSameAs(seq);
     }
 
     @Test
     public void shouldNotRemoveAbsentNullFromNonEmpty() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll((Integer) null)).isEqualTo(seq);
     }
 
@@ -1863,7 +1925,9 @@ public class VectorTest extends AbstractTraversableTest {
     class RemoveatIndexTests {
         @Test
         public void shouldRemoveIndexAtNil() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(empty().removeAt(1)).isEmpty());
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(empty().removeAt(1)).isEmpty());
         }
 
         @Test
@@ -1883,22 +1947,34 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRemoveMultipleTimes() {
-            assertThat(of(3, 1, 4, 1, 5, 9, 2).removeAt(0).removeAt(0).removeAt(4).removeAt(3).removeAt(1)).isEqualTo(of(4, 5));
+            assertThat(of(3, 1, 4, 1, 5, 9, 2)
+                            .removeAt(0)
+                            .removeAt(0)
+                            .removeAt(4)
+                            .removeAt(3)
+                            .removeAt(1))
+                    .isEqualTo(of(4, 5));
         }
 
         @Test
         public void shouldRemoveIndexOutOfBoundsLeft() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(of(1, 2, 3).removeAt(-1)).isEqualTo(of(1, 2, 3)));
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(of(1, 2, 3).removeAt(-1)).isEqualTo(of(1, 2, 3)));
         }
 
         @Test
         public void shouldRemoveIndexOutOfBoundsRight() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(of(1, 2, 3).removeAt(5)).isEqualTo(of(1, 2, 3)));
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(of(1, 2, 3).removeAt(5)).isEqualTo(of(1, 2, 3)));
         }
 
         @Test
         public void shouldRemoveIndexEqualToLength() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(of(1, 2, 3).removeAt(3)).isEqualTo(of(1, 2, 3)));
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(of(1, 2, 3).removeAt(3)).isEqualTo(of(1, 2, 3)));
         }
     }
 
@@ -1924,12 +2000,16 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCreateReverseIteratorOfSingle() {
-        assertThat(List.ofAll((Iterable<String>) () -> ofAll(this.of("a")).reverse().iterator())).isEqualTo(List.of("a"));
+        assertThat(List.ofAll(
+                        (Iterable<String>) () -> ofAll(this.of("a")).reverse().iterator()))
+                .isEqualTo(List.of("a"));
     }
 
     @Test
     public void shouldCreateReverseIteratorOfNonEmpty() {
-        assertThat(List.ofAll((Iterable<String>) () -> ofAll(of("a", "b", "c")).reverse().iterator())).isEqualTo(List.of("c", "b", "a"));
+        assertThat(List.ofAll((Iterable<String>)
+                        () -> ofAll(of("a", "b", "c")).reverse().iterator()))
+                .isEqualTo(List.of("c", "b", "a"));
     }
 
     @Nested
@@ -1978,11 +2058,14 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateByTheMostNegativeDistance() {
             // Integer.MIN_VALUE has no positive negation: the distance is taken modulo the length, not negated
-            assertThat(of(1, 2, 3, 4).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateLeft(Math.floorMod(Integer.MIN_VALUE, 4)));
-            assertThat(of(1, 2, 3, 4).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateRight(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3, 4).rotateLeft(Integer.MIN_VALUE))
+                    .isEqualTo(of(1, 2, 3, 4).rotateLeft(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3, 4).rotateRight(Integer.MIN_VALUE))
+                    .isEqualTo(of(1, 2, 3, 4).rotateRight(Math.floorMod(Integer.MIN_VALUE, 4)));
             assertThat(of(1, 2, 3).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(2, 3, 1));
             assertThat(of(1, 2, 3).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(3, 1, 2));
         }
+
         @Test
         public void shouldRotateRightOnEmpty() {
             assertThat(empty().rotateRight(1)).isSameAs(empty());
@@ -2036,7 +2119,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldShuffleHaveSameElements() {
-            final Vector<Integer> shuffled = of(1, 2, 3).shuffle();
+            Vector<Integer> shuffled = of(1, 2, 3).shuffle();
             assertThat(shuffled.indexOf(1)).isNotEqualTo(-1);
             assertThat(shuffled.indexOf(2)).isNotEqualTo(-1);
             assertThat(shuffled.indexOf(3)).isNotEqualTo(-1);
@@ -2132,8 +2215,8 @@ public class VectorTest extends AbstractTraversableTest {
     class HigherOrderUpdateTests {
         @Test
         public void shouldUpdateViaFunction() throws Exception {
-            final Vector<Character> actual = ofAll("hello".toCharArray()).update(0, Character::toUpperCase);
-            final Vector<Character> expected = ofAll("Hello".toCharArray());
+            Vector<Character> actual = ofAll("hello".toCharArray()).update(0, Character::toUpperCase);
+            Vector<Character> expected = ofAll("Hello".toCharArray());
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -2142,37 +2225,37 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNil() {
-        final Vector<Integer> actual = this.<Integer> empty().slice(0, 0);
+        Vector<Integer> actual = this.<Integer>empty().slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNonNil() {
-        final Vector<Integer> actual = of(1).slice(0, 0);
+        Vector<Integer> actual = of(1).slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnVectorWithFirstElementWhenSliceFrom0To1OnNonNil() {
-        final Vector<Integer> actual = of(1).slice(0, 1);
+        Vector<Integer> actual = of(1).slice(0, 1);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSliceFrom1To1OnNonNil() {
-        final Vector<Integer> actual = of(1).slice(1, 1);
+        Vector<Integer> actual = of(1).slice(1, 1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSliceWhenIndicesAreWithinRange() {
-        final Vector<Integer> actual = of(1, 2, 3).slice(1, 3);
+        Vector<Integer> actual = of(1, 2, 3).slice(1, 3);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilOnSliceWhenIndicesBothAreUpperBound() {
-        final Vector<Integer> actual = of(1, 2, 3).slice(3, 3);
+        Vector<Integer> actual = of(1, 2, 3).slice(3, 3);
         assertThat(actual).isEmpty();
     }
 
@@ -2233,7 +2316,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortNilUsingComparator() {
-        assertThat(this.<Integer> empty().sorted((i, j) -> j - i)).isEmpty();
+        assertThat(this.<Integer>empty().sorted((i, j) -> j - i)).isEmpty();
     }
 
     @Test
@@ -2245,25 +2328,25 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNilUsingFunction() {
-        assertThat(this.<String> empty().sortBy(String::length)).isEmpty();
+        assertThat(this.<String>empty().sortBy(String::length)).isEmpty();
     }
 
     @Test
     public void shouldSortByNonNilUsingFunction() {
-        final Vector<String> testee = of("aaa", "b", "cc");
-        final Vector<String> actual = testee.sortBy(String::length);
-        final Vector<String> expected = of("b", "cc", "aaa");
+        Vector<String> testee = of("aaa", "b", "cc");
+        Vector<String> actual = testee.sortBy(String::length);
+        Vector<String> expected = of("b", "cc", "aaa");
         assertThat(actual).isEqualTo(expected);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void shouldSortByFunctionWhenElementsAreInfiniteLazyLists() {
-        final LazyList<Integer> stream1 = LazyList.continually(1);
-        final LazyList<Integer> stream2 = LazyList.continually(2);
-        final Vector<LazyList<Integer>> testee = of(stream2, stream1);
-        final Vector<LazyList<Integer>> actual = testee.sortBy(LazyList::head);
-        final Vector<LazyList<Integer>> expected = of(stream1, stream2);
+        LazyList<Integer> stream1 = LazyList.continually(1);
+        LazyList<Integer> stream2 = LazyList.continually(2);
+        Vector<LazyList<Integer>> testee = of(stream2, stream1);
+        Vector<LazyList<Integer>> actual = testee.sortBy(LazyList::head);
+        Vector<LazyList<Integer>> expected = of(stream1, stream2);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2271,14 +2354,14 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNilUsingComparatorAndFunction() {
-        assertThat(this.<String> empty().sortBy(String::length)).isEmpty();
+        assertThat(this.<String>empty().sortBy(String::length)).isEmpty();
     }
 
     @Test
     public void shouldSortByNonNilUsingComparatorAndFunction() {
-        final Vector<String> testee = of("aaa", "b", "cc");
-        final Vector<String> actual = testee.sortBy((i1, i2) -> i2 - i1, String::length);
-        final Vector<String> expected = of("aaa", "cc", "b");
+        Vector<String> testee = of("aaa", "b", "cc");
+        Vector<String> actual = testee.sortBy((i1, i2) -> i2 - i1, String::length);
+        Vector<String> expected = of("aaa", "cc", "b");
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2371,17 +2454,20 @@ public class VectorTest extends AbstractTraversableTest {
     class SpliteratorTests {
         @Test
         public void shouldNotHaveSortedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED))
+                    .isFalse();
         }
 
         @Test
         public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
         }
 
         @Test
         public void shouldNotHaveDistinctSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                    .isFalse();
         }
     }
 
@@ -2465,31 +2551,31 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubVectoruenceFrom0OnNil() {
-        final Vector<Integer> actual = this.<Integer> empty().subSequence(0);
+        Vector<Integer> actual = this.<Integer>empty().subSequence(0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnIdentityWhenSubVectoruenceFrom0OnNonNil() {
-        final Vector<Integer> actual = of(1).subSequence(0);
+        Vector<Integer> actual = of(1).subSequence(0);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSubVectoruenceFrom1OnVectorOf1() {
-        final Vector<Integer> actual = of(1).subSequence(1);
+        Vector<Integer> actual = of(1).subSequence(1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSubVectoruenceWhenIndexIsWithinRange() {
-        final Vector<Integer> actual = of(1, 2, 3).subSequence(1);
+        Vector<Integer> actual = of(1, 2, 3).subSequence(1);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilWhenSubVectoruenceBeginningWithSize() {
-        final Vector<Integer> actual = of(1, 2, 3).subSequence(3);
+        Vector<Integer> actual = of(1, 2, 3).subSequence(3);
         assertThat(actual).isEmpty();
     }
 
@@ -2510,7 +2596,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameInstanceIfSubVectoruenceStartsAtZero() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.subSequence(0)).isSameAs(seq);
     }
 
@@ -2518,37 +2604,37 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubVectoruenceFrom0To0OnNil() {
-        final Vector<Integer> actual = this.<Integer> empty().subSequence(0, 0);
+        Vector<Integer> actual = this.<Integer>empty().subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnNilWhenSubVectoruenceFrom0To0OnNonNil() {
-        final Vector<Integer> actual = of(1).subSequence(0, 0);
+        Vector<Integer> actual = of(1).subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnVectorWithFirstElementWhenSubVectoruenceFrom0To1OnNonNil() {
-        final Vector<Integer> actual = of(1).subSequence(0, 1);
+        Vector<Integer> actual = of(1).subSequence(0, 1);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSubVectoruenceFrom1To1OnNonNil() {
-        final Vector<Integer> actual = of(1).subSequence(1, 1);
+        Vector<Integer> actual = of(1).subSequence(1, 1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSubVectoruenceWhenIndicesAreWithinRange() {
-        final Vector<Integer> actual = of(1, 2, 3).subSequence(1, 3);
+        Vector<Integer> actual = of(1, 2, 3).subSequence(1, 3);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilWhenOnSubVectoruenceIndicesBothAreUpperBound() {
-        final Vector<Integer> actual = of(1, 2, 3).subSequence(3, 3);
+        Vector<Integer> actual = of(1, 2, 3).subSequence(3, 3);
         assertThat(actual).isEmpty();
     }
 
@@ -2579,17 +2665,25 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowOnSubVectoruenceWhenEndIndexExceedsUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2, 3).subSequence(1, 4).mkString()); // force computation of last element, e.g. because LazyList is lazy
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> of(1, 2, 3)
+                        .subSequence(1, 4)
+                        .mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
     public void shouldThrowOnSubVectoruenceWhenBeginIndexIsGreaterThanEndIndex() {
-        assertThrows(IllegalArgumentException.class, () -> of(1, 2, 3).subSequence(2, 1).mkString()); // force computation of last element, e.g. because LazyList is lazy
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> of(1, 2, 3)
+                        .subSequence(2, 1)
+                        .mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
     public void shouldReturnSameInstanceIfSubVectoruenceStartsAtZeroAndEndsAtLastElement() {
-        final Vector<Integer> seq = of(1, 2, 3);
+        Vector<Integer> seq = of(1, 2, 3);
         assertThat(seq.subSequence(0, 3)).isSameAs(seq);
     }
 
@@ -2616,7 +2710,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSearchNegatedInsertionPointMinusOneForAbsentElementsUsingComparator() {
-        assertThat(this.<Integer> empty().search(42, Integer::compareTo)).isEqualTo(-1);
+        assertThat(this.<Integer>empty().search(42, Integer::compareTo)).isEqualTo(-1);
         assertThat(of(10, 20, 30).search(25, Integer::compareTo)).isEqualTo(-3);
     }
 
@@ -2624,92 +2718,74 @@ public class VectorTest extends AbstractTraversableTest {
     class TransposeTests {
         @Test
         public void shouldTransposeIfEmpty() {
-            final Vector<Vector<Integer>> actual = empty();
+            Vector<Vector<Integer>> actual = empty();
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfIs1x0() {
-            final Vector<Vector<Integer>> actual = of(empty());
+            Vector<Vector<Integer>> actual = of(empty());
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfIs1x1() {
-            final Vector<Vector<Integer>> actual = of(of(1));
+            Vector<Vector<Integer>> actual = of(of(1));
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfSingleValued() {
-            final Vector<Vector<Integer>> actual = of(of(0));
-            final Vector<Vector<Integer>> expected = of(of(0));
+            Vector<Vector<Integer>> actual = of(of(0));
+            Vector<Vector<Integer>> expected = of(of(0));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedColumn() {
-            final Vector<Vector<Integer>> actual = of(of(0, 1, 2));
-            final Vector<Vector<Integer>> expected = of(of(0), of(1), of(2));
+            Vector<Vector<Integer>> actual = of(of(0, 1, 2));
+            Vector<Vector<Integer>> expected = of(of(0), of(1), of(2));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedRow() {
-            final Vector<Vector<Integer>> actual = of(of(0), of(1), of(2));
-            final Vector<Vector<Integer>> expected = of(of(0, 1, 2));
+            Vector<Vector<Integer>> actual = of(of(0), of(1), of(2));
+            Vector<Vector<Integer>> expected = of(of(0, 1, 2));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedIfSymmetric() {
-            final Vector<Vector<Integer>> actual = of(
-                    of(1, 2, 3),
-                    of(4, 5, 6),
-                    of(7, 8, 9));
-            final Vector<Vector<Integer>> expected = of(
-                    of(1, 4, 7),
-                    of(2, 5, 8),
-                    of(3, 6, 9));
+            Vector<Vector<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9));
+            Vector<Vector<Integer>> expected = of(of(1, 4, 7), of(2, 5, 8), of(3, 6, 9));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreColumnsThanRows() {
-            final Vector<Vector<Integer>> actual = of(
-                    of(1, 2, 3),
-                    of(4, 5, 6));
-            final Vector<Vector<Integer>> expected = of(
-                    of(1, 4),
-                    of(2, 5),
-                    of(3, 6));
+            Vector<Vector<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            Vector<Vector<Integer>> expected = of(of(1, 4), of(2, 5), of(3, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreRowsThanColumns() {
-            final Vector<Vector<Integer>> actual = of(
-                    of(1, 2),
-                    of(3, 4),
-                    of(5, 6));
-            final Vector<Vector<Integer>> expected = of(
-                    of(1, 3, 5),
-                    of(2, 4, 6));
+            Vector<Vector<Integer>> actual = of(of(1, 2), of(3, 4), of(5, 6));
+            Vector<Vector<Integer>> expected = of(of(1, 3, 5), of(2, 4, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldBeEqualIfTransposedTwice() {
-            final Vector<Vector<Integer>> actual = of(
-                    of(1, 2, 3),
-                    of(4, 5, 6));
-            final Vector<Vector<Integer>> transposed = transpose(actual);
+            Vector<Vector<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            Vector<Vector<Integer>> transposed = transpose(actual);
             assertThat(transpose(transposed)).isEqualTo(actual);
         }
 
@@ -2717,12 +2793,7 @@ public class VectorTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         public void shouldNotTransposeForMissingOrEmptyValues() {
             assertThrows(IllegalArgumentException.class, () -> {
-                final Vector<Vector<Integer>> actual = of(
-                  of(),
-                  of(0, 1),
-                  of(2, 3, 4, 5),
-                  of(),
-                  of(6, 7, 8));
+                Vector<Vector<Integer>> actual = of(of(), of(0, 1), of(2, 3, 4, 5), of(), of(6, 7, 8));
                 transpose(actual);
             });
         }
@@ -2748,21 +2819,20 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfEmptyVectorUsingComparator() {
-        final Comparator<Integer> comparator = comparingInt(i -> i);
+        Comparator<Integer> comparator = comparingInt(i -> i);
         assertThat(this.<Integer>empty().distinctByKeepLast(comparator)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfNonEmptyVectorUsingComparator() {
-        final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Vector<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c")
-                .distinctByKeepLast(comparator);
+        Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
+        Vector<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(comparator);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByKeepLastComparatorEmptyVector() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.distinctByKeepLast(Comparators.naturalComparator())).isSameAs(empty);
     }
 
@@ -2775,27 +2845,29 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfNonEmptyVectorUsingKeyExtractor() {
-        final Function<String, Character> function = c -> c.charAt(1);
-        final Vector<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c")
-                .distinctByKeepLast(function);
+        Function<String, Character> function = c -> c.charAt(1);
+        Vector<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(function);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByKeepLastFunctionEmptyVector() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.distinctByKeepLast(Function.identity())).isSameAs(empty);
     }
 
-    private interface SomeInterface {
-    }
+    private interface SomeInterface {}
 
     enum OneEnum implements SomeInterface {
-        A1, A2, A3;
+        A1,
+        A2,
+        A3;
     }
 
     enum SecondEnum implements SomeInterface {
-        A1, A2, A3;
+        A1,
+        A2,
+        A3;
     }
 
     // -- removeAll / retainAll with null elements go through a HashSet, whose contains must not use Option
@@ -2817,20 +2889,26 @@ public class VectorTest extends AbstractTraversableTest {
     // -- the sequence methods Vector declares itself (design 3.7), tested at the 32-wide trie boundaries, on int[] and
     // Object[] leaves, with and without a trie offset
 
-    static final int[] BOUNDARIES = { 0, 1, 31, 32, 33, 1023, 1024, 1025 };
+    static final int[] BOUNDARIES = {0, 1, 31, 32, 33, 1023, 1024, 1025};
 
     /* range(0, n) in every representation the trie has: primitive and Object leaves, each with and without an offset */
     static java.util.List<Vector<Integer>> representations(int n) {
-        final Vector<Integer> primitive = Vector.range(0, n);
-        final Vector<Integer> boxed = Vector.ofAll(new java.util.ArrayList<>(primitive.asJava()));
-        final Vector<Integer> offsetPrimitive = Vector.range(-5, n).drop(5);
-        final Vector<Integer> offsetBoxed = Vector.ofAll(new java.util.ArrayList<>(Vector.range(-5, n).asJava())).drop(5);
+        Vector<Integer> primitive = Vector.range(0, n);
+        Vector<Integer> boxed = Vector.ofAll(new java.util.ArrayList<>(primitive.asJava()));
+        Vector<Integer> offsetPrimitive = Vector.range(-5, n).drop(5);
+        Vector<Integer> offsetBoxed = Vector.ofAll(
+                        new java.util.ArrayList<>(Vector.range(-5, n).asJava()))
+                .drop(5);
         return java.util.List.of(primitive, boxed, offsetPrimitive, offsetBoxed);
     }
 
     /* the positions worth probing in a vector of n elements: the leaf boundaries and the ends */
     static int[] positions(int n) {
-        return java.util.stream.IntStream.of(0, 1, 31, 32, 33, 1023, 1024, n - 1, n).filter(i -> i >= 0 && i <= n).distinct().sorted().toArray();
+        return java.util.stream.IntStream.of(0, 1, 31, 32, 33, 1023, 1024, n - 1, n)
+                .filter(i -> i >= 0 && i <= n)
+                .distinct()
+                .sorted()
+                .toArray();
     }
 
     @Nested
@@ -2846,7 +2924,10 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldHaveSizedAndOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED)).isTrue();
+            assertThat(of(1, 2, 3)
+                            .spliterator()
+                            .hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED))
+                    .isTrue();
             assertThat(of(1, 2, 3).spliterator().getExactSizeIfKnown()).isEqualTo(3);
             assertThat(empty().spliterator().getExactSizeIfKnown()).isEqualTo(0);
         }
@@ -2859,7 +2940,9 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
                     if (n == 0) {
-                        assertThatThrownBy(vector::last).isInstanceOf(NoSuchElementException.class).hasMessage("last of empty Vector");
+                        assertThatThrownBy(vector::last)
+                                .isInstanceOf(NoSuchElementException.class)
+                                .hasMessage("last of empty Vector");
                         assertThat(vector.lastOption()).isEqualTo(Option.none());
                     } else {
                         assertThat(vector.last()).isEqualTo(n - 1);
@@ -2877,7 +2960,7 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldFoldFromTheRightAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final String expected = vector.reverse().foldLeft("", (acc, i) -> acc + i + ",");
+                    String expected = vector.reverse().foldLeft("", (acc, i) -> acc + i + ",");
                     assertThat(vector.foldRight("", (i, acc) -> acc + i + ",")).isEqualTo(expected);
                     assertThat(vector.foldRight(0, Integer::sum)).isEqualTo(n * (n - 1) / 2);
                 }
@@ -2886,9 +2969,11 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnZeroForEmptyAndRejectNullFunction() {
-            final Object zero = new Object();
-            assertThat(Vector.<Integer> empty().foldRight(zero, (i, acc) -> acc)).isSameAs(zero);
-            assertThatNullPointerException().isThrownBy(() -> of(1).foldRight(0, null)).withMessage("f is null");
+            Object zero = new Object();
+            assertThat(Vector.<Integer>empty().foldRight(zero, (i, acc) -> acc)).isSameAs(zero);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).foldRight(0, null))
+                    .withMessage("f is null");
         }
     }
 
@@ -2917,19 +3002,26 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldFindIndexOfAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int element : new int[] { -1, 0, 1, 31, 32, 33, n - 1, n }) {
-                        for (int from : new int[] { Integer.MIN_VALUE, -1, 0, 1, 31, 32, 33, n - 1, n, n + 1, Integer.MAX_VALUE }) {
-                            final int expected = referenceIndexOf(vector, element, from);
+                    for (int element : new int[] {-1, 0, 1, 31, 32, 33, n - 1, n}) {
+                        for (int from :
+                                new int[] {Integer.MIN_VALUE, -1, 0, 1, 31, 32, 33, n - 1, n, n + 1, Integer.MAX_VALUE
+                                }) {
+                            int expected = referenceIndexOf(vector, element, from);
                             assertThat(vector.indexOf(element, from)).isEqualTo(expected);
-                            assertThat(vector.indexOfOption(element, from)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
-                            assertThat(vector.indexWhere(i -> i == element, from)).isEqualTo(expected);
-                            assertThat(vector.indexWhereOption(i -> i == element, from)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                            assertThat(vector.indexOfOption(element, from))
+                                    .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                            assertThat(vector.indexWhere(i -> i == element, from))
+                                    .isEqualTo(expected);
+                            assertThat(vector.indexWhereOption(i -> i == element, from))
+                                    .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
                         }
-                        final int expected = referenceIndexOf(vector, element, 0);
+                        int expected = referenceIndexOf(vector, element, 0);
                         assertThat(vector.indexOf(element)).isEqualTo(expected);
-                        assertThat(vector.indexOfOption(element)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                        assertThat(vector.indexOfOption(element))
+                                .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
                         assertThat(vector.indexWhere(i -> i == element)).isEqualTo(expected);
-                        assertThat(vector.indexWhereOption(i -> i == element)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                        assertThat(vector.indexWhereOption(i -> i == element))
+                                .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
                     }
                 }
             }
@@ -2939,19 +3031,26 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldFindLastIndexOfAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int element : new int[] { -1, 0, 1, 31, 32, 33, n - 1, n }) {
-                        for (int end : new int[] { Integer.MIN_VALUE, -1, 0, 1, 31, 32, 33, n - 1, n, n + 1, Integer.MAX_VALUE }) {
-                            final int expected = referenceLastIndexOf(vector, element, end);
+                    for (int element : new int[] {-1, 0, 1, 31, 32, 33, n - 1, n}) {
+                        for (int end :
+                                new int[] {Integer.MIN_VALUE, -1, 0, 1, 31, 32, 33, n - 1, n, n + 1, Integer.MAX_VALUE
+                                }) {
+                            int expected = referenceLastIndexOf(vector, element, end);
                             assertThat(vector.lastIndexOf(element, end)).isEqualTo(expected);
-                            assertThat(vector.lastIndexOfOption(element, end)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
-                            assertThat(vector.lastIndexWhere(i -> i == element, end)).isEqualTo(expected);
-                            assertThat(vector.lastIndexWhereOption(i -> i == element, end)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                            assertThat(vector.lastIndexOfOption(element, end))
+                                    .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                            assertThat(vector.lastIndexWhere(i -> i == element, end))
+                                    .isEqualTo(expected);
+                            assertThat(vector.lastIndexWhereOption(i -> i == element, end))
+                                    .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
                         }
-                        final int expected = referenceLastIndexOf(vector, element, Integer.MAX_VALUE);
+                        int expected = referenceLastIndexOf(vector, element, Integer.MAX_VALUE);
                         assertThat(vector.lastIndexOf(element)).isEqualTo(expected);
-                        assertThat(vector.lastIndexOfOption(element)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                        assertThat(vector.lastIndexOfOption(element))
+                                .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
                         assertThat(vector.lastIndexWhere(i -> i == element)).isEqualTo(expected);
-                        assertThat(vector.lastIndexWhereOption(i -> i == element)).isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
+                        assertThat(vector.lastIndexWhereOption(i -> i == element))
+                                .isEqualTo(expected < 0 ? Option.none() : Option.some(expected));
                     }
                 }
             }
@@ -2959,7 +3058,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFindTheLastOfRepeatedElements() {
-            final Vector<Integer> repeated = Vector.range(0, 33).appendAll(Vector.range(0, 33));
+            Vector<Integer> repeated = Vector.range(0, 33).appendAll(Vector.range(0, 33));
             assertThat(repeated.lastIndexOf(0)).isEqualTo(33);
             assertThat(repeated.lastIndexOf(32)).isEqualTo(65);
             assertThat(repeated.lastIndexOf(0, 32)).isEqualTo(0);
@@ -2971,11 +3070,12 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldComputeSegmentLengthAndPrefixLengthAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int k : new int[] { 0, 1, 31, 32, 33, n, n + 1 }) {
+                    for (int k : new int[] {0, 1, 31, 32, 33, n, n + 1}) {
                         assertThat(vector.prefixLength(i -> i < k)).isEqualTo(Math.min(k, n));
-                        for (int from : new int[] { -1, 0, 1, 31, 32, 33, n, n + 1 }) {
-                            final int start = Math.max(from, 0);
-                            assertThat(vector.segmentLength(i -> i < k, from)).isEqualTo(Math.max(0, Math.min(k, n) - start));
+                        for (int from : new int[] {-1, 0, 1, 31, 32, 33, n, n + 1}) {
+                            int start = Math.max(from, 0);
+                            assertThat(vector.segmentLength(i -> i < k, from))
+                                    .isEqualTo(Math.max(0, Math.min(k, n) - start));
                         }
                     }
                 }
@@ -2984,17 +3084,37 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullPredicates() {
-            final Vector<Integer> vector = of(1, 2, 3);
-            assertThatNullPointerException().isThrownBy(() -> vector.indexWhere(null)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.indexWhere(null, 1)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.indexWhereOption(null)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.indexWhereOption(null, 1)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.lastIndexWhere(null)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.lastIndexWhere(null, 1)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.lastIndexWhereOption(null)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.lastIndexWhereOption(null, 1)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.segmentLength(null, 0)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.prefixLength(null)).withMessage("predicate is null");
+            Vector<Integer> vector = of(1, 2, 3);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.indexWhere(null))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.indexWhere(null, 1))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.indexWhereOption(null))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.indexWhereOption(null, 1))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.lastIndexWhere(null))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.lastIndexWhere(null, 1))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.lastIndexWhereOption(null))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.lastIndexWhereOption(null, 1))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.segmentLength(null, 0))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.prefixLength(null))
+                    .withMessage("predicate is null");
         }
     }
 
@@ -3008,9 +3128,10 @@ public class VectorTest extends AbstractTraversableTest {
                         if (k + 3 > n) {
                             continue;
                         }
-                        final Vector<Integer> slice = vector.slice(k, k + 3);
+                        Vector<Integer> slice = vector.slice(k, k + 3);
                         // a Vector, a JDK list (traversable again), a lazy LazyList and a one-shot Iterator
-                        for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>> of(slice, new java.util.ArrayList<>(slice.asJava()), LazyList.ofAll(slice))) {
+                        for (Iterable<Integer> shape : java.util.List.<Iterable<Integer>>of(
+                                slice, new java.util.ArrayList<>(slice.asJava()), LazyList.ofAll(slice))) {
                             assertThat(vector.indexOfSlice(shape)).isEqualTo(k);
                             assertThat(vector.indexOfSliceOption(shape)).isEqualTo(Option.some(k));
                             assertThat(vector.lastIndexOfSlice(shape)).isEqualTo(k);
@@ -3018,7 +3139,8 @@ public class VectorTest extends AbstractTraversableTest {
                             assertThat(vector.containsSlice(shape)).isTrue();
                         }
                         assertThat(vector.indexOfSlice(Iterator.ofAll(slice))).isEqualTo(k);
-                        assertThat(vector.lastIndexOfSlice(Iterator.ofAll(slice))).isEqualTo(k);
+                        assertThat(vector.lastIndexOfSlice(Iterator.ofAll(slice)))
+                                .isEqualTo(k);
                         assertThat(vector.containsSlice(Iterator.ofAll(slice))).isTrue();
                         assertThat(vector.indexOfSlice(slice, k)).isEqualTo(k);
                         assertThat(vector.indexOfSlice(slice, k + 1)).isEqualTo(-1);
@@ -3045,7 +3167,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFindOverlappingSlices() {
-            final Vector<Integer> vector = of(1, 2, 1, 2, 1);
+            Vector<Integer> vector = of(1, 2, 1, 2, 1);
             assertThat(vector.indexOfSlice(of(1, 2, 1))).isEqualTo(0);
             assertThat(vector.lastIndexOfSlice(of(1, 2, 1))).isEqualTo(2);
             assertThat(vector.indexOfSlice(of(1, 2, 1), 1)).isEqualTo(2);
@@ -3057,30 +3179,54 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldIterateAOneShotSliceOnlyOnce() {
             // a java.util.stream can be iterated once: a second iterator() call throws IllegalStateException
-            final Vector<Integer> vector = of(1, 2, 3, 2, 3);
-            assertThat(vector.indexOfSlice(java.util.stream.Stream.of(2, 3)::iterator)).isEqualTo(1);
-            assertThat(vector.indexOfSlice(java.util.stream.Stream.of(2, 3)::iterator, 2)).isEqualTo(3);
-            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.of(2, 3)::iterator)).isEqualTo(3);
-            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.of(2, 3)::iterator, 2)).isEqualTo(1);
-            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator)).isEqualTo(5);
-            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator, 2)).isEqualTo(2);
-            assertThat(vector.containsSlice(java.util.stream.Stream.of(3, 2)::iterator)).isTrue();
-            assertThat(vector.containsSlice(java.util.stream.Stream.of(3, 1)::iterator)).isFalse();
-            assertThat(Vector.<Integer> empty().indexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator)).isEqualTo(0);
-            assertThat(Vector.<Integer> empty().indexOfSlice(java.util.stream.Stream.of(1)::iterator)).isEqualTo(-1);
-            assertThat(Vector.<Integer> empty().lastIndexOfSlice(java.util.stream.Stream.<Integer> empty()::iterator)).isEqualTo(0);
-            assertThat(Vector.<Integer> empty().lastIndexOfSlice(java.util.stream.Stream.of(1)::iterator)).isEqualTo(-1);
+            Vector<Integer> vector = of(1, 2, 3, 2, 3);
+            assertThat(vector.indexOfSlice(java.util.stream.Stream.of(2, 3)::iterator))
+                    .isEqualTo(1);
+            assertThat(vector.indexOfSlice(java.util.stream.Stream.of(2, 3)::iterator, 2))
+                    .isEqualTo(3);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.of(2, 3)::iterator))
+                    .isEqualTo(3);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.of(2, 3)::iterator, 2))
+                    .isEqualTo(1);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.<Integer>empty()::iterator))
+                    .isEqualTo(5);
+            assertThat(vector.lastIndexOfSlice(java.util.stream.Stream.<Integer>empty()::iterator, 2))
+                    .isEqualTo(2);
+            assertThat(vector.containsSlice(java.util.stream.Stream.of(3, 2)::iterator))
+                    .isTrue();
+            assertThat(vector.containsSlice(java.util.stream.Stream.of(3, 1)::iterator))
+                    .isFalse();
+            assertThat(Vector.<Integer>empty().indexOfSlice(java.util.stream.Stream.<Integer>empty()::iterator))
+                    .isEqualTo(0);
+            assertThat(Vector.<Integer>empty().indexOfSlice(java.util.stream.Stream.of(1)::iterator))
+                    .isEqualTo(-1);
+            assertThat(Vector.<Integer>empty().lastIndexOfSlice(java.util.stream.Stream.<Integer>empty()::iterator))
+                    .isEqualTo(0);
+            assertThat(Vector.<Integer>empty().lastIndexOfSlice(java.util.stream.Stream.of(1)::iterator))
+                    .isEqualTo(-1);
         }
 
         @Test
         public void shouldRejectNullSlices() {
-            final Vector<Integer> vector = of(1, 2, 3);
-            assertThatNullPointerException().isThrownBy(() -> vector.indexOfSlice(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.indexOfSlice(null, 0)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.lastIndexOfSlice(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.lastIndexOfSlice(null, 0)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.containsSlice(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> Vector.<Integer> empty().indexOfSlice(null)).withMessage("that is null");
+            Vector<Integer> vector = of(1, 2, 3);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.indexOfSlice(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.indexOfSlice(null, 0))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.lastIndexOfSlice(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.lastIndexOfSlice(null, 0))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.containsSlice(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Vector.<Integer>empty().indexOfSlice(null))
+                    .withMessage("that is null");
         }
     }
 
@@ -3091,32 +3237,50 @@ public class VectorTest extends AbstractTraversableTest {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
                     for (int k : positions(n)) {
-                        final Vector<Integer> prefix = vector.take(k);
-                        final Vector<Integer> suffix = vector.drop(k);
+                        Vector<Integer> prefix = vector.take(k);
+                        Vector<Integer> suffix = vector.drop(k);
                         // a Vector (compared by index), a JDK list, a LazyList and a one-shot Iterator (walked once)
                         assertThat(vector.startsWith(prefix)).isTrue();
-                        assertThat(vector.startsWith(new java.util.ArrayList<>(prefix.asJava()))).isTrue();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(prefix.asJava())))
+                                .isTrue();
                         assertThat(vector.startsWith(LazyList.ofAll(prefix))).isTrue();
                         assertThat(vector.startsWith(Iterator.ofAll(prefix))).isTrue();
                         assertThat(vector.startsWith(suffix, k)).isTrue();
-                        assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.asJava()), k)).isTrue();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.asJava()), k))
+                                .isTrue();
                         assertThat(vector.startsWith(Iterator.ofAll(suffix), k)).isTrue();
                         assertThat(vector.endsWith(suffix)).isTrue();
-                        assertThat(vector.endsWith(new java.util.ArrayList<>(suffix.asJava()))).isTrue();
+                        assertThat(vector.endsWith(new java.util.ArrayList<>(suffix.asJava())))
+                                .isTrue();
                         assertThat(vector.endsWith(LazyList.ofAll(suffix))).isTrue();
                         assertThat(vector.endsWith(Iterator.ofAll(suffix))).isTrue();
                         // one element too many, or one element wrong, in either shape
                         assertThat(vector.startsWith(prefix.append(-1))).isFalse();
-                        assertThat(vector.startsWith(new java.util.ArrayList<>(prefix.append(-1).asJava()))).isFalse();
+                        assertThat(vector.startsWith(new java.util.ArrayList<>(
+                                        prefix.append(-1).asJava())))
+                                .isFalse();
                         assertThat(vector.startsWith(suffix.append(-1), k)).isFalse();
-                        assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.append(-1).asJava()), k)).isFalse();
+                        assertThat(vector.startsWith(
+                                        new java.util.ArrayList<>(
+                                                suffix.append(-1).asJava()),
+                                        k))
+                                .isFalse();
                         assertThat(vector.endsWith(suffix.prepend(-1))).isFalse();
-                        assertThat(vector.endsWith(new java.util.ArrayList<>(suffix.prepend(-1).asJava()))).isFalse();
+                        assertThat(vector.endsWith(new java.util.ArrayList<>(
+                                        suffix.prepend(-1).asJava())))
+                                .isFalse();
                         if (k < n) {
-                            assertThat(vector.startsWith(prefix.append(-1).appendAll(vector.drop(k + 1)))).isFalse();
-                            assertThat(vector.endsWith(vector.take(k).append(-1).appendAll(vector.drop(k + 1)))).isFalse();
-                            assertThat(vector.startsWith(suffix.update(0, -1), k)).isFalse();
-                            assertThat(vector.startsWith(new java.util.ArrayList<>(suffix.update(0, -1).asJava()), k)).isFalse();
+                            assertThat(vector.startsWith(prefix.append(-1).appendAll(vector.drop(k + 1))))
+                                    .isFalse();
+                            assertThat(vector.endsWith(vector.take(k).append(-1).appendAll(vector.drop(k + 1))))
+                                    .isFalse();
+                            assertThat(vector.startsWith(suffix.update(0, -1), k))
+                                    .isFalse();
+                            assertThat(vector.startsWith(
+                                            new java.util.ArrayList<>(
+                                                    suffix.update(0, -1).asJava()),
+                                            k))
+                                    .isFalse();
                         }
                     }
                     // an empty prefix starts anywhere, even beyond the end; a negative offset never matches
@@ -3135,10 +3299,16 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullArguments() {
-            final Vector<Integer> vector = of(1, 2, 3);
-            assertThatNullPointerException().isThrownBy(() -> vector.startsWith(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.startsWith(null, 1)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> vector.endsWith(null)).withMessage("that is null");
+            Vector<Integer> vector = of(1, 2, 3);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.startsWith(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.startsWith(null, 1))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.endsWith(null))
+                    .withMessage("that is null");
         }
     }
 
@@ -3148,13 +3318,14 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldBinarySearchAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int element : new int[] { 0, 1, 31, 32, 33, n - 1 }) {
+                    for (int element : new int[] {0, 1, 31, 32, 33, n - 1}) {
                         if (element < 0 || element >= n) {
                             continue;
                         }
                         assertThat(vector.search(element)).isEqualTo(element);
                         assertThat(vector.search(element, Integer::compare)).isEqualTo(element);
-                        assertThat(vector.reverse().search(element, Comparator.reverseOrder())).isEqualTo(n - 1 - element);
+                        assertThat(vector.reverse().search(element, Comparator.reverseOrder()))
+                                .isEqualTo(n - 1 - element);
                     }
                     assertThat(vector.search(-1)).isEqualTo(-1);
                     assertThat(vector.search(n)).isEqualTo(-(n + 1));
@@ -3169,9 +3340,12 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullComparatorAndNonComparableElements() {
-            assertThatNullPointerException().isThrownBy(() -> of(1).search(1, null)).withMessage("comparator is null");
-            assertThatThrownBy(() -> Vector.of(new Object()).search(new Object())).isInstanceOf(ClassCastException.class);
-            assertThat(Vector.<Object> empty().search(new Object())).isEqualTo(-1);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).search(1, null))
+                    .withMessage("comparator is null");
+            assertThatThrownBy(() -> Vector.of(new Object()).search(new Object()))
+                    .isInstanceOf(ClassCastException.class);
+            assertThat(Vector.<Object>empty().search(new Object())).isEqualTo(-1);
         }
     }
 
@@ -3181,12 +3355,14 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldReverseAndIterateBackwardsAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final java.util.List<Integer> expected = new java.util.ArrayList<>(vector.asJava());
+                    java.util.List<Integer> expected = new java.util.ArrayList<>(vector.asJava());
                     java.util.Collections.reverse(expected);
-                    assertThat(new java.util.ArrayList<>(vector.reverse().asJava())).isEqualTo(expected);
+                    assertThat(new java.util.ArrayList<>(vector.reverse().asJava()))
+                            .isEqualTo(expected);
                     assertThat(vector.reverse().reverse()).isEqualTo(vector);
-                    final java.util.Iterator<Integer> iterator = vector.reverse().iterator();
-                    assertThat(new java.util.ArrayList<>(vector.reverse().asJava())).isEqualTo(expected);
+                    java.util.Iterator<Integer> iterator = vector.reverse().iterator();
+                    assertThat(new java.util.ArrayList<>(vector.reverse().asJava()))
+                            .isEqualTo(expected);
                     expected.forEach(element -> assertThat(iterator.next()).isEqualTo(element));
                     assertThat(iterator.hasNext()).isFalse();
                     assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
@@ -3202,9 +3378,9 @@ public class VectorTest extends AbstractTraversableTest {
     class CartesianProductTests {
         @Test
         public void shouldComputeTheCartesianSquareAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 31, 32, 33 }) {
+            for (int n : new int[] {0, 1, 31, 32, 33}) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final List<Tuple2<Integer, Integer>> pairs = vector.crossProduct().toList();
+                    List<Tuple2<Integer, Integer>> pairs = vector.crossProduct().toList();
                     assertThat(pairs.size()).isEqualTo(n * n);
                     if (n > 0) {
                         assertThat(pairs.head()).isEqualTo(Tuple.of(0, 0));
@@ -3219,10 +3395,17 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldComputeTheProductWithEveryArgumentShape() {
-            final Vector<Integer> vector = of(1, 2, 3);
-            final List<Tuple2<Integer, Character>> expected = List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b'), Tuple.of(3, 'a'), Tuple.of(3, 'b'));
+            Vector<Integer> vector = of(1, 2, 3);
+            List<Tuple2<Integer, Character>> expected = List.of(
+                    Tuple.of(1, 'a'),
+                    Tuple.of(1, 'b'),
+                    Tuple.of(2, 'a'),
+                    Tuple.of(2, 'b'),
+                    Tuple.of(3, 'a'),
+                    Tuple.of(3, 'b'));
             assertThat(vector.crossProduct(Vector.of('a', 'b')).toList()).isEqualTo(expected);
-            assertThat(vector.crossProduct(java.util.List.of('a', 'b')).toList()).isEqualTo(expected);
+            assertThat(vector.crossProduct(java.util.List.of('a', 'b')).toList())
+                    .isEqualTo(expected);
             assertThat(vector.crossProduct(LazyList.of('a', 'b')).toList()).isEqualTo(expected);
             assertThat(vector.crossProduct(Iterator.of('a', 'b')).toList()).isEqualTo(expected);
             assertThat(vector.crossProduct(Vector.range(0, 33)).size()).isEqualTo(99);
@@ -3230,24 +3413,28 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(vector.crossProduct(Vector.empty())).isEmpty();
             assertThat(Vector.empty().crossProduct(vector)).isEmpty();
             // a one-shot argument is walked once, for every element of the receiver
-            assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator).toList()).isEqualTo(expected);
-            final int[] walks = { 0 };
-            final Iterable<Character> counted = () -> {
+            assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator)
+                            .toList())
+                    .isEqualTo(expected);
+            int[] walks = {0};
+            Iterable<Character> counted = () -> {
                 walks[0]++;
                 return java.util.List.of('a', 'b').iterator();
             };
             assertThat(vector.crossProduct(counted).toList()).isEqualTo(expected);
             assertThat(walks[0]).isEqualTo(1);
-            assertThatNullPointerException().isThrownBy(() -> vector.crossProduct((Iterable<Integer>) null)).withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> vector.crossProduct((Iterable<Integer>) null))
+                    .withMessage("that is null");
         }
 
         @Test
         public void shouldComputeThePowerWithVectorResults() {
-            final Vector<Integer> vector = of(0, 1, 2);
+            Vector<Integer> vector = of(0, 1, 2);
             assertThat(vector.crossProduct(-1).toList()).isEqualTo(List.empty());
             assertThat(vector.crossProduct(0).toList()).isEqualTo(List.of(Vector.empty()));
             assertThat(vector.crossProduct(1).toList()).isEqualTo(List.of(of(0), of(1), of(2)));
-            final List<Vector<Integer>> cubes = vector.crossProduct(3).toList();
+            List<Vector<Integer>> cubes = vector.crossProduct(3).toList();
             assertThat(cubes.size()).isEqualTo(27);
             assertThat(cubes.head()).isEqualTo(of(0, 0, 0));
             assertThat(cubes.get(1)).isEqualTo(of(0, 0, 1));
@@ -3259,8 +3446,8 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(Vector.range(0, 33).crossProduct(2).size()).isEqualTo(33 * 33);
             assertThat(Vector.range(0, 10).crossProduct(3).take(1).head()).isEqualTo(Vector.fill(3, 0));
             assertThat(Vector.range(0, 10).crossProduct(3).size()).isEqualTo(1000);
-            assertThat(Vector.<Integer> empty().crossProduct(2)).isEmpty();
-            assertThat(Vector.<Integer> empty().crossProduct(0).toList()).isEqualTo(List.of(Vector.empty()));
+            assertThat(Vector.<Integer>empty().crossProduct(2)).isEmpty();
+            assertThat(Vector.<Integer>empty().crossProduct(0).toList()).isEqualTo(List.of(Vector.empty()));
         }
     }
 
@@ -3288,7 +3475,8 @@ public class VectorTest extends AbstractTraversableTest {
                         assertThat(vector.splitAt(i -> i >= k)).isEqualTo(Tuple.of(vector.take(k), vector.drop(k)));
                         assertThat(vector.span(i -> i < k)).isEqualTo(Tuple.of(vector.take(k), vector.drop(k)));
                         if (k < n) {
-                            assertThat(vector.splitAtInclusive(i -> i >= k)).isEqualTo(Tuple.of(vector.take(k + 1), vector.drop(k + 1)));
+                            assertThat(vector.splitAtInclusive(i -> i >= k))
+                                    .isEqualTo(Tuple.of(vector.take(k + 1), vector.drop(k + 1)));
                         }
                     }
                     assertThat(vector.splitAtInclusive(i -> false)).isEqualTo(Tuple.of(vector, Vector.empty()));
@@ -3322,18 +3510,40 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullPredicates() {
-            for (Vector<Integer> vector : java.util.List.of(Vector.<Integer> empty(), of(1, 2, 3))) {
-                assertThatNullPointerException().isThrownBy(() -> vector.dropUntil(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.dropWhile(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.dropRightUntil(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.dropRightWhile(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.takeUntil(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.takeWhile(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.takeRightUntil(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.takeRightWhile(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.splitAt(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.splitAtInclusive(null)).withMessage("predicate is null");
-                assertThatNullPointerException().isThrownBy(() -> vector.span(null)).withMessage("predicate is null");
+            for (Vector<Integer> vector : java.util.List.of(Vector.<Integer>empty(), of(1, 2, 3))) {
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.dropUntil(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.dropWhile(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.dropRightUntil(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.dropRightWhile(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.takeUntil(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.takeWhile(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.takeRightUntil(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.takeRightWhile(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.splitAt(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.splitAtInclusive(null))
+                        .withMessage("predicate is null");
+                assertThatNullPointerException()
+                        .isThrownBy(() -> vector.span(null))
+                        .withMessage("predicate is null");
             }
         }
     }
@@ -3342,7 +3552,7 @@ public class VectorTest extends AbstractTraversableTest {
     class RotateTests {
 
         private java.util.List<Integer> rotatedLeft(Vector<Integer> vector, int n) {
-            final java.util.List<Integer> list = new java.util.ArrayList<>(vector.asJava());
+            java.util.List<Integer> list = new java.util.ArrayList<>(vector.asJava());
             if (!list.isEmpty()) {
                 java.util.Collections.rotate(list, -Math.floorMod(n, list.size()));
             }
@@ -3350,7 +3560,7 @@ public class VectorTest extends AbstractTraversableTest {
         }
 
         private java.util.List<Integer> rotatedRight(Vector<Integer> vector, int n) {
-            final java.util.List<Integer> list = new java.util.ArrayList<>(vector.asJava());
+            java.util.List<Integer> list = new java.util.ArrayList<>(vector.asJava());
             if (!list.isEmpty()) {
                 java.util.Collections.rotate(list, Math.floorMod(n, list.size()));
             }
@@ -3361,9 +3571,32 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldRotateByAnyDistanceAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int distance : new int[] { Integer.MIN_VALUE, -2 * n - 3, -n - 1, -n, -33, -32, -31, -1, 0, 1, 31, 32, 33, n - 1, n, n + 1, 2 * n + 3, Integer.MAX_VALUE }) {
-                        assertThat(new java.util.ArrayList<>(vector.rotateLeft(distance).asJava())).isEqualTo(rotatedLeft(vector, distance));
-                        assertThat(new java.util.ArrayList<>(vector.rotateRight(distance).asJava())).isEqualTo(rotatedRight(vector, distance));
+                    for (int distance : new int[] {
+                        Integer.MIN_VALUE,
+                        -2 * n - 3,
+                        -n - 1,
+                        -n,
+                        -33,
+                        -32,
+                        -31,
+                        -1,
+                        0,
+                        1,
+                        31,
+                        32,
+                        33,
+                        n - 1,
+                        n,
+                        n + 1,
+                        2 * n + 3,
+                        Integer.MAX_VALUE
+                    }) {
+                        assertThat(new java.util.ArrayList<>(
+                                        vector.rotateLeft(distance).asJava()))
+                                .isEqualTo(rotatedLeft(vector, distance));
+                        assertThat(new java.util.ArrayList<>(
+                                        vector.rotateRight(distance).asJava()))
+                                .isEqualTo(rotatedRight(vector, distance));
                         if (distance != Integer.MIN_VALUE) { // -MIN_VALUE overflows
                             assertThat(vector.rotateRight(distance)).isEqualTo(vector.rotateLeft(-distance));
                         }
@@ -3371,7 +3604,8 @@ public class VectorTest extends AbstractTraversableTest {
                             assertThat(vector.rotateLeft(distance)).isSameAs(vector);
                             assertThat(vector.rotateRight(distance)).isSameAs(vector);
                         } else {
-                            assertThat(vector.rotateLeft(distance).rotateRight(distance)).isEqualTo(vector);
+                            assertThat(vector.rotateLeft(distance).rotateRight(distance))
+                                    .isEqualTo(vector);
                         }
                     }
                 }
@@ -3380,7 +3614,7 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateTheOverflowingDistances() {
-            final Vector<Integer> vector = of(1, 2, 3, 4, 5);
+            Vector<Integer> vector = of(1, 2, 3, 4, 5);
             assertThat(vector.rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(3, 4, 5, 1, 2));
             assertThat(vector.rotateRight(Integer.MIN_VALUE)).isEqualTo(of(4, 5, 1, 2, 3));
             assertThat(vector.rotateLeft(Integer.MAX_VALUE)).isEqualTo(of(3, 4, 5, 1, 2));
@@ -3394,14 +3628,16 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldSortAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final Vector<Integer> shuffled = vector.shuffle();
-                    final java.util.List<Integer> before = new java.util.ArrayList<>(shuffled.asJava());
+                    Vector<Integer> shuffled = vector.shuffle();
+                    java.util.List<Integer> before = new java.util.ArrayList<>(shuffled.asJava());
                     assertThat(shuffled.size()).isEqualTo(n);
                     assertThat(shuffled.sorted()).isEqualTo(vector);
                     assertThat(shuffled.sorted(Comparator.reverseOrder())).isEqualTo(vector.reverse());
                     assertThat(shuffled.sortBy(i -> -i)).isEqualTo(vector.reverse());
-                    assertThat(shuffled.sortBy(Comparator.reverseOrder(), i -> -i)).isEqualTo(vector);
-                    assertThat(new java.util.ArrayList<>(shuffled.sorted().asJava())).isEqualTo(new java.util.ArrayList<>(vector.asJava()));
+                    assertThat(shuffled.sortBy(Comparator.reverseOrder(), i -> -i))
+                            .isEqualTo(vector);
+                    assertThat(new java.util.ArrayList<>(shuffled.sorted().asJava()))
+                            .isEqualTo(new java.util.ArrayList<>(vector.asJava()));
                     if (n <= 1) {
                         assertThat(shuffled).isSameAs(vector);
                     }
@@ -3414,21 +3650,25 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldLeaveTheReceiverUnchangedWhenTheComparatorThrows() {
             // three elements at least: two elements are sorted with one comparison, before the n / 2 threshold
-            for (int n : new int[] { 3, 32, 33, 1025 }) {
+            for (int n : new int[] {3, 32, 33, 1025}) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final Vector<Integer> shuffled = vector.shuffle();
-                    final java.util.List<Integer> before = new java.util.ArrayList<>(shuffled.asJava());
-                    final java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
-                    final Comparator<Integer> failing = (a, b) -> {
+                    Vector<Integer> shuffled = vector.shuffle();
+                    java.util.List<Integer> before = new java.util.ArrayList<>(shuffled.asJava());
+                    java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+                    Comparator<Integer> failing = (a, b) -> {
                         if (calls.incrementAndGet() > n / 2) {
                             throw new IllegalStateException("mid-sort");
                         }
                         return Integer.compare(a, b);
                     };
-                    assertThatThrownBy(() -> shuffled.sorted(failing)).isInstanceOf(IllegalStateException.class).hasMessage("mid-sort");
+                    assertThatThrownBy(() -> shuffled.sorted(failing))
+                            .isInstanceOf(IllegalStateException.class)
+                            .hasMessage("mid-sort");
                     assertThat(new java.util.ArrayList<>(shuffled.asJava())).isEqualTo(before);
                     calls.set(0);
-                    assertThatThrownBy(() -> shuffled.sortBy(failing, i -> i)).isInstanceOf(IllegalStateException.class).hasMessage("mid-sort");
+                    assertThatThrownBy(() -> shuffled.sortBy(failing, i -> i))
+                            .isInstanceOf(IllegalStateException.class)
+                            .hasMessage("mid-sort");
                     assertThat(new java.util.ArrayList<>(shuffled.asJava())).isEqualTo(before);
                     assertThat(shuffled.sorted()).isEqualTo(vector);
                 }
@@ -3439,11 +3679,14 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldSortStablyAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    // equal keys keep their order: sorting by parity leaves the evens, then the odds, each in original order
-                    final Vector<Integer> expected = vector.filter(i -> i % 2 == 0).appendAll(vector.filter(i -> i % 2 != 0));
+                    // equal keys keep their order: sorting by parity leaves the evens, then the odds, each in original
+                    // order
+                    Vector<Integer> expected = vector.filter(i -> i % 2 == 0).appendAll(vector.filter(i -> i % 2 != 0));
                     assertThat(vector.sortBy(i -> i % 2)).isEqualTo(expected);
-                    assertThat(vector.sorted(Comparator.comparingInt(i -> i % 2))).isEqualTo(expected);
-                    assertThat(vector.sortBy(Comparator.reverseOrder(), i -> i % 2)).isEqualTo(vector.filter(i -> i % 2 != 0).appendAll(vector.filter(i -> i % 2 == 0)));
+                    assertThat(vector.sorted(Comparator.comparingInt(i -> i % 2)))
+                            .isEqualTo(expected);
+                    assertThat(vector.sortBy(Comparator.reverseOrder(), i -> i % 2))
+                            .isEqualTo(vector.filter(i -> i % 2 != 0).appendAll(vector.filter(i -> i % 2 == 0)));
                     assertThat(vector.sortBy(i -> 0)).isEqualTo(vector);
                 }
             }
@@ -3451,16 +3694,25 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnTheEmptyInstanceAndRejectNulls() {
-            final Vector<Integer> empty = Vector.empty();
+            Vector<Integer> empty = Vector.empty();
             assertThat(empty.sorted()).isSameAs(empty);
             assertThat(empty.sorted(Comparator.reverseOrder())).isSameAs(empty);
             assertThat(empty.sortBy(i -> i)).isSameAs(empty);
             assertThat(empty.sortBy(Comparator.reverseOrder(), i -> i)).isSameAs(empty);
-            assertThatNullPointerException().isThrownBy(() -> of(1).sorted(null)).withMessage("comparator is null");
-            assertThatNullPointerException().isThrownBy(() -> of(1).sortBy(null, i -> i)).withMessage("comparator is null");
-            assertThatNullPointerException().isThrownBy(() -> of(1).sortBy(Comparator.<Integer> naturalOrder(), null)).withMessage("mapper is null");
-            assertThatNullPointerException().isThrownBy(() -> of(1).sortBy((Function<Integer, Integer>) null)).withMessage("mapper is null");
-            assertThatThrownBy(() -> Vector.of(new Object(), new Object()).sorted()).isInstanceOf(ClassCastException.class);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).sorted(null))
+                    .withMessage("comparator is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).sortBy(null, i -> i))
+                    .withMessage("comparator is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).sortBy(Comparator.<Integer>naturalOrder(), null))
+                    .withMessage("mapper is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).sortBy((Function<Integer, Integer>) null))
+                    .withMessage("mapper is null");
+            assertThatThrownBy(() -> Vector.of(new Object(), new Object()).sorted())
+                    .isInstanceOf(ClassCastException.class);
         }
     }
 
@@ -3470,10 +3722,11 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldUnzipAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final Tuple2<Vector<Integer>, Vector<String>> pairs = vector.unzip(i -> Tuple.of(i, "s" + i));
+                    Tuple2<Vector<Integer>, Vector<String>> pairs = vector.unzip(i -> Tuple.of(i, "s" + i));
                     assertThat(pairs._1()).isEqualTo(vector);
                     assertThat(pairs._2()).isEqualTo(vector.map(i -> "s" + i));
-                    final Tuple3<Vector<Integer>, Vector<String>, Vector<Long>> triples = vector.unzip3(i -> Tuple.of(i, "s" + i, (long) i));
+                    Tuple3<Vector<Integer>, Vector<String>, Vector<Long>> triples =
+                            vector.unzip3(i -> Tuple.of(i, "s" + i, (long) i));
                     assertThat(triples._1()).isEqualTo(vector);
                     assertThat(triples._2()).isEqualTo(vector.map(i -> "s" + i));
                     assertThat(triples._3()).isEqualTo(vector.map(Integer::longValue));
@@ -3489,7 +3742,9 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldRejectNulls() {
             assertThatNullPointerException().isThrownBy(() -> of(1).unzip(null)).withMessage("unzipper is null");
-            assertThatNullPointerException().isThrownBy(() -> of(1).unzip3(null)).withMessage("unzipper is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> of(1).unzip3(null))
+                    .withMessage("unzipper is null");
             assertThatNullPointerException().isThrownBy(() -> of(1).unzip(i -> null));
             assertThatNullPointerException().isThrownBy(() -> of(1).unzip3(i -> null));
             assertThatNullPointerException().isThrownBy(() -> of(1).unzip(i -> Tuple.of(i, null)));
@@ -3503,8 +3758,8 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldReadThroughTheImmutableViewAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final java.util.List<Integer> view = vector.asJava();
-                    final java.util.List<Object> expected = java.util.Arrays.asList(vector.toArray());
+                    java.util.List<Integer> view = vector.asJava();
+                    java.util.List<Object> expected = java.util.Arrays.asList(vector.toArray());
                     assertThat(view.size()).isEqualTo(n);
                     assertThat(view.isEmpty()).isEqualTo(n == 0);
                     assertThat(new java.util.ArrayList<>(view)).isEqualTo(expected);
@@ -3517,20 +3772,27 @@ public class VectorTest extends AbstractTraversableTest {
                             assertThat(view.lastIndexOf(k)).isEqualTo(k);
                             assertThat(view.contains(k)).isTrue();
                         }
-                        assertThat(view.subList(k, n)).isEqualTo(java.util.Arrays.asList(vector.drop(k).toArray()));
-                        assertThat(view.subList(0, k)).isEqualTo(java.util.Arrays.asList(vector.take(k).toArray()));
+                        assertThat(view.subList(k, n))
+                                .isEqualTo(
+                                        java.util.Arrays.asList(vector.drop(k).toArray()));
+                        assertThat(view.subList(0, k))
+                                .isEqualTo(
+                                        java.util.Arrays.asList(vector.take(k).toArray()));
                     }
                     assertThat(view.indexOf(-1)).isEqualTo(-1);
                     assertThat(view.lastIndexOf(n)).isEqualTo(-1);
                     assertThat(view.contains(n)).isFalse();
-                    assertThat(view.containsAll(java.util.Arrays.asList(vector.take(3).toArray()))).isTrue();
+                    assertThat(view.containsAll(
+                                    java.util.Arrays.asList(vector.take(3).toArray())))
+                            .isTrue();
                     assertThatThrownBy(() -> view.get(n)).isInstanceOf(IndexOutOfBoundsException.class);
                     assertThatThrownBy(() -> view.add(1)).isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(() -> view.add(0, 1)).isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(() -> view.set(0, 1)).isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(() -> view.remove(0)).isInstanceOf(UnsupportedOperationException.class);
                     // even where the call would change nothing (an empty view)
-                    assertThatThrownBy(() -> view.sort(Comparator.reverseOrder())).isInstanceOf(UnsupportedOperationException.class);
+                    assertThatThrownBy(() -> view.sort(Comparator.reverseOrder()))
+                            .isInstanceOf(UnsupportedOperationException.class);
                     assertThatThrownBy(view::clear).isInstanceOf(UnsupportedOperationException.class);
                     assertThat(Vector.ofAll(view)).isSameAs(vector);
                 }
@@ -3542,13 +3804,20 @@ public class VectorTest extends AbstractTraversableTest {
     class EqualityAcrossSequenceTypesTests {
         @Test
         public void shouldEqualEveryOrderedSequenceWithTheSameElementsInBothDirections() {
-            final Vector<Integer> vector = of(1, 2, 3);
-            for (Traversable<Integer> other : java.util.List.of(Vector.of(1, 2, 3), List.of(1, 2, 3), Queue.of(1, 2, 3), LazyList.of(1, 2, 3))) {
+            Vector<Integer> vector = of(1, 2, 3);
+            for (Traversable<Integer> other :
+                    java.util.List.of(Vector.of(1, 2, 3), List.of(1, 2, 3), Queue.of(1, 2, 3), LazyList.of(1, 2, 3))) {
                 assertThat(vector.equals(other)).isTrue();
                 assertThat(other.equals(vector)).isTrue();
                 assertThat(vector.hashCode()).isEqualTo(other.hashCode());
             }
-            for (Object other : java.util.List.of(List.of(3, 2, 1), List.of(1, 2), HashSet.of(1, 2, 3), LinkedHashSet.of(1, 2, 3), java.util.List.of(1, 2, 3), "Vector(1, 2, 3)")) {
+            for (Object other : java.util.List.of(
+                    List.of(3, 2, 1),
+                    List.of(1, 2),
+                    HashSet.of(1, 2, 3),
+                    LinkedHashSet.of(1, 2, 3),
+                    java.util.List.of(1, 2, 3),
+                    "Vector(1, 2, 3)")) {
                 assertThat(vector.equals(other)).isFalse();
                 assertThat(other.equals(vector)).isFalse();
             }
@@ -3556,7 +3825,10 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(List.empty().equals(Vector.empty())).isTrue();
             assertThat(Vector.range(0, 1025).equals(List.range(0, 1025))).isTrue();
             assertThat(List.range(0, 1025).equals(Vector.range(0, 1025))).isTrue();
-            assertThat(Vector.range(0, 1025).equals(Vector.ofAll(new java.util.ArrayList<>(Vector.range(0, 1025).asJava())))).isTrue();
+            assertThat(Vector.range(0, 1025)
+                            .equals(Vector.ofAll(new java.util.ArrayList<>(
+                                    Vector.range(0, 1025).asJava()))))
+                    .isTrue();
         }
     }
 
@@ -3564,31 +3836,57 @@ public class VectorTest extends AbstractTraversableTest {
     class InsertRemoveUpdateBoundaryTests {
         @Test
         public void shouldInsertRemoveAndUpdateAtEveryBoundaryPosition() {
-            for (int n : new int[] { 1, 31, 32, 33, 1023, 1024, 1025 }) {
+            for (int n : new int[] {1, 31, 32, 33, 1023, 1024, 1025}) {
                 for (Vector<Integer> vector : representations(n)) {
                     for (int i : positions(n)) {
-                        final java.util.List<Integer> reference = new java.util.ArrayList<>(vector.asJava());
+                        java.util.List<Integer> reference = new java.util.ArrayList<>(vector.asJava());
                         reference.add(i, -1);
-                        assertThat(new java.util.ArrayList<>(vector.insert(i, -1).asJava())).isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(
+                                        vector.insert(i, -1).asJava()))
+                                .isEqualTo(reference);
                         reference.add(i + 1, -2);
-                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, Vector.of(-1, -2)).asJava())).isEqualTo(reference);
-                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, java.util.List.of(-1, -2)).asJava())).isEqualTo(reference);
-                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, Iterator.of(-1, -2)).asJava())).isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(
+                                        vector.insertAll(i, Vector.of(-1, -2)).asJava()))
+                                .isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(vector.insertAll(i, java.util.List.of(-1, -2))
+                                        .asJava()))
+                                .isEqualTo(reference);
+                        assertThat(new java.util.ArrayList<>(
+                                        vector.insertAll(i, Iterator.of(-1, -2)).asJava()))
+                                .isEqualTo(reference);
                         assertThat(vector.insertAll(i, Vector.empty())).isEqualTo(vector);
                         if (i < n) {
-                            final java.util.List<Integer> removed = new java.util.ArrayList<>(vector.asJava());
+                            java.util.List<Integer> removed = new java.util.ArrayList<>(vector.asJava());
                             removed.remove(i);
-                            assertThat(new java.util.ArrayList<>(vector.removeAt(i).asJava())).isEqualTo(removed);
-                            assertThat(new java.util.ArrayList<>(vector.remove(i).asJava())).isEqualTo(removed);
-                            assertThat(new java.util.ArrayList<>(vector.removeFirst(e -> e == i).asJava())).isEqualTo(removed);
-                            assertThat(new java.util.ArrayList<>(vector.removeLast(e -> e == i).asJava())).isEqualTo(removed);
-                            final java.util.List<Integer> updated = new java.util.ArrayList<>(vector.asJava());
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.removeAt(i).asJava()))
+                                    .isEqualTo(removed);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.remove(i).asJava()))
+                                    .isEqualTo(removed);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.removeFirst(e -> e == i).asJava()))
+                                    .isEqualTo(removed);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.removeLast(e -> e == i).asJava()))
+                                    .isEqualTo(removed);
+                            java.util.List<Integer> updated = new java.util.ArrayList<>(vector.asJava());
                             updated.set(i, -1);
-                            assertThat(new java.util.ArrayList<>(vector.update(i, -1).asJava())).isEqualTo(updated);
-                            assertThat(new java.util.ArrayList<>(vector.update(i, e -> -1).asJava())).isEqualTo(updated);
-                            assertThat(new java.util.ArrayList<>(vector.replace(i, -1).asJava())).isEqualTo(updated);
-                            assertThat(new java.util.ArrayList<>(vector.replaceAll(i, -1).asJava())).isEqualTo(updated);
-                            assertThat(new java.util.ArrayList<>(vector.patch(i, Vector.of(-1), 1).asJava())).isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.update(i, -1).asJava()))
+                                    .isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.update(i, e -> -1).asJava()))
+                                    .isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.replace(i, -1).asJava()))
+                                    .isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.replaceAll(i, -1).asJava()))
+                                    .isEqualTo(updated);
+                            assertThat(new java.util.ArrayList<>(
+                                            vector.patch(i, Vector.of(-1), 1).asJava()))
+                                    .isEqualTo(updated);
                         }
                     }
                     assertThatThrownBy(() -> vector.insert(n + 1, 0)).isInstanceOf(IndexOutOfBoundsException.class);
@@ -3612,8 +3910,8 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldScanFromBothEndsAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final Vector<Integer> left = vector.scanLeft(0, Integer::sum);
-                    final Vector<Integer> right = vector.scanRight(0, Integer::sum);
+                    Vector<Integer> left = vector.scanLeft(0, Integer::sum);
+                    Vector<Integer> right = vector.scanRight(0, Integer::sum);
                     assertThat(left.size()).isEqualTo(n + 1);
                     assertThat(right.size()).isEqualTo(n + 1);
                     assertThat(left.head()).isEqualTo(0);
@@ -3636,9 +3934,10 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldPadOnBothSidesAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int extra : new int[] { 1, 31, 32, 33 }) {
+                    for (int extra : new int[] {1, 31, 32, 33}) {
                         assertThat(vector.padTo(n + extra, -1)).isEqualTo(vector.appendAll(Vector.fill(extra, -1)));
-                        assertThat(vector.leftPadTo(n + extra, -1)).isEqualTo(Vector.fill(extra, -1).appendAll(vector));
+                        assertThat(vector.leftPadTo(n + extra, -1))
+                                .isEqualTo(Vector.fill(extra, -1).appendAll(vector));
                     }
                     assertThat(vector.padTo(n, -1)).isSameAs(vector);
                     assertThat(vector.padTo(n - 1, -1)).isSameAs(vector);
@@ -3659,13 +3958,14 @@ public class VectorTest extends AbstractTraversableTest {
         @Test
         public void shouldProduceVectorsOfVectors() {
             for (Vector<Integer> vector : representations(4)) {
-                final Vector<Vector<Integer>> permutations = vector.permutations();
+                Vector<Vector<Integer>> permutations = vector.permutations();
                 assertThat(permutations.size()).isEqualTo(24);
                 assertThat(permutations.distinct().size()).isEqualTo(24);
                 assertThat(permutations.head()).isEqualTo(vector);
                 assertThat(permutations.last()).isEqualTo(vector.reverse());
                 assertThat(vector.combinations().size()).isEqualTo(16);
-                assertThat(vector.combinations(2)).isEqualTo(Vector.of(of(0, 1), of(0, 2), of(0, 3), of(1, 2), of(1, 3), of(2, 3)));
+                assertThat(vector.combinations(2))
+                        .isEqualTo(Vector.of(of(0, 1), of(0, 2), of(0, 3), of(1, 2), of(1, 3), of(2, 3)));
                 assertThat(vector.combinations(5)).isEmpty();
                 assertThat(vector.combinations(0)).isEqualTo(Vector.of(Vector.empty()));
             }
@@ -3687,7 +3987,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingAverageOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").average());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").average());
     }
 
     @TestTemplate
@@ -3754,26 +4055,32 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateAverageOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     @TestTemplate
     public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     // -- distinct
 
     @TestTemplate
     public void shouldComputeDistinctOfEmptyTraversable() {
-            assertThat(empty().distinct()).isSameAs(empty());
+        assertThat(empty().distinct()).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldComputeDistinctOfNonEmptyTraversable() {
-        final Vector<Integer> testee = of(1, 1, 2, 2, 3, 3);
-        final Vector<Integer> actual = testee.distinct();
-        final Vector<Integer> expected = of(1, 2, 3);
+        Vector<Integer> testee = of(1, 1, 2, 2, 3, 3);
+        Vector<Integer> actual = testee.distinct();
+        Vector<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
         if (isDistinct()) {
             assertThat(actual).isSameAs(testee);
@@ -3784,21 +4091,21 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByOfEmptyTraversableUsingComparator() {
-        final Comparator<Integer> comparator = comparingInt(i -> i);
-            assertThat(this.<Integer>empty().distinctBy(comparator)).isSameAs(empty());
+        Comparator<Integer> comparator = comparingInt(i -> i);
+        assertThat(this.<Integer>empty().distinctBy(comparator)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingComparator() {
-        final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Vector<String> distinct = of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator)
-          .map(s -> s.substring(1));
+        Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
+        Vector<String> distinct =
+                of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByComparatorEmptyTraversable() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.distinctBy(Comparators.naturalComparator())).isSameAs(empty);
     }
 
@@ -3806,20 +4113,20 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByOfEmptyTraversableUsingKeyExtractor() {
-            assertThat(empty().distinctBy(Function.identity())).isSameAs(empty());
+        assertThat(empty().distinctBy(Function.identity())).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingKeyExtractor() {
-        final Function<String, Character> function = c -> c.charAt(1);
-        final Vector<String> distinct = of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function)
-          .map(s -> s.substring(1));
+        Function<String, Character> function = c -> c.charAt(1);
+        Vector<String> distinct =
+                of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByFunctionEmptyTraversable() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.distinctBy(Function.identity())).isSameAs(empty);
     }
 
@@ -3827,7 +4134,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropNoneOnNil() {
-            assertThat(empty().drop(1)).isSameAs(empty());
+        assertThat(empty().drop(1)).isSameAs(empty());
     }
 
     @TestTemplate
@@ -3842,24 +4149,24 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropAllIfCountExceedsSize() {
-            assertThat(of(1, 2, 3).drop(4)).isSameAs(empty());
+        assertThat(of(1, 2, 3).drop(4)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropZeroCount() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.drop(0)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropNegativeCount() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.drop(-1)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropOne() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.drop(1)).isSameAs(empty);
     }
 
@@ -3867,7 +4174,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropRightNoneOnNil() {
-            assertThat(empty().dropRight(1)).isSameAs(empty());
+        assertThat(empty().dropRight(1)).isSameAs(empty());
     }
 
     @TestTemplate
@@ -3882,24 +4189,24 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropRightAllIfCountExceedsSize() {
-            assertThat(of(1, 2, 3).dropRight(4)).isSameAs(empty());
+        assertThat(of(1, 2, 3).dropRight(4)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropRightZeroCount() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.dropRight(0)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropRightNegativeCount() {
-        final Vector<Integer> t = of(1, 2, 3);
+        Vector<Integer> t = of(1, 2, 3);
         assertThat(t.dropRight(-1)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropRightOne() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.dropRight(1)).isSameAs(empty);
     }
 
@@ -3907,18 +4214,18 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropUntilNoneOnNil() {
-            assertThat(empty().dropUntil(ignored -> true)).isSameAs(empty());
+        assertThat(empty().dropUntil(ignored -> true)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldDropUntilNoneIfPredicateIsTrue() {
-            final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.dropUntil(ignored -> true)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.dropUntil(ignored -> true)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldDropUntilAllIfPredicateIsFalse() {
-            assertThat(of(1, 2, 3).dropUntil(ignored -> false)).isSameAs(empty());
+        assertThat(of(1, 2, 3).dropUntil(ignored -> false)).isSameAs(empty());
     }
 
     @TestTemplate
@@ -3928,7 +4235,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropUntil() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.dropUntil(ignored -> true)).isSameAs(empty);
     }
 
@@ -3936,21 +4243,21 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropWhileNoneOnNil() {
-        final Vector<?> empty = empty();
-        final Vector<?> actual = empty.dropWhile(ignored -> true);
-            assertThat(actual).isSameAs(empty);
+        Vector<?> empty = empty();
+        Vector<?> actual = empty.dropWhile(ignored -> true);
+        assertThat(actual).isSameAs(empty);
     }
 
     @TestTemplate
     public void shouldDropWhileNoneIfPredicateIsFalse() {
-            final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.dropWhile(ignored -> false)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.dropWhile(ignored -> false)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldDropWhileAllIfPredicateIsTrue() {
-        final Vector<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
-            assertThat(actual).isSameAs(empty());
+        Vector<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
+        assertThat(actual).isSameAs(empty());
     }
 
     @TestTemplate
@@ -3965,7 +4272,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropWhile() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.dropWhile(ignored -> true)).isSameAs(empty);
     }
 
@@ -3993,19 +4300,19 @@ public class VectorTest extends AbstractTraversableTest {
         assertThat(of(1, 2, 3).filter(i -> i == 1)).isEqualTo(of(1));
         assertThat(of(1, 2, 3).filter(i -> i == 2)).isEqualTo(of(2));
         assertThat(of(1, 2, 3).filter(i -> i == 3)).isEqualTo(of(3));
-            final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.filter(ignore -> true)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.filter(ignore -> true)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldFilterNonExistingElements() {
-            assertThat(this.<Integer>empty().filter(i -> i == 0)).isSameAs(empty());
-            assertThat(of(1, 2, 3).filter(i -> i == 0)).isSameAs(empty());
+        assertThat(this.<Integer>empty().filter(i -> i == 0)).isSameAs(empty());
+        assertThat(of(1, 2, 3).filter(i -> i == 0)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.filter(v -> true)).isSameAs(empty);
     }
 
@@ -4016,19 +4323,19 @@ public class VectorTest extends AbstractTraversableTest {
         assertThat(of(1, 2, 3).reject(i -> i == 1)).isEqualTo(of(2, 3));
         assertThat(of(1, 2, 3).reject(i -> i == 2)).isEqualTo(of(1, 3));
         assertThat(of(1, 2, 3).reject(i -> i == 3)).isEqualTo(of(1, 2));
-            final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.reject(ignore -> false)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.reject(ignore -> false)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldRejectNonExistingElements() {
-            assertThat(this.<Integer>empty().reject(i -> i == 0)).isSameAs(empty());
-            assertThat(of(1, 2, 3).reject(i -> i > 0)).isSameAs(empty());
+        assertThat(this.<Integer>empty().reject(i -> i == 0)).isSameAs(empty());
+        assertThat(of(1, 2, 3).reject(i -> i > 0)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.reject(v -> true)).isSameAs(empty);
     }
 
@@ -4048,7 +4355,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldFlatMapEmpty() {
-            assertThat(empty().flatMap(v -> of(v, 0))).isSameAs(empty());
+        assertThat(empty().flatMap(v -> of(v, 0))).isSameAs(empty());
     }
 
     @TestTemplate
@@ -4060,8 +4367,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectNothingFromEmpty() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Vector<Integer> actual = this.<Integer>empty().collect(i -> {
+        AtomicInteger calls = new AtomicInteger();
+        Vector<Integer> actual = this.<Integer>empty().collect(i -> {
             calls.incrementAndGet();
             return Option.some(i);
         });
@@ -4081,12 +4388,13 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectTheKeptElementsInOrder() {
-        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none()))
+                .isEqualTo(of("e2", "e4"));
     }
 
     @TestTemplate
     public void shouldCollectWithASwitchInsideTheLambda() {
-        final Vector<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+        Vector<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
             case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
             default -> Option.none();
         });
@@ -4095,26 +4403,28 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
-        final AtomicInteger calls = new AtomicInteger();
-        of(1, 2, 3).collect(i -> {
-            calls.incrementAndGet();
-            return i == 2 ? Option.none() : Option.some(i);
-        }).size();
+        AtomicInteger calls = new AtomicInteger();
+        of(1, 2, 3)
+                .collect(i -> {
+                    calls.incrementAndGet();
+                    return i == 2 ? Option.none() : Option.some(i);
+                })
+                .size();
         assertThat(calls.get()).isEqualTo(3);
     }
 
     @TestTemplate
     public void shouldRejectNullOptionFromCollectMapper() {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, Iterator...)
-        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
+        String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
-          .isInstanceOf(NullPointerException.class)
-          .hasMessage(type + ".collect: mapper returned null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(type + ".collect: mapper returned null");
     }
 
     @TestTemplate
     public void shouldThrowOnCollectWithNullMapper() {
-        final Function<Integer, Option<Integer>> mapper = null;
+        Function<Integer, Option<Integer>> mapper = null;
         assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
     }
 
@@ -4161,16 +4471,17 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConsumeNoElementWithIndexWhenEmpty() {
-        final boolean[] actual = {false};
-        final boolean[] expected = {false};
+        boolean[] actual = {false};
+        boolean[] expected = {false};
         empty().forEachWithIndex((chr, index) -> actual[0] = true);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldConsumeEachElementWithIndexWhenNonEmpty() {
-        final java.util.List<Tuple2<Character, Integer>> actual = new java.util.ArrayList<>();
-        final java.util.List<Tuple2<Character, Integer>> expected = Arrays.asList(Tuple.of('a', 0), Tuple.of('b', 1), Tuple.of('c', 2));
+        java.util.List<Tuple2<Character, Integer>> actual = new java.util.ArrayList<>();
+        java.util.List<Tuple2<Character, Integer>> expected =
+                Arrays.asList(Tuple.of('a', 0), Tuple.of('b', 1), Tuple.of('c', 2));
         ofAll('a', 'b', 'c').forEachWithIndex((chr, index) -> actual.add(Tuple.of(chr, index)));
         assertThat(actual).isEqualTo(expected);
     }
@@ -4184,15 +4495,16 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
+        Map<?, ?> expected =
+                LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilGroupByEqual() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
-        final Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
+        Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4205,15 +4517,16 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
+        Option<Map<?, ?>> expected =
+                Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
-        final Option<Map<?, ?>> expected = Option.none();
+        Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
+        Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4236,22 +4549,22 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldGroupedTraversableWithEqualSizedBlocks() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2), of(3, 4));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2), of(3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedTraversableWithRemainder() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2), of(3, 4), of(5));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2), of(3, 4), of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedWhenTraversableLengthIsSmallerThanBlockSize() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2, 3, 4));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4433,13 +4746,14 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max()
-          .get()).isEqualTo(Double.POSITIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Double.POSITIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get()).isEqualTo(Float.POSITIVE_INFINITY);
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Float.POSITIVE_INFINITY);
     }
 
     // -- maxBy(Comparator)
@@ -4488,11 +4802,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMaxFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(3));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(3));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -4590,14 +4905,14 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     // -- minBy(Comparator)
@@ -4646,11 +4961,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMinFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(1));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(1));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -4658,7 +4974,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameOther() {
-        final Iterable<Integer> other = of(42);
+        Iterable<Integer> other = of(42);
         assertThat(empty().orElse(other)).isSameAs(other);
     }
 
@@ -4669,14 +4985,14 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseOther() {
-        final Vector<Integer> src = of(42);
+        Vector<Integer> src = of(42);
         assertThat(src.orElse(List.of(1))).isSameAs(src);
     }
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameSupplier() {
-        final Iterable<Integer> other = of(42);
-        final Supplier<Iterable<Integer>> supplier = () -> other;
+        Iterable<Integer> other = of(42);
+        Supplier<Iterable<Integer>> supplier = () -> other;
         assertThat(empty().orElse(supplier)).isSameAs(other);
     }
 
@@ -4687,7 +5003,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseSupplier() {
-        final Vector<Integer> src = of(42);
+        Vector<Integer> src = of(42);
         assertThat(src.orElse(() -> List.of(1))).isSameAs(src);
     }
 
@@ -4727,7 +5043,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingProductOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").product());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").product());
     }
 
     @TestTemplate
@@ -4876,14 +5193,14 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReplaceElementOfNilUsingCurrNew() {
-            assertThat(this.<Integer>empty().replace(1, 2)).isSameAs(empty());
+        assertThat(this.<Integer>empty().replace(1, 2)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldReplaceFirstOccurrenceOfNonNilUsingCurrNewWhenMultipleOccurrencesExist() {
-        final Vector<Integer> testee = of(0, 1, 2, 1);
-        final Vector<Integer> actual = testee.replace(1, 3);
-        final Vector<Integer> expected = of(0, 3, 2, 1);
+        Vector<Integer> testee = of(0, 1, 2, 1);
+        Vector<Integer> actual = testee.replace(1, 3);
+        Vector<Integer> expected = of(0, 3, 2, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4894,21 +5211,21 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReplaceElementOfNonNilUsingCurrNewWhenNoOccurrenceExists() {
-            final Vector<Integer> src = of(0, 1, 2);
-            assertThat(src.replace(33, 3)).isSameAs(src);
+        Vector<Integer> src = of(0, 1, 2);
+        assertThat(src.replace(33, 3)).isSameAs(src);
     }
 
     // -- replaceAll(curr, new)
 
     @TestTemplate
     public void shouldReplaceAllElementsOfNilUsingCurrNew() {
-            assertThat(this.<Integer>empty().replaceAll(1, 2)).isSameAs(empty());
+        assertThat(this.<Integer>empty().replaceAll(1, 2)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldReplaceAllElementsOfNonNilUsingCurrNonExistingNew() {
-            final Vector<Integer> src = of(0, 1, 2, 1);
-            assertThat(src.replaceAll(33, 3)).isSameAs(src);
+        Vector<Integer> src = of(0, 1, 2, 1);
+        assertThat(src.replaceAll(33, 3)).isSameAs(src);
     }
 
     @TestTemplate
@@ -4920,84 +5237,85 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllElementsFromNil() {
-        final Vector<Object> empty = empty();
-        final Vector<Object> actual = empty.retainAll(of(1, 2, 3));
-            assertThat(actual).isSameAs(empty);
+        Vector<Object> empty = empty();
+        Vector<Object> actual = empty.retainAll(of(1, 2, 3));
+        assertThat(actual).isSameAs(empty);
     }
 
     @TestTemplate
     public void shouldRetainAllExistingElementsFromNonNil() {
-        final Vector<Integer> src = of(1, 2, 3, 2, 1, 3);
-        final Vector<Integer> expected = of(1, 2, 2, 1);
-        final Vector<Integer> actual = src.retainAll(of(1, 2));
+        Vector<Integer> src = of(1, 2, 3, 2, 1, 3);
+        Vector<Integer> expected = of(1, 2, 2, 1);
+        Vector<Integer> actual = src.retainAll(of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldRetainAllElementsFromNonNil() {
-        final Vector<Integer> src = of(1, 2, 1, 2, 2);
-        final Vector<Integer> expected = of(1, 2, 1, 2, 2);
-        final Vector<Integer> actual = src.retainAll(of(1, 2));
-            assertThat(actual).isSameAs(src);
+        Vector<Integer> src = of(1, 2, 1, 2, 2);
+        Vector<Integer> expected = of(1, 2, 1, 2, 2);
+        Vector<Integer> actual = src.retainAll(of(1, 2));
+        assertThat(actual).isSameAs(src);
     }
 
     @TestTemplate
     public void shouldNotRetainAllNonExistingElementsFromNonNil() {
-        final Vector<Integer> src = of(1, 2, 3);
-        final Vector<Object> expected = empty();
-        final Vector<Integer> actual = src.retainAll(of(4, 5));
-            assertThat(actual).isSameAs(expected);
+        Vector<Integer> src = of(1, 2, 3);
+        Vector<Object> expected = empty();
+        Vector<Integer> actual = src.retainAll(of(4, 5));
+        assertThat(actual).isSameAs(expected);
     }
 
     // -- scan, scanLeft, scanRight
 
     @TestTemplate
     public void shouldScanEmpty() {
-        final Vector<Integer> testee = empty();
-        final Vector<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
+        Vector<Integer> testee = empty();
+        Vector<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(this.of(0));
     }
 
     @TestTemplate
     public void shouldScanLeftEmpty() {
-        final Vector<Integer> testee = empty();
-        final Vector<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
+        Vector<Integer> testee = empty();
+        Vector<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(of(0));
     }
 
     @TestTemplate
     public void shouldScanRightEmpty() {
-        final Vector<Integer> testee = empty();
-        final Vector<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
+        Vector<Integer> testee = empty();
+        Vector<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(of(0));
     }
 
     @TestTemplate
     public void shouldScanNonEmpty() {
-        final Vector<Integer> testee = of(1, 2, 3);
-        final Vector<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
+        Vector<Integer> testee = of(1, 2, 3);
+        Vector<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
         assertThat(actual).isEqualTo(of(0, 1, 3, 6));
     }
 
     @TestTemplate
     public void shouldScanLeftNonEmpty() {
-        final Vector<Integer> testee = of(1, 2, 3);
-        final Vector<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
+        Vector<Integer> testee = of(1, 2, 3);
+        Vector<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
         assertThat(actual).isEqualTo(of("x", "x1", "x12", "x123"));
     }
 
     @TestTemplate
     public void shouldScanRightNonEmpty() {
-        final Vector<Integer> testee = of(1, 2, 3);
-        final Vector<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
+        Vector<Integer> testee = of(1, 2, 3);
+        Vector<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
         assertThat(actual).isEqualTo(of("x321", "x32", "x3", "x"));
     }
 
     @TestTemplate
     public void shouldScanWithNonComparable() {
-        final Vector<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        Vector<NonComparable> testee = of(new NonComparable("a"));
+        List<NonComparable> actual =
+                List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
         assertThat(actual.size()).isEqualTo(expected.size());
@@ -5005,9 +5323,10 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanLeftWithNonComparable() {
-        final Vector<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        Vector<NonComparable> testee = of(new NonComparable("a"));
+        List<NonComparable> actual =
+                List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
         assertThat(actual.size()).isEqualTo(expected.size());
@@ -5015,9 +5334,10 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanRightWithNonComparable() {
-        final Vector<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
+        Vector<NonComparable> testee = of(new NonComparable("a"));
+        List<NonComparable> actual = List.ofAll(
+                testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
         assertThat(actual.size()).isEqualTo(expected.size());
@@ -5032,12 +5352,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTerminateSlideByClassifier() {
-        assertTimeout(Duration.ofSeconds(1),() -> {
+        assertTimeout(Duration.ofSeconds(1), () -> {
             AtomicInteger ai = new AtomicInteger(0);
             List<List<String>> expected = List.of(List.of("a", "-"), List.of("-"), List.of("d"));
             List<List<String>> actual = List.of("a", "-", "-", "d")
-              .slideBy(x -> x.equals("-") ? ai.getAndIncrement() : ai.get())
-              .toList();
+                    .slideBy(x -> x.equals("-") ? ai.getAndIncrement() : ai.get())
+                    .toList();
             assertThat(actual).containsAll(expected);
             assertThat(expected).containsAll(actual);
         });
@@ -5045,36 +5365,37 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideSingularByClassifier() {
-        final List<Vector<Integer>> actual = of(1).slideBy(Function.identity()).toList();
-        final List<Vector<Integer>> expected = List.of(of(1));
+        List<Vector<Integer>> actual = of(1).slideBy(Function.identity()).toList();
+        List<Vector<Integer>> expected = List.of(of(1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByIdentityClassifier() {
-        final List<Vector<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList();
-        final List<Vector<Integer>> expected = List.of(of(1), of(2), of(3));
+        List<Vector<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList();
+        List<Vector<Integer>> expected = List.of(of(1), of(2), of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByConstantClassifier() {
-        final List<Vector<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2, 3));
+        List<Vector<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySomeClassifier() {
-        final List<Vector<Integer>> actual = of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
-        final List<Vector<Integer>> expected = List.of(of(10, 20, 30), of(42, 52), of(60), of(72));
+        List<Vector<Integer>> actual =
+                of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
+        List<Vector<Integer>> expected = List.of(of(10, 20, 30), of(42, 52), of(60), of(72));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideByClassifierReturningNull() {
-        final List<Vector<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2, 3));
+        List<Vector<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5107,15 +5428,15 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideNonNilBySize1() {
-        final List<Vector<Integer>> actual = of(1, 2, 3).sliding(1).toList();
-        final List<Vector<Integer>> expected = List.of(of(1), of(2), of(3));
+        List<Vector<Integer>> actual = of(1, 2, 3).sliding(1).toList();
+        List<Vector<Integer>> expected = List.of(of(1), of(2), of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySize2() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2), of(2, 3), of(3, 4), of(4, 5));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2), of(2, 3), of(3, 4), of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5143,43 +5464,43 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep3() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2), of(4, 5));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2), of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep4() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2), of(5));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2), of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep5() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide4ElementsBySize5AndStep3() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2, 3, 4));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize1AndStep3() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
-        final List<Vector<Integer>> expected = List.of(of(1), of(4), of(7));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
+        List<Vector<Integer>> expected = List.of(of(1), of(4), of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize2AndStep3() {
-        final List<Vector<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
-        final List<Vector<Integer>> expected = List.of(of(1, 2), of(4, 5), of(7));
+        List<Vector<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
+        List<Vector<Integer>> expected = List.of(of(1, 2), of(4, 5), of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5210,7 +5531,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingSumOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
     }
 
     @TestTemplate
@@ -5257,12 +5579,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeNoneOnNil() {
-            assertThat(empty().take(1)).isSameAs(empty());
+        assertThat(empty().take(1)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldTakeNoneIfCountIsNegative() {
-            assertThat(of(1, 2, 3).take(-1)).isSameAs(empty());
+        assertThat(of(1, 2, 3).take(-1)).isSameAs(empty());
     }
 
     @TestTemplate
@@ -5272,13 +5594,13 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeAllIfCountExceedsSize() {
-            final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.take(4)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.take(4)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceIfTakeAll() {
-        final Vector<?> t = of(1, 2, 3);
+        Vector<?> t = of(1, 2, 3);
         assertThat(t.take(3)).isSameAs(t);
         assertThat(t.take(4)).isSameAs(t);
     }
@@ -5287,12 +5609,12 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeRightNoneOnNil() {
-            assertThat(empty().takeRight(1)).isSameAs(empty());
+        assertThat(empty().takeRight(1)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldTakeRightNoneIfCountIsNegative() {
-            assertThat(of(1, 2, 3).takeRight(-1)).isSameAs(empty());
+        assertThat(of(1, 2, 3).takeRight(-1)).isSameAs(empty());
     }
 
     @TestTemplate
@@ -5302,13 +5624,13 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeRightAllIfCountExceedsSize() {
-            final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.takeRight(4)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.takeRight(4)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceIfTakeRightAll() {
-        final Vector<?> t = of(1, 2, 3);
+        Vector<?> t = of(1, 2, 3);
         assertThat(t.takeRight(3)).isSameAs(t);
         assertThat(t.takeRight(4)).isSameAs(t);
     }
@@ -5317,18 +5639,18 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeUntilNoneOnNil() {
-            assertThat(empty().takeUntil(x -> true)).isSameAs(empty());
+        assertThat(empty().takeUntil(x -> true)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldTakeUntilAllOnFalseCondition() {
-        final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.takeUntil(x -> false)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.takeUntil(x -> false)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldTakeUntilAllOnTrueCondition() {
-            assertThat(of(1, 2, 3).takeUntil(x -> true)).isSameAs(empty());
+        assertThat(of(1, 2, 3).takeUntil(x -> true)).isSameAs(empty());
     }
 
     @TestTemplate
@@ -5338,7 +5660,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyTakeUntil() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.takeUntil(ignored -> false)).isSameAs(empty);
     }
 
@@ -5346,18 +5668,18 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeWhileNoneOnNil() {
-            assertThat(empty().takeWhile(x -> true)).isSameAs(empty());
+        assertThat(empty().takeWhile(x -> true)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldTakeWhileAllOnFalseCondition() {
-            assertThat(of(1, 2, 3).takeWhile(x -> false)).isSameAs(empty());
+        assertThat(of(1, 2, 3).takeWhile(x -> false)).isSameAs(empty());
     }
 
     @TestTemplate
     public void shouldTakeWhileAllOnTrueCondition() {
-        final Vector<Integer> t = of(1, 2, 3);
-            assertThat(t.takeWhile(x -> true)).isSameAs(t);
+        Vector<Integer> t = of(1, 2, 3);
+        assertThat(t.takeWhile(x -> true)).isSameAs(t);
     }
 
     @TestTemplate
@@ -5367,7 +5689,7 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyTakeWhile() {
-        final Vector<?> empty = empty();
+        Vector<?> empty = empty();
         assertThat(empty.takeWhile(ignored -> false)).isSameAs(empty);
     }
 
@@ -5404,8 +5726,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldUnzipNonNil() {
-        final Tuple actual = of(0, 1).unzip(i -> Tuple.of(i, (char) ((short) 'a' + i)));
-        final Tuple expected = Tuple.of(of(0, 1), of('a', 'b'));
+        Tuple actual = of(0, 1).unzip(i -> Tuple.of(i, (char) ((short) 'a' + i)));
+        Tuple expected = Tuple.of(of(0, 1), of('a', 'b'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5416,8 +5738,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldUnzip3NonNil() {
-        final Tuple actual = of(0, 1).unzip3(i -> Tuple.of(i, (char) ((short) 'a' + i), (char) ((short) 'a' + i + 1)));
-        final Tuple expected = Tuple.of(of(0, 1), of('a', 'b'), of('b', 'c'));
+        Tuple actual = of(0, 1).unzip3(i -> Tuple.of(i, (char) ((short) 'a' + i), (char) ((short) 'a' + i + 1)));
+        Tuple expected = Tuple.of(of(0, 1), of('a', 'b'), of('b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5425,48 +5747,51 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipNils() {
-        final Vector<?> actual = empty().zip(empty());
+        Vector<?> actual = empty().zip(empty());
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipEmptyAndNonNil() {
-        final Vector<?> actual = empty().zip(of(1));
+        Vector<?> actual = empty().zip(of(1));
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipNonEmptyAndNil() {
-        final Vector<?> actual = of(1).zip(empty());
+        Vector<?> actual = of(1).zip(empty());
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThisIsSmaller() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
-        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThatIsSmaller() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
-        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsOfSameSize() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
-        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     @SuppressWarnings("unchecked")
     public void shouldZipWithNonNilsOfSameSize() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
-        final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5479,21 +5804,21 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipAllNils() {
-        final Vector<?> actual = empty().zipAll(empty(), 0, 0);
+        Vector<?> actual = empty().zipAll(empty(), 0, 0);
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipAllEmptyAndNonNil() {
-        final Vector<?> actual = empty().zipAll(of(1), 0, 0);
-        final Vector<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
+        Vector<?> actual = empty().zipAll(of(1), 0, 0);
+        Vector<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonEmptyAndNil() {
-        final Vector<?> actual = of(1).zipAll(empty(), 0, 0);
-        final Vector<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
+        Vector<?> actual = of(1).zipAll(empty(), 0, 0);
+        Vector<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5505,22 +5830,25 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThisIsSmaller() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
-        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThatIsSmaller() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
-        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsOfSameSize() {
-        final Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
-        @SuppressWarnings("unchecked") final Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        Vector<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5538,16 +5866,17 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipNonNilWithIndex() {
-        final Vector<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
-        @SuppressWarnings("unchecked") final Vector<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        Vector<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
+        @SuppressWarnings("unchecked")
+        Vector<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     @SuppressWarnings("unchecked")
     public void shouldZipNonNilWithIndexWithMapper() {
-        final Vector<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
-        final Vector<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        Vector<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
+        Vector<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5555,15 +5884,15 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertNilToJavaArray() {
-        final Integer[] actual = List.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[]{};
+        Integer[] actual = List.<Integer>empty().toArray(Integer[]::new);
+        Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldConvertNonNilToJavaArray() {
-        final Integer[] array = of(1, 2).toArray(Integer[]::new);
-        final Integer[] expected = new Integer[]{1, 2};
+        Integer[] array = of(1, 2).toArray(Integer[]::new);
+        Integer[] expected = new Integer[] {1, 2};
         assertThat(array).isEqualTo(expected);
     }
 
@@ -5626,23 +5955,23 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTapSingleValuePerformingAnAction() {
-        final int[] effect = {0};
-        final Vector<Integer> actual = of(1).tap(i -> effect[0] = i);
+        int[] effect = {0};
+        Vector<Integer> actual = of(1).tap(i -> effect[0] = i);
         assertThat(actual).isEqualTo(of(1));
         assertThat(effect[0]).isEqualTo(1);
     }
 
     @TestTemplate
     public void shouldTapEveryElement() {
-        final int[] sum = {0};
-        final Vector<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        int[] sum = {0};
+        Vector<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
         assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
         assertThat(sum[0]).isEqualTo(6);
     }
 
     @TestTemplate
     public void shouldReturnThisOnTapOfEagerCollection() {
-        final Vector<Integer> testee = of(1, 2, 3);
+        Vector<Integer> testee = of(1, 2, 3);
         if (hasDefiniteSize()) {
             assertThat(testee.tap(i -> {})).isSameAs(testee);
         }
@@ -5655,22 +5984,25 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldPropagateWhatTheTapActionThrows() {
-        assertThrows(IllegalStateException.class, () -> of(1, 2).tap(i -> {
-            throw new IllegalStateException();
-        }).size());
+        assertThrows(
+                IllegalStateException.class,
+                () -> of(1, 2).tap(i -> {
+                            throw new IllegalStateException();
+                        })
+                        .size());
     }
 
     // -- collect(Collector)
 
     @TestTemplate
     public void shouldCollectWithACollector() {
-        final java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -5695,7 +6027,8 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedMapTwoFunctions() {
-        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity())).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity()))
+                .isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
@@ -5706,19 +6039,22 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctions() {
-        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity())).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity())).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
@@ -5729,9 +6065,9 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedSet() {
-        final Vector<Integer> value = of(3, 7, 1, 15, 0);
-        final Set<Integer> set = value.toLinkedSet();
-        final List<Integer> itemsInOrder = value.toList();
+        Vector<Integer> value = of(3, 7, 1, 15, 0);
+        Set<Integer> set = value.toLinkedSet();
+        List<Integer> itemsInOrder = value.toList();
         assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
         assertThat(empty().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
@@ -5743,13 +6079,15 @@ public class VectorTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
-        assertThrows(ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
+        assertThrows(
+                ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
     }
 
     @TestTemplate
     public void shouldConvertToSortedSet() {
-        final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
-        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed())).isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+        Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
+                .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
 
     @TestTemplate
@@ -5897,57 +6235,73 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(rangeClosedBy('a', 'c', 1)).isEqualTo(of('a', 'b', 'c'));
             assertThat(rangeClosedBy('a', 'e', 2)).isEqualTo(of('a', 'c', 'e'));
             assertThat(rangeClosedBy('a', 'f', 2)).isEqualTo(of('a', 'c', 'e'));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 2)));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 2)));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
             assertThat(rangeClosedBy('c', 'a', -1)).isEqualTo(of('c', 'b', 'a'));
             assertThat(rangeClosedBy('e', 'a', -2)).isEqualTo(of('e', 'c', 'a'));
             assertThat(rangeClosedBy('e', (char) ('a' - 1), -2)).isEqualTo(of('e', 'c', 'a'));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 2)));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 2)));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0, 3.0));
             assertThat(rangeClosedBy(1.0, 5.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
             assertThat(rangeClosedBy(1.0, 6.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
-            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 2.0E307));
+            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 2.0E307));
             assertThat(rangeClosedBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0, 1.0));
             assertThat(rangeClosedBy(5.0, 1.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
             assertThat(rangeClosedBy(5.0, 0.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
-            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
 
             // int
             assertThat(rangeClosedBy(1, 3, 1)).isEqualTo(of(1, 2, 3));
             assertThat(rangeClosedBy(1, 5, 2)).isEqualTo(of(1, 3, 5));
             assertThat(rangeClosedBy(1, 6, 2)).isEqualTo(of(1, 3, 5));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
             assertThat(rangeClosedBy(3, 1, -1)).isEqualTo(of(3, 2, 1));
             assertThat(rangeClosedBy(5, 1, -2)).isEqualTo(of(5, 3, 1));
             assertThat(rangeClosedBy(5, 0, -2)).isEqualTo(of(5, 3, 1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
 
             // long
             assertThat(rangeClosedBy(1L, 3L, 1)).isEqualTo(of(1L, 2L, 3L));
             assertThat(rangeClosedBy(1L, 5L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(1L, 6L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(Long.MAX_VALUE - 2, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
             assertThat(rangeClosedBy(3L, 1L, -1)).isEqualTo(of(3L, 2L, 1L));
             assertThat(rangeClosedBy(5L, 1L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(5L, 0L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE + 2, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
         }
 
         @Test
         public void shouldCreateRangeClosedByWhereFromAndToEqualMIN_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3))
+                    .isEqualTo(of(Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 1)).isEqualTo(of(-Double.MAX_VALUE));
@@ -5972,10 +6326,14 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByWhereFromAndToEqualMAX_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3))
+                    .isEqualTo(of(Character.MAX_VALUE));
 
             // double
             assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, 1)).isEqualTo(of(Double.MAX_VALUE));
@@ -6000,17 +6358,26 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByStartingAtTypeBoundary() {
 
             // int
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE)).isEqualTo(of(Integer.MAX_VALUE, -1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
+                    .isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE))
+                    .isEqualTo(of(Integer.MAX_VALUE, -1));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5))
+                    .isEqualTo(of(Integer.MIN_VALUE));
 
             // long
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE)).isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE)).isEqualTo(of(Long.MAX_VALUE, -1L));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+                    .isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE))
+                    .isEqualTo(of(Long.MAX_VALUE, -1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 1, 5L)).isEqualTo(of(Long.MIN_VALUE));
         }
     }
@@ -6128,18 +6495,24 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(rangeBy('a', 'd', 2)).isEqualTo(of('a', 'c'));
             assertThat(rangeBy('c', 'a', -1)).isEqualTo(of('c', 'b'));
             assertThat(rangeBy('d', 'a', -2)).isEqualTo(of('d', 'b'));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3)));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
 
             // double
             assertThat(rangeBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0));
             assertThat(rangeBy(1.0, 4.0, 2.0)).isEqualTo(of(1.0, 3.0));
             assertThat(rangeBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0));
             assertThat(rangeBy(4.0, 1.0, -2.0)).isEqualTo(of(4.0, 2.0));
-            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 3.0E307));
-            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
+            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 3.0E307));
+            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
 
             // int
             assertThat(rangeBy(1, 3, 1)).isEqualTo(of(1, 2));
@@ -6147,9 +6520,11 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(rangeBy(3, 1, -1)).isEqualTo(of(3, 2));
             assertThat(rangeBy(4, 1, -2)).isEqualTo(of(4, 2));
             assertThat(rangeBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3));
-            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
             assertThat(rangeBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3));
-            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
 
             // long
             assertThat(rangeBy(1L, 3L, 1L)).isEqualTo(of(1L, 2L));
@@ -6157,9 +6532,11 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(rangeBy(3L, 1L, -1L)).isEqualTo(of(3L, 2L));
             assertThat(rangeBy(4L, 1L, -2L)).isEqualTo(of(4L, 2L));
             assertThat(rangeBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3));
-            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
             assertThat(rangeBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3));
-            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
         }
 
         @Test
@@ -6276,14 +6653,18 @@ public class VectorTest extends AbstractTraversableTest {
             // int
             assertThat(rangeBy(5, Integer.MIN_VALUE, 1)).isEmpty();
             assertThat(rangeBy(5, Integer.MAX_VALUE, -1)).isEmpty();
-            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
-            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
 
             // long
             assertThat(rangeBy(5L, Long.MIN_VALUE, 1L)).isEmpty();
             assertThat(rangeBy(5L, Long.MAX_VALUE, -1L)).isEmpty();
-            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
-            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
         }
 
         // double special cases
@@ -6326,8 +6707,8 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldGroupIntoVectorsOfVectorsAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int size : new int[] { 1, 2, 31, 32, 33, 1024, n + 1 }) {
-                        final Vector<Vector<Integer>> groups = vector.grouped(size);
+                    for (int size : new int[] {1, 2, 31, 32, 33, 1024, n + 1}) {
+                        Vector<Vector<Integer>> groups = vector.grouped(size);
                         assertThat(groups).isInstanceOf(Vector.class);
                         assertThat(groups.size()).isEqualTo((n + size - 1) / size);
                         for (int i = 0; i < groups.size(); i++) {
@@ -6347,21 +6728,21 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldSlideIntoVectorsOfVectorsAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    for (int size : new int[] { 1, 2, 32, 33 }) {
-                        for (int step : new int[] { 1, 2, 31, 32, 33 }) {
-                            final Vector<Vector<Integer>> windows = vector.sliding(size, step);
+                    for (int size : new int[] {1, 2, 32, 33}) {
+                        for (int step : new int[] {1, 2, 31, 32, 33}) {
+                            Vector<Vector<Integer>> windows = vector.sliding(size, step);
                             assertThat(windows).isInstanceOf(Vector.class);
-                            int expected = 0;
-                            int start = 0;
                             for (int i = 0; i < windows.size(); i++) {
+                                int start = i * step;
                                 assertThat(windows.get(i)).isInstanceOf(Vector.class);
                                 assertThat(windows.get(i)).isEqualTo(vector.slice(start, Math.min(start + size, n)));
-                                start += step;
                             }
-                            for (long s = 0; s < n && (s == 0 || s - step + size < n); s += step) {
-                                expected++;
-                            }
-                            assertThat(windows.size()).isEqualTo(expected);
+                            // a window at every step from 0 while it starts in the vector and the previous one did not
+                            // reach its end
+                            long expected = java.util.stream.LongStream.iterate(
+                                            0, s -> s < n && (s == 0 || s - step + size < n), s -> s + step)
+                                    .count();
+                            assertThat((long) windows.size()).isEqualTo(expected);
                         }
                     }
                     assertThat(vector.sliding(2)).isEqualTo(vector.sliding(2, 1));
@@ -6374,21 +6755,25 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(Vector.of(1, 2, 3, 4).sliding(3)).isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)));
             assertThat(Vector.of(1, 2, 3, 4, 5).sliding(2, 3)).isEqualTo(Vector.of(Vector.of(1, 2), Vector.of(4, 5)));
             assertThat(Vector.of(1, 2, 3, 4, 5).sliding(2, 4)).isEqualTo(Vector.of(Vector.of(1, 2), Vector.of(5)));
-            assertThat(Vector.of(1, 2, 3, 4, 5).sliding(3, 2)).isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)));
-            assertThat(Vector.of(1, 2, 3, 4, 5, 6).sliding(3, 2)).isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)));
+            assertThat(Vector.of(1, 2, 3, 4, 5).sliding(3, 2))
+                    .isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)));
+            assertThat(Vector.of(1, 2, 3, 4, 5, 6).sliding(3, 2))
+                    .isEqualTo(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)));
             assertThat(Vector.of(1, 2, 3).sliding(1, 3)).isEqualTo(Vector.of(Vector.of(1)));
             assertThat(Vector.of(1, 2).sliding(5)).isEqualTo(Vector.of(Vector.of(1, 2)));
             assertThat(Vector.of(1).sliding(1)).isEqualTo(Vector.of(Vector.of(1)));
-            assertThat(Vector.<Integer> empty().sliding(1)).isSameAs(Vector.empty());
-            assertThat(Vector.<Integer> empty().sliding(2, 3)).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer>empty().sliding(1)).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer>empty().sliding(2, 3)).isSameAs(Vector.empty());
             // a huge step does not overflow the window start
             assertThat(Vector.range(0, 40).sliding(3, Integer.MAX_VALUE)).isEqualTo(Vector.of(Vector.range(0, 3)));
-            assertThat(Vector.range(0, 40).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(Vector.of(Vector.range(0, 40)));
+            assertThat(Vector.range(0, 40).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE))
+                    .isEqualTo(Vector.of(Vector.range(0, 40)));
         }
 
         @Test
         public void shouldRejectANonPositiveWindowSizeOrStep() {
-            for (Vector<Integer> vector : java.util.List.of(Vector.<Integer> empty(), Vector.of(1), Vector.range(0, 33))) {
+            for (Vector<Integer> vector :
+                    java.util.List.of(Vector.<Integer>empty(), Vector.of(1), Vector.range(0, 33))) {
                 assertThrows(IllegalArgumentException.class, () -> vector.grouped(0));
                 assertThrows(IllegalArgumentException.class, () -> vector.grouped(-1));
                 assertThrows(IllegalArgumentException.class, () -> vector.sliding(0));
@@ -6402,8 +6787,8 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldSlideByAClassifierIntoVectorsOfVectorsAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final int[] calls = { 0 };
-                    final Vector<Vector<Integer>> runs = vector.slideBy(x -> {
+                    int[] calls = {0};
+                    Vector<Vector<Integer>> runs = vector.slideBy(x -> {
                         calls[0]++;
                         return x / 32;
                     });
@@ -6434,9 +6819,9 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldBuildTheCartesianSquareAsAVectorAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 31, 32, 33 }) {
+            for (int n : new int[] {0, 1, 31, 32, 33}) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final Vector<Tuple2<Integer, Integer>> pairs = vector.crossProduct();
+                    Vector<Tuple2<Integer, Integer>> pairs = vector.crossProduct();
                     assertThat(pairs).isInstanceOf(Vector.class);
                     assertThat(pairs.size()).isEqualTo(n * n);
                     if (n > 0) {
@@ -6456,14 +6841,14 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldBuildTheProductWithAnIterableNow() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 for (Vector<Integer> vector : representations(n)) {
-                    final int[] walks = { 0 };
-                    final Iterable<Character> counted = () -> {
+                    int[] walks = {0};
+                    Iterable<Character> counted = () -> {
                         walks[0]++;
                         return java.util.List.of('a', 'b').iterator();
                     };
-                    final Vector<Tuple2<Integer, Character>> pairs = vector.crossProduct(counted);
+                    Vector<Tuple2<Integer, Character>> pairs = vector.crossProduct(counted);
                     assertThat(walks[0]).isEqualTo(1);
                     assertThat(pairs).isInstanceOf(Vector.class);
                     assertThat(pairs.size()).isEqualTo(2 * n);
@@ -6471,26 +6856,27 @@ public class VectorTest extends AbstractTraversableTest {
                         assertThat(pairs.get(2 * i)).isEqualTo(Tuple.of(i, 'a'));
                         assertThat(pairs.get(2 * i + 1)).isEqualTo(Tuple.of(i, 'b'));
                     }
-                    assertThat(vector.crossProduct(Vector.<Character> empty())).isSameAs(Vector.empty());
-                    assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator)).isEqualTo(pairs);
+                    assertThat(vector.crossProduct(Vector.<Character>empty())).isSameAs(Vector.empty());
+                    assertThat(vector.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator))
+                            .isEqualTo(pairs);
                 }
             }
-            assertThat(Vector.<Integer> empty().crossProduct(Vector.of(1, 2))).isSameAs(Vector.empty());
+            assertThat(Vector.<Integer>empty().crossProduct(Vector.of(1, 2))).isSameAs(Vector.empty());
         }
 
         @Test
         public void shouldBuildThePowerAsVectorsOfVectorsAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 31, 32, 33 }) {
+            for (int n : new int[] {0, 1, 31, 32, 33}) {
                 for (Vector<Integer> vector : representations(n)) {
                     assertThat(vector.crossProduct(-1)).isSameAs(Vector.empty());
                     assertThat(vector.crossProduct(0)).isEqualTo(Vector.of(Vector.empty()));
-                    final Vector<Vector<Integer>> singles = vector.crossProduct(1);
+                    Vector<Vector<Integer>> singles = vector.crossProduct(1);
                     assertThat(singles).isInstanceOf(Vector.class);
                     assertThat(singles.size()).isEqualTo(n);
                     for (int i = 0; i < n; i++) {
                         assertThat(singles.get(i)).isEqualTo(Vector.of(i));
                     }
-                    final Vector<Vector<Integer>> squares = vector.crossProduct(2);
+                    Vector<Vector<Integer>> squares = vector.crossProduct(2);
                     assertThat(squares.size()).isEqualTo(n * n);
                     if (n > 1) {
                         assertThat(squares.head()).isEqualTo(Vector.of(0, 0));
@@ -6526,13 +6912,13 @@ public class VectorTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnThisWhenAppendingAnEmptyOneShotArgument() {
-            final Vector<Integer> vector = of(1);
+            Vector<Integer> vector = of(1);
             assertThat(vector.appendAll(oneShot())).isSameAs(vector);
         }
 
         @Test
         public void shouldPrependAllFromAOneShotArgument() {
-            final Vector<Integer> vector = of(3);
+            Vector<Integer> vector = of(3);
             assertThat(vector.prependAll(oneShot(1, 2))).isEqualTo(of(1, 2, 3));
             assertThat(vector.prependAll(oneShot())).isSameAs(vector);
             assertThat(empty().prependAll(oneShot(1, 2))).isEqualTo(of(1, 2));
@@ -6561,5 +6947,4 @@ public class VectorTest extends AbstractTraversableTest {
             assertThat(of(1, 2, 3, 4).indexOfSlice(oneShot(2, 3))).isEqualTo(1);
         }
     }
-
 }

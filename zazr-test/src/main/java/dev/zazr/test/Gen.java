@@ -125,10 +125,10 @@ public final class Gen<A> {
      * @throws IllegalStateException when the discard budget of the run is exceeded
      */
     A draw(Sampling sampling, int size) {
-        final Holder<A> holder = new Holder<>();
-        final int gaveUp = sampling.filtersGaveUp;
+        Holder<A> holder = new Holder<>();
+        int gaveUp = sampling.filtersGaveUp;
         for (long attempts = 0; ; attempts++) {
-            final int before = sampling.filtersGaveUp;
+            int before = sampling.filtersGaveUp;
             pass.run(sampling, sampling.grow(size, attempts), value -> {
                 holder.value = value;
                 holder.found = true;
@@ -182,15 +182,15 @@ public final class Gen<A> {
      */
     public static <A> Gen<A> fromIterable(Iterable<? extends A> values) {
         Objects.requireNonNull(values, "values is null");
-        final ArrayList<A> copy = new ArrayList<>();
+        ArrayList<A> copy = new ArrayList<>();
         for (A value : values) {
             copy.add(value);
         }
-        final Object[] array = copy.toArray();
+        Object[] array = copy.toArray();
         return new Gen<>((sampling, size, sink) -> {
             for (Object value : array) {
                 @SuppressWarnings("unchecked")
-                final A a = (A) value;
+                A a = (A) value;
                 if (!sink.accept(a)) {
                     return false;
                 }
@@ -213,10 +213,10 @@ public final class Gen<A> {
         if (values.length == 0) {
             return empty();
         }
-        final Object[] copy = Arrays.copyOf(values, values.length, Object[].class);
+        Object[] copy = Arrays.copyOf(values, values.length, Object[].class);
         return fromRandom(random -> {
             @SuppressWarnings("unchecked")
-            final A a = (A) copy[random.nextInt(copy.length)];
+            A a = (A) copy[random.nextInt(copy.length)];
             return a;
         });
     }
@@ -261,7 +261,7 @@ public final class Gen<A> {
     @SafeVarargs
     public static <A> Gen<A> oneOf(Gen<? extends A>... gens) {
         Objects.requireNonNull(gens, "gens is null");
-        final Gen<?>[] copy = Arrays.copyOf(gens, gens.length, Gen[].class);
+        Gen<?>[] copy = Arrays.copyOf(gens, gens.length, Gen[].class);
         for (Gen<?> gen : copy) {
             Objects.requireNonNull(gen, "gens contains null");
         }
@@ -270,7 +270,7 @@ public final class Gen<A> {
         }
         return new Gen<>((sampling, size, sink) -> {
             @SuppressWarnings("unchecked")
-            final Gen<? extends A> gen = (Gen<? extends A>) copy[sampling.draw().nextInt(copy.length)];
+            Gen<? extends A> gen = (Gen<? extends A>) copy[sampling.draw().nextInt(copy.length)];
             return gen.run(sampling, size, sink);
         });
     }
@@ -292,40 +292,49 @@ public final class Gen<A> {
         if (gens.length == 0) {
             return empty();
         }
-        final Gen<?>[] choices = new Gen<?>[gens.length];
-        final double[] cumulative = new double[gens.length];
-        double total = 0;
+        Gen<?>[] choices = new Gen<?>[gens.length];
+        double[] cumulative = new double[gens.length];
         for (int i = 0; i < gens.length; i++) {
-            final Tuple2<? extends Gen<? extends A>, Double> entry = Objects.requireNonNull(gens[i], "gens contains null");
+            Tuple2<? extends Gen<? extends A>, Double> entry = Objects.requireNonNull(gens[i], "gens contains null");
             choices[i] = Objects.requireNonNull(entry._1(), "gens contains a null generator");
-            final double weight = Objects.requireNonNull(entry._2(), "gens contains a null weight");
+            double weight = Objects.requireNonNull(entry._2(), "gens contains a null weight");
             if (!(weight >= 0) || Double.isInfinite(weight)) {
                 throw new IllegalArgumentException("weight " + weight + " is not a finite number >= 0");
             }
-            total += weight;
-            cumulative[i] = total;
+            cumulative[i] = (i == 0 ? 0 : cumulative[i - 1]) + weight;
         }
-        if (!(total > 0) || Double.isInfinite(total)) {
-            throw new IllegalArgumentException("the weights add up to " + total);
+        double sum = cumulative[cumulative.length - 1];
+        if (!(sum > 0) || Double.isInfinite(sum)) {
+            throw new IllegalArgumentException("the weights add up to " + sum);
         }
-        final double sum = total;
-        int positive = cumulative.length - 1;
-        while (cumulative[positive] == (positive == 0 ? 0 : cumulative[positive - 1])) {
-            positive--;
-        }
-        final int lastPositive = positive;
+        int lastPositive = lastPositive(cumulative);
         return new Gen<>((sampling, size, sink) -> {
-            final double point = sampling.draw().nextDouble() * sum;
-            // the first generator whose share ends after the point: a share of weight 0 ends where the previous one
-            // does, so it is never the first; the bound covers a point rounded up to the sum
-            int i = 0;
-            while (i < lastPositive && cumulative[i] <= point) {
-                i++;
-            }
+            double point = sampling.draw().nextDouble() * sum;
             @SuppressWarnings("unchecked")
-            final Gen<? extends A> gen = (Gen<? extends A>) choices[i];
+            Gen<? extends A> gen = (Gen<? extends A>) choices[shareAt(cumulative, lastPositive, point)];
             return gen.run(sampling, size, sink);
         });
+    }
+
+    // the index of the last share of weight above 0 in the cumulative weights
+    private static int lastPositive(double[] cumulative) {
+        for (int i = cumulative.length - 1; i > 0; i--) {
+            if (cumulative[i] != cumulative[i - 1]) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    // the first share that ends after `point`: a share of weight 0 ends where the previous one does, so it is never the
+    // first; the bound covers a point rounded up to the sum
+    private static int shareAt(double[] cumulative, int lastPositive, double point) {
+        for (int i = 0; i < lastPositive; i++) {
+            if (cumulative[i] > point) {
+                return i;
+            }
+        }
+        return lastPositive;
     }
 
     /**
@@ -339,7 +348,8 @@ public final class Gen<A> {
      * @return a generator of lists
      * @throws NullPointerException if {@code f} is null
      */
-    public static <S, A> Gen<List<A>> unfoldGen(S initial, Function<? super S, ? extends Gen<? extends Tuple2<? extends S, ? extends A>>> f) {
+    public static <S, A> Gen<List<A>> unfoldGen(
+            S initial, Function<? super S, ? extends Gen<? extends Tuple2<? extends S, ? extends A>>> f) {
         Objects.requireNonNull(f, "f is null");
         return small(n -> unfoldGenN(n, initial, f));
     }
@@ -357,18 +367,20 @@ public final class Gen<A> {
      * @throws NullPointerException     if {@code f} is null
      * @throws IllegalArgumentException if {@code n} is negative
      */
-    public static <S, A> Gen<List<A>> unfoldGenN(int n, S initial, Function<? super S, ? extends Gen<? extends Tuple2<? extends S, ? extends A>>> f) {
+    public static <S, A> Gen<List<A>> unfoldGenN(
+            int n, S initial, Function<? super S, ? extends Gen<? extends Tuple2<? extends S, ? extends A>>> f) {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(n, "n");
         return new Gen<>((sampling, size, sink) -> {
-            final ArrayList<A> elements = new ArrayList<>(n);
-            S state = initial;
-            for (int i = 0; i < n; i++) {
-                final Gen<? extends Tuple2<? extends S, ? extends A>> step = Objects.requireNonNull(f.apply(state), "unfoldGen: f returned null");
-                final Tuple2<? extends S, ? extends A> next = Objects.requireNonNull(step.draw(sampling, size), "unfoldGen: f generated null");
-                state = next._1();
+            ArrayList<A> elements = new ArrayList<>(n);
+            Vector.range(0, n).foldLeft(initial, (state, i) -> {
+                Gen<? extends Tuple2<? extends S, ? extends A>> step =
+                        Objects.requireNonNull(f.apply(state), "unfoldGen: f returned null");
+                Tuple2<? extends S, ? extends A> next =
+                        Objects.requireNonNull(step.draw(sampling, size), "unfoldGen: f generated null");
                 elements.add(next._2());
-            }
+                return next._1();
+            });
             return sink.accept(List.ofAll(elements));
         });
     }
@@ -384,19 +396,25 @@ public final class Gen<A> {
      */
     public static <A> Gen<List<A>> collectAll(Iterable<? extends Gen<? extends A>> gens) {
         Objects.requireNonNull(gens, "gens is null");
-        final ArrayList<Gen<? extends A>> copy = new ArrayList<>();
+        ArrayList<Gen<? extends A>> copy = new ArrayList<>();
         for (Gen<? extends A> gen : gens) {
             copy.add(Objects.requireNonNull(gen, "gens contains null"));
         }
         return new Gen<>((sampling, size, sink) -> collectAll(copy, 0, List.empty(), sampling, size, sink));
     }
 
-    private static <A> boolean collectAll(java.util.List<Gen<? extends A>> gens, int index, List<A> reversed,
-                                          Sampling sampling, int size, Sink<? super List<A>> sink) {
+    private static <A> boolean collectAll(
+            java.util.List<Gen<? extends A>> gens,
+            int index,
+            List<A> reversed,
+            Sampling sampling,
+            int size,
+            Sink<? super List<A>> sink) {
         if (index == gens.size()) {
             return sink.accept(reversed.reverse());
         }
-        return gens.get(index).run(sampling, size, a -> collectAll(gens, index + 1, reversed.prepend(a), sampling, size, sink));
+        return gens.get(index)
+                .run(sampling, size, a -> collectAll(gens, index + 1, reversed.prepend(a), sampling, size, sink));
     }
 
     // -- size
@@ -453,10 +471,11 @@ public final class Gen<A> {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(min, "min");
         return new Gen<>((sampling, size, sink) -> {
-            final double exponential = -Math.log(1 - sampling.draw().nextDouble());
-            final long drawn = Math.round(exponential * size / 25.0);
-            final int chosen = (int) Math.max(min, Math.min(drawn, size));
-            return Objects.requireNonNull(f.apply(chosen), "small: f returned null").run(sampling, size, sink);
+            double exponential = -Math.log(1 - sampling.draw().nextDouble());
+            long drawn = Math.round(exponential * size / 25.0);
+            int chosen = (int) Math.max(min, Math.min(drawn, size));
+            return Objects.requireNonNull(f.apply(chosen), "small: f returned null")
+                    .run(sampling, size, sink);
         });
     }
 
@@ -487,8 +506,9 @@ public final class Gen<A> {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(min, "min");
         return new Gen<>((sampling, size, sink) -> {
-            final int chosen = (int) sampling.draw().nextLong(min, Math.max(min, size) + 1L);
-            return Objects.requireNonNull(f.apply(chosen), "large: f returned null").run(sampling, size, sink);
+            int chosen = (int) sampling.draw().nextLong(min, Math.max(min, size) + 1L);
+            return Objects.requireNonNull(f.apply(chosen), "large: f returned null")
+                    .run(sampling, size, sink);
         });
     }
 
@@ -530,8 +550,11 @@ public final class Gen<A> {
      */
     public <B> Gen<B> flatMap(Function<? super A, ? extends Gen<? extends B>> f) {
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> pass.run(sampling, size, a ->
-                Objects.requireNonNull(f.apply(a), "flatMap: f returned null").run(sampling, size, sink)));
+        return new Gen<>((sampling, size, sink) -> pass.run(
+                sampling,
+                size,
+                a -> Objects.requireNonNull(f.apply(a), "flatMap: f returned null")
+                        .run(sampling, size, sink)));
     }
 
     /**
@@ -554,15 +577,16 @@ public final class Gen<A> {
     public Gen<A> filter(Predicate<? super A> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return new Gen<>((sampling, size, sink) -> {
-            final FilterState state = new FilterState();
-            final long giveUp = sampling.filterGiveUp();
+            FilterState state = new FilterState();
+            long giveUp = sampling.filterGiveUp();
+            @SuppressWarnings("Var") // the rejections since the last value, across the passes of this loop
             long rejectedInARow = 0;
             while (true) {
                 state.produced = false;
                 state.accepted = false;
                 state.rejected = 0;
-                final int draws = sampling.draws;
-                final boolean more = pass.run(sampling, size, a -> {
+                int draws = sampling.draws;
+                boolean more = pass.run(sampling, size, a -> {
                     state.produced = true;
                     if (predicate.test(a)) {
                         state.accepted = true;
@@ -675,7 +699,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> Gen<Tuple3<T1, T2, T3>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3) {
+    public static <T1, T2, T3> Gen<Tuple3<T1, T2, T3>> zip(
+            Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3) {
         return zipWith(g1, g2, g3, Tuple::of);
     }
 
@@ -693,7 +718,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> Gen<Tuple4<T1, T2, T3, T4>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4) {
+    public static <T1, T2, T3, T4> Gen<Tuple4<T1, T2, T3, T4>> zip(
+            Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4) {
         return zipWith(g1, g2, g3, g4, Tuple::of);
     }
 
@@ -713,7 +739,12 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5) {
+    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> zip(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5) {
         return zipWith(g1, g2, g3, g4, g5, Tuple::of);
     }
 
@@ -735,7 +766,13 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Gen<? extends T6> g6) {
+    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Gen<? extends T6> g6) {
         return zipWith(g1, g2, g3, g4, g5, g6, Tuple::of);
     }
 
@@ -759,7 +796,14 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Gen<? extends T6> g6, Gen<? extends T7> g7) {
+    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Gen<? extends T6> g6,
+            Gen<? extends T7> g7) {
         return zipWith(g1, g2, g3, g4, g5, g6, g7, Tuple::of);
     }
 
@@ -785,7 +829,15 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Gen<? extends T6> g6, Gen<? extends T7> g7, Gen<? extends T8> g8) {
+    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Gen<? extends T6> g6,
+            Gen<? extends T7> g7,
+            Gen<? extends T8> g8) {
         return zipWith(g1, g2, g3, g4, g5, g6, g7, g8, Tuple::of);
     }
 
@@ -801,11 +853,13 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+    public static <T1, T2, R> Gen<R> zipWith(
+            Gen<? extends T1> g1, Gen<? extends T2> g2, BiFunction<? super T1, ? super T2, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> sink.accept(f.apply(t1, t2)))));
+        return new Gen<>((sampling, size, sink) ->
+                g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> sink.accept(f.apply(t1, t2)))));
     }
 
     /**
@@ -822,13 +876,19 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    public static <T1, T2, T3, R> Gen<R> zipWith(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size,
-                t3 -> sink.accept(f.apply(t1, t2, t3))))));
+        return new Gen<>((sampling, size, sink) -> g1.run(
+                sampling,
+                size,
+                t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size, t3 -> sink.accept(f.apply(t1, t2, t3))))));
     }
 
     /**
@@ -847,14 +907,27 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+    public static <T1, T2, T3, T4, R> Gen<R> zipWith(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
         Objects.requireNonNull(g4, "g4 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size,
-                t3 -> g4.run(sampling, size, t4 -> sink.accept(f.apply(t1, t2, t3, t4)))))));
+        return new Gen<>((sampling, size, sink) -> g1.run(
+                sampling,
+                size,
+                t1 -> g2.run(
+                        sampling,
+                        size,
+                        t2 -> g3.run(
+                                sampling,
+                                size,
+                                t3 -> g4.run(sampling, size, t4 -> sink.accept(f.apply(t1, t2, t3, t4)))))));
     }
 
     /**
@@ -875,15 +948,33 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+    public static <T1, T2, T3, T4, T5, R> Gen<R> zipWith(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
         Objects.requireNonNull(g4, "g4 is null");
         Objects.requireNonNull(g5, "g5 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size,
-                t3 -> g4.run(sampling, size, t4 -> g5.run(sampling, size, t5 -> sink.accept(f.apply(t1, t2, t3, t4, t5))))))));
+        return new Gen<>((sampling, size, sink) -> g1.run(
+                sampling,
+                size,
+                t1 -> g2.run(
+                        sampling,
+                        size,
+                        t2 -> g3.run(
+                                sampling,
+                                size,
+                                t3 -> g4.run(
+                                        sampling,
+                                        size,
+                                        t4 -> g5.run(
+                                                sampling, size, t5 -> sink.accept(f.apply(t1, t2, t3, t4, t5))))))));
     }
 
     /**
@@ -906,7 +997,14 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Gen<? extends T6> g6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+    public static <T1, T2, T3, T4, T5, T6, R> Gen<R> zipWith(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Gen<? extends T6> g6,
+            Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -914,9 +1012,25 @@ public final class Gen<A> {
         Objects.requireNonNull(g5, "g5 is null");
         Objects.requireNonNull(g6, "g6 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size,
-                t3 -> g4.run(sampling, size, t4 -> g5.run(sampling, size, t5 -> g6.run(sampling, size,
-                        t6 -> sink.accept(f.apply(t1, t2, t3, t4, t5, t6)))))))));
+        return new Gen<>((sampling, size, sink) -> g1.run(
+                sampling,
+                size,
+                t1 -> g2.run(
+                        sampling,
+                        size,
+                        t2 -> g3.run(
+                                sampling,
+                                size,
+                                t3 -> g4.run(
+                                        sampling,
+                                        size,
+                                        t4 -> g5.run(
+                                                sampling,
+                                                size,
+                                                t5 -> g6.run(
+                                                        sampling,
+                                                        size,
+                                                        t6 -> sink.accept(f.apply(t1, t2, t3, t4, t5, t6)))))))));
     }
 
     /**
@@ -941,7 +1055,16 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Gen<? extends T6> g6, Gen<? extends T7> g7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+    public static <T1, T2, T3, T4, T5, T6, T7, R> Gen<R> zipWith(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Gen<? extends T6> g6,
+            Gen<? extends T7> g7,
+            Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R>
+                    f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -950,9 +1073,29 @@ public final class Gen<A> {
         Objects.requireNonNull(g6, "g6 is null");
         Objects.requireNonNull(g7, "g7 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size,
-                t3 -> g4.run(sampling, size, t4 -> g5.run(sampling, size, t5 -> g6.run(sampling, size,
-                        t6 -> g7.run(sampling, size, t7 -> sink.accept(f.apply(t1, t2, t3, t4, t5, t6, t7))))))))));
+        return new Gen<>((sampling, size, sink) -> g1.run(
+                sampling,
+                size,
+                t1 -> g2.run(
+                        sampling,
+                        size,
+                        t2 -> g3.run(
+                                sampling,
+                                size,
+                                t3 -> g4.run(
+                                        sampling,
+                                        size,
+                                        t4 -> g5.run(
+                                                sampling,
+                                                size,
+                                                t5 -> g6.run(
+                                                        sampling,
+                                                        size,
+                                                        t6 -> g7.run(
+                                                                sampling,
+                                                                size,
+                                                                t7 -> sink.accept(
+                                                                        f.apply(t1, t2, t3, t4, t5, t6, t7))))))))));
     }
 
     /**
@@ -979,7 +1122,26 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, R> Gen<R> zipWith(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4, Gen<? extends T5> g5, Gen<? extends T6> g6, Gen<? extends T7> g7, Gen<? extends T8> g8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, R> Gen<R> zipWith(
+            Gen<? extends T1> g1,
+            Gen<? extends T2> g2,
+            Gen<? extends T3> g3,
+            Gen<? extends T4> g4,
+            Gen<? extends T5> g5,
+            Gen<? extends T6> g6,
+            Gen<? extends T7> g7,
+            Gen<? extends T8> g8,
+            Function8<
+                            ? super T1,
+                            ? super T2,
+                            ? super T3,
+                            ? super T4,
+                            ? super T5,
+                            ? super T6,
+                            ? super T7,
+                            ? super T8,
+                            ? extends R>
+                    f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -989,9 +1151,33 @@ public final class Gen<A> {
         Objects.requireNonNull(g7, "g7 is null");
         Objects.requireNonNull(g8, "g8 is null");
         Objects.requireNonNull(f, "f is null");
-        return new Gen<>((sampling, size, sink) -> g1.run(sampling, size, t1 -> g2.run(sampling, size, t2 -> g3.run(sampling, size,
-                t3 -> g4.run(sampling, size, t4 -> g5.run(sampling, size, t5 -> g6.run(sampling, size,
-                        t6 -> g7.run(sampling, size, t7 -> g8.run(sampling, size, t8 -> sink.accept(f.apply(t1, t2, t3, t4, t5, t6, t7, t8)))))))))));
+        return new Gen<>((sampling, size, sink) -> g1.run(
+                sampling,
+                size,
+                t1 -> g2.run(
+                        sampling,
+                        size,
+                        t2 -> g3.run(
+                                sampling,
+                                size,
+                                t3 -> g4.run(
+                                        sampling,
+                                        size,
+                                        t4 -> g5.run(
+                                                sampling,
+                                                size,
+                                                t5 -> g6.run(
+                                                        sampling,
+                                                        size,
+                                                        t6 -> g7.run(
+                                                                sampling,
+                                                                size,
+                                                                t7 -> g8.run(
+                                                                        sampling,
+                                                                        size,
+                                                                        t8 -> sink.accept(f.apply(
+                                                                                t1, t2, t3, t4, t5, t6, t7,
+                                                                                t8)))))))))));
     }
 
     // -- scalars
@@ -1029,11 +1215,14 @@ public final class Gen<A> {
         } else if (min == max) {
             return constant(min);
         }
-        final int[] edges = java.util.stream.LongStream.of(min, min + 1L, -1, 0, 1, max - 1L, max)
-                .filter(edge -> edge >= min && edge <= max).distinct().sorted().mapToInt(edge -> (int) edge).toArray();
-        return fromRandom(random -> random.nextBoolean()
-                ? edges[random.nextInt(edges.length)]
-                : (int) random.nextLong(min, max + 1L));
+        int[] edges = java.util.stream.LongStream.of(min, min + 1L, -1, 0, 1, max - 1L, max)
+                .filter(edge -> edge >= min && edge <= max)
+                .distinct()
+                .sorted()
+                .mapToInt(edge -> (int) edge)
+                .toArray();
+        return fromRandom(random ->
+                random.nextBoolean() ? edges[random.nextInt(edges.length)] : (int) random.nextLong(min, max + 1L));
     }
 
     /**
@@ -1060,8 +1249,11 @@ public final class Gen<A> {
         } else if (min == max) {
             return constant(min);
         }
-        final long[] edges = java.util.stream.LongStream.of(min, min + 1, -1, 0, 1, max - 1, max)
-                .filter(edge -> edge >= min && edge <= max).distinct().sorted().toArray();
+        long[] edges = java.util.stream.LongStream.of(min, min + 1, -1, 0, 1, max - 1, max)
+                .filter(edge -> edge >= min && edge <= max)
+                .distinct()
+                .sorted()
+                .toArray();
         return fromRandom(random -> {
             if (random.nextBoolean()) {
                 return edges[random.nextInt(edges.length)];
@@ -1102,15 +1294,28 @@ public final class Gen<A> {
         } else if (Double.compare(min, max) == 0) {
             return constant(min);
         }
-        final double[] edges = java.util.stream.DoubleStream.of(min, Math.nextUp(min), -1.0, -Double.MIN_VALUE, -0.0, 0.0,
-                        Double.MIN_VALUE, 1.0, Math.nextDown(max), max)
+        double[] edges = java.util.stream.DoubleStream.of(
+                        min,
+                        Math.nextUp(min),
+                        -1.0,
+                        -Double.MIN_VALUE,
+                        -0.0,
+                        0.0,
+                        Double.MIN_VALUE,
+                        1.0,
+                        Math.nextDown(max),
+                        max)
                 .filter(edge -> Double.compare(edge, min) >= 0 && Double.compare(edge, max) <= 0)
-                .boxed().distinct().sorted().mapToDouble(Double::doubleValue).toArray();
+                .boxed()
+                .distinct()
+                .sorted()
+                .mapToDouble(Double::doubleValue)
+                .toArray();
         return fromRandom(random -> {
             if (random.nextBoolean()) {
                 return edges[random.nextInt(edges.length)];
             }
-            final double fraction = random.nextDouble();
+            double fraction = random.nextDouble();
             return Math.max(min, Math.min(max, fraction * max + (1.0 - fraction) * min));
         });
     }
@@ -1234,7 +1439,7 @@ public final class Gen<A> {
         Objects.requireNonNull(chars, "chars is null");
         requireNonNegative(n, "n");
         return new Gen<>((sampling, size, sink) -> {
-            final char[] string = new char[n];
+            char[] string = new char[n];
             for (int i = 0; i < n; i++) {
                 string[i] = Objects.requireNonNull(chars.draw(sampling, size), "stringsN: chars generated null");
             }
@@ -1277,10 +1482,11 @@ public final class Gen<A> {
         if (min.isAfter(max)) {
             throw new IllegalArgumentException("min " + min + " is after max " + max);
         }
-        return zipWith(longs(min.toEpochSecond(ZoneOffset.UTC), max.toEpochSecond(ZoneOffset.UTC)),
+        return zipWith(
+                longs(min.toEpochSecond(ZoneOffset.UTC), max.toEpochSecond(ZoneOffset.UTC)),
                 integers(0, 999_999_999),
                 (second, nano) -> {
-                    final LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
+                    LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
                     return dateTime.isBefore(min) ? min : dateTime.isAfter(max) ? max : dateTime;
                 });
     }
@@ -1289,9 +1495,9 @@ public final class Gen<A> {
 
     /// The exceptions {@link #tryOf(Gen)} fails with, shared so that equal failures can be drawn twice.
     private static final Exception[] FAILURES = {
-            new IllegalStateException("generated failure 1"),
-            new IllegalArgumentException("generated failure 2"),
-            new java.io.IOException("generated failure 3"),
+        new IllegalStateException("generated failure 1"),
+        new IllegalArgumentException("generated failure 2"),
+        new java.io.IOException("generated failure 3"),
     };
 
     /**
@@ -1403,13 +1609,14 @@ public final class Gen<A> {
             if (sampling.draw().nextBoolean()) {
                 return values.run(sampling, size, a -> sink.accept(Validation.valid(a)));
             }
-            NonEmptyVector<E> drawn = NonEmptyVector.single(errors.draw(sampling, size));
-            for (int extra = sampling.draw().nextInt(3); extra > 0; extra--) {
-                drawn = drawn.append(errors.draw(sampling, size));
-            }
-            return sink.accept(drawn.size() == 1 && sampling.draw().nextBoolean()
-                    ? Validation.invalid(drawn.head())
-                    : Validation.invalidAll(drawn));
+            // the first error is drawn before the number of the others, as the replay of a seed expects
+            NonEmptyVector<E> first = NonEmptyVector.single(errors.draw(sampling, size));
+            NonEmptyVector<E> drawn = Vector.range(0, sampling.draw().nextInt(3))
+                    .foldLeft(first, (acc, extra) -> acc.append(errors.draw(sampling, size)));
+            return sink.accept(
+                    drawn.size() == 1 && sampling.draw().nextBoolean()
+                            ? Validation.invalid(drawn.head())
+                            : Validation.invalidAll(drawn));
         });
     }
 
@@ -1424,7 +1631,7 @@ public final class Gen<A> {
     public static <A> Gen<Lazy<A>> lazy(Gen<A> gen) {
         Objects.requireNonNull(gen, "gen is null");
         return new Gen<>((sampling, size, sink) -> gen.run(sampling, size, a -> {
-            final Lazy<A> lazy = Lazy.of(() -> a);
+            Lazy<A> lazy = Lazy.of(() -> a);
             if (sampling.draw().nextBoolean()) {
                 lazy.get();
             }
@@ -1496,7 +1703,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> tuple5(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5) {
+    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> tuple5(
+            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5) {
         return zip(g1, g2, g3, g4, g5);
     }
 
@@ -1518,7 +1726,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> tuple6(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6) {
+    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> tuple6(
+            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6) {
         return zip(g1, g2, g3, g4, g5, g6);
     }
 
@@ -1542,7 +1751,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> tuple7(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7) {
+    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> tuple7(
+            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7) {
         return zip(g1, g2, g3, g4, g5, g6, g7);
     }
 
@@ -1568,7 +1778,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> tuple8(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7, Gen<T8> g8) {
+    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> tuple8(
+            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7, Gen<T8> g8) {
         return zip(g1, g2, g3, g4, g5, g6, g7, g8);
     }
 
@@ -1785,7 +1996,7 @@ public final class Gen<A> {
      */
     public List<A> runCollect(CheckConfig config) {
         Objects.requireNonNull(config, "config is null");
-        final ArrayList<A> values = new ArrayList<>();
+        ArrayList<A> values = new ArrayList<>();
         Runner.onePass(config, this, value -> {
             values.add(value);
             return true;
@@ -1819,7 +2030,7 @@ public final class Gen<A> {
     public List<A> runCollectN(int n, CheckConfig config) {
         Objects.requireNonNull(config, "config is null");
         requireNonNegative(n, "n");
-        final ArrayList<A> values = new ArrayList<>(n);
+        ArrayList<A> values = new ArrayList<>(n);
         Runner.passes(config.withSamples(n), this, value -> {
             values.add(value);
             return values.size() < n;

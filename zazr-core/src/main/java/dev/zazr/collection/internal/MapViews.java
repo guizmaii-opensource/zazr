@@ -30,10 +30,10 @@ import static dev.zazr.collection.internal.Maps.ABSENT;
  */
 public final class MapViews {
 
-    private MapViews() {
-    }
+    private MapViews() {}
 
-    public static <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> asJavaMap(HashMap<K, V> map, BitmapIndexedMapNode<K, V> trie) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> java.util.Map<K, V> asJavaMap(
+            HashMap<K, V> map, BitmapIndexedMapNode<K, V> trie) {
         return new HashMapView<>(map, trie);
     }
 
@@ -46,7 +46,8 @@ public final class MapViews {
      * @param <V>     the value type
      * @return the view
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> SequencedMap<K, V> asJavaMap(LinkedHashMap<K, V> map, Iterable<Tuple2<K, V>> reverse) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> SequencedMap<K, V> asJavaMap(
+            LinkedHashMap<K, V> map, Iterable<Tuple2<K, V>> reverse) {
         return new SequencedMapView<>(map, reverse, false);
     }
 
@@ -55,13 +56,18 @@ public final class MapViews {
     }
 
     /** What a {@link TupleIterator} yields for each entry of a Zazr map. */
-    enum Part { KEY, VALUE, ENTRY }
+    enum Part {
+        KEY,
+        VALUE,
+        ENTRY
+    }
 
     /**
      * The keys, the values or the {@link java.util.Map.Entry entries} of an iterator of Zazr map entries, one
      * iterator for the three so that no function is allocated per view.
      */
-    static final class TupleIterator<K extends @Nullable Object, V extends @Nullable Object, X extends @Nullable Object> implements java.util.Iterator<X> {
+    static final class TupleIterator<K extends @Nullable Object, V extends @Nullable Object, X extends @Nullable Object>
+            implements java.util.Iterator<X> {
 
         private final java.util.Iterator<Tuple2<K, V>> entries;
         private final Part part;
@@ -79,12 +85,13 @@ public final class MapViews {
         @SuppressWarnings("unchecked")
         @Override
         public X next() {
-            final Tuple2<K, V> entry = entries.next();
-            return (X) switch (part) {
-                case KEY -> entry._1();
-                case VALUE -> entry._2();
-                case ENTRY -> entry(entry._1(), entry._2());
-            };
+            Tuple2<K, V> entry = entries.next();
+            return (X)
+                    switch (part) {
+                        case KEY -> entry._1();
+                        case VALUE -> entry._2();
+                        case ENTRY -> entry(entry._1(), entry._2());
+                    };
         }
     }
 
@@ -95,7 +102,8 @@ public final class MapViews {
      * @param <K> the key type
      * @param <V> the value type
      */
-    abstract static class UnmodifiableMap<K extends @Nullable Object, V extends @Nullable Object> extends AbstractMap<K, V> implements JavaConverters.View {
+    abstract static class UnmodifiableMap<K extends @Nullable Object, V extends @Nullable Object>
+            extends AbstractMap<K, V> implements JavaConverters.View {
 
         /** The value of {@code key}, or {@link Maps#ABSENT}. */
         abstract @Nullable Object lookup(@Nullable Object key);
@@ -109,14 +117,14 @@ public final class MapViews {
         @SuppressWarnings("unchecked")
         @Override
         public @Nullable V get(@Nullable Object key) {
-            final Object value = lookup(key);
+            Object value = lookup(key);
             return value == ABSENT ? null : (V) value;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public @Nullable V getOrDefault(@Nullable Object key, @Nullable V defaultValue) {
-            final Object value = lookup(key);
+            Object value = lookup(key);
             return value == ABSENT ? defaultValue : (V) value;
         }
 
@@ -127,7 +135,7 @@ public final class MapViews {
 
         @Override
         public boolean containsValue(@Nullable Object value) {
-            final java.util.Iterator<V> values = valueIterator();
+            java.util.Iterator<V> values = valueIterator();
             while (values.hasNext()) {
                 if (Objects.equals(value, values.next())) {
                     return true;
@@ -204,17 +212,20 @@ public final class MapViews {
         }
 
         @Override
-        public final @Nullable V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends @Nullable V> remappingFunction) {
+        public final @Nullable V computeIfPresent(
+                K key, BiFunction<? super K, ? super V, ? extends @Nullable V> remappingFunction) {
             throw unmodifiable();
         }
 
         @Override
-        public final @Nullable V compute(K key, BiFunction<? super K, ? super @Nullable V, ? extends @Nullable V> remappingFunction) {
+        public final @Nullable V compute(
+                K key, BiFunction<? super K, ? super @Nullable V, ? extends @Nullable V> remappingFunction) {
             throw unmodifiable();
         }
 
         @Override
-        public final @Nullable V merge(K key, V value, BiFunction<? super V, ? super V, ? extends @Nullable V> remappingFunction) {
+        public final @Nullable V merge(
+                K key, V value, BiFunction<? super V, ? super V, ? extends @Nullable V> remappingFunction) {
             throw unmodifiable();
         }
 
@@ -264,7 +275,8 @@ public final class MapViews {
      * and the key set, the values and the entry set are {@link SequencedSet}/{@link SequencedCollection} views whose
      * {@code reversed()} is the corresponding view of the reversed map.
      */
-    abstract static class UnmodifiableSequencedMap<K extends @Nullable Object, V extends @Nullable Object> extends UnmodifiableMap<K, V> implements SequencedMap<K, V> {
+    abstract static class UnmodifiableSequencedMap<K extends @Nullable Object, V extends @Nullable Object>
+            extends UnmodifiableMap<K, V> implements SequencedMap<K, V> {
 
         @Override
         public abstract UnmodifiableSequencedMap<K, V> reversed();
@@ -302,7 +314,8 @@ public final class MapViews {
 
     // -- the key set, the values and the entry set of a map view
 
-    static class KeySetView<K extends @Nullable Object, V extends @Nullable Object> extends SetViews.UnmodifiableSet<K> {
+    static class KeySetView<K extends @Nullable Object, V extends @Nullable Object>
+            extends SetViews.UnmodifiableSet<K> {
 
         final UnmodifiableMap<K, V> map;
 
@@ -336,7 +349,8 @@ public final class MapViews {
         }
     }
 
-    static final class SequencedKeySetView<K extends @Nullable Object, V extends @Nullable Object> extends KeySetView<K, V> implements SequencedSet<K> {
+    static final class SequencedKeySetView<K extends @Nullable Object, V extends @Nullable Object>
+            extends KeySetView<K, V> implements SequencedSet<K> {
 
         SequencedKeySetView(UnmodifiableSequencedMap<K, V> map) {
             super(map);
@@ -353,7 +367,8 @@ public final class MapViews {
         }
     }
 
-    static class ValuesView<K extends @Nullable Object, V extends @Nullable Object> extends JavaConverters.UnmodifiableCollection<V> {
+    static class ValuesView<K extends @Nullable Object, V extends @Nullable Object>
+            extends JavaConverters.UnmodifiableCollection<V> {
 
         final UnmodifiableMap<K, V> map;
 
@@ -387,7 +402,8 @@ public final class MapViews {
         }
     }
 
-    static final class SequencedValuesView<K extends @Nullable Object, V extends @Nullable Object> extends ValuesView<K, V> implements SequencedCollection<V> {
+    static final class SequencedValuesView<K extends @Nullable Object, V extends @Nullable Object>
+            extends ValuesView<K, V> implements SequencedCollection<V> {
 
         SequencedValuesView(UnmodifiableSequencedMap<K, V> map) {
             super(map);
@@ -405,7 +421,7 @@ public final class MapViews {
 
         @Override
         public V getFirst() {
-            final java.util.Iterator<V> values = iterator();
+            java.util.Iterator<V> values = iterator();
             if (!values.hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -438,7 +454,8 @@ public final class MapViews {
         }
     }
 
-    static class EntrySetView<K extends @Nullable Object, V extends @Nullable Object> extends SetViews.UnmodifiableSet<java.util.Map.Entry<K, V>> {
+    static class EntrySetView<K extends @Nullable Object, V extends @Nullable Object>
+            extends SetViews.UnmodifiableSet<java.util.Map.Entry<K, V>> {
 
         final UnmodifiableMap<K, V> map;
 
@@ -466,7 +483,7 @@ public final class MapViews {
             if (!(object instanceof java.util.Map.Entry<?, ?> entry)) {
                 return false;
             }
-            final Object value = map.lookup(entry.getKey());
+            Object value = map.lookup(entry.getKey());
             return value != ABSENT && Objects.equals(value, entry.getValue());
         }
 
@@ -476,7 +493,8 @@ public final class MapViews {
         }
     }
 
-    static final class SequencedEntrySetView<K extends @Nullable Object, V extends @Nullable Object> extends EntrySetView<K, V> implements SequencedSet<java.util.Map.Entry<K, V>> {
+    static final class SequencedEntrySetView<K extends @Nullable Object, V extends @Nullable Object>
+            extends EntrySetView<K, V> implements SequencedSet<java.util.Map.Entry<K, V>> {
 
         SequencedEntrySetView(UnmodifiableSequencedMap<K, V> map) {
             super(map);
@@ -496,7 +514,8 @@ public final class MapViews {
     // -- the views of the concrete maps
 
     /** The view of a {@link HashMap}: the lookups and the walks read its trie, with no {@code Tuple2} per entry. */
-    static final class HashMapView<K extends @Nullable Object, V extends @Nullable Object> extends UnmodifiableMap<K, V> {
+    static final class HashMapView<K extends @Nullable Object, V extends @Nullable Object>
+            extends UnmodifiableMap<K, V> {
 
         private final HashMap<K, V> map;
         private final BitmapIndexedMapNode<K, V> trie;
@@ -511,9 +530,11 @@ public final class MapViews {
             return map;
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
-        @Nullable Object lookup(@Nullable Object key) {
+        @Nullable
+        Object lookup(@Nullable Object key) {
             return trie.getOrElse((K) key, (V) ABSENT);
         }
 
@@ -547,7 +568,8 @@ public final class MapViews {
      * The view of a {@link LinkedHashMap} in insertion order, or in reverse insertion order when {@code reversed} is
      * set (the view {@link #reversed()} returns).
      */
-    static final class SequencedMapView<K extends @Nullable Object, V extends @Nullable Object> extends UnmodifiableSequencedMap<K, V> {
+    static final class SequencedMapView<K extends @Nullable Object, V extends @Nullable Object>
+            extends UnmodifiableSequencedMap<K, V> {
 
         private final LinkedHashMap<K, V> map;
         private final Iterable<Tuple2<K, V>> reverse;
@@ -564,9 +586,11 @@ public final class MapViews {
             return reversed ? null : map;
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
-        @Nullable Object lookup(@Nullable Object key) {
+        @Nullable
+        Object lookup(@Nullable Object key) {
             return map.getOrElse((K) key, (V) ABSENT);
         }
 
@@ -604,7 +628,7 @@ public final class MapViews {
             if (map.isEmpty()) {
                 return null;
             }
-            final Tuple2<K, V> first = reversed ? map.last() : map.head();
+            Tuple2<K, V> first = reversed ? map.last() : map.head();
             return entry(first._1(), first._2());
         }
 
@@ -613,7 +637,7 @@ public final class MapViews {
             if (map.isEmpty()) {
                 return null;
             }
-            final Tuple2<K, V> last = reversed ? map.head() : map.last();
+            Tuple2<K, V> last = reversed ? map.head() : map.last();
             return entry(last._1(), last._2());
         }
 

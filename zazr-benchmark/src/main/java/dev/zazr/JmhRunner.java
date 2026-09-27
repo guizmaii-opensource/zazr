@@ -10,15 +10,11 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  */
 public final class JmhRunner {
 
-    private JmhRunner() {
-    }
+    private JmhRunner() {}
 
     public static void main(String[] args) throws Exception {
-        final String include = args.length > 0 ? args[0] : ".*Benchmark.*";
-        final Options options = new OptionsBuilder()
-                .include(include)
-                .shouldDoGC(true)
-                .build();
+        String include = args.length > 0 ? args[0] : ".*Benchmark.*";
+        Options options = new OptionsBuilder().include(include).shouldDoGC(true).build();
         new Runner(options).run();
     }
 }

@@ -15,21 +15,21 @@ class JavaViewOfAllTest {
 
     @Test
     void shouldUnwrapTheListViewOfEverySequence() {
-        final Vector<Integer> vector = Vector.of(1, 2, 3);
-        final List<Integer> list = List.of(1, 2, 3);
-        final Queue<Integer> queue = Queue.of(1, 2, 3);
-        final LazyList<Integer> stream = LazyList.of(1, 2, 3);
+        Vector<Integer> vector = Vector.of(1, 2, 3);
+        List<Integer> list = List.of(1, 2, 3);
+        Queue<Integer> queue = Queue.of(1, 2, 3);
+        LazyList<Integer> stream = LazyList.of(1, 2, 3);
         assertThat(Vector.ofAll(vector.asJava())).isSameAs(vector);
         assertThat(List.ofAll(list.asJava())).isSameAs(list);
         assertThat(Queue.ofAll(queue.asJava())).isSameAs(queue);
         assertThat(LazyList.ofAll(stream.asJava())).isSameAs(stream);
-        final NonEmptyVector<Integer> nonEmpty = NonEmptyVector.of(1, 2, 3);
+        NonEmptyVector<Integer> nonEmpty = NonEmptyVector.of(1, 2, 3);
         assertThat(Vector.ofAll(nonEmpty.asJava())).isSameAs(nonEmpty.toVector());
     }
 
     @Test
     void shouldCopyWhatAReversedListViewShows() {
-        final Vector<Integer> vector = Vector.of(1, 2, 3);
+        Vector<Integer> vector = Vector.of(1, 2, 3);
         assertThat(Vector.ofAll(vector.asJava().reversed())).isEqualTo(Vector.of(3, 2, 1));
         assertThat(List.ofAll(List.of(1, 2, 3).asJava().reversed())).isEqualTo(List.of(3, 2, 1));
         assertThat(Queue.ofAll(Queue.of(1, 2, 3).asJava().reversed())).isEqualTo(Queue.of(3, 2, 1));
@@ -52,10 +52,10 @@ class JavaViewOfAllTest {
 
     @Test
     void shouldUnwrapTheSetViews() {
-        final HashSet<Integer> hashSet = HashSet.of(1, 2, 3);
-        final LinkedHashSet<Integer> linkedHashSet = LinkedHashSet.of(3, 1, 2);
-        final TreeSet<Integer> natural = TreeSet.of(1, 2, 3);
-        final TreeSet<Integer> reversed = TreeSet.of(Comparator.reverseOrder(), 1, 2, 3);
+        HashSet<Integer> hashSet = HashSet.of(1, 2, 3);
+        LinkedHashSet<Integer> linkedHashSet = LinkedHashSet.of(3, 1, 2);
+        TreeSet<Integer> natural = TreeSet.of(1, 2, 3);
+        TreeSet<Integer> reversed = TreeSet.of(Comparator.reverseOrder(), 1, 2, 3);
         assertThat(HashSet.ofAll(hashSet.asJava())).isSameAs(hashSet);
         assertThat(LinkedHashSet.ofAll(linkedHashSet.asJava())).isSameAs(linkedHashSet);
         assertThat(TreeSet.ofAll(natural.asJava())).isSameAs(natural);
@@ -64,27 +64,32 @@ class JavaViewOfAllTest {
 
     @Test
     void shouldCopyWhatAnotherSetViewShows() {
-        final LinkedHashSet<Integer> linkedHashSet = LinkedHashSet.of(3, 1, 2);
-        final LinkedHashSet<Integer> reversedCopy = LinkedHashSet.ofAll(linkedHashSet.asJava().reversed());
+        LinkedHashSet<Integer> linkedHashSet = LinkedHashSet.of(3, 1, 2);
+        LinkedHashSet<Integer> reversedCopy =
+                LinkedHashSet.ofAll(linkedHashSet.asJava().reversed());
         assertThat(reversedCopy).isNotSameAs(linkedHashSet);
         assertThat(reversedCopy.toVector()).isEqualTo(Vector.of(2, 1, 3));
-        final TreeSet<Integer> natural = TreeSet.of(1, 2, 3, 4);
+        TreeSet<Integer> natural = TreeSet.of(1, 2, 3, 4);
         assertThat(TreeSet.ofAll(natural.asJava().headSet(3))).isEqualTo(TreeSet.of(1, 2));
-        assertThat(TreeSet.ofAll(natural.asJava().descendingSet())).isNotSameAs(natural).isEqualTo(natural);
-        final TreeSet<Integer> reordered = TreeSet.ofAll(Comparator.reverseOrder(), natural.asJava());
+        assertThat(TreeSet.ofAll(natural.asJava().descendingSet()))
+                .isNotSameAs(natural)
+                .isEqualTo(natural);
+        TreeSet<Integer> reordered = TreeSet.ofAll(Comparator.reverseOrder(), natural.asJava());
         assertThat(reordered).isNotSameAs(natural);
         assertThat(reordered.toVector()).isEqualTo(Vector.of(4, 3, 2, 1));
-        assertThat(TreeSet.ofAll(TreeSet.of(Comparator.<Integer> reverseOrder(), 1, 2).asJava())).isEqualTo(TreeSet.of(1, 2));
+        assertThat(TreeSet.ofAll(
+                        TreeSet.of(Comparator.<Integer>reverseOrder(), 1, 2).asJava()))
+                .isEqualTo(TreeSet.of(1, 2));
         assertThat(HashSet.ofAll(natural.asJava())).isEqualTo(HashSet.of(1, 2, 3, 4));
         assertThat(LinkedHashSet.ofAll(HashSet.of(1).asJava())).isEqualTo(LinkedHashSet.of(1));
     }
 
     @Test
     void shouldUnwrapTheMapViews() {
-        final HashMap<Integer, String> hashMap = HashMap.of(1, "a", 2, "b");
-        final LinkedHashMap<Integer, String> linkedHashMap = LinkedHashMap.of(2, "b", 1, "a");
-        final TreeMap<Integer, String> natural = TreeMap.of(1, "a", 2, "b");
-        final TreeMap<Integer, String> reversed = TreeMap.of(Comparator.reverseOrder(), 1, "a", 2, "b");
+        HashMap<Integer, String> hashMap = HashMap.of(1, "a", 2, "b");
+        LinkedHashMap<Integer, String> linkedHashMap = LinkedHashMap.of(2, "b", 1, "a");
+        TreeMap<Integer, String> natural = TreeMap.of(1, "a", 2, "b");
+        TreeMap<Integer, String> reversed = TreeMap.of(Comparator.reverseOrder(), 1, "a", 2, "b");
         assertThat(HashMap.ofAll(hashMap.asJavaMap())).isSameAs(hashMap);
         assertThat(LinkedHashMap.ofAll(linkedHashMap.asJavaMap())).isSameAs(linkedHashMap);
         assertThat(TreeMap.ofAll(natural.asJavaMap())).isSameAs(natural);
@@ -95,14 +100,17 @@ class JavaViewOfAllTest {
 
     @Test
     void shouldCopyWhatAnotherMapViewShows() {
-        final LinkedHashMap<Integer, String> linkedHashMap = LinkedHashMap.of(2, "b", 1, "a");
-        final LinkedHashMap<Integer, String> reversedCopy = LinkedHashMap.ofAll(linkedHashMap.asJavaMap().reversed());
+        LinkedHashMap<Integer, String> linkedHashMap = LinkedHashMap.of(2, "b", 1, "a");
+        LinkedHashMap<Integer, String> reversedCopy =
+                LinkedHashMap.ofAll(linkedHashMap.asJavaMap().reversed());
         assertThat(reversedCopy).isNotSameAs(linkedHashMap);
         assertThat(reversedCopy.keySet().toVector()).isEqualTo(Vector.of(1, 2));
-        final TreeMap<Integer, String> natural = TreeMap.of(1, "a", 2, "b", 3, "c");
+        TreeMap<Integer, String> natural = TreeMap.of(1, "a", 2, "b", 3, "c");
         assertThat(TreeMap.ofAll(natural.asJavaMap().headMap(3))).isEqualTo(TreeMap.of(1, "a", 2, "b"));
-        assertThat(TreeMap.ofAll(natural.asJavaMap().descendingMap())).isNotSameAs(natural).isEqualTo(natural);
-        final TreeMap<Integer, String> reordered = TreeMap.ofAll(Comparator.reverseOrder(), natural.asJavaMap());
+        assertThat(TreeMap.ofAll(natural.asJavaMap().descendingMap()))
+                .isNotSameAs(natural)
+                .isEqualTo(natural);
+        TreeMap<Integer, String> reordered = TreeMap.ofAll(Comparator.reverseOrder(), natural.asJavaMap());
         assertThat(reordered).isNotSameAs(natural);
         assertThat(reordered.keySet().toVector()).isEqualTo(Vector.of(3, 2, 1));
         assertThat(HashMap.ofAll(natural.asJavaMap())).isEqualTo(HashMap.of(1, "a", 2, "b", 3, "c"));

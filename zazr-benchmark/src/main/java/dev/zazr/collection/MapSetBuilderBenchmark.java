@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(Scope.Thread)
 public class MapSetBuilderBenchmark {
 
-    @Param({ "10", "1000", "100000" })
+    @Param({"10", "1000", "100000"})
     public int size;
 
     private ArrayList<Integer> shuffled;

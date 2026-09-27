@@ -1,5 +1,6 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
@@ -14,14 +15,15 @@ public class RedBlackTreeBuilderTest {
 
     private static final long SEED = 20260925L;
     // the usual boundaries, and every power of two with its neighbours: the size where the deepest level fills up
-    private static final int[] SIZES = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025,
-            32767, 32768, 32769, 100_000 };
+    private static final int[] SIZES = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 32767, 32768, 32769, 100_000
+    };
 
     private static final Comparator<Integer> NATURAL = Comparators.naturalComparator();
     private static final Comparator<Integer> REVERSED = NATURAL.reversed();
 
     private static RedBlackTree<Integer> fromOrdered(Comparator<Integer> order, int size) {
-        final Object[] sorted = new Object[size];
+        Object[] sorted = new Object[size];
         for (int i = 0; i < size; i++) {
             sorted[i] = (order == NATURAL) ? i : size - 1 - i;
         }
@@ -29,7 +31,7 @@ public class RedBlackTreeBuilderTest {
     }
 
     private static java.util.List<Integer> elements(RedBlackTree<Integer> tree) {
-        final java.util.List<Integer> result = new ArrayList<>();
+        java.util.List<Integer> result = new ArrayList<>();
         tree.forEach(result::add);
         return result;
     }
@@ -46,7 +48,7 @@ public class RedBlackTreeBuilderTest {
     public void shouldBuildAValidTreeOfEverySizeUpTo2100() {
         for (Comparator<Integer> order : java.util.List.of(NATURAL, REVERSED)) {
             for (int size = 0; size <= 2100; size++) {
-                final RedBlackTree<Integer> tree = fromOrdered(order, size);
+                RedBlackTree<Integer> tree = fromOrdered(order, size);
                 assertValid(tree);
                 assertThat(tree.size()).isEqualTo(size);
                 assertThat(tree.comparator()).isSameAs(order);
@@ -57,9 +59,11 @@ public class RedBlackTreeBuilderTest {
     @Test
     public void shouldBuildAValidBalancedTreeAtEveryBoundary() {
         for (int size : SIZES) {
-            final RedBlackTree<Integer> tree = fromOrdered(NATURAL, size);
+            RedBlackTree<Integer> tree = fromOrdered(NATURAL, size);
             assertValid(tree);
-            assertThat(elements(tree)).containsExactlyElementsOf(java.util.stream.IntStream.range(0, size).boxed().toList());
+            assertThat(elements(tree))
+                    .containsExactlyElementsOf(
+                            java.util.stream.IntStream.range(0, size).boxed().toList());
             // perfectly balanced: as shallow as a binary tree of that size can be
             assertThat(height(tree)).isEqualTo(Integer.SIZE - Integer.numberOfLeadingZeros(size));
         }
@@ -67,18 +71,18 @@ public class RedBlackTreeBuilderTest {
 
     @Test
     public void shouldBuildTreesThatTheTreeOperationsKeepValid() {
-        final Random random = new Random(SEED);
-        for (int size : new int[] { 1, 2, 3, 31, 32, 33, 1023, 1024, 1025 }) {
-            final RedBlackTree<Integer> tree = fromOrdered(NATURAL, size);
+        Random random = new Random(SEED);
+        for (int size : new int[] {1, 2, 3, 31, 32, 33, 1023, 1024, 1025}) {
+            RedBlackTree<Integer> tree = fromOrdered(NATURAL, size);
             for (int i = 0; i < 20; i++) {
-                final int value = random.nextInt(size * 2 + 1) - 1;
-                final RedBlackTree<Integer> inserted = tree.insert(value);
+                int value = random.nextInt(size * 2 + 1) - 1;
+                RedBlackTree<Integer> inserted = tree.insert(value);
                 assertValid(inserted);
-                final RedBlackTree<Integer> deleted = tree.delete(value);
+                RedBlackTree<Integer> deleted = tree.delete(value);
                 assertValid(deleted);
                 assertThat(deleted.size()).isEqualTo(tree.contains(value) ? size - 1 : size);
             }
-            final int n = random.nextInt(size + 1);
+            int n = random.nextInt(size + 1);
             assertValid(RedBlackTreeModule.Node.take(tree, n));
             assertValid(RedBlackTreeModule.Node.drop(tree, n));
             assertValid(tree.union(fromOrdered(NATURAL, size / 2 + 7)));
@@ -88,7 +92,7 @@ public class RedBlackTreeBuilderTest {
     // the builder: sort, keep the last of equal elements, build
 
     private static RedBlackTree<Integer> build(Comparator<Integer> order, Iterable<Integer> elements) {
-        final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(order, "test");
+        RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(order, "test");
         for (Integer element : elements) {
             builder.checkOpen();
             builder.add(element);
@@ -98,27 +102,23 @@ public class RedBlackTreeBuilderTest {
 
     // successive persistent insertions, the reference the builder is compared with
     private static <T> RedBlackTree<T> inserted(Comparator<T> order, Iterable<T> elements) {
-        RedBlackTree<T> tree = RedBlackTree.empty(order);
-        for (T element : elements) {
-            tree = tree.insert(element);
-        }
-        return tree;
+        return Vector.ofAll(elements).foldLeft(RedBlackTree.empty(order), RedBlackTree::insert);
     }
 
     @Test
     public void shouldMatchTheJdkTreeSetOnRandomInputsWithDuplicates() {
-        final Random random = new Random(SEED);
+        Random random = new Random(SEED);
         for (Comparator<Integer> order : java.util.List.of(NATURAL, REVERSED)) {
             for (int round = 0; round < 300; round++) {
-                final int size = (round < SIZES.length - 1) ? SIZES[round] : random.nextInt(3000);
-                final int range = 1 + random.nextInt(Math.max(1, size * 2));
-                final java.util.List<Integer> input = new ArrayList<>(size);
+                int size = (round < SIZES.length - 1) ? SIZES[round] : random.nextInt(3000);
+                int range = 1 + random.nextInt(Math.max(1, size * 2));
+                java.util.List<Integer> input = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
                     input.add(random.nextInt(range));
                 }
-                final java.util.TreeSet<Integer> oracle = new java.util.TreeSet<>(order);
+                java.util.TreeSet<Integer> oracle = new java.util.TreeSet<>(order);
                 oracle.addAll(input);
-                final RedBlackTree<Integer> tree = build(order, input);
+                RedBlackTree<Integer> tree = build(order, input);
                 assertValid(tree);
                 assertThat(elements(tree)).containsExactlyElementsOf(oracle);
                 // the same elements as successive insertions
@@ -129,29 +129,30 @@ public class RedBlackTreeBuilderTest {
 
     @Test
     public void shouldKeepTheLastOfEqualElements() {
-        final Comparator<String> caseInsensitive = String.CASE_INSENSITIVE_ORDER;
-        final RedBlackTreeBuilder<String> builder = new RedBlackTreeBuilder<>(caseInsensitive, "test");
-        for (String s : new String[] { "b", "A", "a", "B", "c", "b" }) {
+        Comparator<String> caseInsensitive = String.CASE_INSENSITIVE_ORDER;
+        RedBlackTreeBuilder<String> builder = new RedBlackTreeBuilder<>(caseInsensitive, "test");
+        for (String s : new String[] {"b", "A", "a", "B", "c", "b"}) {
             builder.add(s);
         }
-        final RedBlackTree<String> tree = builder.result();
+        RedBlackTree<String> tree = builder.result();
         assertValid(tree);
-        final java.util.List<String> actual = new ArrayList<>();
+        java.util.List<String> actual = new ArrayList<>();
         tree.forEach(actual::add);
         assertThat(actual).containsExactly("a", "b", "c");
         // successive insertions keep the last one too
-        assertThat(inserted(caseInsensitive, java.util.List.of("b", "A", "a", "B", "c", "b"))).containsExactly("a", "b", "c");
+        assertThat(inserted(caseInsensitive, java.util.List.of("b", "A", "a", "B", "c", "b")))
+                .containsExactly("a", "b", "c");
     }
 
     @Test
     public void shouldCountDistinctElementsWithoutChangingTheResult() {
-        final Random random = new Random(SEED);
+        Random random = new Random(SEED);
         for (int round = 0; round < 50; round++) {
-            final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "test");
-            final java.util.TreeSet<Integer> oracle = new java.util.TreeSet<>();
-            final int size = random.nextInt(2000);
+            RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "test");
+            java.util.TreeSet<Integer> oracle = new java.util.TreeSet<>();
+            int size = random.nextInt(2000);
             for (int i = 0; i < size; i++) {
-                final int value = random.nextInt(size + 1);
+                int value = random.nextInt(size + 1);
                 builder.add(value);
                 oracle.add(value);
                 if (random.nextInt(50) == 0) {
@@ -160,7 +161,7 @@ public class RedBlackTreeBuilderTest {
             }
             assertThat(builder.size()).isEqualTo(oracle.size());
             assertThat(builder.size()).isEqualTo(oracle.size());
-            final RedBlackTree<Integer> tree = builder.result();
+            RedBlackTree<Integer> tree = builder.result();
             assertValid(tree);
             assertThat(elements(tree)).containsExactlyElementsOf(oracle);
         }
@@ -169,7 +170,7 @@ public class RedBlackTreeBuilderTest {
     @Test
     public void shouldKeepTheLastAddedAcrossACompactedPrefix() {
         // the entries after a size() call are sorted with the compacted prefix: the later one must still win
-        final RedBlackTreeBuilder<String> builder = new RedBlackTreeBuilder<>(String.CASE_INSENSITIVE_ORDER, "test");
+        RedBlackTreeBuilder<String> builder = new RedBlackTreeBuilder<>(String.CASE_INSENSITIVE_ORDER, "test");
         builder.add("x");
         builder.add("y");
         assertThat(builder.size()).isEqualTo(2);
@@ -177,24 +178,25 @@ public class RedBlackTreeBuilderTest {
         assertThat(builder.size()).isEqualTo(2);
         builder.add("Y");
         builder.add("z");
-        final java.util.List<String> actual = new ArrayList<>();
+        java.util.List<String> actual = new ArrayList<>();
         builder.result().forEach(actual::add);
         assertThat(actual).containsExactly("X", "Y", "z");
     }
 
     @Test
     public void shouldBuildTheEmptyTreeWithTheComparator() {
-        final RedBlackTree<Integer> tree = new RedBlackTreeBuilder<>(REVERSED, "test").result();
+        RedBlackTree<Integer> tree = new RedBlackTreeBuilder<>(REVERSED, "test").result();
         assertThat(tree.isEmpty()).isTrue();
         assertThat(tree.comparator()).isSameAs(REVERSED);
     }
 
     @Test
     public void shouldRefuseAnyUseAfterResult() {
-        final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "Some.Builder");
+        RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "Some.Builder");
         builder.add(1);
         builder.result();
-        assertThatThrownBy(builder::checkOpen).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(builder::checkOpen)
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("result() has already been called on this Some.Builder");
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
@@ -202,7 +204,7 @@ public class RedBlackTreeBuilderTest {
 
     @Test
     public void shouldRefuseAnyUseAfterTheComparatorThrew() {
-        final IntFunction<Comparator<Integer>> failingAfter = n -> new Comparator<>() {
+        IntFunction<Comparator<Integer>> failingAfter = n -> new Comparator<>() {
             int calls;
 
             @Override
@@ -213,12 +215,13 @@ public class RedBlackTreeBuilderTest {
                 return Integer.compare(a, b);
             }
         };
-        final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(failingAfter.apply(5), "Some.Builder");
+        RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(failingAfter.apply(5), "Some.Builder");
         for (int i = 100; i > 0; i--) {
             builder.add(i);
         }
         assertThatThrownBy(builder::result).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(builder::checkOpen).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(builder::checkOpen)
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("the comparator threw");
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
@@ -229,27 +232,29 @@ public class RedBlackTreeBuilderTest {
 
     @Test
     public void shouldGrowAPresizedBufferOfEveryCapacity() {
-        for (int capacity : new int[] { 0, 1, 2, 3, 16, 17 }) {
-            final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "Some.Builder", capacity, false);
+        for (int capacity : new int[] {0, 1, 2, 3, 16, 17}) {
+            RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(NATURAL, "Some.Builder", capacity, false);
             for (int i = 99; i >= 0; i--) {
                 builder.add(i);
             }
-            final RedBlackTree<Integer> tree = builder.result();
+            RedBlackTree<Integer> tree = builder.result();
             assertValid(tree);
-            assertThat(elements(tree)).isEqualTo(java.util.stream.IntStream.range(0, 100).boxed().toList());
+            assertThat(elements(tree))
+                    .isEqualTo(java.util.stream.IntStream.range(0, 100).boxed().toList());
         }
     }
 
     @Test
     public void shouldKeepTheFirstOrTheLastOfEqualElements() {
-        final Random random = new Random(SEED);
-        for (boolean keepFirst : new boolean[] { false, true }) {
-            for (int size : new int[] { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 }) {
-                final RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(MODULO, "Some.Builder", 0, keepFirst);
+        Random random = new Random(SEED);
+        for (boolean keepFirst : new boolean[] {false, true}) {
+            for (int size : new int[] {0, 1, 2, 31, 32, 33, 1023, 1024, 1025}) {
+                RedBlackTreeBuilder<Integer> builder = new RedBlackTreeBuilder<>(MODULO, "Some.Builder", 0, keepFirst);
                 // the expected kept object per class, and a size() call now and then, which compacts the buffer
-                final java.util.Map<Integer, Integer> kept = new java.util.TreeMap<>();
+                java.util.Map<Integer, Integer> kept = new java.util.TreeMap<>();
                 for (int i = 0; i < 3 * size; i++) {
-                    final Integer element = Integer.valueOf(random.nextInt(Math.max(1, size)) + 1000 * (1 + random.nextInt(5)));
+                    Integer element =
+                            Integer.valueOf(random.nextInt(Math.max(1, size)) + 1000 * (1 + random.nextInt(5)));
                     builder.add(element);
                     if (keepFirst) {
                         kept.putIfAbsent(Math.floorMod(element, 1000), element);
@@ -260,10 +265,10 @@ public class RedBlackTreeBuilderTest {
                         assertThat(builder.size()).isEqualTo(kept.size());
                     }
                 }
-                final RedBlackTree<Integer> tree = builder.result();
+                RedBlackTree<Integer> tree = builder.result();
                 assertValid(tree);
-                final java.util.List<Integer> actual = elements(tree);
-                final java.util.List<Integer> expected = new ArrayList<>(kept.values());
+                java.util.List<Integer> actual = elements(tree);
+                java.util.List<Integer> expected = new ArrayList<>(kept.values());
                 assertThat(actual).hasSameSizeAs(expected);
                 for (int i = 0; i < expected.size(); i++) {
                     assertThat(actual.get(i)).isSameAs(expected.get(i));

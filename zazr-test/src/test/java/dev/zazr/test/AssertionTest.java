@@ -143,7 +143,8 @@ class AssertionTest {
     @Test
     void hasSize_() {
         assertThat(explain(List.of(1, 2), hasSize(equalTo(2)))).isEqualTo("passed");
-        assertThat(explain(List.of(1, 2), hasSize(equalTo(3)))).isEqualTo("List(1, 2) has size 2:\n  2 is not equal to 3");
+        assertThat(explain(List.of(1, 2), hasSize(equalTo(3))))
+                .isEqualTo("List(1, 2) has size 2:\n  2 is not equal to 3");
         assertThat(explain(java.util.List.of(1, 2), hasSize(isGreaterThan(1)))).isEqualTo("passed");
         assertThat(hasSize(equalTo(3))).hasToString("hasSize(equalTo(3))");
     }
@@ -155,7 +156,8 @@ class AssertionTest {
         assertThat(explain(List.of(1, 2), exists(isGreaterThan(1)))).isEqualTo("passed");
         assertThat(explain(List.of(1, 2), exists(isGreaterThan(2))))
                 .isEqualTo("List(1, 2) has no element that satisfies isGreaterThan(2)");
-        assertThat(explain(List.<Integer>empty(), exists(anything()))).isEqualTo("List() has no element that satisfies anything");
+        assertThat(explain(List.<Integer>empty(), exists(anything())))
+                .isEqualTo("List() has no element that satisfies anything");
     }
 
     @Test
@@ -169,14 +171,18 @@ class AssertionTest {
     @Test
     void positions() {
         assertThat(explain(List.of(1, 2, 3), hasFirst(equalTo(1)))).isEqualTo("passed");
-        assertThat(explain(List.of(1, 2, 3), hasFirst(equalTo(2)))).isEqualTo("List(1, 2, 3) has first element 1:\n  1 is not equal to 2");
+        assertThat(explain(List.of(1, 2, 3), hasFirst(equalTo(2))))
+                .isEqualTo("List(1, 2, 3) has first element 1:\n  1 is not equal to 2");
         assertThat(explain(List.<Integer>empty(), hasFirst(equalTo(2)))).isEqualTo("List() has no first element");
         assertThat(explain(List.of(1, 2, 3), hasLast(equalTo(3)))).isEqualTo("passed");
-        assertThat(explain(List.of(1, 2, 3), hasLast(equalTo(2)))).isEqualTo("List(1, 2, 3) has last element 3:\n  3 is not equal to 2");
+        assertThat(explain(List.of(1, 2, 3), hasLast(equalTo(2))))
+                .isEqualTo("List(1, 2, 3) has last element 3:\n  3 is not equal to 2");
         assertThat(explain(List.<Integer>empty(), hasLast(equalTo(2)))).isEqualTo("List() has no last element");
         assertThat(explain(List.of(1, 2, 3), hasAt(1, equalTo(2)))).isEqualTo("passed");
-        assertThat(explain(List.of(1, 2, 3), hasAt(0, equalTo(2)))).isEqualTo("List(1, 2, 3) has 1 at index 0:\n  1 is not equal to 2");
-        assertThat(explain(List.of(1, 2, 3), hasAt(3, equalTo(2)))).isEqualTo("List(1, 2, 3) has no element at index 3");
+        assertThat(explain(List.of(1, 2, 3), hasAt(0, equalTo(2))))
+                .isEqualTo("List(1, 2, 3) has 1 at index 0:\n  1 is not equal to 2");
+        assertThat(explain(List.of(1, 2, 3), hasAt(3, equalTo(2))))
+                .isEqualTo("List(1, 2, 3) has no element at index 3");
         assertThatThrownBy(() -> hasAt(-1, anything())).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -194,8 +200,10 @@ class AssertionTest {
         assertThat(explain(List.of(1, 2, 2, 3), isSorted())).isEqualTo("passed");
         assertThat(explain(List.<Integer>empty(), isSorted())).isEqualTo("passed");
         assertThat(explain(List.of(1, 3, 2), isSorted())).isEqualTo("List(1, 3, 2) is not sorted: 3 comes before 2");
-        assertThat(explain(List.of(3, 2, 1), isSorted(Comparator.<Integer>reverseOrder()))).isEqualTo("passed");
-        assertThat(explain(List.of(1, 2), isSorted(Comparator.<Integer>reverseOrder()))).isEqualTo("List(1, 2) is not sorted: 1 comes before 2");
+        assertThat(explain(List.of(3, 2, 1), isSorted(Comparator.<Integer>reverseOrder())))
+                .isEqualTo("passed");
+        assertThat(explain(List.of(1, 2), isSorted(Comparator.<Integer>reverseOrder())))
+                .isEqualTo("List(1, 2) is not sorted: 1 comes before 2");
         // the name does not depend on the comparator's toString, which holds a hash code
         assertThat(isSorted(Comparator.<Integer>reverseOrder())).hasToString("isSorted(a comparator)");
         assertThat(isSorted()).hasToString("isSorted");
@@ -206,7 +214,8 @@ class AssertionTest {
     @Test
     void options() {
         assertThat(explain(Option.some(4), isSome(isGreaterThan(3)))).isEqualTo("passed");
-        assertThat(explain(Option.some(4), isSome(isGreaterThan(5)))).isEqualTo("Some(4) holds 4:\n  4 is not greater than 5");
+        assertThat(explain(Option.some(4), isSome(isGreaterThan(5))))
+                .isEqualTo("Some(4) holds 4:\n  4 is not greater than 5");
         assertThat(explain(Option.<Integer>none(), isSome(anything()))).isEqualTo("None is not a Some");
         assertThat(explain(Option.none(), isNone())).isEqualTo("passed");
         assertThat(explain(Option.some(4), isNone())).isEqualTo("Some(4) is not None");
@@ -214,68 +223,96 @@ class AssertionTest {
 
     @Test
     void eithers() {
-        assertThat(explain(Either.<String, Integer>left("e"), isLeft(equalTo("e")))).isEqualTo("passed");
-        assertThat(explain(Either.<String, Integer>left("e"), isLeft(equalTo("f")))).isEqualTo("Left(e) holds \"e\":\n  \"e\" is not equal to \"f\"");
-        assertThat(explain(Either.<String, Integer>right(1), isLeft(anything()))).isEqualTo("Right(1) is not a Left");
-        assertThat(explain(Either.<String, Integer>right(1), isRight(equalTo(1)))).isEqualTo("passed");
-        assertThat(explain(Either.<String, Integer>right(1), isRight(equalTo(2)))).isEqualTo("Right(1) holds 1:\n  1 is not equal to 2");
-        assertThat(explain(Either.<String, Integer>left("e"), isRight(anything()))).isEqualTo("Left(e) is not a Right");
+        assertThat(explain(Either.<String, Integer>left("e"), isLeft(equalTo("e"))))
+                .isEqualTo("passed");
+        assertThat(explain(Either.<String, Integer>left("e"), isLeft(equalTo("f"))))
+                .isEqualTo("Left(e) holds \"e\":\n  \"e\" is not equal to \"f\"");
+        assertThat(explain(Either.<String, Integer>right(1), isLeft(anything())))
+                .isEqualTo("Right(1) is not a Left");
+        assertThat(explain(Either.<String, Integer>right(1), isRight(equalTo(1))))
+                .isEqualTo("passed");
+        assertThat(explain(Either.<String, Integer>right(1), isRight(equalTo(2))))
+                .isEqualTo("Right(1) holds 1:\n  1 is not equal to 2");
+        assertThat(explain(Either.<String, Integer>left("e"), isRight(anything())))
+                .isEqualTo("Left(e) is not a Right");
     }
 
     @Test
     void tries() {
-        final IllegalStateException boom = new IllegalStateException("boom");
+        IllegalStateException boom = new IllegalStateException("boom");
         assertThat(explain(Try.success(1), isSuccess(equalTo(1)))).isEqualTo("passed");
-        assertThat(explain(Try.success(1), isSuccess(equalTo(2)))).isEqualTo("Success(1) holds 1:\n  1 is not equal to 2");
+        assertThat(explain(Try.success(1), isSuccess(equalTo(2))))
+                .isEqualTo("Success(1) holds 1:\n  1 is not equal to 2");
         assertThat(explain(Try.<Integer>failure(boom), isSuccess(anything())))
                 .isEqualTo("Failure(java.lang.IllegalStateException: boom) is not a Success");
         assertThat(explain(Try.failure(boom), isFailure(anything()))).isEqualTo("passed");
         assertThat(explain(Try.failure(boom), isFailure(equalTo(new RuntimeException()))))
-                .startsWith("Failure(java.lang.IllegalStateException: boom) holds java.lang.IllegalStateException: boom:\n  java.lang.IllegalStateException: boom is not equal to");
+                .startsWith(
+                        "Failure(java.lang.IllegalStateException: boom) holds java.lang.IllegalStateException: boom:\n  java.lang.IllegalStateException: boom is not equal to");
         assertThat(explain(Try.success(1), isFailure(anything()))).isEqualTo("Success(1) is not a Failure");
     }
 
     @Test
     void validations() {
-        assertThat(explain(Validation.<String, Integer>valid(1), isValid(equalTo(1)))).isEqualTo("passed");
-        assertThat(explain(Validation.<String, Integer>valid(1), isValid(equalTo(2)))).isEqualTo("Valid(1) holds 1:\n  1 is not equal to 2");
-        assertThat(explain(Validation.<String, Integer>invalid("e"), isValid(anything()))).isEqualTo("Invalid(e) is not Valid");
-        assertThat(explain(Validation.<String, Integer>invalid("e"), isInvalid(equalTo(NonEmptyVector.single("e"))))).isEqualTo("passed");
+        assertThat(explain(Validation.<String, Integer>valid(1), isValid(equalTo(1))))
+                .isEqualTo("passed");
+        assertThat(explain(Validation.<String, Integer>valid(1), isValid(equalTo(2))))
+                .isEqualTo("Valid(1) holds 1:\n  1 is not equal to 2");
+        assertThat(explain(Validation.<String, Integer>invalid("e"), isValid(anything())))
+                .isEqualTo("Invalid(e) is not Valid");
+        assertThat(explain(Validation.<String, Integer>invalid("e"), isInvalid(equalTo(NonEmptyVector.single("e")))))
+                .isEqualTo("passed");
         assertThat(explain(Validation.<String, Integer>invalid("e"), isInvalid(hasSize(equalTo(2)))))
-                .isEqualTo("Invalid(e) holds NonEmptyVector(e):\n  NonEmptyVector(e) has size 1:\n    1 is not equal to 2");
-        assertThat(explain(Validation.<String, Integer>valid(1), isInvalid(anything()))).isEqualTo("Valid(1) is not Invalid");
+                .isEqualTo(
+                        "Invalid(e) holds NonEmptyVector(e):\n  NonEmptyVector(e) has size 1:\n    1 is not equal to 2");
+        assertThat(explain(Validation.<String, Integer>valid(1), isInvalid(anything())))
+                .isEqualTo("Valid(1) is not Invalid");
     }
 
     // -- code that must throw
 
     @Test
     void throwing() {
-        assertThat(explainCode(() -> Integer.parseInt("x"), throwsA(NumberFormatException.class))).isEqualTo("passed");
-        assertThat(explainCode(() -> Integer.parseInt("x"), throwsA(IllegalArgumentException.class))).isEqualTo("passed");
-        assertThat(explainCode(() -> Integer.parseInt("1"), throwsA(NumberFormatException.class))).isEqualTo("the code did not throw");
-        assertThat(explainCode(() -> {
-            throw new IllegalStateException("boom");
-        }, throwsA(NumberFormatException.class))).isEqualTo(
-                "the code threw java.lang.IllegalStateException: boom:\n  java.lang.IllegalStateException: boom is not a java.lang.NumberFormatException");
-        assertThat(explainCode(() -> {
-            throw new java.io.IOException("io");
-        }, throwsWith(hasMessage("io")))).isEqualTo("passed");
-        assertThat(explainCode(() -> {
-            throw new AssertionError("inner");
-        }, throwsA(AssertionError.class))).isEqualTo("passed");
+        assertThat(explainCode(() -> Integer.parseInt("x"), throwsA(NumberFormatException.class)))
+                .isEqualTo("passed");
+        assertThat(explainCode(() -> Integer.parseInt("x"), throwsA(IllegalArgumentException.class)))
+                .isEqualTo("passed");
+        assertThat(explainCode(() -> Integer.parseInt("1"), throwsA(NumberFormatException.class)))
+                .isEqualTo("the code did not throw");
+        assertThat(explainCode(
+                        () -> {
+                            throw new IllegalStateException("boom");
+                        },
+                        throwsA(NumberFormatException.class)))
+                .isEqualTo(
+                        "the code threw java.lang.IllegalStateException: boom:\n  java.lang.IllegalStateException: boom is not a java.lang.NumberFormatException");
+        assertThat(explainCode(
+                        () -> {
+                            throw new java.io.IOException("io");
+                        },
+                        throwsWith(hasMessage("io"))))
+                .isEqualTo("passed");
+        assertThat(explainCode(
+                        () -> {
+                            throw new AssertionError("inner");
+                        },
+                        throwsA(AssertionError.class)))
+                .isEqualTo("passed");
         assertThat(throwsA(NumberFormatException.class)).hasToString("throwsA(java.lang.NumberFormatException)");
     }
 
     /// An assertion of the user's own, built with `Assertion.of`.
     private static Assertion<Throwable> hasMessage(String message) {
-        return Assertion.of("hasMessage(" + message + ")", thrown -> message.equals(thrown.getMessage())
-                ? TestResult.succeed()
-                : TestResult.fail(thrown + " has not the message " + message));
+        return Assertion.of(
+                "hasMessage(" + message + ")",
+                thrown -> message.equals(thrown.getMessage())
+                        ? TestResult.succeed()
+                        : TestResult.fail(thrown + " has not the message " + message));
     }
 
     @Test
     void theCodeFormTakesLambdasWithoutACast() {
-        final TestResult result = Assertion.assertThat(() -> Integer.parseInt("x"), throwsA(NumberFormatException.class));
+        TestResult result = Assertion.assertThat(() -> Integer.parseInt("x"), throwsA(NumberFormatException.class));
         assertThat(result.isSuccess()).isTrue();
         assertThat(Assertion.assertThat(5, equalTo(5)).isSuccess()).isTrue();
     }
@@ -287,7 +324,8 @@ class AssertionTest {
         assertThat(explain(5, isGreaterThan(1).and(isLessThan(9)))).isEqualTo("passed");
         assertThat(explain(5, isGreaterThan(6).and(isLessThan(9)))).isEqualTo("5 is not greater than 6");
         assertThat(explain(5, isGreaterThan(1).and(isLessThan(4)))).isEqualTo("5 is not less than 4");
-        assertThat(explain(5, isGreaterThan(6).and(isLessThan(4)))).isEqualTo("5 is not greater than 6\n5 is not less than 4");
+        assertThat(explain(5, isGreaterThan(6).and(isLessThan(4))))
+                .isEqualTo("5 is not greater than 6\n5 is not less than 4");
         assertThat(isGreaterThan(1).and(isLessThan(9))).hasToString("(isGreaterThan(1) and isLessThan(9))");
     }
 
@@ -303,16 +341,19 @@ class AssertionTest {
     @Test
     void orTestsItsRightSideOnlyWhenItsLeftSideFails() {
         // the right side fails with an AssertJ AssertionError, or throws, on the value the left side accepts
-        final Assertion<Integer> positive = Assertion.of("positive", x -> {
+        Assertion<Integer> positive = Assertion.of("positive", x -> {
             assertThat(x).isPositive();
             return TestResult.succeed();
         });
-        final Assertion<Integer> boom = Assertion.of("boom", x -> {
+        Assertion<Integer> boom = Assertion.of("boom", x -> {
             throw new ArithmeticException("evaluated");
         });
         assertThat(explain(0, equalTo(0).or(positive))).isEqualTo("passed");
         assertThat(explain(0, equalTo(0).or(boom))).isEqualTo("passed");
-        assertThat(Check.evaluate(CheckConfig.defaults().withSeed(7), Gen.constant(0), equalTo(0).or(positive)))
+        assertThat(Check.evaluate(
+                        CheckConfig.defaults().withSeed(7),
+                        Gen.constant(0),
+                        equalTo(0).or(positive)))
                 .isEqualTo(new CheckResult.Satisfied(200));
         assertThat(explain(5, equalTo(0).or(positive))).isEqualTo("passed");
         assertThatThrownBy(() -> explain(0, equalTo(1).or(boom))).isInstanceOf(ArithmeticException.class);
@@ -320,11 +361,17 @@ class AssertionTest {
 
     @Test
     void andTestsBothSidesSoAThrowingSideAfterAFailedGuardThrows() {
-        final Assertion<List<Integer>> headIsPositive = Assertion.of("headIsPositive", l -> Assertion.assertThat(l.head(), isGreaterThan(0)));
+        Assertion<List<Integer>> headIsPositive =
+                Assertion.of("headIsPositive", l -> Assertion.assertThat(l.head(), isGreaterThan(0)));
         assertThatThrownBy(() -> Assertion.assertThat(List.<Integer>empty(), isNonEmpty(), headIsPositive))
                 .isInstanceOf(java.util.NoSuchElementException.class);
-        assertThat(Check.evaluate(CheckConfig.defaults().withSeed(7), Gen.constant(List.<Integer>empty()), isNonEmpty(), headIsPositive)
-                .isErroneous()).isTrue();
+        assertThat(Check.evaluate(
+                                CheckConfig.defaults().withSeed(7),
+                                Gen.constant(List.<Integer>empty()),
+                                isNonEmpty(),
+                                headIsPositive)
+                        .isErroneous())
+                .isTrue();
         // behind the guard with or, the second assertion is not tested; the wider assertion may come first
         assertThat(explain(List.<Integer>empty(), isEmpty().or(headIsPositive))).isEqualTo("passed");
         assertThat(explain(List.of(3), isEmpty().or(headIsPositive))).isEqualTo("passed");
@@ -335,20 +382,28 @@ class AssertionTest {
 
     @Test
     void explanationsDoNotDependOnTheRun() {
-        final Assertion<CheckedRunnable> mustNotThrow = not(throwsA(Exception.class));
+        Assertion<CheckedRunnable> mustNotThrow = not(throwsA(Exception.class));
         assertThat(explainCode(() -> Integer.parseInt("x"), mustNotThrow))
                 .isEqualTo("the code satisfies throwsA(java.lang.Exception), but must not");
-        assertThat(explain(new int[] { 1, 2 }, equalTo(new int[] { 1, 2 }))).isEqualTo("passed");
-        assertThat(explain(new int[] { 1, 2 }, equalTo(new int[] { 1, 3 }))).isEqualTo("[1, 2] is not equal to [1, 3]");
-        assertThat(explain(new String[][] { { "a" } }, equalTo(new String[][] { { "b" } }))).isEqualTo("[[a]] is not equal to [[b]]");
-        assertThat(equalTo(new long[] { 1L })).hasToString("equalTo([1])");
+        assertThat(explain(new int[] {1, 2}, equalTo(new int[] {1, 2}))).isEqualTo("passed");
+        assertThat(explain(new int[] {1, 2}, equalTo(new int[] {1, 3}))).isEqualTo("[1, 2] is not equal to [1, 3]");
+        assertThat(explain(new String[][] {{"a"}}, equalTo(new String[][] {{"b"}})))
+                .isEqualTo("[[a]] is not equal to [[b]]");
+        assertThat(equalTo(new long[] {1L})).hasToString("equalTo([1])");
     }
 
     @Test
     void validationAssertionsCombineInEitherOrder() {
-        assertThat(explain(Validation.<String, Integer>invalid("e"), isValid(equalTo(1)).or(isInvalid(hasSize(equalTo(1)))))).isEqualTo("passed");
-        assertThat(explain(Validation.<String, Integer>valid(1), isInvalid(hasSize(equalTo(1))).or(isValid(equalTo(1))))).isEqualTo("passed");
-        assertThat(isValid(equalTo(1)).or(isInvalid(hasSize(equalTo(1))))).hasToString("(isValid(equalTo(1)) or isInvalid(hasSize(equalTo(1))))");
+        assertThat(explain(
+                        Validation.<String, Integer>invalid("e"),
+                        isValid(equalTo(1)).or(isInvalid(hasSize(equalTo(1))))))
+                .isEqualTo("passed");
+        assertThat(explain(
+                        Validation.<String, Integer>valid(1),
+                        isInvalid(hasSize(equalTo(1))).or(isValid(equalTo(1)))))
+                .isEqualTo("passed");
+        assertThat(isValid(equalTo(1)).or(isInvalid(hasSize(equalTo(1)))))
+                .hasToString("(isValid(equalTo(1)) or isInvalid(hasSize(equalTo(1))))");
     }
 
     @Test
@@ -370,20 +425,24 @@ class AssertionTest {
 
     @Test
     void nestingRendersTheFailingPathOnly() {
-        final Assertion<Iterable<? extends Option<Integer>>> allSmall = forall(isSome(isLessThan(10)));
+        Assertion<Iterable<? extends Option<Integer>>> allSmall = forall(isSome(isLessThan(10)));
         assertThat(explain(List.of(Option.some(1), Option.some(12)), allSmall))
-                .isEqualTo("List(Some(1), Some(12)) has Some(12) at index 1:\n  Some(12) holds 12:\n    12 is not less than 10");
+                .isEqualTo(
+                        "List(Some(1), Some(12)) has Some(12) at index 1:\n  Some(12) holds 12:\n    12 is not less than 10");
     }
 
     // -- several assertions
 
     @Test
     void assertThatListsEveryFailingAssertion() {
-        assertThat(Assertion.assertThat(5, isGreaterThan(1), isLessThan(9), not(equalTo(4))).isSuccess()).isTrue();
+        assertThat(Assertion.assertThat(5, isGreaterThan(1), isLessThan(9), not(equalTo(4)))
+                        .isSuccess())
+                .isTrue();
         assertThat(explain3(5, isGreaterThan(6), isLessThan(9), equalTo(4)))
                 .isEqualTo("5 is not greater than 6\n5 is not equal to 4");
         assertThat(explain3("abc", startsWithString("x"), endsWithString("y"), containsString("z")))
-                .isEqualTo("\"abc\" does not start with \"x\"\n\"abc\" does not end with \"y\"\n\"abc\" does not contain \"z\"");
+                .isEqualTo(
+                        "\"abc\" does not start with \"x\"\n\"abc\" does not end with \"y\"\n\"abc\" does not contain \"z\"");
     }
 
     @SafeVarargs
@@ -393,18 +452,23 @@ class AssertionTest {
 
     @Test
     void assertThatNeedsAnAssertion() {
-        assertThatThrownBy(() -> Assertion.assertThat(5)).isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> Assertion.assertThat(5))
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("at least one assertion is needed");
-        assertThatThrownBy(() -> Assertion.assertThat(5, (Assertion<Integer>[]) null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Assertion.assertThat(5, (Assertion<Integer>[]) null))
+                .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Assertion.assertThat(5, equalTo(5), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Assertion.assertThat((CheckedRunnable) null, throwsA(Exception.class))).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Assertion.assertThat((CheckedRunnable) null, throwsA(Exception.class)))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void anAssertionOfTheUsersOwnRejectsNulls() {
-        assertThatThrownBy(() -> Assertion.of(null, x -> TestResult.succeed())).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Assertion.of(null, x -> TestResult.succeed()))
+                .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Assertion.<Integer>of("x", null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Assertion.<Integer>of("x", x -> null).test(1)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> Assertion.<Integer>of("x", x -> null).test(1))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("the test of x returned null");
         assertThatThrownBy(() -> equalTo(1).and(null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> equalTo(1).or(null)).isInstanceOf(NullPointerException.class);

@@ -56,7 +56,7 @@ public interface CheckedPredicate<T extends @Nullable Object> {
     }
 
     /**
-     * Returns an unchecked {@link Predicate} that <em>sneakily throws</em> any exception 
+     * Returns an unchecked {@link Predicate} that <em>sneakily throws</em> any exception
      * encountered when testing a value.
      *
      * @return a {@link Predicate} that may throw any {@link Throwable} without declaring it
@@ -65,7 +65,7 @@ public interface CheckedPredicate<T extends @Nullable Object> {
         return t -> {
             try {
                 return test(t);
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 return sneakyThrow(x);
             }
         };

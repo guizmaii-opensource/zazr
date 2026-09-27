@@ -32,16 +32,11 @@ public class Euler41Test {
 
     private static int largestNPandigitalPrime() {
         return LazyList.rangeClosedBy(9, 1, -1)
-                .flatMap(n -> nDigitPandigitalNumbers(n)
-                        .filter(Utils::isPrime)
-                        .sorted(reverseOrder()))
+                .flatMap(n -> nDigitPandigitalNumbers(n).filter(Utils::isPrime).sorted(reverseOrder()))
                 .head();
     }
 
     private static List<Integer> nDigitPandigitalNumbers(int n) {
-        return List.rangeClosed(1, n)
-                .permutations()
-                .map(List::mkString)
-                .map(Integer::valueOf);
+        return List.rangeClosed(1, n).permutations().map(List::mkString).map(Integer::valueOf);
     }
 }

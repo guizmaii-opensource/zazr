@@ -41,9 +41,7 @@ public class Euler12Test {
     }
 
     private static long valueOfFirstTriangleNumberWithMoreDivisorsThan(long divisorCount) {
-        return triangleNumbers()
-                .find(t -> divisorCount(t) > divisorCount)
-                .get();
+        return triangleNumbers().find(t -> divisorCount(t) > divisorCount).get();
     }
 
     private static LazyList<Long> triangleNumbers() {

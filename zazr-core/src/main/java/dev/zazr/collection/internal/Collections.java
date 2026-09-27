@@ -28,8 +28,8 @@ public final class Collections {
 
     // checks, if the *elements* of the given iterables are equal
     static boolean areEqual(Iterable<?> iterable1, Iterable<?> iterable2) {
-        final java.util.Iterator<?> iter1 = iterable1.iterator();
-        final java.util.Iterator<?> iter2 = iterable2.iterator();
+        java.util.Iterator<?> iter1 = iterable1.iterator();
+        java.util.Iterator<?> iter2 = iterable2.iterator();
         while (iter1.hasNext() && iter2.hasNext()) {
             if (!Objects.equals(iter1.next(), iter2.next())) {
                 return false;
@@ -39,11 +39,12 @@ public final class Collections {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object> boolean equals(Map<K, V> source, @Nullable Object object) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> boolean equals(
+            Map<K, V> source, @Nullable Object object) {
         if (source == object) {
             return true;
         } else if (source != null && object instanceof Map) {
-            final Map<K, V> map = (Map<K, V>) object;
+            Map<K, V> map = (Map<K, V>) object;
             if (source.size() != map.size()) {
                 return false;
             } else {
@@ -79,9 +80,9 @@ public final class Collections {
         if (object == source) {
             return true;
         } else if (object instanceof Traversable<?> sequence && isSequence(sequence)) {
-            // a LazyList's size walks all of it, and never returns on an infinite one: the element by element comparison
-            // stops at the first difference or at the end of the shorter side instead
-            final boolean sizesKnown = !(source instanceof LazyList) && !(sequence instanceof LazyList);
+            // a LazyList's size walks all of it, and never returns on an infinite one: the element by element
+            // comparison stops at the first difference or at the end of the shorter side instead
+            boolean sizesKnown = !(source instanceof LazyList) && !(sequence instanceof LazyList);
             return (!sizesKnown || sequence.size() == source.size()) && areEqual(source, sequence);
         } else {
             return false;
@@ -90,7 +91,10 @@ public final class Collections {
 
     // the ordered sequence types, equal to each other element by element in order
     static boolean isSequence(@Nullable Object object) {
-        return object instanceof Vector || object instanceof List || object instanceof Queue || object instanceof LazyList;
+        return object instanceof Vector
+                || object instanceof List
+                || object instanceof Queue
+                || object instanceof LazyList;
     }
 
     @SuppressWarnings("unchecked")
@@ -98,7 +102,7 @@ public final class Collections {
         if (source == object) {
             return true;
         } else if (source != null && object instanceof Set) {
-            final Set<V> set = (Set<V>) object;
+            Set<V> set = (Set<V>) object;
             if (source.size() != set.size()) {
                 return false;
             } else {
@@ -126,41 +130,50 @@ public final class Collections {
         }
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C fill(int n, Supplier<? extends T> s, C empty, Function<T[], C> of) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C fill(
+            int n, Supplier<? extends T> s, C empty, Function<T[], C> of) {
         Objects.requireNonNull(s, "s is null");
         Objects.requireNonNull(empty, "empty is null");
         Objects.requireNonNull(of, "of is null");
         return tabulate(n, anything -> s.get(), empty, of);
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C fillObject(int n, T element, C empty, Function<T[], C> of) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C fillObject(
+            int n, T element, C empty, Function<T[], C> of) {
         Objects.requireNonNull(empty, "empty is null");
         Objects.requireNonNull(of, "of is null");
         if (n <= 0) {
             return empty;
         } else {
             @SuppressWarnings("unchecked")
-            final T[] elements = (T[]) new Object[n];
+            T[] elements = (T[]) new Object[n];
             Arrays.fill(elements, element);
             return of.apply(elements);
         }
     }
 
-    public static <T extends @Nullable Object, C extends @Nullable Object, R extends Iterable<T>> Map<C, R> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier, Function<? super Iterable<T>, R> mapper, String nullResult) {
+    public static <T extends @Nullable Object, C extends @Nullable Object, R extends Iterable<T>> Map<C, R> groupBy(
+            Traversable<T> source,
+            Function<? super T, ? extends C> classifier,
+            Function<? super Iterable<T>, R> mapper,
+            String nullResult) {
         Objects.requireNonNull(classifier, "classifier is null");
         Objects.requireNonNull(mapper, "mapper is null");
+        @SuppressWarnings("Var")
         Map<C, R> results = LinkedHashMap.empty();
         for (java.util.Map.Entry<? extends C, Collection<T>> entry : groupBy(source, classifier, nullResult)) {
             results = results.put(entry.getKey(), mapper.apply(entry.getValue()));
         }
         return results;
-
     }
 
-    private static <T extends @Nullable Object, C extends @Nullable Object> java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(Traversable<T> source, Function<? super T, ? extends C> classifier, String nullResult) {
-        final java.util.Map<C, Collection<T>> results = new java.util.LinkedHashMap<>(isTraversableAgain(source) ? source.size() : 16);
+    private static <T extends @Nullable Object, C extends @Nullable Object>
+            java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(
+                    Traversable<T> source, Function<? super T, ? extends C> classifier, String nullResult) {
+        java.util.Map<C, Collection<T>> results =
+                new java.util.LinkedHashMap<>(isTraversableAgain(source) ? source.size() : 16);
         for (T value : source) {
-            final C key = Objects.requireNonNull(classifier.apply(value), nullResult);
+            C key = Objects.requireNonNull(classifier.apply(value), nullResult);
             results.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
         return results.entrySet();
@@ -180,6 +193,7 @@ public final class Collections {
         if (iterable == null) {
             return 0;
         } else {
+            @SuppressWarnings("Var")
             int hashCode = 1;
             for (Object o : iterable) {
                 hashCode = accumulator.applyAsInt(hashCode, Objects.hashCode(o));
@@ -219,35 +233,30 @@ public final class Collections {
 
     // The characteristics a Traversable reports through Spliterator: what the type guarantees about its elements.
     static int spliteratorCharacteristics(Traversable<?> traversable) {
-        int characteristics = Spliterator.IMMUTABLE;
-        if (traversable instanceof Set || traversable instanceof Map) {
-            characteristics |= Spliterator.DISTINCT;
-        }
+        int distinct = traversable instanceof Set || traversable instanceof Map ? Spliterator.DISTINCT : 0;
         // a SortedMap orders its keys, not its entries, so it is ORDERED but not SORTED
-        if (traversable instanceof SortedSet) {
-            characteristics |= (Spliterator.SORTED | Spliterator.ORDERED);
-        }
-        if (isSequence(traversable) || traversable instanceof SortedMap
-                || traversable instanceof LinkedHashSet || traversable instanceof LinkedHashMap) {
-            characteristics |= Spliterator.ORDERED;
-        }
-        if (hasDefiniteSize(traversable)) {
-            characteristics |= (Spliterator.SIZED | Spliterator.SUBSIZED);
-        }
-        return characteristics;
+        int sorted = traversable instanceof SortedSet ? Spliterator.SORTED | Spliterator.ORDERED : 0;
+        int ordered = isSequence(traversable)
+                        || traversable instanceof SortedMap
+                        || traversable instanceof LinkedHashSet
+                        || traversable instanceof LinkedHashMap
+                ? Spliterator.ORDERED
+                : 0;
+        int sized = hasDefiniteSize(traversable) ? Spliterator.SIZED | Spliterator.SUBSIZED : 0;
+        return Spliterator.IMMUTABLE | distinct | sorted | ordered | sized;
     }
 
     // The spliterator of a Traversable: sized when the size is known without a walk, and reporting the comparator of a
     // SortedSet (null for the natural order, as Spliterator specifies), so that java.util.stream.Stream.sorted() sorts
     // a set ordered otherwise instead of skipping the sort.
     public static <T extends @Nullable Object> Spliterator<T> spliterator(Traversable<T> traversable) {
-        final int characteristics = spliteratorCharacteristics(traversable);
-        final Spliterator<T> spliterator = (characteristics & Spliterator.SIZED) != 0
-          ? Spliterators.spliterator(traversable.iterator(), traversable.size(), characteristics)
-          : Spliterators.spliteratorUnknownSize(traversable.iterator(), characteristics);
+        int characteristics = spliteratorCharacteristics(traversable);
+        Spliterator<T> spliterator = (characteristics & Spliterator.SIZED) != 0
+                ? Spliterators.spliterator(traversable.iterator(), traversable.size(), characteristics)
+                : Spliterators.spliteratorUnknownSize(traversable.iterator(), characteristics);
         if (traversable instanceof SortedSet<?> sortedSet && !(sortedSet.comparator() instanceof NaturalComparator)) {
             @SuppressWarnings("unchecked")
-            final Comparator<? super T> comparator = (Comparator<? super T>) sortedSet.comparator();
+            Comparator<? super T> comparator = (Comparator<? super T>) sortedSet.comparator();
             return new SortedSpliterator<>(spliterator, comparator);
         }
         return spliterator;
@@ -275,7 +284,7 @@ public final class Collections {
 
         @Override
         public @Nullable Spliterator<T> trySplit() {
-            final Spliterator<T> prefix = delegate.trySplit();
+            Spliterator<T> prefix = delegate.trySplit();
             return prefix == null ? null : new SortedSpliterator<>(prefix, comparator);
         }
 
@@ -300,11 +309,12 @@ public final class Collections {
         }
     }
 
-    public static <T extends @Nullable Object> T last(Traversable<T> source){
+    public static <T extends @Nullable Object> T last(Traversable<T> source) {
         if (source.isEmpty()) {
             throw new NoSuchElementException("last of empty " + source);
         } else {
-            final java.util.Iterator<T> it = source.iterator();
+            java.util.Iterator<T> it = source.iterator();
+            @SuppressWarnings("Var")
             T result = it.next();
             while (it.hasNext()) {
                 result = it.next();
@@ -314,24 +324,33 @@ public final class Collections {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object, K2 extends @Nullable Object, U extends Map<K2, V>> U mapKeys(Map<K, V> source, U zero, Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge) {
+    public static <
+                    K extends @Nullable Object,
+                    V extends @Nullable Object,
+                    K2 extends @Nullable Object,
+                    U extends Map<K2, V>>
+            U mapKeys(
+                    Map<K, V> source,
+                    U zero,
+                    Function<? super K, ? extends K2> keyMapper,
+                    BiFunction<? super V, ? super V, ? extends V> valueMerge) {
         Objects.requireNonNull(zero, "zero is null");
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMerge, "valueMerge is null");
         return source.foldLeft(zero, (acc, entry) -> {
-            final K2 k2 = Objects.requireNonNull(keyMapper.apply(entry._1()), "mapKeys: key is null");
-            final V v2 = entry._2();
-            final V v1 = Maps.getOrAbsent(acc, k2);
-            final V v = v1 != Maps.ABSENT ? valueMerge.apply(v1, v2) : v2;
+            K2 k2 = Objects.requireNonNull(keyMapper.apply(entry._1()), "mapKeys: key is null");
+            V v2 = entry._2();
+            V v1 = Maps.getOrAbsent(acc, k2);
+            V v = v1 != Maps.ABSENT ? valueMerge.apply(v1, v2) : v2;
             return (U) acc.put(k2, v);
         });
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> Tuple2<C, C> partition(C collection, Function<Iterable<T>, C> creator,
-                                                                Predicate<? super T> predicate) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> Tuple2<C, C> partition(
+            C collection, Function<Iterable<T>, C> creator, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final java.util.List<T> left = new java.util.ArrayList<>();
-        final java.util.List<T> right = new java.util.ArrayList<>();
+        java.util.List<T> left = new java.util.ArrayList<>();
+        java.util.List<T> right = new java.util.ArrayList<>();
         for (T element : collection) {
             (predicate.test(element) ? left : right).add(element);
         }
@@ -346,11 +365,12 @@ public final class Collections {
      *
      * @return the duplicated elements; empty (and immutable) when every key is distinct
      */
-    public static <T extends @Nullable Object, K extends @Nullable Object> java.util.List<T> duplicatesBy(Iterable<? extends T> elements, Function<? super T, ? extends K> keyExtractor) {
-        final java.util.LinkedHashMap<K, T> first = new java.util.LinkedHashMap<>();
-        final java.util.HashSet<K> duplicated = new java.util.HashSet<>();
+    public static <T extends @Nullable Object, K extends @Nullable Object> java.util.List<T> duplicatesBy(
+            Iterable<? extends T> elements, Function<? super T, ? extends K> keyExtractor) {
+        java.util.LinkedHashMap<K, T> first = new java.util.LinkedHashMap<>();
+        java.util.HashSet<K> duplicated = new java.util.HashSet<>();
         for (T element : elements) {
-            final K key = keyExtractor.apply(element);
+            K key = keyExtractor.apply(element);
             if (first.putIfAbsent(key, element) != null) {
                 duplicated.add(key);
             }
@@ -358,7 +378,7 @@ public final class Collections {
         if (duplicated.isEmpty()) {
             return java.util.List.of();
         }
-        final java.util.List<T> result = new java.util.ArrayList<>(duplicated.size());
+        java.util.List<T> result = new java.util.ArrayList<>(duplicated.size());
         for (java.util.Map.Entry<K, T> entry : first.entrySet()) {
             if (duplicated.contains(entry.getKey())) {
                 result.add(entry.getValue());
@@ -373,17 +393,19 @@ public final class Collections {
         C apply(Predicate<? super T> predicate);
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C removeAll(C source, Iterable<? extends T> elements, Filter<T, C> filter) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C removeAll(
+            C source, Iterable<? extends T> elements, Filter<T, C> filter) {
         Objects.requireNonNull(elements, "elements is null");
         if (source.isEmpty()) {
             return source;
         } else {
-            final Set<T> removed = HashSet.ofAll(elements);
+            Set<T> removed = HashSet.ofAll(elements);
             return removed.isEmpty() ? source : filter.apply(e -> !removed.contains(e));
         }
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C reject(C source, Predicate<? super T> predicate, Filter<T, C> filter) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C reject(
+            C source, Predicate<? super T> predicate, Filter<T, C> filter) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (source.isEmpty()) {
             return source;
@@ -392,7 +414,8 @@ public final class Collections {
         }
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C removeAll(C source, T element, Filter<T, C> filter) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C removeAll(
+            C source, T element, Filter<T, C> filter) {
         if (source.isEmpty()) {
             return source;
         } else {
@@ -400,12 +423,13 @@ public final class Collections {
         }
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C retainAll(C source, Iterable<? extends T> elements, Filter<T, C> filter) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C retainAll(
+            C source, Iterable<? extends T> elements, Filter<T, C> filter) {
         Objects.requireNonNull(elements, "elements is null");
         if (source.isEmpty()) {
             return source;
         } else {
-            final Set<T> retained = HashSet.ofAll(elements);
+            Set<T> retained = HashSet.ofAll(elements);
             return filter.apply(retained::contains);
         }
     }
@@ -414,7 +438,7 @@ public final class Collections {
         if (iterable instanceof java.util.List) {
             return reverseListIterator((java.util.List<T>) iterable);
         } else if (iterable instanceof Vector) {
-            final Vector<T> vector = (Vector<T>) iterable;
+            Vector<T> vector = (Vector<T>) iterable;
             return new AbstractIterator<T>() {
                 private int i = vector.size();
 
@@ -455,33 +479,42 @@ public final class Collections {
         };
     }
 
-    public static <T extends @Nullable Object, U extends @Nullable Object, R extends Traversable<U>> R scanLeft(Iterable<? extends T> source,
-                                                       U zero, BiFunction<? super U, ? super T, ? extends U> operation, Function<Iterator<U>, R> finisher) {
+    public static <T extends @Nullable Object, U extends @Nullable Object, R extends Traversable<U>> R scanLeft(
+            Iterable<? extends T> source,
+            U zero,
+            BiFunction<? super U, ? super T, ? extends U> operation,
+            Function<Iterator<U>, R> finisher) {
         Objects.requireNonNull(operation, "operation is null");
-        final Iterator<U> iterator = Iterator.ofAll(source).scanLeft(zero, operation);
+        Iterator<U> iterator = Iterator.ofAll(source).scanLeft(zero, operation);
         return finisher.apply(iterator);
     }
 
-    public static <T extends @Nullable Object, U extends @Nullable Object, R extends Traversable<U>> R scanRight(Traversable<? extends T> source,
-                                                        U zero, BiFunction<? super T, ? super U, ? extends U> operation, Function<Iterator<U>, R> finisher) {
+    public static <T extends @Nullable Object, U extends @Nullable Object, R extends Traversable<U>> R scanRight(
+            Traversable<? extends T> source,
+            U zero,
+            BiFunction<? super T, ? super U, ? extends U> operation,
+            Function<Iterator<U>, R> finisher) {
         Objects.requireNonNull(operation, "operation is null");
-        final Iterator<? extends T> reversedElements = reverseIterator(source);
-        return scanLeft(reversedElements, zero, (u, t) -> operation.apply(t, u), us -> finisher.apply(reverseIterator(us)));
+        Iterator<? extends T> reversedElements = reverseIterator(source);
+        return scanLeft(
+                reversedElements, zero, (u, t) -> operation.apply(t, u), us -> finisher.apply(reverseIterator(us)));
     }
 
-    public static <T extends @Nullable Object, S extends Traversable<T>> S shuffle(S source, Function<? super Iterable<T>, S> ofAll) {
+    public static <T extends @Nullable Object, S extends Traversable<T>> S shuffle(
+            S source, Function<? super Iterable<T>, S> ofAll) {
         if (source.size() <= 1) {
             return source;
         }
 
-        final java.util.List<T> list = new ArrayList<>(source.asJava());
+        java.util.List<T> list = new ArrayList<>(source.asJava());
         java.util.Collections.shuffle(list);
         return ofAll.apply(list);
     }
 
     public static void subSequenceRangeCheck(int beginIndex, int endIndex, int length) {
         if (beginIndex < 0 || endIndex > length) {
-            throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ", " + endIndex + "), length = " + length);
+            throw new IndexOutOfBoundsException(
+                    "subSequence(" + beginIndex + ", " + endIndex + "), length = " + length);
         } else if (beginIndex > endIndex) {
             throw new IllegalArgumentException("subSequence(" + beginIndex + ", " + endIndex + ")");
         }
@@ -509,7 +542,8 @@ public final class Collections {
         }
     }
 
-    public static <C extends Traversable<T>, T extends @Nullable Object> C tabulate(int n, Function<? super Integer, ? extends T> f, C empty, Function<T[], C> of) {
+    public static <C extends Traversable<T>, T extends @Nullable Object> C tabulate(
+            int n, Function<? super Integer, ? extends T> f, C empty, Function<T[], C> of) {
         Objects.requireNonNull(f, "f is null");
         Objects.requireNonNull(empty, "empty is null");
         Objects.requireNonNull(of, "of is null");
@@ -517,7 +551,7 @@ public final class Collections {
             return empty;
         } else {
             @SuppressWarnings("unchecked")
-            final T[] elements = (T[]) new Object[n];
+            T[] elements = (T[]) new Object[n];
             for (int i = 0; i < n; i++) {
                 elements[i] = f.apply(i);
             }
@@ -525,7 +559,8 @@ public final class Collections {
         }
     }
 
-    public static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>> V transpose(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
+    public static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>> V transpose(
+            V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
         Objects.requireNonNull(matrix, "matrix is null");
         if (matrix.isEmpty() || (matrix.size() == 1 && matrix.iterator().next().size() <= 1)) {
             return matrix;
@@ -534,16 +569,20 @@ public final class Collections {
         }
     }
 
-    private static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>> V transposeNonEmptyMatrix(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
-        final int newHeight = matrix.iterator().next().size(), newWidth = matrix.size();
-        @SuppressWarnings("unchecked") final T[][] results = (T[][]) new Object[newHeight][newWidth];
+    private static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>>
+            V transposeNonEmptyMatrix(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
+        int newHeight = matrix.iterator().next().size(), newWidth = matrix.size();
+        @SuppressWarnings("unchecked")
+        T[][] results = (T[][]) new Object[newHeight][newWidth];
 
         if (matrix.exists(r -> r.size() != newHeight)) {
             throw new IllegalArgumentException("the parameter `matrix` is invalid!");
         }
 
+        @SuppressWarnings("Var")
         int rowIndex = 0;
         for (U row : matrix) {
+            @SuppressWarnings("Var")
             int columnIndex = 0;
             for (T element : row) {
                 results[columnIndex][rowIndex] = element;
@@ -559,7 +598,8 @@ public final class Collections {
         return isTraversableAgain(iterable) ? withSizeTraversable(iterable) : withSizeTraversable(List.ofAll(iterable));
     }
 
-    private static <T extends @Nullable Object> IterableWithSize<T> withSizeTraversable(Iterable<? extends T> iterable) {
+    private static <T extends @Nullable Object> IterableWithSize<T> withSizeTraversable(
+            Iterable<? extends T> iterable) {
         if (iterable instanceof Collection) {
             return new IterableWithSize<>(iterable, ((Collection<?>) iterable).size());
         } else {
@@ -592,8 +632,8 @@ public final class Collections {
             if (iterable instanceof Collection<?>) {
                 return ((Collection<? extends T>) iterable).toArray();
             } else {
-                final Object[] array = new Object[size];
-                final java.util.Iterator<? extends T> it = iterator();
+                Object[] array = new Object[size];
+                java.util.Iterator<? extends T> it = iterator();
                 for (int i = 0; i < size; i++) {
                     array[i] = it.next();
                 }
@@ -601,5 +641,4 @@ public final class Collections {
             }
         }
     }
-
 }

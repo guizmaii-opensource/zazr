@@ -5,8 +5,7 @@ package dev.zazr.test.laws;
  */
 final class Casts {
 
-    private Casts() {
-    }
+    private Casts() {}
 
     @SuppressWarnings("unchecked")
     static <T> T cast(Object value) {

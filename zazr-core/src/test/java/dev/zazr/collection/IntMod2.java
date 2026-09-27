@@ -38,5 +38,4 @@ final class IntMod2 implements Comparable<IntMod2> {
     public String toString() {
         return String.valueOf(val);
     }
-
 }

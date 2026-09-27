@@ -13,19 +13,22 @@ public interface LazyListModule {
     /** Slice searches over a lazy cons stream: the candidate start positions are the successive tails. */
     interface Slice {
 
-        static <T extends @Nullable Object> int indexOfSlice(LazyList<T> source, Iterable<? extends T> slice, int from) {
+        static <T extends @Nullable Object> int indexOfSlice(
+                LazyList<T> source, Iterable<? extends T> slice, int from) {
             if (source.isEmpty()) {
                 return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
             }
             return findFirstSlice(source, toLazyList(slice), Math.max(from, 0));
         }
 
-        static <T extends @Nullable Object> int lastIndexOfSlice(LazyList<T> source, Iterable<? extends T> slice, int end) {
+        @SuppressWarnings("Var")
+        static <T extends @Nullable Object> int lastIndexOfSlice(
+                LazyList<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
             }
             // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
-            final LazyList<T> _slice = toLazyList(slice);
+            LazyList<T> _slice = toLazyList(slice);
             _slice.size();
             if (_slice.isEmpty()) {
                 // the last position at or before end: the length when this LazyList is shorter; no cell past end - 1 is
@@ -43,7 +46,7 @@ public interface LazyListModule {
             // first end + m elements are forced, and the walk stops once the rest is shorter than the slice
             int result = -1;
             for (int index = 0; !source.isEmpty(); index++) {
-                final int match = matchAt(source, _slice);
+                int match = matchAt(source, _slice);
                 if (match > 0) {
                     result = index;
                 } else if (match < 0) {
@@ -59,6 +62,7 @@ public interface LazyListModule {
 
         // 1 if the non-empty source starts with the non-empty slice, 0 if an element differs, -1 if source ends first;
         // the cells of source are forced only as far as the comparison goes
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int matchAt(LazyList<T> source, LazyList<T> slice) {
             while (true) {
                 if (!java.util.Objects.equals(source.head(), slice.head())) {
@@ -75,7 +79,9 @@ public interface LazyListModule {
             }
         }
 
-        private static <T extends @Nullable Object> int findFirstSlice(LazyList<T> source, LazyList<T> slice, int from) {
+        @SuppressWarnings("Var")
+        private static <T extends @Nullable Object> int findFirstSlice(
+                LazyList<T> source, LazyList<T> slice, int from) {
             int index = 0;
             // a LazyList may be infinite, so its length is never computed here: only the elements the search reaches
             // are forced
@@ -98,9 +104,10 @@ public interface LazyListModule {
     interface Search {
 
         static <T extends @Nullable Object> int linearSearch(LazyList<T> stream, ToIntFunction<T> comparison) {
+            @SuppressWarnings("Var")
             int idx = 0;
             for (T current : stream) {
-                final int cmp = comparison.applyAsInt(current);
+                int cmp = comparison.applyAsInt(current);
                 if (cmp == 0) {
                     return idx;
                 } else if (cmp < 0) {
@@ -112,7 +119,6 @@ public interface LazyListModule {
         }
     }
 
-
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Cons<T> self;
@@ -123,11 +129,12 @@ public interface LazyListModule {
 
         private Cons<T> appendAll(Cons<T> stream, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
             return (Cons<T>) LazyList.cons(stream.head(), () -> {
-                final LazyList<T> tail = stream.tail();
+                LazyList<T> tail = stream.tail();
                 if (!tail.isEmpty()) {
                     return appendAll((Cons<T>) tail, mapper);
                 }
-                return java.util.Objects.requireNonNull(mapper.apply(self), "LazyList.appendSelf: mapper returned null");
+                return java.util.Objects.requireNonNull(
+                        mapper.apply(self), "LazyList.appendSelf: mapper returned null");
             });
         }
 
@@ -142,9 +149,9 @@ public interface LazyListModule {
             if (k == 0) {
                 return LazyList.of(LazyList.empty());
             } else {
-                return elements.zipWithIndex().flatMap(
-                        t -> apply(elements.drop(t._2() + 1), (k - 1)).map((LazyList<T> c) -> c.prepend(t._1()))
-                );
+                return elements.zipWithIndex()
+                        .flatMap(t ->
+                                apply(elements.drop(t._2() + 1), (k - 1)).map((LazyList<T> c) -> c.prepend(t._1())));
             }
         }
     }
@@ -152,10 +159,11 @@ public interface LazyListModule {
     interface Windows {
 
         // `source` is non-empty and starts a window; the next window starts `step` elements further on, and is produced
-        // only when this window is full and followed by at least one element, so that no window repeats the previous one
+        // only when this window is full and followed by at least one element, so that no window repeats the previous
+        // one
         static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> source, int size, int step) {
             return LazyList.cons(source.take(size), () -> {
-                final LazyList<T> next = source.drop(step);
+                LazyList<T> next = source.drop(step);
                 return next.isEmpty() || source.drop(size).isEmpty() ? LazyList.empty() : apply(next, size, step);
             });
         }
@@ -164,14 +172,15 @@ public interface LazyListModule {
     interface DropRight {
 
         // works with infinite streams by buffering elements
-        static <T extends @Nullable Object> LazyList<T> apply(dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, LazyList<T> remaining) {
+        static <T extends @Nullable Object> LazyList<T> apply(
+                dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, LazyList<T> remaining) {
             if (remaining.isEmpty()) {
                 return remaining;
             } else if (front.isEmpty()) {
                 return apply(rear.reverse(), dev.zazr.collection.List.empty(), remaining);
             } else {
-                return LazyList.cons(front.head(),
-                        () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));
+                return LazyList.cons(
+                        front.head(), () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));
             }
         }
     }
@@ -198,7 +207,7 @@ public interface LazyListModule {
 
         @Override
         public T getNext() {
-            final LazyList<T> stream = current.get();
+            LazyList<T> stream = current.get();
             // DEV-NOTE: we make the stream even more lazy because the next head must not be evaluated on hasNext()
             current = stream::tail;
             return stream.head();
@@ -216,11 +225,15 @@ public interface LazyListModule {
         java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
 
         // for a mapper that never returns null, such as the identity over inputs that reject null
-        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        public FlatMapIterator(
+                Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
             this(inputs, mapper, "FlatMapIterator: mapper returned null");
         }
 
-        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper, String nullResult) {
+        public FlatMapIterator(
+                Iterator<? extends T> inputs,
+                Function<? super T, ? extends Iterable<? extends U>> mapper,
+                String nullResult) {
             this.inputs = inputs;
             this.nullResult = nullResult;
             this.mapper = mapper;
@@ -231,9 +244,10 @@ public interface LazyListModule {
             if (failed) {
                 throw new NullPointerException(nullResult);
             }
+            @SuppressWarnings("Var")
             boolean currentHasNext;
             while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
-                final Iterable<? extends U> mapped = mapper.apply(inputs.next());
+                Iterable<? extends U> mapped = mapper.apply(inputs.next());
                 if (mapped == null) {
                     failed = true;
                     throw new NullPointerException(nullResult);

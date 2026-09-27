@@ -29,8 +29,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class JavaConverters {
 
-    private JavaConverters() {
-    }
+    private JavaConverters() {}
 
     /**
      * Implemented by every view. {@link #underlying()} gives the persistent value whose elements the view shows, in
@@ -44,7 +43,8 @@ public final class JavaConverters {
          *
          * @return the persistent value, or {@code null}
          */
-        @Nullable Object underlying();
+        @Nullable
+        Object underlying();
     }
 
     /**
@@ -82,7 +82,8 @@ public final class JavaConverters {
      *
      * @param <T> the element type
      */
-    abstract static class UnmodifiableCollection<T extends @Nullable Object> extends AbstractCollection<T> implements View {
+    abstract static class UnmodifiableCollection<T extends @Nullable Object> extends AbstractCollection<T>
+            implements View {
 
         @Override
         public final boolean add(T element) {
@@ -168,7 +169,7 @@ public final class JavaConverters {
                 if (!(element instanceof Tuple2<?, ?> entry)) {
                     return false;
                 }
-                final Object value;
+                Object value;
                 try {
                     value = Maps.getOrAbsent((Map<Object, Object>) map, entry._1());
                 } catch (ClassCastException | NullPointerException e) {
@@ -207,7 +208,8 @@ public final class JavaConverters {
      * @param <T> the element type
      * @param <C> the sequence type
      */
-    public abstract static class ListView<T extends @Nullable Object, C extends Traversable<T>> extends UnmodifiableCollection<T> implements java.util.List<T> {
+    public abstract static class ListView<T extends @Nullable Object, C extends Traversable<T>>
+            extends UnmodifiableCollection<T> implements java.util.List<T> {
 
         final C delegate;
         final boolean reversed;
@@ -222,11 +224,12 @@ public final class JavaConverters {
         }
 
         final int delegateSize() {
-            int n = size;
-            if (n < 0) {
-                n = delegate.size();
-                size = n;
+            int cached = size;
+            if (cached >= 0) {
+                return cached;
             }
+            int n = delegate.size();
+            size = n;
             return n;
         }
 
@@ -271,7 +274,8 @@ public final class JavaConverters {
             return delegate.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"
+        }) // the unchecked cast of a nullable argument; the delegate accepts null
         @Override
         public boolean contains(@Nullable Object element) {
             return delegate.contains((T) element);
@@ -280,7 +284,7 @@ public final class JavaConverters {
         @Override
         public T get(int index) {
             if (reversed) {
-                final int size = delegateSize();
+                int size = delegateSize();
                 if (index < 0 || index >= size) {
                     throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + size);
                 }
@@ -305,21 +309,23 @@ public final class JavaConverters {
             return reversed ? delegateGet(delegate, 0) : delegateLast(delegate);
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"
+        }) // the unchecked cast of a nullable argument; the delegate accepts null
         @Override
         public int indexOf(@Nullable Object element) {
             if (reversed) {
-                final int index = delegateLastIndexOf(delegate, (T) element);
+                int index = delegateLastIndexOf(delegate, (T) element);
                 return index < 0 ? -1 : delegateSize() - 1 - index;
             }
             return delegateIndexOf(delegate, (T) element);
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"
+        }) // the unchecked cast of a nullable argument; the delegate accepts null
         @Override
         public int lastIndexOf(@Nullable Object element) {
             if (reversed) {
-                final int index = delegateIndexOf(delegate, (T) element);
+                int index = delegateIndexOf(delegate, (T) element);
                 return index < 0 ? -1 : delegateSize() - 1 - index;
             }
             return delegateLastIndexOf(delegate, (T) element);
@@ -373,7 +379,7 @@ public final class JavaConverters {
                 throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
             }
             if (reversed) {
-                final int size = delegateSize();
+                int size = delegateSize();
                 return view(delegateSubSequence(delegate, size - toIndex, size - fromIndex), true);
             }
             return view(delegateSubSequence(delegate, fromIndex, toIndex), false);
@@ -386,10 +392,10 @@ public final class JavaConverters {
 
         @Override
         public Object[] toArray() {
-            final Object[] array = delegate.toArray();
+            Object[] array = delegate.toArray();
             if (reversed) {
                 for (int i = 0, j = array.length - 1; i < j; i++, j--) {
-                    final Object tmp = array[i];
+                    Object tmp = array[i];
                     array[i] = array[j];
                     array[j] = tmp;
                 }
@@ -472,7 +478,8 @@ public final class JavaConverters {
          * iterator, so a forward walk costs what iterating the sequence costs; moving backward, and every move on a
          * reversed view, is a positional {@code get}.
          */
-        private static final class ListIterator<T extends @Nullable Object, C extends Traversable<T>> implements java.util.ListIterator<T> {
+        private static final class ListIterator<T extends @Nullable Object, C extends Traversable<T>>
+                implements java.util.ListIterator<T> {
 
             private final ListView<T, C> list;
             private int cursor;
@@ -500,11 +507,11 @@ public final class JavaConverters {
                     }
                     return list.get(cursor++);
                 }
-                final java.util.Iterator<T> iterator = forward();
+                java.util.Iterator<T> iterator = forward();
                 if (!iterator.hasNext()) {
                     throw new NoSuchElementException();
                 }
-                final T element = iterator.next();
+                T element = iterator.next();
                 forwardPosition = ++cursor;
                 return element;
             }
@@ -519,7 +526,7 @@ public final class JavaConverters {
                 if (cursor <= 0) {
                     throw new NoSuchElementException();
                 }
-                final T element = list.get(cursor - 1);
+                T element = list.get(cursor - 1);
                 cursor--;
                 return element;
             }
@@ -550,6 +557,7 @@ public final class JavaConverters {
             }
 
             private java.util.Iterator<T> forward() {
+                @SuppressWarnings("Var")
                 java.util.Iterator<T> iterator = forward;
                 if (iterator == null || forwardPosition != cursor) {
                     iterator = list.delegateIteratorFrom(list.delegate, cursor);
@@ -569,19 +577,29 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(Vector<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(Vector<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(Vector<T> delegate) { return delegate.last(); }
+        T delegateLast(Vector<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(Vector<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(Vector<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(Vector<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(Vector<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        Vector<T> delegateSubSequence(Vector<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        Vector<T> delegateSubSequence(Vector<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
         java.util.Iterator<T> delegateIteratorFrom(Vector<T> delegate, int index) {
@@ -609,7 +627,9 @@ public final class JavaConverters {
         }
 
         @Override
-        ListView<T, Vector<T>> view(Vector<T> delegate, boolean reversed) { return new VectorListView<>(delegate, reversed); }
+        ListView<T, Vector<T>> view(Vector<T> delegate, boolean reversed) {
+            return new VectorListView<>(delegate, reversed);
+        }
     }
 
     /** The view over a {@link List}: a positional read walks the cons cells up to the index. */
@@ -620,28 +640,44 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(List<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(List<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(List<T> delegate) { return delegate.last(); }
+        T delegateLast(List<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(List<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(List<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(List<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(List<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        List<T> delegateSubSequence(List<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        List<T> delegateSubSequence(List<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(List<T> delegate, int index) { return delegate.drop(index).iterator(); }
+        java.util.Iterator<T> delegateIteratorFrom(List<T> delegate, int index) {
+            return delegate.drop(index).iterator();
+        }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(List<T> delegate) { return delegate.reverse().iterator(); }
+        java.util.Iterator<T> delegateReverseIterator(List<T> delegate) {
+            return delegate.reverse().iterator();
+        }
 
         @Override
-        ListView<T, List<T>> view(List<T> delegate, boolean reversed) { return new ListListView<>(delegate, reversed); }
+        ListView<T, List<T>> view(List<T> delegate, boolean reversed) {
+            return new ListListView<>(delegate, reversed);
+        }
     }
 
     /** The view over a {@link Queue}. */
@@ -652,28 +688,44 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(Queue<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(Queue<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(Queue<T> delegate) { return delegate.last(); }
+        T delegateLast(Queue<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(Queue<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(Queue<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(Queue<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(Queue<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        Queue<T> delegateSubSequence(Queue<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        Queue<T> delegateSubSequence(Queue<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(Queue<T> delegate, int index) { return delegate.drop(index).iterator(); }
+        java.util.Iterator<T> delegateIteratorFrom(Queue<T> delegate, int index) {
+            return delegate.drop(index).iterator();
+        }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(Queue<T> delegate) { return delegate.reverse().iterator(); }
+        java.util.Iterator<T> delegateReverseIterator(Queue<T> delegate) {
+            return delegate.reverse().iterator();
+        }
 
         @Override
-        ListView<T, Queue<T>> view(Queue<T> delegate, boolean reversed) { return new QueueListView<>(delegate, reversed); }
+        ListView<T, Queue<T>> view(Queue<T> delegate, boolean reversed) {
+            return new QueueListView<>(delegate, reversed);
+        }
     }
 
     /**
@@ -692,27 +744,43 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(LazyList<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(LazyList<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(LazyList<T> delegate) { return delegate.last(); }
+        T delegateLast(LazyList<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(LazyList<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(LazyList<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(LazyList<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(LazyList<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        LazyList<T> delegateSubSequence(LazyList<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        LazyList<T> delegateSubSequence(LazyList<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(LazyList<T> delegate, int index) { return delegate.drop(index).iterator(); }
+        java.util.Iterator<T> delegateIteratorFrom(LazyList<T> delegate, int index) {
+            return delegate.drop(index).iterator();
+        }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(LazyList<T> delegate) { return delegate.reverse().iterator(); }
+        java.util.Iterator<T> delegateReverseIterator(LazyList<T> delegate) {
+            return delegate.reverse().iterator();
+        }
 
         @Override
-        ListView<T, LazyList<T>> view(LazyList<T> delegate, boolean reversed) { return new LazyListListView<>(delegate, reversed); }
+        ListView<T, LazyList<T>> view(LazyList<T> delegate, boolean reversed) {
+            return new LazyListListView<>(delegate, reversed);
+        }
     }
 }

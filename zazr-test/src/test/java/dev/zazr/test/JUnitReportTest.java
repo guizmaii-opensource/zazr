@@ -42,14 +42,19 @@ class JUnitReportTest {
 
         @Test
         void aBodyWithTwoResults() {
-            Check.check(CheckConfig.defaults().withSeed(42), Gen.constant(5), n -> assertThat(n, equalTo(4)).and(assertThat(n * 2, equalTo(11))));
+            Check.check(
+                    CheckConfig.defaults().withSeed(42),
+                    Gen.constant(5),
+                    n -> assertThat(n, equalTo(4)).and(assertThat(n * 2, equalTo(11))));
         }
     }
 
     private static TestExecutionSummary run(Class<?> type) {
-        final LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request().selectors(selectClass(type)).build();
-        final Launcher launcher = LauncherFactory.create();
-        final SummaryGeneratingListener listener = new SummaryGeneratingListener();
+        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+                .selectors(selectClass(type))
+                .build();
+        Launcher launcher = LauncherFactory.create();
+        SummaryGeneratingListener listener = new SummaryGeneratingListener();
         launched = true;
         try {
             launcher.execute(request, listener);
@@ -61,10 +66,12 @@ class JUnitReportTest {
 
     @Test
     void aFailingCheckFailsTheTestWithTheExplanation() {
-        final TestExecutionSummary summary = run(Failing.class);
+        TestExecutionSummary summary = run(Failing.class);
         assertThat(summary.getTestsFailedCount()).isEqualTo(2);
-        assertThat(summary.getFailures()).extracting(failure -> failure.getTestIdentifier().getDisplayName() + " -> "
-                        + failure.getException().getClass().getName() + ": " + failure.getException().getMessage())
+        assertThat(summary.getFailures())
+                .extracting(failure -> failure.getTestIdentifier().getDisplayName() + " -> "
+                        + failure.getException().getClass().getName() + ": "
+                        + failure.getException().getMessage())
                 .containsExactlyInAnyOrder(
                         "everyElementIsSmall() -> java.lang.AssertionError: falsified at sample 1 by (List(1, 20)) (seed 42, replay with -Dzazr.check.seed=42):\n"
                                 + "  List(1, 20) has 20 at index 1:\n"
@@ -82,6 +89,8 @@ class JUnitReportTest {
     @Test
     void bothAssertThatsResolveByTheirArguments() {
         assertThat(assertThat(5, equalTo(5)).isSuccess()).isTrue();
-        assertThat(assertThat(() -> Integer.parseInt("x"), Assertion.throwsA(NumberFormatException.class)).isSuccess()).isTrue();
+        assertThat(assertThat(() -> Integer.parseInt("x"), Assertion.throwsA(NumberFormatException.class))
+                        .isSuccess())
+                .isTrue();
     }
 }

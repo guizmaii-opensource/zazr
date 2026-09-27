@@ -58,7 +58,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
 
     private final HashSet<A> set;
 
-    private NonEmptySet(HashSet<A> set) { this.set = set; }
+    private NonEmptySet(HashSet<A> set) {
+        this.set = set;
+    }
 
     // -- constructors
 
@@ -76,7 +78,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public static <A extends @Nullable Object> NonEmptySet<A> of(A head, A... tail) {
         Objects.requireNonNull(head, "NonEmptySet: head is null");
         Objects.requireNonNull(tail, "NonEmptySet: tail is null");
-        final HashSet.Builder<A> builder = HashSet.newBuilder();
+        HashSet.Builder<A> builder = HashSet.newBuilder();
         builder.add(head);
         for (A element : tail) {
             builder.add(Objects.requireNonNull(element, "NonEmptySet: element is null"));
@@ -98,7 +100,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public static <A extends @Nullable Object> NonEmptySet<A> fromIterable(A head, Iterable<? extends A> tail) {
         Objects.requireNonNull(head, "NonEmptySet: head is null");
         Objects.requireNonNull(tail, "NonEmptySet: tail is null");
-        final HashSet.Builder<A> builder = HashSet.newBuilder();
+        HashSet.Builder<A> builder = HashSet.newBuilder();
         builder.add(head);
         return new NonEmptySet<>(addAll(builder, tail).result());
     }
@@ -145,7 +147,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
         if (iterable instanceof HashSet) {
             return fromSet((HashSet<A>) iterable);
         }
-        return fromSet(addAll(HashSet.<A> newBuilder(), iterable).result());
+        return fromSet(addAll(HashSet.<A>newBuilder(), iterable).result());
     }
 
     /**
@@ -176,9 +178,10 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements of every inner set
      * @throws NullPointerException if {@code nested} is null
      */
-    public static <A extends @Nullable Object> NonEmptySet<A> flatten(NonEmptySet<? extends NonEmptySet<? extends A>> nested) {
+    public static <A extends @Nullable Object> NonEmptySet<A> flatten(
+            NonEmptySet<? extends NonEmptySet<? extends A>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        final HashSet.Builder<A> builder = HashSet.newBuilder();
+        HashSet.Builder<A> builder = HashSet.newBuilder();
         for (NonEmptySet<? extends A> inner : nested) {
             builder.addAll(inner.set);
         }
@@ -186,7 +189,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /* a HashSet cannot hold a null, so it is added as is; anything else is checked element by element, naming this type */
-    private static <A extends @Nullable Object> HashSet.Builder<A> addAll(HashSet.Builder<A> builder, Iterable<? extends A> elements) {
+    private static <A extends @Nullable Object> HashSet.Builder<A> addAll(
+            HashSet.Builder<A> builder, Iterable<? extends A> elements) {
         if (elements instanceof HashSet) {
             return builder.addAll(elements);
         }
@@ -219,7 +223,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return this set with {@code elements}
      * @throws NullPointerException if {@code elements} or one of them is null
      */
-    public NonEmptySet<A> addAll(Iterable<? extends A> elements) { return wrap(set.addAll(elements)); }
+    public NonEmptySet<A> addAll(Iterable<? extends A> elements) {
+        return wrap(set.addAll(elements));
+    }
 
     /**
      * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion, as {@link HashSet#union(Set)}.
@@ -228,7 +234,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements of both sets
      * @throws NullPointerException if {@code elements} is null
      */
-    public NonEmptySet<A> union(Set<? extends A> elements) { return wrap(set.union(elements)); }
+    public NonEmptySet<A> union(Set<? extends A> elements) {
+        return wrap(set.union(elements));
+    }
 
     /**
      * @param mapper A function
@@ -249,11 +257,13 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the union of the results
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
-    public <B extends @Nullable Object> NonEmptySet<B> flatMap(Function<? super A, ? extends NonEmptySet<? extends B>> mapper) {
+    public <B extends @Nullable Object> NonEmptySet<B> flatMap(
+            Function<? super A, ? extends NonEmptySet<? extends B>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final HashSet.Builder<B> builder = HashSet.newBuilder();
+        HashSet.Builder<B> builder = HashSet.newBuilder();
         for (A element : set) {
-            builder.addAll(Objects.requireNonNull(mapper.apply(element), "NonEmptySet.flatMap: mapper returned null").set);
+            builder.addAll(
+                    Objects.requireNonNull(mapper.apply(element), "NonEmptySet.flatMap: mapper returned null").set);
         }
         return new NonEmptySet<>(builder.result());
     }
@@ -292,7 +302,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the same as {@link #replace(Object, Object)}
      * @throws NullPointerException if {@code currentElement} or {@code newElement} is null
      */
-    public NonEmptySet<A> replaceAll(A currentElement, A newElement) { return replace(currentElement, newElement); }
+    public NonEmptySet<A> replaceAll(A currentElement, A newElement) {
+        return replace(currentElement, newElement);
+    }
 
     /**
      * Runs {@code action} on every element.
@@ -314,17 +326,21 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the groups, each non-empty, in a non-empty map
      * @throws NullPointerException if {@code classifier} is null or returns null
      */
-    public <K extends @Nullable Object> NonEmptyMap<K, NonEmptySet<A>> groupBy(Function<? super A, ? extends K> classifier) {
-        final HashMap.Builder<K, NonEmptySet<A>> groups = HashMap.newBuilder();
+    public <K extends @Nullable Object> NonEmptyMap<K, NonEmptySet<A>> groupBy(
+            Function<? super A, ? extends K> classifier) {
+        HashMap.Builder<K, NonEmptySet<A>> groups = HashMap.newBuilder();
         Objects.requireNonNull(classifier, "classifier is null");
-        for (Tuple2<K, HashSet<A>> group : set.<K> groupBy(element -> Objects.requireNonNull(classifier.apply(element), "NonEmptySet.groupBy: classifier returned null"))) {
+        for (Tuple2<K, HashSet<A>> group : set.<K>groupBy(element ->
+                Objects.requireNonNull(classifier.apply(element), "NonEmptySet.groupBy: classifier returned null"))) {
             groups.put(group._1(), new NonEmptySet<>(group._2()));
         }
         return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
     /* the plain operations that cannot empty a non-empty set return the same instance when nothing changes */
-    private NonEmptySet<A> wrap(HashSet<A> result) { return result == set ? this : new NonEmptySet<>(result); }
+    private NonEmptySet<A> wrap(HashSet<A> result) {
+        return result == set ? this : new NonEmptySet<>(result);
+    }
 
     // -- returns HashSet: the result may be empty
 
@@ -333,21 +349,27 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      *
      * @return the wrapped set
      */
-    public HashSet<A> toSet() { return set; }
+    public HashSet<A> toSet() {
+        return set;
+    }
 
     /**
      * @param predicate A test
      * @return the elements that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public HashSet<A> filter(Predicate<? super A> predicate) { return set.filter(predicate); }
+    public HashSet<A> filter(Predicate<? super A> predicate) {
+        return set.filter(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return the elements that fail {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public HashSet<A> reject(Predicate<? super A> predicate) { return set.reject(predicate); }
+    public HashSet<A> reject(Predicate<? super A> predicate) {
+        return set.reject(predicate);
+    }
 
     /**
      * Maps and filters in one pass: keeps the {@code Some} results.
@@ -359,7 +381,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      */
     public <B extends @Nullable Object> HashSet<B> collect(Function<? super A, ? extends Option<? extends B>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return set.collect(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySet.collect: mapper returned null"));
+        return set.collect(
+                element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySet.collect: mapper returned null"));
     }
 
     /**
@@ -371,9 +394,11 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the union of the results
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
-    public <B extends @Nullable Object> HashSet<B> flatMapAll(Function<? super A, ? extends Iterable<? extends B>> mapper) {
+    public <B extends @Nullable Object> HashSet<B> flatMapAll(
+            Function<? super A, ? extends Iterable<? extends B>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return set.flatMap(element -> Objects.requireNonNull(mapper.apply(element), "NonEmptySet.flatMapAll: mapper returned null"));
+        return set.flatMap(element ->
+                Objects.requireNonNull(mapper.apply(element), "NonEmptySet.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -382,7 +407,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @param element An element
      * @return this set without {@code element}
      */
-    public HashSet<A> remove(A element) { return set.remove(element); }
+    public HashSet<A> remove(A element) {
+        return set.remove(element);
+    }
 
     /**
      * Complexity: O(n + m) for m given elements, as {@link HashSet#removeAll(Iterable)}.
@@ -391,7 +418,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return this set without {@code elements}
      * @throws NullPointerException if {@code elements} is null
      */
-    public HashSet<A> removeAll(Iterable<? extends A> elements) { return set.removeAll(elements); }
+    public HashSet<A> removeAll(Iterable<? extends A> elements) {
+        return set.removeAll(elements);
+    }
 
     /**
      * Complexity: O(n + m) for m given elements, as {@link HashSet#retainAll(Iterable)}.
@@ -400,7 +429,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements of this set that are among {@code elements}
      * @throws NullPointerException if {@code elements} is null
      */
-    public HashSet<A> retainAll(Iterable<? extends A> elements) { return set.retainAll(elements); }
+    public HashSet<A> retainAll(Iterable<? extends A> elements) {
+        return set.retainAll(elements);
+    }
 
     /**
      * Complexity: O(n + m) for a set of m elements, as {@link HashSet#intersect(Set)}.
@@ -409,7 +440,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements in both sets
      * @throws NullPointerException if {@code elements} is null
      */
-    public HashSet<A> intersect(Set<? extends A> elements) { return set.intersect(elements); }
+    public HashSet<A> intersect(Set<? extends A> elements) {
+        return set.intersect(elements);
+    }
 
     /**
      * Complexity: O(n + m) for a set of m elements, as {@link HashSet#diff(Set)}.
@@ -418,14 +451,18 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements of this set that are not in {@code elements}
      * @throws NullPointerException if {@code elements} is null
      */
-    public HashSet<A> diff(Set<? extends A> elements) { return set.diff(elements); }
+    public HashSet<A> diff(Set<? extends A> elements) {
+        return set.diff(elements);
+    }
 
     /**
      * @param predicate A test
      * @return the elements that pass {@code predicate} and those that fail it; either may be empty
      * @throws NullPointerException if {@code predicate} is null
      */
-    public Tuple2<HashSet<A>, HashSet<A>> partition(Predicate<? super A> predicate) { return set.partition(predicate); }
+    public Tuple2<HashSet<A>, HashSet<A>> partition(Predicate<? super A> predicate) {
+        return set.partition(predicate);
+    }
 
     /**
      * Splits the elements into a left and a right side according to the {@link Either} {@code f} returns for each.
@@ -437,9 +474,11 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the left values and the right values
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(Function<? super A, ? extends Either<? extends L, ? extends R>> f) {
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(
+            Function<? super A, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
-        return set.partitionMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySet.partitionMap: f returned null"));
+        return set.partitionMap(
+                element -> Objects.requireNonNull(f.apply(element), "NonEmptySet.partitionMap: f returned null"));
     }
 
     // -- total: what is partial on a HashSet
@@ -452,7 +491,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the greatest element; {@code NaN} compares as the greatest {@code Double} or {@code Float}
      * @throws ClassCastException if the elements are not {@link Comparable}
      */
-    public A max() { return NonEmptyModule.max(set); }
+    public A max() {
+        return NonEmptyModule.max(set);
+    }
 
     /**
      * The least element in the natural order of the elements, as {@link HashSet#min()}.
@@ -462,21 +503,27 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the least element; among {@code Double}s or {@code Float}s, a {@code NaN} whenever one is present
      * @throws ClassCastException if the elements are not {@link Comparable}
      */
-    public A min() { return NonEmptyModule.min(set); }
+    public A min() {
+        return NonEmptyModule.min(set);
+    }
 
     /**
      * @param comparator The order
      * @return the greatest element under {@code comparator}; of several, the first in iteration order
      * @throws NullPointerException if {@code comparator} is null
      */
-    public A maxBy(Comparator<? super A> comparator) { return NonEmptyModule.max(set, comparator); }
+    public A maxBy(Comparator<? super A> comparator) {
+        return NonEmptyModule.max(set, comparator);
+    }
 
     /**
      * @param comparator The order
      * @return the least element under {@code comparator}; of several, the first in iteration order
      * @throws NullPointerException if {@code comparator} is null
      */
-    public A minBy(Comparator<? super A> comparator) { return NonEmptyModule.min(set, comparator); }
+    public A minBy(Comparator<? super A> comparator) {
+        return NonEmptyModule.min(set, comparator);
+    }
 
     /**
      * @param f   Computes the key, once per element
@@ -484,7 +531,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the element with the greatest key; of several, the first in iteration order
      * @throws NullPointerException if {@code f} is null
      */
-    public <U extends Comparable<? super U>> A maxBy(Function<? super A, ? extends U> f) { return NonEmptyModule.maxBy(set, f); }
+    public <U extends Comparable<? super U>> A maxBy(Function<? super A, ? extends U> f) {
+        return NonEmptyModule.maxBy(set, f);
+    }
 
     /**
      * @param f   Computes the key, once per element
@@ -492,7 +541,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the element with the least key; of several, the first in iteration order
      * @throws NullPointerException if {@code f} is null
      */
-    public <U extends Comparable<? super U>> A minBy(Function<? super A, ? extends U> f) { return NonEmptyModule.minBy(set, f); }
+    public <U extends Comparable<? super U>> A minBy(Function<? super A, ? extends U> f) {
+        return NonEmptyModule.minBy(set, f);
+    }
 
     /**
      * Combines the elements with {@code op} in iteration order, which a hash set does not define: {@code op} should be
@@ -502,7 +553,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the combined elements
      * @throws NullPointerException if {@code op} is null
      */
-    public A reduce(BiFunction<? super A, ? super A, ? extends A> op) { return NonEmptyModule.reduce(set, op); }
+    public A reduce(BiFunction<? super A, ? super A, ? extends A> op) {
+        return NonEmptyModule.reduce(set, op);
+    }
 
     /**
      * Maps every element and combines the results, in one pass and in iteration order: {@code op} should be
@@ -514,7 +567,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the combined mapped values
      * @throws NullPointerException if {@code mapper} or {@code op} is null
      */
-    public <B extends @Nullable Object> B reduceMap(Function<? super A, ? extends B> mapper, BiFunction<? super B, ? super B, ? extends B> op) {
+    public <B extends @Nullable Object> B reduceMap(
+            Function<? super A, ? extends B> mapper, BiFunction<? super B, ? super B, ? extends B> op) {
         return NonEmptyModule.reduceMap(set, mapper, op);
     }
 
@@ -527,20 +581,26 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the folded result
      * @throws NullPointerException if {@code combine} is null
      */
-    public A fold(A zero, BiFunction<? super A, ? super A, ? extends A> combine) { return set.fold(zero, combine); }
+    public A fold(A zero, BiFunction<? super A, ? super A, ? extends A> combine) {
+        return set.fold(zero, combine);
+    }
 
     /**
      * @return the sum of the elements, which must be {@link Number}s, with the arithmetic of {@link HashSet#sum()}
      * @throws UnsupportedOperationException if an element is not a {@code Number}
      */
-    public Number sum() { return set.sum(); }
+    public Number sum() {
+        return set.sum();
+    }
 
     /**
      * @return the product of the elements, which must be {@link Number}s, with the arithmetic of
      *         {@link HashSet#product()}
      * @throws UnsupportedOperationException if an element is not a {@code Number}
      */
-    public Number product() { return set.product(); }
+    public Number product() {
+        return set.product();
+    }
 
     /**
      * The average of the elements, which must be {@link Number}s: the value {@link HashSet#average()} holds.
@@ -548,13 +608,17 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the average
      * @throws UnsupportedOperationException if an element is not a {@code Number}
      */
-    public double average() { return NonEmptyModule.average(set); }
+    public double average() {
+        return NonEmptyModule.average(set);
+    }
 
     /**
      * @return the only element
      * @throws java.util.NoSuchElementException if there is more than one element
      */
-    public A single() { return set.single(); }
+    public A single() {
+        return set.single();
+    }
 
     /**
      * The number of elements.
@@ -563,7 +627,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      *
      * @return the number of elements, at least 1
      */
-    public int size() { return set.size(); }
+    public int size() {
+        return set.size();
+    }
 
     /**
      * Complexity: effectively O(1), as {@link HashSet#contains(Object)}.
@@ -571,42 +637,54 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @param element An element
      * @return whether {@code element} is in this set
      */
-    public boolean contains(A element) { return set.contains(element); }
+    public boolean contains(A element) {
+        return set.contains(element);
+    }
 
     /**
      * @param elements Elements
      * @return whether every one of {@code elements} is in this set
      * @throws NullPointerException if {@code elements} is null
      */
-    public boolean containsAll(Iterable<? extends A> elements) { return set.containsAll(elements); }
+    public boolean containsAll(Iterable<? extends A> elements) {
+        return set.containsAll(elements);
+    }
 
     /**
      * @param predicate A test
      * @return whether at least one element passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public boolean exists(Predicate<? super A> predicate) { return set.exists(predicate); }
+    public boolean exists(Predicate<? super A> predicate) {
+        return set.exists(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return whether exactly one element passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public boolean existsUnique(Predicate<? super A> predicate) { return set.existsUnique(predicate); }
+    public boolean existsUnique(Predicate<? super A> predicate) {
+        return set.existsUnique(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return whether every element passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public boolean forAll(Predicate<? super A> predicate) { return set.forAll(predicate); }
+    public boolean forAll(Predicate<? super A> predicate) {
+        return set.forAll(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return how many elements pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public int count(Predicate<? super A> predicate) { return set.count(predicate); }
+    public int count(Predicate<? super A> predicate) {
+        return set.count(predicate);
+    }
 
     /**
      * @param zero The initial accumulator
@@ -622,13 +700,17 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     /**
      * @return the elements' {@code toString()}s, concatenated
      */
-    public String mkString() { return set.mkString(); }
+    public String mkString() {
+        return set.mkString();
+    }
 
     /**
      * @param delimiter Put between elements
      * @return the elements' {@code toString()}s, joined by {@code delimiter}
      */
-    public String mkString(CharSequence delimiter) { return set.mkString(delimiter); }
+    public String mkString(CharSequence delimiter) {
+        return set.mkString(delimiter);
+    }
 
     /**
      * @param prefix    Put first
@@ -659,7 +741,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements collected, as {@code stream().collect(supplier, accumulator, combiner)} does
      * @throws NullPointerException if an argument is null
      */
-    public <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super A> accumulator, BiConsumer<R, R> combiner) {
+    public <R extends @Nullable Object> R collect(
+            Supplier<R> supplier, BiConsumer<R, ? super A> accumulator, BiConsumer<R, R> combiner) {
         return set.collect(supplier, accumulator, combiner);
     }
 
@@ -669,18 +752,24 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * Complexity: O(1) to create; a whole walk is O(n), as {@link HashSet#iterator()}.
      */
     @Override
-    public java.util.Iterator<A> iterator() { return set.iterator(); }
+    public java.util.Iterator<A> iterator() {
+        return set.iterator();
+    }
 
     /**
      * @return the wrapped set's spliterator, which reports its size and that the elements are distinct
      */
     @Override
-    public Spliterator<A> spliterator() { return set.spliterator(); }
+    public Spliterator<A> spliterator() {
+        return set.spliterator();
+    }
 
     /**
      * @return a sequential {@link java.util.stream.Stream} over the elements
      */
-    public java.util.stream.Stream<A> stream() { return set.stream(); }
+    public java.util.stream.Stream<A> stream() {
+        return set.stream();
+    }
 
     /**
      * An unmodifiable {@link java.util.Set} view of the elements, the one {@link HashSet#asJava()} gives: nothing is
@@ -690,57 +779,77 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      *
      * @return an unmodifiable {@code java.util.Set} view
      */
-    public java.util.Set<A> asJava() { return set.asJava(); }
+    public java.util.Set<A> asJava() {
+        return set.asJava();
+    }
 
     /**
      * @return the elements in a new array
      */
-    public Object[] toArray() { return set.toArray(); }
+    public Object[] toArray() {
+        return set.toArray();
+    }
 
     /**
      * @param arrayFactory Makes an array of the given length
      * @return the elements in a new array made by {@code arrayFactory}
      * @throws NullPointerException if {@code arrayFactory} is null
      */
-    public A[] toArray(IntFunction<A[]> arrayFactory) { return set.toArray(arrayFactory); }
+    public A[] toArray(IntFunction<A[]> arrayFactory) {
+        return set.toArray(arrayFactory);
+    }
 
     /**
      * @return the elements as a {@link Vector}, in iteration order
      */
-    public Vector<A> toVector() { return set.toVector(); }
+    public Vector<A> toVector() {
+        return set.toVector();
+    }
 
     /**
      * @return the elements as a {@link List}, in iteration order
      */
-    public List<A> toList() { return set.toList(); }
+    public List<A> toList() {
+        return set.toList();
+    }
 
     /**
      * @return the elements as a {@link Queue}, in iteration order
      */
-    public Queue<A> toQueue() { return set.toQueue(); }
+    public Queue<A> toQueue() {
+        return set.toQueue();
+    }
 
     /**
      * @return the elements as a {@link LazyList}, in iteration order
      */
-    public LazyList<A> toLazyList() { return set.toLazyList(); }
+    public LazyList<A> toLazyList() {
+        return set.toLazyList();
+    }
 
     /**
      * @return the elements as a {@link LinkedHashSet}, in iteration order
      */
-    public Set<A> toLinkedSet() { return set.toLinkedSet(); }
+    public Set<A> toLinkedSet() {
+        return set.toLinkedSet();
+    }
 
     /**
      * @return the elements as a {@link TreeSet} in their natural order
      * @throws ClassCastException if the elements are not {@link Comparable}
      */
-    public SortedSet<A> toSortedSet() { return set.toSortedSet(); }
+    public SortedSet<A> toSortedSet() {
+        return set.toSortedSet();
+    }
 
     /**
      * @param comparator The order
      * @return the elements as a {@link TreeSet} ordered by {@code comparator}
      * @throws NullPointerException if {@code comparator} is null
      */
-    public SortedSet<A> toSortedSet(Comparator<? super A> comparator) { return set.toSortedSet(comparator); }
+    public SortedSet<A> toSortedSet(Comparator<? super A> comparator) {
+        return set.toSortedSet(comparator);
+    }
 
     /**
      * @param keyMapper   The key of an element
@@ -750,7 +859,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link NonEmptyMap}; of two entries with the same key, the later wins
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> toMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> toMap(
+            Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
         return NonEmptyMap.ofMapped(set, keyMapper, valueMapper, "NonEmptySet.toMap");
     }
 
@@ -761,7 +871,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link NonEmptyMap}; of two entries with the same key, the later wins
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> toMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptyMap<K, V> toMap(
+            Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
         return NonEmptyMap.ofMappedEntries(set, f, "NonEmptySet.toMap");
     }
 
@@ -773,7 +884,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link LinkedHashMap}, in iteration order
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
+            Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
         return set.toLinkedMap(keyMapper, valueMapper);
     }
 
@@ -784,9 +896,11 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link LinkedHashMap}, in iteration order
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
+            Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
-        return set.toLinkedMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySet.toLinkedMap: f returned null"));
+        return set.toLinkedMap(
+                element -> Objects.requireNonNull(f.apply(element), "NonEmptySet.toLinkedMap: f returned null"));
     }
 
     /**
@@ -797,8 +911,10 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
-        return NonEmptySortedMap.ofMapped(Comparators.naturalComparator(), set, keyMapper, valueMapper, "NonEmptySet.toSortedMap");
+    public <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(
+            Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+        return NonEmptySortedMap.ofMapped(
+                Comparators.naturalComparator(), set, keyMapper, valueMapper, "NonEmptySet.toSortedMap");
     }
 
     /**
@@ -808,7 +924,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(
+            Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
         return NonEmptySortedMap.ofMappedEntries(Comparators.naturalComparator(), set, f, "NonEmptySet.toSortedMap");
     }
 
@@ -821,7 +938,10 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}
      * @throws NullPointerException if an argument is null or a mapper returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends K> keyMapper, Function<? super A, ? extends V> valueMapper) {
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(
+            Comparator<? super K> comparator,
+            Function<? super A, ? extends K> keyMapper,
+            Function<? super A, ? extends V> valueMapper) {
         return NonEmptySortedMap.ofMapped(comparator, set, keyMapper, valueMapper, "NonEmptySet.toSortedMap");
     }
 
@@ -833,7 +953,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return the elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}
      * @throws NullPointerException if an argument is null or {@code f} returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(
+            Comparator<? super K> comparator, Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
         return NonEmptySortedMap.ofMappedEntries(comparator, set, f, "NonEmptySet.toSortedMap");
     }
 
@@ -844,7 +965,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * @return an element that passes {@code predicate}, the first in iteration order
      * @throws NullPointerException if {@code predicate} is null
      */
-    public Option<A> find(Predicate<? super A> predicate) { return set.find(predicate); }
+    public Option<A> find(Predicate<? super A> predicate) {
+        return set.find(predicate);
+    }
 
     /**
      * Arranges the elements by a key that must be unique.
@@ -856,7 +979,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      */
     public <K extends @Nullable Object> Option<Map<K, A>> arrangeBy(Function<? super A, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return set.arrangeBy(element -> Objects.requireNonNull(getKey.apply(element), "NonEmptySet.arrangeBy: getKey returned null"));
+        return set.arrangeBy(element ->
+                Objects.requireNonNull(getKey.apply(element), "NonEmptySet.arrangeBy: getKey returned null"));
     }
 
     // -- Object
@@ -874,8 +998,12 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     @Override
-    public int hashCode() { return set.hashCode(); }
+    public int hashCode() {
+        return set.hashCode();
+    }
 
     @Override
-    public String toString() { return set.mkString("NonEmptySet(", ", ", ")"); }
+    public String toString() {
+        return set.mkString("NonEmptySet(", ", ", ")");
+    }
 }

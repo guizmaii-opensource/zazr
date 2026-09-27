@@ -4,14 +4,14 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static dev.zazr.internal.Throwables.isFatal;
-import static dev.zazr.internal.Throwables.sneakyThrow;
-
 import dev.zazr.control.Option;
 import dev.zazr.control.Try;
 import java.util.Objects;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+
+import static dev.zazr.internal.Throwables.isFatal;
+import static dev.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * Represents a function with one argument.
@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 @FunctionalInterface
-public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullable Object>  {
+public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullable Object> {
 
     /**
      * Returns a function that always returns the constant
@@ -59,7 +59,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      * @param <T1> 1st argument
      * @return a {@code CheckedFunction1}
      */
-    static <T1 extends @Nullable Object, R extends @Nullable Object> CheckedFunction1<T1, R> of(CheckedFunction1<T1, R> methodReference) {
+    static <T1 extends @Nullable Object, R extends @Nullable Object> CheckedFunction1<T1, R> of(
+            CheckedFunction1<T1, R> methodReference) {
         return methodReference;
     }
 
@@ -74,10 +75,11 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *         throwable. Fatal throwables (see {@link Try}) are rethrown
      *         instead of being turned into {@code None}.
      */
-    static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Option<R>> lift(CheckedFunction1<? super T1, ? extends R> partialFunction) {
+    static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Option<R>> lift(
+            CheckedFunction1<? super T1, ? extends R> partialFunction) {
         return t1 -> {
             try {
-                final R result = partialFunction.apply(t1);
+                R result = partialFunction.apply(t1);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {
@@ -99,7 +101,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      *         non-fatal throwable. Fatal throwables (see {@link Try}) are rethrown
      *         instead of being wrapped.
      */
-    static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Try<R>> liftTry(CheckedFunction1<? super T1, ? extends R> partialFunction) {
+    static <T1 extends @Nullable Object, R extends @Nullable Object> Function<T1, Try<R>> liftTry(
+            CheckedFunction1<? super T1, ? extends R> partialFunction) {
         return t1 -> Try.of(() -> partialFunction.apply(t1));
     }
 
@@ -112,7 +115,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      * @return the given {@code f} instance as narrowed type {@code CheckedFunction1<T1, R>}
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, R extends @Nullable Object> CheckedFunction1<T1, R> narrow(CheckedFunction1<? super T1, ? extends R> f) {
+    static <T1 extends @Nullable Object, R extends @Nullable Object> CheckedFunction1<T1, R> narrow(
+            CheckedFunction1<? super T1, ? extends R> f) {
         return (CheckedFunction1<T1, R>) f;
     }
 
@@ -173,9 +177,10 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
                 if (isFatal(throwable)) {
                     return sneakyThrow(throwable);
                 }
-                final Function<? super T1, ? extends R> func = recover.apply(throwable);
+                Function<? super T1, ? extends R> func = recover.apply(throwable);
                 if (func == null) {
-                    final NullPointerException nullResult = new NullPointerException("CheckedFunction1.recover: recover returned null");
+                    NullPointerException nullResult =
+                            new NullPointerException("CheckedFunction1.recover: recover returned null");
                     nullResult.initCause(throwable);
                     throw nullResult;
                 }
@@ -193,7 +198,7 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
         return (t1) -> {
             try {
                 return apply(t1);
-            } catch(Throwable t) {
+            } catch (Throwable t) {
                 return sneakyThrow(t);
             }
         };
@@ -208,7 +213,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      * @return a function composed of this and after
      * @throws NullPointerException if after is null
      */
-    default <V extends @Nullable Object> CheckedFunction1<T1, V> andThen(CheckedFunction1<? super R, ? extends V> after) {
+    default <V extends @Nullable Object> CheckedFunction1<T1, V> andThen(
+            CheckedFunction1<? super R, ? extends V> after) {
         Objects.requireNonNull(after, "after is null");
         return (t1) -> after.apply(apply(t1));
     }
@@ -222,7 +228,8 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
      * @return a function composed of before and this
      * @throws NullPointerException if before is null
      */
-    default <V extends @Nullable Object> CheckedFunction1<V, R> compose(CheckedFunction1<? super V, ? extends T1> before) {
+    default <V extends @Nullable Object> CheckedFunction1<V, R> compose(
+            CheckedFunction1<? super V, ? extends T1> before) {
         Objects.requireNonNull(before, "before is null");
         return v -> apply(before.apply(v));
     }

@@ -18,7 +18,6 @@ import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-
 /**
  * An immutable {@code LazyList} is lazy sequence of elements which may be infinitely long.
  * Its immutability makes it suitable for concurrent programming.
@@ -123,13 +122,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A dev.zazr.collection.LazyList Collector.
      */
     static <T extends @Nullable Object> Collector<T, ArrayList<T>, LazyList<T>> collector() {
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
+        Supplier<ArrayList<T>> supplier = ArrayList::new;
+        BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
+        BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
             left.addAll(right);
             return left;
         };
-        final Function<ArrayList<T>, LazyList<T>> finisher = LazyList::ofAll;
+        Function<ArrayList<T>, LazyList<T>> finisher = LazyList::ofAll;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -148,7 +147,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     @SuppressWarnings("varargs")
     @SafeVarargs
-    static <T extends @Nullable Object> LazyList<T> concat(Iterable<? extends T> ... iterables) {
+    static <T extends @Nullable Object> LazyList<T> concat(Iterable<? extends T>... iterables) {
         return Iterator.concat(iterables).toLazyList();
     }
 
@@ -296,7 +295,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      *                              {@code tailSupplier} returns null
      */
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> LazyList<T> cons(T head, Supplier<? extends LazyList<? extends T>> tailSupplier) {
+    static <T extends @Nullable Object> LazyList<T> cons(
+            T head, Supplier<? extends LazyList<? extends T>> tailSupplier) {
         Objects.requireNonNull(head, "LazyList: element is null");
         Objects.requireNonNull(tailSupplier, "tailSupplier is null");
         return new Cons.ConsImpl<>(head, (Supplier<LazyList<T>>) tailSupplier);
@@ -352,7 +352,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A list containing the given elements in the same order.
      */
     @SafeVarargs
-    static <T extends @Nullable Object> LazyList<T> of(T ... elements) {
+    static <T extends @Nullable Object> LazyList<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
         for (T element : elements) {
             Objects.requireNonNull(element, "LazyList.of: element is null");
@@ -451,7 +451,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Boolean values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Boolean> ofAll(boolean ... elements) {
+    static LazyList<Boolean> ofAll(boolean... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -463,7 +463,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Byte values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Byte> ofAll(byte ... elements) {
+    static LazyList<Byte> ofAll(byte... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -475,7 +475,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Character values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Character> ofAll(char ... elements) {
+    static LazyList<Character> ofAll(char... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -487,7 +487,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Double values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Double> ofAll(double ... elements) {
+    static LazyList<Double> ofAll(double... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -499,7 +499,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Float values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Float> ofAll(float ... elements) {
+    static LazyList<Float> ofAll(float... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -511,7 +511,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Integer values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Integer> ofAll(int ... elements) {
+    static LazyList<Integer> ofAll(int... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -523,7 +523,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Long values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Long> ofAll(long ... elements) {
+    static LazyList<Long> ofAll(long... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -535,7 +535,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return A new LazyList of Short values
      * @throws NullPointerException if elements is null
      */
-    static LazyList<Short> ofAll(short ... elements) {
+    static LazyList<Short> ofAll(short... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LazyList.ofAll(Iterator.ofAll(elements));
     }
@@ -867,8 +867,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a LazyList with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f, "LazyList.unfoldRight: f returned null").toLazyList();
+    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> unfoldRight(
+            T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
+        return Iterator.unfoldRight(seed, f, "LazyList.unfoldRight: f returned null")
+                .toLazyList();
     }
 
     /**
@@ -896,8 +898,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a LazyList with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldLeft(seed, f, "LazyList.unfoldLeft: f returned null").toLazyList();
+    static <T extends @Nullable Object, U extends @Nullable Object> LazyList<U> unfoldLeft(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
+        return Iterator.unfoldLeft(seed, f, "LazyList.unfoldLeft: f returned null")
+                .toLazyList();
     }
 
     /**
@@ -924,7 +928,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a LazyList with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    static <T extends @Nullable Object> LazyList<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
+    static <T extends @Nullable Object> LazyList<T> unfold(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
         return Iterator.unfold(seed, f, "LazyList.unfold: f returned null").toLazyList();
     }
 
@@ -965,13 +970,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
-        final LazyList<? extends T> suffix = LazyList.ofAll(that);
-        final int skipped = size() - suffix.size();
+        LazyList<? extends T> suffix = LazyList.ofAll(that);
+        int skipped = size() - suffix.size();
         if (skipped < 0) {
             return false;
         }
-        final Iterator<T> i = Iterator.ofAll(this).drop(skipped);
-        final java.util.Iterator<? extends T> j = suffix.iterator();
+        Iterator<T> i = Iterator.ofAll(this).drop(skipped);
+        java.util.Iterator<? extends T> j = suffix.iterator();
         while (i.hasNext() && j.hasNext()) {
             if (!Objects.equals(i.next(), j.next())) {
                 return false;
@@ -1048,7 +1053,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default int indexWhere(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         int i = Math.max(from, 0);
+        @SuppressWarnings("Var")
         LazyList<T> these = drop(i);
         while (!these.isEmpty()) {
             if (predicate.test(these.head())) {
@@ -1124,6 +1131,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the last index {@code <= end} of a satisfying element, or -1
      * @throws NullPointerException if {@code predicate} is null
      */
+    @SuppressWarnings("Var")
     default int lastIndexWhere(Predicate<? super T> predicate, int end) {
         Objects.requireNonNull(predicate, "predicate is null");
         int i = 0;
@@ -1165,7 +1173,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     @SuppressWarnings("unchecked")
     default int search(T element) {
-        final ToIntFunction<T> comparison = ((Comparable<T>) element)::compareTo;
+        ToIntFunction<T> comparison = ((Comparable<T>) element)::compareTo;
         return LazyListModule.Search.linearSearch(this, comparison);
     }
 
@@ -1183,7 +1191,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default int search(T element, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final ToIntFunction<T> comparison = current -> comparator.compare(element, current);
+        ToIntFunction<T> comparison = current -> comparator.compare(element, current);
         return LazyListModule.Search.linearSearch(this, comparison);
     }
 
@@ -1200,7 +1208,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default int segmentLength(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         int i = 0;
+        @SuppressWarnings("Var")
         LazyList<T> these = this.drop(from);
         while (!these.isEmpty() && predicate.test(these.head())) {
             i++;
@@ -1240,8 +1250,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (offset < 0) {
             return false;
         }
-        final Iterator<T> i = Iterator.ofAll(this).drop(offset);
-        final java.util.Iterator<? extends T> j = that.iterator();
+        Iterator<T> i = Iterator.ofAll(this).drop(offset);
+        java.util.Iterator<? extends T> j = that.iterator();
         while (i.hasNext() && j.hasNext()) {
             if (!Objects.equals(i.next(), j.next())) {
                 return false;
@@ -1420,7 +1430,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList ending with the given element
      */
     default LazyList<T> append(T element) {
-        return isEmpty() ? LazyList.of(element) : new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(LazyList.of(element)));
+        return isEmpty()
+                ? LazyList.of(element)
+                : new Cons.AppendElements<>(this, dev.zazr.collection.Queue.of(LazyList.of(element)));
     }
 
     /**
@@ -1436,9 +1448,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code elements} is null
      */
     default LazyList<T> appendAll(Iterable<? extends T> elements) {
-        // the elements are read into a memoising LazyList, which reads only the first now and is shared by every LazyList
-        // built from the result
-        final LazyList<T> that = LazyList.ofAll(elements);
+        // the elements are read into a memoising LazyList, which reads only the first now and is shared by every
+        // LazyList built from the result
+        LazyList<T> that = LazyList.ofAll(elements);
         if (that.isEmpty()) {
             return this;
         } else if (isEmpty()) {
@@ -1567,7 +1579,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (count <= 0 || isEmpty()) {
             return empty();
         } else {
-            final LazyList<T> self = this;
+            LazyList<T> self = this;
             return LazyList.ofAll(new Iterator<T>() {
                 LazyList<T> stream = self;
                 int i = count - 1;
@@ -1583,7 +1595,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
                         i--;
                         stream = self;
                     }
-                    final T result = stream.head();
+                    T result = stream.head();
                     stream = stream.tail();
                     return result;
                 }
@@ -1617,7 +1629,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default LazyList<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
+        java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
         return filter(seen::add);
     }
 
@@ -1637,7 +1649,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default <U extends @Nullable Object> LazyList<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        final java.util.Set<U> seen = new java.util.HashSet<>();
+        java.util.Set<U> seen = new java.util.HashSet<>();
         return filter(t -> seen.add(keyExtractor.apply(t)));
     }
 
@@ -1668,7 +1680,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default <U extends @Nullable Object> LazyList<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        final java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
+        java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
         return duplicated.isEmpty() ? empty() : ofAll(duplicated);
     }
 
@@ -1713,6 +1725,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
      */
+    @SuppressWarnings("Var")
     default LazyList<T> drop(int n) {
         LazyList<T> stream = this;
         while (n-- > 0 && !stream.isEmpty()) {
@@ -1753,6 +1766,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default LazyList<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         LazyList<T> stream = this;
         while (!stream.isEmpty() && predicate.test(stream.head())) {
             stream = stream.tail();
@@ -1822,13 +1836,15 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
+            @SuppressWarnings("Var")
             LazyList<T> stream = this;
             while (!stream.isEmpty() && !predicate.test(stream.head())) {
                 stream = stream.tail();
             }
-            final LazyList<T> finalLazyList = stream;
-            return stream.isEmpty() ? LazyList.empty()
-                                    : cons(stream.head(), () -> finalLazyList.tail().filter(predicate));
+            LazyList<T> finalLazyList = stream;
+            return stream.isEmpty()
+                    ? LazyList.empty()
+                    : cons(stream.head(), () -> finalLazyList.tail().filter(predicate));
         }
     }
 
@@ -1859,9 +1875,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList
      * @throws NullPointerException if {@code mapper} is null
      */
-    default <U extends @Nullable Object> LazyList<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+    default <U extends @Nullable Object> LazyList<U> flatMap(
+            Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? Empty.instance() : LazyList.ofAll(new FlatMapIterator<>(Iterator.ofAll(this), mapper, "LazyList.flatMap: mapper returned null"));
+        return isEmpty()
+                ? Empty.instance()
+                : LazyList.ofAll(
+                        new FlatMapIterator<>(Iterator.ofAll(this), mapper, "LazyList.flatMap: mapper returned null"));
     }
 
     /**
@@ -1880,6 +1900,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
+        @SuppressWarnings("Var")
         LazyList<T> stream = this;
         for (int i = index - 1; i >= 0; i--) {
             stream = stream.tail();
@@ -1902,7 +1923,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code classifier} is null, or returns null
      */
     default <C extends @Nullable Object> Map<C, LazyList<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return dev.zazr.collection.internal.Collections.groupBy(this, classifier, LazyList::ofAll, "LazyList.groupBy: classifier returned null");
+        return dev.zazr.collection.internal.Collections.groupBy(
+                this, classifier, LazyList::ofAll, "LazyList.groupBy: classifier returned null");
     }
 
     /**
@@ -1916,6 +1938,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the first index {@code >= from} of the element, or -1 if absent
      */
     default int indexOf(T element, int from) {
+        @SuppressWarnings("Var")
         int index = 0;
         for (LazyList<T> stream = this; !stream.isEmpty(); stream = stream.tail(), index++) {
             if (index >= from && Objects.equals(stream.head(), element)) {
@@ -1940,7 +1963,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty stream");
         } else {
-            final LazyList<T> tail = tail();
+            LazyList<T> tail = tail();
             if (tail.isEmpty()) {
                 return Empty.instance();
             } else {
@@ -1998,7 +2021,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements)");
         } else if (index == 0) {
-            return isEmpty() ? LazyList.ofAll(elements) : LazyList.<T> ofAll(elements).appendAll(this);
+            return isEmpty()
+                    ? LazyList.ofAll(elements)
+                    : LazyList.<T>ofAll(elements).appendAll(this);
         } else if (isEmpty()) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on Nil");
         } else {
@@ -2019,7 +2044,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             return this;
         } else {
             return cons(head(), () -> {
-                final LazyList<T> tail = tail();
+                LazyList<T> tail = tail();
                 return tail.isEmpty() ? tail : cons(element, () -> tail.intersperse(element));
             });
         }
@@ -2047,6 +2072,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the last index {@code <= end} of the element, or -1 if absent
      */
     default int lastIndexOf(T element, int end) {
+        @SuppressWarnings("Var")
         int result = -1, index = 0;
         for (LazyList<T> stream = this; index <= end && !stream.isEmpty(); stream = stream.tail(), index++) {
             if (Objects.equals(stream.head(), element)) {
@@ -2055,7 +2081,6 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         }
         return result;
     }
-
 
     /**
      * The elements transformed by {@code mapper}, in order.
@@ -2089,15 +2114,18 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList
      * @throws NullPointerException if {@code mapper} is null, or returns null for an element
      */
-    default <U extends @Nullable Object> LazyList<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+    default <U extends @Nullable Object> LazyList<U> collect(
+            Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // walk to the first kept element now, the rest lazily; the Option found on the way is the head, so the
         // mapper never runs twice for an element
+        @SuppressWarnings("Var")
         LazyList<T> stream = this;
         while (!stream.isEmpty()) {
-            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(stream.head()), "LazyList.collect: mapper returned null");
+            Option<? extends U> collected =
+                    Objects.requireNonNull(mapper.apply(stream.head()), "LazyList.collect: mapper returned null");
             if (collected.isDefined()) {
-                final LazyList<T> tail = stream.tail();
+                LazyList<T> tail = stream.tail();
                 return cons(collected.get(), () -> tail.collect(mapper));
             }
             stream = stream.tail();
@@ -2138,7 +2166,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList, or this LazyList if it is already at least {@code length} long
      */
     default LazyList<T> leftPadTo(int length, T element) {
-        final int actualLength = size();
+        int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -2152,7 +2180,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
     default LazyList<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "LazyList.orElse: supplier returned null")) : this;
+        return isEmpty()
+                ? ofAll(Objects.requireNonNull(supplier.get(), "LazyList.orElse: supplier returned null"))
+                : this;
     }
 
     /**
@@ -2171,14 +2201,15 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default LazyList<T> patch(int from, Iterable<? extends T> that, int replaced) {
         Objects.requireNonNull(that, "that is null");
-        // LazyList.ofAll takes the replacement's iterator now and reads its first element (a LazyList is used as is); its
-        // other elements and the cells of this LazyList are read as the result reaches them
+        // LazyList.ofAll takes the replacement's iterator now and reads its first element (a LazyList is used as is);
+        // its other elements and the cells of this LazyList are read as the result reaches them
         return patchFrom(this, Math.max(from, 0), LazyList.ofAll(that), Math.max(replaced, 0));
     }
 
     // The elements of stream before position `from`, then the replacement, then stream without the `replaced` elements
     // from `from` on; each cell is built when the result reaches it.
-    private static <T extends @Nullable Object> LazyList<T> patchFrom(LazyList<T> stream, int from, LazyList<T> replacement, int replaced) {
+    private static <T extends @Nullable Object> LazyList<T> patchFrom(
+            LazyList<T> stream, int from, LazyList<T> replacement, int replaced) {
         if (from > 0 && !stream.isEmpty()) {
             return cons(stream.head(), () -> patchFrom(stream.tail(), from - 1, replacement, replaced));
         } else {
@@ -2227,19 +2258,22 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the left values and the right values, each in the order of the elements they come from
      * @throws NullPointerException if {@code f} is null, or when it returns null for an element a side reaches
      */
-    default <L extends @Nullable Object, R extends @Nullable Object> Tuple2<LazyList<L>, LazyList<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+    default <L extends @Nullable Object, R extends @Nullable Object> Tuple2<LazyList<L>, LazyList<R>> partitionMap(
+            Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
-        final LazyList<Either<? extends L, ? extends R>> results =
-                this.<Either<? extends L, ? extends R>> map(element -> Objects.requireNonNull(f.apply(element), "LazyList.partitionMap: f returned null"));
+        LazyList<Either<? extends L, ? extends R>> results = this.<Either<? extends L, ? extends R>>map(
+                element -> Objects.requireNonNull(f.apply(element), "LazyList.partitionMap: f returned null"));
         return Tuple.of(lefts(results), rights(results));
     }
 
-    // the left values of a LazyList of results, found lazily: skips the Rights to the next Left, now, the rest on demand
+    // the left values of a LazyList of results, found lazily: skips the Rights to the next Left, now, the rest on
+    // demand
     private static <L extends @Nullable Object> LazyList<L> lefts(LazyList<? extends Either<? extends L, ?>> results) {
+        @SuppressWarnings("Var")
         LazyList<? extends Either<? extends L, ?>> stream = results;
         while (!stream.isEmpty()) {
             if (stream.head() instanceof Either.Left<? extends L, ?>(var left)) {
-                final LazyList<? extends Either<? extends L, ?>> rest = stream;
+                LazyList<? extends Either<? extends L, ?>> rest = stream;
                 return cons(left, () -> lefts(rest.tail()));
             }
             stream = stream.tail();
@@ -2247,12 +2281,14 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         return empty();
     }
 
-    // the right values of a LazyList of results, found lazily: skips the Lefts to the next Right, now, the rest on demand
+    // the right values of a LazyList of results, found lazily: skips the Lefts to the next Right, now, the rest on
+    // demand
     private static <R extends @Nullable Object> LazyList<R> rights(LazyList<? extends Either<?, ? extends R>> results) {
+        @SuppressWarnings("Var")
         LazyList<? extends Either<?, ? extends R>> stream = results;
         while (!stream.isEmpty()) {
             if (stream.head() instanceof Either.Right<?, ? extends R>(var right)) {
-                final LazyList<? extends Either<?, ? extends R>> rest = stream;
+                LazyList<? extends Either<?, ? extends R>> rest = stream;
                 return cons(right, () -> rights(rest.tail()));
             }
             stream = stream.tail();
@@ -2277,7 +2313,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
-            final T head = head();
+            T head = head();
             action.accept(head);
             return cons(head, () -> tail().tap(action));
         }
@@ -2295,13 +2331,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return Empty.instance();
         } else {
-            final LazyList<T> tail = tail();
+            LazyList<T> tail = tail();
             if (tail.isEmpty()) {
                 return LazyList.of(this);
             } else {
-                final LazyList<LazyList<T>> zero = Empty.instance();
+                LazyList<LazyList<T>> zero = Empty.instance();
                 return distinct().foldLeft(zero, (xs, x) -> {
-                    final Function<LazyList<T>, LazyList<T>> prepend = l -> l.prepend(x);
+                    Function<LazyList<T>, LazyList<T>> prepend = l -> l.prepend(x);
                     return xs.appendAll(remove(x).permutations().map(prepend));
                 });
             }
@@ -2336,13 +2372,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             if (elements instanceof LazyList) {
                 @SuppressWarnings("unchecked")
-                final LazyList<T> stream = (LazyList<T>) elements;
+                LazyList<T> stream = (LazyList<T>) elements;
                 return stream;
             } else {
                 return LazyList.ofAll(elements);
             }
         } else {
-            return LazyList.<T> ofAll(elements).appendAll(this);
+            return LazyList.<T>ofAll(elements).appendAll(this);
         }
     }
 
@@ -2359,7 +2395,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
-            final T head = head();
+            T head = head();
             return Objects.equals(head, element) ? tail() : cons(head, () -> tail().remove(element));
         }
     }
@@ -2379,7 +2415,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
-            final T head = head();
+            T head = head();
             return predicate.test(head) ? tail() : cons(head, () -> tail().removeFirst(predicate));
         }
     }
@@ -2479,7 +2515,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
-            final T head = head();
+            T head = head();
             if (Objects.equals(head, currentElement)) {
                 return cons(newElement, this::tail);
             } else {
@@ -2501,8 +2537,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
-            final T head = head();
-            final T newHead = Objects.equals(head, currentElement) ? newElement : head;
+            T head = head();
+            T newHead = Objects.equals(head, currentElement) ? newElement : head;
             return cons(newHead, () -> tail().replaceAll(currentElement, newElement));
         }
     }
@@ -2548,7 +2584,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2567,7 +2603,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2602,7 +2638,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList containing the cumulative results
      * @throws NullPointerException if {@code operation} is null
      */
-    default <U extends @Nullable Object> LazyList<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
+    default <U extends @Nullable Object> LazyList<U> scanLeft(
+            U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         // lazily streams the elements of an iterator
         return dev.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toLazyList);
     }
@@ -2621,7 +2658,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList containing the cumulative results
      * @throws NullPointerException if {@code operation} is null
      */
-    default <U extends @Nullable Object> LazyList<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
+    default <U extends @Nullable Object> LazyList<U> scanRight(
+            U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return dev.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toLazyList);
     }
 
@@ -2648,7 +2686,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList, empty if the range is empty
      */
     default LazyList<T> slice(int beginIndex, int endIndex) {
-        final int lowerBound = Math.max(beginIndex, 0);
+        int lowerBound = Math.max(beginIndex, 0);
         if (lowerBound >= endIndex) {
             return empty();
         } else {
@@ -2710,7 +2748,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new sorted LazyList, or this LazyList if it is empty
      * @throws NullPointerException if {@code comparator} or {@code mapper} is null
      */
-    default <U extends @Nullable Object> LazyList<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
+    default <U extends @Nullable Object> LazyList<T> sortBy(
+            Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
@@ -2773,7 +2812,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the prefix including the matching element, and the suffix
      */
     default Tuple2<LazyList<T>, LazyList<T>> splitAtInclusive(Predicate<? super T> predicate) {
-        final Tuple2<LazyList<T>, LazyList<T>> split = splitAt(predicate);
+        Tuple2<LazyList<T>, LazyList<T>> split = splitAt(predicate);
         if (split._2().isEmpty()) {
             return split;
         } else {
@@ -2794,6 +2833,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
         }
+        @SuppressWarnings("Var")
         LazyList<T> result = this;
         for (int i = 0; i < beginIndex; i++, result = result.tail()) {
             if (result.isEmpty()) {
@@ -2842,6 +2882,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             }
             return Empty.instance();
         }
+        @SuppressWarnings("Var")
         LazyList<T> start = this;
         for (int i = 0; i < beginIndex && !start.isEmpty(); i++) {
             start = start.tail();
@@ -2863,7 +2904,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             return cons(stream.head(), LazyList::empty);
         } else {
             return cons(stream.head(), () -> {
-                final LazyList<T> tail = stream.tail();
+                LazyList<T> tail = stream.tail();
                 if (tail.isEmpty()) {
                     throw new IndexOutOfBoundsException("subSequence of Nil");
                 }
@@ -2949,7 +2990,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return Empty.instance();
         } else {
-            final T head = head();
+            T head = head();
             if (predicate.test(head)) {
                 return cons(head, () -> tail().takeWhile(predicate));
             } else {
@@ -2969,7 +3010,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new {@code LazyList} containing the last {@code n} elements
      */
     default LazyList<T> takeRight(int n) {
+        @SuppressWarnings("Var")
         LazyList<T> right = this;
+        @SuppressWarnings("Var")
         LazyList<T> remaining = drop(n);
         while (!remaining.isEmpty()) {
             right = right.tail();
@@ -3019,11 +3062,12 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException if {@code unzipper} is null
      */
     default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<LazyList<T1>, LazyList<T2>> unzip(
-      Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
+            Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final LazyList<Tuple2<? extends T1, ? extends T2>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip: unzipper returned null"));
-        final LazyList<T1> stream1 = stream.map(t -> t._1());
-        final LazyList<T2> stream2 = stream.map(t -> t._2());
+        LazyList<Tuple2<? extends T1, ? extends T2>> stream = map(
+                element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip: unzipper returned null"));
+        LazyList<T1> stream1 = stream.map(t -> t._1());
+        LazyList<T2> stream2 = stream.map(t -> t._2());
         return Tuple.of(stream1, stream2);
     }
 
@@ -3040,13 +3084,15 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the first, the second and the third parts
      * @throws NullPointerException if {@code unzipper} is null
      */
-    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<LazyList<T1>, LazyList<T2>, LazyList<T3>> unzip3(
-      Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
+    default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Tuple3<LazyList<T1>, LazyList<T2>, LazyList<T3>> unzip3(
+                    Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final LazyList<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip3: unzipper returned null"));
-        final LazyList<T1> stream1 = stream.map(t -> t._1());
-        final LazyList<T2> stream2 = stream.map(t -> t._2());
-        final LazyList<T3> stream3 = stream.map(t -> t._3());
+        LazyList<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(
+                element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip3: unzipper returned null"));
+        LazyList<T1> stream1 = stream.map(t -> t._1());
+        LazyList<T2> stream2 = stream.map(t -> t._2());
+        LazyList<T3> stream3 = stream.map(t -> t._3());
         return Tuple.of(stream1, stream2, stream3);
     }
 
@@ -3068,7 +3114,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
+        @SuppressWarnings("Var")
         LazyList<T> preceding = Empty.instance();
+        @SuppressWarnings("Var")
         LazyList<T> tail = this;
         for (int i = index; i > 0; i--, tail = tail.tail()) {
             if (tail.isEmpty()) {
@@ -3134,7 +3182,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new {@code LazyList} containing mapped elements
      * @throws NullPointerException if {@code that} or {@code mapper} is null
      */
-    default <U extends @Nullable Object, R extends @Nullable Object> LazyList<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+    default <U extends @Nullable Object, R extends @Nullable Object> LazyList<R> zipWith(
+            Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return LazyList.ofAll(Iterator.ofAll(this).zipWith(that, mapper));
@@ -3159,7 +3208,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new {@code LazyList} containing pairs of elements, including fillers as needed
      * @throws NullPointerException if {@code iterable} is null
      */
-    default <U extends @Nullable Object> LazyList<Tuple2<T, U>> zipAll(Iterable<? extends U> iterable, T thisElem, U thatElem) {
+    default <U extends @Nullable Object> LazyList<Tuple2<T, U>> zipAll(
+            Iterable<? extends U> iterable, T thisElem, U thatElem) {
         Objects.requireNonNull(iterable, "iterable is null");
         return LazyList.ofAll(Iterator.ofAll(this).zipAll(iterable, thisElem, thatElem));
     }
@@ -3185,7 +3235,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new {@code LazyList} containing the mapped elements
      * @throws NullPointerException if {@code mapper} is null
      */
-    default <U extends @Nullable Object> LazyList<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+    default <U extends @Nullable Object> LazyList<U> zipWithIndex(
+            BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return LazyList.ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
     }
@@ -3233,11 +3284,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
-            final LazyList<T> that = this;
+            LazyList<T> that = this;
             return LazyList.ofAll(new AbstractIterator<T>() {
 
                 LazyList<T> stream = that;
-                @Nullable T last = null;
+
+                @Nullable
+                T last = null;
 
                 @Override
                 // `stream` is non-empty on entry, so `last` is always assigned before it is read.
@@ -3271,8 +3324,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         private static final Empty<?> INSTANCE = new Empty<>();
 
         // hidden
-        private Empty() {
-        }
+        private Empty() {}
 
         /**
          * Returns the singleton empty LazyList instance.
@@ -3319,7 +3371,6 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         public String toString() {
             return "LazyList()";
         }
-
     }
 
     /**
@@ -3347,26 +3398,27 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         abstract LazyList<T> computeTail();
 
         /// Lets go of what [#computeTail()] needed, once its result or failure is kept.
-        void release() {
-        }
+        void release() {}
 
         /// The tail, computed on the first call and kept. A failure is kept too: every later call throws the same
-        /// exception, so a LazyList built from a one-shot source never skips or reorders elements after a failed call.
-        /// Only a [VirtualMachineError] (such as a stack overflow) is not kept: the next call computes the tail again.
+        /// exception, so a LazyList built from a one-shot source never skips or reorders elements after a
+        /// failed call. Only a [VirtualMachineError] (such as a stack overflow) is not kept: the next call
+        /// computes the tail again.
         @Override
         @SuppressWarnings("unchecked")
         public final LazyList<T> tail() {
-            final Object state = tail;
+            Object state = tail;
             return state instanceof LazyList<?> ? (LazyList<T>) state : evaluateTail();
         }
 
         final boolean isTailComputed() {
-            final Object state = tail;
+            Object state = tail;
             return state instanceof LazyList<?> || state instanceof Throwable;
         }
 
         @SuppressWarnings("unchecked")
         private LazyList<T> evaluateTail() {
+            @SuppressWarnings("Var")
             Object state;
             synchronized (this) {
                 state = tail;
@@ -3392,7 +3444,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
                 }
             }
             if (state instanceof Throwable failure) {
-                throw Cons.<RuntimeException> rethrow(failure);
+                throw Cons.<RuntimeException>rethrow(failure);
             }
             return (LazyList<T>) state;
         }
@@ -3430,10 +3482,11 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
         @Override
         public String toString() {
-            final StringBuilder builder = new StringBuilder("LazyList(");
+            StringBuilder builder = new StringBuilder("LazyList(");
+            @SuppressWarnings("Var")
             LazyList<T> stream = this;
             while (stream != null && !stream.isEmpty()) {
-                final Cons<T> cons = (Cons<T>) stream;
+                Cons<T> cons = (Cons<T>) stream;
                 builder.append(cons.head);
                 if (cons.tail instanceof LazyList<?>) {
                     stream = stream.tail();
@@ -3470,11 +3523,11 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             }
         }
 
-        // The elements of prefix, a non-empty LazyList whose head is this one's, then those of each LazyList in pending, in
-        // order; the pending LazyLists are never empty. append and appendAll add one LazyList to the queue, so a loop of them
-        // keeps every element one step away. Only the LazyLists waiting in a queue may be AppendElements with an
-        // AppendElements prefix: join unwraps them, without recursion, before one becomes a prefix, so computing a tail
-        // never goes through more than one AppendElements.
+        // The elements of prefix, a non-empty LazyList whose head is this one's, then those of each LazyList in
+        // pending, in order; the pending LazyLists are never empty. append and appendAll add one LazyList to the queue,
+        // so a loop of them keeps every element one step away. Only the LazyLists waiting in a queue may be
+        // AppendElements with an AppendElements prefix: join unwraps them, without recursion, before one becomes a
+        // prefix, so computing a tail never goes through more than one AppendElements.
         private static final class AppendElements<T extends @Nullable Object> extends Cons<T> {
 
             private final LazyList<T> prefix;
@@ -3493,18 +3546,21 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
             @Override
             public LazyList<T> appendAll(Iterable<? extends T> elements) {
-                final LazyList<T> that = LazyList.ofAll(elements);
+                LazyList<T> that = LazyList.ofAll(elements);
                 return that.isEmpty() ? this : new AppendElements<>(prefix, pending.append(that));
             }
 
             @Override
             LazyList<T> computeTail() {
-                final LazyList<T> rest = prefix.tail();
+                LazyList<T> rest = prefix.tail();
                 return rest.isEmpty() ? join(pending.head(), pending.tail()) : join(rest, pending);
             }
 
-            // The elements of first, non-empty, then those of pending, as a LazyList whose prefix is not an AppendElements.
-            private static <T extends @Nullable Object> LazyList<T> join(LazyList<T> first, dev.zazr.collection.Queue<LazyList<T>> pending) {
+            // The elements of first, non-empty, then those of pending, as a LazyList whose prefix is not an
+            // AppendElements.
+            @SuppressWarnings("Var")
+            private static <T extends @Nullable Object> LazyList<T> join(
+                    LazyList<T> first, dev.zazr.collection.Queue<LazyList<T>> pending) {
                 while (first instanceof AppendElements<T> appended) {
                     pending = pending.isEmpty() ? appended.pending : appended.pending.append(joinLater(pending));
                     first = appended.prefix;
@@ -3512,10 +3568,11 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
                 return pending.isEmpty() ? first : new AppendElements<>(first, pending);
             }
 
-            // The elements of the non-empty pending as one LazyList, built in O(1): its prefix may be an AppendElements,
-            // so it only waits in a queue until join unwraps it.
-            private static <T extends @Nullable Object> LazyList<T> joinLater(dev.zazr.collection.Queue<LazyList<T>> pending) {
-                final dev.zazr.collection.Queue<LazyList<T>> others = pending.tail();
+            // The elements of the non-empty pending as one LazyList, built in O(1): its prefix may be an
+            // AppendElements, so it only waits in a queue until join unwraps it.
+            private static <T extends @Nullable Object> LazyList<T> joinLater(
+                    dev.zazr.collection.Queue<LazyList<T>> pending) {
+                dev.zazr.collection.Queue<LazyList<T>> others = pending.tail();
                 return others.isEmpty() ? pending.head() : new AppendElements<>(pending.head(), others);
             }
         }
@@ -3631,7 +3688,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         if (power < 0) {
             return empty();
         }
-        LazyList<LazyList<T>> product = LazyList.of(LazyList.<T> empty());
+        @SuppressWarnings("Var")
+        LazyList<LazyList<T>> product = LazyList.of(LazyList.<T>empty());
         for (int i = 0; i < power; i++) {
             product = product.flatMap(el -> map(el::append));
         }
@@ -3654,7 +3712,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     default <U extends @Nullable Object> LazyList<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
         // a lazy, memoising LazyList: the result is lazy, so the argument stays lazy too
-        final LazyList<U> other = LazyList.ofAll(that);
+        LazyList<U> other = LazyList.ofAll(that);
         return flatMap(a -> other.map(b -> Tuple.of(a, b)));
     }
 
@@ -3835,7 +3893,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "LazyList.arrangeBy: getKey returned null")));
+        return TraversableModule.arrangeBy(groupBy(
+                element -> Objects.requireNonNull(getKey.apply(element), "LazyList.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -3992,7 +4051,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param combiner    merges two containers
      * @return the collected result
      */
-    default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
+    default <R extends @Nullable Object> R collect(
+            Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
         return stream().collect(supplier, accumulator, combiner);
     }
 
@@ -4007,7 +4067,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return toMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -4021,8 +4082,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
+    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
         return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "LazyList.toMap: f returned null");
     }
 
@@ -4038,7 +4100,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return toLinkedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -4053,8 +4116,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
+    default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
         return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "LazyList.toLinkedMap: f returned null");
     }
 
@@ -4070,7 +4134,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return toSortedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -4084,7 +4149,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+    default <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
         return toSortedMap(Comparator.naturalOrder(), f);
     }
@@ -4102,7 +4168,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Comparator<? super K> comparator,
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper) {
         return toSortedMap(comparator, TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -4117,10 +4186,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+    default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
-        return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "LazyList.toSortedMap: f returned null");
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll =
+                t -> TreeMap.ofEntries(comparator, t);
+        return TraversableModule.toMap(
+                this, TreeMap.empty(comparator), ofAll, f, "LazyList.toSortedMap: f returned null");
     }
 
     /**
@@ -4160,7 +4232,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default SortedSet<T> toSortedSet(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return TraversableModule.toTraversable(this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
+        return TraversableModule.toTraversable(
+                this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
     }
 
     /**
@@ -4171,5 +4244,4 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     default LazyList<T> toLazyList() {
         return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
-
 }

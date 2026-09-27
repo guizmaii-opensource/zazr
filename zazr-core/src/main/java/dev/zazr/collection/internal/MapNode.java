@@ -7,19 +7,18 @@ import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /// A node of the CHAMP trie behind `HashMap` (see [ChampNode]): a [BitmapIndexedMapNode], or a [HashCollisionMapNode]
-/// below the last level of hash bits. Ported from `MapNode` in `scala/collection/immutable/HashMap.scala` of the Scala 3
-/// standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a map is always a
+/// below the last level of hash bits. Ported from `MapNode` in `scala/collection/immutable/HashMap.scala` of the Scala
+/// 3 standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a map is always a
 /// [BitmapIndexedMapNode]; the empty map is the one of [#empty()].
 ///
 /// Keys and values are never null; `hash` is always `Objects.hashCode(key)` and `shift` the depth of the node times 5.
 ///
 /// @param <K> the key type
 /// @param <V> the value type
-public abstract sealed class MapNode<K extends @Nullable Object, V extends @Nullable Object> extends ChampNode<MapNode<K, V>>
-        permits BitmapIndexedMapNode, HashCollisionMapNode {
+public abstract sealed class MapNode<K extends @Nullable Object, V extends @Nullable Object>
+        extends ChampNode<MapNode<K, V>> permits BitmapIndexedMapNode, HashCollisionMapNode {
 
-    MapNode() {
-    }
+    MapNode() {}
 
     /// The root of the empty map.
     @SuppressWarnings("unchecked")
@@ -41,9 +40,9 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// The node without `key`; this node when the key is absent.
     abstract MapNode<K, V> removed(K key, int hash, int shift);
 
-    /// The put of a [HashMapBuilder]: the node with `key` mapped to `value` (key and value replaced when an equal key is
-    /// present), where a [BitmapIndexedMapNode] owned by `owner` is updated in place instead of copied, and the one
-    /// not owned is copied into a node owned by `owner`, which is updated in place.
+    /// The put of a [HashMapBuilder]: the node with `key` mapped to `value` (key and value replaced when an equal key
+    /// is present), where a [BitmapIndexedMapNode] owned by `owner` is updated in place instead of copied, and the
+    /// one not owned is copied into a node owned by `owner`, which is updated in place.
     abstract MapNode<K, V> putInPlace(Object owner, K key, V value, int hash, int shift);
 
     // -- the operations on whole subtrees
@@ -67,11 +66,14 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         if (a == b) {
             return true;
         } else if (a instanceof BitmapIndexedMapNode<?, ?> x && b instanceof BitmapIndexedMapNode<?, ?> y) {
-            if (x.keyHashSum != y.keyHashSum || x.dataMap != y.dataMap || x.nodeMap != y.nodeMap || x.size != y.size
-                || !java.util.Arrays.equals(x.hashes, y.hashes)) {
+            if (x.keyHashSum != y.keyHashSum
+                    || x.dataMap != y.dataMap
+                    || x.nodeMap != y.nodeMap
+                    || x.size != y.size
+                    || !java.util.Arrays.equals(x.hashes, y.hashes)) {
                 return false;
             }
-            final int payload = 2 * Integer.bitCount(x.dataMap);
+            int payload = 2 * Integer.bitCount(x.dataMap);
             for (int i = 0; i < payload; i++) {
                 if (!java.util.Objects.equals(x.content[i], y.content[i])) {
                     return false;
@@ -88,7 +90,7 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
                 return false;
             }
             for (int i = 0; i < x.content.length; i += 2) {
-                final int j = y.indexOf(x.content[i]);
+                int j = y.indexOf(x.content[i]);
                 if (j < 0 || !java.util.Objects.equals(x.content[i + 1], y.content[2 * j + 1])) {
                     return false;
                 }
@@ -106,11 +108,11 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// Calls `action` with the key and the value of every entry of this subtree, in iteration order: the entries of a
     /// node before those of its children.
     public final void forEach(BiConsumer<? super K, ? super V> action) {
-        final int payload = payloadArity();
+        int payload = payloadArity();
         for (int i = 0; i < payload; i++) {
             action.accept(getKey(i), getValue(i));
         }
-        final int children = nodeArity();
+        int children = nodeArity();
         for (int i = 0; i < children; i++) {
             getNode(i).forEach(action);
         }
@@ -131,7 +133,8 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         return size() == 0 ? Iterator.empty() : new ValueIterator<>(this);
     }
 
-    private static final class EntryIterator<K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object>
+    private static final class EntryIterator<
+                    K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object>
             extends ChampIterator<T, MapNode<K, V>> {
 
         private final BiFunction<? super K, ? super V, ? extends T> f;
@@ -143,12 +146,13 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
 
         @Override
         protected T getNext() {
-            final int cursor = currentValueCursor++;
+            int cursor = currentValueCursor++;
             return f.apply(currentValueNode.getKey(cursor), currentValueNode.getValue(cursor));
         }
     }
 
-    private static final class KeyIterator<K extends @Nullable Object, V extends @Nullable Object> extends ChampIterator<K, MapNode<K, V>> {
+    private static final class KeyIterator<K extends @Nullable Object, V extends @Nullable Object>
+            extends ChampIterator<K, MapNode<K, V>> {
 
         KeyIterator(MapNode<K, V> root) {
             super(root);
@@ -160,7 +164,8 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         }
     }
 
-    private static final class ValueIterator<K extends @Nullable Object, V extends @Nullable Object> extends ChampIterator<V, MapNode<K, V>> {
+    private static final class ValueIterator<K extends @Nullable Object, V extends @Nullable Object>
+            extends ChampIterator<V, MapNode<K, V>> {
 
         ValueIterator(MapNode<K, V> root) {
             super(root);

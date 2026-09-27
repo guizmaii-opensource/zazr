@@ -4,8 +4,8 @@ import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 /// A node of the CHAMP trie behind `HashSet` (see [ChampNode]): a [BitmapIndexedSetNode], or a [HashCollisionSetNode]
-/// below the last level of hash bits. Ported from `SetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 3
-/// standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a set is always a
+/// below the last level of hash bits. Ported from `SetNode` in `scala/collection/immutable/HashSet.scala` of the Scala
+/// 3 standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a set is always a
 /// [BitmapIndexedSetNode]; the empty set is the one of [#empty()].
 ///
 /// Elements are never null; `hash` is always `Objects.hashCode(element)` and `shift` the depth of the node times 5.
@@ -14,8 +14,7 @@ import org.jspecify.annotations.Nullable;
 public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNode<SetNode<T>>
         permits BitmapIndexedSetNode, HashCollisionSetNode {
 
-    SetNode() {
-    }
+    SetNode() {}
 
     /// The root of the empty set.
     @SuppressWarnings("unchecked")
@@ -36,15 +35,15 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
     abstract SetNode<T> removed(T element, int hash, int shift);
 
     /// The addition of a [HashSetBuilder]: the node with `element` (an equal element already there kept), where a
-    /// [BitmapIndexedSetNode] owned by `owner` is updated in place instead of copied, and the one not owned is copied
-    /// into a node owned by `owner`, which is updated in place.
+    /// [BitmapIndexedSetNode] owned by `owner` is updated in place instead of copied, and the one not owned is
+    /// copied into a node owned by `owner`, which is updated in place.
     abstract SetNode<T> addInPlace(Object owner, T element, int hash, int shift);
 
     // -- the operations on whole subtrees
 
     /// The node of the elements of this node and of `that`, which sits at the same place in its trie: of equal
-    /// elements, the one of `that` is kept. Returns `that` when this node adds nothing to it, and shares the subtrees
-    /// of either side that the other side does not touch.
+    /// elements, the one of `that` is kept. Returns `that` when this node adds nothing to it, and shares the
+    /// subtrees of either side that the other side does not touch.
     abstract SetNode<T> concat(SetNode<T> that, int shift);
 
     /// The node of the elements for which `predicate` answers `keep`; this node when that is all of them. The
@@ -64,11 +63,14 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
         if (a == b) {
             return true;
         } else if (a instanceof BitmapIndexedSetNode<?> x && b instanceof BitmapIndexedSetNode<?> y) {
-            if (x.keyHashSum != y.keyHashSum || x.dataMap != y.dataMap || x.nodeMap != y.nodeMap || x.size != y.size
-                || !java.util.Arrays.equals(x.hashes, y.hashes)) {
+            if (x.keyHashSum != y.keyHashSum
+                    || x.dataMap != y.dataMap
+                    || x.nodeMap != y.nodeMap
+                    || x.size != y.size
+                    || !java.util.Arrays.equals(x.hashes, y.hashes)) {
                 return false;
             }
-            final int payload = Integer.bitCount(x.dataMap);
+            int payload = Integer.bitCount(x.dataMap);
             for (int i = 0; i < payload; i++) {
                 if (!java.util.Objects.equals(x.content[i], y.content[i])) {
                     return false;

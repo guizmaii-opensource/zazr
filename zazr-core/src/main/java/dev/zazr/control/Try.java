@@ -59,7 +59,7 @@ import static dev.zazr.internal.Throwables.sneakyThrow;
  * <p>
  * <strong>Note:</strong> Methods such as {@code get()} may re-throw exceptions without declaring them. When used
  * within a {@link java.lang.reflect.InvocationHandler} of a dynamic proxy, such exceptions will be wrapped in
- * {@link java.lang.reflect.UndeclaredThrowableException}. See 
+ * {@link java.lang.reflect.UndeclaredThrowableException}. See
  * <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/reflection/proxy.html">
  * Dynamic Proxy Classes</a> for more details.
  *
@@ -86,7 +86,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     static <T extends @Nullable Object> Try<T> of(Callable<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
         try {
-            final T value = supplier.call();
+            T value = supplier.call();
             return value == null ? TryModule.nullResult("Try.of") : new Success<>(value);
         } catch (Throwable t) {
             return new Failure<>(t);
@@ -132,7 +132,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     static <T extends @Nullable Object> Try<Vector<T>> collectAll(Iterable<? extends Try<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
-        final Vector.Builder<T> builder = Vector.newBuilder();
+        Vector.Builder<T> builder = Vector.newBuilder();
         for (Try<? extends T> value : values) {
             if (value.isFailure()) {
                 return Try.failure(value.getCause());
@@ -159,12 +159,13 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of all the mapped values, or the first {@code Failure}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Try<Vector<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Try<Vector<U>> forEach(
+            Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final Vector.Builder<U> builder = Vector.newBuilder();
+        Vector.Builder<U> builder = Vector.newBuilder();
         for (T value : values) {
-            final Try<? extends U> mapped = Objects.requireNonNull(mapper.apply(value), "Try.forEach: mapper returned null");
+            Try<? extends U> mapped = Objects.requireNonNull(mapper.apply(value), "Try.forEach: mapper returned null");
             if (mapped.isFailure()) {
                 return Try.failure(mapped.getCause());
             }
@@ -259,13 +260,13 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     static <T extends @Nullable Object> Try<T> fromCompletableFuture(CompletableFuture<? extends T> future) {
         Objects.requireNonNull(future, "future is null");
-        final T value;
+        T value;
         try {
             value = future.join();
         } catch (CancellationException e) {
             return new Failure<>(e);
         } catch (CompletionException e) {
-            final Throwable cause = e.getCause();
+            Throwable cause = e.getCause();
             return new Failure<>(cause != null ? cause : e);
         }
         return value == null ? TryModule.nullResult("Try.fromCompletableFuture") : new Success<>(value);
@@ -320,7 +321,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Executes the given {@link CheckedRunnable} if this {@code Try} is a {@link Success}; 
+     * Executes the given {@link CheckedRunnable} if this {@code Try} is a {@link Success};
      * otherwise, returns this {@code Failure}.
      * <p>
      * This allows chaining of runnables that may throw checked exceptions. If the runnable throws a non-fatal
@@ -387,8 +388,10 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         }
         try {
-            final T value = get();
-            return predicate.test(value) ? this : new Failure<>(Objects.requireNonNull(ifFalse.apply(value), "Try.filter: ifFalse returned null"));
+            T value = get();
+            return predicate.test(value)
+                    ? this
+                    : new Failure<>(Objects.requireNonNull(ifFalse.apply(value), "Try.filter: ifFalse returned null"));
         } catch (Throwable t) {
             return new Failure<>(t);
         }
@@ -423,7 +426,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     default <U extends @Nullable Object> Try<U> flatMap(Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return flatMapTry((CheckedFunction1<T, Try<? extends U>>) value -> Objects.requireNonNull(mapper.apply(value), "Try.flatMap: mapper returned null"));
+        return flatMapTry((CheckedFunction1<T, Try<? extends U>>)
+                value -> Objects.requireNonNull(mapper.apply(value), "Try.flatMap: mapper returned null"));
     }
 
     /**
@@ -439,7 +443,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if {@code mapper} is {@code null}
      */
     @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object> Try<U> flatMapTry(CheckedFunction1<? super T, ? extends Try<? extends U>> mapper) {
+    default <U extends @Nullable Object> Try<U> flatMapTry(
+            CheckedFunction1<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isFailure()) {
             return (Failure<U>) this;
@@ -479,11 +484,12 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Failure<U>) this;
         }
         try {
-            final T value = get();
-            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(value), "Try.collect: mapper returned null");
+            T value = get();
+            Option<? extends U> collected =
+                    Objects.requireNonNull(mapper.apply(value), "Try.collect: mapper returned null");
             return collected.isDefined()
-              ? new Success<>(collected.get())
-              : new Failure<>(new NoSuchElementException("Predicate does not hold for " + value));
+                    ? new Success<>(collected.get())
+                    : new Failure<>(new NoSuchElementException("Predicate does not hold for " + value));
         } catch (Throwable t) {
             return new Failure<>(t);
         }
@@ -572,7 +578,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Failure<U>) this;
         } else {
             try {
-                final U value = mapper.apply(get());
+                U value = mapper.apply(get());
                 return value == null ? TryModule.nullResult("Try.mapTry") : new Success<>(value);
             } catch (Throwable t) {
                 return new Failure<>(t);
@@ -651,7 +657,9 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     @SuppressWarnings("unchecked")
     default Try<T> orElse(Supplier<? extends Try<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isSuccess() ? this : (Try<T>) Objects.requireNonNull(supplier.get(), "Try.orElse: supplier returned null");
+        return isSuccess()
+                ? this
+                : (Try<T>) Objects.requireNonNull(supplier.get(), "Try.orElse: supplier returned null");
     }
 
     /**
@@ -800,7 +808,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @param <X>    the type of the result
      * @return the result of applying the corresponding function
      */
-    default <X extends @Nullable Object> X fold(Function<? super Throwable, ? extends X> ifFail, Function<? super T, ? extends X> f) {
+    default <X extends @Nullable Object> X fold(
+            Function<? super Throwable, ? extends X> ifFail, Function<? super T, ? extends X> f) {
         if (isFailure()) {
             return ifFail.apply(getCause());
         } else {
@@ -840,7 +849,9 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     default Try<T> catchAll(Function<? super Throwable, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        return isFailure() ? Try.of(() -> Objects.requireNonNull(f.apply(getCause()), "Try.catchAll: f returned null")) : this;
+        return isFailure()
+                ? Try.of(() -> Objects.requireNonNull(f.apply(getCause()), "Try.catchAll: f returned null"))
+                : this;
     }
 
     /**
@@ -865,8 +876,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(f, "f is null");
         return isFailure() && exceptionType.isInstance(getCause())
-          ? Try.of(() -> Objects.requireNonNull(f.apply((X) getCause()), "Try.catchSome: f returned null"))
-          : this;
+                ? Try.of(() -> Objects.requireNonNull(f.apply((X) getCause()), "Try.catchSome: f returned null"))
+                : this;
     }
 
     /**
@@ -912,7 +923,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if {@code exceptionType} or {@code f} is null
      */
     @SuppressWarnings("unchecked")
-    default <X extends Throwable> Try<T> catchSomeWith(Class<X> exceptionType, Function<? super X, ? extends Try<? extends T>> f) {
+    default <X extends Throwable> Try<T> catchSomeWith(
+            Class<X> exceptionType, Function<? super X, ? extends Try<? extends T>> f) {
         Objects.requireNonNull(exceptionType, "exceptionType is null");
         Objects.requireNonNull(f, "f is null");
         if (isSuccess() || !exceptionType.isInstance(getCause())) {
@@ -1029,7 +1041,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         } catch (Throwable t) {
             if (isFailure() && !isFatal(t)) {
-                final Throwable cause = getCause();
+                Throwable cause = getCause();
                 if (t != cause) {
                     cause.addSuppressed(t);
                 }
@@ -1049,7 +1061,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         if (isSuccess()) {
             return CompletableFuture.completedFuture(get());
         } else {
-            final CompletableFuture<T> completableFuture = new CompletableFuture<>();
+            CompletableFuture<T> completableFuture = new CompletableFuture<>();
             completableFuture.completeExceptionally(getCause());
             return completableFuture;
         }
@@ -1219,7 +1231,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if {@code that} or {@code f} is null
      */
     @SuppressWarnings("unchecked")
-    default <U extends @Nullable Object, V extends @Nullable Object> Try<V> zipWith(Try<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
+    default <U extends @Nullable Object, V extends @Nullable Object> Try<V> zipWith(
+            Try<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(f, "f is null");
         if (isFailure()) {
@@ -1229,7 +1242,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<V>) that;
         }
         try {
-            final V value = f.apply(get(), that.get());
+            V value = f.apply(get(), that.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1280,7 +1293,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Try<Tuple2<T1, T2>> zip(Try<? extends T1> t1, Try<? extends T2> t2) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Try<Tuple2<T1, T2>> zip(
+            Try<? extends T1> t1, Try<? extends T2> t2) {
         return zipWith(t1, t2, Tuple::of);
     }
 
@@ -1303,7 +1317,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(
+            Try<? extends T1> t1, Try<? extends T2> t2, BiFunction<? super T1, ? super T2, ? extends R> f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(f, "f is null");
@@ -1314,7 +1329,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t2;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get());
+            R value = f.apply(t1.get(), t2.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1335,7 +1350,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Try<Tuple3<T1, T2, T3>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Try<Tuple3<T1, T2, T3>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3) {
         return zipWith(t1, t2, t3, Tuple::of);
     }
 
@@ -1360,7 +1376,16 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Try<R> zipWith(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(t3, "t3 is null");
@@ -1375,7 +1400,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t3;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1398,7 +1423,13 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Try<Tuple4<T1, T2, T3, T4>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Try<Tuple4<T1, T2, T3, T4>> zip(
+                    Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4) {
         return zipWith(t1, t2, t3, t4, Tuple::of);
     }
 
@@ -1425,7 +1456,18 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Try<R> zipWith(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(t3, "t3 is null");
@@ -1444,7 +1486,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t4;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1469,7 +1511,18 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Try<Tuple5<T1, T2, T3, T4, T5>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Try<Tuple5<T1, T2, T3, T4, T5>> zip(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5) {
         return zipWith(t1, t2, t3, t4, t5, Tuple::of);
     }
 
@@ -1498,7 +1551,20 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Try<R> zipWith(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(t3, "t3 is null");
@@ -1521,7 +1587,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t5;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1548,7 +1614,20 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Try<Tuple6<T1, T2, T3, T4, T5, T6>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Try<Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Try<? extends T6> t6) {
         return zipWith(t1, t2, t3, t4, t5, t6, Tuple::of);
     }
 
@@ -1579,7 +1658,22 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Try<R> zipWith(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Try<? extends T6> t6,
+                    Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(t3, "t3 is null");
@@ -1606,7 +1700,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t6;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1635,7 +1729,22 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Try<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Try<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Try<? extends T6> t6,
+                    Try<? extends T7> t7) {
         return zipWith(t1, t2, t3, t4, t5, t6, t7, Tuple::of);
     }
 
@@ -1668,7 +1777,33 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Try<R> zipWith(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Try<? extends T6> t6,
+                    Try<? extends T7> t7,
+                    Function7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(t3, "t3 is null");
@@ -1699,7 +1834,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t7;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1730,7 +1865,24 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @return {@code Success} of the tuple of the values, or the first {@code Failure}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Try<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7, Try<? extends T8> t8) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Try<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Try<? extends T6> t6,
+                    Try<? extends T7> t7,
+                    Try<? extends T8> t8) {
         return zipWith(t1, t2, t3, t4, t5, t6, t7, t8, Tuple::of);
     }
 
@@ -1765,7 +1917,36 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      * @throws NullPointerException if any argument is null
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Try<R> zipWith(Try<? extends T1> t1, Try<? extends T2> t2, Try<? extends T3> t3, Try<? extends T4> t4, Try<? extends T5> t5, Try<? extends T6> t6, Try<? extends T7> t7, Try<? extends T8> t8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Try<R> zipWith(
+                    Try<? extends T1> t1,
+                    Try<? extends T2> t2,
+                    Try<? extends T3> t3,
+                    Try<? extends T4> t4,
+                    Try<? extends T5> t5,
+                    Try<? extends T6> t6,
+                    Try<? extends T7> t7,
+                    Try<? extends T8> t8,
+                    Function8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(t1, "t1 is null");
         Objects.requireNonNull(t2, "t2 is null");
         Objects.requireNonNull(t3, "t3 is null");
@@ -1800,7 +1981,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t8;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get(), t8.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get(), t8.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);

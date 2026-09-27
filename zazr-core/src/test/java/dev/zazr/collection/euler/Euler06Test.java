@@ -31,8 +31,10 @@ public class Euler06Test {
      */
     @Test
     public void shouldSolveProblem6() {
-        assertThat(differenceBetweenSumOfTheSquaresAndSquareOfTheSumFrom1UpTo(10)).isEqualTo(2640L);
-        assertThat(differenceBetweenSumOfTheSquaresAndSquareOfTheSumFrom1UpTo(100)).isEqualTo(25164150L);
+        assertThat(differenceBetweenSumOfTheSquaresAndSquareOfTheSumFrom1UpTo(10))
+                .isEqualTo(2640L);
+        assertThat(differenceBetweenSumOfTheSquaresAndSquareOfTheSumFrom1UpTo(100))
+                .isEqualTo(25164150L);
     }
 
     private static long differenceBetweenSumOfTheSquaresAndSquareOfTheSumFrom1UpTo(int max) {
@@ -46,6 +48,7 @@ public class Euler06Test {
     private static long sumOfSquaresFrom1UpTo(int max) {
         return LazyList.rangeClosed(1, max)
                 .map(i -> (long) Math.pow(i, 2))
-                .sum().longValue();
+                .sum()
+                .longValue();
     }
 }

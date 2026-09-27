@@ -66,6 +66,7 @@ final class VectorIterator<T extends @Nullable Object> extends AbstractIterator<
 
     private void advanceSlice() {
         sliceIdx += 1;
+        @SuppressWarnings("Var")
         Object[] slice = v.vectorSlice(sliceIdx);
         while (slice.length == 0) {
             sliceIdx += 1;
@@ -92,13 +93,13 @@ final class VectorIterator<T extends @Nullable Object> extends AbstractIterator<
     }
 
     private void advance() {
-        final int pos = i1 - len1 + totalLength;
+        int pos = i1 - len1 + totalLength;
         if (pos == sliceEnd) {
             advanceSlice();
         }
         if (sliceDim > 1) {
-            final int io = pos - sliceStart;
-            final int xor = oldPos ^ io;
+            int io = pos - sliceStart;
+            int xor = oldPos ^ io;
             advanceA(io, xor);
             oldPos = io;
         }

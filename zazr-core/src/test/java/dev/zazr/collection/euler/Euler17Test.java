@@ -32,15 +32,39 @@ public class Euler17Test {
         runTestsFor(new SolutionB());
 
         // Additional capability, only for more general solution B
-        assertThat(new SolutionB().letterCount(Integer.MAX_VALUE)).isEqualTo("twobilliononehundredandfortysevenmillionfourhundredandeightythreethousandsixhundredandfortyseven".length());
+        assertThat(new SolutionB().letterCount(Integer.MAX_VALUE))
+                .isEqualTo(
+                        "twobilliononehundredandfortysevenmillionfourhundredandeightythreethousandsixhundredandfortyseven"
+                                .length());
     }
 
     private static void runTestsFor(SolutionProblem17 solution) {
-        List.of("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twentyone")
+        List.of(
+                        "one",
+                        "two",
+                        "three",
+                        "four",
+                        "five",
+                        "six",
+                        "seven",
+                        "eight",
+                        "nine",
+                        "ten",
+                        "eleven",
+                        "twelve",
+                        "thirteen",
+                        "fourteen",
+                        "fifteen",
+                        "sixteen",
+                        "seventeen",
+                        "eighteen",
+                        "nineteen",
+                        "twenty",
+                        "twentyone")
                 .zipWithIndex()
                 .forEach(t -> {
-                    final int number = t._2() + 1;
-                    final String numberAsString = t._1();
+                    int number = t._2() + 1;
+                    String numberAsString = t._1();
                     assertThat(numberAsString).hasSize(solution.letterCount(number));
                 });
 
@@ -58,45 +82,45 @@ public class Euler17Test {
         int letterCount(int num);
 
         default int letterCount(LazyList<Integer> range) {
-            return range.map(this::letterCount)
-                    .sum().intValue();
+            return range.map(this::letterCount).sum().intValue();
         }
     }
 
     static final String CONJUNCTION = "and";
     static final Map<Integer, String> LENGTHS = List.of(
-            1, "one",
-            2, "two",
-            3, "three",
-            4, "four",
-            5, "five",
-            6, "six",
-            7, "seven",
-            8, "eight",
-            9, "nine",
-            10, "ten",
-            11, "eleven",
-            12, "twelve",
-            13, "thirteen",
-            14, "fourteen",
-            15, "fifteen",
-            16, "sixteen",
-            17, "seventeen",
-            18, "eighteen",
-            19, "nineteen",
-            20, "twenty",
-            30, "thirty",
-            40, "forty",
-            50, "fifty",
-            60, "sixty",
-            70, "seventy",
-            80, "eighty",
-            90, "ninety",
-            100, "hundred",
-            1_000, "thousand",
-            1_000_000, "million",
-            1_000_000_000, "billion"
-    ).grouped(2).toSortedMap(pair -> Tuple.of((Integer) pair.get(0), (String) pair.get(1)));
+                    1, "one",
+                    2, "two",
+                    3, "three",
+                    4, "four",
+                    5, "five",
+                    6, "six",
+                    7, "seven",
+                    8, "eight",
+                    9, "nine",
+                    10, "ten",
+                    11, "eleven",
+                    12, "twelve",
+                    13, "thirteen",
+                    14, "fourteen",
+                    15, "fifteen",
+                    16, "sixteen",
+                    17, "seventeen",
+                    18, "eighteen",
+                    19, "nineteen",
+                    20, "twenty",
+                    30, "thirty",
+                    40, "forty",
+                    50, "fifty",
+                    60, "sixty",
+                    70, "seventy",
+                    80, "eighty",
+                    90, "ninety",
+                    100, "hundred",
+                    1_000, "thousand",
+                    1_000_000, "million",
+                    1_000_000_000, "billion")
+            .grouped(2)
+            .toSortedMap(pair -> Tuple.of((Integer) pair.get(0), (String) pair.get(1)));
 
     /**
      * Solution using plain conditionals.
@@ -137,23 +161,24 @@ public class Euler17Test {
         }
 
         private static String asText(int number) {
-            return LENGTHS.toList().foldRight(Tuple.of(Vector.<String> empty(), number), (magnitudeAndText, lengthsAndRemainder) -> {
-                final int magnitude = magnitudeAndText._1();
-                final int remainder = lengthsAndRemainder._2();
+            return LENGTHS.toList()
+                    .foldRight(Tuple.of(Vector.<String>empty(), number), (magnitudeAndText, lengthsAndRemainder) -> {
+                        int magnitude = magnitudeAndText._1();
+                        int remainder = lengthsAndRemainder._2();
 
-                return ((remainder >= magnitude) && (remainder > 0)) ? asText(magnitude, magnitudeAndText._2(), lengthsAndRemainder._1(), remainder)
-                                                                     : lengthsAndRemainder;
-            })._1().mkString();
+                        return ((remainder >= magnitude) && (remainder > 0))
+                                ? asText(magnitude, magnitudeAndText._2(), lengthsAndRemainder._1(), remainder)
+                                : lengthsAndRemainder;
+                    })
+                    ._1()
+                    .mkString();
         }
 
-        private static Tuple2<Vector<String>, Integer> asText(int magnitude, String text, Vector<String> chunks, int remainder) {
-            if (remainder >= 100) {
-                text = asText(remainder / magnitude) + text;
-                if ((remainder < 1000) && ((remainder % magnitude) != 0)) {
-                    text += CONJUNCTION;
-                }
-            }
-            return Tuple.of(chunks.append(text), remainder % magnitude);
+        private static Tuple2<Vector<String>, Integer> asText(
+                int magnitude, String text, Vector<String> chunks, int remainder) {
+            String conjunction = (remainder < 1000) && ((remainder % magnitude) != 0) ? CONJUNCTION : "";
+            String chunk = remainder >= 100 ? asText(remainder / magnitude) + text + conjunction : text;
+            return Tuple.of(chunks.append(chunk), remainder % magnitude);
         }
     }
 }

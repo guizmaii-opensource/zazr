@@ -15,10 +15,11 @@ public interface NonEmptyModule {
 
     static <T extends @Nullable Object> T max(Iterable<T> nonEmpty, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T max = iterator.next();
         while (iterator.hasNext()) {
-            final T element = iterator.next();
+            T element = iterator.next();
             if (comparator.compare(element, max) > 0) {
                 max = element;
             }
@@ -28,10 +29,11 @@ public interface NonEmptyModule {
 
     static <T extends @Nullable Object> T min(Iterable<T> nonEmpty, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T min = iterator.next();
         while (iterator.hasNext()) {
-            final T element = iterator.next();
+            T element = iterator.next();
             if (comparator.compare(element, min) < 0) {
                 min = element;
             }
@@ -44,10 +46,10 @@ public interface NonEmptyModule {
     }
 
     /* a NaN is the result whenever one is present, as on the plain collections' min() */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Var"})
     static <T extends @Nullable Object> T min(Iterable<T> nonEmpty) {
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
-        final T head = iterator.next();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        T head = iterator.next();
         if (head instanceof Double first) {
             double min = first;
             while (iterator.hasNext()) {
@@ -61,10 +63,10 @@ public interface NonEmptyModule {
             }
             return (T) (Float) min;
         } else {
-            final Comparator<T> comparator = Comparators.naturalComparator();
+            Comparator<T> comparator = Comparators.naturalComparator();
             T min = head;
             while (iterator.hasNext()) {
-                final T element = iterator.next();
+                T element = iterator.next();
                 if (comparator.compare(element, min) < 0) {
                     min = element;
                 }
@@ -73,14 +75,17 @@ public interface NonEmptyModule {
         }
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> T maxBy(Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> T maxBy(
+            Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T max = iterator.next();
+        @SuppressWarnings("Var")
         U maxKey = f.apply(max);
         while (iterator.hasNext()) {
-            final T element = iterator.next();
-            final U key = f.apply(element);
+            T element = iterator.next();
+            U key = f.apply(element);
             if (key.compareTo(maxKey) > 0) {
                 max = element;
                 maxKey = key;
@@ -89,14 +94,17 @@ public interface NonEmptyModule {
         return max;
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> T minBy(Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> T minBy(
+            Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T min = iterator.next();
+        @SuppressWarnings("Var")
         U minKey = f.apply(min);
         while (iterator.hasNext()) {
-            final T element = iterator.next();
-            final U key = f.apply(element);
+            T element = iterator.next();
+            U key = f.apply(element);
             if (key.compareTo(minKey) < 0) {
                 min = element;
                 minKey = key;
@@ -105,9 +113,11 @@ public interface NonEmptyModule {
         return min;
     }
 
-    static <T extends @Nullable Object> T reduce(Iterable<T> nonEmpty, BiFunction<? super T, ? super T, ? extends T> op) {
+    static <T extends @Nullable Object> T reduce(
+            Iterable<T> nonEmpty, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T result = iterator.next();
         while (iterator.hasNext()) {
             result = op.apply(result, iterator.next());
@@ -115,11 +125,14 @@ public interface NonEmptyModule {
         return result;
     }
 
-    static <T extends @Nullable Object, B extends @Nullable Object> B reduceMap(Iterable<T> nonEmpty, Function<? super T, ? extends B> mapper,
+    static <T extends @Nullable Object, B extends @Nullable Object> B reduceMap(
+            Iterable<T> nonEmpty,
+            Function<? super T, ? extends B> mapper,
             BiFunction<? super B, ? super B, ? extends B> op) {
         Objects.requireNonNull(mapper, "mapper is null");
         Objects.requireNonNull(op, "op is null");
-        final java.util.Iterator<T> iterator = nonEmpty.iterator();
+        java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         B result = mapper.apply(iterator.next());
         while (iterator.hasNext()) {
             result = op.apply(result, mapper.apply(iterator.next()));
@@ -130,7 +143,7 @@ public interface NonEmptyModule {
     /* the value the plain collections' average() holds, from the same compensated sum */
     static double average(Iterable<?> nonEmpty) {
         try {
-            final double[] sum = TraversableModule.neumaierSum(nonEmpty, element -> ((Number) element).doubleValue());
+            double[] sum = TraversableModule.neumaierSum(nonEmpty, element -> ((Number) element).doubleValue());
             return sum[0] / sum[1];
         } catch (ClassCastException x) {
             throw new UnsupportedOperationException("Elements are not numeric", x);

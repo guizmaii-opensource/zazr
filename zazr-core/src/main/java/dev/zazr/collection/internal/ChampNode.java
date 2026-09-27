@@ -3,20 +3,22 @@ package dev.zazr.collection.internal;
 import static java.lang.Integer.bitCount;
 
 /// A node of a compressed hash-array mapped prefix tree (CHAMP, Steindorfer and Vinju, OOPSLA 2015), the trie behind
-/// `HashMap` ([MapNode]) and `HashSet` ([SetNode]). Ported from `Node` in `scala/collection/immutable/ChampCommon.scala`
-/// of the Scala 3 standard library, which ships the Scala 2.13 collection library unchanged.
+/// `HashMap` ([MapNode]) and `HashSet` ([SetNode]). Ported from `Node` in
+/// `scala/collection/immutable/ChampCommon.scala` of the Scala 3 standard library, which ships the Scala 2.13
+/// collection library unchanged.
 ///
 /// A node splits 32 slots between two bitmaps: `dataMap` marks the slots holding an entry inline, `nodeMap` the slots
-/// holding a child node. The slot of an entry at depth `d` is the fragment `(hash >>> 5d) & 31` of its hash. The entries
-/// sit at the front of the node's array, in slot order, and the children at the back, in reverse slot order. Seven
-/// levels consume the 32 bits of a hash; below them, keys of one hash share a collision node.
+/// holding a child node. The slot of an entry at depth `d` is the fragment `(hash >>> 5d) & 31` of its hash. The
+/// entries sit at the front of the node's array, in slot order, and the children at the back, in reverse slot order.
+/// Seven levels consume the 32 bits of a hash; below them, keys of one hash share a collision node.
 ///
 /// The shape is canonical: a slot holds a child only when at least two entries share that prefix, so removal compacts
 /// the path back to inline entries, and equal collections have the same tree, up to the order inside a collision node.
 ///
 /// The nodes store `Objects.hashCode` of each key, and place the key by [#improve], Scala's bit mixing of it
 /// (`scala.collection.Hashing.improve`), so that hash codes which differ only in their high bits still spread over the
-/// first levels. The mixing is a bijection, so two keys have equal stored hashes exactly when they have equal mixed ones.
+/// first levels. The mixing is a bijection, so two keys have equal stored hashes exactly when they have equal mixed
+/// ones.
 ///
 /// @param <N> the node type of the trie, map or set
 public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, SetNode {
@@ -36,15 +38,14 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
 
     static final int[] EMPTY_INTS = new int[0];
 
-    ChampNode() {
-    }
+    ChampNode() {}
 
     /// Scala's `Hashing.improve`: the bits of a hash code mixed, so that every bit of it counts in every fragment.
     static int improve(int hashCode) {
-        int h = hashCode + ~(hashCode << 9);
-        h = h ^ (h >>> 14);
-        h = h + (h << 4);
-        return h ^ (h >>> 10);
+        int h1 = hashCode + ~(hashCode << 9);
+        int h2 = h1 ^ (h1 >>> 14);
+        int h3 = h2 + (h2 << 4);
+        return h3 ^ (h3 >>> 10);
     }
 
     /// The slot, at `shift`, of a key of hash code `hash`: the fragment of its mixed hash.
@@ -86,14 +87,14 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
     abstract int keyHashSum();
 
     static int[] removeElement(int[] as, int ix) {
-        final int[] result = new int[as.length - 1];
+        int[] result = new int[as.length - 1];
         System.arraycopy(as, 0, result, 0, ix);
         System.arraycopy(as, ix + 1, result, ix, as.length - ix - 1);
         return result;
     }
 
     static int[] insertElement(int[] as, int ix, int elem) {
-        final int[] result = new int[as.length + 1];
+        int[] result = new int[as.length + 1];
         System.arraycopy(as, 0, result, 0, ix);
         result[ix] = elem;
         System.arraycopy(as, ix, result, ix + 1, as.length - ix);

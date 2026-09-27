@@ -19,20 +19,35 @@ public class TreeNullInsertTest {
     public void shouldRejectANullElementOnEveryTreeSetInsertion() {
         for (TreeSet<Integer> set : java.util.List.of(TreeSet.empty(ALL_EQUAL), TreeSet.of(ALL_EQUAL, 1))) {
             assertThatNullPointerException().isThrownBy(() -> set.add(null)).withMessage("TreeSet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> set.addAll(java.util.Arrays.asList(1, null))).withMessage("TreeSet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> set.addAll(java.util.Arrays.asList((Integer) null))).withMessage("TreeSet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> set.replace(1, null)).withMessage("TreeSet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> set.replace(2, null)).withMessage("TreeSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.addAll(java.util.Arrays.asList(1, null)))
+                    .withMessage("TreeSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.addAll(java.util.Arrays.asList((Integer) null)))
+                    .withMessage("TreeSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.replace(1, null))
+                    .withMessage("TreeSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.replace(2, null))
+                    .withMessage("TreeSet: element is null");
         }
     }
 
     @Test
     public void shouldRejectANullKeyOrValueOnEveryTreeMapInsertion() {
-        for (TreeMap<Integer, String> map : java.util.List.of(TreeMap.<Integer, String> empty(ALL_EQUAL), TreeMap.of(ALL_EQUAL, 1, "a"))) {
-            assertThatNullPointerException().isThrownBy(() -> map.put(null, "b")).withMessage("TreeMap: key is null");
+        for (TreeMap<Integer, String> map :
+                java.util.List.of(TreeMap.<Integer, String>empty(ALL_EQUAL), TreeMap.of(ALL_EQUAL, 1, "a"))) {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> map.put(null, "b"))
+                    .withMessage("TreeMap: key is null");
             assertThatNullPointerException().isThrownBy(() -> map.put(1, null)).withMessage("TreeMap: value is null");
-            assertThatNullPointerException().isThrownBy(() -> map.put(Tuple.of(null, "b"))).withMessage("TreeMap: key is null");
-            assertThatNullPointerException().isThrownBy(() -> map.put(Tuple.of(1, (String) null))).withMessage("TreeMap: value is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> map.put(Tuple.of(null, "b")))
+                    .withMessage("TreeMap: key is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> map.put(Tuple.of(1, (String) null)))
+                    .withMessage("TreeMap: value is null");
         }
     }
 }

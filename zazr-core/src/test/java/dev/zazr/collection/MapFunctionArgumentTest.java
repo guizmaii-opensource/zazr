@@ -25,8 +25,9 @@ public class MapFunctionArgumentTest {
     @Test
     public void shouldRejectANullRemappingFunctionInComputeIfPresent() {
         for (Map<Integer, String> map : maps()) {
-            for (int key : new int[] { 1, 2 }) {
-                assertThatNullPointerException().as(map + ", key " + key)
+            for (int key : new int[] {1, 2}) {
+                assertThatNullPointerException()
+                        .as(map + ", key " + key)
                         .isThrownBy(() -> map.computeIfPresent(key, (BiFunction<Integer, String, String>) null))
                         .withMessage("remappingFunction is null");
             }
@@ -36,8 +37,9 @@ public class MapFunctionArgumentTest {
     @Test
     public void shouldRejectANullMappingFunctionInComputeIfAbsent() {
         for (Map<Integer, String> map : maps()) {
-            for (int key : new int[] { 1, 2 }) {
-                assertThatNullPointerException().as(map + ", key " + key)
+            for (int key : new int[] {1, 2}) {
+                assertThatNullPointerException()
+                        .as(map + ", key " + key)
                         .isThrownBy(() -> map.computeIfAbsent(key, (Function<Integer, String>) null))
                         .withMessage("mappingFunction is null");
             }
@@ -47,7 +49,8 @@ public class MapFunctionArgumentTest {
     @Test
     public void shouldRejectANullFunctionInReplaceAll() {
         for (Map<Integer, String> map : maps()) {
-            assertThatNullPointerException().as(map.toString())
+            assertThatNullPointerException()
+                    .as(map.toString())
                     .isThrownBy(() -> map.replaceAll((BiFunction<Integer, String, String>) null))
                     .withMessage("function is null");
         }
@@ -56,7 +59,8 @@ public class MapFunctionArgumentTest {
     @Test
     public void shouldRejectANullSupplierInOrElse() {
         for (Map<Integer, String> map : maps()) {
-            assertThatNullPointerException().as(map.toString())
+            assertThatNullPointerException()
+                    .as(map.toString())
                     .isThrownBy(() -> map.orElse((Supplier<Iterable<Tuple2<Integer, String>>>) null))
                     .withMessage("supplier is null");
         }
@@ -64,30 +68,38 @@ public class MapFunctionArgumentTest {
 
     @Test
     public void shouldRejectEachNullArgumentOfCollect() {
-        final java.util.function.Supplier<java.util.List<Object>> supplier = java.util.ArrayList::new;
-        final java.util.function.BiConsumer<java.util.List<Object>, Object> accumulator = java.util.List::add;
-        final java.util.function.BiConsumer<java.util.List<Object>, java.util.List<Object>> combiner = java.util.List::addAll;
+        java.util.function.Supplier<java.util.List<Object>> supplier = java.util.ArrayList::new;
+        java.util.function.BiConsumer<java.util.List<Object>, Object> accumulator = java.util.List::add;
+        java.util.function.BiConsumer<java.util.List<Object>, java.util.List<Object>> combiner = java.util.List::addAll;
         for (Map<Integer, String> map : maps()) {
-            assertThatNullPointerException().as(map.toString())
-                    .isThrownBy(() -> map.collect(null, accumulator, combiner)).withMessage("supplier is null");
-            assertThatNullPointerException().as(map.toString())
-                    .isThrownBy(() -> map.collect(supplier, null, combiner)).withMessage("accumulator is null");
-            assertThatNullPointerException().as(map.toString())
-                    .isThrownBy(() -> map.collect(supplier, accumulator, null)).withMessage("combiner is null");
+            assertThatNullPointerException()
+                    .as(map.toString())
+                    .isThrownBy(() -> map.collect(null, accumulator, combiner))
+                    .withMessage("supplier is null");
+            assertThatNullPointerException()
+                    .as(map.toString())
+                    .isThrownBy(() -> map.collect(supplier, null, combiner))
+                    .withMessage("accumulator is null");
+            assertThatNullPointerException()
+                    .as(map.toString())
+                    .isThrownBy(() -> map.collect(supplier, accumulator, null))
+                    .withMessage("combiner is null");
         }
     }
 
     @Test
     public void shouldRejectANullSupplierInOrElseOnEveryOtherCollection() {
-        final Supplier<Iterable<Integer>> none = null;
-        final java.util.List<ThrowingCallable> calls = java.util.List.of(
-                () -> Vector.<Integer> empty().orElse(none), () -> Vector.of(1).orElse(none),
-                () -> List.<Integer> empty().orElse(none), () -> List.of(1).orElse(none),
-                () -> Queue.<Integer> empty().orElse(none), () -> Queue.of(1).orElse(none),
-                () -> LazyList.<Integer> empty().orElse(none), () -> LazyList.of(1).orElse(none),
-                () -> HashSet.<Integer> empty().orElse(none), () -> HashSet.of(1).orElse(none),
-                () -> LinkedHashSet.<Integer> empty().orElse(none), () -> LinkedHashSet.of(1).orElse(none),
-                () -> TreeSet.<Integer> empty().orElse(none), () -> TreeSet.of(1).orElse(none));
+        Supplier<Iterable<Integer>> none = null;
+        java.util.List<ThrowingCallable> calls = java.util.List.of(
+                () -> Vector.<Integer>empty().orElse(none), () -> Vector.of(1).orElse(none),
+                () -> List.<Integer>empty().orElse(none), () -> List.of(1).orElse(none),
+                () -> Queue.<Integer>empty().orElse(none), () -> Queue.of(1).orElse(none),
+                () -> LazyList.<Integer>empty().orElse(none),
+                        () -> LazyList.of(1).orElse(none),
+                () -> HashSet.<Integer>empty().orElse(none), () -> HashSet.of(1).orElse(none),
+                () -> LinkedHashSet.<Integer>empty().orElse(none),
+                        () -> LinkedHashSet.of(1).orElse(none),
+                () -> TreeSet.<Integer>empty().orElse(none), () -> TreeSet.of(1).orElse(none));
         for (ThrowingCallable call : calls) {
             assertThatNullPointerException().isThrownBy(call).withMessage("supplier is null");
         }

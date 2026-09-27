@@ -1,7 +1,6 @@
 package dev.zazr.test.laws;
 
 import dev.zazr.test.Check;
-
 import java.util.function.Function;
 
 /**
@@ -9,8 +8,7 @@ import java.util.function.Function;
  */
 public final class MapLaws {
 
-    private MapLaws() {
-    }
+    private MapLaws() {}
 
     /**
      * {@code fa.map(x -> x)} equals {@code fa}.
@@ -19,8 +17,10 @@ public final class MapLaws {
      * @return the law
      */
     public static <F> Law<MapSubject<F>> mapIdentity() {
-        return Law.of("mapIdentity", (subject, config) -> Check.evaluate(config, subject.values(),
-                fa -> Results.equal(subject.map(fa, Function.identity()), fa)));
+        return Law.of(
+                "mapIdentity",
+                (subject, config) -> Check.evaluate(
+                        config, subject.values(), fa -> Results.equal(subject.map(fa, Function.identity()), fa)));
     }
 
     /**
@@ -31,9 +31,15 @@ public final class MapLaws {
      * @return the law
      */
     public static <F> Law<MapSubject<F>> mapComposition() {
-        return Law.of("mapComposition", (subject, config) -> Check.evaluate(config, subject.values(),
-                Functions.integers(), Functions.integers(),
-                (fa, f, g) -> Results.equal(subject.map(subject.map(fa, f), g), subject.map(fa, f.andThen(g)))));
+        return Law.of(
+                "mapComposition",
+                (subject, config) -> Check.evaluate(
+                        config,
+                        subject.values(),
+                        Functions.integers(),
+                        Functions.integers(),
+                        (fa, f, g) ->
+                                Results.equal(subject.map(subject.map(fa, f), g), subject.map(fa, f.andThen(g)))));
     }
 
     /**

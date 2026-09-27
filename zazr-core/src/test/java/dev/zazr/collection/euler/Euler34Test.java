@@ -30,15 +30,20 @@ public class Euler34Test {
     }
 
     private static int sumOfOfAllNumbersWhichAreEqualToSumOfDigitFactorial() {
-        return LazyList.rangeClosed(3, 2_540_160) // 9! * 7 = 2 540 160 is a seven digit number, as is 9! * 8, therefore 9! * 7 is the definitive upper limit we have to investigate.
+        return LazyList.rangeClosed(
+                        3,
+                        2_540_160) // 9! * 7 = 2 540 160 is a seven digit number, as is 9! * 8, therefore 9! * 7 is the
+                // definitive upper limit we have to investigate.
                 .filter(i -> i == sumOfDigitFactorial(i))
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 
     private static int sumOfDigitFactorial(int num) {
         return Vector.ofAll(Integer.toString(num).toCharArray())
                 .map(c -> Character.digit(c, 10))
                 .map(MEMOIZED_FACTORIAL)
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 }

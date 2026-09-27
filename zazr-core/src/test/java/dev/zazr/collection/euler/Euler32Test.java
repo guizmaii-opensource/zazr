@@ -39,22 +39,25 @@ public class Euler32Test {
     }
 
     private static boolean isPandigital(int from, int to, String num) {
-        return num.length() == to - from + 1 && List.rangeClosed(from, to).forAll(i -> num.contains(Integer.toString(i)));
+        return num.length() == to - from + 1
+                && List.rangeClosed(from, to).forAll(i -> num.contains(Integer.toString(i)));
     }
 
     private static final Vector<Character> DIGITS_1_9 = Vector.ofAll("123456789".toCharArray());
 
     private static long sumOfAllProductsPandigital1Through9() {
         return List.of(1, 2)
-                .flatMap(i -> DIGITS_1_9.crossProduct(i)
-                        .flatMap(multiplicand -> DIGITS_1_9.removeAll(multiplicand).crossProduct(5 - i)
-                                .map(multiplier -> Tuple.of(multiplicand.mkString(), multiplier.mkString()))
-                        )
-                )
+                .flatMap(i -> DIGITS_1_9
+                        .crossProduct(i)
+                        .flatMap(multiplicand -> DIGITS_1_9
+                                .removeAll(multiplicand)
+                                .crossProduct(5 - i)
+                                .map(multiplier -> Tuple.of(multiplicand.mkString(), multiplier.mkString()))))
                 .map(t -> Tuple.of(t._1(), t._2(), Long.valueOf(t._1()) * Long.valueOf(t._2())))
                 .filter(t -> isPandigital(1, 9, t._1() + t._2() + Long.toString(t._3())))
                 .map(Tuple3::_3)
                 .distinct()
-                .sum().longValue();
+                .sum()
+                .longValue();
     }
 }

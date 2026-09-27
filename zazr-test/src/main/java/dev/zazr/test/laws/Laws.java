@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.collection.Vector;
 import dev.zazr.test.CheckConfig;
-
 import java.util.Objects;
 
 /**
@@ -35,11 +34,10 @@ public final class Laws<S> {
     @SafeVarargs
     public static <S> Laws<S> of(Law<? super S>... laws) {
         Objects.requireNonNull(laws, "laws is null");
-        Vector<Law<? super S>> all = Vector.empty();
         for (Law<? super S> law : laws) {
-            all = all.append(Objects.requireNonNull(law, "law is null"));
+            Objects.requireNonNull(law, "law is null");
         }
-        return new Laws<>(all);
+        return new Laws<>(Vector.<Law<? super S>>of(laws));
     }
 
     /**
@@ -61,16 +59,12 @@ public final class Laws<S> {
      */
     public <T extends S> Laws<T> and(Laws<? super T> other) {
         Objects.requireNonNull(other, "other is null");
-        Vector<Law<? super T>> all = Vector.empty();
-        for (Law<? super S> law : laws) {
-            all = all.append(law);
-        }
-        for (Law<?> law : other.laws) {
+        Vector<Law<? super T>> theirs = other.laws.map(law -> {
             @SuppressWarnings("unchecked")
-            final Law<? super T> checked = (Law<? super T>) law;
-            all = all.append(checked);
-        }
-        return new Laws<>(all);
+            Law<? super T> checked = (Law<? super T>) law;
+            return checked;
+        });
+        return new Laws<>(Vector.<Law<? super T>>narrow(laws).appendAll(theirs));
     }
 
     /**
@@ -121,9 +115,10 @@ public final class Laws<S> {
      * @throws NullPointerException if an argument is null
      */
     public void assertSatisfied(S subject, CheckConfig config) {
-        final Vector<LawResult> failures = check(subject, config).filter(result -> !result.isSatisfied());
+        Vector<LawResult> failures = check(subject, config).filter(result -> !result.isSatisfied());
         if (!failures.isEmpty()) {
-            throw new AssertionError(failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
+            throw new AssertionError(
+                    failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
         }
     }
 

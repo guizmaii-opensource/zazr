@@ -25,40 +25,32 @@ public class Euler45Test {
      * See also <a href="https://projecteuler.net/problem=45">projecteuler.net
      * problem 45</a>.
      */
-
     @Test
     public void shouldSolveProblem45() {
         assertThat(List.of(5, 12, 22, 35)).allMatch(Euler45Test::isPentagonal);
         assertThat(List.of(3, 11, 21, 36)).allMatch(i -> !isPentagonal(i));
         Assertions.assertThat(HEXAGONAL.take(5)).containsExactly(6L, 15L, 28L, 45L, 66L);
 
-        assertThat(HEXAGONAL
-                .filter(Euler45Test::isPentagonal)
-                .head())
-                .isEqualTo(40755);
+        assertThat(HEXAGONAL.filter(Euler45Test::isPentagonal).head()).isEqualTo(40755);
 
-        assertThat(HEXAGONAL
-                .filter(Euler45Test::isPentagonal)
-                .tail()
-                .head())
-                .isEqualTo(1533776805L);
+        assertThat(HEXAGONAL.filter(Euler45Test::isPentagonal).tail().head()).isEqualTo(1533776805L);
     }
 
-    private static final LazyList<Long> HEXAGONAL = LazyList.from(2L).map(i -> i*(2*i -1));
+    private static final LazyList<Long> HEXAGONAL = LazyList.from(2L).map(i -> i * (2 * i - 1));
 
     private static boolean isPentagonal(long i) {
         // If a number k is pentagonal then n(3n−1)/2 = k; for some integer n
         // by the quadratic formula (1+sqrt(1+4*3*2k))/6 = n
-        long discriminant = 1+24*i;
+        long discriminant = 1 + 24 * i;
         return isPerfectSquare(discriminant) && (1 + flooredRoot(discriminant)) % 6 == 0;
     }
 
     private static boolean isPerfectSquare(long i) {
         long sqrtFloor = flooredRoot(i);
-        return sqrtFloor*sqrtFloor == i;
+        return sqrtFloor * sqrtFloor == i;
     }
 
     private static long flooredRoot(long i) {
-        return (long)Math.sqrt(i+0.5);
+        return (long) Math.sqrt(i + 0.5);
     }
 }

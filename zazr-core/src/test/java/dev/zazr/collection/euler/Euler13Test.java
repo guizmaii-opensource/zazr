@@ -25,6 +25,7 @@ public class Euler13Test {
         return readLines(file("p013_numbers.txt"))
                 .map(BigInteger::new)
                 .fold(BigInteger.ZERO, BigInteger::add)
-                .toString().substring(0, 10);
+                .toString()
+                .substring(0, 10);
     }
 }

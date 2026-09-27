@@ -1,7 +1,6 @@
 package dev.zazr.test;
 
 import dev.zazr.control.Option;
-
 import java.util.Objects;
 
 /**
@@ -87,9 +86,10 @@ public sealed interface TestResult permits TestResult.Success, TestResult.Failur
         Objects.requireNonNull(that, "that is null");
         return switch (this) {
             case Success ignored -> this;
-            case Failure(var first) -> that instanceof Failure(var second)
-                    ? new Failure("neither of these holds:\n" + indent(first) + "\n" + indent(second))
-                    : that;
+            case Failure(var first) ->
+                that instanceof Failure(var second)
+                        ? new Failure("neither of these holds:\n" + indent(first) + "\n" + indent(second))
+                        : that;
         };
     }
 
@@ -104,9 +104,9 @@ public sealed interface TestResult permits TestResult.Success, TestResult.Failur
         Objects.requireNonNull(label, "label is null");
         return switch (this) {
             case Success ignored -> this;
-            case Failure(var explanation) -> new Failure(explanation.contains("\n")
-                    ? label + ":\n" + indent(explanation)
-                    : label + ": " + explanation);
+            case Failure(var explanation) ->
+                new Failure(
+                        explanation.contains("\n") ? label + ":\n" + indent(explanation) : label + ": " + explanation);
         };
     }
 

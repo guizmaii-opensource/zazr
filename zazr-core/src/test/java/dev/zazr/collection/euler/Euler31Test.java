@@ -18,14 +18,13 @@ public class Euler31Test {
 
     @Test
     public void shouldSolveProblem31() {
-        final List<Integer> coins = List.of(1, 2, 5, 10, 20, 50, 100, 200);
+        List<Integer> coins = List.of(1, 2, 5, 10, 20, 50, 100, 200);
         assertThat(coinSums(200, coins)).isEqualTo(73682);
     }
 
     private static int coinSums(int n, List<Integer> coins) {
-        return (n == 0) ? 1 :
-               (n < 0 || coins.isEmpty()) ? 0 :
-               coinSums(n, coins.tail()) + coinSums(n - coins.head(), coins);
+        return (n == 0)
+                ? 1
+                : (n < 0 || coins.isEmpty()) ? 0 : coinSums(n, coins.tail()) + coinSums(n - coins.head(), coins);
     }
-
 }

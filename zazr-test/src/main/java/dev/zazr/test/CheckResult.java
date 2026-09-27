@@ -2,7 +2,6 @@ package dev.zazr.test;
 
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
-
 import java.util.Objects;
 
 /**
@@ -83,8 +82,7 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
      */
     default void assertIsSatisfied() {
         switch (this) {
-            case Satisfied ignored -> {
-            }
+            case Satisfied ignored -> {}
             case Falsified falsified -> throw new AssertionError(falsified.describe());
             case Erroneous erroneous -> throw new AssertionError(erroneous.describe(), erroneous.cause());
         }
@@ -173,9 +171,9 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
         }
 
         String describe() {
-            final String head = "falsified at sample " + sampleNumber + " by " + counterexample;
+            String head = "falsified at sample " + sampleNumber + " by " + counterexample;
             // blank lines around a message (AssertJ starts and ends its own with one) are left out
-            final String explanation = message.map(String::strip).getOrElse("");
+            String explanation = message.map(String::strip).getOrElse("");
             if (explanation.contains("\n")) {
                 // an explanation on several lines comes after the seed, one level in
                 return head + replay(seed) + ":\n  " + explanation.replace("\n", "\n  ");
@@ -218,11 +216,12 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
 
         @Override
         public boolean equals(Object o) {
-            return o == this || (o instanceof Erroneous that
-                    && this.sampleNumber == that.sampleNumber
-                    && this.seed == that.seed
-                    && sameCauses(this.cause, that.cause)
-                    && this.sample.equals(that.sample));
+            return o == this
+                    || (o instanceof Erroneous that
+                            && this.sampleNumber == that.sampleNumber
+                            && this.seed == that.seed
+                            && sameCauses(this.cause, that.cause)
+                            && this.sample.equals(that.sample));
         }
 
         @Override
@@ -236,22 +235,24 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
                     + ": " + cause + replay(seed);
         }
 
+        // a loop, not a recursion: a cause chain can be deeper than the stack
         private static boolean sameCauses(Throwable t1, Throwable t2) {
-            while (t1 != null && t2 != null) {
-                if (t1.getClass() != t2.getClass() || !Objects.equals(t1.getMessage(), t2.getMessage())) {
+            for (Throwable a = t1, b = t2; ; a = a.getCause(), b = b.getCause()) {
+                if (a == null || b == null) {
+                    return a == null && b == null;
+                }
+                if (a.getClass() != b.getClass() || !Objects.equals(a.getMessage(), b.getMessage())) {
                     return false;
                 }
-                t1 = t1.getCause();
-                t2 = t2.getCause();
             }
-            return t1 == null && t2 == null;
         }
 
+        // a loop, not a recursion: a cause chain can be deeper than the stack
         private static int causesHashCode(Throwable t) {
+            @SuppressWarnings("Var") // the hash of the causes walked so far
             int hash = 0;
-            while (t != null) {
-                hash = 31 * hash + Objects.hash(t.getClass(), t.getMessage());
-                t = t.getCause();
+            for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+                hash = 31 * hash + Objects.hash(cause.getClass(), cause.getMessage());
             }
             return hash;
         }

@@ -38,34 +38,32 @@ public class Euler43Test {
      */
     @Test
     public void shouldSolveProblem43() {
-        final Vector<Long> result = tenDigitPandigitalsWithProperty();
+        Vector<Long> result = tenDigitPandigitalsWithProperty();
         Assertions.assertThat(result).contains(1406357289L);
 
         assertThat(result.sum().longValue()).isEqualTo(16695334890L);
     }
 
     private static Vector<Long> tenDigitPandigitalsWithProperty() {
-        final Vector<Character> ALL_DIGITS = Vector.ofAll("0123456789".toCharArray());
-        final List<Integer> DIVISORS = List.of(2, 3, 5, 7, 11, 13, 17);
+        Vector<Character> ALL_DIGITS = Vector.ofAll("0123456789".toCharArray());
+        List<Integer> DIVISORS = List.of(2, 3, 5, 7, 11, 13, 17);
 
         return ALL_DIGITS
                 .combinations(2)
                 .flatMap(Vector::permutations)
-                .flatMap(firstTwoDigits -> DIVISORS
-                        .foldLeft(List.of(firstTwoDigits), (accumulator, divisor) -> accumulator
+                .flatMap(firstTwoDigits -> DIVISORS.foldLeft(
+                        List.of(firstTwoDigits),
+                        (accumulator, divisor) -> accumulator
                                 .flatMap(digitsSoFar -> ALL_DIGITS
                                         .removeAll(digitsSoFar)
-                                        .map(nextDigit -> digitsSoFar.append(nextDigit))
-                                )
-                                .filter(digitsToTest -> Integer.parseInt(digitsToTest.takeRight(3).mkString()) % divisor == 0)
-                        )
-                )
-                .map(tailDigitsWithProperty -> tailDigitsWithProperty
-                        .prepend(ALL_DIGITS
-                                .removeAll(tailDigitsWithProperty)
-                                .head()
-                        )
-                )
+                                        .map(nextDigit -> digitsSoFar.append(nextDigit)))
+                                .filter(digitsToTest -> Integer.parseInt(digitsToTest
+                                                        .takeRight(3)
+                                                        .mkString())
+                                                % divisor
+                                        == 0)))
+                .map(tailDigitsWithProperty -> tailDigitsWithProperty.prepend(
+                        ALL_DIGITS.removeAll(tailDigitsWithProperty).head()))
                 .map(v -> Long.parseLong(v.mkString()));
     }
 }

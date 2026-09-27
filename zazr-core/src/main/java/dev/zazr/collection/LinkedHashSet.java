@@ -65,10 +65,10 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A dev.zazr.collection.LinkedHashSet Collector.
      */
     public static <T extends @Nullable Object> Collector<T, Builder<T>, LinkedHashSet<T>> collector() {
-        final Supplier<Builder<T>> supplier = LinkedHashSet::newBuilder;
-        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
-        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
-        final Function<Builder<T>, LinkedHashSet<T>> finisher = Builder::result;
+        Supplier<Builder<T>> supplier = LinkedHashSet::newBuilder;
+        BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        Function<Builder<T>, LinkedHashSet<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -106,7 +106,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet instance containing the given element
      */
     public static <T extends @Nullable Object> LinkedHashSet<T> of(T element) {
-        return LinkedHashSet.<T> empty().add(element);
+        return LinkedHashSet.<T>empty().add(element);
     }
 
     /**
@@ -120,9 +120,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @throws NullPointerException if {@code elements} is null
      */
     @SafeVarargs
-    public static <T extends @Nullable Object> LinkedHashSet<T> of(T ... elements) {
+    public static <T extends @Nullable Object> LinkedHashSet<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<T> builder = new Builder<>();
+        Builder<T> builder = new Builder<>();
         for (T element : elements) {
             builder.addChecked(element, "LinkedHashSet.of: element is null");
         }
@@ -140,7 +140,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A LinkedHashSet consisting of the distinct elements {@code f(0),f(1), ..., f(n - 1)}
      * @throws NullPointerException if {@code f} is null
      */
-    public static <T extends @Nullable Object> LinkedHashSet<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
+    public static <T extends @Nullable Object> LinkedHashSet<T> tabulate(
+            int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
         return Collections.tabulate(n, f, LinkedHashSet.empty(), LinkedHashSet::of);
     }
@@ -177,7 +178,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         } else if (JavaConverters.underlying(elements) instanceof LinkedHashSet<?> underlying) {
             return (LinkedHashSet<T>) underlying;
         } else {
-            final Builder<T> builder = new Builder<>();
+            Builder<T> builder = new Builder<>();
             for (T element : elements) {
                 builder.addChecked(element, "LinkedHashSet: element is null");
             }
@@ -209,9 +210,10 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return the distinct inner elements, in order of first occurrence
      * @throws NullPointerException if {@code nested}, an inner iterable or an element is null
      */
-    public static <T extends @Nullable Object> LinkedHashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
+    public static <T extends @Nullable Object> LinkedHashSet<T> flatten(
+            Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        final Builder<T> builder = new Builder<>();
+        Builder<T> builder = new Builder<>();
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
                 builder.addChecked(element, "LinkedHashSet: element is null");
@@ -227,7 +229,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Boolean values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Boolean> ofAll(boolean ... elements) {
+    public static LinkedHashSet<Boolean> ofAll(boolean... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -239,7 +241,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Byte values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Byte> ofAll(byte ... elements) {
+    public static LinkedHashSet<Byte> ofAll(byte... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -251,7 +253,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Character values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Character> ofAll(char ... elements) {
+    public static LinkedHashSet<Character> ofAll(char... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -263,7 +265,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Double values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Double> ofAll(double ... elements) {
+    public static LinkedHashSet<Double> ofAll(double... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -275,7 +277,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Float values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Float> ofAll(float ... elements) {
+    public static LinkedHashSet<Float> ofAll(float... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -287,7 +289,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Integer values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Integer> ofAll(int ... elements) {
+    public static LinkedHashSet<Integer> ofAll(int... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -299,7 +301,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Long values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Long> ofAll(long ... elements) {
+    public static LinkedHashSet<Long> ofAll(long... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -311,7 +313,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new LinkedHashSet of Short values
      * @throws NullPointerException if elements is null
      */
-    public static LinkedHashSet<Short> ofAll(short ... elements) {
+    public static LinkedHashSet<Short> ofAll(short... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return LinkedHashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -657,7 +659,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public LinkedHashSet<T> add(T element) {
         Objects.requireNonNull(element, "LinkedHashSet.add: element is null");
-        final LinkedHashMap<T, Object> that = map.putIfAbsent(element, element);
+        LinkedHashMap<T, Object> that = map.putIfAbsent(element, element);
         return that == map ? this : new LinkedHashSet<>(that);
     }
 
@@ -679,10 +681,10 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(elements, "elements is null");
         if (isEmpty() && elements instanceof LinkedHashSet) {
             @SuppressWarnings("unchecked")
-            final LinkedHashSet<T> set = (LinkedHashSet<T>) elements;
+            LinkedHashSet<T> set = (LinkedHashSet<T>) elements;
             return set;
         }
-        final LinkedHashMap<T, Object> that = addAll(map, elements);
+        LinkedHashMap<T, Object> that = addAll(map, elements);
         if (that.size() == map.size()) {
             return this;
         } else {
@@ -721,7 +723,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public LinkedHashSet<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final LinkedHashSet<T> filtered = LinkedHashSet.ofAll(Iterator.ofAll(this).filter(predicate));
+        LinkedHashSet<T> filtered = LinkedHashSet.ofAll(Iterator.ofAll(this).filter(predicate));
         return filtered.size() == size() ? this : filtered;
     }
 
@@ -732,20 +734,25 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> LinkedHashSet<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+    public <U extends @Nullable Object> LinkedHashSet<U> flatMap(
+            Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return empty();
         } else {
-            final LinkedHashMap<U, Object> that = foldLeft(LinkedHashMap.empty(),
-                    (tree, t) -> addAll(tree, Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.flatMap: mapper returned null")));
+            LinkedHashMap<U, Object> that = foldLeft(
+                    LinkedHashMap.empty(),
+                    (tree, t) -> addAll(
+                            tree,
+                            Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.flatMap: mapper returned null")));
             return new LinkedHashSet<>(that);
         }
     }
 
     @Override
     public <C extends @Nullable Object> Map<C, LinkedHashSet<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return Collections.groupBy(this, classifier, LinkedHashSet::ofAll, "LinkedHashSet.groupBy: classifier returned null");
+        return Collections.groupBy(
+                this, classifier, LinkedHashSet::ofAll, "LinkedHashSet.groupBy: classifier returned null");
     }
 
     /**
@@ -820,8 +827,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final LinkedHashMap<U, Object> that = foldLeft(LinkedHashMap.empty(), (tree, t) -> {
-                final U u = mapper.apply(t);
+            LinkedHashMap<U, Object> that = foldLeft(LinkedHashMap.empty(), (tree, t) -> {
+                U u = mapper.apply(t);
                 return tree.putIfAbsent(u, u);
             });
             return new LinkedHashSet<>(that);
@@ -829,16 +836,19 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> LinkedHashSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+    public <U extends @Nullable Object> LinkedHashSet<U> collect(
+            Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return empty();
         }
+        @SuppressWarnings("Var")
         LinkedHashMap<U, Object> that = LinkedHashMap.empty();
         for (T t : this) {
-            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.collect: mapper returned null");
+            Option<? extends U> collected =
+                    Objects.requireNonNull(mapper.apply(t), "LinkedHashSet.collect: mapper returned null");
             if (collected.isDefined()) {
-                final U u = collected.get();
+                U u = collected.get();
                 that = that.putIfAbsent(u, u);
             }
         }
@@ -858,7 +868,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public LinkedHashSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "LinkedHashSet.orElse: supplier returned null")) : this;
+        return isEmpty()
+                ? ofAll(Objects.requireNonNull(supplier.get(), "LinkedHashSet.orElse: supplier returned null"))
+                : this;
     }
 
     @Override
@@ -879,9 +891,13 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * @return the left values and the right values, each in the iteration order of the elements they come from
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<LinkedHashSet<L>, LinkedHashSet<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+    public <L extends @Nullable Object, R extends @Nullable Object>
+            Tuple2<LinkedHashSet<L>, LinkedHashSet<R>> partitionMap(
+                    Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         LinkedHashMap<L, Object> lefts = LinkedHashMap.empty();
+        @SuppressWarnings("Var")
         LinkedHashMap<R, Object> rights = LinkedHashMap.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "LinkedHashSet.partitionMap: f returned null")) {
@@ -889,7 +905,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
                 case Either.Right(var right) -> rights = rights.putIfAbsent(right, right);
             }
         }
-        return Tuple.of(lefts.isEmpty() ? empty() : new LinkedHashSet<>(lefts), rights.isEmpty() ? empty() : new LinkedHashSet<>(rights));
+        return Tuple.of(
+                lefts.isEmpty() ? empty() : new LinkedHashSet<>(lefts),
+                rights.isEmpty() ? empty() : new LinkedHashSet<>(rights));
     }
 
     @Override
@@ -909,7 +927,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public LinkedHashSet<T> remove(T element) {
-        final LinkedHashMap<T, Object> newMap = map.remove(element);
+        LinkedHashMap<T, Object> newMap = map.remove(element);
         return (newMap == map) ? this : new LinkedHashSet<>(newMap);
     }
 
@@ -994,7 +1012,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         } else if (elements.isEmpty()) {
             return this;
         } else {
-            final LinkedHashMap<T, Object> that = addAll(map, elements);
+            LinkedHashMap<T, Object> that = addAll(map, elements);
             if (that.size() == map.size()) {
                 return this;
             } else {
@@ -1354,8 +1372,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         /* a set given to addAll on an empty builder: result() returns it when the map builder still holds its map */
         private @Nullable LinkedHashSet<T> adopted;
 
-        private Builder() {
-        }
+        private Builder() {}
 
         /**
          * Adds one element. An element equal to one already added changes nothing: the first one is kept.
@@ -1390,7 +1407,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
             Objects.requireNonNull(elements, "elements is null");
             if (elements instanceof LinkedHashSet<?> set && adopt((LinkedHashSet<T>) set)) {
                 return this;
-            } else if (JavaConverters.underlying(elements) instanceof LinkedHashSet<?> set && adopt((LinkedHashSet<T>) set)) {
+            } else if (JavaConverters.underlying(elements) instanceof LinkedHashSet<?> set
+                    && adopt((LinkedHashSet<T>) set)) {
                 return this;
             }
             for (T element : elements) {
@@ -1414,8 +1432,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public LinkedHashSet<T> result() {
-            final LinkedHashMap<T, Object> result = map.result();
-            final LinkedHashSet<T> set = adopted;
+            LinkedHashMap<T, Object> result = map.result();
+            LinkedHashSet<T> set = adopted;
             adopted = null;
             if (set != null && set.map == result) {
                 return set;
@@ -1438,8 +1456,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
-    private static <T extends @Nullable Object> LinkedHashMap<T, Object> addAll(LinkedHashMap<T, Object> initial,
-            Iterable<? extends T> additional) {
+    private static <T extends @Nullable Object> LinkedHashMap<T, Object> addAll(
+            LinkedHashMap<T, Object> initial, Iterable<? extends T> additional) {
+        @SuppressWarnings("Var")
         LinkedHashMap<T, Object> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "LinkedHashSet: element is null");
@@ -1447,5 +1466,4 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         }
         return that;
     }
-
 }

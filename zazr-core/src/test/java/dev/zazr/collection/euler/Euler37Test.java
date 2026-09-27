@@ -36,14 +36,15 @@ public class Euler37Test {
         return PrimeNumbers.primes()
                 .filter(Euler37Test::isTruncatablePrime)
                 .take(11)
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 
     private static boolean isTruncatablePrime(int prime) {
         if (prime <= 7) {
             return false;
         }
-        final Vector<Character> primeSeq = Vector.ofAll(Integer.toString(prime).toCharArray());
+        Vector<Character> primeSeq = Vector.ofAll(Integer.toString(prime).toCharArray());
         return List.rangeClosed(1, primeSeq.size() - 1)
                 .flatMap(i -> List.of(primeSeq.drop(i), primeSeq.dropRight(i)))
                 .map(Vector::mkString)

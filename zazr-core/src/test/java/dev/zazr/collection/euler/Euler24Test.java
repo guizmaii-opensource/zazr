@@ -27,13 +27,15 @@ public class Euler24Test {
 
     @Test
     public void shouldSolveProblem24() {
-        List.of("012", "021", "102", "120", "201", "210").zipWithIndex()
-                .forEach(p -> {
-                    assertThat(lexicographicPermutationNaive(List.of("1", "0", "2"), p._2() + 1)).isEqualTo(p._1());
-                    assertThat(lexicographicPermutation(List.of("1", "0", "2"), p._2() + 1)).isEqualTo(p._1());
-                });
+        List.of("012", "021", "102", "120", "201", "210").zipWithIndex().forEach(p -> {
+            assertThat(lexicographicPermutationNaive(List.of("1", "0", "2"), p._2() + 1))
+                    .isEqualTo(p._1());
+            assertThat(lexicographicPermutation(List.of("1", "0", "2"), p._2() + 1))
+                    .isEqualTo(p._1());
+        });
 
-        assertThat(lexicographicPermutation(List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"), 1_000_000)).isEqualTo("2783915460");
+        assertThat(lexicographicPermutation(List.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"), 1_000_000))
+                .isEqualTo("2783915460");
     }
 
     /**
@@ -42,10 +44,7 @@ public class Euler24Test {
      * 6, 7, 8 and 9" (takes about 40 seconds on an average laptop).
      */
     private static String lexicographicPermutationNaive(List<String> stringsToPermutate, int ordinal) {
-        return stringsToPermutate.permutations()
-                .map(List::mkString)
-                .sorted()
-                .get(ordinal - 1);
+        return stringsToPermutate.permutations().map(List::mkString).sorted().get(ordinal - 1);
     }
 
     /**
@@ -53,15 +52,17 @@ public class Euler24Test {
      * of permutations achievable in each position instead of actually doing the permutations.
      */
     private static String lexicographicPermutation(List<String> stringsToPermutate, int ordinal) {
-        final List<String> sx = stringsToPermutate.sorted();
+        List<String> sx = stringsToPermutate.sorted();
         if (sx.size() == 1) {
             return sx.mkString();
         }
-        final int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.size() - 1);
-        final int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
-        final int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
-        return List.of(sx.get(headCharPosition - 1)).mkString() + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);
+        int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.size() - 1);
+        int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
+        int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
+        return List.of(sx.get(headCharPosition - 1)).mkString()
+                + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);
     }
 
-    private static final Function<Integer, Integer> memoizedFactorial = Memoize.of((Integer i) -> factorial(i).intValue());
+    private static final Function<Integer, Integer> memoizedFactorial =
+            Memoize.of((Integer i) -> factorial(i).intValue());
 }

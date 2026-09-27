@@ -90,7 +90,7 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     @Override
     V getOrElse(K key, int hash, int shift, V defaultValue) {
         if (this.hash == hash) {
-            final int index = indexOf(key);
+            int index = indexOf(key);
             return index >= 0 ? getValue(index) : defaultValue;
         } else {
             return defaultValue;
@@ -103,9 +103,10 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    @Nullable Tuple2<K, V> getEntry(K key, int hash, int shift) {
+    @Nullable
+    Tuple2<K, V> getEntry(K key, int hash, int shift) {
         if (this.hash == hash) {
-            final int index = indexOf(key);
+            int index = indexOf(key);
             return index >= 0 ? Tuple.of(getKey(index), getValue(index)) : null;
         } else {
             return null;
@@ -114,10 +115,10 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
 
     @Override
     MapNode<K, V> updated(K key, V value, int hash, int shift, boolean replace) {
-        final int index = indexOf(key);
+        int index = indexOf(key);
         if (index >= 0) {
             if (replace && (getKey(index) != key || getValue(index) != value)) {
-                final Object[] dst = content.clone();
+                Object[] dst = content.clone();
                 dst[2 * index] = key;
                 dst[2 * index + 1] = value;
                 return new HashCollisionMapNode<>(this.hash, dst);
@@ -125,7 +126,7 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
                 return this;
             }
         } else {
-            final Object[] dst = java.util.Arrays.copyOf(content, content.length + 2);
+            Object[] dst = java.util.Arrays.copyOf(content, content.length + 2);
             dst[content.length] = key;
             dst[content.length + 1] = value;
             return new HashCollisionMapNode<>(this.hash, dst);
@@ -134,16 +135,22 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
 
     @Override
     MapNode<K, V> removed(K key, int hash, int shift) {
-        final int index = (this.hash == hash) ? indexOf(key) : -1;
+        int index = (this.hash == hash) ? indexOf(key) : -1;
         if (index < 0) {
             return this;
         } else if (content.length == 4) {
             // one entry left: a node of the root level, to be inlined by the parent
-            final int other = 1 - index;
-            return new BitmapIndexedMapNode<>(null, bitposFrom(maskFrom(this.hash, 0)), 0,
-                    new Object[] { getKey(other), getValue(other) }, new int[] { this.hash }, 1, this.hash);
+            int other = 1 - index;
+            return new BitmapIndexedMapNode<>(
+                    null,
+                    bitposFrom(maskFrom(this.hash, 0)),
+                    0,
+                    new Object[] {getKey(other), getValue(other)},
+                    new int[] {this.hash},
+                    1,
+                    this.hash);
         } else {
-            final Object[] dst = new Object[content.length - 2];
+            Object[] dst = new Object[content.length - 2];
             System.arraycopy(content, 0, dst, 0, 2 * index);
             System.arraycopy(content, 2 * index + 2, dst, 2 * index, content.length - 2 * index - 2);
             return new HashCollisionMapNode<>(this.hash, dst);
@@ -158,11 +165,13 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     // `that` is a collision node too: two nodes at the same place below the last level hold keys of the same hash
     @Override
     MapNode<K, V> concat(MapNode<K, V> that, int shift) {
-        final HashCollisionMapNode<K, V> right = (HashCollisionMapNode<K, V>) that;
+        HashCollisionMapNode<K, V> right = (HashCollisionMapNode<K, V>) that;
         if (right == this) {
             return this;
         }
+        @SuppressWarnings("Var")
         Object[] result = null;
+        @SuppressWarnings("Var")
         int length = right.content.length;
         for (int i = 0; i < content.length; i += 2) {
             if (right.indexOf(content[i]) < 0) {
@@ -179,7 +188,8 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
 
     @Override
     MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
-        final Object[] kept = new Object[content.length];
+        Object[] kept = new Object[content.length];
+        @SuppressWarnings("Var")
         int length = 0;
         for (int i = 0; i < content.length; i += 2) {
             if (predicate.test(getKey(i >> 1), getValue(i >> 1)) == keep) {
@@ -194,8 +204,8 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
             return MapNode.empty();
         } else if (length == 2) {
             // one entry left: a node of the root level, to be inlined by the parent
-            return new BitmapIndexedMapNode<>(null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] { kept[0], kept[1] },
-                    new int[] { hash }, 1, hash);
+            return new BitmapIndexedMapNode<>(
+                    null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] {kept[0], kept[1]}, new int[] {hash}, 1, hash);
         } else {
             return new HashCollisionMapNode<>(hash, java.util.Arrays.copyOf(kept, length));
         }
@@ -203,9 +213,10 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
 
     @Override
     <W extends @Nullable Object> MapNode<K, W> transform(BiFunction<? super K, ? super V, ? extends W> f) {
+        @SuppressWarnings("Var")
         Object[] result = null;
         for (int i = 0; i < content.length; i += 2) {
-            final W value = Objects.requireNonNull(f.apply(getKey(i >> 1), getValue(i >> 1)), "HashMap: value is null");
+            W value = Objects.requireNonNull(f.apply(getKey(i >> 1), getValue(i >> 1)), "HashMap: value is null");
             if (result == null && value != content[i + 1]) {
                 result = content.clone();
             }
@@ -214,7 +225,7 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
             }
         }
         @SuppressWarnings("unchecked")
-        final MapNode<K, W> unchanged = (MapNode<K, W>) this;
+        MapNode<K, W> unchanged = (MapNode<K, W>) this;
         return (result == null) ? unchanged : new HashCollisionMapNode<>(hash, result);
     }
 }

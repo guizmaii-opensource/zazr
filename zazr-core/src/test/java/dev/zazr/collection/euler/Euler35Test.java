@@ -25,7 +25,7 @@ public class Euler35Test {
     }
 
     private static int circularPrimes(int n) {
-        final Predicate<Integer> memoizedIsPrime = Memoize.of(Euler35Test::isPrime)::apply;
+        Predicate<Integer> memoizedIsPrime = Memoize.of(Euler35Test::isPrime)::apply;
         return LazyList.rangeClosed(2, n)
                 .filter(memoizedIsPrime)
                 .map(Euler35Test::rotations)
@@ -34,18 +34,18 @@ public class Euler35Test {
     }
 
     private static boolean isPrime(int n) {
-        return n == 2 || n % 2 != 0 &&
-                LazyList.rangeClosedBy(3, (int) Math.sqrt(n), 2)
-                        .find(x -> n % x == 0)
-                        .isEmpty();
+        return n == 2
+                || n % 2 != 0
+                        && LazyList.rangeClosedBy(3, (int) Math.sqrt(n), 2)
+                                .find(x -> n % x == 0)
+                                .isEmpty();
     }
 
     private static List<Integer> rotations(int n) {
-        final Vector<Character> seq = Vector.ofAll(String.valueOf(n).toCharArray());
+        Vector<Character> seq = Vector.ofAll(String.valueOf(n).toCharArray());
         return LazyList.range(0, seq.size())
                 .map(i -> seq.drop(i).appendAll(seq.take(i)))
                 .map(s -> Integer.valueOf(s.mkString()))
                 .toList();
     }
-
 }

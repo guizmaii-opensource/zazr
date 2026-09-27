@@ -23,8 +23,7 @@ import org.jspecify.annotations.Nullable;
  */
 final class VectorStatics {
 
-    private VectorStatics() {
-    }
+    private VectorStatics() {}
 
     static final int BITS = 5;
     static final int WIDTH = 1 << BITS;
@@ -49,7 +48,7 @@ final class VectorStatics {
 
     /* the dimension of the slice at index idx among count slices: 1, 2, .., n, .., 2, 1 */
     static int vectorSliceDim(int count, int idx) {
-        final int c = count / 2;
+        int c = count / 2;
         return c + 1 - Math.abs(idx - c);
     }
 
@@ -70,61 +69,61 @@ final class VectorStatics {
     }
 
     static Object[] wrap1(Object x) {
-        return new Object[] { x };
+        return new Object[] {x};
     }
 
     static Object[] copyUpdate(Object[] a1, int idx1, Object elem) {
-        final Object[] a1c = a1.clone();
+        Object[] a1c = a1.clone();
         a1c[idx1] = elem;
         return a1c;
     }
 
     static Object[] copyUpdate(Object[] a2, int idx2, int idx1, Object elem) {
-        final Object[] a2c = a2.clone();
+        Object[] a2c = a2.clone();
         a2c[idx2] = copyUpdate((Object[]) a2c[idx2], idx1, elem);
         return a2c;
     }
 
     static Object[] copyUpdate(Object[] a3, int idx3, int idx2, int idx1, Object elem) {
-        final Object[] a3c = a3.clone();
+        Object[] a3c = a3.clone();
         a3c[idx3] = copyUpdate((Object[]) a3c[idx3], idx2, idx1, elem);
         return a3c;
     }
 
     static Object[] copyUpdate(Object[] a4, int idx4, int idx3, int idx2, int idx1, Object elem) {
-        final Object[] a4c = a4.clone();
+        Object[] a4c = a4.clone();
         a4c[idx4] = copyUpdate((Object[]) a4c[idx4], idx3, idx2, idx1, elem);
         return a4c;
     }
 
     static Object[] copyUpdate(Object[] a5, int idx5, int idx4, int idx3, int idx2, int idx1, Object elem) {
-        final Object[] a5c = a5.clone();
+        Object[] a5c = a5.clone();
         a5c[idx5] = copyUpdate((Object[]) a5c[idx5], idx4, idx3, idx2, idx1, elem);
         return a5c;
     }
 
     static Object[] copyUpdate(Object[] a6, int idx6, int idx5, int idx4, int idx3, int idx2, int idx1, Object elem) {
-        final Object[] a6c = a6.clone();
+        Object[] a6c = a6.clone();
         a6c[idx6] = copyUpdate((Object[]) a6c[idx6], idx5, idx4, idx3, idx2, idx1, elem);
         return a6c;
     }
 
     static Object[] concatArrays(Object[] a, Object[] b) {
-        final Object[] dest = Arrays.copyOf(a, a.length + b.length);
+        Object[] dest = Arrays.copyOf(a, a.length + b.length);
         System.arraycopy(b, 0, dest, a.length, b.length);
         return dest;
     }
 
     static Object[] copyAppend(Object[] a, Object elem) {
-        final int alen = a.length;
-        final Object[] ac = new Object[alen + 1];
+        int alen = a.length;
+        Object[] ac = new Object[alen + 1];
         System.arraycopy(a, 0, ac, 0, alen);
         ac[alen] = elem;
         return ac;
     }
 
     static Object[] copyPrepend(Object elem, Object[] a) {
-        final Object[] ac = new Object[a.length + 1];
+        Object[] ac = new Object[a.length + 1];
         System.arraycopy(a, 0, ac, 1, a.length);
         ac[0] = elem;
         return ac;
@@ -133,13 +132,13 @@ final class VectorStatics {
     /* applies f to every element under a, where level 0 means a is a leaf */
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> void foreachRec(int level, Object[] a, Consumer<? super T> f) {
-        final int len = a.length;
+        int len = a.length;
         if (level == 0) {
             for (int i = 0; i < len; i++) {
                 f.accept((T) a[i]);
             }
         } else {
-            final int l = level - 1;
+            int l = level - 1;
             for (int i = 0; i < len; i++) {
                 foreachRec(l, (Object[]) a[i], f);
             }
@@ -148,10 +147,11 @@ final class VectorStatics {
 
     /* maps a leaf; returns a itself when f returns every element unchanged (by identity), so that the leaf stays shared */
     @SuppressWarnings("unchecked")
-    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1(Object[] a, Function<? super A, ? extends B> f) {
+    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1(
+            Object[] a, Function<? super A, ? extends B> f) {
         for (int i = 0; i < a.length; i++) {
-            final Object v1 = a[i];
-            final Object v2 = mapped(f.apply((A) v1));
+            Object v1 = a[i];
+            Object v2 = mapped(f.apply((A) v1));
             if (v1 != v2) {
                 return mapElems1Rest(a, f, i, v2);
             }
@@ -160,8 +160,9 @@ final class VectorStatics {
     }
 
     @SuppressWarnings("unchecked")
-    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1Rest(Object[] a, Function<? super A, ? extends B> f, int at, Object v2) {
-        final Object[] ac = new Object[a.length];
+    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1Rest(
+            Object[] a, Function<? super A, ? extends B> f, int at, Object v2) {
+        Object[] ac = new Object[a.length];
         if (at > 0) {
             System.arraycopy(a, 0, ac, 0, at);
         }
@@ -173,13 +174,14 @@ final class VectorStatics {
     }
 
     /* maps an array of dimension n (1 for a leaf); returns a itself when nothing under it changed */
-    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems(int n, Object[] a, Function<? super A, ? extends B> f) {
+    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems(
+            int n, Object[] a, Function<? super A, ? extends B> f) {
         if (n == 1) {
             return mapElems1(a, f);
         }
         for (int i = 0; i < a.length; i++) {
-            final Object[] v1 = (Object[]) a[i];
-            final Object[] v2 = mapElems(n - 1, v1, f);
+            Object[] v1 = (Object[]) a[i];
+            Object[] v2 = mapElems(n - 1, v1, f);
             if (v1 != v2) {
                 return mapElemsRest(n, a, f, i, v2);
             }
@@ -187,8 +189,9 @@ final class VectorStatics {
         return a;
     }
 
-    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElemsRest(int n, Object[] a, Function<? super A, ? extends B> f, int at, Object[] v2) {
-        final Object[] ac = new Object[a.length];
+    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElemsRest(
+            int n, Object[] a, Function<? super A, ? extends B> f, int at, Object[] v2) {
+        Object[] ac = new Object[a.length];
         if (at > 0) {
             System.arraycopy(a, 0, ac, 0, at);
         }
@@ -223,7 +226,7 @@ final class VectorStatics {
         if (xs instanceof RadixVector<?> v) {
             v.copyToArray(dest, start, s);
         } else {
-            final java.util.Iterator<?> it = xs.iterator();
+            java.util.Iterator<?> it = xs.iterator();
             for (int i = 0; i < s; i++) {
                 dest[start + i] = Objects.requireNonNull(it.next(), "Vector: element is null");
             }
@@ -233,7 +236,7 @@ final class VectorStatics {
     /* prefix1 with the k elements of xs prepended, or null when they do not fit in one leaf; k = knownSize(xs) > 0 */
     static Object @Nullable [] prepend1IfSpace(Object[] prefix1, Iterable<?> xs, int k) {
         if (k > 0 && k <= WIDTH - prefix1.length) {
-            final Object[] prefix1b = new Object[prefix1.length + k];
+            Object[] prefix1b = new Object[prefix1.length + k];
             System.arraycopy(prefix1, 0, prefix1b, k, prefix1.length);
             copyToArray(xs, k, prefix1b, 0);
             return prefix1b;
@@ -245,7 +248,7 @@ final class VectorStatics {
     /* suffix1 with the k elements of xs appended, or null when they do not fit in one leaf; k = knownSize(xs) > 0 */
     static Object @Nullable [] append1IfSpace(Object[] suffix1, Iterable<?> xs, int k) {
         if (k > 0 && k <= WIDTH - suffix1.length) {
-            final Object[] suffix1b = Arrays.copyOf(suffix1, suffix1.length + k);
+            Object[] suffix1b = Arrays.copyOf(suffix1, suffix1.length + k);
             copyToArray(xs, k, suffix1b, suffix1.length);
             return suffix1b;
         } else {

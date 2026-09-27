@@ -8,9 +8,9 @@ import org.jspecify.annotations.Nullable;
 /// `scala/collection/immutable/HashMap.scala` of the Scala 3 standard library (the Scala 2.13 collection library, which
 /// Scala 3 ships unchanged) and Clojure's transients.
 ///
-/// Where Scala's builder updates every node of its trie in place, and copies the whole trie before writing to one it has
-/// handed out, the nodes this builder creates carry its owner token and are the only ones updated in place. A node it
-/// did not create (one of a map adopted by [#putAll], or of any persistent operation) is copied the first time a put
+/// Where Scala's builder updates every node of its trie in place, and copies the whole trie before writing to one it
+/// has handed out, the nodes this builder creates carry its owner token and are the only ones updated in place. A node
+/// it did not create (one of a map adopted by [#putAll], or of any persistent operation) is copied the first time a put
 /// goes through it, and the copy is owned. Collision nodes are immutable and replaced. The trie produced is the one
 /// successive persistent puts of the same entries produce, node for node.
 ///
@@ -51,11 +51,11 @@ public final class HashMapBuilder<K extends @Nullable Object, V extends @Nullabl
     }
 
     private void putAllOf(MapNode<K, V> node) {
-        final int payload = node.payloadArity();
+        int payload = node.payloadArity();
         for (int i = 0; i < payload; i++) {
             root = root.putInPlace(owner, node.getKey(i), node.getValue(i), node.getHash(i), 0);
         }
-        final int children = node.nodeArity();
+        int children = node.nodeArity();
         for (int i = 0; i < children; i++) {
             putAllOf(node.getNode(i));
         }
@@ -71,7 +71,7 @@ public final class HashMapBuilder<K extends @Nullable Object, V extends @Nullabl
     public BitmapIndexedMapNode<K, V> result() {
         checkOpen();
         done = true;
-        final BitmapIndexedMapNode<K, V> trie = root;
+        BitmapIndexedMapNode<K, V> trie = root;
         root = MapNode.empty();
         // the owned nodes were written through non-final fields: order those writes before the publication of the
         // trie, as the end of a constructor does for final fields (Scala's HashMapBuilder.result does the same)

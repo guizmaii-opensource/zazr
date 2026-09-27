@@ -39,8 +39,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
     }
 
     /// A builder whose buffer starts with room for `capacity` elements, and which keeps the first of equal elements
-    /// when `keepFirst` is true (as successive insertions that skip an element already present would) instead of the
-    /// last.
+    /// when `keepFirst` is true (as successive insertions that skip an element already present would) instead of
+    /// the last.
     public RedBlackTreeBuilder(Comparator<? super T> comparator, String name, int capacity, boolean keepFirst) {
         this.comparator = comparator;
         this.name = name;
@@ -74,8 +74,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         checkOpen();
         compact();
         done = true;
-        final Empty<T> empty = new Empty<>(comparator);
-        final RedBlackTree<T> tree = Node.fromOrdered(empty, buffer, length);
+        Empty<T> empty = new Empty<>(comparator);
+        RedBlackTree<T> tree = Node.fromOrdered(empty, buffer, length);
         buffer = EMPTY_BUFFER;
         length = 0;
         compacted = 0;
@@ -86,7 +86,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         if (done) {
             throw new IllegalStateException("result() has already been called on this " + name);
         } else if (sorting) {
-            throw new IllegalStateException("the comparator threw while this " + name + " was sorting; it cannot be used any more");
+            throw new IllegalStateException(
+                    "the comparator threw while this " + name + " was sorting; it cannot be used any more");
         }
     }
 
@@ -95,12 +96,13 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         if (compacted == length) {
             return;
         }
-        final Comparator<Object> order = (Comparator<Object>) comparator;
-        final Object[] elements = (Object[]) buffer;
+        Comparator<Object> order = (Comparator<Object>) comparator;
+        Object[] elements = (Object[]) buffer;
         // a throwing comparator can leave a partly merged buffer behind
         sorting = true;
         Arrays.sort(elements, 0, length, order);
         // the sort is stable, so of equal elements the one added first comes first and the one added last comes last
+        @SuppressWarnings("Var")
         int kept = 1;
         for (int i = 1; i < length; i++) {
             if (order.compare(elements[kept - 1], elements[i]) == 0) {

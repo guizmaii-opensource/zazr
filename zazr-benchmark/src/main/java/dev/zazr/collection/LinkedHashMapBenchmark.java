@@ -34,7 +34,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Thread)
 public class LinkedHashMapBenchmark {
 
-    @Param({ "1000", "100000" })
+    @Param({"1000", "100000"})
     public int size;
 
     private Integer[] keys;
@@ -44,20 +44,16 @@ public class LinkedHashMapBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-        final Random random = new Random(0xC0FFEE);
-        final java.util.LinkedHashSet<Integer> distinct = new java.util.LinkedHashSet<>();
+        Random random = new Random(0xC0FFEE);
+        java.util.LinkedHashSet<Integer> distinct = new java.util.LinkedHashSet<>();
         while (distinct.size() < size) {
             distinct.add(random.nextInt(size * 4));
         }
         keys = distinct.toArray(new Integer[0]);
         shuffledKeys = keys.clone();
-        final java.util.List<Integer> shuffled = java.util.Arrays.asList(shuffledKeys);
+        java.util.List<Integer> shuffled = java.util.Arrays.asList(shuffledKeys);
         java.util.Collections.shuffle(shuffled, random);
-        LinkedHashMap<Integer, Integer> m = LinkedHashMap.empty();
-        for (Integer key : keys) {
-            m = m.put(key, key);
-        }
-        map = m;
+        map = Vector.of(keys).foldLeft(LinkedHashMap.empty(), (m, key) -> m.put(key, key));
     }
 
     // -- improved by the tombstone change
@@ -69,6 +65,7 @@ public class LinkedHashMapBenchmark {
 
     @Benchmark
     public LinkedHashMap<Integer, Integer> removeDrainReverseOrder() {
+        @SuppressWarnings("Var") // the loop is what the benchmark measures
         LinkedHashMap<Integer, Integer> m = map;
         for (int i = size - 1; i >= 0; i--) {
             m = m.remove(keys[i]);
@@ -78,6 +75,7 @@ public class LinkedHashMapBenchmark {
 
     @Benchmark
     public LinkedHashMap<Integer, Integer> removeDrainRandomOrder() {
+        @SuppressWarnings("Var") // the loop is what the benchmark measures
         LinkedHashMap<Integer, Integer> m = map;
         for (Integer key : shuffledKeys) {
             m = m.remove(key);
@@ -87,6 +85,7 @@ public class LinkedHashMapBenchmark {
 
     @Benchmark
     public LinkedHashMap<Integer, Integer> putRemoveChurn() {
+        @SuppressWarnings("Var") // the loop is what the benchmark measures
         LinkedHashMap<Integer, Integer> m = map;
         for (int i = 0; i < size; i++) {
             m = (i & 1) == 0 ? m.remove(shuffledKeys[i]) : m.put(shuffledKeys[i - 1], i);
@@ -98,6 +97,7 @@ public class LinkedHashMapBenchmark {
 
     @Benchmark
     public LinkedHashMap<Integer, Integer> putFreshKeys() {
+        @SuppressWarnings("Var") // the loop is what the benchmark measures
         LinkedHashMap<Integer, Integer> m = LinkedHashMap.empty();
         for (Integer key : keys) {
             m = m.put(key, key);
@@ -107,10 +107,12 @@ public class LinkedHashMapBenchmark {
 
     @Benchmark
     public LinkedHashMap<Integer, Integer> putOverwrite() {
+        @SuppressWarnings("Var") // the loop is what the benchmark measures
         LinkedHashMap<Integer, Integer> m = map;
         for (Integer key : shuffledKeys) {
             m = m.put(key, 42);
         }
+
         return m;
     }
 

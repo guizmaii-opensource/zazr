@@ -13,13 +13,13 @@ public class CheckedPredicateTest {
 
     @Test
     public void shouldCreateCheckedPredicateUsingLambda() {
-        final CheckedPredicate<Object> predicate = CheckedPredicate.of(obj -> true);
+        CheckedPredicate<Object> predicate = CheckedPredicate.of(obj -> true);
         assertThat(predicate).isNotNull();
     }
 
     @Test
     public void shouldCreateCheckedPredicateUsingMethodReference() {
-        final CheckedPredicate<Object> predicate = CheckedPredicate.of(CheckedPredicateTest::test);
+        CheckedPredicate<Object> predicate = CheckedPredicate.of(CheckedPredicateTest::test);
         assertThat(predicate).isNotNull();
     }
 
@@ -31,8 +31,8 @@ public class CheckedPredicateTest {
 
     @Test
     public void shouldNegate() throws Exception {
-        final CheckedPredicate<Integer> isPositive = i -> i > 0;
-        final CheckedPredicate<Integer> negated = isPositive.negate();
+        CheckedPredicate<Integer> isPositive = i -> i > 0;
+        CheckedPredicate<Integer> negated = isPositive.negate();
         assertThat(negated.test(1)).isFalse();
         assertThat(negated.test(-1)).isTrue();
     }
@@ -41,21 +41,24 @@ public class CheckedPredicateTest {
     class UncheckedTests {
         @Test
         public void shouldApplyAnUncheckedFunctionThatDoesNotThrow() {
-            final Predicate<Object> preciate = CheckedPredicate.of(obj -> true).unchecked();
+            Predicate<Object> preciate = CheckedPredicate.of(obj -> true).unchecked();
             try {
                 preciate.test(null);
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 Assertions.fail("Did not excepect an exception but received: " + x.getMessage());
             }
         }
 
         @Test
         public void shouldApplyAnUncheckedFunctionThatThrows() {
-            final Predicate<Object> preciate = CheckedPredicate.of(obj -> { throw new Error(); }).unchecked();
+            Predicate<Object> preciate = CheckedPredicate.of(obj -> {
+                        throw new Error();
+                    })
+                    .unchecked();
             try {
                 preciate.test(null);
                 Assertions.fail("Did excepect an exception.");
-            } catch(Error x) {
+            } catch (Error x) {
                 // ok!
             }
         }

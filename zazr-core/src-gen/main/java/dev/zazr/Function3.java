@@ -4,15 +4,15 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static dev.zazr.internal.Throwables.isFatal;
-import static dev.zazr.internal.Throwables.sneakyThrow;
-
 import dev.zazr.control.Option;
 import dev.zazr.control.Try;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+
+import static dev.zazr.internal.Throwables.isFatal;
+import static dev.zazr.internal.Throwables.sneakyThrow;
 
 /**
  * Represents a function with three arguments.
@@ -24,7 +24,11 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Dietrich
  */
 @FunctionalInterface
-public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object>  {
+public interface Function3<
+        T1 extends @Nullable Object,
+        T2 extends @Nullable Object,
+        T3 extends @Nullable Object,
+        R extends @Nullable Object> {
 
     /**
      * Returns a function that always returns the constant
@@ -37,7 +41,12 @@ public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @param value the value to be returned
      * @return a function always returning the given value
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Function3<T1, T2, T3, R> constant(R value) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Function3<T1, T2, T3, R> constant(R value) {
         return (t1, t2, t3) -> value;
     }
 
@@ -66,7 +75,12 @@ public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @param <T3> 3rd argument
      * @return a {@code Function3}
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Function3<T1, T2, T3, R> of(Function3<T1, T2, T3, R> methodReference) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Function3<T1, T2, T3, R> of(Function3<T1, T2, T3, R> methodReference) {
         return methodReference;
     }
 
@@ -83,10 +97,16 @@ public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Obj
      *         throwable. Fatal throwables (see {@link Try}) are rethrown
      *         instead of being turned into {@code None}.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Function3<T1, T2, T3, Option<R>> lift(Function3<? super T1, ? super T2, ? super T3, ? extends R> partialFunction) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Function3<T1, T2, T3, Option<R>> lift(
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> partialFunction) {
         return (t1, t2, t3) -> {
             try {
-                final R result = partialFunction.apply(t1, t2, t3);
+                R result = partialFunction.apply(t1, t2, t3);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {
@@ -110,7 +130,13 @@ public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Obj
      *         non-fatal throwable. Fatal throwables (see {@link Try}) are rethrown
      *         instead of being wrapped.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Function3<T1, T2, T3, Try<R>> liftTry(Function3<? super T1, ? super T2, ? super T3, ? extends R> partialFunction) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Function3<T1, T2, T3, Try<R>> liftTry(
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> partialFunction) {
         return (t1, t2, t3) -> Try.of(() -> partialFunction.apply(t1, t2, t3));
     }
 
@@ -125,7 +151,12 @@ public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @return the given {@code f} instance as narrowed type {@code Function3<T1, T2, T3, R>}
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Function3<T1, T2, T3, R> narrow(Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Function3<T1, T2, T3, R> narrow(Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         return (Function3<T1, T2, T3, R>) f;
     }
 
@@ -136,7 +167,7 @@ public interface Function3<T1 extends @Nullable Object, T2 extends @Nullable Obj
      * @param t2 argument 2
      * @param t3 argument 3
      * @return the result of function application
-     * 
+     *
      */
     R apply(T1 t1, T2 t2, T3 t3);
 

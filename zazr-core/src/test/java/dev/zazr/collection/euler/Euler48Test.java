@@ -25,25 +25,17 @@ public class Euler48Test {
     }
 
     private static long sumPowers(int max) {
-        return LazyList.range(1, max)
-                .map(Euler48Test::selfPower)
-                .reduce(Euler48Test::sumMod);
+        return LazyList.range(1, max).map(Euler48Test::selfPower).reduce(Euler48Test::sumMod);
     }
 
     private static long selfPower(long v) {
-        final LazyList<Long> powers = LazyList.iterate(v, el -> multMod(el, el));
-        return bits(v)
-                .map(powers::get)
-                .prepend(1L)
-                .reduce(Euler48Test::multMod);
+        LazyList<Long> powers = LazyList.iterate(v, el -> multMod(el, el));
+        return bits(v).map(powers::get).prepend(1L).reduce(Euler48Test::multMod);
     }
 
     private static long multMod(long v1, long v2) {
-        final LazyList<Long> shifts = LazyList.iterate(v1, el -> sumMod(el, el));
-        return bits(v2)
-                .map(shifts::get)
-                .prepend(0L)
-                .reduce(Euler48Test::sumMod);
+        LazyList<Long> shifts = LazyList.iterate(v1, el -> sumMod(el, el));
+        return bits(v2).map(shifts::get).prepend(0L).reduce(Euler48Test::sumMod);
     }
 
     private static long sumMod(long v1, long v2) {
@@ -51,9 +43,6 @@ public class Euler48Test {
     }
 
     private static LazyList<Integer> bits(long v) {
-        return LazyList.from(0)
-                .takeWhile(b -> (v >> b) > 0)
-                .filter(b -> ((v >> b) & 1) != 0);
+        return LazyList.from(0).takeWhile(b -> (v >> b) > 0).filter(b -> ((v >> b) & 1) != 0);
     }
-
 }

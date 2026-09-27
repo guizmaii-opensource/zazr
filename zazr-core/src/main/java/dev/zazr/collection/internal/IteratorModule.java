@@ -23,7 +23,9 @@ public interface IteratorModule {
         private static class Cell<T extends @Nullable Object> {
 
             final Iterator<T> it;
-            @Nullable Cell<T> next;
+
+            @Nullable
+            Cell<T> next;
 
             Cell(Iterator<T> it) {
                 this.it = it;
@@ -48,7 +50,7 @@ public interface IteratorModule {
         // `tail` and `last` are assigned together, so a non-null tail implies a non-null last
         @SuppressWarnings("NullAway")
         void append(java.util.Iterator<? extends T> that) {
-            final Iterator<T> it = Iterator.ofAll(that);
+            Iterator<T> it = Iterator.ofAll(that);
             if (tail == null) {
                 tail = last = Cell.of(it);
             } else {
@@ -70,7 +72,7 @@ public interface IteratorModule {
                 return curr != null;
             }
             hasNextCalculated = true;
-            while(true) {
+            while (true) {
                 if (curr != null) {
                     if (curr.hasNext()) {
                         return true;
@@ -122,8 +124,8 @@ public interface IteratorModule {
 
         private boolean searchNext() {
             while (that.hasNext()) {
-                final T elem = that.next();
-                final U key = keyExtractor.apply(elem);
+                T elem = that.next();
+                U key = keyExtractor.apply(elem);
                 if (!known.contains(key)) {
                     known = known.add(key);
                     nextDefined = true;
@@ -138,7 +140,7 @@ public interface IteratorModule {
         // hasNext() sets `next` whenever it sets `nextDefined`
         @SuppressWarnings("NullAway")
         public T getNext() {
-            final T result = next;
+            T result = next;
             nextDefined = false;
             next = null;
             return result;
@@ -150,10 +152,14 @@ public interface IteratorModule {
         static final EmptyIterator INSTANCE = new EmptyIterator();
 
         @Override
-        public boolean hasNext() { return false; }
+        public boolean hasNext() {
+            return false;
+        }
 
         @Override
-        public Object next() { throw new NoSuchElementException("EmptyIterator.next()"); }
+        public Object next() {
+            throw new NoSuchElementException("EmptyIterator.next()");
+        }
 
         @Override
         public String toString() {
@@ -181,9 +187,10 @@ public interface IteratorModule {
             this.step = step;
             this.gap = Math.max(step - size, 0);
             this.preserve = Math.max(size - step, 0);
-            // the first group starts small and grows with the source: a size beyond the source (grouped(Integer.MAX_VALUE)
-            // is one group) must not allocate an array of that size. Later groups allocate `size` directly: they are only
-            // reached when the previous group was full, so the source is known to hold that many.
+            // the first group starts small and grows with the source: a size beyond the source
+            // (grouped(Integer.MAX_VALUE) is one group) must not allocate an array of that size. Later groups allocate
+            // `size` directly: they are only reached when the previous group was full, so the source is known to hold
+            // that many.
             this.buffer = take(that, new Object[Math.min(size, INITIAL_CAPACITY)], 0, size);
         }
 
@@ -199,7 +206,7 @@ public interface IteratorModule {
             if (buffer.length == 0) {
                 throw new NoSuchElementException();
             }
-            final Object[] result = buffer;
+            Object[] result = buffer;
             if (that.hasNext()) {
                 buffer = new Object[size];
                 if (preserve > 0) {
@@ -215,7 +222,7 @@ public interface IteratorModule {
                 buffer = new Object[0];
             }
             @SuppressWarnings("unchecked")
-            final T[] typed = (T[]) result;
+            T[] typed = (T[]) result;
             return Vector.of(typed);
         }
 
@@ -227,8 +234,10 @@ public interface IteratorModule {
 
         /* fills target[offset, offset + count) from the source, doubling the array when it is full, and trims it to what was read */
         private static Object[] take(Iterator<?> source, Object[] target, int offset, int count) {
-            final int wanted = offset + count;
+            int wanted = offset + count;
+            @SuppressWarnings("Var")
             Object[] buffer = target;
+            @SuppressWarnings("Var")
             int i = offset;
             while (i < wanted && source.hasNext()) {
                 if (i == buffer.length) {
@@ -280,12 +289,14 @@ public interface IteratorModule {
     final class BigDecimalHelper {
 
         private static final Lazy<BigDecimal> INFINITY_DISTANCE = Lazy.of(() -> {
-            final BigDecimal two = BigDecimal.valueOf(2);
-            final BigDecimal supremum = BigDecimal.valueOf(Math.nextDown(Double.POSITIVE_INFINITY));
+            BigDecimal two = BigDecimal.valueOf(2);
+            BigDecimal supremum = BigDecimal.valueOf(Math.nextDown(Double.POSITIVE_INFINITY));
+            @SuppressWarnings("Var")
             BigDecimal lowerBound = supremum;
+            @SuppressWarnings("Var")
             BigDecimal upperBound = two.pow(Double.MAX_EXPONENT + 1);
             while (true) {
-                final BigDecimal magicValue = lowerBound.add(upperBound).divide(two, HALF_UP);
+                BigDecimal magicValue = lowerBound.add(upperBound).divide(two, HALF_UP);
                 if (Double.isInfinite(magicValue.doubleValue())) {
                     if (areEqual(magicValue, upperBound)) {
                         return magicValue.subtract(supremum);
@@ -305,10 +316,10 @@ public interface IteratorModule {
         /* parse infinite values also */
         static BigDecimal asDecimal(double number) {
             if (number == NEGATIVE_INFINITY) {
-                final BigDecimal result = BigDecimal.valueOf(Math.nextUp(NEGATIVE_INFINITY));
+                BigDecimal result = BigDecimal.valueOf(Math.nextUp(NEGATIVE_INFINITY));
                 return result.subtract(INFINITY_DISTANCE.get());
             } else if (number == POSITIVE_INFINITY) {
-                final BigDecimal result = BigDecimal.valueOf(Math.nextDown(POSITIVE_INFINITY));
+                BigDecimal result = BigDecimal.valueOf(Math.nextDown(POSITIVE_INFINITY));
                 return result.add(INFINITY_DISTANCE.get());
             } else {
                 return BigDecimal.valueOf(number);

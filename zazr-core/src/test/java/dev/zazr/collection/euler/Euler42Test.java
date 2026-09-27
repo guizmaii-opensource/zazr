@@ -43,7 +43,9 @@ public class Euler42Test {
         assertThat(alphabeticalPosition('K')).isEqualTo(11);
         assertThat(alphabeticalPosition('Y')).isEqualTo(25);
         assertThat(TRIANGLE_NUMBERS.take(10)).containsExactly(1, 3, 6, 10, 15, 21, 28, 36, 45, 55);
-        List.rangeClosed(1, 60).forEach(n -> Assertions.assertThat(isTriangleNumberMemoized.apply(n)).isEqualTo(List.of(1, 3, 6, 10, 15, 21, 28, 36, 45, 55).contains(n)));
+        List.rangeClosed(1, 60)
+                .forEach(n -> Assertions.assertThat(isTriangleNumberMemoized.apply(n))
+                        .isEqualTo(List.of(1, 3, 6, 10, 15, 21, 28, 36, 45, 55).contains(n)));
 
         assertThat(numberOfTriangleNumbersInFile()).isEqualTo(162);
     }
@@ -61,19 +63,20 @@ public class Euler42Test {
     }
 
     private static boolean isTriangleNumber(int n) {
-        return TRIANGLE_NUMBERS
-                .takeWhile(t -> t <= n)
-                .exists(t -> t == n);
+        return TRIANGLE_NUMBERS.takeWhile(t -> t <= n).exists(t -> t == n);
     }
 
-    private static final Function<Integer, Boolean> isTriangleNumberMemoized = Memoize.of(Euler42Test::isTriangleNumber);
+    private static final Function<Integer, Boolean> isTriangleNumberMemoized =
+            Memoize.of(Euler42Test::isTriangleNumber);
 
-    private static final LazyList<Integer> TRIANGLE_NUMBERS = LazyList.from(1).map(n -> 0.5 * n * (n + 1)).map(Double::intValue);
+    private static final LazyList<Integer> TRIANGLE_NUMBERS =
+            LazyList.from(1).map(n -> 0.5 * n * (n + 1)).map(Double::intValue);
 
     private static int sumOfAlphabeticalPositions(String word) {
         return Vector.ofAll(word.toCharArray())
                 .map(Euler42Test::alphabeticalPosition)
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 
     private static int alphabeticalPosition(char c) {

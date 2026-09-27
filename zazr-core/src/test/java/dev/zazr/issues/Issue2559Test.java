@@ -24,20 +24,20 @@ public class Issue2559Test {
 
     @Test
     public void partitionShouldBeUnique() {
-        final Set<String> fruitsToEat = HashSet.of("apple", "banana");
-        final Tuple2<? extends Set<String>, ? extends Set<String>> partition = fruitsToEat.partition(this::biteAndCheck);
+        Set<String> fruitsToEat = HashSet.of("apple", "banana");
+        Tuple2<? extends Set<String>, ? extends Set<String>> partition = fruitsToEat.partition(this::biteAndCheck);
         // Set now implements Predicate<T> (docs/design.md 3.1), so assertThat(Iterable) vs assertThat(Predicate)
         // is ambiguous without a type witness.
         assertThat((Iterable<String>) partition._1()).isEmpty();
         assertThat((Iterable<String>) partition._2()).isEqualTo(HashSet.of("apple", "banana"));
         assertThat(fruitsBeingEaten)
-          .hasSize(2)
-          .containsEntry("apple", new Eat(1, "apple"))
-          .containsEntry("banana", new Eat(1, "banana"));
+                .hasSize(2)
+                .containsEntry("apple", new Eat(1, "apple"))
+                .containsEntry("banana", new Eat(1, "banana"));
     }
 
     private boolean biteAndCheck(String name) {
-        final Eat eat = fruitsBeingEaten.getOrDefault(name, Eat.prepare(name)).bite();
+        Eat eat = fruitsBeingEaten.getOrDefault(name, Eat.prepare(name)).bite();
         fruitsBeingEaten.put(name, eat);
         return eat.isEaten();
     }
@@ -78,10 +78,7 @@ public class Issue2559Test {
 
         @Override
         public String toString() {
-            return "Eat{" +
-              "bites=" + bites +
-              ", name='" + name + '\'' +
-              '}';
+            return "Eat{" + "bites=" + bites + ", name='" + name + '\'' + '}';
         }
     }
 }

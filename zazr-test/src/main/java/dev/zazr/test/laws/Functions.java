@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.test.CheckConfig;
 import dev.zazr.test.Gen;
-
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -12,13 +11,14 @@ import java.util.function.Function;
  */
 final class Functions {
 
-    private Functions() {
-    }
+    private Functions() {}
 
     /// Integer functions `x -> (a * x + b) mod m`: affine, and folding onto a small range when `m` is small, so that
     /// a set's `map` merges elements. Elements that are not integers go through their hash code.
     static Gen<Function<Object, Object>> integers() {
-        return Gen.fromRandom(random -> new IntegerFunction(random.nextInt(21) - 10, random.nextInt(201) - 100,
+        return Gen.fromRandom(random -> new IntegerFunction(
+                random.nextInt(21) - 10,
+                random.nextInt(201) - 100,
                 random.nextInt(3) == 0 ? 1 + random.nextInt(7) : 0));
     }
 
@@ -34,17 +34,17 @@ final class Functions {
     /// The SplitMix64 finaliser: every bit of the result depends on every bit of `z`, so adjacent arguments give
     /// unrelated seeds.
     static long mix(long z) {
-        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
-        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
-        return z ^ (z >>> 31);
+        long z1 = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        long z2 = (z1 ^ (z1 >>> 27)) * 0x94D049BB133111EBL;
+        return z2 ^ (z2 >>> 31);
     }
 
     record IntegerFunction(int a, int b, int m) implements Function<Object, Object> {
 
         @Override
         public Object apply(Object x) {
-            final int n = x instanceof Integer i ? i : Objects.hashCode(x);
-            final int affine = a * n + b;
+            int n = x instanceof Integer i ? i : Objects.hashCode(x);
+            int affine = a * n + b;
             return m == 0 ? affine : Math.floorMod(affine, m);
         }
 
@@ -59,8 +59,9 @@ final class Functions {
 
         @Override
         public F apply(Object x) {
-            final long drawSeed = mix(seed + GOLDEN_GAMMA * Objects.hashCode(x));
-            return gen.runCollectN(1, new CheckConfig(1, size, drawSeed, CheckConfig.DEFAULT_MAX_DISCARDS)).head();
+            long drawSeed = mix(seed + GOLDEN_GAMMA * Objects.hashCode(x));
+            return gen.runCollectN(1, new CheckConfig(1, size, drawSeed, CheckConfig.DEFAULT_MAX_DISCARDS))
+                    .head();
         }
 
         @Override

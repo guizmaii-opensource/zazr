@@ -1,7 +1,6 @@
 package dev.zazr.test.laws;
 
 import dev.zazr.Tuple2;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -55,7 +54,7 @@ public interface IterationOrder<T> {
      */
     static <T> IterationOrder<T> sorted(Comparator<? super T> comparator) {
         return input -> {
-            final TreeSet<T> sorted = new TreeSet<>(comparator);
+            TreeSet<T> sorted = new TreeSet<>(comparator);
             sorted.addAll(input);
             return new ArrayList<>(sorted);
         };
@@ -72,9 +71,11 @@ public interface IterationOrder<T> {
      */
     static <K, V> IterationOrder<Tuple2<K, V>> keysByFirstOccurrence() {
         return input -> {
-            final LinkedHashMap<K, V> map = new LinkedHashMap<>();
+            LinkedHashMap<K, V> map = new LinkedHashMap<>();
             input.forEach(entry -> map.put(entry._1(), entry._2()));
-            return map.entrySet().stream().map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue())).toList();
+            return map.entrySet().stream()
+                    .map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue()))
+                    .toList();
         };
     }
 
@@ -88,9 +89,11 @@ public interface IterationOrder<T> {
      */
     static <K, V> IterationOrder<Tuple2<K, V>> keysSorted(Comparator<? super K> comparator) {
         return input -> {
-            final TreeMap<K, V> map = new TreeMap<>(comparator);
+            TreeMap<K, V> map = new TreeMap<>(comparator);
             input.forEach(entry -> map.put(entry._1(), entry._2()));
-            return map.entrySet().stream().map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue())).toList();
+            return map.entrySet().stream()
+                    .map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue()))
+                    .toList();
         };
     }
 }

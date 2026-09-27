@@ -23,11 +23,15 @@ public interface ListModule {
             if (k == 0) {
                 return List.of(List.empty());
             }
+            @SuppressWarnings("Var")
             List<List<T>> reversed = List.empty();
+            @SuppressWarnings("Var")
             int remaining = length;
             for (List<T> rest = elements; remaining >= k; rest = rest.tail(), remaining--) {
-                final T head = rest.head();
-                for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1); !tails.isEmpty(); tails = tails.tail()) {
+                T head = rest.head();
+                for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1);
+                        !tails.isEmpty();
+                        tails = tails.tail()) {
                     reversed = reversed.prepend(tails.head().prepend(head));
                 }
             }
@@ -37,9 +41,12 @@ public interface ListModule {
 
     interface SplitAt {
 
-        static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(List<T> source, Predicate<? super T> predicate) {
+        static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(
+                List<T> source, Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate, "predicate is null");
+            @SuppressWarnings("Var")
             List<T> init = Nil.instance();
+            @SuppressWarnings("Var")
             List<T> tail = source;
             while (!tail.isEmpty() && !predicate.test(tail.head())) {
                 init = init.prepend(tail.head());
@@ -59,25 +66,26 @@ public interface ListModule {
             return findFirstSlice(source, toList(slice), Math.max(from, 0));
         }
 
+        @SuppressWarnings("Var")
         static <T extends @Nullable Object> int lastIndexOfSlice(List<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
             }
             // the slice is read once, whatever its shape; its emptiness is answered by the copy
-            final List<T> _slice = toList(slice);
+            List<T> _slice = toList(slice);
             if (source.isEmpty()) {
                 return _slice.isEmpty() ? 0 : -1;
             } else if (_slice.isEmpty()) {
-                final int len = source.size();
+                int len = source.size();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
             // lengths once, then counted down: List.size() walks the list
-            final int sliceLength = _slice.size();
+            int sliceLength = _slice.size();
             int remaining = source.size();
             while (remaining >= sliceLength) {
-                final int found = findNextSlice(source, _slice, remaining, sliceLength);
+                int found = findNextSlice(source, _slice, remaining, sliceLength);
                 if (found < 0) {
                     return result;
                 }
@@ -92,9 +100,10 @@ public interface ListModule {
             return result;
         }
 
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int findFirstSlice(List<T> source, List<T> slice, int from) {
             int index = 0;
-            final int sliceLength = slice.size();
+            int sliceLength = slice.size();
             // length once, then counted down: List.size() walks the list
             int remaining = source.size();
             while (remaining >= sliceLength) {
@@ -113,7 +122,9 @@ public interface ListModule {
         }
 
         // the offset of the next occurrence of the slice in source, or -1
-        private static <T extends @Nullable Object> int findNextSlice(List<T> source, List<T> slice, int remaining, int sliceLength) {
+        @SuppressWarnings("Var")
+        private static <T extends @Nullable Object> int findNextSlice(
+                List<T> source, List<T> slice, int remaining, int sliceLength) {
             int index = 0;
             while (remaining >= sliceLength) {
                 if (source.startsWith(slice)) {
@@ -135,9 +146,10 @@ public interface ListModule {
     interface Search {
 
         static <T extends @Nullable Object> int linearSearch(List<T> list, ToIntFunction<T> comparison) {
+            @SuppressWarnings("Var")
             int idx = 0;
             for (T current : list) {
-                final int cmp = comparison.applyAsInt(current);
+                int cmp = comparison.applyAsInt(current);
                 if (cmp == 0) {
                     return idx;
                 } else if (cmp < 0) {

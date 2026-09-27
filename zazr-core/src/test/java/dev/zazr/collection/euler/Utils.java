@@ -10,15 +10,15 @@ import java.util.function.Function;
 
 final class Utils {
 
-    private Utils() {
-    }
+    private Utils() {}
 
     static final Function<Integer, BigInteger> MEMOIZED_FACTORIAL = Memoize.of(Utils::factorial);
 
     static final Function<Long, Boolean> MEMOIZED_IS_PRIME = Memoize.of(Utils::isPrime);
 
     static LazyList<BigInteger> fibonacci() {
-        return LazyList.of(BigInteger.ZERO, BigInteger.ONE).appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));
+        return LazyList.of(BigInteger.ZERO, BigInteger.ONE)
+                .appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));
     }
 
     static BigInteger factorial(int n) {
@@ -43,19 +43,19 @@ final class Utils {
         if (val == 2L) {
             return true;
         }
-        final double upperLimitToCheck = Math.sqrt(val);
+        double upperLimitToCheck = Math.sqrt(val);
         return !PrimeNumbers.primes().takeWhile(d -> d <= upperLimitToCheck).exists(d -> val % d == 0);
     }
 
     static LazyList<String> readLines(File file) {
         try {
-            final java.util.Iterator<String> lines = new java.util.Iterator<String>() {
+            java.util.Iterator<String> lines = new java.util.Iterator<String>() {
 
                 final Scanner scanner = new Scanner(file);
 
                 @Override
                 public boolean hasNext() {
-                    final boolean hasNext = scanner.hasNextLine();
+                    boolean hasNext = scanner.hasNextLine();
                     if (!hasNext) {
                         scanner.close();
                     }
@@ -74,7 +74,7 @@ final class Utils {
     }
 
     static File file(String fileName) {
-        final URL resource = Utils.class.getResource(fileName);
+        URL resource = Utils.class.getResource(fileName);
         if (resource == null) {
             throw new RuntimeException("resource not found");
         }

@@ -3,8 +3,6 @@ package dev.zazr.test.laws;
 import dev.zazr.collection.LazyList;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
-
-
 import java.util.function.Function;
 
 /**
@@ -47,11 +45,21 @@ class LazyListLawsTest extends SequenceLawsSuite<LazyList<?>, LazyList<Integer>,
 
     @Override
     CollectionSubject<Integer, LazyList<Integer>> collection() {
-        return new CollectionSubject<>(Gen.lazyList(Values.integers()), LazyList::ofAll, LazyList::size, LazyList::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(
+                Gen.lazyList(Values.integers()),
+                LazyList::ofAll,
+                LazyList::size,
+                LazyList::toList,
+                true,
+                Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, LazyList<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), LazyList.collector(), LazyList::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(
+                Gen.list(Values.integers()),
+                LazyList.collector(),
+                LazyList::ofAll,
+                Option.some(IterationOrder.input()));
     }
 }

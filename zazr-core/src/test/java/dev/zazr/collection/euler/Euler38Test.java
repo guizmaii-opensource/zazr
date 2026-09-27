@@ -34,8 +34,10 @@ public class Euler38Test {
      */
     @Test
     public void shouldSolveProblem38() {
-        assertThat(isPandigitalMultiple(Vector.ofAll("192384576".toCharArray()))).isTrue();
-        assertThat(isPandigitalMultiple(Vector.ofAll("918273645".toCharArray()))).isTrue();
+        assertThat(isPandigitalMultiple(Vector.ofAll("192384576".toCharArray())))
+                .isTrue();
+        assertThat(isPandigitalMultiple(Vector.ofAll("918273645".toCharArray())))
+                .isTrue();
 
         assertThat(largest1To9PandigitalMultiple().mkString()).isEqualTo("932718654");
     }
@@ -47,7 +49,8 @@ public class Euler38Test {
                 .map(Integer::valueOf)
                 .sorted()
                 .reverse()
-                .map(i -> "9" + i) // Since 918273645 is known we don't have to investigate numbers not starting with a 9.
+                // Since 918273645 is known we don't have to investigate numbers not starting with a 9.
+                .map(i -> "9" + i)
                 .map(s -> Vector.ofAll(s.toCharArray()))
                 .find(Euler38Test::isPandigitalMultiple)
                 .get();
@@ -55,11 +58,13 @@ public class Euler38Test {
 
     private static boolean isPandigitalMultiple(Vector<Character> pandigital) {
         return List.rangeClosed(1, pandigital.size() - 1)
-                .exists(i -> isPandigitalMultipleRest(pandigital.drop(i), Integer.valueOf(pandigital.take(i).mkString()), 2));
+                .exists(i -> isPandigitalMultipleRest(
+                        pandigital.drop(i), Integer.valueOf(pandigital.take(i).mkString()), 2));
     }
 
-    private static boolean isPandigitalMultipleRest(Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
-        final int length = pandigitalRest.size();
+    private static boolean isPandigitalMultipleRest(
+            Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
+        int length = pandigitalRest.size();
         if (length == 0) {
             return true;
         }

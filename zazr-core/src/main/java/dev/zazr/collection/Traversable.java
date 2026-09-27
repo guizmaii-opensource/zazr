@@ -3,7 +3,6 @@ package dev.zazr.collection;
 import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.TraversableModule;
-
 import dev.zazr.control.Option;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -159,6 +158,7 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      */
     default int count(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         int count = 0;
         for (T t : this) {
             if (predicate.test(t)) {
@@ -201,6 +201,7 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      */
     default <U extends @Nullable Object> U foldLeft(U zero, BiFunction<? super U, ? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         U xs = zero;
         for (T x : this) {
             xs = f.apply(xs, x);
@@ -238,7 +239,8 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * @return the concatenation
      */
     default String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
-        final StringBuilder builder = new StringBuilder(prefix);
+        StringBuilder builder = new StringBuilder(prefix);
+        @SuppressWarnings("Var")
         boolean first = true;
         for (T t : this) {
             if (first) {
@@ -310,7 +312,8 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * @return a new array of the elements
      */
     default Object[] toArray() {
-        final Object[] array = new Object[size()];
+        Object[] array = new Object[size()];
+        @SuppressWarnings("Var")
         int i = 0;
         for (T t : this) {
             array[i++] = t;
@@ -328,7 +331,8 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      */
     default T[] toArray(IntFunction<T[]> arrayFactory) {
         Objects.requireNonNull(arrayFactory, "arrayFactory is null");
-        final T[] array = arrayFactory.apply(size());
+        T[] array = arrayFactory.apply(size());
+        @SuppressWarnings("Var")
         int i = 0;
         for (T t : this) {
             array[i++] = t;

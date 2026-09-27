@@ -37,22 +37,22 @@ public class Euler67Test {
         return smart.apply(loadTriangle(fileName), 0, 0);
     }
 
-    private final static Function3<Vector<Vector<Integer>>, Integer, Integer, Integer> smart = Memoize.of(
-            (Vector<Vector<Integer>> tr, Integer row, Integer col) -> {
+    private static final Function3<Vector<Vector<Integer>>, Integer, Integer, Integer> smart =
+            Memoize.of((Vector<Vector<Integer>> tr, Integer row, Integer col) -> {
                 int value = tr.get(row).get(col);
                 if (row == tr.size() - 1) {
                     return tr.get(row).get(col);
                 } else {
-                    return value + Math.max(Euler67Test.smart.apply(tr, row + 1, col), Euler67Test.smart.apply(tr, row + 1, col + 1));
+                    return value
+                            + Math.max(
+                                    Euler67Test.smart.apply(tr, row + 1, col),
+                                    Euler67Test.smart.apply(tr, row + 1, col + 1));
                 }
-            }
-    );
+            });
 
     static Vector<Vector<Integer>> loadTriangle(String fileName) {
-        return Vector.ofAll(
-                Utils.readLines(Utils.file(fileName)).map(line ->
-                        Arrays.stream(line.split("\\s")).map(Integer::parseInt)
-                ).map(s -> Vector.ofAll(s::iterator))
-        );
+        return Vector.ofAll(Utils.readLines(Utils.file(fileName))
+                .map(line -> Arrays.stream(line.split("\\s")).map(Integer::parseInt))
+                .map(s -> Vector.ofAll(s::iterator)));
     }
 }

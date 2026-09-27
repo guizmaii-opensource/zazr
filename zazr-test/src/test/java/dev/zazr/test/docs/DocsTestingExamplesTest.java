@@ -47,9 +47,11 @@ public class DocsTestingExamplesTest {
     @Test
     void aFailingCheckIsAnAssertionErrorWithTheCounterexampleTheSampleNumberAndTheSeed() {
         // the failure the page shows in Maven's output, after "ListShortTest.everyListIsShort:13 "
-        assertThatThrownBy(() -> Check.check(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5))
-            .isExactlyInstanceOf(AssertionError.class)
-            .hasMessage("falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42)");
+        assertThatThrownBy(() -> Check.check(
+                        CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5))
+                .isExactlyInstanceOf(AssertionError.class)
+                .hasMessage(
+                        "falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42)");
     }
 
     @Test
@@ -59,19 +61,20 @@ public class DocsTestingExamplesTest {
 
         Gen<List<Integer>> typed = lists;
         assertThat(Check.evaluate(typed, list -> list.reverse().reverse().equals(list)))
-            .isEqualTo(new CheckResult.Satisfied(200));
+                .isEqualTo(new CheckResult.Satisfied(200));
     }
 
     @Test
     void whatAFailurePrints() {
         assertThatThrownBy(() -> {
-            var config = CheckConfig.defaults().withSeed(42);                  // CheckConfig
-            Check.check(config, Gen.list(Gen.integers()), hasSize(isLessThan(5))); // throws an AssertionError
-        })
-            .isExactlyInstanceOf(AssertionError.class)
-            .hasMessage("falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42):\n"
-                + "  List(1064429137, -1, 2147483646, -499641955, 2147483647) has size 5:\n"
-                + "    5 is not less than 5");
+                    var config = CheckConfig.defaults().withSeed(42); // CheckConfig
+                    Check.check(config, Gen.list(Gen.integers()), hasSize(isLessThan(5))); // throws an AssertionError
+                })
+                .isExactlyInstanceOf(AssertionError.class)
+                .hasMessage(
+                        "falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42):\n"
+                                + "  List(1064429137, -1, 2147483646, -499641955, 2147483647) has size 5:\n"
+                                + "    5 is not less than 5");
     }
 
     @Test
@@ -85,8 +88,8 @@ public class DocsTestingExamplesTest {
 
     @Test
     void combiningAssertions() {
-        var digit  = isGreaterThanOrEqualTo(0).and(isLessThan(10)).label("a digit"); // Assertion<Integer>
-        var result = assertThat(12, digit);                                         // TestResult
+        var digit = isGreaterThanOrEqualTo(0).and(isLessThan(10)).label("a digit"); // Assertion<Integer>
+        var result = assertThat(12, digit); // TestResult
         // Failure: "a digit: 12 is not less than 10"
 
         Assertion<Integer> typedDigit = digit;
@@ -125,19 +128,30 @@ public class DocsTestingExamplesTest {
 
     @Test
     void smallCounterexamplesFirst() {
-        var result = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5);
+        var result =
+                Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5);
         // the first list that breaks the property has exactly 5 elements
-        assertThat(result).isInstanceOfSatisfying(CheckResult.Falsified.class,
-            falsified -> assertThat(((List<?>) falsified.counterexample().toVector().head()).size()).isEqualTo(5));
+        assertThat(result)
+                .isInstanceOfSatisfying(
+                        CheckResult.Falsified.class,
+                        falsified -> assertThat(((List<?>) falsified
+                                                .counterexample()
+                                                .toVector()
+                                                .head())
+                                        .size())
+                                .isEqualTo(5));
     }
 
     @Test
     void readingAResult() {
-        var result = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
+        var result =
+                Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
         var summary = switch (result) {
             case CheckResult.Satisfied(var samples) -> "passed " + samples + " samples";
-            case CheckResult.Falsified(var sampleNumber, _, var counterexample, _) -> "broken at sample " + sampleNumber + " by " + counterexample;
-            case CheckResult.Erroneous(var sampleNumber, _, var cause, _) -> "failed at sample " + sampleNumber + " with " + cause;
+            case CheckResult.Falsified(var sampleNumber, var _, var counterexample, var _) ->
+                "broken at sample " + sampleNumber + " by " + counterexample;
+            case CheckResult.Erroneous(var sampleNumber, var _, var cause, var _) ->
+                "failed at sample " + sampleNumber + " with " + cause;
         };
         // "broken at sample 3 by (1000)"
 
@@ -151,7 +165,8 @@ public class DocsTestingExamplesTest {
         var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
         var config = CheckConfig.defaults().withSeed(42); // CheckConfig
         // CheckResult
-        var result = Check.evaluate(config, digits, vector -> assertThat(vector.distinct()).isEqualTo(vector));
+        var result = Check.evaluate(
+                config, digits, vector -> assertThat(vector.distinct()).isEqualTo(vector));
         var message = result.message(); // Option<String>
         // Some("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)"), AssertJ's message on three lines
 
@@ -162,13 +177,16 @@ public class DocsTestingExamplesTest {
         Option<String> typedMessage = message;
         assertThat(typedDigits).isNotNull();
         assertThat(typedResult.isFalsified()).isTrue();
-        assertThat(typedMessage.get()).isEqualToIgnoringWhitespace("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)");
+        assertThat(typedMessage.get())
+                .isEqualToIgnoringWhitespace("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)");
 
         var thrown = Check.evaluate(Gen.integers(), n -> {
             throw new IllegalStateException("boom");
         });
-        assertThat(thrown).isInstanceOfSatisfying(CheckResult.Erroneous.class,
-            erroneous -> assertThat(erroneous.cause()).isInstanceOf(IllegalStateException.class));
+        assertThat(thrown)
+                .isInstanceOfSatisfying(
+                        CheckResult.Erroneous.class,
+                        erroneous -> assertThat(erroneous.cause()).isInstanceOf(IllegalStateException.class));
     }
 
     @Test
@@ -185,10 +203,13 @@ public class DocsTestingExamplesTest {
         Gen<String> typedCoin = coin;
         Gen<String> typedLoadedCoin = loadedCoin;
         assertThat(typedDice.runCollectN(200).toSet()).containsExactlyInAnyOrder(1, 2, 3, 4, 5, 6);
-        assertThat(typedTwoDice.runCollectN(200).forAll(sum -> sum >= 2 && sum <= 12)).isTrue();
+        assertThat(typedTwoDice.runCollectN(200).forAll(sum -> sum >= 2 && sum <= 12))
+                .isTrue();
         assertThat(typedCoin.runCollectN(200).toSet()).containsExactlyInAnyOrder("heads", "tails");
-        assertThat(typedLoadedCoin.runCollectN(1_000, CheckConfig.defaults().withSeed(42)).count("heads"::equals))
-            .isBetween(850, 950);
+        assertThat(typedLoadedCoin
+                        .runCollectN(1_000, CheckConfig.defaults().withSeed(42))
+                        .count("heads"::equals))
+                .isBetween(850, 950);
     }
 
     @Test
@@ -232,9 +253,12 @@ public class DocsTestingExamplesTest {
         Gen<Integer> typedDepth = depth;
         Gen<String> typedWords = words;
         Gen<List<Integer>> typedShortLists = shortLists;
-        assertThat(typedDepth.runCollectN(200, config).forAll(d -> d >= 0 && d <= 50)).isTrue();
-        assertThat(typedWords.runCollectN(200, config).forAll(w -> w.length() <= 50)).isTrue();
-        assertThat(typedShortLists.runCollectN(200, config).forAll(l -> l.size() <= 3)).isTrue();
+        assertThat(typedDepth.runCollectN(200, config).forAll(d -> d >= 0 && d <= 50))
+                .isTrue();
+        assertThat(typedWords.runCollectN(200, config).forAll(w -> w.length() <= 50))
+                .isTrue();
+        assertThat(typedShortLists.runCollectN(200, config).forAll(l -> l.size() <= 3))
+                .isTrue();
     }
 
     @Test
@@ -254,7 +278,8 @@ public class DocsTestingExamplesTest {
         var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
         // CheckResult
         var impossible = Check.evaluate(Gen.integers().filter(n -> false), n -> true);
-        // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
+        // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard
+        // budget of 1000; ...
 
         Gen<Integer> typedEvens = evens;
         Gen<Integer> typedAlsoEvens = alsoEvens;
@@ -263,10 +288,13 @@ public class DocsTestingExamplesTest {
         Check.check(typedNonEmpty, list -> !list.isEmpty());
         assertThat(typedEvens.runCollectN(200).forAll(n -> n % 2 == 0)).isTrue();
         assertThat(typedAlsoEvens.runCollectN(200).forAll(n -> n % 2 == 0)).isTrue();
-        assertThat(typedImpossible).isInstanceOfSatisfying(CheckResult.Erroneous.class,
-            erroneous -> assertThat(erroneous.cause())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageStartingWith("Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; "));
+        assertThat(typedImpossible)
+                .isInstanceOfSatisfying(
+                        CheckResult.Erroneous.class,
+                        erroneous -> assertThat(erroneous.cause())
+                                .isInstanceOf(IllegalStateException.class)
+                                .hasMessageStartingWith(
+                                        "Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; "));
     }
 
     @Test
@@ -291,33 +319,45 @@ public class DocsTestingExamplesTest {
 
     @Test
     void replayingAFailure() {
-        var first = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5);
-        var again = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5);
+        var first =
+                Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5);
+        var again =
+                Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.list(Gen.integers()), list -> list.size() < 5);
         assertThat(again).isEqualTo(first);
     }
 
     @Test
     void generatorsForEveryZazrType() {
-        var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
+        var checks = Gen.validation(
+                Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
         Check.check(checks, checks, (a, b) -> assertThat(a.zip(b).isValid(), equalTo(a.isValid() && b.isValid())));
 
         Gen<Validation<String, Integer>> typed = checks;
         assertThat(typed).isNotNull();
 
         // lengths favour 0, 1, the size and the size minus one
-        var lengths = Gen.vector(Gen.integers()).withSize(20).runCollectN(1_000, CheckConfig.defaults().withSeed(42))
-            .map(Vector::size);
+        var lengths = Gen.vector(Gen.integers())
+                .withSize(20)
+                .runCollectN(1_000, CheckConfig.defaults().withSeed(42))
+                .map(Vector::size);
         assertThat(lengths.count(n -> n == 0 || n == 1 || n == 19 || n == 20)).isBetween(450, 650);
     }
 
     @Test
     void checkingYourOwnType() {
         record Box(Vector<Object> items) {
-            Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
+            Box map(Function<Object, Object> f) {
+                return new Box(items.map(f));
+            }
         }
         var boxes = new MapSubject<Box>() {
-            public Gen<Box> values() { return Gen.vector(Gen.integers(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
-            public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
+            public Gen<Box> values() {
+                return Gen.vector(Gen.integers(-100, 100)).map(v -> new Box(v.map(x -> (Object) x)));
+            }
+
+            public Box map(Box box, Function<Object, Object> f) {
+                return box.map(f);
+            }
         }; // MapSubject<Box>
         MapLaws.<Box>all().assertSatisfied(boxes);
     }
@@ -326,22 +366,35 @@ public class DocsTestingExamplesTest {
     void whenALawFails() {
         // the subject of the previous example, which the page's broken subject reuses
         record Box(Vector<Object> items) {
-            Box map(Function<Object, Object> f) { return new Box(items.map(f)); }
+            Box map(Function<Object, Object> f) {
+                return new Box(items.map(f));
+            }
         }
         var boxes = new MapSubject<Box>() {
-            public Gen<Box> values() { return Gen.vector(Gen.integers(-100, 100)).map(v -> new Box(v.map(x -> (Object) x))); }
-            public Box map(Box box, Function<Object, Object> f) { return box.map(f); }
+            public Gen<Box> values() {
+                return Gen.vector(Gen.integers(-100, 100)).map(v -> new Box(v.map(x -> (Object) x)));
+            }
+
+            public Box map(Box box, Function<Object, Object> f) {
+                return box.map(f);
+            }
         }; // MapSubject<Box>
 
         assertThatThrownBy(() -> {
-            var broken = new MapSubject<Box>() {
-                public Gen<Box> values() { return boxes.values(); }
-                public Box map(Box box, Function<Object, Object> f) { return new Box(box.map(f).items().dropRight(1)); }
-            }; // MapSubject<Box>
-            MapLaws.<Box>all().assertSatisfied(broken, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
-        })
-            .isInstanceOf(AssertionError.class)
-            .hasMessage("""
+                    var broken = new MapSubject<Box>() {
+                        public Gen<Box> values() {
+                            return boxes.values();
+                        }
+
+                        public Box map(Box box, Function<Object, Object> f) {
+                            return new Box(box.map(f).items().dropRight(1));
+                        }
+                    }; // MapSubject<Box>
+                    MapLaws.<Box>all()
+                            .assertSatisfied(broken, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
+                })
+                .isInstanceOf(AssertionError.class)
+                .hasMessage("""
                 2 law(s) failed:
                 mapIdentity: falsified at sample 5 by (Box[items=Vector(6)]): left = Box[items=Vector()], right = Box[items=Vector(6)] (seed 42, replay with -Dzazr.check.seed=42)
                 mapComposition: falsified at sample 7 by (Box[items=Vector(99, -6)], x -> -1 * x + -9, x -> -10 * x + 80): left = Box[items=Vector()], right = Box[items=Vector(1160)] (seed 42, replay with -Dzazr.check.seed=42)""");

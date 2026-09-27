@@ -27,7 +27,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(Scope.Thread)
 public class VectorBuilderBenchmark {
 
-    @Param({ "1000", "100000" })
+    @Param({"1000", "100000"})
     public int size;
 
     private ArrayList<Integer> list;
@@ -105,7 +105,8 @@ public class VectorBuilderBenchmark {
     /* independent of size: a three-element one-shot source appended to a million-element Vector */
     @Benchmark
     public Vector<Integer> appendAll_smallIteratorToLargeVector() {
-        return large.appendAll((Iterable<Integer>) () -> java.util.List.of(1, 2, 3).iterator());
+        return large.appendAll(
+                (Iterable<Integer>) () -> java.util.List.of(1, 2, 3).iterator());
     }
 
     @Benchmark

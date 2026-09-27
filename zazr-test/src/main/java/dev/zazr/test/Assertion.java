@@ -6,7 +6,6 @@ import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import dev.zazr.control.Try;
 import dev.zazr.control.Validation;
-
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -61,8 +60,10 @@ public final class Assertion<A> {
     }
 
     /// A leaf assertion: `explain(value)` is the explanation when `holds(value)` is false.
-    private static <A> Assertion<A> leaf(String name, java.util.function.Predicate<? super A> holds, Function<? super A, String> explain) {
-        return new Assertion<>(name, value -> holds.test(value) ? TestResult.succeed() : TestResult.fail(explain.apply(value)));
+    private static <A> Assertion<A> leaf(
+            String name, java.util.function.Predicate<? super A> holds, Function<? super A, String> explain) {
+        return new Assertion<>(
+                name, value -> holds.test(value) ? TestResult.succeed() : TestResult.fail(explain.apply(value)));
     }
 
     /**
@@ -119,11 +120,10 @@ public final class Assertion<A> {
         if (assertions.length == 0) {
             throw new IllegalArgumentException("at least one assertion is needed");
         }
-        Assertion<A> all = narrow(Objects.requireNonNull(assertions[0], "assertions contains null"));
-        for (int i = 1; i < assertions.length; i++) {
-            all = all.and(Objects.requireNonNull(assertions[i], "assertions contains null"));
-        }
-        return all;
+        return dev.zazr.collection.Vector.range(1, assertions.length)
+                .foldLeft(
+                        narrow(Objects.requireNonNull(assertions[0], "assertions contains null")),
+                        (all, i) -> all.and(Objects.requireNonNull(assertions[i], "assertions contains null")));
     }
 
     @SuppressWarnings("unchecked")
@@ -146,7 +146,8 @@ public final class Assertion<A> {
      */
     public <B extends A> Assertion<B> and(Assertion<? super B> that) {
         Objects.requireNonNull(that, "that is null");
-        return new Assertion<B>("(" + name + " and " + that.name + ")", value -> test(value).and(that.test(value)));
+        return new Assertion<B>(
+                "(" + name + " and " + that.name + ")", value -> test(value).and(that.test(value)));
     }
 
     /**
@@ -162,7 +163,7 @@ public final class Assertion<A> {
     public <B extends A> Assertion<B> or(Assertion<? super B> that) {
         Objects.requireNonNull(that, "that is null");
         return new Assertion<B>("(" + name + " or " + that.name + ")", value -> {
-            final TestResult left = test(value);
+            TestResult left = test(value);
             return left.isSuccess() ? left : left.or(that.test(value));
         });
     }
@@ -189,9 +190,11 @@ public final class Assertion<A> {
      */
     public static <A> Assertion<A> not(Assertion<A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
-        return new Assertion<>("not(" + assertion.name + ")", value -> assertion.test(value).isSuccess()
-                ? TestResult.fail(show(value) + " satisfies " + assertion.name + ", but must not")
-                : TestResult.succeed());
+        return new Assertion<>(
+                "not(" + assertion.name + ")",
+                value -> assertion.test(value).isSuccess()
+                        ? TestResult.fail(show(value) + " satisfies " + assertion.name + ", but must not")
+                        : TestResult.succeed());
     }
 
     // -- values
@@ -215,7 +218,9 @@ public final class Assertion<A> {
      * @return the assertion
      */
     public static <A> Assertion<A> equalTo(A expected) {
-        return leaf("equalTo(" + show(expected) + ")", value -> Objects.deepEquals(value, expected),
+        return leaf(
+                "equalTo(" + show(expected) + ")",
+                value -> Objects.deepEquals(value, expected),
                 value -> show(value) + " is not equal to " + show(expected));
     }
 
@@ -247,7 +252,9 @@ public final class Assertion<A> {
      */
     public static <A extends Comparable<? super A>> Assertion<A> isGreaterThan(A reference) {
         Objects.requireNonNull(reference, "reference is null");
-        return leaf("isGreaterThan(" + show(reference) + ")", value -> value.compareTo(reference) > 0,
+        return leaf(
+                "isGreaterThan(" + show(reference) + ")",
+                value -> value.compareTo(reference) > 0,
                 value -> show(value) + " is not greater than " + show(reference));
     }
 
@@ -261,7 +268,9 @@ public final class Assertion<A> {
      */
     public static <A extends Comparable<? super A>> Assertion<A> isGreaterThanOrEqualTo(A reference) {
         Objects.requireNonNull(reference, "reference is null");
-        return leaf("isGreaterThanOrEqualTo(" + show(reference) + ")", value -> value.compareTo(reference) >= 0,
+        return leaf(
+                "isGreaterThanOrEqualTo(" + show(reference) + ")",
+                value -> value.compareTo(reference) >= 0,
                 value -> show(value) + " is less than " + show(reference));
     }
 
@@ -275,7 +284,9 @@ public final class Assertion<A> {
      */
     public static <A extends Comparable<? super A>> Assertion<A> isLessThan(A reference) {
         Objects.requireNonNull(reference, "reference is null");
-        return leaf("isLessThan(" + show(reference) + ")", value -> value.compareTo(reference) < 0,
+        return leaf(
+                "isLessThan(" + show(reference) + ")",
+                value -> value.compareTo(reference) < 0,
                 value -> show(value) + " is not less than " + show(reference));
     }
 
@@ -289,7 +300,9 @@ public final class Assertion<A> {
      */
     public static <A extends Comparable<? super A>> Assertion<A> isLessThanOrEqualTo(A reference) {
         Objects.requireNonNull(reference, "reference is null");
-        return leaf("isLessThanOrEqualTo(" + show(reference) + ")", value -> value.compareTo(reference) <= 0,
+        return leaf(
+                "isLessThanOrEqualTo(" + show(reference) + ")",
+                value -> value.compareTo(reference) <= 0,
                 value -> show(value) + " is greater than " + show(reference));
     }
 
@@ -305,7 +318,8 @@ public final class Assertion<A> {
     public static <A extends Comparable<? super A>> Assertion<A> isWithin(A min, A max) {
         Objects.requireNonNull(min, "min is null");
         Objects.requireNonNull(max, "max is null");
-        return leaf("isWithin(" + show(min) + ", " + show(max) + ")",
+        return leaf(
+                "isWithin(" + show(min) + ", " + show(max) + ")",
                 value -> value.compareTo(min) >= 0 && value.compareTo(max) <= 0,
                 value -> show(value) + " is not within " + show(min) + " and " + show(max));
     }
@@ -321,7 +335,9 @@ public final class Assertion<A> {
      */
     public static Assertion<String> startsWithString(String prefix) {
         Objects.requireNonNull(prefix, "prefix is null");
-        return leaf("startsWithString(" + show(prefix) + ")", value -> value.startsWith(prefix),
+        return leaf(
+                "startsWithString(" + show(prefix) + ")",
+                value -> value.startsWith(prefix),
                 value -> show(value) + " does not start with " + show(prefix));
     }
 
@@ -334,7 +350,9 @@ public final class Assertion<A> {
      */
     public static Assertion<String> endsWithString(String suffix) {
         Objects.requireNonNull(suffix, "suffix is null");
-        return leaf("endsWithString(" + show(suffix) + ")", value -> value.endsWith(suffix),
+        return leaf(
+                "endsWithString(" + show(suffix) + ")",
+                value -> value.endsWith(suffix),
                 value -> show(value) + " does not end with " + show(suffix));
     }
 
@@ -347,7 +365,9 @@ public final class Assertion<A> {
      */
     public static Assertion<String> containsString(String part) {
         Objects.requireNonNull(part, "part is null");
-        return leaf("containsString(" + show(part) + ")", value -> value.contains(part),
+        return leaf(
+                "containsString(" + show(part) + ")",
+                value -> value.contains(part),
                 value -> show(value) + " does not contain " + show(part));
     }
 
@@ -360,8 +380,10 @@ public final class Assertion<A> {
      * @throws java.util.regex.PatternSyntaxException if {@code regex} is not a regular expression
      */
     public static Assertion<String> matchesRegex(String regex) {
-        final Pattern pattern = Pattern.compile(Objects.requireNonNull(regex, "regex is null"));
-        return leaf("matchesRegex(" + show(regex) + ")", value -> pattern.matcher(value).matches(),
+        Pattern pattern = Pattern.compile(Objects.requireNonNull(regex, "regex is null"));
+        return leaf(
+                "matchesRegex(" + show(regex) + ")",
+                value -> pattern.matcher(value).matches(),
                 value -> show(value) + " does not match " + show(regex));
     }
 
@@ -395,7 +417,7 @@ public final class Assertion<A> {
     public static Assertion<Iterable<?>> hasSize(Assertion<? super Integer> size) {
         Objects.requireNonNull(size, "size is null");
         return new Assertion<>("hasSize(" + size.name + ")", value -> {
-            final int count = count(value);
+            int count = count(value);
             return nested(show(value) + " has size " + count, size.test(count));
         });
     }
@@ -408,14 +430,17 @@ public final class Assertion<A> {
      * @return the assertion
      */
     public static <A> Assertion<Iterable<? extends A>> contains(A element) {
-        return leaf("contains(" + show(element) + ")", value -> {
-            for (A a : value) {
-                if (Objects.equals(a, element)) {
-                    return true;
-                }
-            }
-            return false;
-        }, value -> show(value) + " does not contain " + show(element));
+        return leaf(
+                "contains(" + show(element) + ")",
+                value -> {
+                    for (A a : value) {
+                        if (Objects.equals(a, element)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                value -> show(value) + " does not contain " + show(element));
     }
 
     /**
@@ -428,14 +453,17 @@ public final class Assertion<A> {
      */
     public static <A> Assertion<Iterable<? extends A>> exists(Assertion<? super A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
-        return leaf("exists(" + assertion.name + ")", value -> {
-            for (A a : value) {
-                if (assertion.test(a).isSuccess()) {
-                    return true;
-                }
-            }
-            return false;
-        }, value -> show(value) + " has no element that satisfies " + assertion.name);
+        return leaf(
+                "exists(" + assertion.name + ")",
+                value -> {
+                    for (A a : value) {
+                        if (assertion.test(a).isSuccess()) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                value -> show(value) + " has no element that satisfies " + assertion.name);
     }
 
     /**
@@ -450,13 +478,13 @@ public final class Assertion<A> {
     public static <A> Assertion<Iterable<? extends A>> forall(Assertion<? super A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
         return new Assertion<>("forall(" + assertion.name + ")", value -> {
-            int index = 0;
-            for (A a : value) {
-                final TestResult result = assertion.test(a);
+            Iterator<? extends A> iterator = value.iterator();
+            for (int index = 0; iterator.hasNext(); index++) {
+                A a = iterator.next();
+                TestResult result = assertion.test(a);
                 if (result.isFailure()) {
                     return nested(show(value) + " has " + show(a) + " at index " + index, result);
                 }
-                index++;
             }
             return TestResult.succeed();
         });
@@ -473,11 +501,11 @@ public final class Assertion<A> {
     public static <A> Assertion<Iterable<? extends A>> hasFirst(Assertion<? super A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
         return new Assertion<>("hasFirst(" + assertion.name + ")", value -> {
-            final Iterator<? extends A> iterator = value.iterator();
+            Iterator<? extends A> iterator = value.iterator();
             if (!iterator.hasNext()) {
                 return TestResult.fail(show(value) + " has no first element");
             }
-            final A first = iterator.next();
+            A first = iterator.next();
             return nested(show(value) + " has first element " + show(first), assertion.test(first));
         });
     }
@@ -493,15 +521,15 @@ public final class Assertion<A> {
     public static <A> Assertion<Iterable<? extends A>> hasLast(Assertion<? super A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
         return new Assertion<>("hasLast(" + assertion.name + ")", value -> {
-            final Iterator<? extends A> iterator = value.iterator();
+            Iterator<? extends A> iterator = value.iterator();
             if (!iterator.hasNext()) {
                 return TestResult.fail(show(value) + " has no last element");
             }
-            A last = iterator.next();
-            while (iterator.hasNext()) {
-                last = iterator.next();
+            for (A last = iterator.next(); ; last = iterator.next()) {
+                if (!iterator.hasNext()) {
+                    return nested(show(value) + " has last element " + show(last), assertion.test(last));
+                }
             }
-            return nested(show(value) + " has last element " + show(last), assertion.test(last));
         });
     }
 
@@ -520,9 +548,10 @@ public final class Assertion<A> {
         Objects.requireNonNull(assertion, "assertion is null");
         Gen.requireNonNegative(index, "index");
         return new Assertion<>("hasAt(" + index + ", " + assertion.name + ")", value -> {
-            int i = 0;
-            for (A a : value) {
-                if (i++ == index) {
+            Iterator<? extends A> iterator = value.iterator();
+            for (int i = 0; iterator.hasNext(); i++) {
+                A a = iterator.next();
+                if (i == index) {
                     return nested(show(value) + " has " + show(a) + " at index " + index, assertion.test(a));
                 }
             }
@@ -541,8 +570,10 @@ public final class Assertion<A> {
      */
     public static <A> Assertion<Iterable<? extends A>> hasSameElements(Iterable<? extends A> expected) {
         Objects.requireNonNull(expected, "expected is null");
-        final Map<Object, Integer> counts = counts(expected);
-        return leaf("hasSameElements(" + show(expected) + ")", value -> counts(value).equals(counts),
+        Map<Object, Integer> counts = counts(expected);
+        return leaf(
+                "hasSameElements(" + show(expected) + ")",
+                value -> counts(value).equals(counts),
                 value -> show(value) + " does not have the same elements as " + show(expected));
     }
 
@@ -572,15 +603,15 @@ public final class Assertion<A> {
 
     private static <A> Assertion<Iterable<? extends A>> isSorted(String name, Comparator<? super A> comparator) {
         return new Assertion<>(name, value -> {
-            final Iterator<? extends A> iterator = value.iterator();
+            Iterator<? extends A> iterator = value.iterator();
             if (!iterator.hasNext()) {
                 return TestResult.succeed();
             }
-            A previous = iterator.next();
-            while (iterator.hasNext()) {
-                final A next = iterator.next();
+            for (A previous = iterator.next(); iterator.hasNext(); ) {
+                A next = iterator.next();
                 if (comparator.compare(previous, next) > 0) {
-                    return TestResult.fail(show(value) + " is not sorted: " + show(previous) + " comes before " + show(next));
+                    return TestResult.fail(
+                            show(value) + " is not sorted: " + show(previous) + " comes before " + show(next));
                 }
                 previous = next;
             }
@@ -625,9 +656,11 @@ public final class Assertion<A> {
      */
     public static <L> Assertion<Either<? extends L, ?>> isLeft(Assertion<? super L> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
-        return new Assertion<>("isLeft(" + assertion.name + ")", value -> value.isLeft()
-                ? nested(show(value) + " holds " + show(value.getLeft()), assertion.test(value.getLeft()))
-                : TestResult.fail(show(value) + " is not a Left"));
+        return new Assertion<>(
+                "isLeft(" + assertion.name + ")",
+                value -> value.isLeft()
+                        ? nested(show(value) + " holds " + show(value.getLeft()), assertion.test(value.getLeft()))
+                        : TestResult.fail(show(value) + " is not a Left"));
     }
 
     /**
@@ -640,9 +673,11 @@ public final class Assertion<A> {
      */
     public static <R> Assertion<Either<?, ? extends R>> isRight(Assertion<? super R> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
-        return new Assertion<>("isRight(" + assertion.name + ")", value -> value.isRight()
-                ? nested(show(value) + " holds " + show(value.get()), assertion.test(value.get()))
-                : TestResult.fail(show(value) + " is not a Right"));
+        return new Assertion<>(
+                "isRight(" + assertion.name + ")",
+                value -> value.isRight()
+                        ? nested(show(value) + " holds " + show(value.get()), assertion.test(value.get()))
+                        : TestResult.fail(show(value) + " is not a Right"));
     }
 
     /**
@@ -687,7 +722,8 @@ public final class Assertion<A> {
     public static <A> Assertion<Validation<?, ? extends A>> isValid(Assertion<? super A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
         return new Assertion<>("isValid(" + assertion.name + ")", value -> switch (value) {
-            case Validation.Valid<?, ? extends A>(var a) -> nested(show(value) + " holds " + show(a), assertion.test(a));
+            case Validation.Valid<?, ? extends A>(var a) ->
+                nested(show(value) + " holds " + show(a), assertion.test(a));
             case Validation.Invalid<?, ? extends A> ignored -> TestResult.fail(show(value) + " is not Valid");
         });
     }
@@ -706,7 +742,7 @@ public final class Assertion<A> {
             case Validation.Invalid<? extends E, ?> invalid -> {
                 // an immutable vector of a subtype of E is a vector of E
                 @SuppressWarnings("unchecked")
-                final NonEmptyVector<E> errors = (NonEmptyVector<E>) invalid.errors();
+                NonEmptyVector<E> errors = (NonEmptyVector<E>) invalid.errors();
                 yield nested(show(value) + " holds " + show(errors), assertion.test(errors));
             }
             case Validation.Valid<? extends E, ?> ignored -> TestResult.fail(show(value) + " is not Invalid");
@@ -725,8 +761,11 @@ public final class Assertion<A> {
      */
     public static Assertion<CheckedRunnable> throwsA(Class<? extends Throwable> type) {
         Objects.requireNonNull(type, "type is null");
-        return throwsWith(leaf("isA(" + type.getName() + ")", type::isInstance,
-                thrown -> show(thrown) + " is not a " + type.getName())).label0("throwsA(" + type.getName() + ")");
+        return throwsWith(leaf(
+                        "isA(" + type.getName() + ")",
+                        type::isInstance,
+                        thrown -> show(thrown) + " is not a " + type.getName()))
+                .label0("throwsA(" + type.getName() + ")");
     }
 
     /**
@@ -778,7 +817,7 @@ public final class Assertion<A> {
 
     /// The elements of an array of objects or of primitives, as `Arrays.deepToString` writes them.
     private static String arrayString(Object array) {
-        final String wrapped = java.util.Arrays.deepToString(new Object[] { array });
+        String wrapped = java.util.Arrays.deepToString(new Object[] {array});
         return wrapped.substring(1, wrapped.length() - 1);
     }
 
@@ -786,15 +825,17 @@ public final class Assertion<A> {
         if (iterable instanceof java.util.Collection<?> collection) {
             return collection.size();
         }
-        int count = 0;
-        for (Object ignored : iterable) {
-            count++;
+        Iterator<?> iterator = iterable.iterator();
+        for (int count = 0; ; count++) {
+            if (!iterator.hasNext()) {
+                return count;
+            }
+            iterator.next();
         }
-        return count;
     }
 
     private static Map<Object, Integer> counts(Iterable<?> iterable) {
-        final Map<Object, Integer> counts = new HashMap<>();
+        Map<Object, Integer> counts = new HashMap<>();
         for (Object element : iterable) {
             counts.merge(element, 1, Integer::sum);
         }

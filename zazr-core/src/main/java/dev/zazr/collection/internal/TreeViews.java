@@ -37,15 +37,14 @@ import static dev.zazr.collection.internal.Maps.ABSENT;
  */
 public final class TreeViews {
 
-    private TreeViews() {
-    }
+    private TreeViews() {}
 
     public static <T extends @Nullable Object> NavigableSet<T> asJava(TreeSet<T> set, RedBlackTree<T> tree) {
         return new NavigableKeySetView<>(set, new TreeRange<>(tree, tree.comparator(), false), false);
     }
 
-    public static <K extends @Nullable Object, V extends @Nullable Object> NavigableMap<K, V> asJavaMap(TreeMap<K, V> map, RedBlackTree<Tuple2<K, V>> entries,
-            Comparator<K> keyComparator) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> NavigableMap<K, V> asJavaMap(
+            TreeMap<K, V> map, RedBlackTree<Tuple2<K, V>> entries, Comparator<K> keyComparator) {
         return new NavigableMapView<>(map, new TreeRange<>(entries, keyComparator, true), false);
     }
 
@@ -77,9 +76,16 @@ public final class TreeViews {
             this(tree, comparator, entries, true, null, true, true, null, true);
         }
 
-        private TreeRange(RedBlackTree<E> tree, Comparator<? super K> comparator, boolean entries,
-                          boolean fromStart, @Nullable K lo, boolean loInclusive,
-                          boolean toEnd, @Nullable K hi, boolean hiInclusive) {
+        private TreeRange(
+                RedBlackTree<E> tree,
+                Comparator<? super K> comparator,
+                boolean entries,
+                boolean fromStart,
+                @Nullable K lo,
+                boolean loInclusive,
+                boolean toEnd,
+                @Nullable K hi,
+                boolean hiInclusive) {
             this.tree = tree;
             this.comparator = comparator;
             this.natural = comparator instanceof NaturalComparator;
@@ -105,7 +111,13 @@ public final class TreeViews {
             }
         }
 
-        private TreeRange<E, K> with(boolean fromStart, @Nullable K lo, boolean loInclusive, boolean toEnd, @Nullable K hi, boolean hiInclusive) {
+        private TreeRange<E, K> with(
+                boolean fromStart,
+                @Nullable K lo,
+                boolean loInclusive,
+                boolean toEnd,
+                @Nullable K hi,
+                boolean hiInclusive) {
             return new TreeRange<>(tree, comparator, entries, fromStart, lo, loInclusive, toEnd, hi, hiInclusive);
         }
 
@@ -120,8 +132,9 @@ public final class TreeViews {
         }
 
         /** The comparator a view reports: {@code null} for the natural order, reversed for a descending view. */
-        @Nullable Comparator<? super K> comparator(boolean descending) {
-            final Comparator<? super K> ascending = natural ? null : comparator;
+        @Nullable
+        Comparator<? super K> comparator(boolean descending) {
+            Comparator<? super K> ascending = natural ? null : comparator;
             return descending ? Collections.reverseOrder(ascending) : ascending;
         }
 
@@ -129,7 +142,7 @@ public final class TreeViews {
 
         private boolean tooLow(@Nullable Object key) {
             if (!fromStart) {
-                final int c = compare(key, lo);
+                int c = compare(key, lo);
                 return c < 0 || (c == 0 && !loInclusive);
             }
             return false;
@@ -137,7 +150,7 @@ public final class TreeViews {
 
         private boolean tooHigh(@Nullable Object key) {
             if (!toEnd) {
-                final int c = compare(key, hi);
+                int c = compare(key, hi);
                 return c > 0 || (c == 0 && !hiInclusive);
             }
             return false;
@@ -158,7 +171,12 @@ public final class TreeViews {
         // -- the sub-ranges; on a descending view "from" is the high end
 
         @SuppressWarnings("unchecked")
-        TreeRange<E, K> sub(boolean descending, @Nullable Object from, boolean fromInclusive, @Nullable Object to, boolean toInclusive) {
+        TreeRange<E, K> sub(
+                boolean descending,
+                @Nullable Object from,
+                boolean fromInclusive,
+                @Nullable Object to,
+                boolean toInclusive) {
             if (!inRange(from, fromInclusive)) {
                 throw new IllegalArgumentException("fromKey out of range");
             }
@@ -166,8 +184,8 @@ public final class TreeViews {
                 throw new IllegalArgumentException("toKey out of range");
             }
             return descending
-                   ? with(false, (K) to, toInclusive, false, (K) from, fromInclusive)
-                   : with(false, (K) from, fromInclusive, false, (K) to, toInclusive);
+                    ? with(false, (K) to, toInclusive, false, (K) from, fromInclusive)
+                    : with(false, (K) from, fromInclusive, false, (K) to, toInclusive);
         }
 
         @SuppressWarnings("unchecked")
@@ -176,8 +194,8 @@ public final class TreeViews {
                 throw new IllegalArgumentException("toKey out of range");
             }
             return descending
-                   ? with(false, (K) to, inclusive, toEnd, hi, hiInclusive)
-                   : with(fromStart, lo, loInclusive, false, (K) to, inclusive);
+                    ? with(false, (K) to, inclusive, toEnd, hi, hiInclusive)
+                    : with(fromStart, lo, loInclusive, false, (K) to, inclusive);
         }
 
         @SuppressWarnings("unchecked")
@@ -186,14 +204,16 @@ public final class TreeViews {
                 throw new IllegalArgumentException("fromKey out of range");
             }
             return descending
-                   ? with(fromStart, lo, loInclusive, false, (K) from, inclusive)
-                   : with(false, (K) from, inclusive, toEnd, hi, hiInclusive);
+                    ? with(fromStart, lo, loInclusive, false, (K) from, inclusive)
+                    : with(false, (K) from, inclusive, toEnd, hi, hiInclusive);
         }
 
         // -- the whole tree, bounds ignored
 
         private @Nullable E treeFirst() {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
                 result = node.value;
@@ -203,7 +223,9 @@ public final class TreeViews {
         }
 
         private @Nullable E treeLast() {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
                 result = node.value;
@@ -214,10 +236,12 @@ public final class TreeViews {
 
         /** The least element whose key is {@code >= key} ({@code > key} when {@code strict}). */
         private @Nullable E treeCeiling(@Nullable Object key, boolean strict) {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c == 0 && !strict) {
                     return node.value;
                 } else if (c < 0) {
@@ -232,10 +256,12 @@ public final class TreeViews {
 
         /** The greatest element whose key is {@code <= key} ({@code < key} when {@code strict}). */
         private @Nullable E treeFloor(@Nullable Object key, boolean strict) {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c == 0 && !strict) {
                     return node.value;
                 } else if (c > 0) {
@@ -250,10 +276,12 @@ public final class TreeViews {
 
         /** The number of elements whose key is {@code < key} ({@code <= key} when {@code inclusive}). */
         private int rank(@Nullable Object key, boolean inclusive) {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             int rank = 0;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c < 0 || (c == 0 && !inclusive)) {
                     t = node.left;
                 } else {
@@ -266,45 +294,51 @@ public final class TreeViews {
 
         // -- within the bounds, in ascending order
 
-        @Nullable E lowest() {
-            final E e = fromStart ? treeFirst() : treeCeiling(lo, !loInclusive);
+        @Nullable
+        E lowest() {
+            E e = fromStart ? treeFirst() : treeCeiling(lo, !loInclusive);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
-        @Nullable E highest() {
-            final E e = toEnd ? treeLast() : treeFloor(hi, !hiInclusive);
+        @Nullable
+        E highest() {
+            E e = toEnd ? treeLast() : treeFloor(hi, !hiInclusive);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
-        @Nullable E ceiling(@Nullable Object key) {
+        @Nullable
+        E ceiling(@Nullable Object key) {
             if (tooLow(key)) {
                 return lowest();
             }
-            final E e = treeCeiling(key, false);
+            E e = treeCeiling(key, false);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
-        @Nullable E higher(@Nullable Object key) {
+        @Nullable
+        E higher(@Nullable Object key) {
             if (tooLow(key)) {
                 return lowest();
             }
-            final E e = treeCeiling(key, true);
+            E e = treeCeiling(key, true);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
-        @Nullable E floor(@Nullable Object key) {
+        @Nullable
+        E floor(@Nullable Object key) {
             if (tooHigh(key)) {
                 return highest();
             }
-            final E e = treeFloor(key, false);
+            E e = treeFloor(key, false);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
-        @Nullable E lower(@Nullable Object key) {
+        @Nullable
+        E lower(@Nullable Object key) {
             if (tooHigh(key)) {
                 return highest();
             }
-            final E e = treeFloor(key, true);
+            E e = treeFloor(key, true);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
@@ -313,7 +347,8 @@ public final class TreeViews {
          * natural order rejects a {@code null} or non-{@link Comparable} key even when there is nothing to compare it
          * with.
          */
-        @Nullable E find(@Nullable Object key) {
+        @Nullable
+        E find(@Nullable Object key) {
             if (natural) {
                 Objects.requireNonNull(key, "key is null");
                 if (!(key instanceof Comparable<?>)) {
@@ -323,9 +358,10 @@ public final class TreeViews {
             if (!inRange(key)) {
                 return null;
             }
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c == 0) {
                     return node.value;
                 }
@@ -338,8 +374,8 @@ public final class TreeViews {
             if (fromStart && toEnd) {
                 return tree.size();
             }
-            final int upper = toEnd ? tree.size() : rank(hi, hiInclusive);
-            final int lower = fromStart ? 0 : rank(lo, !loInclusive);
+            int upper = toEnd ? tree.size() : rank(hi, hiInclusive);
+            int lower = fromStart ? 0 : rank(lo, !loInclusive);
             return Math.max(0, upper - lower);
         }
 
@@ -356,12 +392,13 @@ public final class TreeViews {
             if (!entries) {
                 return (X) element;
             }
-            final Tuple2<K, ?> entry = (Tuple2<K, ?>) element;
-            return (X) switch (part) {
-                case KEY -> entry._1();
-                case VALUE -> entry._2();
-                case ENTRY -> MapViews.entry(entry._1(), entry._2());
-            };
+            Tuple2<K, ?> entry = (Tuple2<K, ?>) element;
+            return (X)
+                    switch (part) {
+                        case KEY -> entry._1();
+                        case VALUE -> entry._2();
+                        case ENTRY -> MapViews.entry(entry._1(), entry._2());
+                    };
         }
     }
 
@@ -370,7 +407,9 @@ public final class TreeViews {
      * kept on an array stack: O(log n) to create, amortized O(1) per step, nothing allocated per step but what
      * {@code part} asks for (a {@link java.util.Map.Entry} for the entries of a map).
      */
-    private static final class RangeIterator<E extends @Nullable Object, K extends @Nullable Object, X extends @Nullable Object> implements java.util.Iterator<X> {
+    private static final class RangeIterator<
+                    E extends @Nullable Object, K extends @Nullable Object, X extends @Nullable Object>
+            implements java.util.Iterator<X> {
 
         private final TreeRange<E, K> range;
         private final boolean descending;
@@ -385,8 +424,9 @@ public final class TreeViews {
             this.descending = descending;
             this.part = part;
             // a red-black tree of n nodes is at most 2 * log2(n + 1) high
-            final int size = range.tree.size();
+            int size = range.tree.size();
             this.stack = (Node<E>[]) new Node<?>[2 * (Integer.SIZE - Integer.numberOfLeadingZeros(size)) + 2];
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = range.tree;
             while (t instanceof Node<E> node) {
                 if (descending) {
@@ -421,14 +461,15 @@ public final class TreeViews {
                 next = null;
                 return;
             }
-            final Node<E> node = stack[--depth];
+            Node<E> node = stack[--depth];
             stack[depth] = null;
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = descending ? node.left : node.right;
             while (t instanceof Node<E> child) {
                 push(child);
                 t = descending ? child.right : child.left;
             }
-            final E value = node.value;
+            E value = node.value;
             if (descending ? range.tooLow(range.key(value)) : range.tooHigh(range.key(value))) {
                 next = null;
                 depth = 0;
@@ -444,7 +485,7 @@ public final class TreeViews {
 
         @Override
         public X next() {
-            final E element = next;
+            E element = next;
             if (element == null) {
                 throw new NoSuchElementException();
             }
@@ -457,7 +498,8 @@ public final class TreeViews {
      * The {@link NavigableSet} view of the keys of a {@link TreeRange}: the view of a {@code TreeSet} and the key set
      * of a {@code TreeMap} view.
      */
-    static final class NavigableKeySetView<E extends @Nullable Object, K extends @Nullable Object> extends SetViews.UnmodifiableSet<K> implements NavigableSet<K> {
+    static final class NavigableKeySetView<E extends @Nullable Object, K extends @Nullable Object>
+            extends SetViews.UnmodifiableSet<K> implements NavigableSet<K> {
 
         private final @Nullable Object owner;
         private final TreeRange<E, K> range;
@@ -579,7 +621,8 @@ public final class TreeViews {
 
         @Override
         public NavigableSet<K> subSet(K fromElement, boolean fromInclusive, K toElement, boolean toInclusive) {
-            return new NavigableKeySetView<>(null, range.sub(descending, fromElement, fromInclusive, toElement, toInclusive), descending);
+            return new NavigableKeySetView<>(
+                    null, range.sub(descending, fromElement, fromInclusive, toElement, toInclusive), descending);
         }
 
         @Override
@@ -609,7 +652,8 @@ public final class TreeViews {
     }
 
     /** The {@link NavigableMap} view of a {@link TreeRange} of entries. */
-    static final class NavigableMapView<K extends @Nullable Object, V extends @Nullable Object> extends MapViews.UnmodifiableSequencedMap<K, V> implements NavigableMap<K, V> {
+    static final class NavigableMapView<K extends @Nullable Object, V extends @Nullable Object>
+            extends MapViews.UnmodifiableSequencedMap<K, V> implements NavigableMap<K, V> {
 
         private final @Nullable Object owner;
         private final TreeRange<Tuple2<K, V>, K> range;
@@ -627,8 +671,9 @@ public final class TreeViews {
         }
 
         @Override
-        @Nullable Object lookup(@Nullable Object key) {
-            final Tuple2<K, V> entry = range.find(key);
+        @Nullable
+        Object lookup(@Nullable Object key) {
+            Tuple2<K, V> entry = range.find(key);
             return entry == null ? ABSENT : entry._2();
         }
 
@@ -793,7 +838,8 @@ public final class TreeViews {
 
         @Override
         public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-            return new NavigableMapView<>(null, range.sub(descending, fromKey, fromInclusive, toKey, toInclusive), descending);
+            return new NavigableMapView<>(
+                    null, range.sub(descending, fromKey, fromInclusive, toKey, toInclusive), descending);
         }
 
         @Override

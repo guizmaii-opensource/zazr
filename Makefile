@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness vocabulary complexity docs-complexity docs-complexity-check docs-examples docs-align docs-align-check site site-serve bench coverage coverage-summary coverage-check javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness reassignment vocabulary complexity docs-complexity docs-complexity-check docs-examples docs-align docs-align-check site site-serve bench coverage coverage-summary coverage-check javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,9 +38,10 @@ package: ## build the jars (runs tests)
 install: ## install the jars into ~/.m2 (runs tests)
 	$(MVN) install
 
-verify: ## what CI runs: full build with tests, formatting, nullness, javadoc, vocabulary, complexity and docs checks
+verify: ## what CI runs: full build with tests, formatting, nullness, reassignment, javadoc, vocabulary, complexity and docs checks
 	$(MVN) verify
 	$(MVN) -Pnullaway compile
+	$(MAKE) reassignment
 	$(MAKE) javadoc
 	$(MAKE) vocabulary
 	$(MAKE) complexity
@@ -113,14 +114,17 @@ site: $(DOCS_VENV)/.installed ## build the website into site/ (mkdocs build --st
 site-serve: $(DOCS_VENV)/.installed ## preview the website at http://127.0.0.1:8000/ with live reload
 	$(DOCS_VENV)/bin/mkdocs serve --dev-addr 127.0.0.1:8000
 
-fmt: ## format the sources (spotless apply)
+fmt: ## format the sources with the Palantir Java Format (spotless apply)
 	$(MVN) spotless:apply
 
-fmt-check: ## fail if sources are not formatted (spotless check)
+fmt-check: ## fail if sources are not formatted with the Palantir Java Format (spotless check)
 	$(MVN) spotless:check
 
 nullness: ## NullAway / JSpecify nullness check
 	$(MVN) -Pnullaway compile
+
+reassignment: ## fail when a local variable or a parameter is assigned after its declaration (Error Prone Var, main and test sources)
+	$(MVN) -Preassignment test-compile
 
 bench: ## run the JMH benchmarks (dev.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test

@@ -41,7 +41,10 @@ public class Euler28Test {
     }
 
     private static LazyList<Long> diagonalNumbersInSpiralWithSide(long maxSideLength) {
-        return LazyList.iterate(Tuple.of(1, center()), t -> Tuple.of(nextSideLength(t._1()), nextRoundOfCorners(t._2().last(), nextSideLength(t._1()))))
+        return LazyList.iterate(
+                        Tuple.of(1, center()),
+                        t -> Tuple.of(
+                                nextSideLength(t._1()), nextRoundOfCorners(t._2().last(), nextSideLength(t._1()))))
                 .takeWhile(t -> t._1() <= maxSideLength)
                 .flatMap(t -> t._2());
     }

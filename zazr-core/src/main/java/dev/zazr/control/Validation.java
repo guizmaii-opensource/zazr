@@ -72,7 +72,8 @@ import org.jspecify.annotations.Nullable;
  * @param <E> the error type
  * @param <A> the value type
  */
-public sealed interface Validation<E extends @Nullable Object, A extends @Nullable Object> permits Validation.Valid, Validation.Invalid {
+public sealed interface Validation<E extends @Nullable Object, A extends @Nullable Object>
+        permits Validation.Valid, Validation.Invalid {
 
     // -- constructors
 
@@ -112,7 +113,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Invalid(errors)}
      * @throws NullPointerException if {@code errors} is null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> invalidAll(NonEmptyVector<E> errors) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> invalidAll(
+            NonEmptyVector<E> errors) {
         return new Invalid<>(errors);
     }
 
@@ -130,7 +132,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @throws NullPointerException if {@code nested} is null
      */
     @SuppressWarnings("unchecked")
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> flatten(Validation<? extends E, ? extends Validation<? extends E, ? extends A>> nested) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> flatten(
+            Validation<? extends E, ? extends Validation<? extends E, ? extends A>> nested) {
         Objects.requireNonNull(nested, "nested is null");
         return switch (nested) {
             case Valid(var inner) -> (Validation<E, A>) inner;
@@ -148,7 +151,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return the {@code Validation} equivalent of {@code either}
      * @throws NullPointerException if {@code either} is null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromEither(Either<? extends E, ? extends A> either) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromEither(
+            Either<? extends E, ? extends A> either) {
         Objects.requireNonNull(either, "either is null");
         return either.isRight() ? valid(either.get()) : invalid(either.getLeft());
     }
@@ -164,10 +168,13 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return the {@code Validation} equivalent of {@code option}
      * @throws NullPointerException if {@code option} or {@code ifNone} is null, or if {@code ifNone} supplies null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromOption(Option<? extends A> option, Supplier<? extends E> ifNone) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromOption(
+            Option<? extends A> option, Supplier<? extends E> ifNone) {
         Objects.requireNonNull(option, "option is null");
         Objects.requireNonNull(ifNone, "ifNone is null");
-        return option.isDefined() ? valid(option.get()) : invalid(Objects.requireNonNull(ifNone.get(), "Validation.fromOption: ifNone returned null"));
+        return option.isDefined()
+                ? valid(option.get())
+                : invalid(Objects.requireNonNull(ifNone.get(), "Validation.fromOption: ifNone returned null"));
     }
 
     /**
@@ -186,11 +193,15 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid(value)} if the predicate holds, otherwise {@code Invalid} of the built error
      * @throws NullPointerException if any argument is null, or if {@code ifFalse} returns null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromPredicate(A value, Predicate<? super A> predicate, Function<? super A, ? extends E> ifFalse) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> fromPredicate(
+            A value, Predicate<? super A> predicate, Function<? super A, ? extends E> ifFalse) {
         Objects.requireNonNull(value, "value is null");
         Objects.requireNonNull(predicate, "predicate is null");
         Objects.requireNonNull(ifFalse, "ifFalse is null");
-        return predicate.test(value) ? valid(value) : invalid(Objects.requireNonNull(ifFalse.apply(value), "Validation.fromPredicate: ifFalse returned null"));
+        return predicate.test(value)
+                ? valid(value)
+                : invalid(Objects.requireNonNull(
+                        ifFalse.apply(value), "Validation.fromPredicate: ifFalse returned null"));
     }
 
     /**
@@ -222,12 +233,14 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the result or {@code Invalid} of the built error
      * @throws NullPointerException if {@code f} or {@code onError} is null, or if {@code onError} returns null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> of(Callable<? extends A> f, Function<? super Throwable, ? extends E> onError) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, A> of(
+            Callable<? extends A> f, Function<? super Throwable, ? extends E> onError) {
         Objects.requireNonNull(f, "f is null");
         Objects.requireNonNull(onError, "onError is null");
         return switch (Try.of(f)) {
             case Success(var value) -> valid(value);
-            case Failure(var cause) -> invalid(Objects.requireNonNull(onError.apply(cause), "Validation.of: onError returned null"));
+            case Failure(var cause) ->
+                invalid(Objects.requireNonNull(onError.apply(cause), "Validation.of: onError returned null"));
         };
     }
 
@@ -247,7 +260,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of all the values, or {@code Invalid} of all the errors
      * @throws NullPointerException if {@code validations} or one of its elements is null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, Vector<A>> collectAll(Iterable<? extends Validation<? extends E, ? extends A>> validations) {
+    static <E extends @Nullable Object, A extends @Nullable Object> Validation<E, Vector<A>> collectAll(
+            Iterable<? extends Validation<? extends E, ? extends A>> validations) {
         Objects.requireNonNull(validations, "validations is null");
         return forEach(validations, v -> Objects.requireNonNull(v, "Validation.collectAll: element is null"));
     }
@@ -269,13 +283,18 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
      * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Validation<E, Vector<B>> forEach(Iterable<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object>
+            Validation<E, Vector<B>> forEach(
+                    Iterable<? extends A> values,
+                    Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(f, "f is null");
-        final Vector.Builder<B> results = Vector.newBuilder();
+        Vector.Builder<B> results = Vector.newBuilder();
+        @SuppressWarnings("Var")
         Vector.Builder<E> errors = null;
         for (A value : values) {
-            final Validation<? extends E, ? extends B> validation = Objects.requireNonNull(f.apply(value), "Validation.forEach: f returned null");
+            Validation<? extends E, ? extends B> validation =
+                    Objects.requireNonNull(f.apply(value), "Validation.forEach: f returned null");
             if (validation instanceof Invalid(var es)) {
                 if (errors == null) {
                     errors = Vector.newBuilder();
@@ -285,7 +304,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
                 results.add(validation.get());
             }
         }
-        return errors == null ? valid(results.result()) : new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
+        return errors == null
+                ? valid(results.result())
+                : new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
 
     /**
@@ -300,7 +321,10 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of all the mapped values, or {@code Invalid} of all the errors
      * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Validation<E, NonEmptyVector<B>> forEach(NonEmptyVector<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object>
+            Validation<E, NonEmptyVector<B>> forEach(
+                    NonEmptyVector<? extends A> values,
+                    Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
         return forEach(values.toVector(), f).map(NonEmptyVector::unsafeFromVector);
     }
@@ -321,11 +345,14 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return the errors and the values
      * @throws NullPointerException if {@code values} or {@code f} is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object> Tuple2<Vector<E>, Vector<B>> partition(Iterable<? extends A> values, Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+    static <E extends @Nullable Object, A extends @Nullable Object, B extends @Nullable Object>
+            Tuple2<Vector<E>, Vector<B>> partition(
+                    Iterable<? extends A> values,
+                    Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(f, "f is null");
-        final Vector.Builder<E> errors = Vector.newBuilder();
-        final Vector.Builder<B> results = Vector.newBuilder();
+        Vector.Builder<E> errors = Vector.newBuilder();
+        Vector.Builder<B> results = Vector.newBuilder();
         for (A value : values) {
             switch (Objects.requireNonNull(f.apply(value), "Validation.partition: f returned null")) {
                 case Valid(var v) -> results.add(v);
@@ -364,18 +391,22 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
      */
     @SuppressWarnings("unchecked")
-    default <B extends @Nullable Object, C extends @Nullable Object> Validation<E, C> zipWith(Validation<? extends E, ? extends B> that, BiFunction<? super A, ? super B, ? extends C> f) {
+    default <B extends @Nullable Object, C extends @Nullable Object> Validation<E, C> zipWith(
+            Validation<? extends E, ? extends B> that, BiFunction<? super A, ? super B, ? extends C> f) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
-            case Valid(var a) -> switch (that) {
-                case Valid(var b) -> valid(Objects.requireNonNull(f.apply(a, b), "Validation.zipWith: f returned null"));
-                case Invalid<? extends E, ? extends B> invalid -> (Validation<E, C>) invalid;
-            };
-            case Invalid(var errors) -> switch (that) {
-                case Valid<?, ?> _ -> (Validation<E, C>) this;
-                case Invalid(var more) -> new Invalid<>(errors.appendAll(more));
-            };
+            case Valid(var a) ->
+                switch (that) {
+                    case Valid(var b) ->
+                        valid(Objects.requireNonNull(f.apply(a, b), "Validation.zipWith: f returned null"));
+                    case Invalid<? extends E, ? extends B> invalid -> (Validation<E, C>) invalid;
+                };
+            case Invalid(var errors) ->
+                switch (that) {
+                    case Valid<?, ?> _ -> (Validation<E, C>) this;
+                    case Invalid(var more) -> new Invalid<>(errors.appendAll(more));
+                };
         };
     }
 
@@ -433,7 +464,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object> Validation<E, Tuple2<T1, T2>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2) {
+    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object>
+            Validation<E, Tuple2<T1, T2>> zip(
+                    Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2) {
         return zipWith(v1, v2, Tuple::of);
     }
 
@@ -453,13 +486,19 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    BiFunction<? super T1, ? super T2, ? extends R> f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
+        Vector.@Nullable Builder<E> errors = accumulate(accumulate(null, v1), v2);
         if (errors == null) {
             return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get()), "Validation.zipWith: f returned null"));
         }
@@ -482,7 +521,15 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Validation<E, Tuple3<T1, T2, T3>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object>
+            Validation<E, Tuple3<T1, T2, T3>> zip(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3) {
         return zipWith(v1, v2, v3, Tuple::of);
     }
 
@@ -504,17 +551,25 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
+        Vector.@Nullable Builder<E> errors = accumulate(accumulate(accumulate(null, v1), v2), v3);
         if (errors == null) {
-            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get()), "Validation.zipWith: f returned null"));
+            return valid(Objects.requireNonNull(
+                    f.apply(v1.get(), v2.get(), v3.get()), "Validation.zipWith: f returned null"));
         }
         return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
@@ -537,7 +592,17 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Validation<E, Tuple4<T1, T2, T3, T4>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Validation<E, Tuple4<T1, T2, T3, T4>> zip(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4) {
         return zipWith(v1, v2, v3, v4, Tuple::of);
     }
 
@@ -561,19 +626,28 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
         Objects.requireNonNull(v4, "v4 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
+        Vector.@Nullable Builder<E> errors = accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4);
         if (errors == null) {
-            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get()), "Validation.zipWith: f returned null"));
+            return valid(Objects.requireNonNull(
+                    f.apply(v1.get(), v2.get(), v3.get(), v4.get()), "Validation.zipWith: f returned null"));
         }
         return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
@@ -598,7 +672,19 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Validation<E, Tuple5<T1, T2, T3, T4, T5>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Validation<E, Tuple5<T1, T2, T3, T4, T5>> zip(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5) {
         return zipWith(v1, v2, v3, v4, v5, Tuple::of);
     }
 
@@ -624,21 +710,32 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
         Objects.requireNonNull(v4, "v4 is null");
         Objects.requireNonNull(v5, "v5 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
+        Vector.@Nullable Builder<E> errors =
+                accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5);
         if (errors == null) {
-            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get()), "Validation.zipWith: f returned null"));
+            return valid(Objects.requireNonNull(
+                    f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get()), "Validation.zipWith: f returned null"));
         }
         return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
@@ -665,7 +762,21 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Validation<E, Tuple6<T1, T2, T3, T4, T5, T6>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Validation<E, Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Validation<? extends E, ? extends T6> v6) {
         return zipWith(v1, v2, v3, v4, v5, v6, Tuple::of);
     }
 
@@ -693,7 +804,23 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Validation<? extends E, ? extends T6> v6,
+                    Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
@@ -701,15 +828,12 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v5, "v5 is null");
         Objects.requireNonNull(v6, "v6 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
-        errors = accumulate(errors, v6);
+        Vector.@Nullable Builder<E> errors =
+                accumulate(accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5), v6);
         if (errors == null) {
-            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get()), "Validation.zipWith: f returned null"));
+            return valid(Objects.requireNonNull(
+                    f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get()),
+                    "Validation.zipWith: f returned null"));
         }
         return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
@@ -738,7 +862,23 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Validation<E, Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Validation<E, Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Validation<? extends E, ? extends T6> v6,
+                    Validation<? extends E, ? extends T7> v7) {
         return zipWith(v1, v2, v3, v4, v5, v6, v7, Tuple::of);
     }
 
@@ -768,7 +908,34 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Validation<? extends E, ? extends T6> v6,
+                    Validation<? extends E, ? extends T7> v7,
+                    Function7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
@@ -777,16 +944,13 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v6, "v6 is null");
         Objects.requireNonNull(v7, "v7 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
-        errors = accumulate(errors, v6);
-        errors = accumulate(errors, v7);
+        Vector.@Nullable Builder<E> errors = accumulate(
+                accumulate(accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5), v6),
+                v7);
         if (errors == null) {
-            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get()), "Validation.zipWith: f returned null"));
+            return valid(Objects.requireNonNull(
+                    f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get()),
+                    "Validation.zipWith: f returned null"));
         }
         return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
@@ -817,7 +981,25 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the tuple of the values, or the accumulated errors
      * @throws NullPointerException if any argument is null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Validation<E, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7, Validation<? extends E, ? extends T8> v8) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Validation<E, Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Validation<? extends E, ? extends T6> v6,
+                    Validation<? extends E, ? extends T7> v7,
+                    Validation<? extends E, ? extends T8> v8) {
         return zipWith(v1, v2, v3, v4, v5, v6, v7, v8, Tuple::of);
     }
 
@@ -849,7 +1031,37 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return {@code Valid} of the combined value, or the accumulated errors
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <E extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Validation<E, R> zipWith(Validation<? extends E, ? extends T1> v1, Validation<? extends E, ? extends T2> v2, Validation<? extends E, ? extends T3> v3, Validation<? extends E, ? extends T4> v4, Validation<? extends E, ? extends T5> v5, Validation<? extends E, ? extends T6> v6, Validation<? extends E, ? extends T7> v7, Validation<? extends E, ? extends T8> v8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+    static <
+                    E extends @Nullable Object,
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Validation<E, R> zipWith(
+                    Validation<? extends E, ? extends T1> v1,
+                    Validation<? extends E, ? extends T2> v2,
+                    Validation<? extends E, ? extends T3> v3,
+                    Validation<? extends E, ? extends T4> v4,
+                    Validation<? extends E, ? extends T5> v5,
+                    Validation<? extends E, ? extends T6> v6,
+                    Validation<? extends E, ? extends T7> v7,
+                    Validation<? extends E, ? extends T8> v8,
+                    Function8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
@@ -859,17 +1071,17 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v7, "v7 is null");
         Objects.requireNonNull(v8, "v8 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
-        errors = accumulate(errors, v6);
-        errors = accumulate(errors, v7);
-        errors = accumulate(errors, v8);
+        Vector.@Nullable Builder<E> errors = accumulate(
+                accumulate(
+                        accumulate(
+                                accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5),
+                                v6),
+                        v7),
+                v8);
         if (errors == null) {
-            return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get(), v8.get()), "Validation.zipWith: f returned null"));
+            return valid(Objects.requireNonNull(
+                    f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get(), v8.get()),
+                    "Validation.zipWith: f returned null"));
         }
         return new Invalid<>(NonEmptyVector.unsafeFromVector(errors.result()));
     }
@@ -879,12 +1091,12 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * {@code validation}, if it is {@code Invalid}, to {@code errors}, which is {@code null} until the first
      * {@code Invalid} operand creates it (the {@link #forEach(Iterable, Function)} pattern).
      */
-    private static <E extends @Nullable Object> Vector.@Nullable Builder<E> accumulate(Vector.@Nullable Builder<E> errors, Validation<? extends E, ?> validation) {
+    private static <E extends @Nullable Object> Vector.@Nullable Builder<E> accumulate(
+            Vector.@Nullable Builder<E> errors, Validation<? extends E, ?> validation) {
         if (validation instanceof Invalid(var es)) {
-            if (errors == null) {
-                errors = Vector.newBuilder();
-            }
-            errors.addAll(es.toVector());
+            Vector.Builder<E> created = errors == null ? Vector.newBuilder() : errors;
+            created.addAll(es.toVector());
+            return created;
         }
         return errors;
     }
@@ -901,7 +1113,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     @SuppressWarnings("unchecked")
     default Validation<E, A> orElse(Supplier<? extends Validation<? extends E, ? extends A>> that) {
         Objects.requireNonNull(that, "that is null");
-        return isValid() ? this : (Validation<E, A>) Objects.requireNonNull(that.get(), "Validation.orElse: that returned null");
+        return isValid()
+                ? this
+                : (Validation<E, A>) Objects.requireNonNull(that.get(), "Validation.orElse: that returned null");
     }
 
     // -- short-circuit
@@ -925,10 +1139,12 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @throws NullPointerException if {@code f} is null, or if it returns null
      */
     @SuppressWarnings("unchecked")
-    default <B extends @Nullable Object> Validation<E, B> flatMap(Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
+    default <B extends @Nullable Object> Validation<E, B> flatMap(
+            Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
-            case Valid(var value) -> (Validation<E, B>) Objects.requireNonNull(f.apply(value), "Validation.flatMap: f returned null");
+            case Valid(var value) ->
+                (Validation<E, B>) Objects.requireNonNull(f.apply(value), "Validation.flatMap: f returned null");
             case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
         };
     }
@@ -943,10 +1159,12 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @throws NullPointerException if {@code f} is null, or if it returns null
      */
     @SuppressWarnings("unchecked")
-    default <B extends @Nullable Object> Validation<E, B> flatMapEither(Function<? super A, ? extends Either<? extends E, ? extends B>> f) {
+    default <B extends @Nullable Object> Validation<E, B> flatMapEither(
+            Function<? super A, ? extends Either<? extends E, ? extends B>> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
-            case Valid(var value) -> fromEither(Objects.requireNonNull(f.apply(value), "Validation.flatMapEither: f returned null"));
+            case Valid(var value) ->
+                fromEither(Objects.requireNonNull(f.apply(value), "Validation.flatMapEither: f returned null"));
             case Invalid<E, A> invalid -> (Validation<E, B>) invalid;
         };
     }
@@ -983,7 +1201,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid<E, A> valid -> (Validation<E2, A>) valid;
-            case Invalid(var errors) -> new Invalid<>(errors.map(e -> Objects.requireNonNull(f.apply(e), "Validation.mapError: f returned null")));
+            case Invalid(var errors) ->
+                new Invalid<>(
+                        errors.map(e -> Objects.requireNonNull(f.apply(e), "Validation.mapError: f returned null")));
         };
     }
 
@@ -998,11 +1218,13 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @throws NullPointerException if {@code f} is null, or if it returns null
      */
     @SuppressWarnings("unchecked")
-    default <E2 extends @Nullable Object> Validation<E2, A> mapErrorAll(Function<? super NonEmptyVector<E>, ? extends NonEmptyVector<E2>> f) {
+    default <E2 extends @Nullable Object> Validation<E2, A> mapErrorAll(
+            Function<? super NonEmptyVector<E>, ? extends NonEmptyVector<E2>> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid<E, A> valid -> (Validation<E2, A>) valid;
-            case Invalid(var errors) -> new Invalid<>(Objects.requireNonNull(f.apply(errors), "Validation.mapErrorAll: f returned null"));
+            case Invalid(var errors) ->
+                new Invalid<>(Objects.requireNonNull(f.apply(errors), "Validation.mapErrorAll: f returned null"));
         };
     }
 
@@ -1016,12 +1238,17 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return the mapped {@code Validation}
      * @throws NullPointerException if a mapper is null, or if the applied one returns null
      */
-    default <E2 extends @Nullable Object, B extends @Nullable Object> Validation<E2, B> mapBoth(Function<? super E, ? extends E2> errorMapper, Function<? super A, ? extends B> valueMapper) {
+    default <E2 extends @Nullable Object, B extends @Nullable Object> Validation<E2, B> mapBoth(
+            Function<? super E, ? extends E2> errorMapper, Function<? super A, ? extends B> valueMapper) {
         Objects.requireNonNull(errorMapper, "errorMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         return switch (this) {
-            case Valid(var value) -> valid(Objects.requireNonNull(valueMapper.apply(value), "Validation.mapBoth: valueMapper returned null"));
-            case Invalid(var errors) -> new Invalid<>(errors.map(e -> Objects.requireNonNull(errorMapper.apply(e), "Validation.mapBoth: errorMapper returned null")));
+            case Valid(var value) ->
+                valid(Objects.requireNonNull(
+                        valueMapper.apply(value), "Validation.mapBoth: valueMapper returned null"));
+            case Invalid(var errors) ->
+                new Invalid<>(errors.map(e ->
+                        Objects.requireNonNull(errorMapper.apply(e), "Validation.mapBoth: errorMapper returned null")));
         };
     }
 
@@ -1035,7 +1262,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return the result of the function that applies
      * @throws NullPointerException if a function is null
      */
-    default <B extends @Nullable Object> B fold(Function<? super NonEmptyVector<E>, ? extends B> ifInvalid, Function<? super A, ? extends B> ifValid) {
+    default <B extends @Nullable Object> B fold(
+            Function<? super NonEmptyVector<E>, ? extends B> ifInvalid, Function<? super A, ? extends B> ifValid) {
         Objects.requireNonNull(ifInvalid, "ifInvalid is null");
         Objects.requireNonNull(ifValid, "ifValid is null");
         return switch (this) {
@@ -1111,7 +1339,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(exceptionSupplier, "exceptionSupplier is null");
         return switch (this) {
             case Valid(var value) -> value;
-            case Invalid<E, A> _ -> throw Objects.requireNonNull(exceptionSupplier.get(), "Validation.getOrElseThrow: exceptionSupplier returned null");
+            case Invalid<E, A> _ ->
+                throw Objects.requireNonNull(
+                        exceptionSupplier.get(), "Validation.getOrElseThrow: exceptionSupplier returned null");
         };
     }
 
@@ -1129,7 +1359,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(exceptionFunction, "exceptionFunction is null");
         return switch (this) {
             case Valid(var value) -> value;
-            case Invalid(var errors) -> throw Objects.requireNonNull(exceptionFunction.apply(errors), "Validation.getOrElseThrow: exceptionFunction returned null");
+            case Invalid(var errors) ->
+                throw Objects.requireNonNull(
+                        exceptionFunction.apply(errors), "Validation.getOrElseThrow: exceptionFunction returned null");
         };
     }
 
@@ -1261,11 +1493,13 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @return the {@code Either} equivalent of this {@code Validation}
      * @throws NullPointerException if {@code f} is null, or if it returns null for an {@code Invalid}
      */
-    default <E2 extends @Nullable Object> Either<E2, A> toEitherWith(Function<? super NonEmptyVector<E>, ? extends E2> f) {
+    default <E2 extends @Nullable Object> Either<E2, A> toEitherWith(
+            Function<? super NonEmptyVector<E>, ? extends E2> f) {
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid(var value) -> Either.right(value);
-            case Invalid(var errors) -> Either.left(Objects.requireNonNull(f.apply(errors), "Validation.toEitherWith: f returned null"));
+            case Invalid(var errors) ->
+                Either.left(Objects.requireNonNull(f.apply(errors), "Validation.toEitherWith: f returned null"));
         };
     }
 
@@ -1295,7 +1529,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(f, "f is null");
         return switch (this) {
             case Valid(var value) -> Try.success(value);
-            case Invalid(var errors) -> Try.failure(Objects.requireNonNull(f.apply(errors), "Validation.toTry: f returned null"));
+            case Invalid(var errors) ->
+                Try.failure(Objects.requireNonNull(f.apply(errors), "Validation.toTry: f returned null"));
         };
     }
 
@@ -1360,7 +1595,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
      * @param <E>    the error type
      * @param <A>    the value type
      */
-    record Invalid<E extends @Nullable Object, A extends @Nullable Object>(NonEmptyVector<E> errors) implements Validation<E, A> {
+    record Invalid<E extends @Nullable Object, A extends @Nullable Object>(NonEmptyVector<E> errors)
+            implements Validation<E, A> {
 
         /**
          * Rejects {@code null}.

@@ -21,8 +21,7 @@ import static dev.zazr.collection.internal.JavaConverters.unmodifiable;
  */
 public final class SetViews {
 
-    private SetViews() {
-    }
+    private SetViews() {}
 
     public static <T extends @Nullable Object> java.util.Set<T> asJava(HashSet<T> set) {
         return new HashSetView<>(set);
@@ -45,7 +44,8 @@ public final class SetViews {
      *
      * @param <T> the element type
      */
-    abstract static class UnmodifiableSet<T extends @Nullable Object> extends AbstractSet<T> implements JavaConverters.View {
+    abstract static class UnmodifiableSet<T extends @Nullable Object> extends AbstractSet<T>
+            implements JavaConverters.View {
 
         @Override
         public final boolean add(T element) {
@@ -127,7 +127,8 @@ public final class SetViews {
             return set.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public boolean contains(@Nullable Object element) {
             return set.contains((T) element);
@@ -153,7 +154,8 @@ public final class SetViews {
      * The view of a {@link LinkedHashSet} in insertion order, or in reverse insertion order when {@code reversed} is
      * set (the view {@link #reversed()} returns).
      */
-    static final class SequencedSetView<T extends @Nullable Object> extends UnmodifiableSet<T> implements SequencedSet<T> {
+    static final class SequencedSetView<T extends @Nullable Object> extends UnmodifiableSet<T>
+            implements SequencedSet<T> {
 
         private final LinkedHashSet<T> set;
         private final Iterable<T> reverse;
@@ -180,7 +182,8 @@ public final class SetViews {
             return set.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public boolean contains(@Nullable Object element) {
             return set.contains((T) element);
@@ -194,8 +197,8 @@ public final class SetViews {
         @Override
         public Spliterator<T> spliterator() {
             return reversed
-                   ? Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED | Spliterator.IMMUTABLE)
-                   : set.spliterator();
+                    ? Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED | Spliterator.IMMUTABLE)
+                    : set.spliterator();
         }
 
         @Override

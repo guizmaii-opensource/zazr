@@ -12,7 +12,6 @@ import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-
 /**
  * An immutable {@code Queue} stores elements allowing a first-in-first-out (FIFO) retrieval.
  * <p>
@@ -52,7 +51,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
-    private static final Queue<?> EMPTY = new Queue<>(dev.zazr.collection.List.empty(), dev.zazr.collection.List.empty());
+    private static final Queue<?> EMPTY =
+            new Queue<>(dev.zazr.collection.List.empty(), dev.zazr.collection.List.empty());
 
     private final dev.zazr.collection.List<T> front;
     private final dev.zazr.collection.List<T> rear;
@@ -67,7 +67,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param rear  A List of rear elements, in reverse order.
      */
     private Queue(dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear) {
-        final boolean frontIsEmpty = front.isEmpty();
+        boolean frontIsEmpty = front.isEmpty();
         this.front = frontIsEmpty ? rear.reverse() : front;
         this.rear = frontIsEmpty ? front : rear;
     }
@@ -81,13 +81,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A dev.zazr.collection.Queue Collector.
      */
     public static <T extends @Nullable Object> Collector<T, ArrayList<T>, Queue<T>> collector() {
-        final Supplier<ArrayList<T>> supplier = ArrayList::new;
-        final BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
-        final BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
+        Supplier<ArrayList<T>> supplier = ArrayList::new;
+        BiConsumer<ArrayList<T>, T> accumulator = ArrayList::add;
+        BinaryOperator<ArrayList<T>> combiner = (left, right) -> {
             left.addAll(right);
             return left;
         };
-        final Function<ArrayList<T>, Queue<T>> finisher = Queue::ofAll;
+        Function<ArrayList<T>, Queue<T>> finisher = Queue::ofAll;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -137,7 +137,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     @SuppressWarnings("varargs")
     @SafeVarargs
-    public static <T extends @Nullable Object> Queue<T> of(T ... elements) {
+    public static <T extends @Nullable Object> Queue<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.of(elements));
     }
@@ -159,7 +159,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             return (Queue<T>) underlying;
         } else {
             // one read of the argument, which may be a one-shot Iterable: the emptiness is answered by the copy
-            final dev.zazr.collection.List<T> front = dev.zazr.collection.List.ofAll(elements);
+            dev.zazr.collection.List<T> front = dev.zazr.collection.List.ofAll(elements);
             return front.isEmpty() ? empty() : new Queue<>(front, dev.zazr.collection.List.empty());
         }
     }
@@ -191,6 +191,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public static <T extends @Nullable Object> Queue<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
         // List.flatten's loop, not a delegation, so that a null element is reported under this type's name
+        @SuppressWarnings("Var")
         dev.zazr.collection.List<T> reversed = dev.zazr.collection.List.empty();
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
@@ -207,7 +208,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Boolean values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Boolean> ofAll(boolean ... elements) {
+    public static Queue<Boolean> ofAll(boolean... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -219,7 +220,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Byte values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Byte> ofAll(byte ... elements) {
+    public static Queue<Byte> ofAll(byte... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -231,7 +232,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Character values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Character> ofAll(char ... elements) {
+    public static Queue<Character> ofAll(char... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -243,7 +244,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Double values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Double> ofAll(double ... elements) {
+    public static Queue<Double> ofAll(double... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -255,7 +256,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Float values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Float> ofAll(float ... elements) {
+    public static Queue<Float> ofAll(float... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -267,7 +268,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Integer values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Integer> ofAll(int ... elements) {
+    public static Queue<Integer> ofAll(int... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -279,7 +280,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Long values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Long> ofAll(long ... elements) {
+    public static Queue<Long> ofAll(long... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -291,7 +292,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return A new Queue of Short values
      * @throws NullPointerException if elements is null
      */
-    public static Queue<Short> ofAll(short ... elements) {
+    public static Queue<Short> ofAll(short... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return ofAll(dev.zazr.collection.List.ofAll(elements));
     }
@@ -692,8 +693,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a Queue with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public static <T extends @Nullable Object, U extends @Nullable Object> Queue<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f, "Queue.unfoldRight: f returned null").toQueue();
+    public static <T extends @Nullable Object, U extends @Nullable Object> Queue<U> unfoldRight(
+            T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
+        return Iterator.unfoldRight(seed, f, "Queue.unfoldRight: f returned null")
+                .toQueue();
     }
 
     /**
@@ -721,7 +724,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a Queue with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public static <T extends @Nullable Object, U extends @Nullable Object> Queue<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
+    public static <T extends @Nullable Object, U extends @Nullable Object> Queue<U> unfoldLeft(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
         return Iterator.unfoldLeft(seed, f, "Queue.unfoldLeft: f returned null").toQueue();
     }
 
@@ -749,7 +753,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a Queue with the values built up by the iteration
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public static <T extends @Nullable Object> Queue<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
+    public static <T extends @Nullable Object> Queue<T> unfold(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
         return Iterator.unfold(seed, f, "Queue.unfold: f returned null").toQueue();
     }
 
@@ -1010,10 +1015,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public int segmentLength(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final InOrder<T> elements = new InOrder<>(front, rear);
+        InOrder<T> elements = new InOrder<>(front, rear);
         for (int i = from; i > 0 && elements.hasNext(); i--) {
             elements.next();
         }
+        @SuppressWarnings("Var")
         int length = 0;
         while (elements.hasNext() && predicate.test(elements.next())) {
             length++;
@@ -1356,7 +1362,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public <U extends @Nullable Object> Queue<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        final java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
+        java.util.List<T> duplicated = Collections.duplicatesBy(this, keyExtractor);
         return duplicated.isEmpty() ? empty() : ofAll(duplicated);
     }
 
@@ -1425,7 +1431,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final List<T> dropped = toList().dropWhile(predicate);
+        List<T> dropped = toList().dropWhile(predicate);
         return ofAll(dropped.size() == size() ? this : dropped);
     }
 
@@ -1488,7 +1494,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final dev.zazr.collection.List<T> filtered = toList().filter(predicate);
+        dev.zazr.collection.List<T> filtered = toList().filter(predicate);
 
         if (filtered.isEmpty()) {
             return empty();
@@ -1504,7 +1510,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            return new Queue<>(toList().flatMap(t -> Objects.requireNonNull(mapper.apply(t), "Queue.flatMap: mapper returned null")), dev.zazr.collection.List.empty());
+            return new Queue<>(
+                    toList().flatMap(t ->
+                            Objects.requireNonNull(mapper.apply(t), "Queue.flatMap: mapper returned null")),
+                    dev.zazr.collection.List.empty());
         }
     }
 
@@ -1526,7 +1535,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
         // walk the front instead of measuring it: List.size() is O(n)
+        @SuppressWarnings("Var")
         int remaining = index;
+        @SuppressWarnings("Var")
         List<T> list = front;
         while (remaining > 0 && !list.isEmpty()) {
             list = list.tail();
@@ -1535,17 +1546,19 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (!list.isEmpty()) {
             return list.head();
         }
-        final int rearIndex = remaining;
-        final int rearLength = rear.size();
+        int rearIndex = remaining;
+        int rearLength = rear.size();
         if (rearIndex < rearLength) {
             return rear.get(rearLength - rearIndex - 1);
         } else {
-            throw new IndexOutOfBoundsException("get(" + index + ") on Queue of length " + (index - remaining + rearLength));
+            throw new IndexOutOfBoundsException(
+                    "get(" + index + ") on Queue of length " + (index - remaining + rearLength));
         }
     }
 
     public <C extends @Nullable Object> Map<C, Queue<T>> groupBy(Function<? super T, ? extends C> classifier) {
-        return dev.zazr.collection.internal.Collections.groupBy(this, classifier, Queue::ofAll, "Queue.groupBy: classifier returned null");
+        return dev.zazr.collection.internal.Collections.groupBy(
+                this, classifier, Queue::ofAll, "Queue.groupBy: classifier returned null");
     }
 
     /**
@@ -1575,13 +1588,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the first index {@code >= from} of the element, or -1 if absent
      */
     public int indexOf(T element, int from) {
-        final int frontIndex = front.indexOf(element, from);
+        int frontIndex = front.indexOf(element, from);
         if (frontIndex != -1) {
             return frontIndex;
         } else {
             // we need to reverse because we search the first occurrence
-            final int frontLength = front.size();
-            final int rearIndex = rear.reverse().indexOf(element, from - frontLength);
+            int frontLength = front.size();
+            int rearIndex = rear.reverse().indexOf(element, from - frontLength);
             return (rearIndex == -1) ? -1 : rearIndex + frontLength;
         }
     }
@@ -1610,12 +1623,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     // init() of a Queue whose rear is empty: the first half of the front stays the front, the second half without its
     // last element becomes the rear (reversed), so that the next init() calls take from the rear in O(1)
+    @SuppressWarnings("Var")
     private Queue<T> initOfFront() {
-        final int length = front.size();
+        int length = front.size();
         if (length == 1) {
             return empty();
         }
-        final int kept = length / 2;
+        int kept = length / 2;
         dev.zazr.collection.List<T> reversedFront = dev.zazr.collection.List.empty();
         dev.zazr.collection.List<T> rest = front;
         for (int i = 0; i < kept; i++, rest = rest.tail()) {
@@ -1642,14 +1656,14 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insert(" + index + ", element)");
         }
-        final int length = front.size();
+        int length = front.size();
         if (index <= length) {
             return new Queue<>(front.insert(index, element), rear);
         } else {
-            final int rearIndex = index - length;
-            final int rearLength = rear.size();
+            int rearIndex = index - length;
+            int rearLength = rear.size();
             if (rearIndex <= rearLength) {
-                final int reverseRearIndex = rearLength - rearIndex;
+                int reverseRearIndex = rearLength - rearIndex;
                 return new Queue<>(front, rear.insert(reverseRearIndex, element));
             } else {
                 throw new IndexOutOfBoundsException("insert(" + index + ", element) on Queue of length " + size());
@@ -1675,20 +1689,22 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements)");
         }
-        final int length = front.size();
+        int length = front.size();
         if (index <= length) {
             if (isEmpty() && elements instanceof Queue) {
                 return (Queue<T>) elements;
             } else {
-                final dev.zazr.collection.List<T> newFront = front.insertAll(index, elements);
+                dev.zazr.collection.List<T> newFront = front.insertAll(index, elements);
                 return (newFront == front) ? this : new Queue<>(newFront, rear);
             }
         } else {
-            final int rearIndex = index - length;
-            final int rearLength = rear.size();
+            int rearIndex = index - length;
+            int rearLength = rear.size();
             if (rearIndex <= rearLength) {
-                final int reverseRearIndex = rearLength - rearIndex;
-                final dev.zazr.collection.List<T> newRear = rear.insertAll(reverseRearIndex, dev.zazr.collection.List.ofAll(elements).reverse());
+                int reverseRearIndex = rearLength - rearIndex;
+                dev.zazr.collection.List<T> newRear = rear.insertAll(
+                        reverseRearIndex,
+                        dev.zazr.collection.List.ofAll(elements).reverse());
                 return (newRear == rear) ? this : new Queue<>(front, newRear);
             } else {
                 throw new IndexOutOfBoundsException("insertAll(" + index + ", elements) on Queue of length " + size());
@@ -1710,7 +1726,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         } else if (rear.isEmpty()) {
             return new Queue<>(front.intersperse(element), rear);
         } else {
-            return new Queue<>(front.intersperse(element), rear.intersperse(element).append(element));
+            return new Queue<>(
+                    front.intersperse(element), rear.intersperse(element).append(element));
         }
     }
 
@@ -1760,7 +1777,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return toList().lastIndexOf(element, end);
     }
 
-
     public <U extends @Nullable Object> Queue<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new Queue<>(front.map(mapper), rear.map(mapper));
@@ -1769,7 +1785,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <U extends @Nullable Object> Queue<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // the null check runs here so that the message names this type, not the List that does the walking
-        return isEmpty() ? empty() : new Queue<>(toList().collect(t -> Objects.requireNonNull(mapper.apply(t), "Queue.collect: mapper returned null")), dev.zazr.collection.List.empty());
+        return isEmpty()
+                ? empty()
+                : new Queue<>(
+                        toList().collect(t ->
+                                Objects.requireNonNull(mapper.apply(t), "Queue.collect: mapper returned null")),
+                        dev.zazr.collection.List.empty());
     }
 
     public <U extends @Nullable Object> Queue<U> as(U value) {
@@ -1795,7 +1816,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if it is already at least {@code length} long
      */
     public Queue<T> padTo(int length, T element) {
-        final int actualLength = size();
+        int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -1813,7 +1834,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if it is already at least {@code length} long
      */
     public Queue<T> leftPadTo(int length, T element) {
-        final int actualLength = size();
+        int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -1834,11 +1855,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public Queue<T> patch(int from, Iterable<? extends T> that, int replaced) {
-        from = Math.max(from, 0);
-        replaced = Math.max(replaced, 0);
+        int start = Math.max(from, 0);
+        int count = Math.max(replaced, 0);
         // the end of the replaced range, saturated: from + replaced can overflow an int
-        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
-        return take(from).appendAll(that).appendAll(drop(end));
+        int end = (int) Math.min((long) start + count, Integer.MAX_VALUE);
+        return take(start).appendAll(that).appendAll(drop(end));
     }
 
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
@@ -1859,9 +1880,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the left values and the right values, each in the order of the elements they come from
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Queue<L>, Queue<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Queue<L>, Queue<R>> partitionMap(
+            Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         dev.zazr.collection.List<L> lefts = dev.zazr.collection.List.empty();
+        @SuppressWarnings("Var")
         dev.zazr.collection.List<R> rights = dev.zazr.collection.List.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "Queue.partitionMap: f returned null")) {
@@ -1911,7 +1935,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (isEmpty() && elements instanceof Queue) {
             return (Queue<T>) elements;
         } else {
-            final dev.zazr.collection.List<T> newFront = front.prependAll(elements);
+            dev.zazr.collection.List<T> newFront = front.prependAll(elements);
             return (newFront == front) ? this : new Queue<>(newFront, rear);
         }
     }
@@ -1925,7 +1949,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue, or this Queue if the element is absent
      */
     public Queue<T> remove(T element) {
-        final dev.zazr.collection.List<T> removed = toList().remove(element);
+        dev.zazr.collection.List<T> removed = toList().remove(element);
         return ofAll(removed.size() == size() ? this : removed);
     }
 
@@ -1939,7 +1963,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public Queue<T> removeFirst(Predicate<T> predicate) {
-        final dev.zazr.collection.List<T> removed = toList().removeFirst(predicate);
+        dev.zazr.collection.List<T> removed = toList().removeFirst(predicate);
         return ofAll(removed.size() == size() ? this : removed);
     }
 
@@ -1953,7 +1977,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code predicate} is null
      */
     public Queue<T> removeLast(Predicate<T> predicate) {
-        final dev.zazr.collection.List<T> removed = toList().removeLast(predicate);
+        dev.zazr.collection.List<T> removed = toList().removeLast(predicate);
         return ofAll(removed.size() == size() ? this : removed);
     }
 
@@ -1992,12 +2016,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue with the first occurrence of {@code currentElement} replaced by {@code newElement}
      */
     public Queue<T> replace(T currentElement, T newElement) {
-        final dev.zazr.collection.List<T> newFront = front.replace(currentElement, newElement);
+        dev.zazr.collection.List<T> newFront = front.replace(currentElement, newElement);
         if (newFront != front) {
             return new Queue<>(newFront, rear);
         }
-        final dev.zazr.collection.List<T> rearInOrder = rear.reverse();
-        final dev.zazr.collection.List<T> newRearInOrder = rearInOrder.replace(currentElement, newElement);
+        dev.zazr.collection.List<T> rearInOrder = rear.reverse();
+        dev.zazr.collection.List<T> newRearInOrder = rearInOrder.replace(currentElement, newElement);
         if (newRearInOrder == rearInOrder) {
             return this;
         }
@@ -2014,11 +2038,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
     public Queue<T> replaceAll(T currentElement, T newElement) {
-        final dev.zazr.collection.List<T> newFront = front.replaceAll(currentElement, newElement);
-        final dev.zazr.collection.List<T> newRear = rear.replaceAll(currentElement, newElement);
-        return newFront.size() + newRear.size() == 0 ? empty()
-                                                     : newFront == front && newRear == rear ? this
-                                                                                            : new Queue<>(newFront, newRear);
+        dev.zazr.collection.List<T> newFront = front.replaceAll(currentElement, newElement);
+        dev.zazr.collection.List<T> newRear = rear.replaceAll(currentElement, newElement);
+        return newFront.size() + newRear.size() == 0
+                ? empty()
+                : newFront == front && newRear == rear ? this : new Queue<>(newFront, newRear);
     }
 
     /**
@@ -2046,7 +2070,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2064,7 +2088,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2095,7 +2119,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue containing the cumulative results
      * @throws NullPointerException if {@code operation} is null
      */
-    public <U extends @Nullable Object> Queue<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
+    public <U extends @Nullable Object> Queue<U> scanLeft(
+            U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         return dev.zazr.collection.internal.Collections.scanLeft(this, zero, operation, Iterator::toQueue);
     }
 
@@ -2112,7 +2137,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new Queue containing the cumulative results
      * @throws NullPointerException if {@code operation} is null
      */
-    public <U extends @Nullable Object> Queue<U> scanRight(U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
+    public <U extends @Nullable Object> Queue<U> scanRight(
+            U zero, BiFunction<? super T, ? super U, ? extends U> operation) {
         return dev.zazr.collection.internal.Collections.scanRight(this, zero, operation, Iterator::toQueue);
     }
 
@@ -2192,7 +2218,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new sorted Queue, or this Queue if it is empty
      * @throws NullPointerException if {@code comparator} or {@code mapper} is null
      */
-    public <U extends @Nullable Object> Queue<T> sortBy(Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
+    public <U extends @Nullable Object> Queue<T> sortBy(
+            Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
         return sorted((e1, e2) -> comparator.compare(mapper.apply(e1), mapper.apply(e2)));
@@ -2250,7 +2277,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the prefix including the matching element, and the suffix
      */
     public Tuple2<Queue<T>, Queue<T>> splitAtInclusive(Predicate<? super T> predicate) {
-        return toList().splitAtInclusive(predicate).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        return toList().splitAtInclusive(predicate)
+                .map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
     }
 
     /**
@@ -2271,11 +2299,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (offset < 0) {
             return false;
         }
-        final InOrder<T> elements = new InOrder<>(front, rear);
+        InOrder<T> elements = new InOrder<>(front, rear);
         for (int i = offset; i > 0 && elements.hasNext(); i--) {
             elements.next();
         }
-        final java.util.Iterator<? extends T> prefix = that.iterator();
+        java.util.Iterator<? extends T> prefix = that.iterator();
         while (elements.hasNext() && prefix.hasNext()) {
             if (!Objects.equals(elements.next(), prefix.next())) {
                 return false;
@@ -2358,7 +2386,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n >= size()) {
             return this;
         }
-        final int frontLength = front.size();
+        int frontLength = front.size();
         if (n < frontLength) {
             return new Queue<>(front.take(n), dev.zazr.collection.List.empty());
         } else if (n == frontLength) {
@@ -2382,7 +2410,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final dev.zazr.collection.List<T> taken = toList().takeUntil(predicate);
+        dev.zazr.collection.List<T> taken = toList().takeUntil(predicate);
         return taken.size() == size() ? this : ofAll(taken);
     }
 
@@ -2403,7 +2431,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n >= size()) {
             return this;
         }
-        final int rearLength = rear.size();
+        int rearLength = rear.size();
         if (n < rearLength) {
             return new Queue<>(rear.take(n).reverse(), dev.zazr.collection.List.empty());
         } else if (n == rearLength) {
@@ -2424,7 +2452,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> takeRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final dev.zazr.collection.List<T> taken = toList().takeRightUntil(predicate);
+        dev.zazr.collection.List<T> taken = toList().takeRightUntil(predicate);
         return taken.size() == size() ? this : ofAll(taken);
     }
 
@@ -2443,14 +2471,23 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Queue<T1>, Queue<T2>> unzip(
-      Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
+            Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().<T1, T2> unzip(t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip: unzipper returned null")).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        return toList().<T1, T2>unzip(
+                        t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip: unzipper returned null"))
+                .map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
     }
 
-    public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Queue<T1>, Queue<T2>, Queue<T3>> unzip3(Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
+    public <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Tuple3<Queue<T1>, Queue<T2>, Queue<T3>> unzip3(
+                    Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().<T1, T2, T3> unzip3(t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip3: unzipper returned null")).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        return toList().<T1, T2, T3>unzip3(
+                        t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip3: unzipper returned null"))
+                .map(
+                        dev.zazr.collection.List::toQueue,
+                        dev.zazr.collection.List::toQueue,
+                        dev.zazr.collection.List::toQueue);
     }
 
     /**
@@ -2523,10 +2560,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} or {@code mapper} is null
      */
     @SuppressWarnings("unchecked")
-    public <U extends @Nullable Object, R extends @Nullable Object> Queue<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+    public <U extends @Nullable Object, R extends @Nullable Object> Queue<R> zipWith(
+            Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final dev.zazr.collection.List<R> zipped = dev.zazr.collection.List.ofAll(Iterator.ofAll(new InOrder<>(front, rear)).zipWith(that, mapper));
+        dev.zazr.collection.List<R> zipped = dev.zazr.collection.List.ofAll(
+                Iterator.ofAll(new InOrder<>(front, rear)).zipWith(that, mapper));
         return zipped.isEmpty() ? empty() : new Queue<>(zipped, dev.zazr.collection.List.empty());
     }
 
@@ -2575,7 +2614,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new {@code Queue} containing the mapped elements
      * @throws NullPointerException if {@code mapper} is null
      */
-    public <U extends @Nullable Object> Queue<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+    public <U extends @Nullable Object> Queue<U> zipWithIndex(
+            BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return ofAll(toList().zipWithIndex(mapper));
     }
@@ -2641,7 +2681,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if elements is null
      */
     @SuppressWarnings("unchecked")
-    public Queue<T> enqueue(T ... elements) {
+    public Queue<T> enqueue(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return enqueueAll(dev.zazr.collection.List.of(elements));
     }
@@ -2880,7 +2920,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (power < 0) {
             return empty();
         }
-        Queue<Queue<T>> product = Queue.of(Queue.<T> empty());
+        @SuppressWarnings("Var")
+        Queue<Queue<T>> product = Queue.of(Queue.<T>empty());
         for (int i = 0; i < power; i++) {
             product = product.flatMap(el -> map(el::append));
         }
@@ -2900,7 +2941,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public <U extends @Nullable Object> Queue<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
-        final Queue<U> other = Queue.ofAll(that);
+        Queue<U> other = Queue.ofAll(that);
         return flatMap(a -> other.map(b -> Tuple.of(a, b)));
     }
 
@@ -3079,7 +3120,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public <K extends @Nullable Object> Option<Map<K, T>> arrangeBy(Function<? super T, ? extends K> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Queue.arrangeBy: getKey returned null")));
+        return TraversableModule.arrangeBy(groupBy(
+                element -> Objects.requireNonNull(getKey.apply(element), "Queue.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -3237,7 +3279,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param combiner    merges two containers
      * @return the collected result
      */
-    public <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
+    public <R extends @Nullable Object> R collect(
+            Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
         return stream().collect(supplier, accumulator, combiner);
     }
 
@@ -3252,7 +3295,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return toMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -3266,8 +3310,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
         return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Queue.toMap: f returned null");
     }
 
@@ -3283,7 +3328,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return toLinkedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -3298,8 +3344,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
+    public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
         return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Queue.toLinkedMap: f returned null");
     }
 
@@ -3315,7 +3362,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return toSortedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -3329,7 +3377,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public <K extends Comparable<? super K>, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
         return toSortedMap(Comparator.naturalOrder(), f);
     }
@@ -3347,7 +3396,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Comparator<? super K> comparator,
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper) {
         return toSortedMap(comparator, TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -3362,9 +3414,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
+            Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll = t -> TreeMap.ofEntries(comparator, t);
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll =
+                t -> TreeMap.ofEntries(comparator, t);
         return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Queue.toSortedMap: f returned null");
     }
 
@@ -3405,7 +3459,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public SortedSet<T> toSortedSet(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return TraversableModule.toTraversable(this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
+        return TraversableModule.toTraversable(
+                this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
     }
 
     /**
@@ -3445,10 +3500,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            final T head = current.head();
+            T head = current.head();
             current = current.tail();
             return head;
         }
     }
-
 }

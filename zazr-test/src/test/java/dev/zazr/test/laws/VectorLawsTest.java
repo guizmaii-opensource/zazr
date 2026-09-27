@@ -46,12 +46,19 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
 
     @Override
     CollectionSubject<Integer, Vector<Integer>> collection() {
-        return new CollectionSubject<>(Gen.vector(Values.integers()), Vector::ofAll, Vector::size, Vector::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(
+                Gen.vector(Values.integers()),
+                Vector::ofAll,
+                Vector::size,
+                Vector::toList,
+                true,
+                Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Vector<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), Vector.collector(), Vector::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(
+                Gen.list(Values.integers()), Vector.collector(), Vector::ofAll, Option.some(IterationOrder.input()));
     }
 
     @Test
@@ -60,7 +67,7 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
     }
 
     /// Sizes at the boundaries of a 32-wide trie.
-    private static final int[] TRIE_BOUNDARIES = { 32, 33, 1024, 1025, 32_769 };
+    private static final int[] TRIE_BOUNDARIES = {32, 33, 1024, 1025, 32_769};
 
     /// The samples of each check at a trie boundary.
     private static final int BOUNDARY_SAMPLES = 40;
@@ -74,20 +81,30 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
     @Test
     void builderResultEqualsOfAllAtTrieBoundaries() {
         for (int size : TRIE_BOUNDARIES) {
-            final Gen<Iterable<Integer>> elements = atBoundary(size, Gen.vectorN(size, Values.integers()), Gen.list(Values.integers()));
+            Gen<Iterable<Integer>> elements =
+                    atBoundary(size, Gen.vectorN(size, Values.integers()), Gen.list(Values.integers()));
             Laws.of(BuilderLaws.builderResultEqualsOfAll())
-                    .assertSatisfied(elements, LawChecks.config("builderResultEqualsOfAll" + size).withSamples(BOUNDARY_SAMPLES));
+                    .assertSatisfied(
+                            elements,
+                            LawChecks.config("builderResultEqualsOfAll" + size).withSamples(BOUNDARY_SAMPLES));
         }
     }
 
     @Test
     void sequenceLawsAtTrieBoundaries() {
         for (int size : TRIE_BOUNDARIES) {
-            final CollectionSubject<Integer, Vector<Integer>> collection = collection();
-            final Gen<Vector<Integer>> vectors = atBoundary(size, Gen.vectorN(size, Values.integers()), collection.values());
-            CollectionLaws.<Integer, Vector<Integer>>sequence().assertSatisfied(
-                    new CollectionSubject<>(vectors, collection.ofAll(), collection.size(), collection.toList(), collection.ordered(), collection.order()),
-                    LawChecks.config("sequenceLaws" + size).withSamples(BOUNDARY_SAMPLES));
+            CollectionSubject<Integer, Vector<Integer>> collection = collection();
+            Gen<Vector<Integer>> vectors = atBoundary(size, Gen.vectorN(size, Values.integers()), collection.values());
+            CollectionLaws.<Integer, Vector<Integer>>sequence()
+                    .assertSatisfied(
+                            new CollectionSubject<>(
+                                    vectors,
+                                    collection.ofAll(),
+                                    collection.size(),
+                                    collection.toList(),
+                                    collection.ordered(),
+                                    collection.order()),
+                            LawChecks.config("sequenceLaws" + size).withSamples(BOUNDARY_SAMPLES));
         }
     }
 }
