@@ -6952,6 +6952,21 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void aFailureMetWithNoMemoryLeftIsKept() throws Exception {
+            // a JVM of its own, with a small heap that the probe fills before the failure is met
+            final String javaHome = System.getProperty("java.home");
+            final String classPath = java.nio.file.Path.of(Stream.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    + java.io.File.pathSeparator
+                    + java.nio.file.Path.of(FailedTailOutOfMemoryProbe.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            final Process process = new ProcessBuilder(java.nio.file.Path.of(javaHome, "bin", "java").toString(), "-Xmx64m",
+                    "-XX:+UseSerialGC", "-cp", classPath, FailedTailOutOfMemoryProbe.class.getName())
+                    .redirectErrorStream(true).start();
+            final String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).strip();
+            assertThat(process.waitFor()).as(output).isEqualTo(0);
+            assertThat(output).isEqualTo("RuntimeException: boom (same)");
+        }
+
+        @Test
         public void toStringShowsAFailedTailAsNotComputed() {
             final Stream<Integer> stream = Stream.ofAll(() -> new FailingSource(3));
             walk(stream);

@@ -540,7 +540,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param currentElement the entry to replace
      * @param newElement     its replacement
      * @return a map with the replacement made; this map if {@code currentElement} is not an entry
-     * @throws NullPointerException if an argument is null
+     * @throws NullPointerException if an argument, or the key or the value of {@code newElement}, is null, even when
+     *                              {@code currentElement} is not an entry
      */
     Map<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);
 
@@ -577,6 +578,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param currentElement the entry to replace
      * @param newElement     its replacement
      * @return a map with the replacement made; this map if {@code currentElement} is not an entry
+     * @throws NullPointerException as {@link #replace(Tuple2, Tuple2)}
      */
     Map<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement);
 

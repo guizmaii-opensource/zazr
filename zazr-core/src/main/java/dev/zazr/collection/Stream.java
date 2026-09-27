@@ -3334,8 +3334,8 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         final T head;
 
-        // null until the tail is computed; then the tail, or a Failure holding what computing it threw. Written only
-        // under the lock of this cell, and never changed once it is a Stream or a Failure.
+        // null until the tail is computed; then the tail, or the Throwable computing it threw. Written only under the
+        // lock of this cell, and never changed once it is a Stream or a Throwable.
         private volatile @Nullable Object tail;
 
         Cons(T head) {
@@ -3362,7 +3362,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
         final boolean isTailComputed() {
             final Object state = tail;
-            return state instanceof Stream<?> || state instanceof Failure;
+            return state instanceof Stream<?> || state instanceof Throwable;
         }
 
         @SuppressWarnings("unchecked")
@@ -3374,31 +3374,33 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
                     throw new IllegalStateException("Stream: computing this tail needs the tail itself");
                 } else if (state == null) {
                     tail = EVALUATING;
+                    // Nothing that can allocate or throw runs between the computation and the write of its outcome,
+                    // not even a type check, which may resolve a class: the cell is never left EVALUATING, even when
+                    // the heap or the stack is exhausted. Without an outcome, it is put back as it was.
                     try {
-                        state = Objects.requireNonNull(computeTail());
-                    } catch (VirtualMachineError error) {
-                        tail = null;
-                        throw error;
+                        state = computeTail();
                     } catch (Throwable failure) {
-                        state = new Failure(failure);
+                        state = failure;
+                    } finally {
+                        tail = state;
                     }
-                    tail = state;
-                    release();
+                    if (state instanceof VirtualMachineError) {
+                        tail = null;
+                    } else {
+                        release();
+                    }
                 }
             }
-            if (state instanceof Failure failure) {
-                throw Failure.<RuntimeException> rethrow(failure.cause());
+            if (state instanceof Throwable failure) {
+                throw Cons.<RuntimeException> rethrow(failure);
             }
             return (Stream<T>) state;
         }
 
-        // what computing a tail threw, thrown again by every later call
-        private record Failure(Throwable cause) {
-
-            @SuppressWarnings("unchecked")
-            static <E extends Throwable> E rethrow(Throwable cause) throws E {
-                throw (E) cause;
-            }
+        // throws the kept failure itself, whatever its type
+        @SuppressWarnings("unchecked")
+        private static <E extends Throwable> E rethrow(Throwable failure) throws E {
+            throw (E) failure;
         }
 
         @Override

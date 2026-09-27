@@ -2737,4 +2737,28 @@ public class TreeMapTest extends AbstractTraversableTest {
             return map;
         }
     }
+
+    @Nested
+    class ReplaceRejectsNullsTests {
+
+        @Test
+        public void aNullNewKeyOrValueIsRejectedEvenWhenTheEntryIsAbsent() {
+            final TreeMap<Integer, String> map = TreeMap.of(1, "a", 2, "b");
+            for (Tuple2<Integer, String> current : List.of(Tuple.of(1, "a"), Tuple.of(1, "z"), Tuple.of(9, "a"))) {
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(null, "x"))).withMessage("TreeMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(3, null))).withMessage("TreeMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(null, "x"))).withMessage("TreeMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(3, null))).withMessage("TreeMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, null)).withMessage("newElement is null");
+            }
+            org.assertj.core.api.Assertions.assertThat(map.replaceAll(Tuple.of(9, "a"), Tuple.of(3, "x"))).isSameAs(map);
+            org.assertj.core.api.Assertions.assertThat(map.replaceAll(Tuple.of(1, "a"), Tuple.of(3, "x")).toList())
+                    .isEqualTo(map.replace(Tuple.of(1, "a"), Tuple.of(3, "x")).toList());
+        }
+    }
 }
