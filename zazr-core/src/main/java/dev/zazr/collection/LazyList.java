@@ -18,17 +18,15 @@ import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code LazyList} is lazy sequence of elements which may be infinitely long.
+ * An immutable {@code LazyList} is a lazy sequence of elements which may be infinitely long.
  * Its immutability makes it suitable for concurrent programming.
  * <p>
- * A {@code LazyList} is composed of a {@code head} element and a lazy evaluated {@code tail} {@code LazyList}.
- * <p>
- * There are two implementations of the {@code LazyList} interface:
- *
- * <ul>
- * <li>{@link Empty}, which represents the empty {@code LazyList}.</li>
- * <li>{@link Cons}, which represents a {@code LazyList} containing one or more elements.</li>
- * </ul>
+ * A {@code LazyList} is fully lazy, as Scala's {@code LazyList}: nothing is evaluated until it is read, not its first
+ * element, and not even whether it is empty. It is a lazily evaluated state, either empty or a {@code head} and a
+ * {@code tail} {@code LazyList}, computed on the first call to {@link #isEmpty()}, {@link #head()} or {@link #tail()}
+ * and kept; the tail is itself a {@code LazyList}, not evaluated until it is read. Building a {@code LazyList} and
+ * calling a lazy operation on it evaluate nothing; reading an element evaluates the cells it needs, once, even when
+ * several threads read it.
  *
  * Methods to obtain a {@code LazyList}:
  *
@@ -36,7 +34,7 @@ import org.jspecify.annotations.Nullable;
  * {@code
  * // factory methods
  * LazyList.empty()                  // = LazyList.of() = empty()
- * LazyList.of(x)                    // = LazyList.cons(x, LazyList::empty)
+ * LazyList.of(x)                    // = LazyList.defer(() -> LazyList.cons(x, LazyList::empty))
  * LazyList.of(Object...)            // e.g. LazyList.of(1, 2, 3)
  * LazyList.ofAll(Iterable)          // e.g. LazyList.ofAll(List.of(1, 2, 3)) = 1, 2, 3
  * LazyList.ofAll(<primitive array>) // e.g. LazyList.ofAll(1, 2, 3) = 1, 2, 3
@@ -48,6 +46,7 @@ import org.jspecify.annotations.Nullable;
  *
  * // generators
  * LazyList.cons(Object, Supplier)   // e.g. LazyList.cons(current, () -> next(current));
+ * LazyList.defer(Supplier)          // e.g. LazyList.defer(() -> LazyList.cons(expensive(), () -> rest));
  * LazyList.continually(Supplier)    // e.g. LazyList.continually(Math::random);
  * LazyList.iterate(Object, Function)// e.g. LazyList.iterate(1, i -> i * 2);
  * }
@@ -137,8 +136,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Building the LazyList is O(k) in the number of given iterables, since an iterator is eagerly
      * obtained from every one of them up front; only the traversal of the elements is lazy.
      * <p>
-     * Complexity: O(k) for k iterables: their iterators are taken, and the first element is computed now (past any
-     * empty iterables before it); the others when the result reaches them.
+     * Complexity: lazy; nothing is computed now. Reading the first element takes the iterators and reads past the empty
+     * iterables before it; each further element is read when the result reaches it.
      *
      * @param iterables The iterables
      * @param <T>       Component type.
@@ -160,8 +159,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * up front, so it must be finite (an infinite outer iterable causes this call to never return);
      * only the traversal of the resulting elements is lazy.
      * <p>
-     * Complexity: O(k) for k iterables: the outer iterable is read whole, so an infinite one never returns; each
-     * iterator is taken and the first element computed now, the others when the result reaches them.
+     * Complexity: lazy; nothing is computed now. Reading the first element reads the outer iterable whole, so an
+     * infinite one never returns then; each element is read when the result reaches it.
      *
      * @param iterables The iterable of iterables
      * @param <T>       Component type.
@@ -181,9 +180,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * result reaches it, so an infinite outer iterable, or an infinite inner one, is accepted. The outer iterable and
      * each inner one are iterated once, so one-shot iterables are accepted.
      * <p>
-     * Complexity: lazy; the first element is found now, past the empty inner iterables before it, and each further one
-     * when the result reaches it. An outer iterable with infinitely many empty inner ones and no element after them
-     * never returns.
+     * Complexity: lazy; nothing is computed now. Reading the first element finds it past the empty inner iterables before
+     * it, and each further one is found when the result reaches it. An outer iterable with infinitely many empty inner
+     * ones and no element after them never returns then.
      *
      * @param nested Iterables of elements
      * @param <T>    Component type of the inner iterables
@@ -293,14 +292,16 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Constructs a LazyList of a head element and a tail supplier.
+     * Constructs a LazyList of a head element and a tail supplier. The head is a value, so the first cell of the
+     * result is already evaluated; the supplier is called when the tail is first read, not by {@link #tail()}, which
+     * returns the tail without reading it. {@link #defer(Supplier)} makes the head lazy too.
      *
      * @param head         The head element of the LazyList
      * @param tailSupplier A supplier of the tail values. To end the lazy list, return {@link LazyList#empty}.
      * @param <T>          value type
      * @return A new LazyList
-     * @throws NullPointerException if {@code head} or {@code tailSupplier} is null; {@code tail()} throws it when
-     *                              {@code tailSupplier} returns null
+     * @throws NullPointerException if {@code head} or {@code tailSupplier} is null; reading the tail (whether it is
+     *                              empty, its head or its tail) throws it when {@code tailSupplier} returns null
      */
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> LazyList<T> cons(
@@ -341,12 +342,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * Returns the single instance of Empty. Convenience method for {@code empty()}.
-     * <p>
-     * Note: this method intentionally returns type {@code LazyList} and not {@code Empty}. This comes in handy when folding.
-     * If you explicitly need type {@code Empty} use {@linkplain Empty#instance()}.
+     * The empty LazyList, already evaluated: the same instance every time.
      *
-     * @param <T> Component type of Empty, determined by type inference in the particular context.
+     * @param <T> Component type, determined by type inference in the particular context.
      * @return The empty list.
      */
     static <T extends @Nullable Object> LazyList<T> empty() {
@@ -1485,10 +1483,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new LazyList with the given elements appended at the end, in iteration order.
      * <p>
-     * Complexity: O(1); only the first of the given elements is read now, the others when the result reaches them, so
-     * an infinite argument is fine. The elements are read once, into a LazyList that every result built from this one
-     * shares. Calling appendAll or {@link #append(Object)} in a loop stays O(1) per call, and reading the result back
-     * costs O(1) per element, however many calls built it.
+     * Complexity: O(1); nothing is computed now, neither of this LazyList nor of the given elements, which are read when
+     * the result reaches them, so an infinite argument is fine. They are read once, into a LazyList that every result
+     * built from this one shares. Calling appendAll or {@link #append(Object)} in a loop stays O(1) per call, and reading
+     * the result back costs O(1) per element, however many calls built it.
      *
      * @param elements the elements to append
      * @return a new LazyList ending with the given elements, or this LazyList if there are none
@@ -1548,7 +1546,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * All combinations of the elements, for every size from 0 to {@code size()}, by position.
      * <p>
-     * Complexity: O(n * 2^n) to read the 2^n combinations; the whole LazyList is computed now.
+     * Complexity: lazy; nothing is computed now. Reading the first combination computes the whole LazyList, and reading
+     * the 2^n combinations costs O(n * 2^n).
      *
      * @return the combinations, shortest first
      */
@@ -1561,9 +1560,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
      * counts as 0, and a {@code k} greater than {@code size()} gives no combination.
      * <p>
-     * Complexity: lazy; the first k + 1 elements are computed now. Reading every combination costs O(n * C(n, k)) for a
-     * small k, but the search explores every run of up to k positions, so it grows to O(n * 2^n) as k nears n, even
-     * though few combinations remain. A k greater than the length pays all of it now, to return an empty LazyList.
+     * Complexity: lazy; nothing is computed now, and reading the first combination computes the first k elements.
+     * Reading every combination costs O(n * C(n, k)) for a small k, but the search explores every run of up to k
+     * positions, so it grows to O(n * 2^n) as k nears n, even though few combinations remain. A k greater than the length
+     * pays all of it when the result is first read, to find it empty.
      *
      * @param k the size of each combination
      * @return the combinations
@@ -1608,8 +1608,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * }
      * </pre>
      * <p>
-     * Complexity: lazy; the result reads one element ahead of what it returns, so the first two elements are computed
-     * now.
+     * Complexity: lazy; nothing is computed now, and the result reads one element ahead of what it returns.
      *
      * @param count the number of cycles to be performed
      * @return A new LazyList containing this elements cycled {@code count} times.
@@ -1699,8 +1698,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * occurrence. {@code LazyList.of(3, 1, 3, 2, 1, 3).duplicates()} is {@code LazyList.of(3, 1)}. {@code isEmpty()} on
      * the result is the "all distinct" test.
      * <p>
-     * Complexity: O(n), one hash lookup per element; the whole LazyList is computed now, because whether an element
-     * repeats is known only at the end.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n) with one
+     * hash lookup per element, because whether an element repeats is known only at the end.
      *
      * @return a new LazyList of the repeated elements
      */
@@ -1712,7 +1711,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * {@link #duplicates()} under a key: the first element of each key occurring more than once, in order of first
      * occurrence. One pass, the key computed once per element.
      * <p>
-     * Complexity: O(n), one key and one hash lookup per element; the whole LazyList is computed now.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n) with one key
+     * and one hash lookup per element.
      *
      * @param keyExtractor computes the key an element is compared by
      * @param <U>          the key type
@@ -1731,7 +1731,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The elements without duplicates, keeping the last occurrence of each group of elements the comparator calls
      * equal, in the order of those last occurrences.
      * <p>
-     * Complexity: O(n log n) comparisons; the whole LazyList is computed now, because the last occurrence decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n log n)
+     * comparisons, because the last occurrence decides.
      *
      * @param comparator decides which elements are duplicates
      * @return a new LazyList
@@ -1746,7 +1747,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The elements without duplicates, keeping the last occurrence of each key, in the order of those last
      * occurrences.
      * <p>
-     * Complexity: O(n), one key per element; the whole LazyList is computed now, because the last occurrence decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n) with one key
+     * per element, because the last occurrence decides.
      *
      * @param keyExtractor computes the key an element is deduplicated by
      * @param <U>          the key type
@@ -1762,8 +1764,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code LazyList} without the first {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
-     * result reaches them.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the k dropped elements and the first
+     * one kept, O(k); the rest are computed when the result reaches them.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1777,8 +1779,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code LazyList} starting from the first element
      * that satisfies the given {@code predicate}, dropping all preceding elements.
      * <p>
-     * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
-     * result reaches them.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the k dropped elements and the first
+     * one kept, O(k); the rest are computed when the result reaches them.
      *
      * @param predicate a condition tested on each element
      * @return a new instance starting from the first element matching the predicate
@@ -1796,8 +1798,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * This is equivalent to {@code dropUntil(predicate.negate())}, which is useful
      * for method references that cannot be negated directly.
      * <p>
-     * Complexity: O(k) for k dropped elements; they and the first element kept are computed now, the rest when the
-     * result reaches them.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the k dropped elements and the first
+     * one kept, O(k); the rest are computed when the result reaches them.
      *
      * @param predicate a condition tested on each element
      * @return a new instance starting from the first element not matching the predicate
@@ -1819,8 +1821,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Returns a new {@code LazyList} without the last {@code n} elements,
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
-     * Complexity: O(k) for k dropped elements: the first k + 1 elements are computed now. The result then reads k
-     * elements ahead of what it returns, so it works on an infinite LazyList.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the first k + 1 elements, O(k), and the
+     * result then reads k elements ahead of what it returns, so it works on an infinite LazyList.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1836,7 +1838,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
+     * last matching element decides.
      *
      * @param predicate the condition, tested from the end
      * @return a new LazyList
@@ -1851,7 +1854,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The elements up to and including the last one not satisfying {@code predicate}, that is
      * {@code dropRightUntil(predicate.negate())}.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
+     * last matching element decides.
      *
      * @param predicate the condition, tested from the end
      * @return a new LazyList
@@ -1865,8 +1869,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new traversable containing only the elements that satisfy the given predicate.
      * <p>
-     * Complexity: lazy; the elements up to the first match are computed now. Moving to the next element skips every
-     * element that does not match, which never ends on an infinite LazyList with no further match.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the elements up to the first match, and
+     * moving to the next element skips every element that does not match, which never ends on an infinite LazyList with
+     * no further match.
      *
      * @param predicate the condition to test elements
      * @return a traversable with elements matching the predicate
@@ -1889,9 +1894,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
      * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept are computed now. Moving
-     * to the next element skips every element that satisfies the predicate, which never ends on an infinite LazyList with
-     * nothing left to keep.
+     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now, and reading an element skips every
+     * element before it that satisfies the predicate, which never ends on an infinite LazyList with nothing left to
+     * keep.
      *
      * @param predicate the condition of the elements left out
      * @return a new LazyList
@@ -1905,8 +1910,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements of the iterables {@code mapper} returns for the elements of this LazyList, in order.
      * <p>
-     * Complexity: lazy; the elements are computed now until {@code mapper} returns a non-empty result. Moving on skips
-     * the empty results, which never ends on an infinite LazyList whose results are all empty from some point on.
+     * Complexity: lazy; nothing is computed now. Reading an element computes the elements until {@code mapper} returns a
+     * non-empty result, skipping the empty results, which never ends on an infinite LazyList whose results are all
+     * empty from some point on.
      *
      * @param mapper maps an element to the elements that replace it
      * @param <U>    the element type of the result
@@ -1953,7 +1959,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The elements grouped by the key {@code classifier} computes, in a map ordered by the first occurrence of each
      * key; each group keeps the order of this LazyList.
      * <p>
-     * Complexity: O(n), one key and one hash lookup per element; the whole LazyList is computed now.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n) with one key
+     * and one hash lookup per element.
      *
      * @param classifier the key of an element
      * @param <C>        the key type
@@ -1991,8 +1998,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * This is the dual of {@link #tail()}.
      * <p>
-     * Complexity: lazy; the result reads one element ahead of what it returns, so the first two elements are computed
-     * now.
+     * Complexity: lazy; the first element is computed now, to know that this LazyList is not empty, and the result reads one
+     * element ahead of what it returns.
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this LazyList is empty
@@ -2051,9 +2058,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * {@code IndexOutOfBoundsException} is thrown only once the returned LazyList is traversed as far
      * as the offending position.
      * <p>
-     * Complexity: lazy; only the first of {@code elements} is read now when i is 0, nothing otherwise. The result
-     * copies the elements before index i as it reaches them, then reads {@code elements} and shares the rest of this
-     * LazyList, as {@link #prependAll(Iterable)} does.
+     * Complexity: lazy; nothing is computed now. The result copies the elements before index i as it reaches them, then
+     * reads {@code elements} and shares the rest of this LazyList, as {@link #prependAll(Iterable)} does.
      */
     default LazyList<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
@@ -2122,7 +2128,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements transformed by {@code mapper}, in order.
      * <p>
-     * Complexity: lazy; {@code mapper} runs on the first element now, and on each other one when the result reaches it.
+     * Complexity: lazy; nothing is computed now, and {@code mapper} runs on each element when the result reaches it.
      *
      * @param mapper transforms an element
      * @param <U>    the element type of the result
@@ -2138,9 +2144,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The values {@code mapper} returns for the elements it keeps, in order: an element is kept when {@code mapper}
      * returns a {@code Some}, and {@code mapper} runs once per element.
      * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept, and the one after it,
-     * are computed now. Moving to the next element skips every element {@code mapper} drops, which never ends on an
-     * infinite LazyList with nothing left to keep.
+     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now, and reading an element skips every
+     * element {@code mapper} drops before it, which never ends on an infinite LazyList with nothing left to keep.
      *
      * @param mapper the value of an element, or {@code None} to drop it
      * @param <U>    the element type of the result
@@ -2191,7 +2196,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList padded on the left with {@code element} until it is {@code length} long.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because its length decides how much padding is needed.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because its
+     * length decides how much padding is needed.
      *
      * @param length  the target length
      * @param element the padding element
@@ -2224,9 +2230,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * This LazyList with {@code replaced} elements from {@code from} on replaced by {@code that}. A negative
      * {@code from} or {@code replaced} counts as 0.
      * <p>
-     * Complexity: lazy; each element is computed when the result reaches it, and the replaced ones are skipped then.
-     * When {@code from} is 0 and {@code that} is empty, the result starts after the replaced elements, so they are
-     * computed now.
+     * Complexity: lazy; nothing is computed now. Each element is computed when the result reaches it, and the replaced ones
+     * are skipped then.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -2254,8 +2259,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements that satisfy {@code predicate} and those that do not, each in order.
      * <p>
-     * Complexity: lazy; each side computes the elements up to its first one now, as {@link #filter(Predicate)} does, so
-     * the call never returns on an infinite LazyList when one side stays empty. The predicate runs twice per element,
+     * Complexity: lazy; nothing is computed now, and each side computes its elements as {@link #filter(Predicate)} does,
+     * so reading a side that stays empty never returns on an infinite LazyList. The predicate runs twice per element,
      * once for each side.
      *
      * @param predicate the condition
@@ -2273,9 +2278,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * one LazyList of the results of {@code f}, each computed once and kept, so {@code f} is called once per element,
      * in order, when either side first reaches that element, and never again.
      * <p>
-     * Complexity: lazy; each side computes the elements up to its first one now, the others when that side reaches
-     * them, and {@code f} runs once per element. The values one side has passed are kept until the other side passes
-     * them too. On an infinite LazyList whose elements all go to one side, the call never returns.
+     * Complexity: lazy; nothing is computed now, each side computes the elements when it reaches them, and {@code f} runs
+     * once per element. The values one side has passed are kept until the other side passes them too. On an infinite
+     * LazyList whose elements all go to one side, reading the other side never returns.
      *
      * @param f   Classifies an element
      * @param <L> Component type of the left side
@@ -2332,7 +2337,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * chain of calls. The action runs on the head now and on each other element when that element is evaluated.
      * Whatever the action throws propagates to the caller.
      * <p>
-     * Complexity: lazy; the action runs on the first element now, and on each other one when the result reaches it.
+     * Complexity: lazy; nothing is computed now, and the action runs on each element when the result reaches it.
      *
      * @param action what to do with each element
      * @return this LazyList if it is empty; otherwise a new, structurally equal LazyList whose elements are handed to
@@ -2354,8 +2359,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: O(n! * n^2) to read every permutation of n distinct elements (fewer permutations when some are
-     * equal). The whole LazyList is computed now, and O(n!) of the work is done before the call returns.
+     * Complexity: lazy; nothing is computed now. Reading every permutation of n distinct elements costs O(n! * n^2) (fewer
+     * permutations when some are equal); reading the first computes the whole LazyList.
      *
      * @return the permutations
      */
@@ -2390,9 +2395,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * A new LazyList with {@code elements} in front of this one, in iteration order.
      * <p>
-     * Complexity: O(1); only the first of the given elements is read now, the others when the result reaches them,
-     * and this LazyList is shared, not read. Calling prependAll in a loop stays O(1) per call, and reading the result
-     * back costs O(1) per element, however many calls built it.
+     * Complexity: O(1); nothing is computed now: the given elements are read when the result reaches them, and this
+     * LazyList is shared, not read. Calling prependAll in a loop stays O(1) per call, and reading the result back costs
+     * O(1) per element, however many calls built it.
      *
      * @param elements the elements to prepend
      * @return a new LazyList starting with the given elements, or this LazyList if there are none
@@ -2405,8 +2410,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList without the first occurrence of {@code element}.
      * <p>
-     * Complexity: lazy; each element is compared when the result reaches it, and the elements after the removed one are
-     * shared. When the first element is the one removed, the second is computed now.
+     * Complexity: lazy; nothing is computed now. Each element is compared when the result reaches it, and the elements
+     * after the removed one are shared.
      *
      * @param element the element to remove
      * @return a new LazyList, or this LazyList if it is empty
@@ -2424,8 +2429,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList without the first element satisfying {@code predicate}.
      * <p>
-     * Complexity: lazy; each element is tested when the result reaches it, and the elements after the removed one are
-     * shared. When the first element is the one removed, the second is computed now.
+     * Complexity: lazy; nothing is computed now. Each element is tested when the result reaches it, and the elements after
+     * the removed one are shared.
      *
      * @param predicate the condition
      * @return a new LazyList, or this LazyList if it is empty
@@ -2445,7 +2450,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList without the last element satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because the last match decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
+     * last match decides.
      *
      * @param predicate the condition
      * @return a new LazyList, or this LazyList if it is empty
@@ -2463,8 +2469,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * {@code IndexOutOfBoundsException} is thrown only once the returned LazyList is traversed as far
      * as the offending position.
      * <p>
-     * Complexity: lazy; nothing is computed now (the second element when i is 0). The result copies the elements before
-     * index i as it reaches them, and shares the rest.
+     * Complexity: lazy; nothing is computed now. The result copies the elements before index i as it reaches them, and
+     * shares the rest.
      */
     default LazyList<T> removeAt(int index) {
         if (index < 0) {
@@ -2484,9 +2490,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList without any occurrence of {@code element}.
      * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept are computed now. Moving
-     * to the next element skips every occurrence of {@code element}, which never ends on an infinite LazyList with
-     * nothing left to keep.
+     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now, and reading an element skips every
+     * occurrence of {@code element} before it, which never ends on an infinite LazyList with nothing left to keep.
      *
      * @param element the element to remove
      * @return a new LazyList
@@ -2498,9 +2503,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList without any occurrence of any of {@code elements}.
      * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: the m given elements are hashed now, and the elements up to
-     * the first one kept are computed. Moving to the next element skips every removed element, which never ends on an
-     * infinite LazyList with nothing left to keep.
+     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now. Reading the first element hashes the m
+     * given elements, and reading an element skips every removed element before it, which never ends on an infinite
+     * LazyList with nothing left to keep.
      *
      * @param elements the elements to remove
      * @return a new LazyList
@@ -2519,9 +2524,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList without the elements satisfying {@code predicate}.
      * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: the elements up to the first one kept are computed now. Moving
-     * to the next element skips every element that satisfies the predicate, which never ends on an infinite LazyList with
-     * nothing left to keep.
+     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now, and reading an element skips every
+     * element before it that satisfies the predicate, which never ends on an infinite LazyList with nothing left to
+     * keep.
      *
      * @deprecated use {@link #reject(Predicate)}
      * @param predicate the condition
@@ -2579,9 +2584,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Retains only the elements from this LazyList that are contained in the given {@code elements}.
      * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: the m given elements are hashed now, and the elements up to
-     * the first one kept are computed. Moving to the next element skips every element that is not among them, which
-     * never ends on an infinite LazyList with nothing left to keep.
+     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now. Reading the first element hashes the m
+     * given elements, and reading an element skips every element before it that is not among them, which never ends on
+     * an infinite LazyList with nothing left to keep.
      *
      * @param elements the elements to keep
      * @return a new LazyList containing only the elements present in {@code elements}, in their original order
@@ -2610,8 +2615,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Rotates the elements {@code n} positions to the left: {@code LazyList(1, 2, 3, 4, 5).rotateLeft(2)} is
      * {@code LazyList(3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because its length decides the rotation. A rotation by 0 is
-     * O(1) and works on an infinite LazyList.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because its
+     * length decides the rotation. A rotation by 0 is O(1) and works on an infinite LazyList.
      *
      * @param n the distance
      * @return the rotated LazyList, or this LazyList if the rotation is a multiple of the length
@@ -2633,8 +2638,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Rotates the elements {@code n} positions to the right: {@code LazyList(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code LazyList(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because its length decides the rotation. A rotation by 0 is
-     * O(1) and works on an infinite LazyList.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because its
+     * length decides the rotation. A rotation by 0 is O(1) and works on an infinite LazyList.
      *
      * @param n the distance
      * @return the rotated LazyList, or this LazyList if the rotation is a multiple of the length
@@ -2723,8 +2728,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive, both clamped to the bounds of
      * this LazyList.
      * <p>
-     * Complexity: O(i); the first i + 1 elements are computed now, the rest up to index j when the result reaches them,
-     * so it works on an infinite LazyList.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the first i + 1 elements, O(i), and
+     * the rest up to index j are computed when the result reaches them, so it works on an infinite LazyList.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2805,8 +2810,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The first element of the returned {@code Tuple} is the longest prefix of elements satisfying {@code predicate},
      * and the second element is the remaining elements.
      * <p>
-     * Complexity: O(k) for a prefix of k elements; they and the first element after them are computed now, the rest of
-     * the suffix when it is read.
+     * Complexity: lazy; nothing is computed now. Each side computes its elements when it is read: the prefix up to the
+     * first element that fails the predicate, the suffix from there.
      *
      * @param predicate a predicate used to determine the prefix
      * @return a {@code Tuple} containing the prefix and remainder
@@ -2820,8 +2825,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList split in two at position {@code n}: the first {@code n} elements and the rest.
      * <p>
-     * Complexity: O(k) for a split after k elements; the first k + 1 elements are computed now, the rest of the suffix
-     * when it is read.
+     * Complexity: lazy; nothing is computed now, and each side computes its elements when it is read.
      *
      * @param n the position of the split
      * @return the prefix and the suffix
@@ -2834,8 +2838,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * This LazyList split in two before the first element satisfying {@code predicate}. If no element satisfies it, the
      * whole LazyList is the first part.
      * <p>
-     * Complexity: O(k) for k elements before the split; they and the matching element are computed now, the rest of the
-     * suffix when it is read.
+     * Complexity: lazy; nothing is computed now, and each side computes its elements when it is read: the suffix starts at
+     * the first match.
      *
      * @param predicate the condition
      * @return the prefix and the suffix
@@ -2849,8 +2853,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * This LazyList split in two after the first element satisfying {@code predicate}. If no element satisfies it, the
      * whole LazyList is the first part.
      * <p>
-     * Complexity: O(k) for k elements up to and including the match; they and the element after the match are computed
-     * now, the rest of the suffix when it is read.
+     * Complexity: lazy; nothing is computed now, and each side computes its elements when it is read: reading either
+     * computes the elements up to the match.
      *
      * @param predicate the condition
      * @return the prefix including the matching element, and the suffix
@@ -2866,7 +2870,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements from {@code beginIndex} on.
      * <p>
-     * Complexity: O(i); the first i + 1 elements are computed now, the rest when the result reaches them.
+     * Complexity: O(i); the first i elements are computed now, to check that the index is within this LazyList, and the
+     * rest when the result reaches them.
      *
      * @param beginIndex the first position
      * @return a new LazyList
@@ -2889,9 +2894,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
-     * Complexity: O(i); the first i + 1 elements are computed now, the rest up to index j when the result reaches them.
-     * An empty range computes its first i elements too, to check that it is within this LazyList, and a reversed range
-     * its first j.
+     * Complexity: O(i); the first i + 1 elements are computed now, to check the bounds, and the rest up to index j when the
+     * result reaches them. An empty range computes its first i elements too, to check that it is within this LazyList,
+     * and a reversed range its first j.
      * <p>
      * The bounds are those of {@link Vector#subSequence(int, int)}: {@code IndexOutOfBoundsException} when
      * {@code beginIndex < 0} or {@code endIndex > size()}, otherwise {@code IllegalArgumentException} when
@@ -2959,11 +2964,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new {@code LazyList} without its first element.
      * <p>
-     * Complexity: O(k) for k elements computed. On a LazyList returned by filter, reject, retainAll, removeAll,
-     * distinct, distinctBy, collect or flatMap, the first call computes the elements up to the next one kept, and
-     * never returns on an infinite LazyList with no further match. Every later call is O(1): the result is kept, and so
-     * is an exception the first call threw. On a LazyList built by append or appendAll, the first call to reach the
-     * appended elements may put the p appended parts in order, O(p) once for the whole walk. O(1) otherwise.
+     * Complexity: O(1) once this LazyList is computed: the tail is returned without being computed. If this LazyList is not
+     * computed yet, the call computes it first, as {@link #head()} does. On a LazyList built by append or appendAll,
+     * computing the first appended element may put the p appended parts in order, O(p) once for the whole walk.
      *
      * @return a new {@code LazyList} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code LazyList} is empty
@@ -2973,7 +2976,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a new {@code LazyList} without its first element as an {@code Option}.
      * <p>
-     * Complexity: O(k) for k elements computed, as {@link #tail()}.
+     * Complexity: O(1), as {@link #tail()}.
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
@@ -3046,7 +3049,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because the last elements are found by walking to the end.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
+     * last elements are found by walking to the end.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code LazyList} containing the last {@code n} elements
@@ -3068,7 +3072,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
+     * last matching element decides.
      *
      * @param predicate the condition, tested from the end
      * @return a new LazyList
@@ -3082,7 +3087,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); the whole LazyList is computed now, because the last matching element decides.
+     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
+     * last matching element decides.
      *
      * @param predicate the condition, tested from the end
      * @return a new LazyList
@@ -3096,8 +3102,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Splits every element in two with {@code unzipper}: the first parts, and the second parts, each in order.
      * <p>
-     * Complexity: lazy; {@code unzipper} runs on the first element now, and once on each other one, when either side
-     * reaches it.
+     * Complexity: lazy; nothing is computed now, and {@code unzipper} runs once on each element, when either side reaches
+     * it.
      *
      * @param unzipper splits an element
      * @param <T1>     the type of the first parts
@@ -3118,8 +3124,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Splits every element in three with {@code unzipper}: the first, the second and the third parts, each in order.
      * <p>
-     * Complexity: lazy; {@code unzipper} runs on the first element now, and once on each other one, when a side reaches
-     * it.
+     * Complexity: lazy; nothing is computed now, and {@code unzipper} runs once on each element, when a side reaches it.
      *
      * @param unzipper splits an element
      * @param <T1>     the type of the first parts
@@ -3143,8 +3148,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList with the element at {@code index} replaced by {@code element}.
      * <p>
-     * Complexity: O(i); the first i + 2 elements are computed now (the one after the replaced element too). The result
-     * copies the elements before index i and shares those after it.
+     * Complexity: lazy; nothing is computed now. The result copies the elements before index i as it reaches them and
+     * shares those after it; an index past the end throws when the result reaches it.
      *
      * @param index   the position to update
      * @param element the new element
@@ -3163,7 +3168,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * This LazyList with the element at {@code index} replaced by what {@code updater} computes from it.
      * <p>
-     * Complexity: O(i), as {@link #update(int, Object)}, after one {@link #get(int)}.
+     * Complexity: lazy, as {@link #update(int, Object)}: {@code updater} runs when the result reaches index i.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one
@@ -3311,8 +3316,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * If this LazyList is empty, it is returned unchanged (there is no last element to seed the
      * function); use {@link #extend(Object)} or {@link #extend(Supplier)} to extend an empty LazyList.
      * <p>
-     * Complexity: O(1); the result reads one element ahead of what it returns, so the first two elements are computed
-     * now. The result is infinite.
+     * Complexity: O(1); nothing is computed now, and the result, infinite, reads one element ahead of what it returns.
      *
      * @param nextFunction a function which calculates the next value based on the previous value
      * @return new {@code LazyList} composed from this lazy list extended with values calculated by the provided function
@@ -3350,7 +3354,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * The first element, already evaluated.
      * <p>
-     * Complexity: O(1): the first element is always already computed.
+     * Complexity: O(1) once this LazyList is computed; otherwise the call computes it first, which is where a lazy
+     * operation does its work (such as the search of {@link #filter(Predicate)}), and keeps the result.
      *
      * @return the head of this LazyList
      * @throws NoSuchElementException if this LazyList is empty
@@ -3419,8 +3424,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * {@code LazyList(LazyList(1, 2, 3), LazyList(10, 12), LazyList(5, 7), LazyList(20, 29))}. The runs concatenate back
      * to this LazyList.
      * <p>
-     * Complexity: lazy; the first run is computed now, with the first element of the next one; each further run when
-     * the result reaches it.
+     * Complexity: lazy; nothing is computed now. Reading a run computes it with the first element of the next one.
      *
      * @param classifier the key of an element; two consecutive elements are in the same run when their keys are
      *                   equal
@@ -3471,8 +3475,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * LazyList and {@code b} from {@code that}, {@code a} varying slowest. {@code that} is read lazily and
      * each of its elements kept once read, so an infinite {@code that} works with {@code take}.
      * <p>
-     * Complexity: lazy; nothing is computed now but the first element of {@code that}, and reading every pair costs O(n
-     * * m). An empty {@code that} computes the whole LazyList now, so it never returns on an infinite one.
+     * Complexity: lazy; nothing is computed now, and reading every pair costs O(n * m). With an empty {@code that},
+     * reading the result computes the whole LazyList, so it never returns on an infinite one.
      *
      * @param that the right-hand elements
      * @param <U>  their type

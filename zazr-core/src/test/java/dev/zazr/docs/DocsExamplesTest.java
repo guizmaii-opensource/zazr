@@ -1266,6 +1266,18 @@ public class DocsExamplesTest {
             assertThat(squares).hasToString("Vector(1, 9, 25, 49)");
             assertThat(firstTen).hasToString("Vector(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)");
         }
+
+        @Test
+        void nothingIsComputedBeforeItIsRead() {
+            var seen = new java.util.ArrayList<Integer>();
+            var squares = LazyList.from(1).tap(seen::add).map(n -> n * n); // LazyList<Integer>
+            // seen is empty: nothing is computed yet
+            var third = squares.get(2); // 9, and seen is [1, 2, 3]
+
+            assertThat(squares.toString()).isEqualTo("LazyList(1, 4, 9, ?)");
+            assertThat(third).isEqualTo(9);
+            assertThat(seen).containsExactly(1, 2, 3);
+        }
     }
 
     @Nested

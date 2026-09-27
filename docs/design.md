@@ -307,7 +307,7 @@ API first, and the member is never widened, since a public member of an exported
   package cannot do without `protected` members, and `protected` on a public non-final class is API. They are
   private nested classes of `Stream.Cons` instead (a member of the interface `Stream` would be implicitly public),
   reachable from the rest of `Stream`'s body; the other `StreamModule` classes use only public members of `Cons`
-  and moved.
+  and moved. (Since #191 the cells are `collection.internal.LazyCell`, and `Cons` and `Empty` are gone.)
 
 Trade-off: package-private hides on the classpath and on the module path; a `public` type in an unexported package
 hides on the module path only, and on the classpath the package name is the warning. Accepted for an API package that
@@ -1287,6 +1287,41 @@ come back later as a file or a module without touching the core.
   `make docs-complexity`, `make docs-align`). It leaves this log alone. It can be deleted once nothing in flight uses
   the old name.
 
+**Decided 2026-09-27, #191: `LazyList` is fully lazy, as Scala's.** Until then it was Vavr's `Stream` renamed: a cell
+held its head already computed and only the tail was lazy, like Scala 2.12's `Stream`, which Scala 2.13 replaced by
+`LazyList` for that reason. The evaluation model is ported from Scala 3's `LazyList.scala` (the Scala 2.13 collection
+library, which Scala 3 ships unchanged):
+
+- **A cell is a lazily evaluated state**, empty or a head and a tail, computed on the first `isEmpty`, `head` or
+  `tail` and kept. Construction and the lazy operations evaluate nothing; reading an element evaluates the cells it
+  needs. `tail()` evaluates this cell and returns the tail without evaluating it.
+- **The cells are `LazyCell` in `collection.internal`**, one abstract class and four private kinds (created evaluated,
+  deferred to a supplier's list, read from an iterator, appended). `LazyList.Cons` and `LazyList.Empty` are deleted:
+  a public case type cannot say whether an unevaluated list is empty. `LazyList.empty()` is still one evaluated
+  instance.
+- **Kept from #188, where Zazr differs from Scala:** a failed evaluation is kept and rethrown as the same instance
+  (Scala's `initState` restores the thunk and retries); a `VirtualMachineError` is not kept; the outcome is written in
+  a `finally` before any type check. A cell that needs its own state fails fast, as in Scala (which
+  throws a `RuntimeException`, Zazr an `IllegalStateException`), and evaluation runs under the cell's lock. `append`, `appendAll` and `prependAll` keep
+  the queue of parts, so a loop of them reads back one step per element (Scala's `appended` adds a layer per call).
+- **API.** `cons(head, tailSupplier)` keeps its value head; its supplier is called when the tail is read, not by
+  `tail()`. The lazy counterpart is `LazyList.defer(Supplier<LazyList>)` rather than a `cons(Supplier, Supplier)`
+  overload: with a type parameter for the head, a `LazyList<Supplier<X>>` built with `cons(supplier, ...)` would
+  silently pick the lazy overload. `of(...)` and `ofAll(...)` are lazy too (`ofAll` asks for the iterator on the first
+  read, as Scala's `LazyList.from`), and return `empty()` for an argument known to be empty (a strict empty collection,
+  Scala's `knownSize == 0`).
+- **Which operations still evaluate when called:** those Scala evaluates eagerly (`reverse`, `sorted`, `sortBy`,
+  `scanRight`, and `shuffle`, which Scala lacks), the index checks of `subSequence` (its contract throws on a bad
+  range), `init` (it throws on an empty list) and `transpose` (it checks the matrix shape). Every other operation is
+  lazy, including those that must read the whole list to produce anything (`takeRight`, `rotateLeft`, `duplicates`,
+  `distinctByKeepLast`): they read it when the result is first read.
+- **Errors that became lazy:** an index past the end given to `insert`, `insertAll`, `removeAt` or `update` throws when
+  the result is read that far (a negative index, or any index on a list already known to be empty, still throws at
+  once); a null returned by a `cons` or `defer` supplier fails when the list is read.
+- **Identity.** An operation on a list already known to be empty returns `empty()` without evaluating; otherwise the
+  result is a new cell, even when it turns out equal to the receiver (`orElse` on a non-empty list, `rotateLeft` by the
+  length), since deciding would evaluate. `toString` never evaluates: `LazyList(?)` for an unevaluated list.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
@@ -2133,6 +2168,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #26 | `asJava` views for every collection (`asJavaMap` for the maps); the `toJava*` copies deleted | 3.1 | #24 |
 | #27 | Builders for the other collections | 3.8.1 | #24 |
 | #28 | Rename `Stream` to `LazyList` | 3.7 | #24 |
+| #191 | `LazyList` fully lazy (lazy head and emptiness), ported from Scala's `LazyList` | 3.7 | #28 |
 | #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |
