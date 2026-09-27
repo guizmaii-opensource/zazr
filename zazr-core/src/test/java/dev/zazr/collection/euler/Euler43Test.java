@@ -41,7 +41,7 @@ public class Euler43Test {
         Vector<Long> result = tenDigitPandigitalsWithProperty();
         Assertions.assertThat(result).contains(1406357289L);
 
-        assertThat(result.sum().longValue()).isEqualTo(16695334890L);
+        assertThat(result.sumLong(Number::longValue)).isEqualTo(16695334890L);
     }
 
     private static Vector<Long> tenDigitPandigitalsWithProperty() {

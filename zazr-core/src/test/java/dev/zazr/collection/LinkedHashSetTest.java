@@ -24,7 +24,6 @@ import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -189,7 +188,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         public void shouldNarrowLinkedHashSet() {
             LinkedHashSet<Double> doubles = of(1.0d);
             LinkedHashSet<Number> numbers = LinkedHashSet.narrow(doubles);
-            int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
+            int actual = numbers.add(new BigDecimal("2.0")).sumInt(Number::intValue);
             assertThat(actual).isEqualTo(3);
         }
     }
@@ -251,97 +250,6 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
                     .isTrue();
         }
-    }
-
-    // -- average
-
-    @TestTemplate
-    public void shouldReturnNoneWhenComputingAverageOfNil() {
-        assertThat(empty().average()).isEqualTo(Option.none());
-    }
-
-    @TestTemplate
-    public void shouldThrowWhenComputingAverageOfStrings() {
-        assertThrows(
-                UnsupportedOperationException.class, () -> of("1", "2", "3").average());
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfByte() {
-        assertThat(of((byte) 1, (byte) 2).average().get()).isEqualTo(1.5);
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfDouble() {
-        assertThat(of(.1, .2, .3).average().get()).isEqualTo(.2, within(10e-17));
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfFloat() {
-        assertThat(of(.1f, .2f, .3f).average().get()).isEqualTo(.2, within(10e-9));
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfInt() {
-        assertThat(of(1, 2, 3).average().get()).isEqualTo(2);
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfLong() {
-        assertThat(of(1L, 2L, 3L).average().get()).isEqualTo(2);
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfShort() {
-        assertThat(of((short) 1, (short) 2, (short) 3).average().get()).isEqualTo(2);
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfBigInteger() {
-        assertThat(of(BigInteger.ZERO, BigInteger.ONE).average().get()).isEqualTo(.5);
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageOfBigDecimal() {
-        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).average().get()).isEqualTo(.5);
-    }
-
-    @TestTemplate
-    public void shouldComputeAverageAndCompensateErrors() {
-        // Kahan's summation algorithm (used by DoubleStream.average()) returns 0.0 (false)
-        // Neumaier's modification of Kahan's algorithm returns 0.75 (correct)
-        assertThat(of(1.0, +10e100, 2.0, -10e100).average().get()).isEqualTo(0.75);
-    }
-
-    @TestTemplate
-    public void shouldCalculateAverageOfDoublesContainingNaN() {
-        assertThat(of(1.0, Double.NaN, 2.0).average().get()).isNaN();
-    }
-
-    @TestTemplate
-    public void shouldCalculateAverageOfFloatsContainingNaN() {
-        assertThat(of(1.0f, Float.NaN, 2.0f).average().get()).isNaN();
-    }
-
-    @TestTemplate
-    public void shouldCalculateAverageOfDoubleAndFloat() {
-        assertThat(this.<Number>of(1.0, 1.0f).average().get()).isEqualTo(1.0);
-    }
-
-    @TestTemplate
-    public void shouldCalculateAverageOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)
-                        .average()
-                        .get())
-                .isNaN();
-    }
-
-    @TestTemplate
-    public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
-                        .average()
-                        .get())
-                .isNaN();
     }
 
     // -- existsUnique
@@ -949,59 +857,6 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         assertThat(of(2, 4).partition(i -> i % 2 != 0)).isEqualTo(Tuple.of(empty(), of(2, 4)));
     }
 
-    // -- product
-
-    @TestTemplate
-    public void shouldComputeProductOfNil() {
-        assertThat(empty().product()).isEqualTo(1);
-    }
-
-    @TestTemplate
-    public void shouldThrowWhenComputingProductOfStrings() {
-        assertThrows(
-                UnsupportedOperationException.class, () -> of("1", "2", "3").product());
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfByte() {
-        assertThat(of((byte) 1, (byte) 2).product()).isEqualTo(2L);
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfDouble() {
-        assertThat(of(.1, .2, .3).product().doubleValue()).isEqualTo(.006, within(10e-18));
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfFloat() {
-        assertThat(of(.1f, .2f, .3f).product().doubleValue()).isEqualTo(.006, within(10e-10));
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfInt() {
-        assertThat(of(1, 2, 3).product()).isEqualTo(6L);
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfLong() {
-        assertThat(of(1L, 2L, 3L).product()).isEqualTo(6L);
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfShort() {
-        assertThat(of((short) 1, (short) 2, (short) 3).product()).isEqualTo(6L);
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfBigInteger() {
-        assertThat(of(BigInteger.ZERO, BigInteger.ONE).product()).isEqualTo(BigInteger.ZERO);
-    }
-
-    @TestTemplate
-    public void shouldComputeProductOfBigDecimal() {
-        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).product()).isEqualTo(BigDecimal.ZERO);
-    }
-
     // -- reduceOption
 
     @TestTemplate
@@ -1131,59 +986,6 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         } else {
             assertThat(actual).isSameAs(expected);
         }
-    }
-
-    // -- sum
-
-    @TestTemplate
-    public void shouldComputeSumOfNil() {
-        assertThat(empty().sum()).isEqualTo(0);
-    }
-
-    @TestTemplate
-    public void shouldThrowWhenComputingSumOfStrings() {
-        assertThrows(
-                UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfByte() {
-        assertThat(of((byte) 1, (byte) 2).sum()).isEqualTo(3L);
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfDouble() {
-        assertThat(of(.1, .2, .3).sum().doubleValue()).isEqualTo(.6, within(10e-16));
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfFloat() {
-        assertThat(of(.1f, .2f, .3f).sum().doubleValue()).isEqualTo(.6, within(10e-8));
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfInt() {
-        assertThat(of(1, 2, 3).sum()).isEqualTo(6L);
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfLong() {
-        assertThat(of(1L, 2L, 3L).sum()).isEqualTo(6L);
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfShort() {
-        assertThat(of((short) 1, (short) 2, (short) 3).sum()).isEqualTo(6L);
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfBigInteger() {
-        assertThat(of(BigInteger.ZERO, BigInteger.ONE).sum()).isEqualTo(BigInteger.ONE);
-    }
-
-    @TestTemplate
-    public void shouldComputeSumOfBigDecimal() {
-        assertThat(of(BigDecimal.ZERO, BigDecimal.ONE).sum()).isEqualTo(BigDecimal.ONE);
     }
 
     // -- as
@@ -1998,7 +1800,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     public void shouldNarrowSet() {
         Set<Double> doubles = of(1.0d);
         Set<Number> numbers = Set.narrow(doubles);
-        int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
+        int actual = numbers.add(new BigDecimal("2.0")).sumInt(Number::intValue);
         assertThat(actual).isEqualTo(3);
     }
 

@@ -57,7 +57,6 @@ public class Euler32Test {
                 .filter(t -> isPandigital(1, 9, t._1() + t._2() + Long.toString(t._3())))
                 .map(Tuple3::_3)
                 .distinct()
-                .sum()
-                .longValue();
+                .sumLong(Number::longValue);
     }
 }

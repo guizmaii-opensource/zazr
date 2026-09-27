@@ -75,8 +75,7 @@ public class Euler42Test {
     private static int sumOfAlphabeticalPositions(String word) {
         return Vector.ofAll(word.toCharArray())
                 .map(Euler42Test::alphabeticalPosition)
-                .sum()
-                .intValue();
+                .sumInt(Number::intValue);
     }
 
     private static int alphabeticalPosition(char c) {

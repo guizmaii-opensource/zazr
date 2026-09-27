@@ -367,9 +367,14 @@ public class NonEmptySortedSetTest {
                     .isEqualTo(set.mkString(","));
             assertThat(ness.fold(0, Integer::sum)).isEqualTo(n * (n - 1) / 2);
             assertThat(ness.foldLeft("", (s, i) -> s + i)).isEqualTo(set.foldLeft("", (s, i) -> s + i));
-            assertThat(ness.sum()).isEqualTo(set.sum());
-            assertThat(ness.product()).isEqualTo(set.product());
-            assertThat(ness.average()).isEqualTo(set.average().get());
+            assertThat(ness.sumInt(i -> i)).isEqualTo(set.sumInt(i -> i)).isEqualTo(n * (n - 1) / 2);
+            assertThat(ness.sumLong(i -> i)).isEqualTo(set.sumLong(i -> i));
+            assertThat(ness.sumDouble(i -> i / 3.0)).isEqualTo(set.sumDouble(i -> i / 3.0));
+            assertThat(ness.productInt(i -> i % 3 == 0 ? -1 : 1)).isEqualTo(set.productInt(i -> i % 3 == 0 ? -1 : 1));
+            assertThat(ness.productLong(i -> i % 3 == 0 ? -1L : 1L))
+                    .isEqualTo(set.productLong(i -> i % 3 == 0 ? -1L : 1L));
+            assertThat(ness.productDouble(i -> i % 3 + 1)).isEqualTo(set.productDouble(i -> i % 3 + 1));
+            assertThat(ness.average(i -> i)).isEqualTo(set.average(i -> i).get());
             assertThat(ness.size()).isEqualTo(n);
             assertThat(ness.contains(n - 1)).isTrue();
             assertThat(ness.contains(n)).isFalse();

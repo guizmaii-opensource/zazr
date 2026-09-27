@@ -21,10 +21,7 @@ public class Euler36Test {
     }
 
     private static int solve(int n) {
-        return LazyList.range(1, n)
-                .filter(Euler36Test::isDoubleBasePalindrome)
-                .sum()
-                .intValue();
+        return LazyList.range(1, n).filter(Euler36Test::isDoubleBasePalindrome).sumInt(Number::intValue);
     }
 
     private static boolean isPalindrome(Vector<Character> seq) {

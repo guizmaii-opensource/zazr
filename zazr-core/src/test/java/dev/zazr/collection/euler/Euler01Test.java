@@ -24,7 +24,7 @@ public class Euler01Test {
     }
 
     private static int sumOfMultiplesOf3and5Below(int limit) {
-        return List.range(1, limit).filter(Euler01Test::isMultipleOf3or5).sum().intValue();
+        return List.range(1, limit).filter(Euler01Test::isMultipleOf3or5).sumInt(Number::intValue);
     }
 
     private static boolean isMultipleOf3or5(int num) {

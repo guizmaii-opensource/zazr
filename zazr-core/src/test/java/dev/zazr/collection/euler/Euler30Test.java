@@ -43,15 +43,14 @@ public class Euler30Test {
     private static long sumOfAllTheNumbersThatCanBeWrittenAsTheSumOfPowersOfTheirDigits(int powers) {
         return List.rangeClosed(10, maximalSumForPowers(powers))
                 .filter(i -> sumOfPowersOfDigits(powers, i) == i)
-                .sum()
-                .longValue();
+                .sumLong(Number::longValue);
     }
 
     private static long maximalSumForPowers(int powers) {
         return LazyList.from(1)
                 .map(i -> Tuple.of(
                         (long) Math.pow(10, i) - 1,
-                        List.fill(i, () -> Math.pow(9, powers)).sum().longValue()))
+                        List.fill(i, () -> Math.pow(9, powers)).sumLong(Number::longValue)))
                 .find(t -> t._1() > t._2())
                 .map(t -> t._1())
                 .get();
@@ -61,7 +60,6 @@ public class Euler30Test {
         return Vector.ofAll(Long.toString(num).toCharArray())
                 .map(c -> Character.digit(c, 10))
                 .map(d -> (long) Math.pow(d, powers))
-                .sum()
-                .longValue();
+                .sumLong(Number::longValue);
     }
 }

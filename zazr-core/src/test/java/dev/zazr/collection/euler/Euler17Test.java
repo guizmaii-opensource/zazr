@@ -82,7 +82,7 @@ public class Euler17Test {
         int letterCount(int num);
 
         default int letterCount(LazyList<Integer> range) {
-            return range.map(this::letterCount).sum().intValue();
+            return range.map(this::letterCount).sumInt(Number::intValue);
         }
     }
 

@@ -382,6 +382,7 @@ duplication is cheaper than a god interface).
 | `Lazy.val(Supplier, Class)` (dynamic proxy) | delete | magic |
 | `Lazy.filter -> Option` | delete | |
 | `isAsync`, `isLazy`, `isSingleValued`, `isTraversableAgain`, `hasDefiniteSize`, `isSequential`, `isOrdered`, `isDistinct` | delete | reflection-on-the-type flags that no caller should branch on |
+| `sum()`, `product()` → `Number`; `average()` → `Option<Double>`, all picking the arithmetic from the first element's class at run time | `sumInt(ToIntFunction)`, `sumLong(ToLongFunction)`, `sumDouble(ToDoubleFunction)`, `productInt`, `productLong`, `productDouble` with the same arguments, returning the primitive; `average(ToDoubleFunction)` → `Option<Double>` on the sequences and the sets, `double` on `NonEmptyVector`, `NonEmptySet`, `NonEmptySortedSet`. The untyped ones are deleted (decided 2026-09-28, #194) | the old forms summed `Integer`s into a `Long`, truncated a mixed `[1, 2.5]`, overflowed `long` silently and threw `UnsupportedOperationException` on non-numbers; Scala types them by `Numeric` at compile time, Java by the mapper, as `IntStream.sum`/`mapToInt`. **Overflow**: the `int` and `long` sums and products are exact and throw `ArithmeticException` when, and only when, the exact result does not fit: a partial result may leave the range if the later elements bring it back (`[MAX_VALUE, 1, -1]` gives `MAX_VALUE` in every order), so a set's result never depends on its iteration order. `sumInt` accumulates in a `long`, `sumLong` counts the carries out of 64 bits, the products keep the magnitude (unsigned for `long`) and the sign apart and become `0` on a zero factor whatever came before. The JDK's silent wrap-around was rejected (a wrong total is worse than an exception), and so was `Math.addExact` on the running total (it throws on `[MAX_VALUE, 1, -1]` and not on `[1, -1, MAX_VALUE]`). **Doubles**: `sumDouble` and `average` use Neumaier's compensated summation (NaN when a value is NaN or both infinities appear, the infinity when one is infinite or a partial sum overflows); `productDouble` multiplies in iteration order, compensation does not apply to products. **Empty**: `0`/`0L`/`0.0` and `1`/`1L`/`1.0`, the identities, as Scala and `IntStream`; `average` is `None`. **`Option<Double>` rather than `OptionalDouble`**: it is the library's absence type (pattern matching, `map`, `getOrElse`), what `max`/`min`/`reduceOption` already return, and 3.12 keeps primitive options out of v1; the one boxed `Double` per call is not a per-element cost. No `BigInteger`/`BigDecimal` forms: `foldLeft(BigInteger.ZERO, BigInteger::add)` says the same thing |
 
 Things ZIO does that **do not** port and should not be imitated:
 - `Par` suffix: there is no parallelism in pure data. Do **not** name `Validation`'s accumulating zip
@@ -630,9 +631,9 @@ now has every operation of `Vector`, each under the same contract, delegating to
   power gives none, 0 gives one empty vector), and the `Iterable` forms `zip(Iterable)`, `zipWith(Iterable, ·)`,
   `crossProduct(Iterable)`, empty when the argument is.
 - **Total:** `max()`, `min()` (natural order; `min` returns a `NaN` whenever one is present, as `Vector.min()` does),
-  `maxBy(Comparator)`, `minBy(Comparator)`, `average()` as a `double` (the value `Vector.average()` holds, from the
-  same compensated sum, without the `Option`), `single()` (throws when there is more than one element), `fold`, `sum`,
-  `product`, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
+  `maxBy(Comparator)`, `minBy(Comparator)`, `average(ToDoubleFunction)` as a `double` (the value `Vector.average`
+  holds, from the same compensated sum, without the `Option`), `single()` (throws when there is more than one element),
+  `fold`, the typed sums and products of 3.3, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
   `indexOfSlice` ×2, `lastIndexOfSlice` ×2, `startsWith` ×2, `endsWith`, `containsSlice`, `containsAll`, `search` ×2,
   `segmentLength`, `prefixLength`, `existsUnique`, `forEachWithIndex`, `collect(Collector)`,
   `collect(Supplier, BiConsumer, BiConsumer)`.
@@ -697,7 +698,7 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `partition`, `partitionMap` (`HashSet` only, `TreeSet` has none), and on the sorted ones `tail`, `init`, `take*`,
   `drop*`.
 - **Total:** `max()`, `min()`, `maxBy` ×2, `minBy` ×2, `reduce`, `reduceMap`, `fold`, `single` (throws on more than one),
-  `average` as a `double` on the sets, `head`/`last` on the sorted ones, all through the loops of
+  `average(ToDoubleFunction)` as a `double` on the sets (and the typed sums and products of 3.3), `head`/`last` on the sorted ones, all through the loops of
   `collection.internal.NonEmptyModule` (no `Option` wrapped to be unwrapped). `max`/`min` stay in the natural order of
   the elements on the sorted variants, as on `TreeSet`/`TreeMap`; the comparator's extremes are `head`/`last`.
 - **Unwrap and narrowing.** `toSet()`, `toSortedSet()`, `toMap()`, `toSortedMap()` without arguments return the
@@ -963,7 +964,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
 - **What `Set` keeps** (decided): the set algebra (`add`, `addAll`, `remove`, `removeAll(Iterable)`, `union`,
   `intersect`, `diff`, `contains`), `filter`, `reject`, `map`, `flatMap`, `collect(Function)`, `as`, `partition`,
   `groupBy`, `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
-  `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average`, `fold`/`reduce`/`reduceOption`, `single`/
+  `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average` (typed since #194, 3.3), `fold`/`reduce`/`reduceOption`, `single`/
   `singleOption`, `arrangeBy`, `collect(Collector)` ×2, the `toJava*` and `to*` conversions, `toJavaSet()`;
   `SortedSet` adds `comparator()` and the comparator-taking `map`/`flatMap`/`collect`. **What it drops**: `head`,
   `headOption`, `last`, `lastOption`, `init`, `initOption`, `tail`, `tailOption`, `take`/`takeRight`/`takeUntil`/
@@ -982,7 +983,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over
   the entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and
   the conversions; `SortedMap` adds `comparator()` and the comparator-taking forms. **What it drops**: the same
-  positional names as `Set`, `length`, `sum`/`product`/`average` (entries are never numbers), and every
+  positional names as `Set`, `length`, the sums, products and `average` (entries are never numbers), and every
   sequence-shaped method step 2 had typed `Stream`: `map(Function)`, `flatMap(Function)`, `collect(Function)`,
   `as`, `zip`/`zipWith`/`zipAll`/`zipWithIndex` ×2, `unzip` ×3, `unzip3` ×2, `scanLeft`/`scanRight`, together with
   `keysIterator`, `valuesIterator` and `iterator(BiFunction)` (`keySet()` and `values()` are the replacements).
@@ -1802,7 +1803,8 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   collections store every element boxed (`Vector`'s leaves are `Object[]` only, 3.8), and there is no
   `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
   hot path shows the boxing, and then added together with the producing methods (`indexOfOption`,
-  numeric `max`/`sum` folds).
+  numeric `max` folds). The typed sums and products (3.3) return primitives and need none; `average` returns an
+  `Option<Double>`.
 - **JIT escape analysis** already removes both allocations for the common inline pattern
   (`find(...).map(...).getOrElse(...)` in one method) once C2 inlines; records make that more likely.
   Measure before adding types.
