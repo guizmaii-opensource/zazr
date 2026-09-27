@@ -121,7 +121,7 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         if (list instanceof LazyCell<? extends T> cell) {
             Object outcome = cell.force();
             if (outcome == CONS) {
-                set(cell.head, (LazyList<T>) cell.tail);
+                set(cell.evaluatedHead(), (LazyList<T>) cell.evaluatedTail());
             }
             return outcome;
         } else if (list.isEmpty()) {
@@ -185,21 +185,29 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
     }
 
     @Override
-    @SuppressWarnings("NullAway") // a CONS state is written after head
     public final T head() {
         if (force() == EMPTY) {
             throw new NoSuchElementException("head of empty stream");
         }
-        return head;
+        return evaluatedHead();
     }
 
     @Override
-    @SuppressWarnings("NullAway") // a CONS state is written after tail
     public final LazyList<T> tail() {
         if (force() == EMPTY) {
             throw new UnsupportedOperationException("tail of empty stream");
         }
-        return tail;
+        return evaluatedTail();
+    }
+
+    // the head of a cell whose state is CONS, which is written after head and tail: never null then
+    private T evaluatedHead() {
+        return Objects.requireNonNull(head, "LazyList: head of a cell that is not evaluated");
+    }
+
+    // the tail of a cell whose state is CONS
+    private LazyList<T> evaluatedTail() {
+        return Objects.requireNonNull(tail, "LazyList: tail of a cell that is not evaluated");
     }
 
     @Override
@@ -268,9 +276,11 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         }
 
         @Override
-        @SuppressWarnings("NullAway") // compute() runs only while the state is not kept, so supplier is set
         Object compute() {
-            return adopt(Objects.requireNonNull(supplier.get(), nullResult));
+            // compute() runs only while the state is not kept, before release() clears supplier
+            Supplier<? extends LazyList<? extends T>> source =
+                    Objects.requireNonNull(supplier, "LazyList: a kept cell is evaluated again");
+            return adopt(Objects.requireNonNull(source.get(), nullResult));
         }
 
         @Override
@@ -290,9 +300,10 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         }
 
         @Override
-        @SuppressWarnings("NullAway") // compute() runs only while the state is not kept, so iterator is set
         Object compute() {
-            java.util.Iterator<? extends T> source = iterator;
+            // compute() runs only while the state is not kept, before release() clears iterator
+            java.util.Iterator<? extends T> source =
+                    Objects.requireNonNull(iterator, "LazyList: a kept cell is evaluated again");
             if (!source.hasNext()) {
                 return EMPTY;
             }
