@@ -482,28 +482,33 @@ class GenTypesTest {
 
     @Test
     void everySequenceLayoutHoldsTheElementsInOrder() {
-        long seed = 0;
+        // a distinct seed for each shape
+        java.util.Random seeds = new java.util.Random(0);
         for (int n : BOUNDARIES) {
             for (int layout = 0; layout < Shapes.VECTOR_LAYOUTS; layout++) {
-                Vector<Integer> vector = Shapes.vector(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Vector<Integer> vector =
+                        Shapes.vector(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 assertThat(vector)
                         .as("vector layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
                 assertThat(vector.size()).isEqualTo(n);
             }
             for (int layout = 0; layout < Shapes.LIST_LAYOUTS; layout++) {
-                List<Integer> list = Shapes.list(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                List<Integer> list =
+                        Shapes.list(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 assertThat(list).as("list layout %d of %d elements", layout, n).containsExactlyElementsOf(elements(n));
             }
             for (int layout = 0; layout < Shapes.QUEUE_LAYOUTS; layout++) {
-                Queue<Integer> queue = Shapes.queue(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Queue<Integer> queue =
+                        Shapes.queue(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 assertThat(queue)
                         .as("queue layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
                 assertThat(queue.size()).isEqualTo(n);
             }
             for (int layout = 0; layout < Shapes.STREAM_LAYOUTS; layout++) {
-                Stream<Integer> stream = Shapes.stream(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Stream<Integer> stream =
+                        Shapes.stream(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 assertThat(stream)
                         .as("stream layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
@@ -513,13 +518,15 @@ class GenTypesTest {
 
     @Test
     void everyNonEmptyVectorLayoutHoldsTheHeadThenTheTail() {
-        long seed = 0;
+        // a distinct seed for each shape
+        java.util.Random seeds = new java.util.Random(0);
         for (int n : BOUNDARIES) {
             ArrayList<Integer> expected = new ArrayList<>();
             expected.add(-1);
             expected.addAll(elements(n));
             for (int tailLayout = 0; tailLayout < Shapes.VECTOR_LAYOUTS; tailLayout++) {
-                Vector<Integer> tail = Shapes.vector(tailLayout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Vector<Integer> tail =
+                        Shapes.vector(tailLayout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 for (int layout = 0; layout < Shapes.NON_EMPTY_VECTOR_LAYOUTS; layout++) {
                     assertThat(Shapes.nonEmptyVector(layout, -1, tail))
                             .as(
@@ -537,7 +544,8 @@ class GenTypesTest {
         Gen<Integer> extra = Gen.integers(0, 2_000);
         java.util.List<Shapes.SetOps<Integer, ? extends Traversable<Integer>>> kinds =
                 java.util.List.of(Shapes.hashSetOps(), Shapes.linkedHashSetOps(), Shapes.treeSetOps());
-        long seed = 0;
+        // a distinct seed for each shape
+        java.util.Random seeds = new java.util.Random(0);
         for (int n : BOUNDARIES) {
             // every element twice
             ArrayList<Integer> drawn = new ArrayList<>();
@@ -548,7 +556,7 @@ class GenTypesTest {
             for (Shapes.SetOps<Integer, ? extends Traversable<Integer>> ops : kinds) {
                 for (int layout = 0; layout < Shapes.SET_LAYOUTS; layout++) {
                     Traversable<Integer> set =
-                            set(layout, new ArrayList<>(drawn), extra, ops, new Sampling(seed++, 1000));
+                            set(layout, new ArrayList<>(drawn), extra, ops, new Sampling(seeds.nextLong(), 1000));
                     assertThat(set)
                             .as("%s layout %d of %d draws", set.getClass().getSimpleName(), layout, n)
                             .containsExactlyInAnyOrderElementsOf(expected);
@@ -568,7 +576,8 @@ class GenTypesTest {
         Gen<Integer> extraKeys = Gen.integers(1_000_000, 2_000_000);
         java.util.List<Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>>> kinds =
                 java.util.List.of(Shapes.hashMapOps(), Shapes.linkedHashMapOps(), Shapes.treeMapOps());
-        long seed = 0;
+        // a distinct seed for each shape
+        java.util.Random seeds = new java.util.Random(0);
         for (int n : BOUNDARIES) {
             // every key twice, the second time with another value
             ArrayList<Tuple2<Integer, Integer>> entries = new ArrayList<>();
@@ -580,7 +589,7 @@ class GenTypesTest {
             for (Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>> ops : kinds) {
                 for (int layout = 0; layout < Shapes.MAP_LAYOUTS; layout++) {
                     Traversable<Tuple2<Integer, Integer>> map =
-                            map(layout, new ArrayList<>(entries), extraKeys, ops, new Sampling(seed++, 1000));
+                            map(layout, new ArrayList<>(entries), extraKeys, ops, new Sampling(seeds.nextLong(), 1000));
                     assertThat(toJava(map))
                             .as("%s layout %d of %d entries", map.getClass().getSimpleName(), layout, n)
                             .isEqualTo(expected);
@@ -639,10 +648,12 @@ class GenTypesTest {
                 vectors,
                 v -> {
                     Object tree = field(v, Vector.class, "trie");
-                    Class<?> owner = tree.getClass();
-                    while (owner.getSuperclass() != Object.class) {
-                        owner = owner.getSuperclass();
-                    }
+                    // the topmost class of the tree below Object
+                    Class<?> owner = java.util.stream.Stream.<Class<?>>iterate(tree.getClass(), Class::getSuperclass)
+                            .filter(c -> c.getSuperclass() == Object.class)
+                            .findFirst()
+                            .orElseThrow();
+
                     return v.size() > 32 && ((Object[]) field(tree, owner, "prefix1")).length < 32;
                 },
                 "a tree of two levels or more whose first leaf is partly filled");

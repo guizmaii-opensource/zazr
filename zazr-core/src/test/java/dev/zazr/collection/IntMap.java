@@ -88,11 +88,9 @@ public final class IntMap<T> implements Traversable<T> {
             public int characteristics() {
                 int characteristics =
                         Spliterator.IMMUTABLE | Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.DISTINCT;
-                if (original instanceof SortedMap || original instanceof LinkedHashMap) {
-                    characteristics |=
-                            Spliterator.ORDERED; // the values follow the key order, they are not sorted themselves
-                }
-                return characteristics;
+                // the values follow the key order, they are not sorted themselves
+                boolean ordered = original instanceof SortedMap || original instanceof LinkedHashMap;
+                return ordered ? characteristics | Spliterator.ORDERED : characteristics;
             }
         };
     }

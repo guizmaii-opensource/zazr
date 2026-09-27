@@ -16,6 +16,7 @@ public interface NonEmptyModule {
     static <T extends @Nullable Object> T max(Iterable<T> nonEmpty, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T max = iterator.next();
         while (iterator.hasNext()) {
             T element = iterator.next();
@@ -29,6 +30,7 @@ public interface NonEmptyModule {
     static <T extends @Nullable Object> T min(Iterable<T> nonEmpty, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T min = iterator.next();
         while (iterator.hasNext()) {
             T element = iterator.next();
@@ -44,7 +46,7 @@ public interface NonEmptyModule {
     }
 
     /* a NaN is the result whenever one is present, as on the plain collections' min() */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Var"})
     static <T extends @Nullable Object> T min(Iterable<T> nonEmpty) {
         java.util.Iterator<T> iterator = nonEmpty.iterator();
         T head = iterator.next();
@@ -77,7 +79,9 @@ public interface NonEmptyModule {
             Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T max = iterator.next();
+        @SuppressWarnings("Var")
         U maxKey = f.apply(max);
         while (iterator.hasNext()) {
             T element = iterator.next();
@@ -94,7 +98,9 @@ public interface NonEmptyModule {
             Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T min = iterator.next();
+        @SuppressWarnings("Var")
         U minKey = f.apply(min);
         while (iterator.hasNext()) {
             T element = iterator.next();
@@ -111,6 +117,7 @@ public interface NonEmptyModule {
             Iterable<T> nonEmpty, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
         java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         T result = iterator.next();
         while (iterator.hasNext()) {
             result = op.apply(result, iterator.next());
@@ -125,6 +132,7 @@ public interface NonEmptyModule {
         Objects.requireNonNull(mapper, "mapper is null");
         Objects.requireNonNull(op, "op is null");
         java.util.Iterator<T> iterator = nonEmpty.iterator();
+        @SuppressWarnings("Var")
         B result = mapper.apply(iterator.next());
         while (iterator.hasNext()) {
             result = op.apply(result, mapper.apply(iterator.next()));

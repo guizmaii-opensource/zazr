@@ -2,6 +2,7 @@ package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -80,11 +81,8 @@ public class ChampMapTest {
     // -- the tries compared
 
     private static <K, V> BitmapIndexedMapNode<K, V> persistent(java.util.List<K> keys, java.util.List<V> values) {
-        BitmapIndexedMapNode<K, V> trie = MapNode.empty();
-        for (int i = 0; i < keys.size(); i++) {
-            trie = trie.updated(keys.get(i), values.get(i));
-        }
-        return trie;
+        return Vector.range(0, keys.size())
+                .foldLeft(MapNode.<K, V>empty(), (trie, i) -> trie.updated(keys.get(i), values.get(i)));
     }
 
     private static <K, V> BitmapIndexedMapNode<K, V> built(java.util.List<K> keys, java.util.List<V> values) {
@@ -136,10 +134,8 @@ public class ChampMapTest {
         assertValid(trie);
         java.util.List<Object[]> all = entries(trie);
         Collections.reverse(all);
-        BitmapIndexedMapNode<Key, Object> fresh = MapNode.empty();
-        for (Object[] entry : all) {
-            fresh = fresh.updated((Key) entry[0], entry[1]);
-        }
+        BitmapIndexedMapNode<Key, Object> fresh = Vector.ofAll(all)
+                .foldLeft(MapNode.<Key, Object>empty(), (acc, entry) -> acc.updated((Key) entry[0], entry[1]));
         assertSameShape(fresh, trie, false);
     }
 
@@ -175,23 +171,23 @@ public class ChampMapTest {
 
     @Test
     public void shouldFindPresentKeysAndMissAbsentOnes() {
-        BitmapIndexedMapNode<Integer, Integer> trie = MapNode.empty();
-        assertThat(trie.containsKey(2)).isFalse();
-        assertThat(trie.getOrElse(2, 42)).isEqualTo(42);
-        assertThat(trie.getEntry(2)).isNull();
-        trie = trie.updated(1, 2).updated(4, 5);
-        assertThat(trie.containsKey(1)).isTrue();
-        assertThat(trie.getOrElse(1, 42)).isEqualTo(2);
-        assertThat(trie.containsKey(4)).isTrue();
-        assertThat(trie.getOrElse(4, 42)).isEqualTo(5);
-        assertThat(trie.containsKey(2)).isFalse();
-        assertThat(trie.getOrElse(2, 42)).isEqualTo(42);
-        assertThat(trie.getEntry(2)).isNull();
+        BitmapIndexedMapNode<Integer, Integer> empty = MapNode.empty();
+        assertThat(empty.containsKey(2)).isFalse();
+        assertThat(empty.getOrElse(2, 42)).isEqualTo(42);
+        assertThat(empty.getEntry(2)).isNull();
+        BitmapIndexedMapNode<Integer, Integer> two = empty.updated(1, 2).updated(4, 5);
+        assertThat(two.containsKey(1)).isTrue();
+        assertThat(two.getOrElse(1, 42)).isEqualTo(2);
+        assertThat(two.containsKey(4)).isTrue();
+        assertThat(two.getOrElse(4, 42)).isEqualTo(5);
+        assertThat(two.containsKey(2)).isFalse();
+        assertThat(two.getOrElse(2, 42)).isEqualTo(42);
+        assertThat(two.getEntry(2)).isNull();
         // a key of the same fragment as a present one, and of the same hash as a present one
-        trie = trie.updated(33, 33);
-        assertThat(trie.containsKey(65)).isFalse();
-        assertThat(trie.getOrElse(65, 42)).isEqualTo(42);
-        assertThat(trie.getEntry(65)).isNull();
+        BitmapIndexedMapNode<Integer, Integer> three = two.updated(33, 33);
+        assertThat(three.containsKey(65)).isFalse();
+        assertThat(three.getOrElse(65, 42)).isEqualTo(42);
+        assertThat(three.getEntry(65)).isNull();
         BitmapIndexedMapNode<Key, Integer> colliding =
                 MapNode.<Key, Integer>empty().updated(new Key(7, 0), 0).updated(new Key(7, 1), 1);
         assertThat(colliding.containsKey(new Key(7, 2))).isFalse();
@@ -275,12 +271,11 @@ public class ChampMapTest {
                 persistent(java.util.List.of(new Key(5, 0), new Key(5, 1), new Key(5, 2)), ids(3));
         assertValid(trie);
         // six single-child levels below the root, then the collision node
-        MapNode<Key, Integer> node = trie;
-        for (int level = 0; level < 7; level++) {
-            assertThat(node).isInstanceOf(BitmapIndexedMapNode.class);
-            assertThat(((BitmapIndexedMapNode<Key, Integer>) node).dataMap).isZero();
-            node = node.getNode(0);
-        }
+        MapNode<Key, Integer> node = Vector.range(0, 7).foldLeft((MapNode<Key, Integer>) trie, (level, i) -> {
+            assertThat(level).isInstanceOf(BitmapIndexedMapNode.class);
+            assertThat(((BitmapIndexedMapNode<Key, Integer>) level).dataMap).isZero();
+            return level.getNode(0);
+        });
         assertThat(node).isInstanceOf(HashCollisionMapNode.class);
         assertThat(node.size()).isEqualTo(3);
         // down to one entry, the collision node goes back up to the root
@@ -299,13 +294,14 @@ public class ChampMapTest {
         BitmapIndexedMapNode<Key, Integer> trie = persistent(keys, ids(4));
         assertValid(trie);
         assertThat(trie.nodeMap).isEqualTo(1);
-        for (int i = 0; i < 3; i++) {
-            trie = trie.removed(keys.get(i));
-            assertCanonical(trie);
-        }
-        assertThat(trie.nodeMap).isZero();
-        assertThat(trie.dataMap).isEqualTo(1);
-        assertThat(trie.getKey(0)).isSameAs(keys.get(3));
+        BitmapIndexedMapNode<Key, Integer> survivor = Vector.range(0, 3).foldLeft(trie, (acc, i) -> {
+            BitmapIndexedMapNode<Key, Integer> removed = acc.removed(keys.get(i));
+            assertCanonical(removed);
+            return removed;
+        });
+        assertThat(survivor.nodeMap).isZero();
+        assertThat(survivor.dataMap).isEqualTo(1);
+        assertThat(survivor.getKey(0)).isSameAs(keys.get(3));
         // and a root that keeps other entries inlines the survivor
         BitmapIndexedMapNode<Key, Integer> mixed =
                 persistent(java.util.List.of(new Key(0, 0), new Key(1 << 30, 0), new Key(7, 0)), ids(3));
@@ -344,11 +340,9 @@ public class ChampMapTest {
             Key second = new Key(hash, 0);
             String v1 = new String("v");
             String v2 = new String("v");
-            BitmapIndexedMapNode<Key, String> trie = MapNode.empty();
-            if (hash == 7) {
-                trie = trie.updated(new Key(7, 1), "other");
-            }
-            trie = trie.updated(first, v1);
+            BitmapIndexedMapNode<Key, String> empty = MapNode.empty();
+            BitmapIndexedMapNode<Key, String> trie =
+                    (hash == 7 ? empty.updated(new Key(7, 1), "other") : empty).updated(first, v1);
             BitmapIndexedMapNode<Key, String> sameValue = trie.updated(second, v1);
             assertThat(sameValue.getEntry(first)._1()).isSameAs(second);
             BitmapIndexedMapNode<Key, String> sameKey = trie.updated(first, v2);
@@ -369,34 +363,15 @@ public class ChampMapTest {
             java.util.Map<Key, Kept> model = new java.util.HashMap<>();
             java.util.List<BitmapIndexedMapNode<Key, Object>> versions = new ArrayList<>();
             java.util.List<java.util.Map<Key, Kept>> versionModels = new ArrayList<>();
-            BitmapIndexedMapNode<Key, Object> trie = MapNode.empty();
             int steps = random.nextInt(4) == 0 ? random.nextInt(60) : random.nextInt(2500);
-            for (int step = 0; step < steps; step++) {
-                Key key = randomKey(random);
-                if (random.nextInt(3) == 0) {
-                    BitmapIndexedMapNode<Key, Object> after = trie.removed(key);
-                    if (model.remove(key) == null) {
-                        assertThat(after).isSameAs(trie);
-                    }
-                    trie = after;
-                    // the canonical form after every removal: the local invariants, which make the shape unique, and
-                    // now and then the comparison with a fresh trie of the same entries
-                    assertValid(trie);
-                    if (random.nextInt(10) == 0) {
-                        assertCanonical(trie);
-                    }
-                } else {
-                    Object value = random.nextInt(4) == 0 && model.containsKey(key)
-                            ? model.get(key).value()
-                            : new Object();
-                    trie = trie.updated(key, value);
-                    model.put(key, new Kept(key, value));
-                }
+            BitmapIndexedMapNode<Key, Object> trie = Vector.range(0, steps).foldLeft(MapNode.empty(), (acc, step) -> {
+                BitmapIndexedMapNode<Key, Object> next = randomStep(random, acc, model);
                 if (random.nextInt(50) == 0) {
-                    versions.add(trie);
+                    versions.add(next);
                     versionModels.add(new java.util.HashMap<>(model));
                 }
-            }
+                return next;
+            });
             assertCanonical(trie);
             assertHolds(trie, model);
             // older versions are unchanged
@@ -407,14 +382,39 @@ public class ChampMapTest {
             // and removing everything, in random order, keeps it canonical down to the empty trie
             java.util.List<Key> keys = new ArrayList<>(model.keySet());
             Collections.shuffle(keys, random);
-            for (Key key : keys) {
-                trie = trie.removed(new Key(key.hash(), key.id()));
+            BitmapIndexedMapNode<Key, Object> emptied = Vector.ofAll(keys).foldLeft(trie, (acc, key) -> {
+                BitmapIndexedMapNode<Key, Object> removed = acc.removed(new Key(key.hash(), key.id()));
                 model.remove(key);
-                assertValid(trie);
-            }
-            assertThat(trie.size()).isZero();
-            assertThat(trie.dataMap | trie.nodeMap).isZero();
+                assertValid(removed);
+                return removed;
+            });
+            assertThat(emptied.size()).isZero();
+            assertThat(emptied.dataMap | emptied.nodeMap).isZero();
         }
+    }
+
+    // a random removal (a third of the steps) or put on `trie`, applied to `model` too
+    private static BitmapIndexedMapNode<Key, Object> randomStep(
+            Random random, BitmapIndexedMapNode<Key, Object> trie, java.util.Map<Key, Kept> model) {
+        Key key = randomKey(random);
+        if (random.nextInt(3) == 0) {
+            BitmapIndexedMapNode<Key, Object> after = trie.removed(key);
+            if (model.remove(key) == null) {
+                assertThat(after).isSameAs(trie);
+            }
+            // the canonical form after every removal: the local invariants, which make the shape unique, and now and
+            // then the comparison with a fresh trie of the same entries
+            assertValid(after);
+            if (random.nextInt(10) == 0) {
+                assertCanonical(after);
+            }
+            return after;
+        }
+        Object value = random.nextInt(4) == 0 && model.containsKey(key)
+                ? model.get(key).value()
+                : new Object();
+        model.put(key, new Kept(key, value));
+        return trie.updated(key, value);
     }
 
     @Test
@@ -422,25 +422,26 @@ public class ChampMapTest {
         Random random = new Random(SEED);
         for (boolean weak : new boolean[] {false, true}) {
             java.util.Map<Object, Integer> jdk = new java.util.HashMap<>();
-            BitmapIndexedMapNode<Object, Integer> trie = MapNode.empty();
-            for (int i = 0; i < 5000; i++) {
-                int k = random.nextInt();
-                // a weak hash code: ten hashes for all the keys
-                Object key = weak ? new Key(Math.abs(k % 10), k) : Integer.valueOf(k);
-                int value = random.nextInt();
-                jdk.put(key, value);
-                trie = trie.updated(key, value);
-            }
+            BitmapIndexedMapNode<Object, Integer> trie = Vector.range(0, 5000)
+                    .foldLeft(MapNode.<Object, Integer>empty(), (acc, i) -> {
+                        int k = random.nextInt();
+                        // a weak hash code: ten hashes for all the keys
+                        Object key = weak ? new Key(Math.abs(k % 10), k) : Integer.valueOf(k);
+                        int value = random.nextInt();
+                        jdk.put(key, value);
+                        return acc.updated(key, value);
+                    });
             assertValid(trie);
             assertThat(trie.size()).isEqualTo(jdk.size());
             for (java.util.Map.Entry<Object, Integer> e : jdk.entrySet()) {
                 assertThat(trie.getOrElse(e.getKey(), null)).isEqualTo(e.getValue());
             }
-            for (Object key : new ArrayList<>(jdk.keySet())) {
-                jdk.remove(key);
-                trie = trie.removed(key);
-            }
-            assertThat(trie.size()).isZero();
+            BitmapIndexedMapNode<Object, Integer> emptied = Vector.ofAll(new ArrayList<>(jdk.keySet()))
+                    .foldLeft(trie, (acc, key) -> {
+                        jdk.remove(key);
+                        return acc.removed(key);
+                    });
+            assertThat(emptied.size()).isZero();
         }
     }
 
@@ -591,10 +592,8 @@ public class ChampMapTest {
         java.util.List<Integer> keys = ids(1025);
         BitmapIndexedMapNode<Integer, Integer> built = built(keys, keys);
         String before = describe(built);
-        BitmapIndexedMapNode<Integer, Integer> updated = built;
-        for (int i = 0; i < 2000; i += 3) {
-            updated = updated.updated(i, -i).removed(i + 1);
-        }
+        BitmapIndexedMapNode<Integer, Integer> updated = Vector.rangeBy(0, 2000, 3)
+                .foldLeft(built, (acc, i) -> acc.updated(i, -i).removed(i + 1));
         assertThat(describe(built)).isEqualTo(before);
         assertSameShape(persistent(keys, keys), built, true);
         // the persistent operations on the built trie create nodes of their own
@@ -634,15 +633,15 @@ public class ChampMapTest {
             assertSameShape(persistent(moreKeys, moreValues), built, true);
             // every node is either one of the source, untouched, or a copy owned by the builder
             Set<Object> owners = Collections.newSetFromMap(new IdentityHashMap<>());
-            int shared = 0;
             for (Object node : internalNodes(built)) {
                 if (sourceNodes.contains(node)) {
-                    shared++;
                     assertThat(((BitmapIndexedMapNode<?, ?>) node).owner).isNull();
                 } else {
                     owners.add(((BitmapIndexedMapNode<?, ?>) node).owner);
                 }
             }
+            long shared =
+                    internalNodes(built).stream().filter(sourceNodes::contains).count();
             assertThat(owners).doesNotContainNull().hasSizeLessThanOrEqualTo(1);
             if (size >= 1024) {
                 assertThat(shared)
@@ -708,11 +707,10 @@ public class ChampMapTest {
         assertThat(describe(source)).isEqualTo(sourceBefore);
         assertValid(built);
         // the entries of the argument win, as later puts do
-        BitmapIndexedMapNode<Integer, Integer> expected =
-                persistent(first, first.stream().map(i -> -i).toList());
-        for (Object[] entry : entries(source)) {
-            expected = expected.updated((Integer) entry[0], (Integer) entry[1]);
-        }
+        BitmapIndexedMapNode<Integer, Integer> expected = Vector.ofAll(entries(source))
+                .foldLeft(
+                        persistent(first, first.stream().map(i -> -i).toList()),
+                        (acc, entry) -> acc.updated((Integer) entry[0], (Integer) entry[1]));
         assertSameShape(expected, built, true);
         internalNodes(built)
                 .forEach(node ->
@@ -745,22 +743,29 @@ public class ChampMapTest {
     // a trie made by persistent operations only: puts, and sometimes removals
     private static BitmapIndexedMapNode<Key, Integer> persistentTrie(
             Random random, java.util.Map<Key, Integer> oracle) {
-        BitmapIndexedMapNode<Key, Integer> trie = MapNode.empty();
         int size = random.nextInt(4) == 0 ? random.nextInt(40) : random.nextInt(1500);
-        for (int i = 0; i < size; i++) {
-            Key key = randomKey(random);
-            trie = trie.updated(key, i);
-            oracle.put(key, i);
+        BitmapIndexedMapNode<Key, Integer> trie = Vector.range(0, size)
+                .foldLeft(MapNode.<Key, Integer>empty(), (acc, i) -> {
+                    Key key = randomKey(random);
+                    oracle.put(key, i);
+                    return acc.updated(key, i);
+                });
+        if (!random.nextBoolean()) {
+            return trie;
         }
-        if (random.nextBoolean()) {
-            for (Key key : new ArrayList<>(oracle.keySet())) {
-                if (random.nextInt(4) != 0) {
-                    trie = trie.removed(key);
-                    oracle.remove(key);
-                }
+        return removeSome(random, 4, trie, oracle);
+    }
+
+    // `trie` without each key of `oracle` for which `random.nextInt(oneIn)` is not 0, removed from `oracle` too
+    private static BitmapIndexedMapNode<Key, Integer> removeSome(
+            Random random, int oneIn, BitmapIndexedMapNode<Key, Integer> trie, java.util.Map<Key, Integer> oracle) {
+        return Vector.ofAll(new ArrayList<>(oracle.keySet())).foldLeft(trie, (acc, key) -> {
+            if (random.nextInt(oneIn) == 0) {
+                return acc;
             }
-        }
-        return trie;
+            oracle.remove(key);
+            return acc.removed(key);
+        });
     }
 
     private static java.util.Map<Key, Integer> contents(BitmapIndexedMapNode<Key, Integer> trie) {
@@ -830,20 +835,23 @@ public class ChampMapTest {
                 assertThat(contents(r)).isEqualTo(rightOracle);
 
                 // persistent derivatives of the results and of the source join the pool, to be adopted in later steps
-                BitmapIndexedMapNode<Key, Integer> derived = random.nextBoolean() ? l : source;
+                BitmapIndexedMapNode<Key, Integer> base = random.nextBoolean() ? l : source;
                 java.util.Map<Key, Integer> derivedOracle =
-                        new java.util.HashMap<>(derived == l ? leftOracle : poolContents.get(from));
-                for (Key key : new ArrayList<>(derivedOracle.keySet())) {
-                    if (random.nextInt(3) == 0) {
-                        derived = derived.removed(key);
-                        derivedOracle.remove(key);
-                    }
-                }
-                for (int i = 0; i < 20; i++) {
+                        new java.util.HashMap<>(base == l ? leftOracle : poolContents.get(from));
+                BitmapIndexedMapNode<Key, Integer> removed = Vector.ofAll(new ArrayList<>(derivedOracle.keySet()))
+                        .foldLeft(base, (acc, key) -> {
+                            if (random.nextInt(3) != 0) {
+                                return acc;
+                            }
+                            derivedOracle.remove(key);
+                            return acc.removed(key);
+                        });
+                BitmapIndexedMapNode<Key, Integer> derived = Vector.range(0, 20).foldLeft(removed, (acc, i) -> {
                     Key key = randomKey(random);
-                    derived = derived.updated(key, 1000 + i);
                     derivedOracle.put(key, 1000 + i);
-                }
+                    return acc.updated(key, 1000 + i);
+                });
+
                 pool.add(l);
                 poolContents.add(leftOracle);
                 pool.add(r);

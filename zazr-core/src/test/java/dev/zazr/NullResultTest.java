@@ -1368,6 +1368,19 @@ public class NullResultTest {
         }
     }
 
+    /** The type argument of {@code parameterized} for the type parameter {@code variable} of {@code raw}, the last of
+     *  that name, or {@code otherwise} when {@code raw} has no such parameter. */
+    private static Type actualTypeArgument(
+            Class<?> raw, ParameterizedType parameterized, TypeVariable<?> variable, Type otherwise) {
+        TypeVariable<?>[] variables = raw.getTypeParameters();
+        for (int i = variables.length - 1; i >= 0; i--) {
+            if (variables[i].getName().equals(variable.getName())) {
+                return parameterized.getActualTypeArguments()[i];
+            }
+        }
+        return otherwise;
+    }
+
     /** A parameter of a functional interface type whose single abstract method returns a Zazr type or an iterable. */
     private static boolean returnsAZazrType(Type parameter) {
         if (!(parameter instanceof ParameterizedType parameterized)
@@ -1376,24 +1389,18 @@ public class NullResultTest {
                 || !raw.isAnnotationPresent(FunctionalInterface.class)) {
             return false;
         }
-        Method abstractMethod = null;
-        for (Method method : raw.getMethods()) {
-            if (Modifier.isAbstract(method.getModifiers())) {
-                abstractMethod = method;
-            }
-        }
+        // the last abstract method, as getMethods() lists them
+        Method abstractMethod = java.util.Arrays.stream(raw.getMethods())
+                .filter(method -> Modifier.isAbstract(method.getModifiers()))
+                .reduce((first, second) -> second)
+                .orElse(null);
         if (abstractMethod == null) {
             return false;
         }
-        Type result = abstractMethod.getGenericReturnType();
-        if (result instanceof TypeVariable<?> variable && abstractMethod.getDeclaringClass() == raw) {
-            TypeVariable<?>[] variables = raw.getTypeParameters();
-            for (int i = 0; i < variables.length; i++) {
-                if (variables[i].getName().equals(variable.getName())) {
-                    result = parameterized.getActualTypeArguments()[i];
-                }
-            }
-        }
+        Type declared = abstractMethod.getGenericReturnType();
+        Type result = declared instanceof TypeVariable<?> variable && abstractMethod.getDeclaringClass() == raw
+                ? actualTypeArgument(raw, parameterized, variable, declared)
+                : declared;
         Class<?> resultClass = rawClassOf(result);
         return resultClass != null
                 && (resultClass.getName().startsWith("dev.zazr.")

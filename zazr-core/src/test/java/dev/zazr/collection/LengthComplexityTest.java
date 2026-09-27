@@ -130,10 +130,7 @@ public class LengthComplexityTest {
         // fixed (one split, then O(1) each)
         Queue<Integer> start = Queue.ofAll(List.range(0, MILLION));
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
-            Queue<Integer> queue = start;
-            for (int i = 0; i < 6_000; i++) {
-                queue = queue.init();
-            }
+            Queue<Integer> queue = Vector.range(0, 6_000).foldLeft(start, (acc, i) -> acc.init());
             assertThat(queue.size()).isEqualTo(MILLION - 6_000);
             assertThat(queue.last()).isEqualTo(MILLION - 6_001);
         });

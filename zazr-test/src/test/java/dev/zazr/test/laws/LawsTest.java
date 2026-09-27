@@ -455,11 +455,11 @@ class LawsTest {
                 new CollectionSubject<>(
                         Gen.linkedHashMap(Values.integers(), Values.integers()),
                         entries -> {
-                            LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
-                            for (Tuple2<Integer, Integer> entry : entries) {
-                                map = map.remove(entry._1()).put(entry._1(), entry._2());
-                            }
-                            return map;
+                            return Vector.ofAll(entries)
+                                    .foldLeft(
+                                            LinkedHashMap.<Integer, Integer>empty(),
+                                            (map, entry) ->
+                                                    map.remove(entry._1()).put(entry._1(), entry._2()));
                         },
                         LinkedHashMap::size,
                         LinkedHashMap::toList,
@@ -474,22 +474,17 @@ class LawsTest {
     void generatedFunctionsDependOnTheirArgument() {
         Gen<Function<Object, Option<?>>> functions =
                 Functions.to(Gen.option(Values.integers()).map(o -> (Option<?>) o), 8);
-        int varying = 0;
+        java.util.List<Function<Object, Option<?>>> varying = new ArrayList<>();
         for (Function<Object, Option<?>> f : functions.runCollectN(1000, new CheckConfig(1000, 100, 11, 1000))) {
-            boolean some = false;
-            boolean none = false;
+            java.util.List<Boolean> defined = new ArrayList<>();
             for (int x = -8; x <= 8; x++) {
-                if (f.apply(x).isDefined()) {
-                    some = true;
-                } else {
-                    none = true;
-                }
+                defined.add(f.apply(x).isDefined());
             }
-            if (some && none) {
-                varying++;
+            if (defined.contains(true) && defined.contains(false)) {
+                varying.add(f);
             }
         }
         // a function is constant when all 17 draws are Some (3 in 4 each): 0.75^17, under 1%
-        assertThat(varying).isGreaterThan(970);
+        assertThat(varying.size()).isGreaterThan(970);
     }
 }

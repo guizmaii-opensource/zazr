@@ -1,5 +1,6 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.Vector;
 import dev.zazr.collection.internal.RedBlackTree.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,10 +41,8 @@ public class RedBlackTreeIteratorTest {
         for (int size : SIZES) {
             java.util.List<Integer> shuffled = new ArrayList<>(range(size));
             java.util.Collections.shuffle(shuffled, new Random(size));
-            RedBlackTree<Integer> tree = RedBlackTree.empty(NATURAL);
-            for (Integer value : shuffled) {
-                tree = tree.insert(value);
-            }
+            RedBlackTree<Integer> tree =
+                    Vector.ofAll(shuffled).foldLeft(RedBlackTree.empty(NATURAL), RedBlackTree::insert);
             assertThat(iterated(tree)).as("size %d", size).containsExactlyElementsOf(range(size));
         }
     }
@@ -61,14 +60,9 @@ public class RedBlackTreeIteratorTest {
     @Test
     public void shouldIterateInOrderAfterDeletions() {
         for (int size : SIZES) {
-            RedBlackTree<Integer> tree = RedBlackTree.empty(NATURAL);
-            for (int i = 0; i < size; i++) {
-                tree = tree.insert(i);
-            }
-            RedBlackTree<Integer> full = tree;
-            for (int i = 0; i < size; i += 3) {
-                tree = tree.delete(i);
-            }
+            RedBlackTree<Integer> full =
+                    Vector.range(0, size).foldLeft(RedBlackTree.empty(NATURAL), RedBlackTree::insert);
+            RedBlackTree<Integer> tree = Vector.rangeBy(0, size, 3).foldLeft(full, RedBlackTree::delete);
             java.util.List<Integer> expected =
                     range(size).stream().filter(i -> i % 3 != 0).toList();
             assertThat(iterated(tree)).as("size %d", size).containsExactlyElementsOf(expected);
@@ -81,10 +75,8 @@ public class RedBlackTreeIteratorTest {
     public void shouldNeverNeedMoreThanTheFirstStackForValidTrees() {
         // the iterator sizes its stack from the root's black height; a valid tree is never higher than that
         for (int size : SIZES) {
-            RedBlackTree<Integer> tree = RedBlackTree.empty(NATURAL);
-            for (int i = 0; i < size; i++) {
-                tree = tree.insert(i);
-            }
+            RedBlackTree<Integer> tree =
+                    Vector.range(0, size).foldLeft(RedBlackTree.empty(NATURAL), RedBlackTree::insert);
             if (!tree.isEmpty()) {
                 int blackHeight = ((RedBlackTreeModule.Node<Integer>) tree).blackHeight;
                 assertThat(height(tree)).as("size %d", size).isLessThanOrEqualTo(Math.max(4, 2 * blackHeight + 2));
@@ -98,14 +90,14 @@ public class RedBlackTreeIteratorTest {
         // allocates, so the stack has to grow while the leftmost path is pushed
         RedBlackTreeModule.Empty<Integer> empty = new RedBlackTreeModule.Empty<>(NATURAL);
         int length = 100;
-        RedBlackTree<Integer> chain = empty;
-        for (int i = length - 1; i >= 0; i--) {
-            chain = new RedBlackTreeModule.Node<>(Color.BLACK, 1, empty, i, chain, empty);
-        }
-        RedBlackTree<Integer> leftChain = empty;
-        for (int i = 0; i < length; i++) {
-            leftChain = new RedBlackTreeModule.Node<>(Color.BLACK, 1, leftChain, i, empty, empty);
-        }
+        RedBlackTree<Integer> chain = Vector.rangeBy(length - 1, -1, -1)
+                .foldLeft(
+                        (RedBlackTree<Integer>) empty,
+                        (acc, i) -> new RedBlackTreeModule.Node<>(Color.BLACK, 1, empty, i, acc, empty));
+        RedBlackTree<Integer> leftChain = Vector.range(0, length)
+                .foldLeft(
+                        (RedBlackTree<Integer>) empty,
+                        (acc, i) -> new RedBlackTreeModule.Node<>(Color.BLACK, 1, acc, i, empty, empty));
         assertThat(iterated(chain)).containsExactlyElementsOf(range(length));
         assertThat(iterated(leftChain)).containsExactlyElementsOf(range(length));
     }

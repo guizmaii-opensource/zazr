@@ -36,6 +36,7 @@ final class Runner {
         int samples = config.samples();
         Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
         int[] delivered = {0};
+        @SuppressWarnings("Var") // the passes without a value since the last one, across the passes of this loop
         long emptyInARow = 0;
         while (delivered[0] < samples) {
             int before = delivered[0];

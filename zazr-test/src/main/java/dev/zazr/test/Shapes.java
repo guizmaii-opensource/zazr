@@ -106,18 +106,10 @@ final class Shapes {
                 yield builder.result();
             }
             case 2 -> {
-                Vector<T> vector = Vector.empty();
-                for (T x : xs) {
-                    vector = vector.append(x);
-                }
-                yield vector;
+                yield Vector.ofAll(xs).foldLeft(Vector.empty(), Vector::append);
             }
             case 3 -> {
-                Vector<T> vector = Vector.empty();
-                for (int i = xs.size() - 1; i >= 0; i--) {
-                    vector = vector.prepend(xs.get(i));
-                }
-                yield vector;
+                yield Vector.ofAll(xs).foldRight(Vector.empty(), (x, vector) -> vector.prepend(x));
             }
             case 4 -> {
                 ArrayList<T> prefix = extra(gen, sampling, size);
@@ -145,11 +137,7 @@ final class Shapes {
         return switch (layout) {
             case 0 -> List.ofAll(xs);
             case 1 -> {
-                List<T> list = List.empty();
-                for (int i = xs.size() - 1; i >= 0; i--) {
-                    list = list.prepend(xs.get(i));
-                }
-                yield list;
+                yield Vector.ofAll(xs).foldRight(List.empty(), (x, list) -> list.prepend(x));
             }
             default -> {
                 ArrayList<T> prefix = extra(gen, sampling, size);
@@ -171,11 +159,7 @@ final class Shapes {
         return switch (layout) {
             case 0 -> Queue.ofAll(xs);
             case 1 -> {
-                Queue<T> queue = Queue.empty();
-                for (T x : xs) {
-                    queue = queue.enqueue(x);
-                }
-                yield queue;
+                yield Vector.ofAll(xs).foldLeft(Queue.empty(), Queue::enqueue);
             }
             case 2 -> {
                 int split = xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
@@ -205,10 +189,8 @@ final class Shapes {
             case 2 -> {
                 Stream<T> stream = lazyStream(xs, 0);
                 int evaluated = sampling.draw().nextInt(xs.size() + 1);
-                Stream<T> cursor = stream;
-                for (int i = 0; i < evaluated && !cursor.isEmpty(); i++) {
-                    cursor = cursor.tail();
-                }
+                // the first cells evaluated, and memoised
+                Vector.range(0, evaluated).foldLeft(stream, (cursor, i) -> cursor.isEmpty() ? cursor : cursor.tail());
                 yield stream;
             }
             case 3 -> {
@@ -289,36 +271,20 @@ final class Shapes {
         return switch (layout) {
             case 0 -> ops.ofAll().apply(xs);
             case 1 -> {
-                S set = ops.empty().get();
-                for (T x : xs) {
-                    set = ops.add().apply(set, x);
-                }
-                yield set;
+                yield Vector.ofAll(xs).foldLeft(ops.empty().get(), ops.add());
             }
             case 2 -> {
                 S base = ops.ofAll().apply(xs);
                 ArrayList<T> extra = extra(gen, sampling, size);
-                S set = base;
-                for (T x : extra) {
-                    set = ops.add().apply(set, x);
-                }
-                for (T x : extra) {
-                    if (!ops.contains().test(base, x)) {
-                        set = ops.remove().apply(set, x);
-                    }
-                }
-                yield set;
+                S added = Vector.ofAll(extra).foldLeft(base, ops.add());
+                yield Vector.ofAll(extra)
+                        .filter(x -> !ops.contains().test(base, x))
+                        .foldLeft(added, ops.remove());
             }
             default -> {
-                S set = ops.ofAll().apply(xs);
                 int removed = sampling.draw().nextInt(xs.size() + 1);
-                for (int i = 0; i < removed; i++) {
-                    set = ops.remove().apply(set, xs.get(i));
-                }
-                for (int i = 0; i < removed; i++) {
-                    set = ops.add().apply(set, xs.get(i));
-                }
-                yield set;
+                Vector<T> first = Vector.ofAll(xs.subList(0, removed));
+                yield first.foldLeft(first.foldLeft(ops.ofAll().apply(xs), ops.remove()), ops.add());
             }
         };
     }
@@ -398,27 +364,22 @@ final class Shapes {
                         extra.add(entry);
                     }
                 }
-                M map = putAll(base, extra, ops);
-                for (Tuple2<K, V> entry : extra) {
-                    map = ops.remove().apply(map, entry._1());
-                }
-                yield map;
+                yield Vector.ofAll(extra)
+                        .foldLeft(
+                                putAll(base, extra, ops),
+                                (map, entry) -> ops.remove().apply(map, entry._1()));
             }
             default -> {
-                M map = ops.empty().get();
-                for (Tuple2<K, V> entry : xs) {
-                    map = ops.put().apply(map, entry._1(), values.draw(sampling, size));
-                }
-                yield putAll(map, xs, ops);
+                M drawnValues = Vector.ofAll(xs)
+                        .foldLeft(
+                                ops.empty().get(),
+                                (map, entry) -> ops.put().apply(map, entry._1(), values.draw(sampling, size)));
+                yield putAll(drawnValues, xs, ops);
             }
         };
     }
 
     private static <K, V, M> M putAll(M map, java.util.List<Tuple2<K, V>> entries, MapOps<K, V, M> ops) {
-        M result = map;
-        for (Tuple2<K, V> entry : entries) {
-            result = ops.put().apply(result, entry._1(), entry._2());
-        }
-        return result;
+        return Vector.ofAll(entries).foldLeft(map, (result, entry) -> ops.put().apply(result, entry._1(), entry._2()));
     }
 }

@@ -85,13 +85,7 @@ public class TreeFilterAndBulkTest {
     // the number of nodes of the tree of `result` shared with the tree of `source`
     private static int sharedNodes(RedBlackTree<?> result, RedBlackTree<?> source) {
         IdentityHashMap<Object, Boolean> old = nodes(source);
-        int shared = 0;
-        for (Object node : nodes(result).keySet()) {
-            if (old.containsKey(node)) {
-                shared++;
-            }
-        }
-        return shared;
+        return (int) nodes(result).keySet().stream().filter(old::containsKey).count();
     }
 
     private static <T> java.util.List<T> list(Iterable<T> iterable) {
@@ -121,26 +115,25 @@ public class TreeFilterAndBulkTest {
     }
 
     private static TreeSet<Integer> randomSet(Comparator<Integer> order, int size, Random random) {
-        TreeSet<Integer> set = TreeSet.empty(order);
-        while (set.size() < size) {
-            set = set.add(random.nextInt(4 * size + 1) - 2 * size);
-        }
+        TreeSet<Integer> inserted = filled(TreeSet.empty(order), size, random);
         // some deletions, so that the shape is not only the one of insertions
-        for (Integer element : list(set).subList(0, size / 3)) {
-            set = set.remove(element);
-        }
-        while (set.size() < size) {
-            set = set.add(random.nextInt(4 * size + 1) - 2 * size);
-        }
-        return set;
+        TreeSet<Integer> deleted =
+                Vector.ofAll(list(inserted).subList(0, size / 3)).foldLeft(inserted, TreeSet::remove);
+        return filled(deleted, size, random);
+    }
+
+    // `set` with random elements added until it holds `size` of them
+    private static TreeSet<Integer> filled(TreeSet<Integer> set, int size, Random random) {
+        return java.util.stream.Stream.iterate(set, acc -> acc.add(random.nextInt(4 * size + 1) - 2 * size))
+                .filter(acc -> acc.size() >= size)
+                .findFirst()
+                .orElseThrow();
     }
 
     private static TreeMap<Integer, String> randomMap(Comparator<Integer> order, int size, Random random) {
-        TreeMap<Integer, String> map = TreeMap.empty(order);
-        for (Integer key : randomSet(order, size, random)) {
-            map = map.put(key, "v" + Math.floorMod(key, 7));
-        }
-        return map;
+        return randomSet(order, size, random)
+                .foldLeft(
+                        TreeMap.<Integer, String>empty(order), (map, key) -> map.put(key, "v" + Math.floorMod(key, 7)));
     }
 
     private static java.util.List<Predicate<Integer>> predicates(Iterable<Integer> elements, Random random) {
@@ -364,11 +357,7 @@ public class TreeFilterAndBulkTest {
     // -- TreeSet.addAll: of equal elements, the one already present, or else the first given, is kept
 
     private static <T> TreeSet<T> addedOneByOne(TreeSet<T> set, Iterable<? extends T> elements) {
-        TreeSet<T> result = set;
-        for (T element : elements) {
-            result = result.add(element);
-        }
-        return result;
+        return Vector.<T>ofAll(elements).foldLeft(set, TreeSet::add);
     }
 
     @Test
@@ -436,11 +425,10 @@ public class TreeFilterAndBulkTest {
     // -- flatten, of, tabulate, fill: of equal elements, the last one is kept
 
     private static <T> TreeSet<T> insertedKeepingLast(Comparator<? super T> order, Iterable<? extends T> elements) {
-        TreeSet<T> result = TreeSet.empty(order);
-        for (T element : elements) {
-            result = result.remove(element).add(element);
-        }
-        return result;
+        return Vector.<T>ofAll(elements)
+                .foldLeft(
+                        TreeSet.<T>empty(order),
+                        (result, element) -> result.remove(element).add(element));
     }
 
     @Test
@@ -524,12 +512,10 @@ public class TreeFilterAndBulkTest {
                         given.add(Tuple.of(key, "other"));
                     }
                 }
-                TreeMap<Integer, String> expected = TreeMap.empty(order);
-                for (Tuple2<Integer, String> entry : given) {
-                    if (map.contains(entry)) {
-                        expected = expected.put(entry._1(), entry._2());
-                    }
-                }
+                TreeMap<Integer, String> expected = Vector.ofAll(given)
+                        .filter(map::contains)
+                        .foldLeft(
+                                TreeMap.<Integer, String>empty(order), (acc, entry) -> acc.put(entry._1(), entry._2()));
                 for (Iterable<Tuple2<Integer, String>> input :
                         java.util.List.<Iterable<Tuple2<Integer, String>>>of(given, oneShot(given))) {
                     TreeMap<Integer, String> retained = map.retainAll(input);

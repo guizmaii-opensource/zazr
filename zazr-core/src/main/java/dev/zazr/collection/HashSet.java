@@ -119,6 +119,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @SafeVarargs
     public static <T extends @Nullable Object> HashSet<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
+        @SuppressWarnings("Var")
         BitmapIndexedSetNode<T> tree = SetNode.empty();
         for (T element : elements) {
             Objects.requireNonNull(element, "HashSet.of: element is null");
@@ -209,6 +210,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     public static <T extends @Nullable Object> HashSet<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
+        @SuppressWarnings("Var")
         BitmapIndexedSetNode<T> all = SetNode.empty();
         for (Iterable<? extends T> inner : nested) {
             all = addAll(all, inner);
@@ -879,6 +881,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         }
+        @SuppressWarnings("Var")
         BitmapIndexedSetNode<U> that = SetNode.empty();
         for (T t : this) {
             Option<? extends U> collected =
@@ -930,7 +933,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(
             Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         BitmapIndexedSetNode<L> lefts = SetNode.empty();
+        @SuppressWarnings("Var")
         BitmapIndexedSetNode<R> rights = SetNode.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "HashSet.partitionMap: f returned null")) {
@@ -1179,6 +1184,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     // persistent additions, each keeping an equal element already there
     private static <T extends @Nullable Object> BitmapIndexedSetNode<T> addAll(
             BitmapIndexedSetNode<T> initial, Iterable<? extends T> additional) {
+        @SuppressWarnings("Var")
         BitmapIndexedSetNode<T> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "HashSet: element is null");

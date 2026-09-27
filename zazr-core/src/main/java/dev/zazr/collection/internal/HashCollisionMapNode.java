@@ -169,7 +169,9 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
         if (right == this) {
             return this;
         }
+        @SuppressWarnings("Var")
         Object[] result = null;
+        @SuppressWarnings("Var")
         int length = right.content.length;
         for (int i = 0; i < content.length; i += 2) {
             if (right.indexOf(content[i]) < 0) {
@@ -187,6 +189,7 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     @Override
     MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
         Object[] kept = new Object[content.length];
+        @SuppressWarnings("Var")
         int length = 0;
         for (int i = 0; i < content.length; i += 2) {
             if (predicate.test(getKey(i >> 1), getValue(i >> 1)) == keep) {
@@ -210,6 +213,7 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
 
     @Override
     <W extends @Nullable Object> MapNode<K, W> transform(BiFunction<? super K, ? super V, ? extends W> f) {
+        @SuppressWarnings("Var")
         Object[] result = null;
         for (int i = 0; i < content.length; i += 2) {
             W value = Objects.requireNonNull(f.apply(getKey(i >> 1), getValue(i >> 1)), "HashMap: value is null");

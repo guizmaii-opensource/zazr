@@ -137,9 +137,8 @@ class IteratorTest {
     @Test
     public void shouldFullyIterateNonNil() {
         Iterator<Integer> iterator = of(1, 2, 3);
-        int actual;
         for (int i = 1; i <= 3; i++) {
-            actual = iterator.next();
+            int actual = iterator.next();
             assertThat(actual).isEqualTo(i);
         }
         assertThat(iterator.hasNext()).isFalse();
@@ -1757,11 +1756,11 @@ class IteratorTest {
     public void shouldBeItsOwnIterator() {
         Iterator<Integer> iterator = of(1, 2, 3);
         assertThatIterator(iterator.iterator()).isSameAs(iterator);
-        int sum = 0;
+        java.util.List<Integer> iterated = new java.util.ArrayList<>();
         for (int i : iterator) {
-            sum += i;
+            iterated.add(i);
         }
-        assertThat(sum).isEqualTo(6);
+        assertThat(iterated).containsExactly(1, 2, 3);
         assertThat(iterator.hasNext()).isFalse();
     }
 

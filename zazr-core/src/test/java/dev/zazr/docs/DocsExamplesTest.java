@@ -718,6 +718,7 @@ public class DocsExamplesTest {
             assertThat(typed).hasToString("Success(a)");
         }
 
+        @SuppressWarnings("Var") // the snippet of the page reassigns a local, as user code may
         @Test
         void manyResources() {
             var sources = Vector.of("alpha", "beta", "gamma");
@@ -1224,6 +1225,7 @@ public class DocsExamplesTest {
     @Nested
     class QueuePage {
 
+        @SuppressWarnings("Var") // the snippet of the page reassigns a local, as user code may
         @Test
         void whenToChooseIt() {
             var queue = Queue.of("a", "b").enqueue("c"); // Queue<String>

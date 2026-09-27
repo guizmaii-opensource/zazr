@@ -113,28 +113,19 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> IntMap<T> of(T element) {
-        Map<Integer, T> map = emptyMap();
-        map = map.put(0, element);
-        return IntMap.of(map);
+        return IntMap.of(this.<Integer, T>emptyMap().put(0, element));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected <T> IntMap<T> of(T... elements) {
-        Map<Integer, T> map = emptyMap();
-        for (T element : elements) {
-            map = map.put(map.size(), element);
-        }
-        return IntMap.of(map);
+        return IntMap.of(Vector.of(elements).foldLeft(this.<Integer, T>emptyMap(), (map, e) -> map.put(map.size(), e)));
     }
 
     @Override
     protected <T> IntMap<T> ofAll(Iterable<? extends T> elements) {
-        Map<Integer, T> map = emptyMap();
-        for (T element : elements) {
-            map = map.put(map.size(), element);
-        }
-        return IntMap.of(map);
+        return IntMap.of(
+                Vector.ofAll(elements).foldLeft(this.<Integer, T>emptyMap(), (map, e) -> map.put(map.size(), e)));
     }
 
     @Override
@@ -185,11 +176,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> IntMap<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
-        Map<Integer, T> map = emptyMap();
-        for (int i = 0; i < n; i++) {
-            map = map.put(map.size(), f.apply(i));
-        }
-        return IntMap.of(map);
+        return IntMap.of(
+                Vector.range(0, n).foldLeft(this.<Integer, T>emptyMap(), (map, i) -> map.put(map.size(), f.apply(i))));
     }
 
     @Override
@@ -3183,11 +3171,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         private TreeMap<Integer, String> mk(Iterable<Integer> keys) {
-            TreeMap<Integer, String> map = TreeMap.empty();
-            for (Integer key : keys) {
-                map = map.put(key, "v" + key);
-            }
-            return map;
+            return Vector.ofAll(keys).foldLeft(TreeMap.<Integer, String>empty(), (map, key) -> map.put(key, "v" + key));
         }
 
         private TreeMap<Integer, String> mkReversed(Integer... keys) {
@@ -3195,11 +3179,10 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         private TreeMap<Integer, String> mkReversed(Iterable<Integer> keys) {
-            TreeMap<Integer, String> map = TreeMap.empty(Comparator.<Integer>reverseOrder());
-            for (Integer key : keys) {
-                map = map.put(key, "v" + key);
-            }
-            return map;
+            return Vector.ofAll(keys)
+                    .foldLeft(
+                            TreeMap.<Integer, String>empty(Comparator.<Integer>reverseOrder()),
+                            (map, key) -> map.put(key, "v" + key));
         }
     }
 }

@@ -83,6 +83,7 @@ public interface TraversableModule {
 
     static <T extends @Nullable Object> boolean existsUnique(Iterable<T> elements, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         boolean exists = false;
         for (T t : elements) {
             if (predicate.test(t)) {
@@ -100,7 +101,10 @@ public interface TraversableModule {
     @SuppressWarnings("NullAway")
     static <T extends @Nullable Object> Option<T> findLast(Iterable<T> elements, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        @Nullable T last = null;
+        @SuppressWarnings("Var")
+        @Nullable
+        T last = null;
+        @SuppressWarnings("Var")
         boolean found = false;
         for (T t : elements) {
             if (predicate.test(t)) {
@@ -113,6 +117,7 @@ public interface TraversableModule {
 
     static <T extends @Nullable Object> void forEachWithIndex(Iterable<T> elements, ObjIntConsumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
+        @SuppressWarnings("Var")
         int index = 0;
         for (T t : elements) {
             action.accept(t, index++);
@@ -127,6 +132,7 @@ public interface TraversableModule {
             throw new NoSuchElementException(
                     "reduceLeft on empty " + traversable.getClass().getSimpleName());
         }
+        @SuppressWarnings("Var")
         T xs = iterator.next();
         while (iterator.hasNext()) {
             xs = op.apply(xs, iterator.next());
@@ -164,6 +170,7 @@ public interface TraversableModule {
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T max = iterator.next();
         while (iterator.hasNext()) {
             T t = iterator.next();
@@ -181,7 +188,9 @@ public interface TraversableModule {
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T tm = iterator.next();
+        @SuppressWarnings("Var")
         U um = f.apply(tm);
         while (iterator.hasNext()) {
             T t = iterator.next();
@@ -195,7 +204,7 @@ public interface TraversableModule {
     }
 
     // minBy(naturalComparator) would not handle (Double/Float) NaN as min() promises
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "Var"})
     static <T extends @Nullable Object> Option<T> min(Traversable<T> traversable) {
         java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
@@ -233,6 +242,7 @@ public interface TraversableModule {
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T min = iterator.next();
         while (iterator.hasNext()) {
             T t = iterator.next();
@@ -250,7 +260,9 @@ public interface TraversableModule {
         if (!iterator.hasNext()) {
             return Option.none();
         }
+        @SuppressWarnings("Var")
         T tm = iterator.next();
+        @SuppressWarnings("Var")
         U um = f.apply(tm);
         while (iterator.hasNext()) {
             T t = iterator.next();
@@ -273,6 +285,7 @@ public interface TraversableModule {
         }
     }
 
+    @SuppressWarnings("Var")
     static Number product(Traversable<?> traversable) {
         java.util.Iterator<?> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
@@ -310,6 +323,7 @@ public interface TraversableModule {
         }
     }
 
+    @SuppressWarnings("Var")
     static Number sum(Traversable<?> traversable) {
         java.util.Iterator<?> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
@@ -354,6 +368,7 @@ public interface TraversableModule {
      * @param toDouble function which maps elements to {@code double} values
      * @return A pair {@code [sum, size]}, where {@code sum} is the compensated sum and {@code size} is the number of elements which were summed.
      */
+    @SuppressWarnings("Var")
     static <T extends @Nullable Object> double[] neumaierSum(Iterable<T> ts, ToDoubleFunction<T> toDouble) {
         double simpleSum = 0.0;
         double sum = 0.0;

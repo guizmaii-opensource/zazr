@@ -118,28 +118,20 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> IntMap<T> of(T element) {
-        Map<Integer, T> map = emptyMap();
-        map = map.put(0, element);
+        Map<Integer, T> map = this.<Integer, T>emptyMap().put(0, element);
         return IntMap.of(map);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected <T> IntMap<T> of(T... elements) {
-        Map<Integer, T> map = emptyMap();
-        for (T element : elements) {
-            map = map.put(map.size(), element);
-        }
-        return IntMap.of(map);
+        return IntMap.of(Vector.of(elements).foldLeft(this.<Integer, T>emptyMap(), (map, e) -> map.put(map.size(), e)));
     }
 
     @Override
     protected <T> IntMap<T> ofAll(Iterable<? extends T> elements) {
-        Map<Integer, T> map = emptyMap();
-        for (T element : elements) {
-            map = map.put(map.size(), element);
-        }
-        return IntMap.of(map);
+        return IntMap.of(
+                Vector.ofAll(elements).foldLeft(this.<Integer, T>emptyMap(), (map, e) -> map.put(map.size(), e)));
     }
 
     @Override
@@ -190,11 +182,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> IntMap<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
-        Map<Integer, T> map = emptyMap();
-        for (int i = 0; i < n; i++) {
-            map = map.put(map.size(), f.apply(i));
-        }
-        return IntMap.of(map);
+        return IntMap.of(
+                Vector.range(0, n).foldLeft(this.<Integer, T>emptyMap(), (map, i) -> map.put(map.size(), f.apply(i))));
     }
 
     @Override
@@ -761,10 +750,12 @@ public class HashMapTest extends AbstractTraversableTest {
             // every node boundary, and keys of one hash in collision nodes
             for (int size : new int[] {0, 1, 2, 31, 32, 33, 1023, 1024, 1025}) {
                 for (boolean colliding : new boolean[] {false, true}) {
-                    HashMap<Object, Integer> map = HashMap.empty();
-                    for (int i = 0; i < size; i++) {
-                        map = map.put(colliding ? new CollidingKey(i % 7, i) : Integer.valueOf(i), i);
-                    }
+                    HashMap<Object, Integer> map = Vector.range(0, size)
+                            .foldLeft(
+                                    HashMap.empty(),
+                                    (acc, i) ->
+                                            acc.put(colliding ? new CollidingKey(i % 7, i) : Integer.valueOf(i), i));
+
                     java.util.List<Object> walked = new java.util.ArrayList<>();
                     map.forEach((k, v) -> {
                         walked.add(k);
@@ -2511,13 +2502,11 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCalculateBigHashCode() {
-            HashMap<Integer, Integer> h1 = HashMap.empty();
-            HashMap<Integer, Integer> h2 = HashMap.empty();
             int count = 1234;
-            for (int i = 0; i <= count; i++) {
-                h1 = h1.put(i, i);
-                h2 = h2.put(count - i, count - i);
-            }
+            HashMap<Integer, Integer> h1 =
+                    Vector.rangeClosed(0, count).foldLeft(HashMap.empty(), (map, i) -> map.put(i, i));
+            HashMap<Integer, Integer> h2 =
+                    Vector.rangeClosed(0, count).foldLeft(HashMap.empty(), (map, i) -> map.put(count - i, count - i));
             Assertions.assertThat(h1.hashCode() == h2.hashCode()).isTrue();
         }
 

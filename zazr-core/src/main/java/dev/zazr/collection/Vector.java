@@ -1188,6 +1188,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         Objects.requireNonNull(that, "that is null");
         Vector<? extends T> suffix = ofAll(that);
         int suffixLength = suffix.size();
+        @SuppressWarnings("Var")
         int i = size() - suffixLength;
         if (i < 0) {
             return false;
@@ -1203,6 +1204,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public Vector<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         java.util.Iterator<T> elements = trie.iterator();
+        @SuppressWarnings("Var")
         int kept = 0;
         while (elements.hasNext() && predicate.test(elements.next())) {
             kept++;
@@ -1252,6 +1254,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> U foldRight(U zero, BiFunction<? super T, ? super U, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         U xs = zero;
         for (int i = size() - 1; i >= 0; i--) {
             xs = f.apply(get(i), xs);
@@ -1746,6 +1749,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public int lastIndexWhere(Predicate<? super T> predicate, int end) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         int i = Math.max(-1, Math.min(end, size() - 1));
         while (i >= 0 && !predicate.test(get(i))) {
             i--;
@@ -1886,14 +1890,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code that} or one of its elements is null
      */
     public Vector<T> patch(int from, Iterable<? extends T> that, int replaced) {
-        from = Math.max(from, 0);
-        replaced = Math.max(replaced, 0);
+        int start = Math.max(from, 0);
+        int count = Math.max(replaced, 0);
 
         // the end of the replaced range, saturated: from + replaced can overflow an int
 
-        int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        int end = (int) Math.min((long) start + count, Integer.MAX_VALUE);
 
-        return take(from).appendAll(that).appendAll(drop(end));
+        return take(start).appendAll(that).appendAll(drop(end));
     }
 
     /**
@@ -1961,6 +1965,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         } else if (size() == 1) {
             return of(this);
         } else {
+            @SuppressWarnings("Var")
             Vector<Vector<T>> results = empty();
             for (T t : distinct()) {
                 for (Vector<T> ts : remove(t).permutations()) {
@@ -2163,7 +2168,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
     public Vector<T> replaceAll(T currentElement, T newElement) {
+        @SuppressWarnings("Var")
         Vector<T> result = this;
+        @SuppressWarnings("Var")
         int index = 0;
         for (T value : this) {
             if (Objects.equals(value, currentElement)) {
@@ -2356,6 +2363,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         Objects.requireNonNull(predicate, "predicate is null");
         int len = size();
         int start = Math.max(from, 0);
+        @SuppressWarnings("Var")
         int i = start;
         while (i < len && predicate.test(get(i))) {
             i++;
@@ -2575,6 +2583,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             }
             return true;
         }
+        @SuppressWarnings("Var")
         int i = offset;
         java.util.Iterator<? extends T> thatElements = that.iterator();
         while (i < thisLength && thatElements.hasNext()) {
@@ -3143,6 +3152,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return the runs, in order; empty if this Vector is empty
      * @throws NullPointerException if {@code classifier} is null
      */
+    @SuppressWarnings("Var")
     public Vector<Vector<T>> slideBy(Function<? super T, ?> classifier) {
         Objects.requireNonNull(classifier, "classifier is null");
         if (isEmpty()) {
@@ -3190,6 +3200,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (power < 0) {
             return empty();
         }
+        @SuppressWarnings("Var")
         Vector<Vector<T>> product = Vector.of(Vector.<T>empty());
         for (int i = 0; i < power; i++) {
             product = product.flatMap(el -> map(el::append));
@@ -3230,6 +3241,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             throw new NoSuchElementException("reduceRight on empty Vector");
         }
+        @SuppressWarnings("Var")
         T xs = get(size() - 1);
         for (int i = size() - 2; i >= 0; i--) {
             xs = op.apply(get(i), xs);

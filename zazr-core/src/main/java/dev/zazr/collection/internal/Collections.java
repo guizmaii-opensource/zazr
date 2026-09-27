@@ -156,6 +156,7 @@ public final class Collections {
             String nullResult) {
         Objects.requireNonNull(classifier, "classifier is null");
         Objects.requireNonNull(mapper, "mapper is null");
+        @SuppressWarnings("Var")
         Map<C, R> results = LinkedHashMap.empty();
         for (java.util.Map.Entry<? extends C, Collection<T>> entry : groupBy(source, classifier, nullResult)) {
             results = results.put(entry.getKey(), mapper.apply(entry.getValue()));
@@ -189,6 +190,7 @@ public final class Collections {
         if (iterable == null) {
             return 0;
         } else {
+            @SuppressWarnings("Var")
             int hashCode = 1;
             for (Object o : iterable) {
                 hashCode = accumulator.applyAsInt(hashCode, Objects.hashCode(o));
@@ -228,24 +230,17 @@ public final class Collections {
 
     // The characteristics a Traversable reports through Spliterator: what the type guarantees about its elements.
     static int spliteratorCharacteristics(Traversable<?> traversable) {
-        int characteristics = Spliterator.IMMUTABLE;
-        if (traversable instanceof Set || traversable instanceof Map) {
-            characteristics |= Spliterator.DISTINCT;
-        }
+        int distinct = traversable instanceof Set || traversable instanceof Map ? Spliterator.DISTINCT : 0;
         // a SortedMap orders its keys, not its entries, so it is ORDERED but not SORTED
-        if (traversable instanceof SortedSet) {
-            characteristics |= (Spliterator.SORTED | Spliterator.ORDERED);
-        }
-        if (isSequence(traversable)
-                || traversable instanceof SortedMap
-                || traversable instanceof LinkedHashSet
-                || traversable instanceof LinkedHashMap) {
-            characteristics |= Spliterator.ORDERED;
-        }
-        if (hasDefiniteSize(traversable)) {
-            characteristics |= (Spliterator.SIZED | Spliterator.SUBSIZED);
-        }
-        return characteristics;
+        int sorted = traversable instanceof SortedSet ? Spliterator.SORTED | Spliterator.ORDERED : 0;
+        int ordered = isSequence(traversable)
+                        || traversable instanceof SortedMap
+                        || traversable instanceof LinkedHashSet
+                        || traversable instanceof LinkedHashMap
+                ? Spliterator.ORDERED
+                : 0;
+        int sized = hasDefiniteSize(traversable) ? Spliterator.SIZED | Spliterator.SUBSIZED : 0;
+        return Spliterator.IMMUTABLE | distinct | sorted | ordered | sized;
     }
 
     // The spliterator of a Traversable: sized when the size is known without a walk, and reporting the comparator of a
@@ -316,6 +311,7 @@ public final class Collections {
             throw new NoSuchElementException("last of empty " + source);
         } else {
             java.util.Iterator<T> it = source.iterator();
+            @SuppressWarnings("Var")
             T result = it.next();
             while (it.hasNext()) {
                 result = it.next();
@@ -580,8 +576,10 @@ public final class Collections {
             throw new IllegalArgumentException("the parameter `matrix` is invalid!");
         }
 
+        @SuppressWarnings("Var")
         int rowIndex = 0;
         for (U row : matrix) {
+            @SuppressWarnings("Var")
             int columnIndex = 0;
             for (T element : row) {
                 results[columnIndex][rowIndex] = element;

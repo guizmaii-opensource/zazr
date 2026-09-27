@@ -74,6 +74,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         Objects.requireNonNull(iterables, "iterables is null");
         // one pass over the outer iterable, which may be one-shot; nothing appended means the empty iterator
         ConcatIterator<T> res = new ConcatIterator<>();
+        @SuppressWarnings("Var")
         boolean appended = false;
         for (Iterable<? extends T> iterable : iterables) {
             res.append(iterable.iterator());
@@ -1677,6 +1678,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public boolean hasNext() {
+                    @SuppressWarnings("Var")
                     boolean currentHasNext;
                     while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
                         current = mapper.apply(inputs.next()).iterator();
@@ -1698,6 +1700,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     default <U extends @Nullable Object> U foldLeft(U zero, BiFunction<? super U, ? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         U xs = zero;
         while (hasNext()) {
             xs = f.apply(xs, next());
@@ -1722,6 +1725,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     default String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
         StringBuilder builder = new StringBuilder(prefix);
+        @SuppressWarnings("Var")
         boolean first = true;
         while (hasNext()) {
             if (first) {

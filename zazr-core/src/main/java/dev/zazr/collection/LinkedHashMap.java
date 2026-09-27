@@ -774,6 +774,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
+    @SuppressWarnings("Var")
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> LinkedHashMap<K2, V2> flatMap(
             BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -1190,6 +1191,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /// in the iteration order; an entry of `newElement`'s key elsewhere in the map is removed. The value of
     /// `currentKey` plays no part, which is what [LinkedHashSet#replace] needs for a key set whose values are not
     /// its elements.
+    @SuppressWarnings("Var")
     LinkedHashMap<K, V> replaceKey(K currentKey, Tuple2<K, V> newElement) {
         Vector<K> newList = list;
         HashMap<K, Slot<K, V>> newMap = map;
@@ -1532,6 +1534,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public Vector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
         Vector.Builder<Tuple2<Tuple2<K, V>, Integer>> builder = Vector.newBuilder(size());
+        @SuppressWarnings("Var")
         int index = 0;
         for (K key : list) {
             if (key != TOMBSTONE) {
@@ -1645,7 +1648,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Vector.Builder<R> builder = Vector.newBuilder();
         Vector<K> keys = compact.list;
         int length = keys.size();
+        @SuppressWarnings("Var")
         Object key = classify.apply(byKey ? keys.get(0) : compact.entryAt(keys.get(0)));
+        @SuppressWarnings("Var")
         int start = 0;
         for (int index = 1; index < length; index++) {
             Object next = classify.apply(byKey ? keys.get(index) : compact.entryAt(keys.get(index)));
@@ -1672,6 +1677,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     // the number of leading entries, in insertion order, for which predicate returns `expected`
     private int countLeading(Predicate<? super Tuple2<K, V>> predicate, boolean expected) {
+        @SuppressWarnings("Var")
         int length = 0;
         for (K key : list) {
             if (key != TOMBSTONE) {
@@ -1687,6 +1693,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     // the number of leading keys, in insertion order, for which predicate returns `expected`: LinkedHashSet's
     // takeWhile and its siblings, with no entry looked up
     int countLeadingKeys(Predicate<? super K> predicate, boolean expected) {
+        @SuppressWarnings("Var")
         int length = 0;
         for (K key : list) {
             if (key != TOMBSTONE) {
@@ -1702,6 +1709,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     // the keys paired with their position in insertion order: LinkedHashSet's zipWithIndex, with no entry looked up
     Vector<Tuple2<K, Integer>> zipKeysWithIndex() {
         Vector.Builder<Tuple2<K, Integer>> builder = Vector.newBuilder(size());
+        @SuppressWarnings("Var")
         int index = 0;
         for (K key : list) {
             if (key != TOMBSTONE) {
@@ -1723,6 +1731,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         }
         int size = size();
         if (rank < size - rank) {
+            @SuppressWarnings("Var")
             int live = -1;
             for (int i = 0; ; i++) {
                 if (list.get(i) != TOMBSTONE && ++live == rank) {
@@ -1730,6 +1739,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
                 }
             }
         } else {
+            @SuppressWarnings("Var")
             int live = size;
             for (int i = list.size() - 1; ; i--) {
                 if (list.get(i) != TOMBSTONE && --live == rank) {
@@ -1760,6 +1770,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         int hi = indexOfRank(end - 1) + 1;
         int kept = end - start;
         Vector<K> newList = list.slice(lo, hi);
+        @SuppressWarnings("Var")
         HashMap<K, Slot<K, V>> newMap;
         if (kept <= size - kept) {
             newMap = HashMap.empty();
@@ -1814,6 +1825,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return mkString("LinkedHashMap(", ", ", ")");
     }
 
+    @SuppressWarnings("Var")
     private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> normalized(
             Vector<K> list, HashMap<K, Slot<K, V>> map, int offset, int tombstones) {
         // the markers at both ends are found by reading, then cut off with one slice: no Vector per marker
@@ -1848,7 +1860,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
                 liveKeys.add(key);
             }
         }
+        @SuppressWarnings("Var")
         HashMap<K, Slot<K, V>> indexed = HashMap.empty();
+        @SuppressWarnings("Var")
         int index = 0;
         for (K key : liveKeys) {
             indexed = indexed.put(key, new Slot<>(survivors.get(key).get().entry(), index++));

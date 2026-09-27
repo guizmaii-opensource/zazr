@@ -6213,11 +6213,11 @@ public class QueueTest extends AbstractTraversableTest {
 
         // every split of 0..n-1 between the front and the rear, the rear holding the elements enqueued last
         private List<Queue<Integer>> shapes(int n) {
-            List<Queue<Integer>> shapes = List.of(Queue.ofAll(List.range(0, n)));
-            for (int split = 1; split < n; split++) {
-                shapes = shapes.append(Queue.ofAll(List.range(0, split)).enqueueAll(List.range(split, n)));
-            }
-            return shapes;
+            return List.range(1, n)
+                    .foldLeft(
+                            List.of(Queue.ofAll(List.range(0, n))),
+                            (shapes, split) -> shapes.append(
+                                    Queue.ofAll(List.range(0, split)).enqueueAll(List.range(split, n))));
         }
 
         // an Iterable whose iterator can be asked for once
@@ -6334,13 +6334,13 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldTakeInitFromEitherEnd() {
             for (int n = 1; n <= 9; n++) {
-                Queue<Integer> queue = Queue.ofAll(List.range(0, n));
-                for (int size = n; size > 0; size--) {
-                    assertThat(queue.toList()).isEqualTo(List.range(0, size));
-                    assertThat(queue.last()).isEqualTo(size - 1);
-                    queue = queue.init();
-                }
-                assertThat(queue).isSameAs(Queue.empty());
+                Queue<Integer> emptied = List.rangeBy(n, 0, -1)
+                        .foldLeft(Queue.ofAll(List.range(0, n)), (queue, size) -> {
+                            assertThat(queue.toList()).isEqualTo(List.range(0, size));
+                            assertThat(queue.last()).isEqualTo(size - 1);
+                            return queue.init();
+                        });
+                assertThat(emptied).isSameAs(Queue.empty());
             }
             // a front of one element and a rear
             assertThat(Queue.of(0).enqueue(1, 2).init().toList()).isEqualTo(List.of(0, 1));
@@ -6351,59 +6351,12 @@ public class QueueTest extends AbstractTraversableTest {
         public void shouldAgreeWithVectorOverRandomOperations() {
             java.util.Random random = new java.util.Random(93);
             for (int run = 0; run < 200; run++) {
-                Queue<Integer> queue = Queue.empty();
-                Vector<Integer> model = Vector.empty();
-                // an older version kept and used again later
-                Queue<Integer> older = queue;
-                Vector<Integer> olderModel = model;
-                for (int step = 0; step < 60; step++) {
-                    int element = random.nextInt(1000);
-                    switch (random.nextInt(9)) {
-                        case 0 -> {
-                            queue = queue.enqueue(element);
-                            model = model.append(element);
-                        }
-                        case 1 -> {
-                            queue = queue.append(element);
-                            model = model.append(element);
-                        }
-                        case 2 -> {
-                            queue = queue.prepend(element);
-                            model = model.prepend(element);
-                        }
-                        case 3 -> {
-                            queue = queue.enqueueAll(List.of(element, element + 1));
-                            model = model.appendAll(List.of(element, element + 1));
-                        }
-                        case 4 -> {
-                            if (!model.isEmpty()) {
-                                queue = queue.tail();
-                                model = model.tail();
-                            }
-                        }
-                        case 5 -> {
-                            if (!model.isEmpty()) {
-                                queue = queue.init();
-                                model = model.init();
-                            }
-                        }
-                        case 6 -> {
-                            if (!model.isEmpty()) {
-                                Tuple2<Integer, Queue<Integer>> dequeued = queue.dequeue();
-                                assertThat(dequeued._1()).isEqualTo(model.head());
-                                queue = dequeued._2();
-                                model = model.tail();
-                            }
-                        }
-                        case 7 -> {
-                            older = queue;
-                            olderModel = model;
-                        }
-                        default -> {
-                            queue = older;
-                            model = olderModel;
-                        }
-                    }
+                // the current queue and its model, and an older version kept and used again later
+                Modelled empty = new Modelled(Queue.empty(), Vector.empty());
+                List.range(0, 60).foldLeft(Tuple.of(empty, empty), (versions, step) -> {
+                    Tuple2<Modelled, Modelled> next = randomStep(random, versions._1(), versions._2());
+                    Queue<Integer> queue = next._1().queue();
+                    Vector<Integer> model = next._1().model();
                     assertThat(queue.toList().toVector()).isEqualTo(model);
                     assertThat(queue.size()).isEqualTo(model.size());
                     assertThat(queue).isEqualTo(Queue.ofAll(model));
@@ -6414,8 +6367,48 @@ public class QueueTest extends AbstractTraversableTest {
                         int index = random.nextInt(model.size());
                         assertThat(queue.get(index)).isEqualTo(model.get(index));
                     }
-                }
+                    return next;
+                });
             }
+        }
+
+        // a queue and the Vector of the same elements
+        private record Modelled(Queue<Integer> queue, Vector<Integer> model) {}
+
+        // a random operation on `current`, or `current` kept as the older version, or the older version made current
+        private Tuple2<Modelled, Modelled> randomStep(java.util.Random random, Modelled current, Modelled older) {
+            Queue<Integer> queue = current.queue();
+            Vector<Integer> model = current.model();
+            int element = random.nextInt(1000);
+            return switch (random.nextInt(9)) {
+                case 0 -> Tuple.of(new Modelled(queue.enqueue(element), model.append(element)), older);
+                case 1 -> Tuple.of(new Modelled(queue.append(element), model.append(element)), older);
+                case 2 -> Tuple.of(new Modelled(queue.prepend(element), model.prepend(element)), older);
+                case 3 ->
+                    Tuple.of(
+                            new Modelled(
+                                    queue.enqueueAll(List.of(element, element + 1)),
+                                    model.appendAll(List.of(element, element + 1))),
+                            older);
+                case 4 ->
+                    model.isEmpty()
+                            ? Tuple.of(current, older)
+                            : Tuple.of(new Modelled(queue.tail(), model.tail()), older);
+                case 5 ->
+                    model.isEmpty()
+                            ? Tuple.of(current, older)
+                            : Tuple.of(new Modelled(queue.init(), model.init()), older);
+                case 6 -> {
+                    if (model.isEmpty()) {
+                        yield Tuple.of(current, older);
+                    }
+                    Tuple2<Integer, Queue<Integer>> dequeued = queue.dequeue();
+                    assertThat(dequeued._1()).isEqualTo(model.head());
+                    yield Tuple.of(new Modelled(dequeued._2(), model.tail()), older);
+                }
+                case 7 -> Tuple.of(current, current);
+                default -> Tuple.of(older, older);
+            };
         }
     }
 }

@@ -741,6 +741,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
+    @SuppressWarnings("Var")
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> flatMap(
             BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -991,6 +992,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public HashMap<K, V> removeAll(Iterable<? extends K> keys) {
         Objects.requireNonNull(keys, "keys is null");
+        @SuppressWarnings("Var")
         BitmapIndexedMapNode<K, V> result = trie;
         for (K key : keys) {
             result = result.removed(key);
@@ -1086,6 +1088,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public HashMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
+        @SuppressWarnings("Var")
         BitmapIndexedMapNode<K, V> tree = MapNode.empty();
         for (Tuple2<K, V> entry : elements) {
             if (contains(entry)) {

@@ -86,41 +86,41 @@ public class RedBlackTreeTest {
     @Test
     public void shouldInsert_2_1_4_5_9_3_6_7() {
 
-        RedBlackTree<Integer> tree = empty();
-        assertThat(tree.toString()).isEqualTo("()");
-        assertThat(tree.size()).isEqualTo(0);
+        RedBlackTree<Integer> tree0 = empty();
+        assertThat(tree0.toString()).isEqualTo("()");
+        assertThat(tree0.size()).isEqualTo(0);
 
-        tree = tree.insert(2);
-        assertThat(tree.toString()).isEqualTo("(B:2)");
-        assertThat(tree.size()).isEqualTo(1);
+        RedBlackTree<Integer> tree1 = tree0.insert(2);
+        assertThat(tree1.toString()).isEqualTo("(B:2)");
+        assertThat(tree1.size()).isEqualTo(1);
 
-        tree = tree.insert(1);
-        assertThat(tree.toString()).isEqualTo("(B:2 R:1)");
-        assertThat(tree.size()).isEqualTo(2);
+        RedBlackTree<Integer> tree2 = tree1.insert(1);
+        assertThat(tree2.toString()).isEqualTo("(B:2 R:1)");
+        assertThat(tree2.size()).isEqualTo(2);
 
-        tree = tree.insert(4);
-        assertThat(tree.toString()).isEqualTo("(B:2 R:1 R:4)");
-        assertThat(tree.size()).isEqualTo(3);
+        RedBlackTree<Integer> tree3 = tree2.insert(4);
+        assertThat(tree3.toString()).isEqualTo("(B:2 R:1 R:4)");
+        assertThat(tree3.size()).isEqualTo(3);
 
-        tree = tree.insert(5);
-        assertThat(tree.toString()).isEqualTo("(B:4 (B:2 R:1) B:5)");
-        assertThat(tree.size()).isEqualTo(4);
+        RedBlackTree<Integer> tree4 = tree3.insert(5);
+        assertThat(tree4.toString()).isEqualTo("(B:4 (B:2 R:1) B:5)");
+        assertThat(tree4.size()).isEqualTo(4);
 
-        tree = tree.insert(9);
-        assertThat(tree.toString()).isEqualTo("(B:4 (B:2 R:1) (B:5 R:9))");
-        assertThat(tree.size()).isEqualTo(5);
+        RedBlackTree<Integer> tree5 = tree4.insert(9);
+        assertThat(tree5.toString()).isEqualTo("(B:4 (B:2 R:1) (B:5 R:9))");
+        assertThat(tree5.size()).isEqualTo(5);
 
-        tree = tree.insert(3);
-        assertThat(tree.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (B:5 R:9))");
-        assertThat(tree.size()).isEqualTo(6);
+        RedBlackTree<Integer> tree6 = tree5.insert(3);
+        assertThat(tree6.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (B:5 R:9))");
+        assertThat(tree6.size()).isEqualTo(6);
 
-        tree = tree.insert(6);
-        assertThat(tree.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (R:6 B:5 B:9))");
-        assertThat(tree.size()).isEqualTo(7);
+        RedBlackTree<Integer> tree7 = tree6.insert(6);
+        assertThat(tree7.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (R:6 B:5 B:9))");
+        assertThat(tree7.size()).isEqualTo(7);
 
-        tree = tree.insert(7);
-        assertThat(tree.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (R:6 B:5 (B:9 R:7)))");
-        assertThat(tree.size()).isEqualTo(8);
+        RedBlackTree<Integer> tree8 = tree7.insert(7);
+        assertThat(tree8.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (R:6 B:5 (B:9 R:7)))");
+        assertThat(tree8.size()).isEqualTo(8);
     }
 
     @Test
@@ -150,10 +150,7 @@ public class RedBlackTreeTest {
     public void shouldDelete_2_from_2_1_4_5_9_3_6_7() {
         // the tree of shouldInsert_2_1_4_5_9_3_6_7, built by the same insertions (`of` sorts, then builds a balanced
         // tree)
-        RedBlackTree<Integer> testee = empty();
-        for (int value : new int[] {2, 1, 4, 5, 9, 3, 6, 7}) {
-            testee = testee.insert(value);
-        }
+        RedBlackTree<Integer> testee = List.of(2, 1, 4, 5, 9, 3, 6, 7).foldLeft(empty(), RedBlackTree::insert);
         assertThat(testee.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (R:6 B:5 (B:9 R:7)))");
         RedBlackTree<Integer> actual = testee.delete(2);
         assertThat(actual.toString()).isEqualTo("(B:4 (B:3 R:1) (R:6 B:5 (B:9 R:7)))");
@@ -222,11 +219,7 @@ public class RedBlackTreeTest {
     }
 
     private static RedBlackTree<Integer> range(int from, int to) {
-        RedBlackTree<Integer> tree = empty();
-        for (int i = from; i <= to; i++) {
-            tree = tree.insert(i);
-        }
-        return tree;
+        return List.rangeClosed(from, to).foldLeft(empty(), RedBlackTree::insert);
     }
 
     @Test
@@ -427,11 +420,7 @@ public class RedBlackTreeTest {
             values.add(i);
         }
         java.util.Collections.shuffle(values, random);
-        RedBlackTree<Integer> tree = empty();
-        for (Integer value : values) {
-            tree = tree.insert(value);
-        }
-        return tree;
+        return List.ofAll(values).foldLeft(empty(), RedBlackTree::insert);
     }
 
     // the trees of sizes 0..70: one random insertion order, one ascending, one with a third of a larger tree deleted,
@@ -441,21 +430,10 @@ public class RedBlackTreeTest {
         java.util.List<RedBlackTree<Integer>> trees = new java.util.ArrayList<>();
         for (int size = 0; size <= 70; size++) {
             trees.add(shuffledTree(size, random));
-            RedBlackTree<Integer> ascending = empty();
-            for (int i = 0; i < size; i++) {
-                ascending = ascending.insert(i);
-            }
-            trees.add(ascending);
+            trees.add(List.range(0, size).foldLeft(empty(), RedBlackTree::insert));
             int larger = size + size / 2;
-            RedBlackTree<Integer> deleted = shuffledTree(larger, random);
-            for (int i = size; i < larger; i++) {
-                deleted = deleted.delete(i);
-            }
-            trees.add(deleted);
-            RedBlackTree<Integer> removed = empty();
-            for (int i = size; i < larger; i++) {
-                removed = removed.insert(i);
-            }
+            trees.add(List.range(size, larger).foldLeft(shuffledTree(larger, random), RedBlackTree::delete));
+            RedBlackTree<Integer> removed = List.range(size, larger).foldLeft(empty(), RedBlackTree::insert);
             trees.add(shuffledTree(larger, random).difference(removed));
         }
         return trees;
@@ -480,8 +458,8 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldSplitAtEveryRankIntoTwoValidTrees() {
-        int splits = 0;
-        for (RedBlackTree<Integer> tree : treesUpTo70()) {
+        java.util.List<RedBlackTree<Integer>> trees = treesUpTo70();
+        for (RedBlackTree<Integer> tree : trees) {
             java.util.List<Integer> all = elements(tree);
             for (int n = 0; n <= tree.size(); n++) {
                 dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split =
@@ -494,10 +472,10 @@ public class RedBlackTreeTest {
                 assertThat(elements(split._2())).isEqualTo(all.subList(n, all.size()));
                 assertThat(split._1().comparator()).isSameAs(tree.comparator());
                 assertThat(split._2().comparator()).isSameAs(tree.comparator());
-                splits++;
             }
         }
-        assertThat(splits).isEqualTo(4 * (71 * 72 / 2));
+        // every tree split at every position
+        assertThat(trees.stream().mapToInt(tree -> tree.size() + 1).sum()).isEqualTo(4 * (71 * 72 / 2));
     }
 
     @Test
@@ -572,6 +550,17 @@ public class RedBlackTreeTest {
 
     // validity of the set operations: difference, intersection, union, delete, split, join, merge
 
+    // the node where a random path from `node` stops: at each node, a third of the time there, else one of its
+    // children picked at random, if it has one on that side
+    private static RedBlackTreeModule.Node<Integer> randomDescendant(
+            RedBlackTreeModule.Node<Integer> node, java.util.Random random) {
+        if (random.nextInt(3) == 0) {
+            return node;
+        }
+        RedBlackTree<Integer> child = random.nextBoolean() ? node.left : node.right;
+        return child.isEmpty() ? node : randomDescendant((RedBlackTreeModule.Node<Integer>) child, random);
+    }
+
     // a random valid tree of 0..100 elements drawn from 0..199, ordered by the comparator of `model` (natural when it
     // has none), in one of three shapes: shuffled insertion, insertion in order, or a larger tree with random deletions
     private static RedBlackTree<Integer> randomTree(java.util.Random random, java.util.TreeSet<Integer> model) {
@@ -584,31 +573,20 @@ public class RedBlackTreeTest {
             }
         }
         int shape = random.nextInt(3);
-        RedBlackTree<Integer> tree = model.comparator() == null ? empty() : RedBlackTree.empty(model.comparator());
+        RedBlackTree<Integer> empty = model.comparator() == null ? empty() : RedBlackTree.empty(model.comparator());
         if (shape == 0) {
-            for (Integer value : values) {
-                tree = tree.insert(value);
-            }
+            return List.ofAll(values).foldLeft(empty, RedBlackTree::insert);
         } else if (shape == 1) {
-            for (Integer value : model) {
-                tree = tree.insert(value);
-            }
-        } else {
-            java.util.List<Integer> extra = new java.util.ArrayList<>();
-            for (int i = 0; i < size; i++) {
-                extra.add(200 + random.nextInt(200));
-            }
-            java.util.List<Integer> all = new java.util.ArrayList<>(values);
-            all.addAll(extra);
-            java.util.Collections.shuffle(all, random);
-            for (Integer value : all) {
-                tree = tree.insert(value);
-            }
-            for (Integer value : extra) {
-                tree = tree.delete(value);
-            }
+            return List.ofAll(model).foldLeft(empty, RedBlackTree::insert);
         }
-        return tree;
+        java.util.List<Integer> extra = new java.util.ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            extra.add(200 + random.nextInt(200));
+        }
+        java.util.List<Integer> all = new java.util.ArrayList<>(values);
+        all.addAll(extra);
+        java.util.Collections.shuffle(all, random);
+        return List.ofAll(extra).foldLeft(List.ofAll(all).foldLeft(empty, RedBlackTree::insert), RedBlackTree::delete);
     }
 
     private static java.util.List<Integer> javaList(TreeSet<Integer> set) {
@@ -704,11 +682,7 @@ public class RedBlackTreeTest {
             counter.check(
                     "difference then union", union, () -> t1.difference(t2).union(t2));
             counter.check("intersection then insert", model(order, model2), () -> {
-                RedBlackTree<Integer> tree = t2.intersection(t1);
-                for (Integer value : model2) {
-                    tree = tree.insert(value);
-                }
-                return tree;
+                return List.ofAll(model2).foldLeft(t2.intersection(t1), RedBlackTree::insert);
             });
 
             int value = random.nextInt(200);
@@ -716,11 +690,7 @@ public class RedBlackTreeTest {
             deleted.remove(value);
             counter.check("delete", deleted, () -> t1.delete(value));
             counter.check("difference then delete", model(order, difference.headSet(value)), () -> {
-                RedBlackTree<Integer> tree = t1.difference(t2);
-                for (Integer element : difference.tailSet(value)) {
-                    tree = tree.delete(element);
-                }
-                return tree;
+                return List.ofAll(difference.tailSet(value)).foldLeft(t1.difference(t2), RedBlackTree::delete);
             });
 
             // take, drop and slice by rank of the results of difference and intersection
@@ -778,15 +748,7 @@ public class RedBlackTreeTest {
                 continue;
             }
             // descend a random path and take apart the node where it stops
-            RedBlackTreeModule.Node<Integer> node = (RedBlackTreeModule.Node<Integer>) tree;
-            while (random.nextInt(3) != 0) {
-                RedBlackTree<Integer> child = random.nextBoolean() ? node.left : node.right;
-                if (child.isEmpty()) {
-                    break;
-                }
-                node = (RedBlackTreeModule.Node<Integer>) child;
-            }
-            RedBlackTreeModule.Node<Integer> taken = node;
+            RedBlackTreeModule.Node<Integer> taken = randomDescendant((RedBlackTreeModule.Node<Integer>) tree, random);
             java.util.TreeSet<Integer> expected = model(elements(taken));
             counter.check(
                     "join of the children",
@@ -830,13 +792,14 @@ public class RedBlackTreeTest {
         TreeSet<Integer> difference = treeSet(56, 31, 20, 10, 6, 42, 11, 28, 23).diff(treeSet(32, 19));
         assertThat(javaList(difference)).containsExactly(6, 10, 11, 20, 23, 28, 31, 42, 56);
         // removing every element in order threw IllegalStateException
-        TreeSet<Integer> removed = difference;
         java.util.List<Integer> remaining = javaList(difference);
-        for (Integer element : difference) {
-            removed = removed.remove(element);
+        difference.foldLeft(difference, (removed, element) -> {
+            TreeSet<Integer> next = removed.remove(element);
             remaining.remove(element);
-            assertThat(javaList(removed)).isEqualTo(remaining);
-        }
+            assertThat(javaList(next)).isEqualTo(remaining);
+            return next;
+        });
+
         // drop, and union, diff and intersect with a set sharing the comparator, threw ClassCastException
         assertThat(javaList(difference.drop(1))).containsExactly(10, 11, 20, 23, 28, 31, 42, 56);
         assertThat(javaList(difference.take(8))).containsExactly(6, 10, 11, 20, 23, 28, 31, 42);

@@ -1045,7 +1045,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default int indexWhere(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         int i = Math.max(from, 0);
+        @SuppressWarnings("Var")
         Stream<T> these = drop(i);
         while (!these.isEmpty()) {
             if (predicate.test(these.head())) {
@@ -1121,6 +1123,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the last index {@code <= end} of a satisfying element, or -1
      * @throws NullPointerException if {@code predicate} is null
      */
+    @SuppressWarnings("Var")
     default int lastIndexWhere(Predicate<? super T> predicate, int end) {
         Objects.requireNonNull(predicate, "predicate is null");
         int i = 0;
@@ -1197,7 +1200,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default int segmentLength(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         int i = 0;
+        @SuppressWarnings("Var")
         Stream<T> these = this.drop(from);
         while (!these.isEmpty() && predicate.test(these.head())) {
             i++;
@@ -1716,6 +1721,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
      */
+    @SuppressWarnings("Var")
     default Stream<T> drop(int n) {
         Stream<T> stream = this;
         while (n-- > 0 && !stream.isEmpty()) {
@@ -1756,6 +1762,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      */
     default Stream<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        @SuppressWarnings("Var")
         Stream<T> stream = this;
         while (!stream.isEmpty() && predicate.test(stream.head())) {
             stream = stream.tail();
@@ -1825,6 +1832,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         if (isEmpty()) {
             return this;
         } else {
+            @SuppressWarnings("Var")
             Stream<T> stream = this;
             while (!stream.isEmpty() && !predicate.test(stream.head())) {
                 stream = stream.tail();
@@ -1889,6 +1897,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
+        @SuppressWarnings("Var")
         Stream<T> stream = this;
         for (int i = index - 1; i >= 0; i--) {
             stream = stream.tail();
@@ -1926,6 +1935,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the first index {@code >= from} of the element, or -1 if absent
      */
     default int indexOf(T element, int from) {
+        @SuppressWarnings("Var")
         int index = 0;
         for (Stream<T> stream = this; !stream.isEmpty(); stream = stream.tail(), index++) {
             if (index >= from && Objects.equals(stream.head(), element)) {
@@ -2060,6 +2070,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return the last index {@code <= end} of the element, or -1 if absent
      */
     default int lastIndexOf(T element, int end) {
+        @SuppressWarnings("Var")
         int result = -1, index = 0;
         for (Stream<T> stream = this; index <= end && !stream.isEmpty(); stream = stream.tail(), index++) {
             if (Objects.equals(stream.head(), element)) {
@@ -2105,6 +2116,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         Objects.requireNonNull(mapper, "mapper is null");
         // walk to the first kept element now, the rest lazily; the Option found on the way is the head, so the
         // mapper never runs twice for an element
+        @SuppressWarnings("Var")
         Stream<T> stream = this;
         while (!stream.isEmpty()) {
             Option<? extends U> collected =
@@ -2253,6 +2265,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     // the left values of a Stream of results, found lazily: skips the Rights to the next Left, now, the rest on demand
     private static <L extends @Nullable Object> Stream<L> lefts(Stream<? extends Either<? extends L, ?>> results) {
+        @SuppressWarnings("Var")
         Stream<? extends Either<? extends L, ?>> stream = results;
         while (!stream.isEmpty()) {
             if (stream.head() instanceof Either.Left<? extends L, ?>(var left)) {
@@ -2266,6 +2279,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
 
     // the right values of a Stream of results, found lazily: skips the Lefts to the next Right, now, the rest on demand
     private static <R extends @Nullable Object> Stream<R> rights(Stream<? extends Either<?, ? extends R>> results) {
+        @SuppressWarnings("Var")
         Stream<? extends Either<?, ? extends R>> stream = results;
         while (!stream.isEmpty()) {
             if (stream.head() instanceof Either.Right<?, ? extends R>(var right)) {
@@ -2815,6 +2829,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         if (beginIndex < 0) {
             throw new IndexOutOfBoundsException("subSequence(" + beginIndex + ")");
         }
+        @SuppressWarnings("Var")
         Stream<T> result = this;
         for (int i = 0; i < beginIndex; i++, result = result.tail()) {
             if (result.isEmpty()) {
@@ -2863,6 +2878,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
             }
             return Empty.instance();
         }
+        @SuppressWarnings("Var")
         Stream<T> start = this;
         for (int i = 0; i < beginIndex && !start.isEmpty(); i++) {
             start = start.tail();
@@ -2990,7 +3006,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
      * @return a new {@code Stream} containing the last {@code n} elements
      */
     default Stream<T> takeRight(int n) {
+        @SuppressWarnings("Var")
         Stream<T> right = this;
+        @SuppressWarnings("Var")
         Stream<T> remaining = drop(n);
         while (!remaining.isEmpty()) {
             right = right.tail();
@@ -3093,7 +3111,9 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         if (index < 0) {
             throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
+        @SuppressWarnings("Var")
         Stream<T> preceding = Empty.instance();
+        @SuppressWarnings("Var")
         Stream<T> tail = this;
         for (int i = index; i > 0; i--, tail = tail.tail()) {
             if (tail.isEmpty()) {
@@ -3402,6 +3422,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder("Stream(");
+            @SuppressWarnings("Var")
             Stream<T> stream = this;
             while (stream != null && !stream.isEmpty()) {
                 Cons<T> cons = (Cons<T>) stream;
@@ -3583,6 +3604,7 @@ public interface Stream<T extends @Nullable Object> extends Traversable<T> {
         if (power < 0) {
             return empty();
         }
+        @SuppressWarnings("Var")
         Stream<Stream<T>> product = Stream.of(Stream.<T>empty());
         for (int i = 0; i < power; i++) {
             product = product.flatMap(el -> map(el::append));

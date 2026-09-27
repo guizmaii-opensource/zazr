@@ -307,6 +307,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
                 }
 
                 private void pushLeftChildren(Node<T> that) {
+                    @SuppressWarnings("Var")
                     RedBlackTree<T> tree = that;
                     while (!tree.isEmpty()) {
                         Node<T> node = (Node<T>) tree;

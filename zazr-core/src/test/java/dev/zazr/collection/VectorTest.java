@@ -6732,17 +6732,17 @@ public class VectorTest extends AbstractTraversableTest {
                         for (int step : new int[] {1, 2, 31, 32, 33}) {
                             Vector<Vector<Integer>> windows = vector.sliding(size, step);
                             assertThat(windows).isInstanceOf(Vector.class);
-                            int expected = 0;
-                            int start = 0;
                             for (int i = 0; i < windows.size(); i++) {
+                                int start = i * step;
                                 assertThat(windows.get(i)).isInstanceOf(Vector.class);
                                 assertThat(windows.get(i)).isEqualTo(vector.slice(start, Math.min(start + size, n)));
-                                start += step;
                             }
-                            for (long s = 0; s < n && (s == 0 || s - step + size < n); s += step) {
-                                expected++;
-                            }
-                            assertThat(windows.size()).isEqualTo(expected);
+                            // a window at every step from 0 while it starts in the vector and the previous one did not
+                            // reach its end
+                            long expected = java.util.stream.LongStream.iterate(
+                                            0, s -> s < n && (s == 0 || s - step + size < n), s -> s + step)
+                                    .count();
+                            assertThat((long) windows.size()).isEqualTo(expected);
                         }
                     }
                     assertThat(vector.sliding(2)).isEqualTo(vector.sliding(2, 1));

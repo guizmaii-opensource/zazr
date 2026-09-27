@@ -294,7 +294,6 @@ public final class Gen<A> {
         }
         Gen<?>[] choices = new Gen<?>[gens.length];
         double[] cumulative = new double[gens.length];
-        double total = 0;
         for (int i = 0; i < gens.length; i++) {
             Tuple2<? extends Gen<? extends A>, Double> entry = Objects.requireNonNull(gens[i], "gens contains null");
             choices[i] = Objects.requireNonNull(entry._1(), "gens contains a null generator");
@@ -302,30 +301,40 @@ public final class Gen<A> {
             if (!(weight >= 0) || Double.isInfinite(weight)) {
                 throw new IllegalArgumentException("weight " + weight + " is not a finite number >= 0");
             }
-            total += weight;
-            cumulative[i] = total;
+            cumulative[i] = (i == 0 ? 0 : cumulative[i - 1]) + weight;
         }
-        if (!(total > 0) || Double.isInfinite(total)) {
-            throw new IllegalArgumentException("the weights add up to " + total);
+        double sum = cumulative[cumulative.length - 1];
+        if (!(sum > 0) || Double.isInfinite(sum)) {
+            throw new IllegalArgumentException("the weights add up to " + sum);
         }
-        double sum = total;
-        int positive = cumulative.length - 1;
-        while (cumulative[positive] == (positive == 0 ? 0 : cumulative[positive - 1])) {
-            positive--;
-        }
-        int lastPositive = positive;
+        int lastPositive = lastPositive(cumulative);
         return new Gen<>((sampling, size, sink) -> {
             double point = sampling.draw().nextDouble() * sum;
-            // the first generator whose share ends after the point: a share of weight 0 ends where the previous one
-            // does, so it is never the first; the bound covers a point rounded up to the sum
-            int i = 0;
-            while (i < lastPositive && cumulative[i] <= point) {
-                i++;
-            }
             @SuppressWarnings("unchecked")
-            Gen<? extends A> gen = (Gen<? extends A>) choices[i];
+            Gen<? extends A> gen = (Gen<? extends A>) choices[shareAt(cumulative, lastPositive, point)];
             return gen.run(sampling, size, sink);
         });
+    }
+
+    // the index of the last share of weight above 0 in the cumulative weights
+    private static int lastPositive(double[] cumulative) {
+        for (int i = cumulative.length - 1; i > 0; i--) {
+            if (cumulative[i] != cumulative[i - 1]) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    // the first share that ends after `point`: a share of weight 0 ends where the previous one does, so it is never the
+    // first; the bound covers a point rounded up to the sum
+    private static int shareAt(double[] cumulative, int lastPositive, double point) {
+        for (int i = 0; i < lastPositive; i++) {
+            if (cumulative[i] > point) {
+                return i;
+            }
+        }
+        return lastPositive;
     }
 
     /**
@@ -364,15 +373,14 @@ public final class Gen<A> {
         requireNonNegative(n, "n");
         return new Gen<>((sampling, size, sink) -> {
             ArrayList<A> elements = new ArrayList<>(n);
-            S state = initial;
-            for (int i = 0; i < n; i++) {
+            Vector.range(0, n).foldLeft(initial, (state, i) -> {
                 Gen<? extends Tuple2<? extends S, ? extends A>> step =
                         Objects.requireNonNull(f.apply(state), "unfoldGen: f returned null");
                 Tuple2<? extends S, ? extends A> next =
                         Objects.requireNonNull(step.draw(sampling, size), "unfoldGen: f generated null");
-                state = next._1();
                 elements.add(next._2());
-            }
+                return next._1();
+            });
             return sink.accept(List.ofAll(elements));
         });
     }
@@ -571,6 +579,7 @@ public final class Gen<A> {
         return new Gen<>((sampling, size, sink) -> {
             FilterState state = new FilterState();
             long giveUp = sampling.filterGiveUp();
+            @SuppressWarnings("Var") // the rejections since the last value, across the passes of this loop
             long rejectedInARow = 0;
             while (true) {
                 state.produced = false;
@@ -1600,10 +1609,10 @@ public final class Gen<A> {
             if (sampling.draw().nextBoolean()) {
                 return values.run(sampling, size, a -> sink.accept(Validation.valid(a)));
             }
-            NonEmptyVector<E> drawn = NonEmptyVector.single(errors.draw(sampling, size));
-            for (int extra = sampling.draw().nextInt(3); extra > 0; extra--) {
-                drawn = drawn.append(errors.draw(sampling, size));
-            }
+            NonEmptyVector<E> drawn = Vector.range(0, sampling.draw().nextInt(3))
+                    .foldLeft(
+                            NonEmptyVector.single(errors.draw(sampling, size)),
+                            (acc, extra) -> acc.append(errors.draw(sampling, size)));
             return sink.accept(
                     drawn.size() == 1 && sampling.draw().nextBoolean()
                             ? Validation.invalid(drawn.head())

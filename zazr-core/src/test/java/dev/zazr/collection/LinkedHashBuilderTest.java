@@ -32,19 +32,11 @@ public class LinkedHashBuilderTest {
     }
 
     private static <T> LinkedHashSet<T> adds(Iterable<T> elements) {
-        LinkedHashSet<T> set = LinkedHashSet.empty();
-        for (T element : elements) {
-            set = set.add(element);
-        }
-        return set;
+        return Vector.ofAll(elements).foldLeft(LinkedHashSet.empty(), LinkedHashSet::add);
     }
 
     private static <K, V> LinkedHashMap<K, V> puts(Iterable<Tuple2<K, V>> entries) {
-        LinkedHashMap<K, V> map = LinkedHashMap.empty();
-        for (Tuple2<K, V> entry : entries) {
-            map = map.put(entry._1(), entry._2());
-        }
-        return map;
+        return Vector.ofAll(entries).foldLeft(LinkedHashMap.empty(), (map, entry) -> map.put(entry._1(), entry._2()));
     }
 
     // -- LinkedHashSet

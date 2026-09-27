@@ -1,5 +1,6 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.Vector;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 
 import static dev.zazr.collection.internal.VectorStatics.WIDTH;
@@ -67,47 +69,44 @@ public class RadixVectorTest {
 
     @Test
     public void randomSequencesAroundVector3Capacity() {
-        int seed = 100_000;
-        for (int size : MEDIUM_SIZES) {
-            for (History history : new History[] {History.BUILDER, History.APPENDS, History.PREPENDS, History.SLICED}) {
-                Run run = new Run(seed++);
-                runSequence(run, size, history, 60, 70_000);
+        History[] histories = {History.BUILDER, History.APPENDS, History.PREPENDS, History.SLICED};
+        for (int s = 0; s < MEDIUM_SIZES.length; s++) {
+            for (int h = 0; h < histories.length; h++) {
+                Run run = new Run(100_000 + s * histories.length + h);
+                runSequence(run, MEDIUM_SIZES[s], histories[h], 60, 70_000);
             }
         }
     }
 
     @Test
     public void randomSequencesAroundVector4Capacity() {
-        int seed = 200_000;
-        for (int size : LARGE_SIZES) {
-            for (History history : new History[] {History.BUILDER, History.SLICED}) {
-                Run run = new Run(seed++);
-                runSequence(run, size, history, 25, 1 << 21);
+        History[] histories = {History.BUILDER, History.SLICED};
+        for (int s = 0; s < LARGE_SIZES.length; s++) {
+            for (int h = 0; h < histories.length; h++) {
+                Run run = new Run(200_000 + s * histories.length + h);
+                runSequence(run, LARGE_SIZES[s], histories[h], 25, 1 << 21);
             }
         }
     }
 
     private static void runSequence(Run run, int size, History history, int steps, int maxLength) {
         run.log("start " + history + " " + size);
-        Pair p = run.checked(() -> build(run, size, history));
-        for (int step = 0; step < steps; step++) {
-            Pair current = p;
-            int s = step;
-            p = run.checked(() -> {
-                run.step = s;
-                return step(run, current, maxLength);
-            });
-        }
+        Vector.range(0, steps)
+                .foldLeft(
+                        run.checked(() -> build(run, size, history)),
+                        (current, s) -> run.checked(() -> {
+                            run.step = s;
+                            return step(run, current, maxLength);
+                        }));
         run.recheckHistory();
     }
 
     private static Pair step(Run run, Pair p, int maxLength) {
         Random rnd = run.rnd;
         int n = p.v.length();
-        int op = rnd.nextInt(100);
-        if (n > maxLength && op < 60) {
-            op = 60 + rnd.nextInt(34);
-        }
+        int drawn = rnd.nextInt(100);
+        // beyond the maximum length, only the operations that do not grow the vector
+        int op = n > maxLength && drawn < 60 ? 60 + rnd.nextInt(34) : drawn;
         if (op < 15) {
             Integer x = run.fresh();
             run.log("appended " + x);
@@ -435,44 +434,43 @@ public class RadixVectorTest {
     public void levelTransitionsByAppendAndPrepend() {
         Run run = new Run(500_000);
         for (boolean append : new boolean[] {true, false}) {
-            RadixVector<Integer> r = RadixVector.empty();
-            VectorModel<Integer> v = VectorModel.empty();
-            int depth = 0;
+            // the depth reached so far is the number of transitions
             List<Integer> transitions = new ArrayList<>();
-            for (int i = 0; i < 33_000; i++) {
+            Pair empty = new Pair(RadixVector.empty(), VectorModel.empty(), "transition");
+            Pair p = Vector.range(0, 33_000).foldLeft(empty, (acc, i) -> {
                 Integer x = run.fresh();
-                r = append ? r.appended(x) : r.prepended(x);
-                v = append ? v.append(x) : v.prepend(x);
+                RadixVector<Integer> r = append ? acc.r.appended(x) : acc.r.prepended(x);
+                VectorModel<Integer> v = append ? acc.v.append(x) : acc.v.prepend(x);
                 int d = depth(r);
-                if (d != depth) {
-                    assertThat(d).as("depth after %d elements", i + 1).isEqualTo(depth + 1);
-                    depth = d;
+                if (d != transitions.size()) {
+                    assertThat(d).as("depth after %d elements", i + 1).isEqualTo(transitions.size() + 1);
                     transitions.add(i + 1);
                 }
                 checkShape(r);
+                Pair next = new Pair(r, v, "transition");
                 if ((i & (i + 1)) == 0 || (i % 1024) == 1023 || i < 70) {
-                    checkContents(new Pair(r, v, "transition"));
+                    checkContents(next);
                 }
-            }
-            checkContents(new Pair(r, v, "transition"));
-            assertThat(depth).isEqualTo(4);
+                return next;
+            });
+            checkContents(p);
+            assertThat(depth(p.r)).isEqualTo(4);
             assertThat(transitions).hasSize(4);
         }
         // Vector4 to Vector5, both ways, from a builder-made vector whose data is full
         for (boolean append : new boolean[] {true, false}) {
             Pair start = run.checked(() -> build(run, (1 << 20) - 5, History.BUILDER));
             assertThat(start.r).isInstanceOf(RadixVector.Vector4.class);
-            Pair p = start;
-            for (int i = 0; i < 10; i++) {
-                Pair current = p;
-                p = run.checked(() -> {
-                    Integer x = run.fresh();
-                    run.log(append ? "appended" : "prepended");
-                    return append
-                            ? run.record(current.r.appended(x), current.v.append(x))
-                            : run.record(current.r.prepended(x), current.v.prepend(x));
-                });
-            }
+            Pair p = Vector.range(0, 10)
+                    .foldLeft(
+                            start,
+                            (current, i) -> run.checked(() -> {
+                                Integer x = run.fresh();
+                                run.log(append ? "appended" : "prepended");
+                                return append
+                                        ? run.record(current.r.appended(x), current.v.append(x))
+                                        : run.record(current.r.prepended(x), current.v.prepend(x));
+                            }));
             assertThat(p.r).isInstanceOf(RadixVector.Vector5.class);
         }
         run.recheckHistory();
@@ -488,14 +486,15 @@ public class RadixVectorTest {
         for (int i = 0; i < base; i++) {
             builder.add(i);
         }
-        RadixVector<Integer> v = builder.result();
+        RadixVector<Integer> built = builder.result();
         List<RadixVector<Integer>> history = new ArrayList<>();
-        history.add(v);
-        for (int k = 0; k < 5; k++) {
-            v = v.appendedAll(v);
-            checkShape(v);
-            history.add(v);
-        }
+        history.add(built);
+        RadixVector<Integer> v = Vector.range(0, 5).foldLeft(built, (acc, k) -> {
+            RadixVector<Integer> doubled = acc.appendedAll(acc);
+            checkShape(doubled);
+            history.add(doubled);
+            return doubled;
+        });
         assertThat(v.length()).isEqualTo(1 << 25);
         assertThat(v).isInstanceOf(RadixVector.Vector5.class);
         checkModulo(v, base, 0);
@@ -557,11 +556,11 @@ public class RadixVectorTest {
             RadixVector<Integer> sliced = w.slice(lo, n - lo);
             checkShape(sliced);
         }
-        RadixVector<Integer> t = w;
-        for (int i = 0; i < 40; i++) {
-            t = t.tail().init();
-            checkShape(t);
-        }
+        RadixVector<Integer> t = Vector.range(0, 40).foldLeft(w, (acc, i) -> {
+            RadixVector<Integer> shorter = acc.tail().init();
+            checkShape(shorter);
+            return shorter;
+        });
         assertThat(t.length()).isEqualTo(n - 80);
         RadixVector<Integer> small =
                 RadixVector.ofAll(new Object[] {7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
@@ -597,16 +596,17 @@ public class RadixVectorTest {
 
     /* the element at index i is (i - shift) mod base, checked through the iterator and a sample of get */
     private static void checkModulo(RadixVector<Integer> v, int base, int shift) {
-        int i = 0;
         Iterator<Integer> it = v.iterator();
-        while (it.hasNext()) {
+        for (int i = 0; i < v.length(); i++) {
+            assertThat(it.hasNext())
+                    .as("iterator ends at %d of %d", i, v.length())
+                    .isTrue();
             int x = it.next();
             if (x != Math.floorMod(i - shift, base)) {
                 throw new AssertionError("element " + i + " is " + x);
             }
-            i++;
         }
-        assertThat(i).isEqualTo(v.length());
+        assertThat(it.hasNext()).as("iterator goes beyond %d", v.length()).isFalse();
         for (int j = 0; j < v.length(); j += 99_991) {
             assertThat(v.get(j)).isEqualTo(Math.floorMod(j - shift, base));
         }
@@ -772,10 +772,7 @@ public class RadixVectorTest {
     @Test
     public void lengthNeverExceedsIntegerMaxValue() {
         Object[] leaf = sequence(0, WIDTH);
-        RadixVector<Integer> v = RadixVector.ofAll(leaf);
-        while (v.length() < (1 << 30)) {
-            v = v.appendedAll(v);
-        }
+        RadixVector<Integer> v = doubledUntil(RadixVector.ofAll(leaf), 1 << 30);
         RadixVector<Integer> half = v;
         RadixVector<Integer> full = v.appendedAll(v.init());
         assertThat(full).isInstanceOf(RadixVector.Vector6.class);
@@ -1074,11 +1071,12 @@ public class RadixVectorTest {
 
     /* a vector of n elements (a power of two, at least 32) made of one leaf 0..31, shared everywhere */
     private static RadixVector<Integer> sharedLeafVector(int n) {
-        RadixVector<Integer> v = RadixVector.ofAll(sequence(0, WIDTH));
-        while (v.length() < n) {
-            v = v.appendedAll(v);
-        }
-        return v;
+        return doubledUntil(RadixVector.ofAll(sequence(0, WIDTH)), n);
+    }
+
+    // `v` appended to itself until it holds at least `length` elements
+    private static RadixVector<Integer> doubledUntil(RadixVector<Integer> v, int length) {
+        return v.length() >= length ? v : doubledUntil(v.appendedAll(v), length);
     }
 
     /*
@@ -1094,31 +1092,26 @@ public class RadixVectorTest {
         for (int i = 0; i < base; i++) {
             builder.add(i);
         }
-        RadixVector<Integer> block = builder.result();
-        while (block.length() < blockSize) {
-            block = block.appendedAll(block);
-        }
+        RadixVector<Integer> block = doubledUntil(builder.result(), blockSize);
         int blocks = 63;
-        RadixVector<Integer> big = block.updated(0, marker(0));
-        for (int j = 1; j < blocks; j++) {
-            big = big.appendedAll(block.updated(0, marker(j)));
-        }
-        RadixVector<Integer> v = big;
+        RadixVector<Integer> v = Vector.range(1, blocks)
+                .foldLeft(block.updated(0, marker(0)), (big, j) -> big.appendedAll(block.updated(0, marker(j))));
         assertThat(v).isInstanceOf(RadixVector.Vector6.class);
         assertThat(v.length()).isEqualTo(blocks * blockSize);
         RadixVector.Vector6<Integer> v6 = (RadixVector.Vector6<Integer>) v;
         assertThat(v6.data6.length).isGreaterThan(32);
 
-        int i = 0;
         Iterator<Integer> it = v.iterator();
-        while (it.hasNext()) {
+        for (int i = 0; i < v.length(); i++) {
+            assertThat(it.hasNext())
+                    .as("iterator ends at %d of %d", i, v.length())
+                    .isTrue();
             int x = it.next();
             if (x != blockElement(i, blockSize, base)) {
                 throw new AssertionError("iterator at " + i + ": " + x);
             }
-            i++;
         }
-        assertThat(i).isEqualTo(v.length());
+        assertThat(it.hasNext()).as("iterator goes beyond %d", v.length()).isFalse();
         for (int j = 0; j < blocks; j++) {
             for (int d = -1; d <= 1; d++) {
                 long at = (long) j * blockSize + d;
@@ -1229,8 +1222,7 @@ public class RadixVectorTest {
             case BUILDER_CHUNKS -> {
                 List<Integer> list = run.freshList(size);
                 VectorBuilder<Integer> builder = RadixVector.newBuilder();
-                int i = 0;
-                while (i < size) {
+                for (int i = 0; i < size; ) {
                     int chunk = Math.min(size - i, 1 + rnd.nextInt(rnd.nextBoolean() ? 40 : 1500));
                     List<Integer> part = list.subList(i, i + chunk);
                     switch (rnd.nextInt(4)) {
@@ -1248,39 +1240,30 @@ public class RadixVectorTest {
                 return run.record(RadixVector.ofAll(list.toArray()), VectorModel.ofAll(list), label);
             }
             case APPENDS -> {
-                RadixVector<Integer> r = RadixVector.empty();
-                VectorModel<Integer> v = VectorModel.empty();
-                for (int i = 0; i < size; i++) {
-                    Integer x = run.fresh();
-                    r = r.appended(x);
-                    v = v.append(x);
-                }
-                return run.record(r, v, label);
+                Pair p = Vector.range(0, size)
+                        .foldLeft(new Pair(RadixVector.empty(), VectorModel.empty(), label), (acc, i) -> {
+                            Integer x = run.fresh();
+                            return new Pair(acc.r.appended(x), acc.v.append(x), label);
+                        });
+                return run.record(p.r, p.v, label);
             }
             case PREPENDS -> {
-                RadixVector<Integer> r = RadixVector.empty();
-                VectorModel<Integer> v = VectorModel.empty();
-                for (int i = 0; i < size; i++) {
-                    Integer x = run.fresh();
-                    r = r.prepended(x);
-                    v = v.prepend(x);
-                }
-                return run.record(r, v, label);
+                Pair p = Vector.range(0, size)
+                        .foldLeft(new Pair(RadixVector.empty(), VectorModel.empty(), label), (acc, i) -> {
+                            Integer x = run.fresh();
+                            return new Pair(acc.r.prepended(x), acc.v.prepend(x), label);
+                        });
+                return run.record(p.r, p.v, label);
             }
             case ALTERNATING -> {
-                RadixVector<Integer> r = RadixVector.empty();
-                VectorModel<Integer> v = VectorModel.empty();
-                for (int i = 0; i < size; i++) {
-                    Integer x = run.fresh();
-                    if (rnd.nextBoolean()) {
-                        r = r.appended(x);
-                        v = v.append(x);
-                    } else {
-                        r = r.prepended(x);
-                        v = v.prepend(x);
-                    }
-                }
-                return run.record(r, v, label);
+                Pair p = Vector.range(0, size)
+                        .foldLeft(new Pair(RadixVector.empty(), VectorModel.empty(), label), (acc, i) -> {
+                            Integer x = run.fresh();
+                            return rnd.nextBoolean()
+                                    ? new Pair(acc.r.appended(x), acc.v.append(x), label)
+                                    : new Pair(acc.r.prepended(x), acc.v.prepend(x), label);
+                        });
+                return run.record(p.r, p.v, label);
             }
             case SLICED -> {
                 int before = rnd.nextInt(rnd.nextBoolean() ? 40 : 2000);
@@ -1425,28 +1408,16 @@ public class RadixVectorTest {
 
         /* both operations succeed and give the same contents, or both fail with the same exception class */
         Pair same(Pair old, Supplier<RadixVector<Integer>> radix, Supplier<VectorModel<Integer>> vector) {
-            RadixVector<Integer> r = null;
-            VectorModel<Integer> v = null;
-            RuntimeException re = null;
-            RuntimeException ve = null;
-            try {
-                r = radix.get();
-            } catch (RuntimeException e) {
-                re = e;
-            }
-            try {
-                v = vector.get();
-            } catch (RuntimeException e) {
-                ve = e;
-            }
-            if (re != null || ve != null) {
-                if (re == null || ve == null || re.getClass() != ve.getClass()) {
-                    throw new AssertionError("different outcomes: radix " + (re == null ? "succeeded" : re)
-                            + ", vector " + (ve == null ? "succeeded" : ve));
+            Outcome<RadixVector<Integer>> r = Outcome.of(radix);
+            Outcome<VectorModel<Integer>> v = Outcome.of(vector);
+            if (r.error != null || v.error != null) {
+                if (r.error == null || v.error == null || r.error.getClass() != v.error.getClass()) {
+                    throw new AssertionError("different outcomes: radix " + (r.error == null ? "succeeded" : r.error)
+                            + ", vector " + (v.error == null ? "succeeded" : v.error));
                 }
                 return old;
             }
-            return record(r, v);
+            return record(r.value, v.value);
         }
 
         Pair checked(Supplier<Pair> action) {
@@ -1512,27 +1483,26 @@ public class RadixVectorTest {
     }
 
     private static void sameOutcome(Supplier<?> radix, Supplier<?> vector) {
-        Object r = null;
-        Object v = null;
-        RuntimeException re = null;
-        RuntimeException ve = null;
-        try {
-            r = radix.get();
-        } catch (RuntimeException e) {
-            re = e;
-        }
-        try {
-            v = vector.get();
-        } catch (RuntimeException e) {
-            ve = e;
-        }
-        if (re != null || ve != null) {
-            if (re == null || ve == null || re.getClass() != ve.getClass()) {
-                throw new AssertionError(
-                        "different outcomes: radix " + (re == null ? r : re) + ", vector " + (ve == null ? v : ve));
+        Outcome<?> r = Outcome.of(radix);
+        Outcome<?> v = Outcome.of(vector);
+        if (r.error != null || v.error != null) {
+            if (r.error == null || v.error == null || r.error.getClass() != v.error.getClass()) {
+                throw new AssertionError("different outcomes: radix " + (r.error == null ? r.value : r.error)
+                        + ", vector " + (v.error == null ? v.value : v.error));
             }
-        } else if (!java.util.Objects.equals(r, v)) {
-            throw new AssertionError("different results: radix " + r + ", vector " + v);
+        } else if (!java.util.Objects.equals(r.value, v.value)) {
+            throw new AssertionError("different results: radix " + r.value + ", vector " + v.value);
+        }
+    }
+
+    /* the value an operation returned, or the exception it threw */
+    private record Outcome<T>(T value, RuntimeException error) {
+        static <T> Outcome<T> of(Supplier<? extends T> operation) {
+            try {
+                return new Outcome<>(operation.get(), null);
+            } catch (RuntimeException e) {
+                return new Outcome<>(null, e);
+            }
         }
     }
 
@@ -1549,9 +1519,9 @@ public class RadixVectorTest {
             throw new AssertionError("isEmpty");
         }
         Object[] expected = new Object[n];
-        int k = 0;
-        for (Integer x : p.v) {
-            expected[k++] = x;
+        java.util.Iterator<Integer> model = p.v.iterator();
+        for (int k = 0; k < n; k++) {
+            expected[k] = model.next();
         }
         Iterator<Integer> it = r.iterator();
         for (int i = 0; i < n; i++) {
@@ -1697,8 +1667,8 @@ public class RadixVectorTest {
             assertInvariant(big.suffix1 == r.vectorSlice(c - 1), r, "suffix1 is the last slice");
         }
         assertInvariant(r.prefix1 == r.vectorSlice(0), r, "prefix1 is the first slice");
-        long count = 0;
         for (int i = 0; i < c; i++) {
+            long before = i == 0 ? 0 : r.vectorSlicePrefixLength(i - 1);
             int dim = vectorSliceDim(c, i);
             Object[] slice = r.vectorSlice(i);
             assertInvariant(slice.getClass() == Object[].class, r, "slice " + i + " is an Object[]");
@@ -1708,7 +1678,6 @@ public class RadixVectorTest {
                         r,
                         "slice " + i + " (a leaf) holds 1 to 32 elements");
                 checkLeaf(slice, r);
-                count += slice.length;
             } else {
                 int max = (dim == depth) ? (depth == 6 ? 2 * WIDTH - 2 : WIDTH - 2) : WIDTH - 1;
                 assertInvariant(
@@ -1716,13 +1685,14 @@ public class RadixVectorTest {
                 for (Object child : slice) {
                     checkFull(dim - 1, child, r);
                 }
-                count += (long) slice.length << (5 * (dim - 1));
             }
+            long count = before + ((long) slice.length << (5 * (dim - 1)));
             assertInvariant(
                     r.vectorSlicePrefixLength(i) == count,
                     r,
                     "vectorSlicePrefixLength(" + i + ") = " + r.vectorSlicePrefixLength(i) + ", counted " + count);
         }
+        long count = c == 0 ? 0 : r.vectorSlicePrefixLength(c - 1);
         assertInvariant(count == r.length(), r, "length " + r.length() + ", counted " + count);
         long capacity = capacity(depth);
         assertInvariant(r.length() <= capacity, r, "a Vector" + depth + " holds at most " + capacity);
@@ -1734,12 +1704,11 @@ public class RadixVectorTest {
         if (depth <= 1) {
             return depth * WIDTH;
         }
-        long c = 2L * WIDTH;
-        for (int d = 2; d < depth; d++) {
-            c += 2L * (WIDTH - 1) << (5 * (d - 1));
-        }
-        c += (long) (depth == 6 ? 2 * WIDTH - 2 : WIDTH - 2) << (5 * (depth - 1));
-        return c;
+        long middle = LongStream.range(2, depth)
+                .map(d -> 2L * (WIDTH - 1) << (5 * (d - 1)))
+                .sum();
+        long data = (long) (depth == 6 ? 2 * WIDTH - 2 : WIDTH - 2) << (5 * (depth - 1));
+        return 2L * WIDTH + middle + data;
     }
 
     private static void checkFull(int level, Object a, RadixVector<?> r) {

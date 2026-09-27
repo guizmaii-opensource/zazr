@@ -35,19 +35,11 @@ public class HashBulkTest {
     }
 
     private static HashSet<Key> set(int from, int to, int tag) {
-        HashSet<Key> result = HashSet.empty();
-        for (int i = from; i < to; i++) {
-            result = result.add(new Key(i, tag));
-        }
-        return result;
+        return Vector.range(from, to).foldLeft(HashSet.empty(), (set, i) -> set.add(new Key(i, tag)));
     }
 
     private static HashMap<Key, Integer> map(int from, int to, int tag) {
-        HashMap<Key, Integer> result = HashMap.empty();
-        for (int i = from; i < to; i++) {
-            result = result.put(new Key(i, tag), tag);
-        }
-        return result;
+        return Vector.range(from, to).foldLeft(HashMap.empty(), (map, i) -> map.put(new Key(i, tag), tag));
     }
 
     private static java.util.Map<Integer, Integer> tags(Iterable<Key> keys) {
@@ -134,16 +126,10 @@ public class HashBulkTest {
             for (int i = 0; i < random.nextInt(400); i++) {
                 ids.add(random.nextInt(1000));
             }
-            HashSet<Key> a = HashSet.empty();
-            for (Integer id : ids) {
-                a = a.add(new Key(id, 1));
-            }
+            HashSet<Key> a = Vector.ofAll(ids).foldLeft(HashSet.empty(), (set, id) -> set.add(new Key(id, 1)));
             java.util.List<Integer> shuffled = new ArrayList<>(ids);
             java.util.Collections.shuffle(shuffled, random);
-            HashSet<Key> b = HashSet.empty();
-            for (Integer id : shuffled) {
-                b = b.add(new Key(id, 2));
-            }
+            HashSet<Key> b = Vector.ofAll(shuffled).foldLeft(HashSet.empty(), (set, id) -> set.add(new Key(id, 2)));
             assertThat(a).isEqualTo(b);
             assertThat(a.hashCode()).isEqualTo(b.hashCode());
             assertThat(a.hashCode()).isEqualTo(LinkedHashSet.ofAll(a).hashCode());
@@ -225,10 +211,8 @@ public class HashBulkTest {
     @Test
     public void shouldCompareHashMapsAsAnyMap() {
         HashMap<Key, Integer> a = map(0, 300, 1);
-        HashMap<Key, Integer> b = HashMap.empty();
-        for (int i = 299; i >= 0; i--) {
-            b = b.put(new Key(i, 2), 1);
-        }
+        HashMap<Key, Integer> b =
+                Vector.rangeClosedBy(299, 0, -1).foldLeft(HashMap.empty(), (map, i) -> map.put(new Key(i, 2), 1));
         assertThat(a).isEqualTo(b);
         assertThat(a.hashCode()).isEqualTo(b.hashCode());
         assertThat(a.equals(LinkedHashMap.ofEntries(a))).isTrue();

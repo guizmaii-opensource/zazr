@@ -70,16 +70,17 @@ class JavaMapViewTest {
         return IntStream.of(JavaViewContract.SIZES)
                 .mapToObj(n -> DynamicTest.dynamicTest("LinkedHashMap of " + n + " minus every third", () -> {
                     java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
-                    LinkedHashMap<Integer, String> map = LinkedHashMap.ofEntries(entries(keys));
                     java.util.LinkedHashMap<Integer, String> reference = fill(new java.util.LinkedHashMap<>(), keys);
-                    for (int i = 0; i < keys.size(); i += 3) {
-                        map = map.remove(keys.get(i));
-                        reference.remove(keys.get(i));
-                    }
-                    for (int i = 1; i < keys.size(); i += 5) {
-                        map = map.put(keys.get(i), "v" + keys.get(i));
-                        reference.put(keys.get(i), "v" + keys.get(i));
-                    }
+                    LinkedHashMap<Integer, String> removed = Vector.rangeBy(0, keys.size(), 3)
+                            .foldLeft(LinkedHashMap.ofEntries(entries(keys)), (acc, i) -> {
+                                reference.remove(keys.get(i));
+                                return acc.remove(keys.get(i));
+                            });
+                    LinkedHashMap<Integer, String> map = Vector.rangeBy(1, keys.size(), 5)
+                            .foldLeft(removed, (acc, i) -> {
+                                reference.put(keys.get(i), "v" + keys.get(i));
+                                return acc.put(keys.get(i), "v" + keys.get(i));
+                            });
                     JavaViewContract.ordered()
                             .sequencedMap(
                                     "LinkedHashMap(" + n + ").remove(...).asJavaMap()",

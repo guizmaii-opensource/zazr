@@ -347,6 +347,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     // the concat of BitmapIndexedMapNode, on elements: a first pass sorts each slot into one of nine cases, a second
     // builds the node
     @Override
+    @SuppressWarnings("Var")
     public BitmapIndexedSetNode<T> concat(SetNode<T> that, int shift) {
         BitmapIndexedSetNode<T> bm = (BitmapIndexedSetNode<T>) that;
         if (size == 0) {
@@ -546,6 +547,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     }
 
     @Override
+    @SuppressWarnings("Var")
     public BitmapIndexedSetNode<T> filter(Predicate<? super T> predicate, boolean keep) {
         // the elements first, then the children, as the iteration goes
         int payload = payloadArity();
@@ -569,6 +571,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     }
 
     @Override
+    @SuppressWarnings("Var")
     public BitmapIndexedSetNode<T> diff(SetNode<T> that, int shift) {
         BitmapIndexedSetNode<T> bm = (BitmapIndexedSetNode<T>) that;
         int payload = payloadArity();
@@ -605,21 +608,23 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     // records the new child at `index` once one child has changed: null while every child is the old one
     private static <T extends @Nullable Object> SetNode<T> @Nullable [] withChild(
             SetNode<T> @Nullable [] newChildren, int children, int index, SetNode<T> child, SetNode<T> newChild) {
-        SetNode<T>[] result = newChildren;
-        if (newChild != child && result == null) {
-            @SuppressWarnings("unchecked")
-            SetNode<T>[] array = (SetNode<T>[]) new SetNode<?>[children];
-            result = array;
+        if (newChildren != null) {
+            newChildren[index] = newChild;
+            return newChildren;
         }
-        if (result != null) {
-            result[index] = newChild;
+        if (newChild == child) {
+            return null;
         }
-        return result;
+        @SuppressWarnings("unchecked")
+        SetNode<T>[] array = (SetNode<T>[]) new SetNode<?>[children];
+        array[index] = newChild;
+        return array;
     }
 
     // the node of the inline elements of `keptDataMap` and of the new children (null entries, or a null array: the
     // old child), where a child down to one element comes back inline and an empty one goes; this node when nothing
     // was dropped
+    @SuppressWarnings("Var")
     private BitmapIndexedSetNode<T> rebuilt(int keptDataMap, SetNode<T> @Nullable [] newChildren) {
         if (keptDataMap == dataMap && newChildren == null) {
             return this;
@@ -706,6 +711,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         if ((thisBitmap | nodeBitmap) != nodeBitmap) {
             return false;
         }
+        @SuppressWarnings("Var")
         int bits = thisBitmap;
         while (bits != 0) {
             int bitpos = Integer.lowestOneBit(bits);

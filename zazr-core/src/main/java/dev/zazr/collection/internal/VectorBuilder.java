@@ -123,6 +123,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             Objects.requireNonNull(elements[i], "Vector: element is null");
         }
         checkRoomFor(to - from);
+        @SuppressWarnings("Var")
         int i = from;
         while (i < to) {
             if (len1 == WIDTH) {
@@ -372,7 +373,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
      * copy instead.
      */
     private void leftAlignPrefix() {
+        @SuppressWarnings("Var")
         Object @Nullable [] a = null; // the array being modified
+        @SuppressWarnings("Var")
         Object @Nullable [] aParent = null; // a's parent, so that aParent[0] == a
         if (depth >= 6) {
             a = a6;

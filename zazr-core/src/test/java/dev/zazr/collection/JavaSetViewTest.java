@@ -51,12 +51,12 @@ class JavaSetViewTest {
         return IntStream.of(JavaViewContract.SIZES)
                 .mapToObj(n -> DynamicTest.dynamicTest("LinkedHashSet of " + n + " minus every third", () -> {
                     java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
-                    LinkedHashSet<Integer> set = LinkedHashSet.ofAll(elements);
                     java.util.LinkedHashSet<Integer> reference = new java.util.LinkedHashSet<>(elements);
-                    for (int i = 0; i < elements.size(); i += 3) {
-                        set = set.remove(elements.get(i));
-                        reference.remove(elements.get(i));
-                    }
+                    LinkedHashSet<Integer> set = Vector.rangeBy(0, elements.size(), 3)
+                            .foldLeft(LinkedHashSet.ofAll(elements), (acc, i) -> {
+                                reference.remove(elements.get(i));
+                                return acc.remove(elements.get(i));
+                            });
                     JavaViewContract.ordered()
                             .sequencedSet(
                                     "LinkedHashSet(" + n + ").remove(...).asJava()",

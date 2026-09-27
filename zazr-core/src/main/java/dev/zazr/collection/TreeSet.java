@@ -763,6 +763,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
         // a few elements: each one not present yet is inserted, so of equal elements the one already here, or else
         // the first given, is kept
+        @SuppressWarnings("Var")
         RedBlackTree<T> that = tree;
         for (T element : elements) {
             Objects.requireNonNull(element, "TreeSet: element is null");

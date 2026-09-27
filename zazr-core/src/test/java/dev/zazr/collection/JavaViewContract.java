@@ -142,13 +142,9 @@ final class JavaViewContract {
     }
 
     private static Object normalizeAll(java.util.Iterator<?> iterator, boolean ordered) {
-        Collection<Object> result = ordered ? new ArrayList<>() : new HashSet<>();
-        int count = 0;
-        while (iterator.hasNext()) {
-            result.add(normalize(iterator.next(), ordered));
-            count++;
-        }
-        return ordered ? result : Arrays.asList(count, result);
+        java.util.List<Object> all = new ArrayList<>();
+        iterator.forEachRemaining(element -> all.add(normalize(element, ordered)));
+        return ordered ? all : Arrays.asList(all.size(), new HashSet<>(all));
     }
 
     // -- java.util.Collection

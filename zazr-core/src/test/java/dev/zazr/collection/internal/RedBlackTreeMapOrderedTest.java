@@ -1,9 +1,12 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import static dev.zazr.collection.internal.RedBlackTreeValidity.assertValid;
@@ -25,32 +28,26 @@ public class RedBlackTreeMapOrderedTest {
     // at every depth), inserts followed by deletes (the rebalancing of deletion), and the bottom-up construction
     private static java.util.List<RedBlackTree<Integer>> sources(Comparator<Integer> order, int size, Random random) {
         java.util.List<RedBlackTree<Integer>> trees = new ArrayList<>();
-        RedBlackTree<Integer> ascending = RedBlackTree.empty(order);
-        for (int i = 0; i < size; i++) {
-            ascending = ascending.insert(i);
-        }
-        trees.add(ascending);
-        RedBlackTree<Integer> shuffled = RedBlackTree.empty(order);
-        while (shuffled.size() < size) {
-            shuffled = shuffled.insert(random.nextInt(4 * size + 1) - 2 * size);
-        }
-        trees.add(shuffled);
-        RedBlackTree<Integer> deleted = RedBlackTree.empty(order);
-        while (deleted.size() < 2 * size) {
-            deleted = deleted.insert(random.nextInt(8 * size + 1) - 4 * size);
-        }
-        java.util.List<Integer> elements = elements(deleted);
+        trees.add(Vector.range(0, size).foldLeft(RedBlackTree.empty(order), RedBlackTree::insert));
+        trees.add(randomTree(order, size, () -> random.nextInt(4 * size + 1) - 2 * size));
+        RedBlackTree<Integer> larger = randomTree(order, 2 * size, () -> random.nextInt(8 * size + 1) - 4 * size);
+        java.util.List<Integer> elements = elements(larger);
         java.util.Collections.shuffle(elements, random);
-        for (int i = 0; i < size; i++) {
-            deleted = deleted.delete(elements.get(i));
-        }
-        trees.add(deleted);
+        trees.add(Vector.ofAll(elements.subList(0, size)).foldLeft(larger, RedBlackTree::delete));
         Object[] sorted = new Object[size];
         for (int i = 0; i < size; i++) {
             sorted[i] = (order == NATURAL) ? i : size - 1 - i;
         }
         trees.add(RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(order), sorted, size));
         return trees;
+    }
+
+    // a tree of `size` distinct elements, inserted one at a time as `next` draws them
+    private static RedBlackTree<Integer> randomTree(Comparator<Integer> order, int size, IntSupplier next) {
+        return Stream.iterate(RedBlackTree.empty(order), tree -> tree.insert(next.getAsInt()))
+                .filter(tree -> tree.size() >= size)
+                .findFirst()
+                .orElseThrow();
     }
 
     private static <T> java.util.List<T> elements(RedBlackTree<T> tree) {
@@ -117,10 +114,8 @@ public class RedBlackTreeMapOrderedTest {
 
     @Test
     public void shouldMapUnderACaseInsensitiveComparator() {
-        RedBlackTree<String> source = RedBlackTree.empty(String.CASE_INSENSITIVE_ORDER);
-        for (String s : java.util.List.of("delta", "Alpha", "charlie", "Bravo", "echo", "ALPHA")) {
-            source = source.insert(s);
-        }
+        RedBlackTree<String> source = Vector.of("delta", "Alpha", "charlie", "Bravo", "echo", "ALPHA")
+                .foldLeft(RedBlackTree.empty(String.CASE_INSENSITIVE_ORDER), RedBlackTree::insert);
         // "ALPHA" replaced "Alpha": the tree holds the element inserted last
         assertThat(elements(source)).containsExactly("ALPHA", "Bravo", "charlie", "delta", "echo");
         check(source, String.CASE_INSENSITIVE_ORDER, s -> s.toLowerCase(java.util.Locale.ROOT));

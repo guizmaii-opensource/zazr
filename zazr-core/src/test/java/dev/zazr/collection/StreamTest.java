@@ -6947,6 +6947,15 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class SubSequenceBoundsTests {
 
+        // what `operation` returns, or the class of the exception it throws
+        private Object valueOrExceptionClass(Supplier<?> operation) {
+            try {
+                return operation.get();
+            } catch (RuntimeException e) {
+                return e.getClass();
+            }
+        }
+
         private int[] indices(int n) {
             return new int[] {Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE};
         }
@@ -6957,31 +6966,18 @@ public class StreamTest extends AbstractTraversableTest {
                 Vector<Integer> vector = Vector.range(0, n);
                 for (int from : indices(n)) {
                     int begin = from;
-                    Object single;
-                    try {
-                        single = vector.subSequence(begin);
-                    } catch (RuntimeException e) {
-                        single = e.getClass();
-                    }
-                    Object singleStream;
-                    try {
-                        singleStream = Stream.range(0, n).subSequence(begin).toVector();
-                    } catch (RuntimeException e) {
-                        singleStream = e.getClass();
-                    }
+                    Object single = valueOrExceptionClass(() -> vector.subSequence(begin));
+                    Object singleStream = valueOrExceptionClass(
+                            () -> Stream.range(0, n).subSequence(begin).toVector());
                     assertThat(singleStream)
                             .as("subSequence(%d) on %d", begin, n)
                             .isEqualTo(single);
                     for (int to : indices(n)) {
                         String call = "subSequence(" + from + ", " + to + ") on " + n;
-                        Class<?> expected;
-                        Vector<Integer> expectedResult = null;
-                        try {
-                            expectedResult = vector.subSequence(from, to);
-                            expected = null;
-                        } catch (RuntimeException e) {
-                            expected = e.getClass();
-                        }
+                        Try<Vector<Integer>> expectedTry = Try.of(() -> vector.subSequence(from, to));
+                        Class<?> expected =
+                                expectedTry.isFailure() ? expectedTry.getCause().getClass() : null;
+                        Vector<Integer> expectedResult = expectedTry.getOrNull();
                         Stream<Integer> stream = Stream.range(0, n);
                         Stream<Integer> result;
                         try {

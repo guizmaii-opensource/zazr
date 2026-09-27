@@ -262,10 +262,7 @@ public interface Tuple {
      * @return the same result as {@link Objects#hash(Object...)}
      */
     static int hash(@Nullable Object o1, @Nullable Object o2) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        return result;
+        return 31 * (31 + hash(o1)) + hash(o2);
     }
 
     /**
@@ -277,11 +274,7 @@ public interface Tuple {
      * @return the same result as {@link Objects#hash(Object...)}
      */
     static int hash(@Nullable Object o1, @Nullable Object o2, @Nullable Object o3) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        result = 31 * result + hash(o3);
-        return result;
+        return 31 * (31 * (31 + hash(o1)) + hash(o2)) + hash(o3);
     }
 
     /**
@@ -294,12 +287,7 @@ public interface Tuple {
      * @return the same result as {@link Objects#hash(Object...)}
      */
     static int hash(@Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        result = 31 * result + hash(o3);
-        result = 31 * result + hash(o4);
-        return result;
+        return 31 * (31 * (31 * (31 + hash(o1)) + hash(o2)) + hash(o3)) + hash(o4);
     }
 
     /**
@@ -314,13 +302,7 @@ public interface Tuple {
      */
     static int hash(
             @Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4, @Nullable Object o5) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        result = 31 * result + hash(o3);
-        result = 31 * result + hash(o4);
-        result = 31 * result + hash(o5);
-        return result;
+        return 31 * (31 * (31 * (31 * (31 + hash(o1)) + hash(o2)) + hash(o3)) + hash(o4)) + hash(o5);
     }
 
     /**
@@ -341,14 +323,7 @@ public interface Tuple {
             @Nullable Object o4,
             @Nullable Object o5,
             @Nullable Object o6) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        result = 31 * result + hash(o3);
-        result = 31 * result + hash(o4);
-        result = 31 * result + hash(o5);
-        result = 31 * result + hash(o6);
-        return result;
+        return 31 * (31 * (31 * (31 * (31 * (31 + hash(o1)) + hash(o2)) + hash(o3)) + hash(o4)) + hash(o5)) + hash(o6);
     }
 
     /**
@@ -371,15 +346,10 @@ public interface Tuple {
             @Nullable Object o5,
             @Nullable Object o6,
             @Nullable Object o7) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        result = 31 * result + hash(o3);
-        result = 31 * result + hash(o4);
-        result = 31 * result + hash(o5);
-        result = 31 * result + hash(o6);
-        result = 31 * result + hash(o7);
-        return result;
+        return 31
+                        * (31 * (31 * (31 * (31 * (31 * (31 + hash(o1)) + hash(o2)) + hash(o3)) + hash(o4)) + hash(o5))
+                                + hash(o6))
+                + hash(o7);
     }
 
     /**
@@ -404,16 +374,24 @@ public interface Tuple {
             @Nullable Object o6,
             @Nullable Object o7,
             @Nullable Object o8) {
-        int result = 1;
-        result = 31 * result + hash(o1);
-        result = 31 * result + hash(o2);
-        result = 31 * result + hash(o3);
-        result = 31 * result + hash(o4);
-        result = 31 * result + hash(o5);
-        result = 31 * result + hash(o6);
-        result = 31 * result + hash(o7);
-        result = 31 * result + hash(o8);
-        return result;
+        return 31
+                        * (31
+                                        * (31
+                                                        * (31
+                                                                        * (31
+                                                                                        * (31
+                                                                                                        * (31
+                                                                                                                        * (31
+                                                                                                                                + hash(
+                                                                                                                                        o1))
+                                                                                                                + hash(
+                                                                                                                        o2))
+                                                                                                + hash(o3))
+                                                                                + hash(o4))
+                                                                + hash(o5))
+                                                + hash(o6))
+                                + hash(o7))
+                + hash(o8);
     }
 
     /**

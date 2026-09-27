@@ -1,5 +1,6 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -67,27 +68,29 @@ public class ChampBulkTest {
     // a map trie of random keys, some shared with `pool` (as new, equal objects), and the model of what it keeps
     private static BitmapIndexedMapNode<Key, Object> randomMap(
             Random random, java.util.List<Key> pool, java.util.Map<Key, Kept> model) {
-        BitmapIndexedMapNode<Key, Object> trie = MapNode.empty();
         int size = switch (random.nextInt(4)) {
             case 0 -> random.nextInt(3);
             case 1 -> random.nextInt(40);
             default -> random.nextInt(1500);
         };
         int range = random.nextBoolean() ? 100 : Integer.MAX_VALUE;
-        for (int i = 0; i < size; i++) {
-            Key key;
-            if (!pool.isEmpty() && random.nextInt(3) == 0) {
-                Key shared = pool.get(random.nextInt(pool.size()));
-                key = new Key(shared.hash(), shared.id());
-            } else {
-                key = randomKey(random, range);
-                pool.add(key);
-            }
+        return Vector.range(0, size).foldLeft(MapNode.<Key, Object>empty(), (trie, i) -> {
+            Key key = sharedOrRandomKey(random, pool, range);
             Object value = new Object();
-            trie = trie.updated(key, value);
             model.put(key, new Kept(key, value));
+            return trie.updated(key, value);
+        });
+    }
+
+    // a new key equal to one of `pool` for a third of the calls, else a random key, added to `pool`
+    private static Key sharedOrRandomKey(Random random, java.util.List<Key> pool, int range) {
+        if (!pool.isEmpty() && random.nextInt(3) == 0) {
+            Key shared = pool.get(random.nextInt(pool.size()));
+            return new Key(shared.hash(), shared.id());
         }
-        return trie;
+        Key key = randomKey(random, range);
+        pool.add(key);
+        return key;
     }
 
     private static void assertHolds(MapNode<Key, ?> trie, java.util.Map<Key, Kept> model) {
@@ -108,10 +111,8 @@ public class ChampBulkTest {
         assertValid(trie);
         java.util.List<Object[]> all = entries(trie);
         Collections.reverse(all);
-        BitmapIndexedMapNode<Key, Object> fresh = MapNode.empty();
-        for (Object[] entry : all) {
-            fresh = fresh.updated((Key) entry[0], entry[1]);
-        }
+        BitmapIndexedMapNode<Key, Object> fresh = Vector.ofAll(all)
+                .foldLeft(MapNode.<Key, Object>empty(), (acc, entry) -> acc.updated((Key) entry[0], entry[1]));
         assertSameShape(fresh, trie, false);
     }
 
@@ -150,16 +151,14 @@ public class ChampBulkTest {
         int[] sizes = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025};
         for (int leftSize : sizes) {
             for (int rightSize : sizes) {
-                BitmapIndexedMapNode<Key, String> left = MapNode.empty();
-                for (int i = 0; i < leftSize; i++) {
-                    left = left.updated(new Key(i, 0), "l" + i);
-                }
+                BitmapIndexedMapNode<Key, String> left = Vector.range(0, leftSize)
+                        .foldLeft(MapNode.<Key, String>empty(), (acc, i) -> acc.updated(new Key(i, 0), "l" + i));
                 // keys of mixed hashes 0, 1, 2...: the node boundaries; the right side overlaps the upper half of the
                 // left one, and goes beyond it
-                BitmapIndexedMapNode<Key, String> right = MapNode.empty();
-                for (int i = 0; i < rightSize; i++) {
-                    right = right.updated(new Key(leftSize / 2 + i, 0), "r" + i);
-                }
+                BitmapIndexedMapNode<Key, String> right = Vector.range(0, rightSize)
+                        .foldLeft(
+                                MapNode.<Key, String>empty(),
+                                (acc, i) -> acc.updated(new Key(leftSize / 2 + i, 0), "r" + i));
                 BitmapIndexedMapNode<Key, String> result = left.concat(right, 0);
                 assertValid(result);
                 java.util.Map<Key, String> expected = new java.util.HashMap<>();
@@ -263,17 +262,20 @@ public class ChampBulkTest {
             // the same entries, equal but not identical keys and values, in another order
             java.util.List<Key> keys = new ArrayList<>(model.keySet());
             Collections.shuffle(keys, random);
-            BitmapIndexedMapNode<Key, Object> copy = MapNode.empty();
-            for (Key key : keys) {
-                copy = copy.updated(
-                        new Key(key.hash(), key.id()),
-                        new String("v" + System.identityHashCode(model.get(key).value())));
-            }
-            BitmapIndexedMapNode<Key, Object> same = MapNode.empty();
-            for (Key key : keys) {
-                same = same.updated(
-                        new Key(key.hash(), key.id()), model.get(key).value());
-            }
+            BitmapIndexedMapNode<Key, Object> copy = Vector.ofAll(keys)
+                    .foldLeft(
+                            MapNode.<Key, Object>empty(),
+                            (acc, key) -> acc.updated(
+                                    new Key(key.hash(), key.id()),
+                                    new String("v"
+                                            + System.identityHashCode(
+                                                    model.get(key).value()))));
+            BitmapIndexedMapNode<Key, Object> same = Vector.ofAll(keys)
+                    .foldLeft(
+                            MapNode.<Key, Object>empty(),
+                            (acc, key) -> acc.updated(
+                                    new Key(key.hash(), key.id()),
+                                    model.get(key).value()));
             assertThat(MapNode.sameEntries(trie, same)).isTrue();
             assertThat(MapNode.sameEntries(same, trie)).isTrue();
             assertThat(MapNode.sameEntries(trie, trie)).isTrue();
@@ -301,26 +303,17 @@ public class ChampBulkTest {
 
     private static BitmapIndexedSetNode<Key> randomSet(
             Random random, java.util.List<Key> pool, java.util.Map<Key, Key> model) {
-        BitmapIndexedSetNode<Key> trie = SetNode.empty();
         int size = switch (random.nextInt(4)) {
             case 0 -> random.nextInt(3);
             case 1 -> random.nextInt(40);
             default -> random.nextInt(1500);
         };
         int range = random.nextBoolean() ? 100 : Integer.MAX_VALUE;
-        for (int i = 0; i < size; i++) {
-            Key key;
-            if (!pool.isEmpty() && random.nextInt(3) == 0) {
-                Key shared = pool.get(random.nextInt(pool.size()));
-                key = new Key(shared.hash(), shared.id());
-            } else {
-                key = randomKey(random, range);
-                pool.add(key);
-            }
-            trie = trie.updated(key, true);
+        return Vector.range(0, size).foldLeft(SetNode.<Key>empty(), (trie, i) -> {
+            Key key = sharedOrRandomKey(random, pool, range);
             model.put(key, key);
-        }
-        return trie;
+            return trie.updated(key, true);
+        });
     }
 
     private static java.util.List<Key> elements(SetNode<Key> trie) {
@@ -343,10 +336,8 @@ public class ChampBulkTest {
         assertValid(trie);
         java.util.List<Key> all = elements(trie);
         Collections.reverse(all);
-        BitmapIndexedSetNode<Key> fresh = SetNode.empty();
-        for (Key element : all) {
-            fresh = fresh.updated(element, true);
-        }
+        BitmapIndexedSetNode<Key> fresh =
+                Vector.ofAll(all).foldLeft(SetNode.<Key>empty(), (acc, element) -> acc.updated(element, true));
         assertSameShape(fresh, trie, false);
     }
 
@@ -366,15 +357,14 @@ public class ChampBulkTest {
                 }
                 case 1 -> {
                     // a subset of the left side, as new equal objects
-                    BitmapIndexedSetNode<Key> subset = SetNode.empty();
-                    for (Key key : leftModel.keySet()) {
-                        if (random.nextBoolean()) {
-                            Key equal = new Key(key.hash(), key.id());
-                            subset = subset.updated(equal, true);
-                            rightModel.put(equal, equal);
+                    right = Vector.ofAll(leftModel.keySet()).foldLeft(SetNode.<Key>empty(), (subset, key) -> {
+                        if (!random.nextBoolean()) {
+                            return subset;
                         }
-                    }
-                    right = subset;
+                        Key equal = new Key(key.hash(), key.id());
+                        rightModel.put(equal, equal);
+                        return subset.updated(equal, true);
+                    });
                 }
                 default -> right = randomSet(random, pool, rightModel);
             }
@@ -415,11 +405,8 @@ public class ChampBulkTest {
     public void shouldConcatAndDiffSetsAtTheNodeBoundaries() {
         int[] sizes = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025};
         Function<int[], BitmapIndexedSetNode<Key>> range = bounds -> {
-            BitmapIndexedSetNode<Key> trie = SetNode.empty();
-            for (int i = bounds[0]; i < bounds[1]; i++) {
-                trie = trie.updated(new Key(i, 0), true);
-            }
-            return trie;
+            return Vector.range(bounds[0], bounds[1])
+                    .foldLeft(SetNode.<Key>empty(), (trie, i) -> trie.updated(new Key(i, 0), true));
         };
         for (int leftSize : sizes) {
             for (int rightSize : sizes) {

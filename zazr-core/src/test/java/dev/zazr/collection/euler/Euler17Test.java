@@ -176,13 +176,9 @@ public class Euler17Test {
 
         private static Tuple2<Vector<String>, Integer> asText(
                 int magnitude, String text, Vector<String> chunks, int remainder) {
-            if (remainder >= 100) {
-                text = asText(remainder / magnitude) + text;
-                if ((remainder < 1000) && ((remainder % magnitude) != 0)) {
-                    text += CONJUNCTION;
-                }
-            }
-            return Tuple.of(chunks.append(text), remainder % magnitude);
+            String conjunction = (remainder < 1000) && ((remainder % magnitude) != 0) ? CONJUNCTION : "";
+            String chunk = remainder >= 100 ? asText(remainder / magnitude) + text + conjunction : text;
+            return Tuple.of(chunks.append(chunk), remainder % magnitude);
         }
     }
 }

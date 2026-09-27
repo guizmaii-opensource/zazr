@@ -80,11 +80,8 @@ public class LinkedHashRepeatedKeyTest {
     }
 
     private static LinkedHashMap<Key, String> puts(Iterable<Tuple2<Key, String>> entries) {
-        LinkedHashMap<Key, String> map = LinkedHashMap.empty();
-        for (Tuple2<Key, String> entry : entries) {
-            map = map.put(entry._1(), entry._2());
-        }
-        return map;
+        return Vector.ofAll(entries)
+                .foldLeft(LinkedHashMap.<Key, String>empty(), (map, entry) -> map.put(entry._1(), entry._2()));
     }
 
     private static <T> java.util.List<T> javaList(Iterable<T> elements) {
@@ -329,10 +326,10 @@ public class LinkedHashRepeatedKeyTest {
                     source.collect((key, value) -> Option.some(Tuple.of(mappedKeys.get(key), value))),
                     expected);
 
-            LinkedHashMap<Key, String> merged = LinkedHashMap.empty();
-            for (Tuple2<Key, String> entry : mapped) {
-                merged = merged.put(entry._1(), entry._2(), (a, b) -> a);
-            }
+            LinkedHashMap<Key, String> merged = Vector.ofAll(mapped)
+                    .foldLeft(
+                            LinkedHashMap.<Key, String>empty(),
+                            (acc, entry) -> acc.put(entry._1(), entry._2(), (a, b) -> a));
             assertSameMap("mapKeys(merge) " + input, source.mapKeys(mappedKeys::get, (a, b) -> a), merged);
         }
     }
@@ -345,22 +342,16 @@ public class LinkedHashRepeatedKeyTest {
             LinkedHashMap<Key, String> right = puts(inputs.get(i + 1));
             String input = left + " " + right;
 
-            LinkedHashMap<Key, String> kept = left;
-            for (Tuple2<Key, String> entry : right) {
-                if (!kept.containsKey(entry._1())) {
-                    kept = kept.put(entry._1(), entry._2());
-                }
-            }
+            LinkedHashMap<Key, String> kept = right.foldLeft(
+                    left, (acc, entry) -> acc.containsKey(entry._1()) ? acc : acc.put(entry._1(), entry._2()));
             assertSameMap("merge " + input, left.merge(right), kept);
             assertSameMap(
                     "merge into empty " + input,
                     LinkedHashMap.<Key, String>empty().merge(right),
                     right);
 
-            LinkedHashMap<Key, String> resolved = left;
-            for (Tuple2<Key, String> entry : right) {
-                resolved = resolved.put(entry._1(), entry._2(), (a, b) -> a);
-            }
+            LinkedHashMap<Key, String> resolved =
+                    right.foldLeft(left, (acc, entry) -> acc.put(entry._1(), entry._2(), (a, b) -> a));
             assertSameMap("merge(resolution) " + input, left.merge(right, (a, b) -> a), resolved);
         }
     }
@@ -434,10 +425,8 @@ public class LinkedHashRepeatedKeyTest {
                         expected);
                 // a map put into a builder that is not empty is put entry by entry
                 LinkedHashMap<Key, String> suffixMap = puts(suffix);
-                LinkedHashMap<Key, String> both = prefixMap;
-                for (Tuple2<Key, String> entry : suffixMap) {
-                    both = both.put(entry._1(), entry._2());
-                }
+                LinkedHashMap<Key, String> both =
+                        suffixMap.foldLeft(prefixMap, (acc, entry) -> acc.put(entry._1(), entry._2()));
                 assertSameMap(
                         "builder putAll(map) after entries at " + split + " " + input,
                         LinkedHashMap.<Key, String>newBuilder()
@@ -458,14 +447,11 @@ public class LinkedHashRepeatedKeyTest {
             // an adopted map with removals: the builder extends it as successive puts would, markers and all
             if (!expected.isEmpty()) {
                 java.util.List<Tuple2<Key, String>> kept = javaList(expected);
-                LinkedHashMap<Key, String> removed = expected.remove(kept.get(0)._1());
-                if (kept.size() > 2) {
-                    removed = removed.remove(kept.get(kept.size() / 2)._1());
-                }
-                LinkedHashMap<Key, String> extended = removed;
-                for (Tuple2<Key, String> entry : entries) {
-                    extended = extended.put(entry._1(), entry._2());
-                }
+                LinkedHashMap<Key, String> first = expected.remove(kept.get(0)._1());
+                LinkedHashMap<Key, String> removed =
+                        kept.size() > 2 ? first.remove(kept.get(kept.size() / 2)._1()) : first;
+                LinkedHashMap<Key, String> extended =
+                        Vector.ofAll(entries).foldLeft(removed, (acc, entry) -> acc.put(entry._1(), entry._2()));
                 assertSameMap(
                         "builder adopting a map with removals " + input,
                         LinkedHashMap.<Key, String>newBuilder()
@@ -630,10 +616,8 @@ public class LinkedHashRepeatedKeyTest {
 
             if (!expected.isEmpty()) {
                 java.util.List<Key> kept = javaList(expected);
-                LinkedHashSet<Key> removed = expected.remove(kept.get(0));
-                if (kept.size() > 2) {
-                    removed = removed.remove(kept.get(kept.size() / 2));
-                }
+                LinkedHashSet<Key> first = expected.remove(kept.get(0));
+                LinkedHashSet<Key> removed = kept.size() > 2 ? first.remove(kept.get(kept.size() / 2)) : first;
                 assertSameSet(
                         "builder adopting a set with removals " + input,
                         LinkedHashSet.<Key>newBuilder()
@@ -646,9 +630,6 @@ public class LinkedHashRepeatedKeyTest {
     }
 
     private static LinkedHashSet<Key> addEach(LinkedHashSet<Key> set, Iterable<Key> elements) {
-        for (Key element : elements) {
-            set = set.add(element);
-        }
-        return set;
+        return Vector.ofAll(elements).foldLeft(set, LinkedHashSet::add);
     }
 }

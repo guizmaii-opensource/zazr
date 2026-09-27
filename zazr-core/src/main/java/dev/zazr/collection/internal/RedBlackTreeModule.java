@@ -454,6 +454,7 @@ public interface RedBlackTreeModule {
 
             // sets both fields to the results for the subtree `node`; the depth of the recursion is the height of the
             // tree, at most 2 log2(n + 1)
+            @SuppressWarnings("Var")
             void walk(Node<T> node, java.util.function.Predicate<? super T> predicate) {
                 RedBlackTree<T> leftKept = node.left;
                 RedBlackTree<T> leftRejected = node.left;
@@ -576,6 +577,7 @@ public interface RedBlackTreeModule {
         }
 
         public static <T extends @Nullable Object> T maximum(Node<T> node) {
+            @SuppressWarnings("Var")
             Node<T> curr = node;
             while (!curr.right.isEmpty()) {
                 curr = (Node<T>) curr.right;
@@ -584,6 +586,7 @@ public interface RedBlackTreeModule {
         }
 
         public static <T extends @Nullable Object> T minimum(Node<T> node) {
+            @SuppressWarnings("Var")
             Node<T> curr = node;
             while (!curr.left.isEmpty()) {
                 curr = (Node<T>) curr.left;
@@ -698,6 +701,7 @@ public interface RedBlackTreeModule {
          */
         public static <T extends @Nullable Object> int prefixLength(
                 RedBlackTree<T> tree, java.util.function.Predicate<? super T> predicate, boolean expected) {
+            @SuppressWarnings("Var")
             int length = 0;
             java.util.Iterator<T> iterator = tree.iterator();
             while (iterator.hasNext() && predicate.test(iterator.next()) == expected) {
@@ -731,6 +735,7 @@ public interface RedBlackTreeModule {
          * order, each run wrapped by {@code wrap}. One walk, then one {@link #slice(RedBlackTree, int, int)} per run:
          * O(n + r log n) for r runs.
          */
+        @SuppressWarnings("Var")
         public static <T extends @Nullable Object, R extends @Nullable Object> Vector<R> slideBy(
                 RedBlackTree<T> tree,
                 java.util.function.Function<? super T, ?> classifier,
@@ -762,6 +767,7 @@ public interface RedBlackTreeModule {
          */
         public static <T extends @Nullable Object> Vector<Tuple2<T, Integer>> zipWithIndex(RedBlackTree<T> tree) {
             Vector.Builder<Tuple2<T, Integer>> builder = Vector.newBuilder(tree.size());
+            @SuppressWarnings("Var")
             int index = 0;
             for (T value : tree) {
                 builder.add(Tuple.of(value, index++));

@@ -66,6 +66,7 @@ final class VectorIterator<T extends @Nullable Object> extends AbstractIterator<
 
     private void advanceSlice() {
         sliceIdx += 1;
+        @SuppressWarnings("Var")
         Object[] slice = v.vectorSlice(sliceIdx);
         while (slice.length == 0) {
             sliceIdx += 1;

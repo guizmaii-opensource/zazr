@@ -41,21 +41,15 @@ public class HashBuilderTest {
     // builders themselves. The persistent HashMap.put of each element on itself builds a trie of the same shape as the
     // HashSet of the elements, so its entries in iteration order give the elements in the order of that trie.
     private static <T> java.util.List<T> addedSet(Iterable<T> elements) {
-        HashMap<T, T> map = HashMap.empty();
-        for (T element : elements) {
-            map = map.put(element, element);
-        }
+        HashMap<T, T> map =
+                Vector.ofAll(elements).foldLeft(HashMap.empty(), (acc, element) -> acc.put(element, element));
         java.util.List<T> result = new ArrayList<>();
         map.forEach(entry -> result.add(entry._1()));
         return result;
     }
 
     private static <K, V> HashMap<K, V> putMap(Iterable<Tuple2<K, V>> entries) {
-        HashMap<K, V> map = HashMap.empty();
-        for (Tuple2<K, V> entry : entries) {
-            map = map.put(entry._1(), entry._2());
-        }
-        return map;
+        return Vector.ofAll(entries).foldLeft(HashMap.empty(), (map, entry) -> map.put(entry._1(), entry._2()));
     }
 
     // -- HashSet

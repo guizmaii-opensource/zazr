@@ -227,23 +227,23 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
         }
 
         private static boolean sameCauses(Throwable t1, Throwable t2) {
-            while (t1 != null && t2 != null) {
-                if (t1.getClass() != t2.getClass() || !Objects.equals(t1.getMessage(), t2.getMessage())) {
-                    return false;
-                }
-                t1 = t1.getCause();
-                t2 = t2.getCause();
+            if (t1 == null || t2 == null) {
+                return t1 == null && t2 == null;
             }
-            return t1 == null && t2 == null;
+            return t1.getClass() == t2.getClass()
+                    && Objects.equals(t1.getMessage(), t2.getMessage())
+                    && sameCauses(t1.getCause(), t2.getCause());
         }
 
         private static int causesHashCode(Throwable t) {
-            int hash = 0;
-            while (t != null) {
-                hash = 31 * hash + Objects.hash(t.getClass(), t.getMessage());
-                t = t.getCause();
-            }
-            return hash;
+            return causesHashCode(t, 0);
+        }
+
+        // the hash of the chain from `t` down, after the causes above it gave `hash`
+        private static int causesHashCode(Throwable t, int hash) {
+            return t == null
+                    ? hash
+                    : causesHashCode(t.getCause(), 31 * hash + Objects.hash(t.getClass(), t.getMessage()));
         }
     }
 

@@ -211,7 +211,9 @@ public final class TreeViews {
         // -- the whole tree, bounds ignored
 
         private @Nullable E treeFirst() {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
                 result = node.value;
@@ -221,7 +223,9 @@ public final class TreeViews {
         }
 
         private @Nullable E treeLast() {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
                 result = node.value;
@@ -232,7 +236,9 @@ public final class TreeViews {
 
         /** The least element whose key is {@code >= key} ({@code > key} when {@code strict}). */
         private @Nullable E treeCeiling(@Nullable Object key, boolean strict) {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
                 int c = compare(key, key(node.value));
@@ -250,7 +256,9 @@ public final class TreeViews {
 
         /** The greatest element whose key is {@code <= key} ({@code < key} when {@code strict}). */
         private @Nullable E treeFloor(@Nullable Object key, boolean strict) {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             E result = null;
             while (t instanceof Node<E> node) {
                 int c = compare(key, key(node.value));
@@ -268,7 +276,9 @@ public final class TreeViews {
 
         /** The number of elements whose key is {@code < key} ({@code <= key} when {@code inclusive}). */
         private int rank(@Nullable Object key, boolean inclusive) {
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
             int rank = 0;
             while (t instanceof Node<E> node) {
                 int c = compare(key, key(node.value));
@@ -348,6 +358,7 @@ public final class TreeViews {
             if (!inRange(key)) {
                 return null;
             }
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = tree;
             while (t instanceof Node<E> node) {
                 int c = compare(key, key(node.value));
@@ -415,6 +426,7 @@ public final class TreeViews {
             // a red-black tree of n nodes is at most 2 * log2(n + 1) high
             int size = range.tree.size();
             this.stack = (Node<E>[]) new Node<?>[2 * (Integer.SIZE - Integer.numberOfLeadingZeros(size)) + 2];
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = range.tree;
             while (t instanceof Node<E> node) {
                 if (descending) {
@@ -451,6 +463,7 @@ public final class TreeViews {
             }
             Node<E> node = stack[--depth];
             stack[depth] = null;
+            @SuppressWarnings("Var")
             RedBlackTree<E> t = descending ? node.left : node.right;
             while (t instanceof Node<E> child) {
                 push(child);

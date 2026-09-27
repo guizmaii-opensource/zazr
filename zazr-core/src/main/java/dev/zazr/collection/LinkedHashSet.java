@@ -842,6 +842,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         }
+        @SuppressWarnings("Var")
         LinkedHashMap<U, Object> that = LinkedHashMap.empty();
         for (T t : this) {
             Option<? extends U> collected =
@@ -894,7 +895,9 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
             Tuple2<LinkedHashSet<L>, LinkedHashSet<R>> partitionMap(
                     Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         LinkedHashMap<L, Object> lefts = LinkedHashMap.empty();
+        @SuppressWarnings("Var")
         LinkedHashMap<R, Object> rights = LinkedHashMap.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "LinkedHashSet.partitionMap: f returned null")) {
@@ -1455,6 +1458,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
 
     private static <T extends @Nullable Object> LinkedHashMap<T, Object> addAll(
             LinkedHashMap<T, Object> initial, Iterable<? extends T> additional) {
+        @SuppressWarnings("Var")
         LinkedHashMap<T, Object> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "LinkedHashSet: element is null");

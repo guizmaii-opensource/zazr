@@ -23,7 +23,9 @@ public interface ListModule {
             if (k == 0) {
                 return List.of(List.empty());
             }
+            @SuppressWarnings("Var")
             List<List<T>> reversed = List.empty();
+            @SuppressWarnings("Var")
             int remaining = length;
             for (List<T> rest = elements; remaining >= k; rest = rest.tail(), remaining--) {
                 T head = rest.head();
@@ -42,7 +44,9 @@ public interface ListModule {
         static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(
                 List<T> source, Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate, "predicate is null");
+            @SuppressWarnings("Var")
             List<T> init = Nil.instance();
+            @SuppressWarnings("Var")
             List<T> tail = source;
             while (!tail.isEmpty() && !predicate.test(tail.head())) {
                 init = init.prepend(tail.head());
@@ -62,6 +66,7 @@ public interface ListModule {
             return findFirstSlice(source, toList(slice), Math.max(from, 0));
         }
 
+        @SuppressWarnings("Var")
         static <T extends @Nullable Object> int lastIndexOfSlice(List<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
@@ -95,6 +100,7 @@ public interface ListModule {
             return result;
         }
 
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int findFirstSlice(List<T> source, List<T> slice, int from) {
             int index = 0;
             int sliceLength = slice.size();
@@ -116,6 +122,7 @@ public interface ListModule {
         }
 
         // the offset of the next occurrence of the slice in source, or -1
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int findNextSlice(
                 List<T> source, List<T> slice, int remaining, int sliceLength) {
             int index = 0;
@@ -139,6 +146,7 @@ public interface ListModule {
     interface Search {
 
         static <T extends @Nullable Object> int linearSearch(List<T> list, ToIntFunction<T> comparison) {
+            @SuppressWarnings("Var")
             int idx = 0;
             for (T current : list) {
                 int cmp = comparison.applyAsInt(current);

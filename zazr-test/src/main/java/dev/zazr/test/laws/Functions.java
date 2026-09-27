@@ -34,9 +34,9 @@ final class Functions {
     /// The SplitMix64 finaliser: every bit of the result depends on every bit of `z`, so adjacent arguments give
     /// unrelated seeds.
     static long mix(long z) {
-        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
-        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
-        return z ^ (z >>> 31);
+        long z1 = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        long z2 = (z1 ^ (z1 >>> 27)) * 0x94D049BB133111EBL;
+        return z2 ^ (z2 >>> 31);
     }
 
     record IntegerFunction(int a, int b, int m) implements Function<Object, Object> {

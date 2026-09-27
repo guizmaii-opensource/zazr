@@ -297,6 +297,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         if (k < tinyAppendLimit && total <= FAR_FROM_THE_LIMIT) {
             Object[] elements = new Object[k];
             VectorStatics.copyToArray(prefix, k, elements, 0);
+            @SuppressWarnings("Var")
             RadixVector<T> v = this;
             for (int i = k - 1; i >= 0; i--) {
                 v = v.prepended0(elements[i]);
@@ -305,6 +306,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         } else if (length() < (k >>> LOG2_CONCAT_FASTER)
                 && total <= FAR_FROM_THE_LIMIT
                 && prefix instanceof RadixVector<?> pv) {
+            @SuppressWarnings("Var")
             RadixVector<T> v = (RadixVector<T>) pv;
             int len = length();
             for (int i = 0; i < len; i++) {
@@ -332,6 +334,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
         int tinyAppendLimit = 4 + vectorSliceCount();
         if (k < tinyAppendLimit && (long) length() + k <= FAR_FROM_THE_LIMIT) {
+            @SuppressWarnings("Var")
             RadixVector<T> v = this;
             for (T element : suffix) {
                 v = v.appended(element);
@@ -340,6 +343,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         } else if (length() < (k >>> LOG2_CONCAT_FASTER)
                 && (long) length() + k <= FAR_FROM_THE_LIMIT
                 && suffix instanceof RadixVector<?> sv) {
+            @SuppressWarnings("Var")
             RadixVector<T> v = (RadixVector<T>) sv;
             for (int i = length() - 1; i >= 0; i--) {
                 v = v.prepended0(get(i));
@@ -390,6 +394,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /* copies the first n elements into dest from index start, one whole-leaf copy at a time */
     final void copyToArray(Object[] dest, int start, int n) {
         int end = start + n;
+        @SuppressWarnings("Var")
         int pos = start;
         int c = vectorSliceCount();
         for (int i = 0; i < c && pos < end; i++) {
@@ -397,6 +402,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
     }
 
+    @SuppressWarnings("Var")
     private static int copyRec(int level, Object[] a, Object[] dest, int pos, int end) {
         if (level == 0) {
             int k = Math.min(a.length, end - pos);

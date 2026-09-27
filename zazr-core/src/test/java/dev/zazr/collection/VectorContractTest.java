@@ -20,12 +20,9 @@ public class VectorContractTest {
     /* the same elements 0 .. n-1, built in six ways */
     private static java.util.List<Vector<Integer>> histories(int n) {
         java.util.List<Integer> list = IntStream.range(0, n).boxed().toList();
-        Vector<Integer> appended = Vector.empty();
-        Vector<Integer> prepended = Vector.empty();
-        for (int i = 0; i < n; i++) {
-            appended = appended.append(i);
-            prepended = prepended.prepend(n - 1 - i);
-        }
+        Vector<Integer> appended = Vector.range(0, n).foldLeft(Vector.empty(), Vector::append);
+        Vector<Integer> prepended = Vector.range(0, n).foldLeft(Vector.empty(), (acc, i) -> acc.prepend(n - 1 - i));
+
         Vector<Integer> sliced = Vector.range(-40, n + 40).slice(40, n + 40);
         return java.util.List.of(
                 Vector.ofAll(list),

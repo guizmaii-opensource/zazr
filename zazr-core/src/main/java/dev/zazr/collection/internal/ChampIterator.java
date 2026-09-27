@@ -39,7 +39,10 @@ public abstract class ChampIterator<T extends @Nullable Object, N extends ChampN
     }
 
     private void pushNode(N node) {
-        @Nullable Object[] stack = nodes;
+        @SuppressWarnings("Var")
+        @Nullable
+        Object[] stack = nodes;
+        @SuppressWarnings("Var")
         int[] cursors = nodeCursorsAndLengths;
         if (stack == null || cursors == null) {
             stack = nodes = new Object[ChampNode.MAX_DEPTH];

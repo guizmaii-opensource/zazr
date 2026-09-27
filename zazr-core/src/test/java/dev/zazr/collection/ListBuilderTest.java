@@ -33,11 +33,7 @@ public class ListBuilderTest {
     /// Whether `suffix` is, cell for cell, the end of `list`.
     private static <T> boolean endsWithCells(List<T> list, List<T> suffix) {
         int skip = list.size() - suffix.size();
-        List<T> rest = list;
-        for (int i = 0; i < skip; i++) {
-            rest = rest.tail();
-        }
-        return rest == suffix;
+        return Vector.range(0, skip).foldLeft(list, (rest, i) -> rest.tail()) == suffix;
     }
 
     @Test

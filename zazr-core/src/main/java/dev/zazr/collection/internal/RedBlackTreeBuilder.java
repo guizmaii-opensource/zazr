@@ -102,6 +102,7 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         sorting = true;
         Arrays.sort(elements, 0, length, order);
         // the sort is stable, so of equal elements the one added first comes first and the one added last comes last
+        @SuppressWarnings("Var")
         int kept = 1;
         for (int i = 1; i < length; i++) {
             if (order.compare(elements[kept - 1], elements[i]) == 0) {

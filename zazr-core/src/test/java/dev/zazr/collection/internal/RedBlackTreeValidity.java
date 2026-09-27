@@ -14,18 +14,16 @@ public final class RedBlackTreeValidity {
     public static <T> void assertValid(RedBlackTree<T> tree) {
         assertThat(tree.color()).as("root of %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
         blackNodesBelow(tree);
-        T previous = null;
-        int count = 0;
+        java.util.List<T> values = new java.util.ArrayList<>();
         for (T value : tree) {
-            if (previous != null) {
-                assertThat(tree.comparator().compare(previous, value))
-                        .as("order of %s", tree)
-                        .isNegative();
-            }
-            previous = value;
-            count++;
+            values.add(value);
         }
-        assertThat(tree.size()).isEqualTo(count);
+        for (int i = 1; i < values.size(); i++) {
+            assertThat(tree.comparator().compare(values.get(i - 1), values.get(i)))
+                    .as("order of %s", tree)
+                    .isNegative();
+        }
+        assertThat(tree.size()).isEqualTo(values.size());
     }
 
     // the number of black nodes on every path from the root of `tree` down, counting the empty leaf as one

@@ -235,7 +235,9 @@ public interface IteratorModule {
         /* fills target[offset, offset + count) from the source, doubling the array when it is full, and trims it to what was read */
         private static Object[] take(Iterator<?> source, Object[] target, int offset, int count) {
             int wanted = offset + count;
+            @SuppressWarnings("Var")
             Object[] buffer = target;
+            @SuppressWarnings("Var")
             int i = offset;
             while (i < wanted && source.hasNext()) {
                 if (i == buffer.length) {
@@ -289,7 +291,9 @@ public interface IteratorModule {
         private static final Lazy<BigDecimal> INFINITY_DISTANCE = Lazy.of(() -> {
             BigDecimal two = BigDecimal.valueOf(2);
             BigDecimal supremum = BigDecimal.valueOf(Math.nextDown(Double.POSITIVE_INFINITY));
+            @SuppressWarnings("Var")
             BigDecimal lowerBound = supremum;
+            @SuppressWarnings("Var")
             BigDecimal upperBound = two.pow(Double.MAX_EXPONENT + 1);
             while (true) {
                 BigDecimal magicValue = lowerBound.add(upperBound).divide(two, HALF_UP);

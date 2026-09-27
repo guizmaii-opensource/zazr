@@ -42,10 +42,10 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
 
     /// Scala's `Hashing.improve`: the bits of a hash code mixed, so that every bit of it counts in every fragment.
     static int improve(int hashCode) {
-        int h = hashCode + ~(hashCode << 9);
-        h = h ^ (h >>> 14);
-        h = h + (h << 4);
-        return h ^ (h >>> 10);
+        int h1 = hashCode + ~(hashCode << 9);
+        int h2 = h1 ^ (h1 >>> 14);
+        int h3 = h2 + (h2 << 4);
+        return h3 ^ (h3 >>> 10);
     }
 
     /// The slot, at `shift`, of a key of hash code `hash`: the fragment of its mixed hash.

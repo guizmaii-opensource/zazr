@@ -122,28 +122,19 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> IntMap<T> of(T element) {
-        Map<Integer, T> map = emptyMap();
-        map = map.put(0, element);
-        return IntMap.of(map);
+        return IntMap.of(this.<Integer, T>emptyMap().put(0, element));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected <T> IntMap<T> of(T... elements) {
-        Map<Integer, T> map = emptyMap();
-        for (T element : elements) {
-            map = map.put(map.size(), element);
-        }
-        return IntMap.of(map);
+        return IntMap.of(Vector.of(elements).foldLeft(this.<Integer, T>emptyMap(), (map, e) -> map.put(map.size(), e)));
     }
 
     @Override
     protected <T> IntMap<T> ofAll(Iterable<? extends T> elements) {
-        Map<Integer, T> map = emptyMap();
-        for (T element : elements) {
-            map = map.put(map.size(), element);
-        }
-        return IntMap.of(map);
+        return IntMap.of(
+                Vector.ofAll(elements).foldLeft(this.<Integer, T>emptyMap(), (map, e) -> map.put(map.size(), e)));
     }
 
     @Override
@@ -194,11 +185,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> IntMap<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
-        Map<Integer, T> map = emptyMap();
-        for (int i = 0; i < n; i++) {
-            map = map.put(map.size(), f.apply(i));
-        }
-        return IntMap.of(map);
+        return IntMap.of(
+                Vector.range(0, n).foldLeft(this.<Integer, T>emptyMap(), (map, i) -> map.put(map.size(), f.apply(i))));
     }
 
     @Override
@@ -2821,15 +2809,11 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         private java.util.List<LinkedHashMap<Integer, String>> receivers() {
             LinkedHashMap<Integer, String> five = mk(5, 3, 9, 1, 7);
-            LinkedHashMap<Integer, String> everyThirdRemoved = mk(Vector.range(0, 70));
-            for (int i = 0; i < 70; i += 3) {
-                everyThirdRemoved = everyThirdRemoved.remove(i);
-            }
+            LinkedHashMap<Integer, String> everyThirdRemoved =
+                    Vector.rangeBy(0, 70, 3).foldLeft(mk(Vector.range(0, 70)), LinkedHashMap::remove);
             // 35 markers for 35 entries: the most the insertion order keeps before it is rebuilt
-            LinkedHashMap<Integer, String> atThreshold = mk(Vector.range(0, 70));
-            for (int i = 10; i < 45; i++) {
-                atThreshold = atThreshold.remove(i);
-            }
+            LinkedHashMap<Integer, String> atThreshold =
+                    Vector.range(10, 45).foldLeft(mk(Vector.range(0, 70)), LinkedHashMap::remove);
             java.util.List<Integer> shuffled =
                     new java.util.ArrayList<>(Vector.range(0, 70).asJava());
             java.util.Collections.shuffle(shuffled, new java.util.Random(72));
@@ -3234,11 +3218,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         }
 
         private LinkedHashMap<Integer, String> mk(Iterable<Integer> keys) {
-            LinkedHashMap<Integer, String> map = LinkedHashMap.empty();
-            for (Integer key : keys) {
-                map = map.put(key, "v" + key);
-            }
-            return map;
+            return Vector.ofAll(keys)
+                    .foldLeft(LinkedHashMap.<Integer, String>empty(), (map, key) -> map.put(key, "v" + key));
         }
     }
 }

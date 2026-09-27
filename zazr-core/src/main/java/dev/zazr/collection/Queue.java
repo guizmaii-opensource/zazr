@@ -191,6 +191,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public static <T extends @Nullable Object> Queue<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
         // List.flatten's loop, not a delegation, so that a null element is reported under this type's name
+        @SuppressWarnings("Var")
         dev.zazr.collection.List<T> reversed = dev.zazr.collection.List.empty();
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
@@ -1018,6 +1019,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         for (int i = from; i > 0 && elements.hasNext(); i--) {
             elements.next();
         }
+        @SuppressWarnings("Var")
         int length = 0;
         while (elements.hasNext() && predicate.test(elements.next())) {
             length++;
@@ -1533,7 +1535,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             throw new IndexOutOfBoundsException("get(" + index + ")");
         }
         // walk the front instead of measuring it: List.size() is O(n)
+        @SuppressWarnings("Var")
         int remaining = index;
+        @SuppressWarnings("Var")
         List<T> list = front;
         while (remaining > 0 && !list.isEmpty()) {
             list = list.tail();
@@ -1619,6 +1623,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     // init() of a Queue whose rear is empty: the first half of the front stays the front, the second half without its
     // last element becomes the rear (reversed), so that the next init() calls take from the rear in O(1)
+    @SuppressWarnings("Var")
     private Queue<T> initOfFront() {
         int length = front.size();
         if (length == 1) {
@@ -1850,11 +1855,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws NullPointerException if {@code that} is null
      */
     public Queue<T> patch(int from, Iterable<? extends T> that, int replaced) {
-        from = Math.max(from, 0);
-        replaced = Math.max(replaced, 0);
+        int start = Math.max(from, 0);
+        int count = Math.max(replaced, 0);
         // the end of the replaced range, saturated: from + replaced can overflow an int
-        int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
-        return take(from).appendAll(that).appendAll(drop(end));
+        int end = (int) Math.min((long) start + count, Integer.MAX_VALUE);
+        return take(start).appendAll(that).appendAll(drop(end));
     }
 
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
@@ -1878,7 +1883,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Queue<L>, Queue<R>> partitionMap(
             Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
+        @SuppressWarnings("Var")
         dev.zazr.collection.List<L> lefts = dev.zazr.collection.List.empty();
+        @SuppressWarnings("Var")
         dev.zazr.collection.List<R> rights = dev.zazr.collection.List.empty();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "Queue.partitionMap: f returned null")) {
@@ -2913,6 +2920,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (power < 0) {
             return empty();
         }
+        @SuppressWarnings("Var")
         Queue<Queue<T>> product = Queue.of(Queue.<T>empty());
         for (int i = 0; i < power; i++) {
             product = product.flatMap(el -> map(el::append));

@@ -1596,6 +1596,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> removeAll(Iterable<? extends K> keys) {
+        @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> removed = entries;
         for (K key : keys) {
             Tuple2<K, V> entry = lookupEntry(key);
@@ -2052,6 +2053,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @SuppressWarnings("unchecked")
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromPairs(
             EntryComparator<K, V> entryComparator, Object... pairs) {
+        @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (int i = 0; i < pairs.length; i += 2) {
             K key = requireKey((K) pairs[i]);

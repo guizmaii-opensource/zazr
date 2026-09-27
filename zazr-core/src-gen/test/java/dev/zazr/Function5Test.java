@@ -109,15 +109,15 @@ public class Function5Test {
         Function5<Integer, Integer, Integer, Integer, Integer, Try<Integer>> divByZeroTry =
                 Function5.liftTry(divByZero);
 
-        Try<Integer> res = divByZeroTry.apply(0, 0, 0, 0, 0);
-        assertThat(res.isFailure()).isTrue();
-        assertThat(res.getCause()).isNotNull();
-        assertThat(res.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
+        Try<Integer> failure = divByZeroTry.apply(0, 0, 0, 0, 0);
+        assertThat(failure.isFailure()).isTrue();
+        assertThat(failure.getCause()).isNotNull();
+        assertThat(failure.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
 
         integer.incrementAndGet();
-        res = divByZeroTry.apply(1, 2, 3, 4, 5);
-        assertThat(res.isSuccess()).isTrue();
-        assertThat(res.get()).isEqualTo(10);
+        Try<Integer> success = divByZeroTry.apply(1, 2, 3, 4, 5);
+        assertThat(success.isSuccess()).isTrue();
+        assertThat(success.get()).isEqualTo(10);
     }
 
     private static final Function5<Integer, Integer, Integer, Integer, Integer, Integer> recurrent1 =

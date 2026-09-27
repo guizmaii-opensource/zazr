@@ -1,5 +1,6 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
@@ -101,11 +102,7 @@ public class RedBlackTreeBuilderTest {
 
     // successive persistent insertions, the reference the builder is compared with
     private static <T> RedBlackTree<T> inserted(Comparator<T> order, Iterable<T> elements) {
-        RedBlackTree<T> tree = RedBlackTree.empty(order);
-        for (T element : elements) {
-            tree = tree.insert(element);
-        }
-        return tree;
+        return Vector.ofAll(elements).foldLeft(RedBlackTree.empty(order), RedBlackTree::insert);
     }
 
     @Test

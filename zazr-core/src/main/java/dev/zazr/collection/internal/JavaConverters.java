@@ -224,11 +224,12 @@ public final class JavaConverters {
         }
 
         final int delegateSize() {
-            int n = size;
-            if (n < 0) {
-                n = delegate.size();
-                size = n;
+            int cached = size;
+            if (cached >= 0) {
+                return cached;
             }
+            int n = delegate.size();
+            size = n;
             return n;
         }
 
@@ -556,6 +557,7 @@ public final class JavaConverters {
             }
 
             private java.util.Iterator<T> forward() {
+                @SuppressWarnings("Var")
                 java.util.Iterator<T> iterator = forward;
                 if (iterator == null || forwardPosition != cursor) {
                     iterator = list.delegateIteratorFrom(list.delegate, cursor);

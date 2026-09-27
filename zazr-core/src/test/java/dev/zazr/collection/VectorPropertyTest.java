@@ -1,7 +1,5 @@
 package dev.zazr.collection;
 
-import dev.zazr.Tuple;
-import dev.zazr.Tuple2;
 import dev.zazr.collection.internal.Iterator;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -77,46 +75,42 @@ public class VectorPropertyTest {
             }
         }
 
-        dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 1000);
-        Vector<Integer> actual = Vector.ofAll(ints(expected));
-        for (int drop = 0; drop <= (WIDTH + 1); drop++) {
-            assertAreEqual(actual, expected);
-
-            expected = expected.tail().init();
-            actual = actual.tail().init();
-        }
+        dev.zazr.collection.List<Integer> start = dev.zazr.collection.List.range(0, 1000);
+        Vector.rangeClosed(0, WIDTH + 1).foldLeft(new Both<>(start, Vector.ofAll(ints(start))), (both, drop) -> {
+            assertAreEqual(both.actual(), both.expected());
+            return new Both<>(
+                    both.expected().tail().init(), both.actual().tail().init());
+        });
     }
 
     @Test
     public void shouldPrepend() {
-        dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.empty();
-        Vector<Integer> actual = Vector.empty();
+        Vector.rangeClosed(0, WIDTH + 1)
+                .foldLeft(
+                        new Both<Integer>(dev.zazr.collection.List.empty(), Vector.empty()),
+                        (outer, drop) -> Vector.range(0, 1000).foldLeft(outer, (both, value) -> {
+                            dev.zazr.collection.List<Integer> dropped =
+                                    both.expected().drop(drop);
+                            Vector<Integer> actual = assertAreEqual(both.actual(), drop, Vector::drop, dropped);
 
-        for (int drop = 0; drop <= (WIDTH + 1); drop++) {
-            for (Integer value : Iterator.range(0, 1000)) {
-                expected = expected.drop(drop);
-                actual = assertAreEqual(actual, drop, Vector::drop, expected);
-
-                expected = expected.prepend(value);
-                actual = assertAreEqual(actual, value, Vector::prepend, expected);
-            }
-        }
+                            dev.zazr.collection.List<Integer> expected = dropped.prepend(value);
+                            return new Both<>(expected, assertAreEqual(actual, value, Vector::prepend, expected));
+                        }));
     }
 
     @Test
     public void shouldAppend() {
-        dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.empty();
-        Vector<Integer> actual = Vector.empty();
+        Vector.rangeClosed(0, WIDTH + 1)
+                .foldLeft(
+                        new Both<Integer>(dev.zazr.collection.List.empty(), Vector.empty()),
+                        (outer, drop) -> Vector.range(0, 500).foldLeft(outer, (both, value) -> {
+                            dev.zazr.collection.List<Integer> dropped =
+                                    both.expected().drop(drop);
+                            Vector<Integer> actual = assertAreEqual(both.actual(), drop, Vector::drop, dropped);
 
-        for (int drop = 0; drop <= (WIDTH + 1); drop++) {
-            for (Integer value : Iterator.range(0, 500)) {
-                expected = expected.drop(drop);
-                actual = assertAreEqual(actual, drop, Vector::drop, expected);
-
-                expected = expected.append(value);
-                actual = assertAreEqual(actual, value, Vector::append, expected);
-            }
-        }
+                            dev.zazr.collection.List<Integer> expected = dropped.append(value);
+                            return new Both<>(expected, assertAreEqual(actual, value, Vector::append, expected));
+                        }));
     }
 
     @Test
@@ -127,18 +121,15 @@ public class VectorPropertyTest {
             int length = 10_000;
 
             for (int drop = 0; drop <= (WIDTH + 1); drop++) {
-                dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, length);
-                Vector<Integer> actual = Vector.ofAll(expected);
+                dev.zazr.collection.List<Integer> all = dev.zazr.collection.List.range(0, length);
+                dev.zazr.collection.List<Integer> expected =
+                        all.drop(drop); // test the `trailing` drops and the internal tree offset
+                Vector<Integer> actual = assertAreEqual(Vector.ofAll(all), drop, Vector::drop, expected);
 
-                expected = expected.drop(drop); // test the `trailing` drops and the internal tree offset
-                actual = assertAreEqual(actual, drop, Vector::drop, expected);
+                Vector<Integer> updated = Vector.range(0, actual.size())
+                        .foldLeft(actual, (acc, i) -> acc.update(i, mapper.apply(acc.get(i))));
 
-                for (int i = 0; i < actual.size(); i++) {
-                    Integer newValue = mapper.apply(actual.get(i));
-                    actual = actual.update(i, newValue);
-                }
-
-                assertAreEqual(actual, 0, (a, p) -> a, expected.map(mapper));
+                assertAreEqual(updated, 0, (a, p) -> a, expected.map(mapper));
             }
         }
     }
@@ -148,15 +139,14 @@ public class VectorPropertyTest {
         dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 2_000);
         Vector<Integer> actual = Vector.ofAll(expected);
 
-        Vector<Integer> actualSingleDrop = actual;
-        for (int i = 0; i <= expected.size(); i++) {
+        Vector.rangeClosed(0, expected.size()).foldLeft(actual, (actualSingleDrop, i) -> {
             dev.zazr.collection.List<Integer> expectedDrop = expected.drop(i);
 
             assertAreEqual(actual, i, Vector::drop, expectedDrop);
             assertAreEqual(actualSingleDrop, null, (a, p) -> a, expectedDrop);
 
-            actualSingleDrop = actualSingleDrop.drop(1);
-        }
+            return actualSingleDrop.drop(1);
+        });
     }
 
     @Test
@@ -164,27 +154,27 @@ public class VectorPropertyTest {
         dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 2_000);
         Vector<Integer> actual = Vector.ofAll(expected);
 
-        Vector<Integer> actualSingleDrop = actual;
-        for (int i = 0; i <= expected.size(); i++) {
+        Vector.rangeClosed(0, expected.size()).foldLeft(actual, (actualSingleDrop, i) -> {
             dev.zazr.collection.List<Integer> expectedDrop = expected.dropRight(i);
 
             assertAreEqual(actual, i, Vector::dropRight, expectedDrop);
             assertAreEqual(actualSingleDrop, null, (a, p) -> a, expectedDrop);
 
-            actualSingleDrop = actualSingleDrop.dropRight(1);
-        }
+            return actualSingleDrop.dropRight(1);
+        });
     }
 
     @Test
     public void shouldSlice() {
         for (int length = 1, end = 500; length <= end; length++) {
-            dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, length);
-            Vector<Integer> actual = Vector.ofAll(expected);
+            dev.zazr.collection.List<Integer> start = dev.zazr.collection.List.range(0, length);
 
-            for (int i = 0; i <= expected.size(); i++) {
-                expected = expected.slice(1, expected.size() - 1);
-                actual = assertAreEqual(actual, i, (a, p) -> a.slice(1, a.size() - 1), expected);
-            }
+            Vector.rangeClosed(0, start.size()).foldLeft(new Both<>(start, Vector.ofAll(start)), (both, i) -> {
+                dev.zazr.collection.List<Integer> expected =
+                        both.expected().slice(1, both.expected().size() - 1);
+                return new Both<>(
+                        expected, assertAreEqual(both.actual(), i, (a, p) -> a.slice(1, a.size() - 1), expected));
+            });
         }
     }
 
@@ -193,131 +183,150 @@ public class VectorPropertyTest {
         Random random = new Random(13579);
 
         for (int i = 1; i < 10; i++) {
-            dev.zazr.collection.List<Object> expected = dev.zazr.collection.List.empty();
-            Vector<Object> actual = Vector.empty();
-            for (int j = 0; j < 20_000; j++) {
-                dev.zazr.collection.List<Tuple2<dev.zazr.collection.List<Object>, Vector<Object>>> history =
-                        dev.zazr.collection.List.empty();
-
-                if (percent(random) < 20) {
-                    expected = dev.zazr.collection.List.ofAll(
-                            Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
-                    actual = (percent(random) < 30)
-                            ? Vector.narrow(Vector.ofAll(ints(expected)))
-                            : Vector.ofAll(expected);
-                    assertAreEqual(expected, actual);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 50) {
-                    Object value = randomValue(random);
-                    expected = expected.append(value);
-                    actual = assertAreEqual(actual, value, Vector::append, expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-                if (percent(random) < 10) {
-                    Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
-                    expected = expected.appendAll(values);
-
-                    values = (percent(random) < 50)
-                            ? Iterator.ofAll(values.iterator())
-                            : values; /* not traversable again */
-                    actual = assertAreEqual(actual, values, Vector::appendAll, expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 50) {
-                    Object value = randomValue(random);
-                    expected = expected.prepend(value);
-                    actual = assertAreEqual(actual, value, Vector::prepend, expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-                if (percent(random) < 10) {
-                    Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
-                    expected = expected.prependAll(values);
-
-                    values = (percent(random) < 50) ? Iterator.ofAll(values) : values; /* not traversable again */
-                    actual = assertAreEqual(actual, values, Vector::prependAll, expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 30) {
-                    int n = random.nextInt(expected.size() + 1);
-                    expected = expected.drop(n);
-                    actual = assertAreEqual(actual, n, Vector::drop, expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 10) {
-                    int index = random.nextInt(expected.size() + 1);
-                    Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
-                    expected = expected.insertAll(index, values);
-
-                    values = (percent(random) < 50) ? Iterator.ofAll(values) : values; /* not traversable again */
-                    actual = assertAreEqual(actual, values, (a, p) -> a.insertAll(index, p), expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 30) {
-                    int n = random.nextInt(expected.size() + 1);
-                    expected = expected.take(n);
-                    actual = assertAreEqual(actual, n, Vector::take, expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (!expected.isEmpty()) {
-                    assertThat(actual.head()).isEqualTo(expected.head());
-                    Assertions.assertThat(
-                                    new java.util.ArrayList<>(actual.tail().asJava()))
-                            .isEqualTo(new java.util.ArrayList<>(expected.tail().asJava()));
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (!expected.isEmpty()) {
-                    int index = random.nextInt(expected.size());
-                    assertThat(actual.get(index)).isEqualTo(expected.get(index));
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 50) {
-                    if (!expected.isEmpty()) {
-                        int index = random.nextInt(expected.size());
-                        Object value = randomValue(random);
-                        expected = expected.update(index, value);
-                        actual = assertAreEqual(actual, null, (a, p) -> a.update(index, value), expected);
-                        history = history.append(Tuple.of(expected, actual));
-                    }
-                }
-
-                if (percent(random) < 20) {
-                    Function<Object, Object> mapper = val -> (val instanceof Integer) ? ((Integer) val + 1) : val;
-                    expected = expected.map(mapper);
-                    actual = assertAreEqual(actual, null, (a, p) -> a.map(mapper), expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 30) {
-                    Predicate<Object> filter = val -> (String.valueOf(val).length() % 10) == 0;
-                    expected = expected.filter(filter);
-                    actual = assertAreEqual(actual, null, (a, p) -> a.filter(filter), expected);
-                    history = history.append(Tuple.of(expected, actual));
-                }
-
-                if (percent(random) < 30) {
-                    for (int k = 0; k < 2; k++) {
-                        if (!expected.isEmpty()) {
-                            int to = random.nextInt(expected.size());
-                            int from = random.nextInt(to + 1);
-                            expected = expected.slice(from, to);
-                            actual = assertAreEqual(actual, null, (a, p) -> a.slice(from, to), expected);
-                            history = history.append(Tuple.of(expected, actual));
-                        }
-                    }
-                }
-
-                history.forEach(t -> assertAreEqual(t._1(), t._2())); // test that the modifications are persistent
-            }
+            Vector.range(0, 20_000)
+                    .foldLeft(
+                            new Both<Object>(dev.zazr.collection.List.empty(), Vector.empty()),
+                            (both, j) -> randomSteps(random, both));
         }
+    }
+
+    // the expected list and the vector under test, whose elements must be equal
+    private record Both<T>(dev.zazr.collection.List<T> expected, Vector<T> actual) {}
+
+    // `both` after `onExpected` and `onActual`, checked and added to `history`
+    private static <P> Both<Object> step(
+            Both<Object> both,
+            java.util.List<Both<Object>> history,
+            Function<dev.zazr.collection.List<Object>, dev.zazr.collection.List<Object>> onExpected,
+            P param,
+            BiFunction<Vector<Object>, P, Vector<Object>> onActual) {
+        dev.zazr.collection.List<Object> expected = onExpected.apply(both.expected());
+        Both<Object> next = new Both<>(expected, assertAreEqual(both.actual(), param, onActual, expected));
+        history.add(next);
+        return next;
+    }
+
+    // a round of random operations on `start`; every pair reached is checked again at the end, which shows that the
+    // operations are persistent
+    private Both<Object> randomSteps(Random random, Both<Object> start) {
+        java.util.List<Both<Object>> history = new java.util.ArrayList<>();
+
+        Both<Object> reset = percent(random) < 20 ? fresh(random, history) : start;
+
+        Both<Object> appended = percent(random) < 50 ? appendValue(random, reset, history) : reset;
+
+        Both<Object> appendedAll = percent(random) < 10 ? appendValues(random, appended, history) : appended;
+
+        Both<Object> prepended = percent(random) < 50 ? prependValue(random, appendedAll, history) : appendedAll;
+
+        Both<Object> prependedAll = percent(random) < 10 ? prependValues(random, prepended, history) : prepended;
+
+        Both<Object> dropped = percent(random) < 30 ? drop(random, prependedAll, history) : prependedAll;
+
+        Both<Object> inserted = percent(random) < 10 ? insertValues(random, dropped, history) : dropped;
+
+        Both<Object> taken = percent(random) < 30 ? take(random, inserted, history) : inserted;
+
+        if (!taken.expected().isEmpty()) {
+            assertThat(taken.actual().head()).isEqualTo(taken.expected().head());
+            Assertions.assertThat(
+                            new java.util.ArrayList<>(taken.actual().tail().asJava()))
+                    .isEqualTo(new java.util.ArrayList<>(taken.expected().tail().asJava()));
+            history.add(taken);
+        }
+
+        if (!taken.expected().isEmpty()) {
+            int index = random.nextInt(taken.expected().size());
+            assertThat(taken.actual().get(index)).isEqualTo(taken.expected().get(index));
+            history.add(taken);
+        }
+
+        Both<Object> updated =
+                percent(random) < 50 && !taken.expected().isEmpty() ? update(random, taken, history) : taken;
+
+        Function<Object, Object> mapper = val -> (val instanceof Integer) ? ((Integer) val + 1) : val;
+        Both<Object> mapped = percent(random) < 20
+                ? step(updated, history, e -> e.map(mapper), null, (a, p) -> a.map(mapper))
+                : updated;
+
+        Predicate<Object> filter = val -> (String.valueOf(val).length() % 10) == 0;
+        Both<Object> filtered = percent(random) < 30
+                ? step(mapped, history, e -> e.filter(filter), null, (a, p) -> a.filter(filter))
+                : mapped;
+
+        Both<Object> sliced = percent(random) < 30
+                ? Vector.range(0, 2)
+                        .foldLeft(filtered, (acc, k) -> acc.expected().isEmpty() ? acc : slice(random, acc, history))
+                : filtered;
+
+        history.forEach(t -> assertAreEqual(t.expected(), t.actual())); // test that the modifications are persistent
+        return sliced;
+    }
+
+    private Both<Object> fresh(Random random, java.util.List<Both<Object>> history) {
+        dev.zazr.collection.List<Object> expected = dev.zazr.collection.List.ofAll(
+                Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
+        Vector<Object> actual =
+                (percent(random) < 30) ? Vector.narrow(Vector.ofAll(ints(expected))) : Vector.ofAll(expected);
+        assertAreEqual(expected, actual);
+        Both<Object> both = new Both<>(expected, actual);
+        history.add(both);
+        return both;
+    }
+
+    private Both<Object> appendValue(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        Object value = randomValue(random);
+        return step(both, history, e -> e.append(value), value, Vector::append);
+    }
+
+    private Both<Object> appendValues(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
+        dev.zazr.collection.List<Object> expected = both.expected().appendAll(values);
+        Iterable<Object> given =
+                (percent(random) < 50) ? Iterator.ofAll(values.iterator()) : values; /* not traversable again */
+        return step(both, history, e -> expected, given, Vector::appendAll);
+    }
+
+    private Both<Object> prependValue(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        Object value = randomValue(random);
+        return step(both, history, e -> e.prepend(value), value, Vector::prepend);
+    }
+
+    private Both<Object> prependValues(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
+        dev.zazr.collection.List<Object> expected = both.expected().prependAll(values);
+        Iterable<Object> given = (percent(random) < 50) ? Iterator.ofAll(values) : values; /* not traversable again */
+        return step(both, history, e -> expected, given, Vector::prependAll);
+    }
+
+    private Both<Object> drop(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        int n = random.nextInt(both.expected().size() + 1);
+        return step(both, history, e -> e.drop(n), n, Vector::drop);
+    }
+
+    private Both<Object> insertValues(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        int index = random.nextInt(both.expected().size() + 1);
+        Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
+        dev.zazr.collection.List<Object> expected = both.expected().insertAll(index, values);
+        Iterable<Object> given = (percent(random) < 50) ? Iterator.ofAll(values) : values; /* not traversable again */
+        return step(both, history, e -> expected, given, (a, p) -> a.insertAll(index, p));
+    }
+
+    private Both<Object> take(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        int n = random.nextInt(both.expected().size() + 1);
+        return step(both, history, e -> e.take(n), n, Vector::take);
+    }
+
+    private Both<Object> update(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        int index = random.nextInt(both.expected().size());
+        Object value = randomValue(random);
+        return step(both, history, e -> e.update(index, value), null, (a, p) -> a.update(index, value));
+    }
+
+    private Both<Object> slice(Random random, Both<Object> both, java.util.List<Both<Object>> history) {
+        int to = random.nextInt(both.expected().size());
+        int from = random.nextInt(to + 1);
+        return step(both, history, e -> e.slice(from, to), null, (a, p) -> a.slice(from, to));
     }
 
     private int percent(Random random) {
@@ -358,72 +367,72 @@ public class VectorPropertyTest {
 
     private static boolean[] booleans(dev.zazr.collection.List<?> values) {
         boolean[] array = new boolean[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Boolean) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Boolean) iterator.next();
         }
         return array;
     }
 
     private static byte[] bytes(dev.zazr.collection.List<?> values) {
         byte[] array = new byte[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Byte) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Byte) iterator.next();
         }
         return array;
     }
 
     private static char[] chars(dev.zazr.collection.List<?> values) {
         char[] array = new char[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Character) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Character) iterator.next();
         }
         return array;
     }
 
     private static double[] doubles(dev.zazr.collection.List<?> values) {
         double[] array = new double[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Double) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Double) iterator.next();
         }
         return array;
     }
 
     private static float[] floats(dev.zazr.collection.List<?> values) {
         float[] array = new float[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Float) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Float) iterator.next();
         }
         return array;
     }
 
     private static int[] ints(dev.zazr.collection.List<?> values) {
         int[] array = new int[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Integer) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Integer) iterator.next();
         }
         return array;
     }
 
     private static long[] longs(dev.zazr.collection.List<?> values) {
         long[] array = new long[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Long) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Long) iterator.next();
         }
         return array;
     }
 
     private static short[] shorts(dev.zazr.collection.List<?> values) {
         short[] array = new short[values.size()];
-        int i = 0;
-        for (Object value : values) {
-            array[i++] = (Short) value;
+        java.util.Iterator<?> iterator = values.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (Short) iterator.next();
         }
         return array;
     }

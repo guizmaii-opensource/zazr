@@ -20,6 +20,7 @@ public interface StreamModule {
             return findFirstSlice(source, toStream(slice), Math.max(from, 0));
         }
 
+        @SuppressWarnings("Var")
         static <T extends @Nullable Object> int lastIndexOfSlice(
                 Stream<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
@@ -60,6 +61,7 @@ public interface StreamModule {
 
         // 1 if the non-empty source starts with the non-empty slice, 0 if an element differs, -1 if source ends first;
         // the cells of source are forced only as far as the comparison goes
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int matchAt(Stream<T> source, Stream<T> slice) {
             while (true) {
                 if (!java.util.Objects.equals(source.head(), slice.head())) {
@@ -76,6 +78,7 @@ public interface StreamModule {
             }
         }
 
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int findFirstSlice(Stream<T> source, Stream<T> slice, int from) {
             int index = 0;
             // a Stream may be infinite, so its length is never computed here: only the elements the search reaches
@@ -99,6 +102,7 @@ public interface StreamModule {
     interface Search {
 
         static <T extends @Nullable Object> int linearSearch(Stream<T> stream, ToIntFunction<T> comparison) {
+            @SuppressWarnings("Var")
             int idx = 0;
             for (T current : stream) {
                 int cmp = comparison.applyAsInt(current);
@@ -245,6 +249,7 @@ public interface StreamModule {
             if (failed) {
                 throw new NullPointerException(nullResult);
             }
+            @SuppressWarnings("Var")
             boolean currentHasNext;
             while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
                 Iterable<? extends U> mapped = mapper.apply(inputs.next());

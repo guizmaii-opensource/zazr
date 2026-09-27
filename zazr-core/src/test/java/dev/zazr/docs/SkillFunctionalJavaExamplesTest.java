@@ -502,6 +502,7 @@ public class SkillFunctionalJavaExamplesTest {
             assertThat(lazy.items.isEvaluated()).isTrue();
         }
 
+        @SuppressWarnings("Var") // the snippet of the page reassigns a local, as user code may
         @Test
         void whileLoop() {
             // before

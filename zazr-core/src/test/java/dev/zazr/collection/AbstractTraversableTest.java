@@ -468,9 +468,8 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldFullyIterateNonNil() {
         java.util.Iterator<Integer> iterator = of(1, 2, 3).iterator();
-        int actual;
         for (int i = 1; i <= 3; i++) {
-            actual = iterator.next();
+            int actual = iterator.next();
             assertThat(actual).isEqualTo(i);
         }
         assertThat(iterator.hasNext()).isFalse();

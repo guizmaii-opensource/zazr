@@ -6,6 +6,7 @@ import dev.zazr.collection.internal.Iterator;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,22 +27,25 @@ public class TreeMapTreeCopyTest {
     private static final Comparator<Integer> MODULO = Comparator.comparingInt(i -> Math.floorMod(i, 1000));
 
     private static TreeMap<Integer, String> randomMap(Comparator<Integer> order, int size, Random random) {
-        TreeMap<Integer, String> map = TreeMap.empty(order);
-        while (map.size() < size) {
-            int key = random.nextInt(4 * size + 1) - 2 * size;
-            map = map.put(key, "v" + key);
-        }
+        TreeMap<Integer, String> inserted = filled(TreeMap.empty(order), size, "v", random);
         // some deletions, so that the shape is not only the one of insertions
         java.util.List<Integer> keys = new ArrayList<>();
-        map.forEach(entry -> keys.add(entry._1()));
-        for (Integer key : keys.subList(0, size / 3)) {
-            map = map.remove(key);
-        }
-        while (map.size() < size) {
-            int key = random.nextInt(4 * size + 1) - 2 * size;
-            map = map.put(key, "w" + key);
-        }
-        return map;
+        inserted.forEach(entry -> keys.add(entry._1()));
+        TreeMap<Integer, String> deleted =
+                Vector.ofAll(keys.subList(0, size / 3)).foldLeft(inserted, TreeMap::remove);
+        return filled(deleted, size, "w", random);
+    }
+
+    // `map` with random keys put, each mapped to `prefix` and itself, until it holds `size` entries
+    private static TreeMap<Integer, String> filled(
+            TreeMap<Integer, String> map, int size, String prefix, Random random) {
+        return Stream.iterate(map, acc -> {
+                    int key = random.nextInt(4 * size + 1) - 2 * size;
+                    return acc.put(key, prefix + key);
+                })
+                .filter(acc -> acc.size() >= size)
+                .findFirst()
+                .orElseThrow();
     }
 
     private static <K, V> SortedSet<K> keySetByRebuilding(TreeMap<K, V> map) {
@@ -109,17 +113,15 @@ public class TreeMapTreeCopyTest {
         SortedSet<Integer> keys = map.keySet();
         java.util.TreeSet<Integer> reference = new java.util.TreeSet<>(list(keys));
         Random random = new Random(SEED + 1);
-        SortedSet<Integer> changed = keys;
-        for (int i = 0; i < 2000; i++) {
+        SortedSet<Integer> changed = Vector.range(0, 2000).foldLeft(keys, (acc, i) -> {
             int element = random.nextInt(8000) - 4000;
             if (random.nextBoolean()) {
-                changed = changed.add(element);
                 reference.add(element);
-            } else {
-                changed = changed.remove(element);
-                reference.remove(element);
+                return acc.add(element);
             }
-        }
+            reference.remove(element);
+            return acc.remove(element);
+        });
         assertThat(list(changed)).isEqualTo(new ArrayList<>(reference));
         assertThat(keys).isEqualTo(keySetByRebuilding(map));
         assertThat(list(map)).isEqualTo(entriesBefore);

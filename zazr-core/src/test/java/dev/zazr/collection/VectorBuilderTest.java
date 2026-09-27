@@ -579,7 +579,7 @@ public class VectorBuilderTest {
 
     /* every full leaf of the source (32 elements) is the same array, at the same position, in the built Vector */
     private static <T> void assertSharesFullLeaves(Vector<T> built, Vector<T> source) {
-        int shared = 0;
+        java.util.List<Integer> sharedLeaves = new ArrayList<>();
         for (int i = 0; i < source.size(); ) {
             Object[] sourceLeaf = leafAt(source.trie, i);
             int start = i - indexInLeaf(source.trie, i);
@@ -588,11 +588,11 @@ public class VectorBuilderTest {
                         .as("leaf at %d is shared", start)
                         .isSameAs(sourceLeaf);
                 assertThat(indexInLeaf(built.trie, start)).isZero();
-                shared++;
+                sharedLeaves.add(start);
             }
             i = start + sourceLeaf.length;
         }
-        assertThat(shared).isGreaterThanOrEqualTo((source.size() - 62) / 32);
+        assertThat(sharedLeaves.size()).isGreaterThanOrEqualTo((source.size() - 62) / 32);
     }
 
     private static <T> void assertSameShape(Vector<T> actual, Vector<T> expected, int size) {

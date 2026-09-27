@@ -1,12 +1,15 @@
 package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple2;
+import dev.zazr.collection.Vector;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntSupplier;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import static dev.zazr.collection.internal.RedBlackTreeValidity.assertValid;
@@ -31,31 +34,13 @@ public class RedBlackTreeFilterTest {
     // depth), inserts followed by deletes (the rebalancing of deletion), and the bottom-up construction
     private static java.util.List<RedBlackTree<Integer>> sources(Comparator<Integer> order, int size, Random random) {
         java.util.List<RedBlackTree<Integer>> trees = new ArrayList<>();
-        RedBlackTree<Integer> ascending = RedBlackTree.empty(order);
-        for (int i = 0; i < size; i++) {
-            ascending = ascending.insert(i);
-        }
-        trees.add(ascending);
-        RedBlackTree<Integer> descending = RedBlackTree.empty(order);
-        for (int i = size - 1; i >= 0; i--) {
-            descending = descending.insert(i);
-        }
-        trees.add(descending);
-        RedBlackTree<Integer> shuffled = RedBlackTree.empty(order);
-        while (shuffled.size() < size) {
-            shuffled = shuffled.insert(random.nextInt(4 * size + 1) - 2 * size);
-        }
-        trees.add(shuffled);
-        RedBlackTree<Integer> deleted = RedBlackTree.empty(order);
-        while (deleted.size() < 2 * size) {
-            deleted = deleted.insert(random.nextInt(8 * size + 1) - 4 * size);
-        }
-        java.util.List<Integer> elements = elements(deleted);
+        trees.add(Vector.range(0, size).foldLeft(RedBlackTree.empty(order), RedBlackTree::insert));
+        trees.add(Vector.rangeBy(size - 1, -1, -1).foldLeft(RedBlackTree.empty(order), RedBlackTree::insert));
+        trees.add(randomTree(order, size, () -> random.nextInt(4 * size + 1) - 2 * size));
+        RedBlackTree<Integer> larger = randomTree(order, 2 * size, () -> random.nextInt(8 * size + 1) - 4 * size);
+        java.util.List<Integer> elements = elements(larger);
         java.util.Collections.shuffle(elements, random);
-        for (int i = 0; i < size; i++) {
-            deleted = deleted.delete(elements.get(i));
-        }
-        trees.add(deleted);
+        trees.add(Vector.ofAll(elements.subList(0, size)).foldLeft(larger, RedBlackTree::delete));
         Object[] sorted = new Object[size];
         for (int i = 0; i < size; i++) {
             sorted[i] = (order == NATURAL) ? i : size - 1 - i;
@@ -91,13 +76,17 @@ public class RedBlackTreeFilterTest {
     // the number of nodes of `result` that are not nodes of `source`
     private static int freshNodes(RedBlackTree<?> result, RedBlackTree<?> source) {
         IdentityHashMap<Object, Boolean> old = nodes(source);
-        int fresh = 0;
-        for (Object node : nodes(result).keySet()) {
-            if (!old.containsKey(node)) {
-                fresh++;
-            }
-        }
-        return fresh;
+        return (int) nodes(result).keySet().stream()
+                .filter(node -> !old.containsKey(node))
+                .count();
+    }
+
+    // a tree of `size` distinct elements, inserted one at a time as `next` draws them
+    private static RedBlackTree<Integer> randomTree(Comparator<Integer> order, int size, IntSupplier next) {
+        return Stream.iterate(RedBlackTree.empty(order), tree -> tree.insert(next.getAsInt()))
+                .filter(tree -> tree.size() >= size)
+                .findFirst()
+                .orElseThrow();
     }
 
     // what the result of keeping `expected` out of `source` must be: valid, the kept elements themselves in order, the
@@ -246,10 +235,7 @@ public class RedBlackTreeFilterTest {
         };
         Random random = new Random(SEED + 3);
         for (int size : SIZES) {
-            RedBlackTree<Integer> source = RedBlackTree.empty(counting);
-            while (source.size() < size) {
-                source = source.insert(random.nextInt(4 * size + 1));
-            }
+            RedBlackTree<Integer> source = randomTree(counting, size, () -> random.nextInt(4 * size + 1));
             comparisons.set(0);
             RedBlackTreeModule.Node.filter(source, element -> (element & 1) == 0);
             RedBlackTreeModule.Node.filter(source, element -> random.nextBoolean());
@@ -260,11 +246,8 @@ public class RedBlackTreeFilterTest {
 
     @Test
     public void shouldKeepTheElementsOfAComparatorInconsistentWithEquals() {
-        RedBlackTree<String> source = RedBlackTree.empty(String.CASE_INSENSITIVE_ORDER);
-        for (String s : java.util.List.of("delta", "Alpha", "charlie", "Bravo", "echo", "ALPHA", "Foxtrot", "golf")) {
-            source = source.insert(s);
-        }
-        RedBlackTree<String> tree = source;
+        RedBlackTree<String> tree = Vector.of("delta", "Alpha", "charlie", "Bravo", "echo", "ALPHA", "Foxtrot", "golf")
+                .foldLeft(RedBlackTree.empty(String.CASE_INSENSITIVE_ORDER), RedBlackTree::insert);
         check(tree, s -> Character.isUpperCase(s.charAt(0)));
         check(tree, s -> s.length() > 4);
         assertThat(elements(RedBlackTreeModule.Node.filter(tree, s -> s.startsWith("A"))))
@@ -310,10 +293,8 @@ public class RedBlackTreeFilterTest {
             return Integer.compare(a, b);
         };
         for (int size : SIZES) {
-            RedBlackTree<Integer> tree = RedBlackTree.empty(counting);
-            for (int i = 1; i <= size; i++) {
-                tree = tree.insert(i);
-            }
+            RedBlackTree<Integer> tree =
+                    Vector.rangeClosed(1, size).foldLeft(RedBlackTree.empty(counting), RedBlackTree::insert);
             RedBlackTree<Integer> empty = tree.emptyInstance();
             comparisons.set(0);
             RedBlackTree<Integer> withMin = RedBlackTreeModule.Node.join(empty, 0, tree);

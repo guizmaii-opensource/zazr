@@ -143,7 +143,9 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
         if (right == this) {
             return this;
         }
+        @SuppressWarnings("Var")
         Object[] result = null;
+        @SuppressWarnings("Var")
         int length = right.content.length;
         for (Object element : content) {
             if (right.indexOf(element) < 0) {
@@ -159,6 +161,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     @Override
     SetNode<T> filter(Predicate<? super T> predicate, boolean keep) {
         Object[] kept = new Object[content.length];
+        @SuppressWarnings("Var")
         int length = 0;
         for (int i = 0; i < content.length; i++) {
             if (predicate.test(getPayload(i)) == keep) {
@@ -171,6 +174,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     @Override
     SetNode<T> diff(SetNode<T> that, int shift) {
         Object[] kept = new Object[content.length];
+        @SuppressWarnings("Var")
         int length = 0;
         for (int i = 0; i < content.length; i++) {
             if (!that.contains(getPayload(i), hash, shift)) {

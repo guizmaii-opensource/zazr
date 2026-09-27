@@ -2,6 +2,7 @@ package dev.zazr.test.laws;
 
 import dev.zazr.Tuple2;
 import dev.zazr.collection.LinkedHashMap;
+import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
 import java.util.function.Function;
@@ -74,11 +75,10 @@ class LinkedHashMapLawsTest extends MapLawsSuite<LinkedHashMap<?, ?>, LinkedHash
                 new CollectionSubject<>(
                         Gen.linkedHashMap(Values.integers(), Values.integers()),
                         entries -> {
-                            LinkedHashMap<Integer, Integer> map = LinkedHashMap.empty();
-                            for (Tuple2<Integer, Integer> entry : entries) {
-                                map = map.put(entry._1(), entry._2());
-                            }
-                            return map;
+                            return Vector.ofAll(entries)
+                                    .foldLeft(
+                                            LinkedHashMap.<Integer, Integer>empty(),
+                                            (map, entry) -> map.put(entry._1(), entry._2()));
                         },
                         LinkedHashMap::size,
                         LinkedHashMap::toList,

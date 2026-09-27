@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,24 +17,19 @@ final class ChampValidity {
     /// The hash code whose mixed hash ([ChampNode#improve]) is `mixed`: a key of that hash code sits in the slots the
     /// fragments of `mixed` name. Each step of the mixing is undone in reverse order.
     static int hashCodeFor(int mixed) {
-        int h = mixed;
         // h ^ (h >>> 10)
-        h = h ^ (h >>> 10) ^ (h >>> 20) ^ (h >>> 30);
+        int h1 = mixed ^ (mixed >>> 10) ^ (mixed >>> 20) ^ (mixed >>> 30);
         // h + (h << 4), a product by 17
-        h = h * inverse(17);
+        int h2 = h1 * inverse(17);
         // h ^ (h >>> 14)
-        h = h ^ (h >>> 14) ^ (h >>> 28);
+        int h3 = h2 ^ (h2 >>> 14) ^ (h2 >>> 28);
         // hcode + ~(hcode << 9) == -511 * hcode - 1
-        return (h + 1) * inverse(-511);
+        return (h3 + 1) * inverse(-511);
     }
 
     // the inverse of an odd number modulo 2^32, by Newton's iteration
     private static int inverse(int odd) {
-        int x = odd;
-        for (int i = 0; i < 5; i++) {
-            x *= 2 - odd * x;
-        }
-        return x;
+        return IntStream.range(0, 5).reduce(odd, (x, i) -> x * (2 - odd * x));
     }
 
     // -- maps
@@ -60,12 +56,8 @@ final class ChampValidity {
             int children = Integer.bitCount(n.nodeMap);
             assertThat(n.content.length).isEqualTo(2 * payload + children);
             assertThat(n.hashes.length).isEqualTo(payload);
-            int size = 0;
-            int hashSum = 0;
-            int bits = n.dataMap;
-            for (int i = 0; i < payload; i++) {
+            for (int i = 0, bits = n.dataMap; i < payload; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
-                bits &= bits - 1;
                 Object key = n.content[2 * i];
                 Object value = n.content[2 * i + 1];
                 assertThat(key).isNotNull().isNotInstanceOf(MapNode.class);
@@ -77,13 +69,11 @@ final class ChampValidity {
                 assertThat(ChampNode.improve(n.hashes[i]) & pathMask)
                         .as("entry under its path")
                         .isEqualTo(path);
-                size++;
-                hashSum += n.hashes[i];
             }
-            bits = n.nodeMap;
-            for (int i = 0; i < children; i++) {
+            int[] childSizes = new int[children];
+            int[] childHashSums = new int[children];
+            for (int i = 0, bits = n.nodeMap; i < children; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
-                bits &= bits - 1;
                 Object child = n.content[n.content.length - 1 - i];
                 assertThat(child).isInstanceOf(MapNode.class);
                 MapNode<?, ?> c = (MapNode<?, ?>) child;
@@ -96,9 +86,12 @@ final class ChampValidity {
                 int childSize = assertValidMap(
                         c, childShift, path | (fragment << shift), pathMask | (ChampNode.BIT_PARTITION_MASK << shift));
                 assertThat(childSize).as("a child holds at least two entries").isGreaterThanOrEqualTo(2);
-                size += childSize;
-                hashSum += c.keyHashSum();
+                childSizes[i] = childSize;
+                childHashSums[i] = c.keyHashSum();
             }
+            int size = payload + IntStream.of(childSizes).sum();
+            int hashSum =
+                    IntStream.of(n.hashes).sum() + IntStream.of(childHashSums).sum();
             assertThat(n.size).isEqualTo(size);
             assertThat(n.keyHashSum).isEqualTo(hashSum);
             return size;
@@ -249,12 +242,8 @@ final class ChampValidity {
             int children = Integer.bitCount(n.nodeMap);
             assertThat(n.content.length).isEqualTo(payload + children);
             assertThat(n.hashes.length).isEqualTo(payload);
-            int size = 0;
-            int hashSum = 0;
-            int bits = n.dataMap;
-            for (int i = 0; i < payload; i++) {
+            for (int i = 0, bits = n.dataMap; i < payload; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
-                bits &= bits - 1;
                 Object element = n.content[i];
                 assertThat(element).isNotNull().isNotInstanceOf(SetNode.class);
                 assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(element));
@@ -264,13 +253,11 @@ final class ChampValidity {
                 assertThat(ChampNode.improve(n.hashes[i]) & pathMask)
                         .as("element under its path")
                         .isEqualTo(path);
-                size++;
-                hashSum += n.hashes[i];
             }
-            bits = n.nodeMap;
-            for (int i = 0; i < children; i++) {
+            int[] childSizes = new int[children];
+            int[] childHashSums = new int[children];
+            for (int i = 0, bits = n.nodeMap; i < children; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
-                bits &= bits - 1;
                 Object child = n.content[n.content.length - 1 - i];
                 assertThat(child).isInstanceOf(SetNode.class);
                 SetNode<?> c = (SetNode<?>) child;
@@ -283,9 +270,12 @@ final class ChampValidity {
                 int childSize = assertValidSet(
                         c, childShift, path | (fragment << shift), pathMask | (ChampNode.BIT_PARTITION_MASK << shift));
                 assertThat(childSize).as("a child holds at least two elements").isGreaterThanOrEqualTo(2);
-                size += childSize;
-                hashSum += c.keyHashSum();
+                childSizes[i] = childSize;
+                childHashSums[i] = c.keyHashSum();
             }
+            int size = payload + IntStream.of(childSizes).sum();
+            int hashSum =
+                    IntStream.of(n.hashes).sum() + IntStream.of(childHashSums).sum();
             assertThat(n.size).isEqualTo(size);
             assertThat(n.keyHashSum).isEqualTo(hashSum);
             return size;

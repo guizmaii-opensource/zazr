@@ -1577,6 +1577,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public A max(Comparator<? super A> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         java.util.Iterator<A> iterator = vector.iterator();
+        @SuppressWarnings("Var")
         A max = iterator.next();
         while (iterator.hasNext()) {
             A element = iterator.next();
@@ -1597,6 +1598,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public A min(Comparator<? super A> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
         java.util.Iterator<A> iterator = vector.iterator();
+        @SuppressWarnings("Var")
         A min = iterator.next();
         while (iterator.hasNext()) {
             A element = iterator.next();
@@ -1616,7 +1618,9 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public <U extends Comparable<? super U>> A maxBy(Function<? super A, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         java.util.Iterator<A> iterator = vector.iterator();
+        @SuppressWarnings("Var")
         A max = iterator.next();
+        @SuppressWarnings("Var")
         U maxKey = f.apply(max);
         while (iterator.hasNext()) {
             A element = iterator.next();
@@ -1638,7 +1642,9 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public <U extends Comparable<? super U>> A minBy(Function<? super A, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         java.util.Iterator<A> iterator = vector.iterator();
+        @SuppressWarnings("Var")
         A min = iterator.next();
+        @SuppressWarnings("Var")
         U minKey = f.apply(min);
         while (iterator.hasNext()) {
             A element = iterator.next();
@@ -1696,6 +1702,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         Objects.requireNonNull(mapper, "mapper is null");
         Objects.requireNonNull(op, "op is null");
         java.util.Iterator<A> iterator = vector.iterator();
+        @SuppressWarnings("Var")
         B result = mapper.apply(iterator.next());
         while (iterator.hasNext()) {
             result = op.apply(result, mapper.apply(iterator.next()));
@@ -2085,12 +2092,14 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         java.util.Iterator<A> iterator = vector.iterator();
         A head = iterator.next();
         if (head instanceof Double first) {
+            @SuppressWarnings("Var")
             double min = first;
             while (iterator.hasNext()) {
                 min = Math.min(min, (Double) iterator.next());
             }
             return (A) (Double) min;
         } else if (head instanceof Float first) {
+            @SuppressWarnings("Var")
             float min = first;
             while (iterator.hasNext()) {
                 min = Math.min(min, (Float) iterator.next());

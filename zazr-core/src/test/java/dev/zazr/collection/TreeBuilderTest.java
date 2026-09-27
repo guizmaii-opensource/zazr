@@ -35,19 +35,15 @@ public class TreeBuilderTest {
     // successive persistent insertions keeping the last of equal elements (TreeSet.add keeps the first): the reference
     // the builders are compared with, since ofAll and ofEntries now use the builders themselves
     private static <T> TreeSet<T> insertedSet(Comparator<? super T> order, Iterable<T> elements) {
-        TreeSet<T> set = TreeSet.empty(order);
-        for (T element : elements) {
-            set = set.remove(element).add(element);
-        }
-        return set;
+        return Vector.ofAll(elements)
+                .foldLeft(
+                        TreeSet.empty(order),
+                        (set, element) -> set.remove(element).add(element));
     }
 
     private static <K, V> TreeMap<K, V> insertedMap(Comparator<? super K> order, Iterable<Tuple2<K, V>> entries) {
-        TreeMap<K, V> map = TreeMap.empty(order);
-        for (Tuple2<K, V> entry : entries) {
-            map = map.put(entry._1(), entry._2());
-        }
-        return map;
+        return Vector.ofAll(entries)
+                .foldLeft(TreeMap.<K, V>empty(order), (map, entry) -> map.put(entry._1(), entry._2()));
     }
 
     // -- TreeSet

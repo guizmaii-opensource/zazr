@@ -187,8 +187,12 @@ public final class Using {
 
         private <T extends @Nullable Object> @Nullable T manage(CheckedFunction1<? super Manager, ? extends T> f)
                 throws Throwable {
-            @Nullable T result = null;
-            @Nullable Throwable toThrow = null;
+            @SuppressWarnings("Var")
+            @Nullable
+            T result = null;
+            @SuppressWarnings("Var")
+            @Nullable
+            Throwable toThrow = null;
             try {
                 result = f.apply(this);
             } catch (Throwable t) {
@@ -212,14 +216,14 @@ public final class Using {
         }
 
         private static <T> T afterBlock(Object value, @Nullable CheckedConsumer<?> release) {
-            Throwable toThrow = new IllegalStateException(
+            IllegalStateException afterEnd = new IllegalStateException(
                     "Using.Manager: acquire after the block of the manager ended; the resource was released");
             try {
                 release(value, release);
             } catch (Throwable t) {
-                toThrow = preferentiallySuppress(toThrow, t);
+                return sneakyThrow(preferentiallySuppress(afterEnd, t));
             }
-            return sneakyThrow(toThrow);
+            return sneakyThrow(afterEnd);
         }
 
         @SuppressWarnings("unchecked")

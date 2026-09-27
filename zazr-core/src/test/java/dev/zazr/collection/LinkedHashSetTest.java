@@ -2382,15 +2382,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         private java.util.List<LinkedHashSet<Integer>> receivers() {
             LinkedHashSet<Integer> five = mk(5, 3, 9, 1, 7);
-            LinkedHashSet<Integer> everyThirdRemoved = mk(Vector.range(0, 70));
-            for (int i = 0; i < 70; i += 3) {
-                everyThirdRemoved = everyThirdRemoved.remove(i);
-            }
+            LinkedHashSet<Integer> everyThirdRemoved =
+                    Vector.rangeBy(0, 70, 3).foldLeft(mk(Vector.range(0, 70)), LinkedHashSet::remove);
             // 35 markers for 35 elements: the most the insertion order keeps before it is rebuilt
-            LinkedHashSet<Integer> atThreshold = mk(Vector.range(0, 70));
-            for (int i = 10; i < 45; i++) {
-                atThreshold = atThreshold.remove(i);
-            }
+            LinkedHashSet<Integer> atThreshold =
+                    Vector.range(10, 45).foldLeft(mk(Vector.range(0, 70)), LinkedHashSet::remove);
             java.util.List<Integer> shuffled =
                     new java.util.ArrayList<>(Vector.range(0, 70).asJava());
             java.util.Collections.shuffle(shuffled, new java.util.Random(72));

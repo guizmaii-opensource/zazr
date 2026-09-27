@@ -153,6 +153,7 @@ public class SkillExamplesTest {
             assertThat(ages).isEqualTo(Validation.invalid("age is negative"));
         }
 
+        @SuppressWarnings("Var") // the snippet of the page reassigns a local, as user code may
         @Test
         void using() {
             var sources = Vector.of("alpha", "beta");

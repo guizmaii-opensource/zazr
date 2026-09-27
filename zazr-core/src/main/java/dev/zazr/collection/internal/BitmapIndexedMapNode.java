@@ -400,6 +400,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     // Scala's concat: a first pass sorts each slot into one of nine cases, a second builds the node
     @Override
+    @SuppressWarnings("Var")
     public BitmapIndexedMapNode<K, V> concat(MapNode<K, V> that, int shift) {
         BitmapIndexedMapNode<K, V> bm = (BitmapIndexedMapNode<K, V>) that;
         if (size == 0) {
@@ -609,6 +610,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     }
 
     @Override
+    @SuppressWarnings("Var")
     public BitmapIndexedMapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
         int payload = payloadArity();
         int children = nodeArity();
@@ -699,6 +701,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     @Override
     public <W extends @Nullable Object> BitmapIndexedMapNode<K, W> transform(
             BiFunction<? super K, ? super V, ? extends W> f) {
+        @SuppressWarnings("Var")
         Object[] newContent = null;
         int payload = payloadArity();
         for (int i = 0; i < payload; i++) {

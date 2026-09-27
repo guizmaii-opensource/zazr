@@ -290,6 +290,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(f, "f is null");
         Vector.Builder<B> results = Vector.newBuilder();
+        @SuppressWarnings("Var")
         Vector.Builder<E> errors = null;
         for (A value : values) {
             Validation<? extends E, ? extends B> validation =
@@ -497,9 +498,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v1, "v1 is null");
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
+        Vector.@Nullable Builder<E> errors = accumulate(accumulate(null, v1), v2);
         if (errors == null) {
             return valid(Objects.requireNonNull(f.apply(v1.get(), v2.get()), "Validation.zipWith: f returned null"));
         }
@@ -567,10 +566,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v2, "v2 is null");
         Objects.requireNonNull(v3, "v3 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
+        Vector.@Nullable Builder<E> errors = accumulate(accumulate(accumulate(null, v1), v2), v3);
         if (errors == null) {
             return valid(Objects.requireNonNull(
                     f.apply(v1.get(), v2.get(), v3.get()), "Validation.zipWith: f returned null"));
@@ -648,11 +644,7 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v3, "v3 is null");
         Objects.requireNonNull(v4, "v4 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
+        Vector.@Nullable Builder<E> errors = accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4);
         if (errors == null) {
             return valid(Objects.requireNonNull(
                     f.apply(v1.get(), v2.get(), v3.get(), v4.get()), "Validation.zipWith: f returned null"));
@@ -739,12 +731,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v4, "v4 is null");
         Objects.requireNonNull(v5, "v5 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
+        Vector.@Nullable Builder<E> errors =
+                accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5);
         if (errors == null) {
             return valid(Objects.requireNonNull(
                     f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get()), "Validation.zipWith: f returned null"));
@@ -840,13 +828,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v5, "v5 is null");
         Objects.requireNonNull(v6, "v6 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
-        errors = accumulate(errors, v6);
+        Vector.@Nullable Builder<E> errors =
+                accumulate(accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5), v6);
         if (errors == null) {
             return valid(Objects.requireNonNull(
                     f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get()),
@@ -961,14 +944,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v6, "v6 is null");
         Objects.requireNonNull(v7, "v7 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
-        errors = accumulate(errors, v6);
-        errors = accumulate(errors, v7);
+        Vector.@Nullable Builder<E> errors = accumulate(
+                accumulate(accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5), v6),
+                v7);
         if (errors == null) {
             return valid(Objects.requireNonNull(
                     f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get()),
@@ -1093,15 +1071,13 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
         Objects.requireNonNull(v7, "v7 is null");
         Objects.requireNonNull(v8, "v8 is null");
         Objects.requireNonNull(f, "f is null");
-        Vector.Builder<E> errors = null;
-        errors = accumulate(errors, v1);
-        errors = accumulate(errors, v2);
-        errors = accumulate(errors, v3);
-        errors = accumulate(errors, v4);
-        errors = accumulate(errors, v5);
-        errors = accumulate(errors, v6);
-        errors = accumulate(errors, v7);
-        errors = accumulate(errors, v8);
+        Vector.@Nullable Builder<E> errors = accumulate(
+                accumulate(
+                        accumulate(
+                                accumulate(accumulate(accumulate(accumulate(accumulate(null, v1), v2), v3), v4), v5),
+                                v6),
+                        v7),
+                v8);
         if (errors == null) {
             return valid(Objects.requireNonNull(
                     f.apply(v1.get(), v2.get(), v3.get(), v4.get(), v5.get(), v6.get(), v7.get(), v8.get()),
@@ -1118,10 +1094,9 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
     private static <E extends @Nullable Object> Vector.@Nullable Builder<E> accumulate(
             Vector.@Nullable Builder<E> errors, Validation<? extends E, ?> validation) {
         if (validation instanceof Invalid(var es)) {
-            if (errors == null) {
-                errors = Vector.newBuilder();
-            }
-            errors.addAll(es.toVector());
+            Vector.Builder<E> created = errors == null ? Vector.newBuilder() : errors;
+            created.addAll(es.toVector());
+            return created;
         }
         return errors;
     }

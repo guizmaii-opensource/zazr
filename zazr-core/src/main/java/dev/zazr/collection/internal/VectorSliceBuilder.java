@@ -127,6 +127,7 @@ final class VectorSliceBuilder {
         }
         balancePrefix(1);
         balanceSuffix(1);
+        @SuppressWarnings("Var")
         int resultDim = maxDim;
         if (resultDim < 6) {
             Object[] pre = slices[prefixIdx(maxDim)];

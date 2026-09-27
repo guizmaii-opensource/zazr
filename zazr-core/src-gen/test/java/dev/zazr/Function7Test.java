@@ -119,15 +119,15 @@ public class Function7Test {
         Function7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Try<Integer>> divByZeroTry =
                 Function7.liftTry(divByZero);
 
-        Try<Integer> res = divByZeroTry.apply(0, 0, 0, 0, 0, 0, 0);
-        assertThat(res.isFailure()).isTrue();
-        assertThat(res.getCause()).isNotNull();
-        assertThat(res.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
+        Try<Integer> failure = divByZeroTry.apply(0, 0, 0, 0, 0, 0, 0);
+        assertThat(failure.isFailure()).isTrue();
+        assertThat(failure.getCause()).isNotNull();
+        assertThat(failure.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
 
         integer.incrementAndGet();
-        res = divByZeroTry.apply(1, 2, 3, 4, 5, 6, 7);
-        assertThat(res.isSuccess()).isTrue();
-        assertThat(res.get()).isEqualTo(10);
+        Try<Integer> success = divByZeroTry.apply(1, 2, 3, 4, 5, 6, 7);
+        assertThat(success.isSuccess()).isTrue();
+        assertThat(success.get()).isEqualTo(10);
     }
 
     private static final Function7<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> recurrent1 =

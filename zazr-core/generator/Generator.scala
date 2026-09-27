@@ -764,11 +764,9 @@ def generateMainClasses(): Unit = {
               ${if (i == 1) {
                 s"return $Objects.hashCode(o1);"
               } else {
-                xs"""
-                  int result = 1;
-                  ${(1 to i).gen(j => s"result = 31 * result + hash(o$j);")(using "\n")}
-                  return result;
-                """
+                // 31 * (... (31 * (31 * 1 + hash(o1)) + hash(o2)) ...) + hash(oi), as Arrays.hashCode computes it
+                val sum = (2 to i).foldLeft("31 + hash(o1)")((acc, j) => s"31 * ($acc) + hash(o$j)")
+                s"return $sum;"
               }}
           }
         """
@@ -1052,15 +1050,15 @@ def generateTestClasses(): Unit = {
                     $name$i<${(1 to i + 1).gen(j => "Integer")(using ", ")}> divByZero = (${(1 to i).gen(j => s"i$j")(using ", ")}) -> 10 / integer.get();
                     $name$i<${(1 to i).gen(j => "Integer, ")(using "")}Try<Integer>> divByZeroTry = $name$i.liftTry(divByZero);
 
-                    ${im.getType("dev.zazr.control.Try")}<Integer> res = divByZeroTry.apply(${(1 to i).gen(j => s"0")(using ", ")});
-                    assertThat(res.isFailure()).isTrue();
-                    assertThat(res.getCause()).isNotNull();
-                    assertThat(res.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
+                    ${im.getType("dev.zazr.control.Try")}<Integer> failure = divByZeroTry.apply(${(1 to i).gen(j => s"0")(using ", ")});
+                    assertThat(failure.isFailure()).isTrue();
+                    assertThat(failure.getCause()).isNotNull();
+                    assertThat(failure.getCause().getMessage()).isEqualToIgnoringCase("/ by zero");
 
                     integer.incrementAndGet();
-                    res = divByZeroTry.apply(${(1 to i).mkString(", ")});
-                    assertThat(res.isSuccess()).isTrue();
-                    assertThat(res.get()).isEqualTo(10);
+                    ${im.getType("dev.zazr.control.Try")}<Integer> success = divByZeroTry.apply(${(1 to i).mkString(", ")});
+                    assertThat(success.isSuccess()).isTrue();
+                    assertThat(success.get()).isEqualTo(10);
                 }
               """)}
 

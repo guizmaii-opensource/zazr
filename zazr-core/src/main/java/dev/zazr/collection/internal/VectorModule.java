@@ -41,7 +41,9 @@ public interface VectorModule {
                 int len = source.size();
                 return len < end ? len : end;
             }
+            @SuppressWarnings("Var")
             int index = 0;
+            @SuppressWarnings("Var")
             int result = -1;
             int maxIndex = source.size() - _slice.size();
             while (index <= maxIndex) {
@@ -59,6 +61,7 @@ public interface VectorModule {
             return result;
         }
 
+        @SuppressWarnings("Var")
         private static <T extends @Nullable Object> int findSlice(
                 Vector<T> source, Vector<? extends T> slice, int index, int maxIndex) {
             while (index <= maxIndex) {
@@ -75,7 +78,9 @@ public interface VectorModule {
     final class Search {
 
         public static int binarySearch(Vector<?> vector, IntUnaryOperator comparison) {
+            @SuppressWarnings("Var")
             int low = 0;
+            @SuppressWarnings("Var")
             int high = vector.size() - 1;
             while (low <= high) {
                 int mid = (low + high) >>> 1;

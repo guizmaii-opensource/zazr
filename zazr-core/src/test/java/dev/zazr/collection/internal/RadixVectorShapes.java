@@ -15,14 +15,16 @@ public final class RadixVectorShapes {
 
     /** The leaf array holding the element at {@code index}. */
     public static Object[] leafAt(RadixVector<?> v, int index) {
-        Object[] a = sliceAt(v, index);
-        int i = index - sliceStart(v, index);
-        for (int dim = sliceDim(v, index); dim > 1; dim--) {
-            int width = 1 << (VectorStatics.BITS * (dim - 1));
-            a = (Object[]) a[i / width];
-            i %= width;
+        return descend(sliceAt(v, index), index - sliceStart(v, index), sliceDim(v, index));
+    }
+
+    // the leaf holding position `i` of the `dim`-dimensional array `a`
+    private static Object[] descend(Object[] a, int i, int dim) {
+        if (dim <= 1) {
+            return a;
         }
-        return a;
+        int width = 1 << (VectorStatics.BITS * (dim - 1));
+        return descend((Object[]) a[i / width], i % width, dim - 1);
     }
 
     /** The position of the element at {@code index} in its leaf. */
@@ -36,11 +38,11 @@ public final class RadixVectorShapes {
         if (index < 0 || index >= v.length()) {
             throw new IndexOutOfBoundsException("index " + index + " of a vector of " + v.length());
         }
-        int s = 0;
-        while (index >= v.vectorSlicePrefixLength(s)) {
-            s++;
+        for (int s = 0; ; s++) {
+            if (index < v.vectorSlicePrefixLength(s)) {
+                return s;
+            }
         }
-        return s;
     }
 
     private static Object[] sliceAt(RadixVector<?> v, int index) {

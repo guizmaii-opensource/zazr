@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DynamicTest;
@@ -155,18 +156,18 @@ public class UsingTest {
     }
 
     static List<Kind[]> releaseCombinations(int n) {
+        if (n == 0) {
+            List<Kind[]> none = new ArrayList<>();
+            none.add(new Kind[0]);
+            return none;
+        }
         List<Kind[]> combinations = new ArrayList<>();
-        combinations.add(new Kind[0]);
-        for (int i = 0; i < n; i++) {
-            List<Kind[]> next = new ArrayList<>();
-            for (Kind[] prefix : combinations) {
-                for (Kind kind : RELEASE) {
-                    Kind[] longer = java.util.Arrays.copyOf(prefix, prefix.length + 1);
-                    longer[prefix.length] = kind;
-                    next.add(longer);
-                }
+        for (Kind[] prefix : releaseCombinations(n - 1)) {
+            for (Kind kind : RELEASE) {
+                Kind[] longer = java.util.Arrays.copyOf(prefix, prefix.length + 1);
+                longer[prefix.length] = kind;
+                combinations.add(longer);
             }
-            combinations = next;
         }
         return combinations;
     }
@@ -236,20 +237,25 @@ public class UsingTest {
         assertThat(run.released).as("release order").isEqualTo(expectedReleases);
 
         Map<Throwable, List<Throwable>> expectedSuppressed = new IdentityHashMap<>();
-        Throwable primary = null;
-        for (Throwable t : run.events) {
-            expectedSuppressed.putIfAbsent(t, new ArrayList<>());
-            if (primary == null) {
-                primary = t;
-            } else if (t != primary) {
-                if (run.kinds.get(t).severity > run.kinds.get(primary).severity) {
-                    expectedSuppressed.get(t).add(primary);
-                    primary = t;
-                } else {
-                    expectedSuppressed.get(primary).add(t);
-                }
-            }
-        }
+        // the throwable surfacing after each event: the most severe so far, the others suppressed in it
+        Throwable primary = dev.zazr.collection.Vector.ofAll(run.events)
+                .foldLeft(Option.<Throwable>none(), (surfacing, t) -> {
+                    expectedSuppressed.putIfAbsent(t, new ArrayList<>());
+                    if (surfacing.isEmpty()) {
+                        return Option.some(t);
+                    }
+                    Throwable current = surfacing.get();
+                    if (t == current) {
+                        return surfacing;
+                    }
+                    if (run.kinds.get(t).severity > run.kinds.get(current).severity) {
+                        expectedSuppressed.get(t).add(current);
+                        return Option.some(t);
+                    }
+                    expectedSuppressed.get(current).add(t);
+                    return surfacing;
+                })
+                .getOrNull();
         for (Map.Entry<Throwable, List<Throwable>> e : expectedSuppressed.entrySet()) {
             assertThat(e.getKey().getSuppressed())
                     .as("suppressed in %s", e.getKey())
@@ -298,13 +304,12 @@ public class UsingTest {
     void theMatrixCoversEveryCombination() {
         // every block outcome for every combination of releases, and every acquisition failure for every
         // combination of releases of the resources acquired before it
-        int expected = 0;
-        for (int n = 0; n <= 3; n++) {
-            expected += (int) Math.pow(RELEASE.length, n) * BODY.length;
-            for (int failAt = 0; failAt < n; failAt++) {
-                expected += (int) Math.pow(RELEASE.length, failAt) * ACQUISITION_FAILURE.length;
-            }
-        }
+        int expected = IntStream.rangeClosed(0, 3)
+                .map(n -> (int) Math.pow(RELEASE.length, n) * BODY.length
+                        + IntStream.range(0, n)
+                                .map(failAt -> (int) Math.pow(RELEASE.length, failAt) * ACQUISITION_FAILURE.length)
+                                .sum())
+                .sum();
         assertThat(scenarios(3, true)).hasSize(expected);
     }
 
@@ -615,11 +620,9 @@ public class UsingTest {
         void releasesManyResourcesOnceEachInReverseOrder() {
             List<Integer> released = new ArrayList<>();
             Try<Integer> result = Using.manager(use -> {
-                int sum = 0;
-                for (int i = 0; i < 100; i++) {
-                    sum += use.acquire(i, released::add);
-                }
-                return sum;
+                return IntStream.range(0, 100)
+                        .map(i -> use.acquire(i, released::add))
+                        .sum();
             });
             assertThat(result).isEqualTo(Try.success(4950));
             List<Integer> expected = new ArrayList<>();
