@@ -6738,4 +6738,614 @@ public class StreamTest extends AbstractTraversableTest {
                     .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
         }
     }
+
+    @Nested
+    class FailedForceTests {
+
+        /** A one-shot source of 0, 1, 2, ... whose next() call number `failAt` (from 1) throws, after consuming. */
+        private final class FailingSource implements java.util.Iterator<Integer> {
+
+            final int failAt;
+            int calls;
+
+            FailingSource(int failAt) {
+                this.failAt = failAt;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Integer next() {
+                calls++;
+                if (calls == failAt) {
+                    throw new IllegalStateException("source failed at call " + calls);
+                }
+                return calls - 1;
+            }
+        }
+
+        /** Reads the stream (and the streams in it) to the end: the elements read, then what stopped the walk. */
+        private Tuple2<Vector<Object>, Throwable> walk(Stream<?> stream) {
+            Vector<Object> read = Vector.empty();
+            try {
+                for (Stream<?> s = stream; !s.isEmpty(); s = s.tail()) {
+                    if (read.size() == 1_000) {
+                        throw new AssertionError("the walk went past the failure: " + read.take(10));
+                    }
+                    final Object head = s.head();
+                    read = read.append(head instanceof Traversable<?> nested ? nested.toVector() : head);
+                }
+            } catch (RuntimeException failure) {
+                return Tuple.of(read, failure);
+            }
+            throw new AssertionError("the walk ended without a failure: " + read);
+        }
+
+        /** Walks three times, through tail(), the iterator, get and toVector: the same elements and exception each time. */
+        private void assertFailsTheSameWay(String name, Stream<?> result, FailingSource source) {
+            final Tuple2<Vector<Object>, Throwable> first = walk(result);
+            final int calls = source.calls;
+            for (int i = 0; i < 2; i++) {
+                final Tuple2<Vector<Object>, Throwable> again = walk(result);
+                assertThat(again._1()).as(name).isEqualTo(first._1());
+                assertThat(again._2()).as(name).isSameAs(first._2());
+                assertThatThrownBy(result::toVector).as(name).isSameAs(first._2());
+                assertThatThrownBy(() -> result.iterator().forEachRemaining(x -> { })).as(name).isSameAs(first._2());
+                assertThatThrownBy(() -> result.get(1_000)).as(name).isSameAs(first._2());
+                assertThat(source.calls).as(name).isEqualTo(calls);
+            }
+        }
+
+        private <R> void check(String name, Function<Stream<Integer>, Stream<R>> operation) {
+            for (int failAt = 2; failAt <= 5; failAt++) {
+                final FailingSource source = new FailingSource(failAt);
+                final Stream<Integer> stream = Stream.ofAll(() -> source);
+                final Stream<R> result;
+                try {
+                    result = operation.apply(stream);
+                } catch (IllegalStateException failure) {
+                    // an operation that reads ahead met the failure now: calling it again meets the same one
+                    final int calls = source.calls;
+                    for (int i = 0; i < 2; i++) {
+                        assertThatThrownBy(() -> operation.apply(stream)).as(name).isSameAs(failure);
+                    }
+                    assertThat(source.calls).as(name).isEqualTo(calls);
+                    continue;
+                }
+                assertFailsTheSameWay(name + " failing at " + failAt, result, source);
+            }
+        }
+
+        @Test
+        public void everyLazyOperationKeepsTheFailureOfItsSource() {
+            check("ofAll", s -> s);
+            check("map", s -> s.map(x -> x * 10));
+            check("tap", s -> s.tap(x -> { }));
+            check("filter", s -> s.filter(x -> x % 2 == 0));
+            check("reject", s -> s.reject(x -> x % 2 == 1));
+            check("collect", s -> s.collect(x -> Option.some(x)));
+            check("flatMap", s -> s.flatMap(x -> List.of(x, x)));
+            check("distinct", Stream::distinct);
+            check("distinctBy", s -> s.distinctBy(x -> x));
+            check("retainAll", s -> s.retainAll(Stream.range(0, 100)));
+            check("removeAll", s -> s.removeAll(List.of(1)));
+            check("append", s -> s.append(-1));
+            check("appendAll", s -> s.appendAll(List.of(-1, -2)));
+            check("appendAll into", s -> Stream.of(-1).append(-2).appendAll(s));
+            check("prependAll", s -> s.prependAll(List.of(-1, -2)));
+            check("prependAll into", s -> Stream.of(-1).prependAll(s));
+            check("insert", s -> s.insert(1, -1));
+            check("insertAll", s -> s.insertAll(1, List.of(-1, -2)));
+            check("patch", s -> s.patch(1, List.of(-1, -2), 1));
+            check("intersperse", s -> s.intersperse(-1));
+            check("take", s -> s.take(100));
+            check("takeWhile", s -> s.takeWhile(x -> x < 100));
+            check("dropWhile", s -> s.dropWhile(x -> x < 1));
+            check("removeAt", s -> s.removeAt(1));
+            check("replace", s -> s.replace(1, -1));
+            check("zip", s -> s.zip(Stream.from(0)));
+            check("zip into", s -> Stream.from(0).zip(s));
+            check("zipWith", s -> s.zipWith(Stream.from(0), Integer::sum));
+            check("zipAll", s -> s.zipAll(List.of(1), -1, -2));
+            check("zipWithIndex", Stream::zipWithIndex);
+            check("scanLeft", s -> s.scanLeft(0, Integer::sum));
+            check("scan", s -> s.scan(0, Integer::sum));
+            check("sliding", s -> s.sliding(2));
+            check("grouped", s -> s.grouped(2));
+            check("slideBy", s -> s.slideBy(x -> x / 2));
+            check("cycle", Stream::cycle);
+            check("init", Stream::init);
+            check("extend", s -> s.extend(-1));
+            check("appendSelf", s -> s.appendSelf(self -> self.map(x -> -x)));
+        }
+
+        @Test
+        public void aFunctionThatFailsOnceKeepsFailing() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Stream<Integer> mapped = Stream.range(0, 10).map(x -> {
+                calls.incrementAndGet();
+                if (x == 3 && calls.get() == 4) {
+                    throw new IllegalStateException("mapper failed once");
+                }
+                return x;
+            });
+            final Throwable first = walk(mapped)._2();
+            assertThat(first.getMessage()).isEqualTo("mapper failed once");
+            assertThatThrownBy(mapped::toVector).isSameAs(first);
+            assertThatThrownBy(mapped::toVector).isSameAs(first);
+            assertThat(calls.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void scanLeftIsNeverTruncatedByAFailedForce() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Stream<Integer> sums = Stream.range(0, 5).scanLeft(0, (acc, x) -> {
+                if (calls.incrementAndGet() == 2) {
+                    throw new IllegalStateException("operation failed");
+                }
+                return acc + x;
+            });
+            final Tuple2<Vector<Object>, Throwable> first = walk(sums);
+            assertThat(first._1()).isEqualTo(Vector.of(0, 0));
+            for (int i = 0; i < 2; i++) {
+                assertThat(walk(sums)._1()).isEqualTo(first._1());
+                assertThatThrownBy(sums::toVector).isSameAs(first._2());
+            }
+            assertThat(calls.get()).isEqualTo(2);
+        }
+
+        @Test
+        public void aRejectedNullElementIsNeverDropped() {
+            final java.util.Iterator<Integer> source = java.util.Arrays.asList(1, null, 3).iterator();
+            final Stream<Integer> stream = Stream.ofAll(() -> source);
+            final Throwable first = walk(stream)._2();
+            assertThat(first).isInstanceOf(NullPointerException.class);
+            for (int i = 0; i < 2; i++) {
+                assertThat(walk(stream)._1()).isEqualTo(Vector.of(1));
+                assertThatThrownBy(stream::toVector).isSameAs(first);
+                assertThatThrownBy(() -> stream.get(1)).isSameAs(first);
+            }
+            assertThat(source.next()).isEqualTo(3); // the element after the null was never read
+        }
+
+        @Test
+        public void aNullTailFromConsIsTheSameFailureEachTime() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Stream<Integer> stream = Stream.cons(1, () -> {
+                calls.incrementAndGet();
+                return null;
+            });
+            final Throwable first = walk(stream)._2();
+            assertThat(first.getMessage()).isEqualTo("Stream.cons: tailSupplier returned null");
+            assertThatThrownBy(stream::tail).isSameAs(first);
+            assertThatThrownBy(stream::tail).isSameAs(first);
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void aTailThatNeedsItselfFailsInsteadOfOverflowing() {
+            final Stream<Integer>[] self = new Stream[1];
+            self[0] = Stream.cons(1, () -> self[0].tail());
+            assertThatThrownBy(self[0]::tail).isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Stream: computing this tail needs the tail itself");
+            final Throwable first = walk(self[0])._2();
+            assertThatThrownBy(self[0]::tail).isSameAs(first);
+        }
+
+        @Test
+        public void aVirtualMachineErrorIsNotKept() {
+            final AtomicInteger calls = new AtomicInteger();
+            final Stream<Integer> stream = Stream.cons(1, () -> {
+                if (calls.incrementAndGet() == 1) {
+                    throw new StackOverflowError("simulated");
+                }
+                return Stream.of(2);
+            });
+            assertThatThrownBy(stream::tail).isInstanceOf(StackOverflowError.class);
+            assertThat(stream.toString()).isEqualTo("Stream(1, ?)");
+            assertThat(stream.tail()).isEqualTo(Stream.of(2));
+            assertThat(stream.tail()).isSameAs(stream.tail());
+            assertThat(calls.get()).isEqualTo(2);
+        }
+
+        @Test
+        public void aFailureMetWithNoMemoryLeftIsKept() throws Exception {
+            // a JVM of its own, with a small heap that the probe fills before the failure is met
+            final String javaHome = System.getProperty("java.home");
+            final String classPath = java.nio.file.Path.of(Stream.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    + java.io.File.pathSeparator
+                    + java.nio.file.Path.of(FailedTailOutOfMemoryProbe.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            final Process process = new ProcessBuilder(java.nio.file.Path.of(javaHome, "bin", "java").toString(), "-Xmx64m",
+                    "-XX:+UseSerialGC", "-cp", classPath, FailedTailOutOfMemoryProbe.class.getName())
+                    .redirectErrorStream(true).start();
+            final String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).strip();
+            assertThat(process.waitFor()).as(output).isEqualTo(0);
+            assertThat(output).isEqualTo("RuntimeException: boom (same)");
+        }
+
+        @Test
+        public void toStringShowsAFailedTailAsNotComputed() {
+            final Stream<Integer> stream = Stream.ofAll(() -> new FailingSource(3));
+            walk(stream);
+            assertThat(stream.toString()).isEqualTo("Stream(0, 1, ?)");
+        }
+
+        @Test
+        public void aFailureIsKeptAcrossThreads() throws Exception {
+            final FailingSource source = new FailingSource(2);
+            final Stream<Integer> stream = Stream.ofAll(() -> source);
+            final Throwable first = walk(stream)._2();
+            final java.util.concurrent.atomic.AtomicReference<Throwable> seen = new java.util.concurrent.atomic.AtomicReference<>();
+            final Thread thread = Thread.ofVirtual().start(() -> seen.set(walk(stream)._2()));
+            thread.join();
+            assertThat(seen.get()).isSameAs(first);
+            assertThat(source.calls).isEqualTo(2);
+        }
+    }
+
+    @Nested
+    class LazyConcatenationTests {
+
+        private static final int LOOP = 10_000;
+
+        /** An infinite Stream counting how many of its elements have been computed. */
+        private Stream<Integer> counted(AtomicInteger forced) {
+            return Stream.continually(forced::incrementAndGet);
+        }
+
+        /** A one-shot Iterable counting the elements read from it. */
+        private Iterable<Integer> oneShot(AtomicInteger read, int size) {
+            final java.util.Iterator<Integer> iterator = new java.util.Iterator<>() {
+                int next;
+
+                @Override
+                public boolean hasNext() {
+                    return next < size;
+                }
+
+                @Override
+                public Integer next() {
+                    read.incrementAndGet();
+                    return next++;
+                }
+            };
+            return () -> iterator;
+        }
+
+        private @org.jspecify.annotations.Nullable Object prefixOf(Stream<?> cell) {
+            for (Class<?> type = cell.getClass(); type != Object.class; type = type.getSuperclass()) {
+                try {
+                    final java.lang.reflect.Field field = type.getDeclaredField("prefix");
+                    field.setAccessible(true);
+                    return field.get(cell);
+                } catch (NoSuchFieldException e) {
+                    // not declared here
+                } catch (IllegalAccessException e) {
+                    throw new AssertionError(e);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Walks the whole Stream and counts the cells whose tail goes through more than one wrapper: a Stream whose
+         * appends are layered one over the other would count one per layer and element, quadratic in a loop.
+         */
+        private int walkCountingNestedWrappers(Stream<Integer> stream, Vector<Integer> expected) {
+            int nested = 0;
+            int index = 0;
+            for (Stream<Integer> s = stream; !s.isEmpty(); s = s.tail(), index++) {
+                assertThat(s.head()).isEqualTo(expected.get(index));
+                assertThat(s.tail()).isSameAs(s.tail());
+                final Object prefix = prefixOf(s);
+                if (prefix instanceof Stream<?> inner && prefixOf(inner) != null) {
+                    nested++;
+                }
+            }
+            assertThat(index).isEqualTo(expected.size());
+            return nested;
+        }
+
+        // -- infinite and one-shot arguments
+
+        @Test
+        public void appendAllAfterAppendReturnsAtOnceOnAnInfiniteArgument() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> result = Stream.of(1).append(2).appendAll(counted(forced));
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(result.take(5)).isEqualTo(Stream.of(1, 2, 1, 2, 3));
+            assertThat(forced.get()).isEqualTo(3);
+            assertThat(Stream.of(1).append(2).appendAll(Stream.from(0)).take(4)).isEqualTo(Stream.of(1, 2, 0, 1));
+        }
+
+        @Test
+        public void appendAllReadsOnlyTheFirstElementOfItsArgumentNow() {
+            final AtomicInteger read = new AtomicInteger();
+            final Stream<Integer> plain = Stream.of(-1).appendAll(oneShot(read, 5));
+            assertThat(read.get()).isEqualTo(1);
+            final AtomicInteger readAfterAppend = new AtomicInteger();
+            final Stream<Integer> appended = Stream.of(-2).append(-1).appendAll(oneShot(readAfterAppend, 5));
+            assertThat(readAfterAppend.get()).isEqualTo(1);
+            assertThat(plain).isEqualTo(Stream.of(-1, 0, 1, 2, 3, 4));
+            assertThat(appended).isEqualTo(Stream.of(-2, -1, 0, 1, 2, 3, 4));
+            // the one-shot source is read once, however many Streams share it
+            assertThat(appended.append(9)).isEqualTo(Stream.of(-2, -1, 0, 1, 2, 3, 4, 9));
+            assertThat(appended.appendAll(List.of(8, 9))).isEqualTo(Stream.of(-2, -1, 0, 1, 2, 3, 4, 8, 9));
+            assertThat(read.get()).isEqualTo(5);
+            assertThat(readAfterAppend.get()).isEqualTo(5);
+        }
+
+        @Test
+        public void appendAllOfNothingReturnsThisStream() {
+            final Stream<Integer> plain = Stream.of(1, 2);
+            final Stream<Integer> appended = plain.append(3);
+            assertThat(plain.appendAll(List.empty())).isSameAs(plain);
+            assertThat(appended.appendAll(List.empty())).isSameAs(appended);
+            assertThat(appended.appendAll(Stream.empty())).isSameAs(appended);
+            final Stream<Integer> empty = Stream.empty();
+            assertThat(empty.appendAll(plain)).isSameAs(plain);
+            assertThat(empty.appendAll(appended)).isSameAs(appended);
+            assertThatNullPointerException().isThrownBy(() -> appended.appendAll(null)).withMessage("elements is null");
+            assertThatNullPointerException().isThrownBy(() -> plain.appendAll(null)).withMessage("elements is null");
+        }
+
+        @Test
+        public void prependAllOfAnAppendedStreamReturnsAtOnceOnAnInfiniteStream() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> result = counted(forced).prependAll(Stream.of(-2).append(-1));
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(result.take(4)).isEqualTo(Stream.of(-2, -1, 1, 2));
+            assertThat(forced.get()).isEqualTo(2);
+        }
+
+        @Test
+        public void insertAllOfAnAppendedStreamReturnsAtOnceOnAnInfiniteStream() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> atZero = counted(forced).insertAll(0, Stream.of(-2).append(-1));
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(atZero.take(3)).isEqualTo(Stream.of(-2, -1, 1));
+            final Stream<Integer> atTwo = Stream.from(0).insertAll(2, Stream.of(-2).append(-1));
+            assertThat(atTwo.take(6)).isEqualTo(Stream.of(0, 1, -2, -1, 2, 3));
+            assertThat(Stream.from(0).insertAll(1, Stream.from(100)).take(3)).isEqualTo(Stream.of(0, 100, 101));
+        }
+
+        @Test
+        public void patchReturnsAtOnceOnInfiniteStreams() {
+            assertThat(Stream.from(0).patch(1, Stream.from(100), 2).take(3)).isEqualTo(Stream.of(0, 100, 101));
+            assertThat(Stream.from(0).patch(1, Stream.of(-2).append(-1), 2).take(5)).isEqualTo(Stream.of(0, -2, -1, 3, 4));
+        }
+
+        @Test
+        public void extendAfterAppendReturnsAtOnce() {
+            assertThat(Stream.of(1).append(2).extend(0).take(4)).isEqualTo(Stream.of(1, 2, 0, 0));
+            final AtomicInteger calls = new AtomicInteger();
+            assertThat(Stream.of(1).append(2).extend(calls::incrementAndGet).take(4)).isEqualTo(Stream.of(1, 2, 1, 2));
+        }
+
+        // -- memoised tails
+
+        @Test
+        public void theTailOfAnAppendedStreamIsKept() {
+            final Stream<Integer> appended = Stream.range(0, 3).append(3).append(4).appendAll(List.of(5, 6));
+            final Vector<Integer> expected = Vector.range(0, 7);
+            assertThat(walkCountingNestedWrappers(appended, expected)).isZero();
+            // the same cells on a second walk
+            Stream<Integer> first = appended;
+            Stream<Integer> second = appended;
+            while (!first.isEmpty()) {
+                assertThat(second).isSameAs(first);
+                first = first.tail();
+                second = second.tail();
+            }
+            assertThat(appended.drop(4)).isSameAs(appended.drop(4));
+            assertThat(appended.tailOption().get()).isSameAs(appended.tail());
+            assertThat(appended.get(5)).isEqualTo(5);
+        }
+
+        @Test
+        public void anOlderVersionStaysValid() {
+            final Stream<Integer> base = Stream.of(0).append(1);
+            final Stream<Integer> left = base.append(2);
+            final Stream<Integer> right = base.appendAll(List.of(3, 4));
+            assertThat(left.toVector()).isEqualTo(Vector.of(0, 1, 2));
+            assertThat(right.toVector()).isEqualTo(Vector.of(0, 1, 3, 4));
+            assertThat(base.toVector()).isEqualTo(Vector.of(0, 1));
+            final Stream<Integer> tail = left.tail();
+            assertThat(tail.append(5).toVector()).isEqualTo(Vector.of(1, 2, 5));
+            assertThat(left.toVector()).isEqualTo(Vector.of(0, 1, 2));
+        }
+
+        // -- loops
+
+        private int depth() {
+            return StackWalker.getInstance().walk(frames -> frames.count()).intValue();
+        }
+
+        /**
+         * The Stream of the single element i, whose tail records how deep the stack is when a walk reaches its end: with
+         * appends layered one over the other, reaching it would go through one call per layer.
+         */
+        private Stream<Integer> recording(int i, AtomicInteger deepest) {
+            return Stream.cons(i, () -> {
+                deepest.accumulateAndGet(depth(), Math::max);
+                return Stream.empty();
+            });
+        }
+
+        /** Walks the Stream, checks it, and returns how much deeper than the walk the recorded tails were computed. */
+        private int walk(Stream<Integer> stream, Vector<Integer> expected, AtomicInteger deepest) {
+            final int walkDepth = depth();
+            assertThat(walkCountingNestedWrappers(stream, expected)).isZero();
+            return deepest.get() - walkDepth;
+        }
+
+        // a bound on the calls between the walk and a recorded tail, whatever the number of appends
+        private static final int FEW_CALLS = 40;
+
+        @Test
+        public void aLoopOfAppendsReadsBackOneStepPerElement() {
+            final AtomicInteger deepest = new AtomicInteger();
+            Stream<Integer> stream = Stream.of(0);
+            for (int i = 1; i < LOOP; i++) {
+                stream = i % 2 == 0 ? stream.append(i) : stream.appendAll(recording(i, deepest));
+            }
+            assertThat(walk(stream, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfAppendAllsReadsBackOneStepPerElement() {
+            final AtomicInteger deepest = new AtomicInteger();
+            Stream<Integer> plain = Stream.of(0);
+            for (int i = 1; i < LOOP; i++) {
+                plain = i % 2 == 0 ? plain.appendAll(List.of(i)) : plain.appendAll(recording(i, deepest));
+            }
+            assertThat(walk(plain, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+            final AtomicInteger deepestNested = new AtomicInteger();
+            Stream<Integer> appendedStreams = Stream.of(0);
+            for (int i = 1; i < LOOP; i++) {
+                // each argument is itself a Stream built by append
+                appendedStreams = appendedStreams.appendAll(recording(i, deepestNested).append(-i));
+            }
+            final Vector<Integer> expected = Vector.of(0).appendAll(Vector.range(1, LOOP).flatMap(i -> List.of(i, -i)));
+            assertThat(walk(appendedStreams, expected, deepestNested)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfPrependAllsReadsBackOneStepPerElement() {
+            final AtomicInteger deepest = new AtomicInteger();
+            Stream<Integer> stream = Stream.of(LOOP - 1);
+            for (int i = LOOP - 2; i >= 0; i--) {
+                stream = i % 2 == 0 ? stream.prependAll(List.of(i)) : stream.prependAll(recording(i, deepest));
+            }
+            assertThat(walk(stream, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+            final AtomicInteger deepestAppended = new AtomicInteger();
+            Stream<Integer> appended = Stream.of(LOOP - 1);
+            for (int i = LOOP - 2; i >= 0; i--) {
+                appended = appended.prependAll(recording(i, deepestAppended).append(-i));
+            }
+            final Vector<Integer> expected = Vector.range(0, LOOP - 1).flatMap(i -> List.of(i, -i)).append(LOOP - 1);
+            assertThat(walk(appended, expected, deepestAppended)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfInsertAllsReadsBackOneStepPerElement() {
+            final AtomicInteger deepest = new AtomicInteger();
+            Stream<Integer> stream = Stream.of(LOOP - 1);
+            for (int i = LOOP - 2; i >= 0; i--) {
+                stream = stream.insertAll(0, recording(i, deepest));
+            }
+            assertThat(walk(stream, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfPrependsAndAppendsReadsBackOneStepPerElement() {
+            final AtomicInteger deepest = new AtomicInteger();
+            Stream<Integer> stream = Stream.of(0);
+            for (int i = 1; i < LOOP; i++) {
+                stream = stream.prepend(-i).appendAll(recording(i, deepest));
+            }
+            assertThat(walk(stream, Vector.range(-LOOP + 1, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfTailsAndAppendsReadsBackOneStepPerElement() {
+            final AtomicInteger deepest = new AtomicInteger();
+            Stream<Integer> stream = Stream.range(0, 3);
+            for (int i = 3; i < LOOP; i++) {
+                stream = stream.tail().appendAll(recording(i, deepest));
+            }
+            assertThat(walk(stream, Vector.range(LOOP - 3, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfAppendsOfNestedAppendedStreamsIsReadWithoutOverflowingTheStack() {
+            Stream<Integer> stream = Stream.of(0);
+            for (int i = 1; i < LOOP; i++) {
+                // a Stream that starts with a plain cell whose tail is the previous result: nested one level deeper
+                // at each step
+                final Stream<Integer> previous = stream;
+                stream = Stream.cons(i, () -> previous).append(-i);
+            }
+            final Vector<Integer> read = stream.toVector();
+            assertThat(read.size()).isEqualTo(2 * LOOP - 1);
+            assertThat(read.take(3)).isEqualTo(Vector.of(LOOP - 1, LOOP - 2, LOOP - 3));
+            assertThat(read.takeRight(3)).isEqualTo(Vector.of(-(LOOP - 3), -(LOOP - 2), -(LOOP - 1)));
+        }
+    }
+
+    @Nested
+    class InfiniteEqualsTests {
+
+        private Vector<Traversable<Integer>> sequencesOf(Integer... elements) {
+            return Vector.of(List.of(elements), Vector.of(elements), Queue.of(elements), Stream.of(elements),
+                    Stream.of(elements).append(0).init());
+        }
+
+        @Test
+        public void anInfiniteStreamIsNotEqualToAFiniteSequence() {
+            for (Traversable<Integer> finite : sequencesOf(0, 1, 2).appendAll(sequencesOf()).appendAll(sequencesOf(0))) {
+                final Stream<Integer> infinite = Stream.from(0);
+                assertThat(infinite.equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(infinite)).as("%s", finite).isFalse();
+                final Stream<Integer> appended = Stream.of(0).append(1).appendAll(Stream.from(2));
+                assertThat(appended.equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(appended)).as("%s", finite).isFalse();
+            }
+        }
+
+        @Test
+        public void anInfiniteStreamIsNotEqualToAFiniteSequenceThatDiffers() {
+            for (Traversable<Integer> finite : sequencesOf(1, 2)) {
+                assertThat(Stream.from(0).equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(Stream.from(0))).as("%s", finite).isFalse();
+            }
+        }
+
+        @Test
+        public void equalsStopsAtTheFirstDifference() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> stream = Stream.continually(forced::incrementAndGet); // 1, 2, 3, ...
+            assertThat(stream.equals(List.of(1, 2, 9, 4))).isFalse();
+            assertThat(forced.get()).isEqualTo(3);
+            assertThat(Vector.of(1, 2, 3, 4, 9).equals(stream)).isFalse();
+            assertThat(forced.get()).isEqualTo(5);
+        }
+
+        @Test
+        public void equalsStopsOneElementAfterTheEndOfTheShorterSide() {
+            final AtomicInteger forced = new AtomicInteger();
+            final Stream<Integer> stream = Stream.continually(forced::incrementAndGet);
+            assertThat(stream.equals(Queue.of(1, 2, 3))).isFalse();
+            // the fourth element answers whether the Stream goes on
+            assertThat(forced.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void twoInfiniteStreamsThatDifferAreNotEqual() {
+            assertThat(Stream.from(0).equals(Stream.from(0).update(1_000, -1))).isFalse();
+            assertThat(Stream.from(0).equals(Stream.from(1))).isFalse();
+        }
+
+        @Test
+        public void finiteSequencesOfEveryTypeAreEqualToAStreamWithTheSameElements() {
+            for (Traversable<Integer> finite : sequencesOf(0, 1, 2)) {
+                for (Traversable<Integer> other : sequencesOf(0, 1, 2)) {
+                    assertThat(finite.equals(other)).as("%s %s", finite, other).isTrue();
+                }
+                for (Traversable<Integer> shorter : sequencesOf(0, 1)) {
+                    assertThat(finite.equals(shorter)).as("%s %s", finite, shorter).isFalse();
+                    assertThat(shorter.equals(finite)).as("%s %s", shorter, finite).isFalse();
+                }
+            }
+        }
+
+        @Test
+        public void aStreamIsEqualToItself() {
+            final Stream<Integer> infinite = Stream.from(0);
+            assertThat(infinite.equals(infinite)).isTrue();
+        }
+    }
 }

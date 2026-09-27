@@ -79,7 +79,10 @@ public final class Collections {
         if (object == source) {
             return true;
         } else if (object instanceof Traversable<?> sequence && isSequence(sequence)) {
-            return sequence.size() == source.size() && areEqual(source, sequence);
+            // a Stream's size walks all of it, and never returns on an infinite one: the element by element comparison
+            // stops at the first difference or at the end of the shorter side instead
+            final boolean sizesKnown = !(source instanceof Stream) && !(sequence instanceof Stream);
+            return (!sizesKnown || sequence.size() == source.size()) && areEqual(source, sequence);
         } else {
             return false;
         }
