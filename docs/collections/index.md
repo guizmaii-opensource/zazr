@@ -64,15 +64,15 @@ equals only a non-empty set, and a non-empty map only a non-empty map.
 
 ## Sums, products and averages
 
-The sequences, the sets and the non-empty collections add up, multiply and average the numbers a function reads from
-each element. The type of the function picks the arithmetic: `sumInt`, `sumLong`, `sumDouble`, and `productInt`,
-`productLong`, `productDouble`.
+The sequences, the sets, `NonEmptyVector`, `NonEmptySet` and `NonEmptySortedSet` add up, multiply and average the
+numbers a function reads from each element. The type of the function picks the arithmetic: `sumInt`, `sumLong`,
+`sumDouble`, and `productInt`, `productLong`, `productDouble`.
 
 - An `int` or `long` result is exact. When it does not fit, the method throws an `ArithmeticException` instead of
   wrapping around.
 - `sumDouble` and `average` add with compensation, so the rounding errors do not pile up over many elements.
 - An empty collection sums to 0 and multiplies to 1. `average` returns an `Option`, empty when there is no element; on
-  a non-empty collection it returns the `double` itself.
+  the non-empty ones it returns the `double` itself.
 
 ```java
 var words   = List.of("one", "three", "five");

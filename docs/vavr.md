@@ -41,6 +41,7 @@ below are deliberate. [Design](principles.md) explains the ideas behind them, an
 | `Validation.cond`, `Either.cond` | `fromPredicate` |
 | `getOrElseGet(Function)` | a `getOrElse(Function)` overload |
 | `toJavaArray` | `toArray` |
+| `sum()`, `product()`, `average()` | `sumInt`, `sumLong`, `sumDouble`, `productInt`, `productLong`, `productDouble`, `average`, each taking the function that reads the number from an element |
 
 ## Behaviour that differs
 

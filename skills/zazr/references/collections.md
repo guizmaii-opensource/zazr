@@ -68,8 +68,8 @@ var kiwis = stock.getOrElse("kiwi", 0);  // Integer
 
 Sums, products and averages take the function that reads the number from an element, and its type picks the
 arithmetic: `sumInt`, `sumLong`, `sumDouble`, `productInt`, `productLong`, `productDouble` return the primitive,
-`average` an `Option<Double>` (a `double` on the non-empty collections). The `int` and `long` forms throw an
-`ArithmeticException` when the result does not fit; there is no untyped `sum()`.
+`average` an `Option<Double>` (a `double` on `NonEmptyVector`, `NonEmptySet` and `NonEmptySortedSet`). The `int` and
+`long` forms throw an `ArithmeticException` when the result does not fit; there is no untyped `sum()`.
 
 ```java
 var words   = List.of("one", "three", "five");
