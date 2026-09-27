@@ -5,12 +5,12 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Traversable;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
@@ -91,7 +91,7 @@ class GenTypesTest {
         lengths.put("vector", Gen.vector(distinct()).map(Traversable::size));
         lengths.put("list", Gen.list(distinct()).map(Traversable::size));
         lengths.put("queue", Gen.queue(distinct()).map(Traversable::size));
-        lengths.put("stream", Gen.stream(distinct()).map(Traversable::size));
+        lengths.put("lazyList", Gen.lazyList(distinct()).map(Traversable::size));
         lengths.put("hashSet", Gen.hashSet(distinct()).map(Traversable::size));
         lengths.put("linkedHashSet", Gen.linkedHashSet(distinct()).map(Traversable::size));
         lengths.put("treeSet", Gen.treeSet(distinct()).map(Traversable::size));
@@ -129,7 +129,7 @@ class GenTypesTest {
         gens.put("nonEmptyVector", Gen.nonEmptyVector(ints));
         gens.put("list", Gen.list(ints));
         gens.put("queue", Gen.queue(ints));
-        gens.put("stream", Gen.stream(ints));
+        gens.put("lazyList", Gen.lazyList(ints));
         gens.put("hashSet", Gen.hashSet(ints));
         gens.put("linkedHashSet", Gen.linkedHashSet(ints));
         gens.put("treeSet", Gen.treeSet(ints));
@@ -396,7 +396,7 @@ class GenTypesTest {
                 Gen.vectorN(0, failing()),
                 Gen.list(failing()),
                 Gen.queue(failing()),
-                Gen.stream(failing()),
+                Gen.lazyList(failing()),
                 Gen.hashSet(failing()),
                 Gen.linkedHashSet(failing()),
                 Gen.treeSet(failing()),
@@ -452,7 +452,7 @@ class GenTypesTest {
         java.util.Map<String, Class<?>> classes = java.util.Map.ofEntries(
                 java.util.Map.entry("vector", Vector.class), java.util.Map.entry("vectorN", Vector.class),
                 java.util.Map.entry("nonEmptyVector", NonEmptyVector.class), java.util.Map.entry("list", List.class),
-                java.util.Map.entry("queue", Queue.class), java.util.Map.entry("stream", Stream.class),
+                java.util.Map.entry("queue", Queue.class), java.util.Map.entry("lazyList", LazyList.class),
                 java.util.Map.entry("hashSet", HashSet.class),
                         java.util.Map.entry("linkedHashSet", LinkedHashSet.class),
                 java.util.Map.entry("treeSet", TreeSet.class), java.util.Map.entry("hashMap", HashMap.class),
@@ -471,7 +471,7 @@ class GenTypesTest {
         assertThat(Shapes.VECTOR_LAYOUTS).isEqualTo(6);
         assertThat(Shapes.LIST_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.QUEUE_LAYOUTS).isEqualTo(4);
-        assertThat(Shapes.STREAM_LAYOUTS).isEqualTo(5);
+        assertThat(Shapes.LAZY_LIST_LAYOUTS).isEqualTo(5);
         assertThat(Shapes.NON_EMPTY_VECTOR_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.SET_LAYOUTS).isEqualTo(4);
         assertThat(Shapes.MAP_LAYOUTS).isEqualTo(4);
@@ -506,9 +506,9 @@ class GenTypesTest {
                         .containsExactlyElementsOf(elements(n));
                 assertThat(queue.size()).isEqualTo(n);
             }
-            for (int layout = 0; layout < Shapes.STREAM_LAYOUTS; layout++) {
-                Stream<Integer> stream =
-                        Shapes.stream(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
+            for (int layout = 0; layout < Shapes.LAZY_LIST_LAYOUTS; layout++) {
+                LazyList<Integer> stream =
+                        Shapes.lazyList(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 assertThat(stream)
                         .as("stream layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
@@ -672,15 +672,15 @@ class GenTypesTest {
     }
 
     @Test
-    void streamReachesEvaluatedAndUnevaluatedTails() {
-        List<Stream<Integer>> streams = samples(Gen.stream(Gen.integers()));
+    void lazyListReachesEvaluatedAndUnevaluatedTails() {
+        List<LazyList<Integer>> streams = samples(Gen.lazyList(Gen.integers()));
         assertSome(
                 streams,
-                s -> !s.isEmpty() && !((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(),
+                s -> !s.isEmpty() && !(field(s, LazyList.Cons.class, "tail") instanceof LazyList<?>),
                 "an unevaluated tail");
         assertSome(
                 streams,
-                s -> !s.isEmpty() && ((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(),
+                s -> !s.isEmpty() && field(s, LazyList.Cons.class, "tail") instanceof LazyList<?>,
                 "an evaluated tail");
     }
 
@@ -731,7 +731,7 @@ class GenTypesTest {
         gens.put("nonEmptyVector", Gen.nonEmptyVector(NULLS));
         gens.put("list", Gen.list(NULLS));
         gens.put("queue", Gen.queue(NULLS));
-        gens.put("stream", Gen.stream(NULLS));
+        gens.put("lazyList", Gen.lazyList(NULLS));
         gens.put("hashSet", Gen.hashSet(NULLS));
         gens.put("linkedHashSet", Gen.linkedHashSet(NULLS));
         gens.put("treeSet", Gen.treeSet(NULLS));
@@ -807,7 +807,7 @@ class GenTypesTest {
                 () -> Gen.nonEmptyVector(n),
                 () -> Gen.list(n),
                 () -> Gen.queue(n),
-                () -> Gen.stream(n),
+                () -> Gen.lazyList(n),
                 () -> Gen.hashSet(n),
                 () -> Gen.linkedHashSet(n),
                 () -> Gen.treeSet(n),
@@ -858,7 +858,7 @@ class GenTypesTest {
     }
 
     @Test
-    void streamElementsAreDrawnWhenTheStreamIsGenerated() {
+    void lazyListElementsAreDrawnWhenTheLazyListIsGenerated() {
         AtomicBoolean done = new AtomicBoolean();
         Gen<Integer> elements = Gen.fromRandom(random -> {
             if (done.get()) {
@@ -866,11 +866,11 @@ class GenTypesTest {
             }
             return random.nextInt();
         });
-        List<Stream<Integer>> first = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
+        List<LazyList<Integer>> first = Gen.lazyList(elements).withSize(100).runCollectN(300, config(7));
         done.set(true);
         List<List<Integer>> evaluated = first.map(List::ofAll);
         done.set(false);
-        List<Stream<Integer>> second = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
+        List<LazyList<Integer>> second = Gen.lazyList(elements).withSize(100).runCollectN(300, config(7));
         done.set(true);
         assertThat(second.map(List::ofAll)).isEqualTo(evaluated);
         assertThat(evaluated).anyMatch(l -> l.size() > 32);
@@ -896,7 +896,7 @@ class GenTypesTest {
                 Gen.nonEmptyVector(size),
                 Gen.list(size),
                 Gen.queue(size),
-                Gen.stream(size),
+                Gen.lazyList(size),
                 Gen.hashSet(size),
                 Gen.linkedHashSet(size),
                 Gen.treeSet(size));

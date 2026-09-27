@@ -239,7 +239,7 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
+        assertThat(mapOf(LazyList.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -256,7 +256,7 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
         assertThat(mapOf(
-                        Stream.range(0, 4).stream(),
+                        LazyList.range(0, 4).stream(),
                         i -> Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
@@ -2266,9 +2266,9 @@ public class TreeMapTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldConvertToStream() {
-        assertThat(entries(1, 2, 3).toStream()).isEqualTo(Stream.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-        assertThat(emptyMap().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(entries(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(entry(0, 1), entry(1, 2), entry(2, 3)));
+        assertThat(emptyMap().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- values
@@ -3183,6 +3183,37 @@ public class TreeMapTest extends AbstractTraversableTest {
                     .foldLeft(
                             TreeMap.<Integer, String>empty(Comparator.<Integer>reverseOrder()),
                             (map, key) -> map.put(key, "v" + key));
+        }
+    }
+
+    @Nested
+    class ReplaceRejectsNullsTests {
+
+        @Test
+        public void aNullNewKeyOrValueIsRejectedEvenWhenTheEntryIsAbsent() {
+            TreeMap<Integer, String> map = TreeMap.of(1, "a", 2, "b");
+            for (Tuple2<Integer, String> current : List.of(Tuple.of(1, "a"), Tuple.of(1, "z"), Tuple.of(9, "a"))) {
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(null, "x")))
+                        .withMessage("TreeMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(3, null)))
+                        .withMessage("TreeMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(null, "x")))
+                        .withMessage("TreeMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(3, null)))
+                        .withMessage("TreeMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, null))
+                        .withMessage("newElement is null");
+            }
+            org.assertj.core.api.Assertions.assertThat(map.replaceAll(Tuple.of(9, "a"), Tuple.of(3, "x")))
+                    .isSameAs(map);
+            org.assertj.core.api.Assertions.assertThat(
+                            map.replaceAll(Tuple.of(1, "a"), Tuple.of(3, "x")).toList())
+                    .isEqualTo(map.replace(Tuple.of(1, "a"), Tuple.of(3, "x")).toList());
         }
     }
 }

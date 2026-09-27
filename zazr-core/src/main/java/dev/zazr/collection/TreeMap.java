@@ -1627,12 +1627,15 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
+        Objects.requireNonNull(newElement, "newElement is null");
+        Objects.requireNonNull(newElement._1(), "TreeMap: key is null");
+        Objects.requireNonNull(newElement._2(), "TreeMap: value is null");
         return Maps.replace(this, currentElement, newElement);
     }
 
     @Override
     public TreeMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
-        return Maps.replaceAll(this, currentElement, newElement);
+        return replace(currentElement, newElement);
     }
 
     @Override

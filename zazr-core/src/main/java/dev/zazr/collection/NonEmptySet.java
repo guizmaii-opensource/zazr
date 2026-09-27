@@ -821,10 +821,10 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * @return the elements as a {@link Stream}, in iteration order
+     * @return the elements as a {@link LazyList}, in iteration order
      */
-    public Stream<A> toStream() {
-        return set.toStream();
+    public LazyList<A> toLazyList() {
+        return set.toLazyList();
     }
 
     /**

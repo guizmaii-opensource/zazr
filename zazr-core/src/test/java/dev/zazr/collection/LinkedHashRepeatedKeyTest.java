@@ -216,11 +216,11 @@ public class LinkedHashRepeatedKeyTest {
             java.util.Iterator<Tuple2<Key, String>> supplied = entries.iterator();
             assertSameMap("fill " + input, LinkedHashMap.fill(entries.size(), supplied::next), expected);
             assertSameMap(
-                    "ofAll(Stream, entryMapper) " + input,
+                    "ofAll(LazyList, entryMapper) " + input,
                     LinkedHashMap.ofAll(entries.stream(), Function.identity()),
                     expected);
             assertSameMap(
-                    "ofAll(Stream, key, value) " + input,
+                    "ofAll(LazyList, key, value) " + input,
                     LinkedHashMap.ofAll(entries.stream(), Tuple2::_1, Tuple2::_2),
                     expected);
             assertSameMap("orElse " + input, LinkedHashMap.<Key, String>empty().orElse(entries), expected);
@@ -475,7 +475,7 @@ public class LinkedHashRepeatedKeyTest {
             assertSameSet("ofAll(java.util.List) " + input, LinkedHashSet.ofAll(elements), expected);
             assertSameSet("ofAll(List) " + input, LinkedHashSet.ofAll(List.ofAll(elements)), expected);
             assertSameSet("ofAll(one-shot) " + input, LinkedHashSet.ofAll(oneShot(elements)), expected);
-            assertSameSet("ofAll(Stream) " + input, LinkedHashSet.ofAll(elements.stream()), expected);
+            assertSameSet("ofAll(LazyList) " + input, LinkedHashSet.ofAll(elements.stream()), expected);
             assertSameSet("collector " + input, elements.stream().collect(LinkedHashSet.collector()), expected);
             assertSameSet(
                     "parallel collector " + input,

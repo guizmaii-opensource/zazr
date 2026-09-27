@@ -270,7 +270,7 @@ class JavaViewMutatorTest {
         views.put("Vector", elements -> Vector.ofAll(elements).asJava());
         views.put("List", elements -> List.ofAll(elements).asJava());
         views.put("Queue", elements -> Queue.ofAll(elements).asJava());
-        views.put("Stream", elements -> Stream.ofAll(elements).asJava());
+        views.put("LazyList", elements -> LazyList.ofAll(elements).asJava());
         return views.entrySet().stream()
                 .flatMap(view -> each(
                         view.getKey() + ".asJava()",

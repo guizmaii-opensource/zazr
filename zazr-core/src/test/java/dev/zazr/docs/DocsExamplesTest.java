@@ -5,6 +5,7 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple0;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
@@ -14,7 +15,6 @@ import dev.zazr.collection.NonEmptySet;
 import dev.zazr.collection.NonEmptySortedMap;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
@@ -1250,16 +1250,16 @@ public class DocsExamplesTest {
     }
 
     @Nested
-    class StreamPage {
+    class LazyListPage {
 
         @Test
         void whenToChooseIt() {
-            var naturals = Stream.from(1); // Stream<Integer>
+            var naturals = LazyList.from(1); // LazyList<Integer>
             var squares =
                     naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
             // Vector(1, 9, 25, 49)
 
-            var fibonacci = Stream.of(0L, 1L).appendSelf(self -> self.zipWith(self.tail(), Long::sum));
+            var fibonacci = LazyList.of(0L, 1L).appendSelf(self -> self.zipWith(self.tail(), Long::sum));
             var firstTen = fibonacci.take(10).toVector(); // Vector<Long>
             // Vector(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
 

@@ -1028,6 +1028,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
+        Objects.requireNonNull(newElement, "newElement is null");
+        Objects.requireNonNull(newElement._1(), "HashMap: key is null");
+        Objects.requireNonNull(newElement._2(), "HashMap: value is null");
         return Maps.replace(this, currentElement, newElement);
     }
 
@@ -1038,7 +1041,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
-        return Maps.replaceAll(this, currentElement, newElement);
+        return replace(currentElement, newElement);
     }
 
     /**

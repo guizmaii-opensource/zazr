@@ -1381,9 +1381,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThat(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- static range, rangeBy, rangeClosed, rangeClosedBy
@@ -2960,6 +2960,42 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                                     LinkedHashSet.range(0, 33).toVector().reverse()))
                             .toVector())
                     .isEqualTo(Vector.range(0, 33).reverse());
+        }
+    }
+
+    @Nested
+    class ReplaceKeepsThePositionTests {
+
+        private final LinkedHashSet<Integer> set = LinkedHashSet.of(1, 2, 3);
+
+        @Test
+        public void replaceAllMatchesSuccessivePuts() {
+            Assertions.assertThat(set.replaceAll(2, 4).toList())
+                    .isEqualTo(
+                            LinkedHashSet.<Integer>empty().add(1).add(4).add(3).toList());
+            Assertions.assertThat(set.replaceAll(1, 4).toList())
+                    .isEqualTo(
+                            LinkedHashSet.<Integer>empty().add(4).add(2).add(3).toList());
+            Assertions.assertThat(set.replaceAll(3, 4).toList())
+                    .isEqualTo(
+                            LinkedHashSet.<Integer>empty().add(1).add(2).add(4).toList());
+            Assertions.assertThat(set.replaceAll(2, 3).toList())
+                    .isEqualTo(LinkedHashSet.<Integer>empty().add(1).add(3).toList());
+            Assertions.assertThat(set.replaceAll(3, 1).toList())
+                    .isEqualTo(LinkedHashSet.<Integer>empty().add(2).add(1).toList());
+            for (int current = 0; current <= 4; current++) {
+                for (int replacement = 0; replacement <= 4; replacement++) {
+                    Assertions.assertThat(set.replaceAll(current, replacement).toList())
+                            .isEqualTo(set.replace(current, replacement).toList());
+                }
+            }
+            Assertions.assertThat(set.toList()).isEqualTo(List.of(1, 2, 3));
+        }
+
+        @Test
+        public void anAbsentOrEqualElementReturnsTheSameSet() {
+            Assertions.assertThat(set.replaceAll(9, 4)).isSameAs(set);
+            Assertions.assertThat(set.replaceAll(2, 2)).isSameAs(set);
         }
     }
 }

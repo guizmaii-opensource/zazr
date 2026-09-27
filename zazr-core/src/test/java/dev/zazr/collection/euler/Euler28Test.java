@@ -1,7 +1,7 @@
 package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,8 +40,8 @@ public class Euler28Test {
         return diagonalNumbersInSpiralWithSide(maxSideLength).sum().longValue();
     }
 
-    private static Stream<Long> diagonalNumbersInSpiralWithSide(long maxSideLength) {
-        return Stream.iterate(
+    private static LazyList<Long> diagonalNumbersInSpiralWithSide(long maxSideLength) {
+        return LazyList.iterate(
                         Tuple.of(1, center()),
                         t -> Tuple.of(
                                 nextSideLength(t._1()), nextRoundOfCorners(t._2().last(), nextSideLength(t._1()))))
@@ -49,16 +49,16 @@ public class Euler28Test {
                 .flatMap(t -> t._2());
     }
 
-    private static Stream<Long> center() {
-        return Stream.of(1L);
+    private static LazyList<Long> center() {
+        return LazyList.of(1L);
     }
 
     private static int nextSideLength(int currentSideLength) {
         return currentSideLength + 2;
     }
 
-    private static Stream<Long> nextRoundOfCorners(long previousCorner, int currentSideLength) {
-        return Stream.iterate(previousCorner, n -> n + currentSideLength - 1)
+    private static LazyList<Long> nextRoundOfCorners(long previousCorner, int currentSideLength) {
+        return LazyList.iterate(previousCorner, n -> n + currentSideLength - 1)
                 .drop(1)
                 .take(4);
     }

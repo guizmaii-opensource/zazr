@@ -520,7 +520,7 @@ public class NonEmptySetTest {
             assertThat(nes.toVector()).isEqualTo(set.toVector());
             assertThat(nes.toList()).isEqualTo(set.toList());
             assertThat(nes.toQueue()).isEqualTo(set.toQueue());
-            assertThat(nes.toStream()).isEqualTo(set.toStream());
+            assertThat(nes.toLazyList()).isEqualTo(set.toLazyList());
             assertThat(nes.toLinkedSet()).isEqualTo(set.toLinkedSet());
             assertThat(nes.toSortedSet()).isEqualTo(set.toSortedSet());
             assertThat(nes.toSortedSet(Comparator.reverseOrder()).head()).isEqualTo(n - 1);

@@ -18,7 +18,7 @@ documents it. The [complexity page](complexity.md) lists them all.
 | a sequence that has at least one element | [`NonEmptyVector`](../non-empty-vector.md) | `head`, `max`, `reduce` cannot fail |
 | to take a sequence apart head first, or a stack | [`List`](list.md) | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
 | first in, first out | [`Queue`](queue.md) | O(1) `enqueue`, amortised O(1) `dequeue` |
-| a sequence computed on demand, possibly infinite | [`Stream`](stream.md) | each element computed once, when first read |
+| a sequence computed on demand, possibly infinite | [`LazyList`](lazy-list.md) | each element computed once, when first read |
 | a set, by default | [`HashSet`](sets.md) | effectively O(1) `contains`, `add`, `remove` |
 | a set in insertion order | [`LinkedHashSet`](sets.md) | a `HashSet` plus the insertion order, with positional methods |
 | a sorted set | [`TreeSet`](sets.md) | O(log n) lookups and updates, positional methods in comparator order |
@@ -58,7 +58,7 @@ var same       = Vector.of(1, 2, 3).equals(sortedList);
 // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 ```
 
-A `Vector`, `List`, `Queue` or `Stream` equals another of these four when they hold equal elements in the same
+A `Vector`, `List`, `Queue` or `LazyList` equals another of these four when they hold equal elements in the same
 order. Sets equal sets and maps equal maps. A `NonEmptyVector` equals only another `NonEmptyVector`; a non-empty set
 equals only a non-empty set, and a non-empty map only a non-empty map.
 
@@ -76,7 +76,7 @@ var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);  // Option<Integer>
 A function that returns `null` where a collection needs an `Option`, a tuple or an iterable, such as the mapper of
 `flatMap` or the function of `toMap`, throws a `NullPointerException` naming the method:
 `Vector.flatMap: mapper returned null`. So does a `groupBy` classifier. A function that returns a plain element, such
-as the mapper of `map`, is rejected like any other `null` element: `Vector: element is null`. A `Stream` throws when
+as the mapper of `map`, is rejected like any other `null` element: `Vector: element is null`. A `LazyList` throws when
 it reaches that element.
 
 ## Complexity

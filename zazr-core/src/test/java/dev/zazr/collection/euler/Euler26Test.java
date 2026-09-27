@@ -2,8 +2,8 @@ package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import java.math.BigDecimal;
@@ -76,9 +76,9 @@ public class Euler26Test {
     }
 
     private static int recurringCycleLengthInDecimalFractionPart(String decimalFractionPart) {
-        // Stream is lazy, so the rest is only evaluated until the recurring cycle is found.
-        Stream<Character> reversed =
-                Vector.ofAll(decimalFractionPart.toCharArray()).reverse().toStream();
+        // LazyList is lazy, so the rest is only evaluated until the recurring cycle is found.
+        LazyList<Character> reversed =
+                Vector.ofAll(decimalFractionPart.toCharArray()).reverse().toLazyList();
         return createCandidateCycles()
                 .andThen(removeCandidatesLongerThanHalfTheFullString(decimalFractionPart))
                 .andThen(findFirstRecurringCycle(decimalFractionPart))
@@ -101,20 +101,20 @@ public class Euler26Test {
                 .reverse();
     }
 
-    private static Function<Stream<Character>, Stream<String>> createCandidateCycles() {
+    private static Function<LazyList<Character>, LazyList<String>> createCandidateCycles() {
         return reversedDecimalFractionPart -> reversedDecimalFractionPart
                 .map(String::valueOf)
                 .scan("", String::concat)
                 .drop(1); // Drop the first empty string created by scan
     }
 
-    private static Function<Stream<String>, Stream<String>> removeCandidatesLongerThanHalfTheFullString(
+    private static Function<LazyList<String>, LazyList<String>> removeCandidatesLongerThanHalfTheFullString(
             String decimalFractionPart) {
         return candidateCycles ->
                 candidateCycles.filter(candidate -> decimalFractionPart.length() >= candidate.length() * 2);
     }
 
-    private static Function<Stream<String>, Option<String>> findFirstRecurringCycle(String decimalFractionPart) {
+    private static Function<LazyList<String>, Option<String>> findFirstRecurringCycle(String decimalFractionPart) {
         return reversedCandidateCycles -> reversedCandidateCycles
                 .map(s -> Vector.ofAll(s.toCharArray()).reverse().mkString())
                 .find(candidate -> candidate.equals(decimalFractionPart.substring(

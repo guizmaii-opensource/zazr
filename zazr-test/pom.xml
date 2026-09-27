@@ -19,7 +19,7 @@
         </license>
     </licenses>
     <properties>
-        <!-- The tests look at the internal layout of the collections they generate (the fields of Queue, Stream and
+        <!-- The tests look at the internal layout of the collections they generate (the fields of Queue, LazyList and
              Vector), which the dev.zazr module does not open. Surefire's argLine; the coverage profile's JaCoCo agent
              is prepended to it. -->
         <argLine>--add-opens dev.zazr/dev.zazr.collection=dev.zazr.test --add-opens dev.zazr/dev.zazr.collection.internal=dev.zazr.test</argLine>
@@ -33,6 +33,13 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- runs a real JUnit test from a test, to show what a failing check reports -->
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

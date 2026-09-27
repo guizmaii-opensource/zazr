@@ -1,8 +1,8 @@
 package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -87,7 +87,7 @@ public class Euler11Test {
     }
 
     private static int product(int row, int col, int dr, int dc) {
-        return Stream.range(0, 4)
+        return LazyList.range(0, 4)
                 .map(i -> MATRIX.get(row + i * dr).get(col + i * dc))
                 .reduce((i1, i2) -> i1 * i2);
     }

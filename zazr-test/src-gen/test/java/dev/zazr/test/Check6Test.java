@@ -4,6 +4,7 @@ package dev.zazr.test;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
+import dev.zazr.CheckedFunction6;
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
 import java.util.ArrayList;
@@ -380,6 +381,612 @@ class Check6Test {
                         "erroneous at sample 1 with (1, 2, 3, 4, 5, 6): java.lang.IllegalStateException: boom (seed 42, replay with -Dzazr.check.seed=42)");
     }
 
+    /// A property of the right arity that holds, for the method references.
+    static boolean holds(Integer v1, Integer v2, Integer v3, Integer v4, Integer v5, Integer v6) {
+        return true;
+    }
+
+    @Test
+    void everyEntryPointTakesBooleanAndTestResultBodies() {
+        // implicitly typed lambdas: an expression and a block returning a boolean, the same returning a
+        // TestResult, and a method reference; none of them is ambiguous
+        Check.check(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> true);
+        Check.check(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.check(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return true;
+                });
+        Check.check(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return TestResult.succeed();
+                });
+        Check.check(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Check6Test::holds);
+        Check.check(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> true);
+        Check.check(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.check(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return true;
+                });
+        Check.check(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return TestResult.succeed();
+                });
+        Check.check(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Check6Test::holds);
+        Check.checkN(
+                3,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> true);
+        Check.checkN(
+                3,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.checkN(
+                3,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return true;
+                });
+        Check.checkN(
+                3,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return TestResult.succeed();
+                });
+        Check.checkN(
+                3,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Check6Test::holds);
+        Check.checkAll(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> true);
+        Check.checkAll(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.checkAll(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return true;
+                });
+        Check.checkAll(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return TestResult.succeed();
+                });
+        Check.checkAll(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Check6Test::holds);
+        Check.checkAll(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> true);
+        Check.checkAll(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+        Check.checkAll(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return true;
+                });
+        Check.checkAll(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> {
+                    return TestResult.succeed();
+                });
+        Check.checkAll(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Check6Test::holds);
+        assertThat(Check.evaluate(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> true)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)))
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return false;
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return TestResult.fail("no");
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                Check6Test::holds)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> true)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)))
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return false;
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return TestResult.fail("no");
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                Check6Test::holds)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateN(
+                                3,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> true)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateN(
+                                3,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)))
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateN(
+                                3,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return false;
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluateN(
+                                3,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return TestResult.fail("no");
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluateN(
+                                3,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                Check6Test::holds)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> true)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)))
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return false;
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return TestResult.fail("no");
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                Check6Test::holds)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> true)
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(1)))
+                        .isSatisfied())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return false;
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> {
+                                    return TestResult.fail("no");
+                                })
+                        .isFalsified())
+                .isTrue();
+        assertThat(Check.evaluateAll(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                Check6Test::holds)
+                        .isSatisfied())
+                .isTrue();
+    }
+
+    @Test
+    void aFailedTestResultFalsifiesTheCheckWithItsExplanation() {
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(0))))
+                .isEqualTo(new CheckResult.Falsified(
+                        1, 42L, Tuple.of(1, 2, 3, 4, 5, 6), Option.some("1 is not equal to 0")));
+        assertThatThrownBy(() -> Check.check(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        (v1, v2, v3, v4, v5, v6) -> Assertion.assertThat(v1, Assertion.equalTo(0))))
+                .isExactlyInstanceOf(AssertionError.class)
+                .hasMessage(
+                        "falsified at sample 1 by (1, 2, 3, 4, 5, 6): 1 is not equal to 0 (seed 42, replay with -Dzazr.check.seed=42)");
+    }
+
+    @Test
+    void aResultThatIsNeitherABooleanNorATestResultPassesWhenTheBodyCompletes() {
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        (v1, v2, v3, v4, v5, v6) -> "yes"))
+                .isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        (v1, v2, v3, v4, v5, v6) -> assertThat(v1).isPositive()))
+                .isEqualTo(new CheckResult.Satisfied(20));
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                (v1, v2, v3, v4, v5, v6) -> assertThat(v1).isNegative())
+                        .isFalsified())
+                .isTrue();
+        CheckResult nothing = Check.evaluate(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                (v1, v2, v3, v4, v5, v6) -> null);
+        assertThat(nothing.isErroneous()).isTrue();
+        assertThat(nothing.error().get())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("the check returned null");
+    }
+
     @Test
     void rejectsNulls() {
         assertThatThrownBy(() -> Check.evaluate(
@@ -410,7 +1017,7 @@ class Check6Test {
                         Gen.constant(4),
                         Gen.constant(5),
                         Gen.constant(6),
-                        null))
+                        (CheckedFunction6<Integer, Integer, Integer, Integer, Integer, Integer, Boolean>) null))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.check(
                         CONFIG,
@@ -420,7 +1027,7 @@ class Check6Test {
                         Gen.constant(4),
                         Gen.constant(5),
                         Gen.constant(6),
-                        null))
+                        (CheckedFunction6<Integer, Integer, Integer, Integer, Integer, Integer, Boolean>) null))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.checkAll(
                         CONFIG,
@@ -430,7 +1037,7 @@ class Check6Test {
                         Gen.constant(4),
                         Gen.constant(5),
                         Gen.constant(6),
-                        null))
+                        (CheckedFunction6<Integer, Integer, Integer, Integer, Integer, Integer, Boolean>) null))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.check(
                         (CheckConfig) null,
@@ -450,7 +1057,7 @@ class Check6Test {
                         Gen.constant(4),
                         Gen.constant(5),
                         Gen.constant(6),
-                        null))
+                        (CheckedFunction6<Integer, Integer, Integer, Integer, Integer, Integer, Boolean>) null))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.evaluate(
                         CONFIG,

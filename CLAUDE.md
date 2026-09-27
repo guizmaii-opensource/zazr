@@ -30,7 +30,7 @@ section 5 order. When a new rule or decision is given, record it in `docs/design
   (where the API packages call them), never exported by `module-info.java`, and never named by a public or protected
   signature of an exported type. Internal code that needs a package-private member of a public class gets the same
   result through the public API first; the member stays package-private and is never widened. A subclass that needs
-  package-private constructors or fields of a public class is a private nested class of it (`Stream.Cons`).
+  package-private constructors or fields of a public class is a private nested class of it (`LazyList.Cons`).
 - The library's name is spelled `Zazr` in prose, titles and the wordmark (decided 2026-09-25). Identifiers stay
   lowercase: the Java packages and module (`dev.zazr`), the Maven group and artifacts (`dev.zazr:zazr-core`,
   `dev.zazr:zazr-test`), the repository, URLs and file names.

@@ -2103,12 +2103,12 @@ public class ListTest extends AbstractTraversableTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldSortByFunctionWhenElementsAreInfiniteStreams() {
-        Stream<Integer> stream1 = Stream.continually(1);
-        Stream<Integer> stream2 = Stream.continually(2);
-        List<Stream<Integer>> testee = of(stream2, stream1);
-        List<Stream<Integer>> actual = testee.sortBy(Stream::head);
-        List<Stream<Integer>> expected = of(stream1, stream2);
+    public void shouldSortByFunctionWhenElementsAreInfiniteLazyLists() {
+        LazyList<Integer> stream1 = LazyList.continually(1);
+        LazyList<Integer> stream2 = LazyList.continually(2);
+        List<LazyList<Integer>> testee = of(stream2, stream1);
+        List<LazyList<Integer>> actual = testee.sortBy(LazyList::head);
+        List<LazyList<Integer>> expected = of(stream1, stream2);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2431,7 +2431,7 @@ public class ListTest extends AbstractTraversableTest {
                 IndexOutOfBoundsException.class,
                 () -> of(1, 2, 3)
                         .subSequence(1, 4)
-                        .mkString()); // force computation of last element, e.g. because Stream is lazy
+                        .mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
@@ -2440,7 +2440,7 @@ public class ListTest extends AbstractTraversableTest {
                 IllegalArgumentException.class,
                 () -> of(1, 2, 3)
                         .subSequence(2, 1)
-                        .mkString()); // force computation of last element, e.g. because Stream is lazy
+                        .mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
@@ -2565,15 +2565,15 @@ public class ListTest extends AbstractTraversableTest {
     class NonListArgumentTests {
         @Test
         public void shouldStartWithANonListIterable() {
-            assertThat(of(1, 3, 4).startsWith(Stream.of(1, 3))).isTrue();
-            assertThat(of(1, 2, 3, 4).startsWith(Stream.of(1, 2, 4))).isFalse();
-            assertThat(of(1, 2).startsWith(Stream.of(1, 2, 4))).isFalse();
+            assertThat(of(1, 3, 4).startsWith(LazyList.of(1, 3))).isTrue();
+            assertThat(of(1, 2, 3, 4).startsWith(LazyList.of(1, 2, 4))).isFalse();
+            assertThat(of(1, 2).startsWith(LazyList.of(1, 2, 4))).isFalse();
         }
 
         @Test
         public void shouldEndWithANonListIterable() {
-            assertThat(of(1, 3, 4).endsWith(Stream.of(3, 4))).isTrue();
-            assertThat(of(1, 2, 3, 4).endsWith(Stream.of(2, 3, 5))).isFalse();
+            assertThat(of(1, 3, 4).endsWith(LazyList.of(3, 4))).isTrue();
+            assertThat(of(1, 2, 3, 4).endsWith(LazyList.of(2, 3, 5))).isFalse();
         }
     }
 
@@ -4930,9 +4930,9 @@ public class ListTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThat(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- the range factories
@@ -5660,7 +5660,7 @@ public class ListTest extends AbstractTraversableTest {
             assertThat(list.crossProduct(java.util.stream.Stream.of('a', 'b')::iterator))
                     .isEqualTo(pairs);
             assertThat(list.crossProduct(Vector.of('a', 'b'))).isEqualTo(pairs);
-            assertThat(list.crossProduct(Stream.of('a', 'b'))).isEqualTo(pairs);
+            assertThat(list.crossProduct(LazyList.of('a', 'b'))).isEqualTo(pairs);
             assertThat(list.crossProduct(List.empty())).isSameAs(List.empty());
             assertThat(List.<Integer>empty().crossProduct(list)).isSameAs(List.empty());
         }

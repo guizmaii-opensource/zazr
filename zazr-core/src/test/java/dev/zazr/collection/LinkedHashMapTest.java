@@ -260,7 +260,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
+        assertThat(mapOf(LazyList.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -277,7 +277,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
         assertThat(mapOf(
-                        Stream.range(0, 4).stream(),
+                        LazyList.range(0, 4).stream(),
                         i -> Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
@@ -497,12 +497,12 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapBothNonEmpty() {
-        Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        Stream<Tuple2<Integer, String>> actual = emptyInt()
+        LazyList<Tuple2<Integer, String>> expected = LazyList.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
+        LazyList<Tuple2<Integer, String>> actual = emptyInt()
                 .put(1, "1")
                 .put(2, "2")
                 .mapBoth(i -> i + 1, s -> s + "!")
-                .toStream();
+                .toLazyList();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2274,9 +2274,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldConvertToStream() {
-        assertThat(entries(1, 2, 3).toStream()).isEqualTo(Stream.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-        assertThat(emptyMap().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(entries(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(entry(0, 1), entry(1, 2), entry(2, 3)));
+        assertThat(emptyMap().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- values
@@ -3220,6 +3220,144 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         private LinkedHashMap<Integer, String> mk(Iterable<Integer> keys) {
             return Vector.ofAll(keys)
                     .foldLeft(LinkedHashMap.<Integer, String>empty(), (map, key) -> map.put(key, "v" + key));
+        }
+    }
+
+    @Nested
+    class ReplaceKeepsThePositionTests {
+
+        private final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
+
+        private void assertBothReplace(
+                Tuple2<Integer, String> current,
+                Tuple2<Integer, String> replacement,
+                LinkedHashMap<Integer, String> expected) {
+            LinkedHashMap<Integer, String> replaced = map.replace(current, replacement);
+            LinkedHashMap<Integer, String> replacedAll = map.replaceAll(current, replacement);
+            Assertions.assertThat(replaced.toList()).isEqualTo(expected.toList());
+            Assertions.assertThat(replacedAll.toList()).isEqualTo(expected.toList());
+            Assertions.assertThat(replacedAll.keySet().toList())
+                    .isEqualTo(expected.keySet().toList());
+            Assertions.assertThat(map.toList())
+                    .isEqualTo(List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
+        }
+
+        @Test
+        public void aNewValueForTheSameKeyKeepsItsPosition() {
+            assertBothReplace(
+                    Tuple.of(2, "b"),
+                    Tuple.of(2, "x"),
+                    LinkedHashMap.<Integer, String>empty()
+                            .put(1, "a")
+                            .put(2, "x")
+                            .put(3, "c"));
+            assertBothReplace(
+                    Tuple.of(1, "a"),
+                    Tuple.of(1, "x"),
+                    LinkedHashMap.<Integer, String>empty()
+                            .put(1, "x")
+                            .put(2, "b")
+                            .put(3, "c"));
+            assertBothReplace(
+                    Tuple.of(3, "c"),
+                    Tuple.of(3, "x"),
+                    LinkedHashMap.<Integer, String>empty()
+                            .put(1, "a")
+                            .put(2, "b")
+                            .put(3, "x"));
+        }
+
+        @Test
+        public void aNewKeyTakesThePositionOfTheReplacedEntry() {
+            assertBothReplace(
+                    Tuple.of(2, "b"),
+                    Tuple.of(4, "x"),
+                    LinkedHashMap.<Integer, String>empty()
+                            .put(1, "a")
+                            .put(4, "x")
+                            .put(3, "c"));
+            assertBothReplace(
+                    Tuple.of(1, "a"),
+                    Tuple.of(4, "x"),
+                    LinkedHashMap.<Integer, String>empty()
+                            .put(4, "x")
+                            .put(2, "b")
+                            .put(3, "c"));
+        }
+
+        @Test
+        public void aNewKeyFoundElsewhereIsRemovedFromItsPosition() {
+            assertBothReplace(
+                    Tuple.of(2, "b"),
+                    Tuple.of(3, "x"),
+                    LinkedHashMap.<Integer, String>empty().put(1, "a").put(3, "x"));
+            assertBothReplace(
+                    Tuple.of(3, "c"),
+                    Tuple.of(1, "x"),
+                    LinkedHashMap.<Integer, String>empty().put(2, "b").put(1, "x"));
+        }
+
+        @Test
+        public void anAbsentOrEqualEntryReturnsTheSameMap() {
+            Assertions.assertThat(map.replaceAll(Tuple.of(2, "z"), Tuple.of(2, "x")))
+                    .isSameAs(map);
+            Assertions.assertThat(map.replaceAll(Tuple.of(9, "b"), Tuple.of(2, "x")))
+                    .isSameAs(map);
+            Assertions.assertThat(map.replaceAll(Tuple.of(2, "b"), Tuple.of(2, "b")))
+                    .isSameAs(map);
+            Assertions.assertThat(LinkedHashMap.<Integer, String>empty().replaceAll(Tuple.of(2, "b"), Tuple.of(2, "x")))
+                    .isSameAs(LinkedHashMap.empty());
+        }
+
+        @Test
+        public void theKeySetReplacesAtThePosition() {
+            Set<Integer> keys = map.keySet();
+            Assertions.assertThat(keys.replaceAll(2, 4).toList()).isEqualTo(List.of(1, 4, 3));
+            Assertions.assertThat(keys.replaceAll(2, 3).toList()).isEqualTo(List.of(1, 3));
+            Assertions.assertThat(keys.replaceAll(3, 1).toList()).isEqualTo(List.of(2, 1));
+            Assertions.assertThat(keys.replaceAll(9, 4)).isSameAs(keys);
+            Assertions.assertThat(keys.replaceAll(2, 2)).isSameAs(keys);
+            Assertions.assertThat(keys.replace(2, 4).toList())
+                    .isEqualTo(keys.replaceAll(2, 4).toList());
+        }
+
+        @Test
+        public void nullsAreRejectedAsByReplace() {
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(null, Tuple.of(2, "x")));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(Tuple.of(2, "b"), null));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(Tuple.of(2, "b"), Tuple.of(null, "x")));
+            assertThatNullPointerException().isThrownBy(() -> map.replaceAll(Tuple.of(2, "b"), Tuple.of(2, null)));
+        }
+    }
+
+    @Nested
+    class ReplaceRejectsNullsTests {
+
+        @Test
+        public void aNullNewKeyOrValueIsRejectedEvenWhenTheEntryIsAbsent() {
+            LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
+            for (Tuple2<Integer, String> current : List.of(Tuple.of(1, "a"), Tuple.of(1, "z"), Tuple.of(9, "a"))) {
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(null, "x")))
+                        .withMessage("LinkedHashMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(3, null)))
+                        .withMessage("LinkedHashMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(null, "x")))
+                        .withMessage("LinkedHashMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(3, null)))
+                        .withMessage("LinkedHashMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, null))
+                        .withMessage("newElement is null");
+            }
+            org.assertj.core.api.Assertions.assertThat(map.replaceAll(Tuple.of(9, "a"), Tuple.of(3, "x")))
+                    .isSameAs(map);
+            org.assertj.core.api.Assertions.assertThat(
+                            map.replaceAll(Tuple.of(1, "a"), Tuple.of(3, "x")).toList())
+                    .isEqualTo(map.replace(Tuple.of(1, "a"), Tuple.of(3, "x")).toList());
         }
     }
 }

@@ -1,7 +1,7 @@
 package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import java.util.Objects;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ public class Euler21Test {
 
     private static int sumOfDivisors(int n) {
         return 1
-                + Stream.rangeClosed(2, (int) Math.sqrt(n))
+                + LazyList.rangeClosed(2, (int) Math.sqrt(n))
                         .map(d -> Tuple.of(d, n / d))
                         .filter(t -> t._1() * t._2() == n && !Objects.equals(t._1(), t._2()))
                         .map(t -> t._1() + t._2())
@@ -37,7 +37,7 @@ public class Euler21Test {
 
     private static int sumOfAmicablePairs(int n) {
         Function<Integer, Integer> mSumOfDivisors = Memoize.of(Euler21Test::sumOfDivisors);
-        return Stream.range(1, n)
+        return LazyList.range(1, n)
                 .filter(x ->
                         mSumOfDivisors.apply(mSumOfDivisors.apply(x)).intValue() == x && mSumOfDivisors.apply(x) > x)
                 .foldLeft(0, (sum, x) -> sum + x + mSumOfDivisors.apply(x));

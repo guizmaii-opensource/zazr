@@ -1,36 +1,37 @@
 package dev.zazr.collection.internal;
 
-import dev.zazr.collection.Stream;
-import dev.zazr.collection.Stream.Cons;
-import dev.zazr.collection.Stream.Empty;
+import dev.zazr.collection.LazyList;
+import dev.zazr.collection.LazyList.Cons;
+import dev.zazr.collection.LazyList.Empty;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
 
-public interface StreamModule {
+public interface LazyListModule {
 
     /** Slice searches over a lazy cons stream: the candidate start positions are the successive tails. */
     interface Slice {
 
-        static <T extends @Nullable Object> int indexOfSlice(Stream<T> source, Iterable<? extends T> slice, int from) {
+        static <T extends @Nullable Object> int indexOfSlice(
+                LazyList<T> source, Iterable<? extends T> slice, int from) {
             if (source.isEmpty()) {
                 return from == 0 && Collections.isEmpty(slice) ? 0 : -1;
             }
-            return findFirstSlice(source, toStream(slice), Math.max(from, 0));
+            return findFirstSlice(source, toLazyList(slice), Math.max(from, 0));
         }
 
         @SuppressWarnings("Var")
         static <T extends @Nullable Object> int lastIndexOfSlice(
-                Stream<T> source, Iterable<? extends T> slice, int end) {
+                LazyList<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
             }
             // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
-            Stream<T> _slice = toStream(slice);
+            LazyList<T> _slice = toLazyList(slice);
             _slice.size();
             if (_slice.isEmpty()) {
-                // the last position at or before end: the length when this Stream is shorter; no cell past end - 1 is
+                // the last position at or before end: the length when this LazyList is shorter; no cell past end - 1 is
                 // forced
                 int length = 0;
                 while (length < end && !source.isEmpty()) {
@@ -62,7 +63,7 @@ public interface StreamModule {
         // 1 if the non-empty source starts with the non-empty slice, 0 if an element differs, -1 if source ends first;
         // the cells of source are forced only as far as the comparison goes
         @SuppressWarnings("Var")
-        private static <T extends @Nullable Object> int matchAt(Stream<T> source, Stream<T> slice) {
+        private static <T extends @Nullable Object> int matchAt(LazyList<T> source, LazyList<T> slice) {
             while (true) {
                 if (!java.util.Objects.equals(source.head(), slice.head())) {
                     return 0;
@@ -79,9 +80,10 @@ public interface StreamModule {
         }
 
         @SuppressWarnings("Var")
-        private static <T extends @Nullable Object> int findFirstSlice(Stream<T> source, Stream<T> slice, int from) {
+        private static <T extends @Nullable Object> int findFirstSlice(
+                LazyList<T> source, LazyList<T> slice, int from) {
             int index = 0;
-            // a Stream may be infinite, so its length is never computed here: only the elements the search reaches
+            // a LazyList may be infinite, so its length is never computed here: only the elements the search reaches
             // are forced
             while (source.nonEmpty()) {
                 if (index >= from && source.startsWith(slice)) {
@@ -94,14 +96,14 @@ public interface StreamModule {
         }
 
         @SuppressWarnings("unchecked")
-        private static <T extends @Nullable Object> Stream<T> toStream(Iterable<? extends T> iterable) {
-            return (iterable instanceof Stream) ? (Stream<T>) iterable : Stream.ofAll(iterable);
+        private static <T extends @Nullable Object> LazyList<T> toLazyList(Iterable<? extends T> iterable) {
+            return (iterable instanceof LazyList) ? (LazyList<T>) iterable : LazyList.ofAll(iterable);
         }
     }
 
     interface Search {
 
-        static <T extends @Nullable Object> int linearSearch(Stream<T> stream, ToIntFunction<T> comparison) {
+        static <T extends @Nullable Object> int linearSearch(LazyList<T> stream, ToIntFunction<T> comparison) {
             @SuppressWarnings("Var")
             int idx = 0;
             for (T current : stream) {
@@ -120,26 +122,19 @@ public interface StreamModule {
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Cons<T> self;
-        // set once mapper returned null: the tail is not memoised on a failure, so every later force fails the same
-        // way instead of calling mapper again
-        private boolean failed;
 
-        public AppendSelf(Cons<T> self, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
+        public AppendSelf(Cons<T> self, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
             this.self = appendAll(self, mapper);
         }
 
-        private Cons<T> appendAll(Cons<T> stream, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
-            return (Cons<T>) Stream.cons(stream.head(), () -> {
-                Stream<T> tail = stream.tail();
+        private Cons<T> appendAll(Cons<T> stream, Function<? super LazyList<T>, ? extends LazyList<T>> mapper) {
+            return (Cons<T>) LazyList.cons(stream.head(), () -> {
+                LazyList<T> tail = stream.tail();
                 if (!tail.isEmpty()) {
                     return appendAll((Cons<T>) tail, mapper);
                 }
-                Stream<T> mapped = failed ? null : mapper.apply(self);
-                if (mapped == null) {
-                    failed = true;
-                    throw new NullPointerException("Stream.appendSelf: mapper returned null");
-                }
-                return mapped;
+                return java.util.Objects.requireNonNull(
+                        mapper.apply(self), "LazyList.appendSelf: mapper returned null");
             });
         }
 
@@ -150,13 +145,13 @@ public interface StreamModule {
 
     interface Combinations {
 
-        static <T extends @Nullable Object> Stream<Stream<T>> apply(Stream<T> elements, int k) {
+        static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> elements, int k) {
             if (k == 0) {
-                return Stream.of(Stream.empty());
+                return LazyList.of(LazyList.empty());
             } else {
                 return elements.zipWithIndex()
-                        .flatMap(
-                                t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Stream<T> c) -> c.prepend(t._1())));
+                        .flatMap(t ->
+                                apply(elements.drop(t._2() + 1), (k - 1)).map((LazyList<T> c) -> c.prepend(t._1())));
             }
         }
     }
@@ -166,10 +161,10 @@ public interface StreamModule {
         // `source` is non-empty and starts a window; the next window starts `step` elements further on, and is produced
         // only when this window is full and followed by at least one element, so that no window repeats the previous
         // one
-        static <T extends @Nullable Object> Stream<Stream<T>> apply(Stream<T> source, int size, int step) {
-            return Stream.cons(source.take(size), () -> {
-                Stream<T> next = source.drop(step);
-                return next.isEmpty() || source.drop(size).isEmpty() ? Stream.empty() : apply(next, size, step);
+        static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> source, int size, int step) {
+            return LazyList.cons(source.take(size), () -> {
+                LazyList<T> next = source.drop(step);
+                return next.isEmpty() || source.drop(size).isEmpty() ? LazyList.empty() : apply(next, size, step);
             });
         }
     }
@@ -177,31 +172,31 @@ public interface StreamModule {
     interface DropRight {
 
         // works with infinite streams by buffering elements
-        static <T extends @Nullable Object> Stream<T> apply(
-                dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, Stream<T> remaining) {
+        static <T extends @Nullable Object> LazyList<T> apply(
+                dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, LazyList<T> remaining) {
             if (remaining.isEmpty()) {
                 return remaining;
             } else if (front.isEmpty()) {
                 return apply(rear.reverse(), dev.zazr.collection.List.empty(), remaining);
             } else {
-                return Stream.cons(
+                return LazyList.cons(
                         front.head(), () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));
             }
         }
     }
 
-    interface StreamFactory {
+    interface LazyListFactory {
 
-        static <T extends @Nullable Object> Stream<T> create(java.util.Iterator<? extends T> iterator) {
-            return iterator.hasNext() ? Stream.cons(iterator.next(), () -> create(iterator)) : Empty.instance();
+        static <T extends @Nullable Object> LazyList<T> create(java.util.Iterator<? extends T> iterator) {
+            return iterator.hasNext() ? LazyList.cons(iterator.next(), () -> create(iterator)) : Empty.instance();
         }
     }
 
-    final class StreamIterator<T extends @Nullable Object> extends AbstractIterator<T> {
+    final class LazyListIterator<T extends @Nullable Object> extends AbstractIterator<T> {
 
-        private Supplier<Stream<T>> current;
+        private Supplier<LazyList<T>> current;
 
-        public StreamIterator(Cons<T> stream) {
+        public LazyListIterator(Cons<T> stream) {
             this.current = () -> stream;
         }
 
@@ -212,7 +207,7 @@ public interface StreamModule {
 
         @Override
         public T getNext() {
-            Stream<T> stream = current.get();
+            LazyList<T> stream = current.get();
             // DEV-NOTE: we make the stream even more lazy because the next head must not be evaluated on hasNext()
             current = stream::tail;
             return stream.head();

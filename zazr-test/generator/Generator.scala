@@ -41,14 +41,15 @@ def generateMainClasses(): Unit = {
         val gens = (1 to i).gen(j => s"Gen<? extends T$j> g$j")(using ", ")
         val gensArgs = (1 to i).gen(j => s"g$j")(using ", ")
         val checked = im.getType(s"dev.zazr.CheckedFunction$i")
-        val bodyType = s"$checked<${(1 to i).gen(j => s"? super T$j")(using ", ")}, Boolean>"
+        val bodyType = s"$checked<${(1 to i).gen(j => s"? super T$j")(using ", ")}, ?>"
         val tupleType = im.getType(s"dev.zazr.Tuple$i")
         val zipped = if (i == 1) s"g1.<$tupleType<T1>>map(${im.getType("dev.zazr.Tuple")}::of)" else s"Gen.zip($gensArgs)"
         val apply = s"sample -> body.apply(${(1 to i).gen(j => s"sample._$j()")(using ", ")})"
         val genParams = (1 to i).gen(j => s"* @param g$j   the generator of the ${j.ordinal} value")(using "\n")
         val typeParams = (1 to i).gen(j => s"* @param <T$j> the type of the ${j.ordinal} value")(using "\n")
         val requireGens = (1 to i).gen(j => s"""$objects.requireNonNull(g$j, "g$j is null");""")(using "\n")
-        val bodyDoc = if (i == 1) "the property of a value: true when it holds" else s"the property of $i values: true when it holds"
+        val bodyDoc = (if (i == 1) "the property of a value" else s"the property of $i values") +
+          ": {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw"
         xs"""
           /$javadoc
            * Checks {@code body} against {@link CheckConfig#defaults()}, 200 samples unless configured otherwise, and fails
@@ -213,16 +214,68 @@ def generateMainClasses(): Unit = {
               $objects.requireNonNull(body, "body is null");
               return Runner.check(config, $zipped, $apply, true);
           }
+          ${(i == 1).gen(genAssertionShortcuts)}
         """
+      }
+
+      def genAssertionShortcuts: String = {
+        val assertions = "Assertion<? super T1>... assertions"
+        val params = """* @param g1         the generator of the values
+           * @param assertions the assertions every value must satisfy, at least one
+           * @param <T1>       the type of the values"""
+        val throwsDoc = """* @throws NullPointerException     if an argument, or one of the assertions, is null
+           * @throws IllegalArgumentException if no assertion is given"""
+        val failDoc = """* @throws AssertionError           with the counterexample, the explanation of every failing assertion, the
+           *                                  sample number and the seed, when a value does not satisfy them"""
+        def shortcut(name: String, ret: String, configParam: String, configArg: String, target: String, what: String, extraDoc: String): String = {
+          val call = if (ret == "void") s"$target($configArg${if (configArg.isEmpty) "" else ", "}g1, Assertion.all(assertions)::test);" else s"return $target($configArg${if (configArg.isEmpty) "" else ", "}g1, Assertion.all(assertions)::test);"
+          xs"""
+            /$javadoc
+             * $what
+             *
+             $extraDoc
+             $params
+             ${if (ret == "void") "" else "* @return the result of the check"}
+             ${if (ret == "void") failDoc else ""}
+             $throwsDoc
+             */
+            @SafeVarargs
+            public static <T1> $ret $name($configParam${if (configParam.isEmpty) "" else ", "}Gen<? extends T1> g1, $assertions) {
+                $call
+            }
+          """
+        }
+        val cfg = "* @param config     the number of samples, the size and the seed"
+        val allCfg = "* @param config     the size and the seed"
+        val n = "* @param samples    the number of samples"
+        Seq(
+          shortcut("check", "void", "", "", "check", "Checks that every value of {@code g1} satisfies the assertions, as {@link #check(Gen, CheckedFunction1)}.", ""),
+          shortcut("check", "void", "CheckConfig config", "config", "check", "Checks that every value of {@code g1} satisfies the assertions, as {@link #check(CheckConfig, Gen, CheckedFunction1)}.", cfg),
+          shortcut("checkN", "void", "int samples", "samples", "checkN", "Checks that {@code samples} values of {@code g1} satisfy the assertions, as {@link #checkN(int, Gen, CheckedFunction1)}.", n),
+          shortcut("checkAll", "void", "", "", "checkAll", "Checks that every value of one pass of {@code g1} satisfies the assertions, as {@link #checkAll(Gen, CheckedFunction1)}.", ""),
+          shortcut("checkAll", "void", "CheckConfig config", "config", "checkAll", "Checks that every value of one pass of {@code g1} satisfies the assertions, as {@link #checkAll(CheckConfig, Gen, CheckedFunction1)}.", allCfg),
+          shortcut("evaluate", "CheckResult", "", "", "evaluate", "Evaluates the assertions against the values of {@code g1}, as {@link #evaluate(Gen, CheckedFunction1)}.", ""),
+          shortcut("evaluate", "CheckResult", "CheckConfig config", "config", "evaluate", "Evaluates the assertions against the values of {@code g1}, as {@link #evaluate(CheckConfig, Gen, CheckedFunction1)}.", cfg),
+          shortcut("evaluateN", "CheckResult", "int samples", "samples", "evaluateN", "Evaluates the assertions against {@code samples} values of {@code g1}, as {@link #evaluateN(int, Gen, CheckedFunction1)}.", n),
+          shortcut("evaluateAll", "CheckResult", "", "", "evaluateAll", "Evaluates the assertions against every value of one pass of {@code g1}, as {@link #evaluateAll(Gen, CheckedFunction1)}.", ""),
+          shortcut("evaluateAll", "CheckResult", "CheckConfig config", "config", "evaluateAll", "Evaluates the assertions against every value of one pass of {@code g1}, as {@link #evaluateAll(CheckConfig, Gen, CheckedFunction1)}.", allCfg)
+        ).mkString("\n")
       }
 
       xs"""
         /$javadoc
          * Checks a property against generated values, from 1 to $N generators.
          * <p>
-         * The property is a function of the generated values that returns {@code true} when it holds. It may also
-         * throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies the sample
-         * like {@code false} and keeps its message; any other exception makes the check {@link CheckResult.Erroneous}.
+         * The property is a function of the generated values. It returns {@code true} when it holds, or the
+         * {@link TestResult} of {@link Assertion#assertThat}, whose explanation the report of a failing sample keeps.
+         * It may also throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies
+         * the sample like {@code false} and keeps its message; any other exception, or a {@code null} result, makes
+         * the check {@link CheckResult.Erroneous}. Any other result passes, since the body completed without throwing:
+         * a body that ends with an AssertJ chain, which returns its {@code Assert}, is checked by its assertions. One
+         * body type takes every result, because Java cannot tell two implicitly typed lambdas apart by what they
+         * return.
+         * <p>
+         * With one generator, {@code check(gen, assertions...)} checks that every value satisfies the assertions.
          * <p>
          * {@code check} and {@code checkN} run {@link CheckConfig#samples()} samples, pass after pass of the
          * generators, with a size that grows from 0 for the first sample to {@link CheckConfig#size()} for the last:
@@ -274,6 +327,7 @@ def generateTestClasses(): Unit = {
         val sum = (1 to i).gen(j => s"v$j")(using " + ")
         val tupleOfParams = s"$tuple.of($params)"
         val combinations = 1 << i
+        val nullBody = s"(${im.getType(s"dev.zazr.CheckedFunction$i")}<${(1 to i).gen(j => "Integer")(using ", ")}, Boolean>) null"
 
         def failingAt(k: Int): String = (1 to i).gen(j => if (j == k) "FAILING" else s"Gen.constant($j)")(using ", ")
         def nullAt(k: Int): String = (1 to i).gen(j => if (j == k) "null" else s"Gen.constant($j)")(using ", ")
@@ -374,15 +428,67 @@ def generateTestClasses(): Unit = {
                           .hasMessage("erroneous at sample 1 with ($ones): java.lang.IllegalStateException: boom (seed 42, replay with -Dzazr.check.seed=42)");
               }
 
+              /// A property of the right arity that holds, for the method references.
+              static boolean holds(${(1 to i).gen(j => s"Integer v$j")(using ", ")}) {
+                  return true;
+              }
+
+              @$test
+              void everyEntryPointTakesBooleanAndTestResultBodies() {
+                  // implicitly typed lambdas: an expression and a block returning a boolean, the same returning a
+                  // TestResult, and a method reference; none of them is ambiguous
+                  ${Seq("check(", "check(CONFIG, ", "checkN(3, ", "checkAll(", "checkAll(CONFIG, ").map(entry => xs"""
+                    Check.$entry$constants, ($params) -> true);
+                    Check.$entry$constants, ($params) -> Assertion.assertThat(v1, Assertion.equalTo(1)));
+                    Check.$entry$constants, ($params) -> {
+                        return true;
+                    });
+                    Check.$entry$constants, ($params) -> {
+                        return TestResult.succeed();
+                    });
+                    Check.$entry$constants, $className::holds);
+                  """).mkString("\n")}
+                  ${Seq("evaluate(", "evaluate(CONFIG, ", "evaluateN(3, ", "evaluateAll(", "evaluateAll(CONFIG, ").map(entry => xs"""
+                    $assertThat(Check.$entry$constants, ($params) -> true).isSatisfied()).isTrue();
+                    $assertThat(Check.$entry$constants, ($params) -> Assertion.assertThat(v1, Assertion.equalTo(1))).isSatisfied()).isTrue();
+                    $assertThat(Check.$entry$constants, ($params) -> {
+                        return false;
+                    }).isFalsified()).isTrue();
+                    $assertThat(Check.$entry$constants, ($params) -> {
+                        return TestResult.fail("no");
+                    }).isFalsified()).isTrue();
+                    $assertThat(Check.$entry$constants, $className::holds).isSatisfied()).isTrue();
+                  """).mkString("\n")}
+              }
+
+              @$test
+              void aFailedTestResultFalsifiesTheCheckWithItsExplanation() {
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> Assertion.assertThat(v1, Assertion.equalTo(0))))
+                          .isEqualTo(new CheckResult.Falsified(1, 42L, $tuple.of($ones), $option.some("1 is not equal to 0")));
+                  $assertThatThrownBy(() -> Check.check(CONFIG, $constants, ($params) -> Assertion.assertThat(v1, Assertion.equalTo(0))))
+                          .isExactlyInstanceOf(AssertionError.class)
+                          .hasMessage("falsified at sample 1 by ($ones): 1 is not equal to 0 (seed 42, replay with -Dzazr.check.seed=42)");
+              }
+
+              @$test
+              void aResultThatIsNeitherABooleanNorATestResultPassesWhenTheBodyCompletes() {
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> "yes")).isEqualTo(new CheckResult.Satisfied(20));
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> $assertThat(v1).isPositive())).isEqualTo(new CheckResult.Satisfied(20));
+                  $assertThat(Check.evaluate(CONFIG, $constants, ($params) -> $assertThat(v1).isNegative()).isFalsified()).isTrue();
+                  CheckResult nothing = Check.evaluate(CONFIG, $constants, ($params) -> null);
+                  $assertThat(nothing.isErroneous()).isTrue();
+                  $assertThat(nothing.error().get()).isInstanceOf(NullPointerException.class).hasMessage("the check returned null");
+              }
+
               @$test
               void rejectsNulls() {
                   $assertThatThrownBy(() -> Check.evaluate((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
                   $assertThatThrownBy(() -> Check.evaluateAll((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
-                  $assertThatThrownBy(() -> Check.evaluate(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
-                  $assertThatThrownBy(() -> Check.check(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
-                  $assertThatThrownBy(() -> Check.checkAll(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.evaluate(CONFIG, $constants, $nullBody)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.check(CONFIG, $constants, $nullBody)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.checkAll(CONFIG, $constants, $nullBody)).isInstanceOf(NullPointerException.class);
                   $assertThatThrownBy(() -> Check.check((CheckConfig) null, $constants, ($params) -> true)).isInstanceOf(NullPointerException.class);
-                  $assertThatThrownBy(() -> Check.evaluateAll(CONFIG, $constants, null)).isInstanceOf(NullPointerException.class);
+                  $assertThatThrownBy(() -> Check.evaluateAll(CONFIG, $constants, $nullBody)).isInstanceOf(NullPointerException.class);
                   ${(1 to i).gen(k => xs"""
                     $assertThatThrownBy(() -> Check.evaluate(CONFIG, ${nullAt(k)}, ($params) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g$k is null");
                     $assertThatThrownBy(() -> Check.evaluateAll(CONFIG, ${nullAt(k)}, ($params) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g$k is null");

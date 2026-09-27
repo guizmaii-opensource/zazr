@@ -77,6 +77,7 @@ plugins:
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:
+        collections/stream.md: collections/lazy-list.md
         control-types.md: control/index.md
         validation.md: control/validation.md
 
@@ -141,7 +142,7 @@ nav:
       - Vector: collections/vector.md
       - List: collections/list.md
       - Queue: collections/queue.md
-      - Stream: collections/stream.md
+      - LazyList: collections/lazy-list.md
       - Sets: collections/sets.md
       - Maps: collections/maps.md
       - Complexity: collections/complexity.md

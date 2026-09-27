@@ -257,7 +257,7 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
+        assertThat(mapOf(LazyList.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -274,7 +274,7 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
         assertThat(mapOf(
-                        Stream.range(0, 4).stream(),
+                        LazyList.range(0, 4).stream(),
                         i -> Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
@@ -494,12 +494,12 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapBothNonEmpty() {
-        Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        Stream<Tuple2<Integer, String>> actual = emptyInt()
+        LazyList<Tuple2<Integer, String>> expected = LazyList.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
+        LazyList<Tuple2<Integer, String>> actual = emptyInt()
                 .put(1, "1")
                 .put(2, "2")
                 .mapBoth(i -> i + 1, s -> s + "!")
-                .toStream();
+                .toLazyList();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2306,9 +2306,9 @@ public class HashMapTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldConvertToStream() {
-        assertThat(entries(1, 2, 3).toStream()).isEqualTo(Stream.of(entry(0, 1), entry(1, 2), entry(2, 3)));
-        assertThat(emptyMap().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(entries(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(entry(0, 1), entry(1, 2), entry(2, 3)));
+        assertThat(emptyMap().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- values
@@ -2553,6 +2553,37 @@ public class HashMapTest extends AbstractTraversableTest {
                 names.retainAll(ORDERED_POSITIONAL_MEMBERS);
                 org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of(), names, type.getSimpleName());
             }
+        }
+    }
+
+    @Nested
+    class ReplaceRejectsNullsTests {
+
+        @Test
+        public void aNullNewKeyOrValueIsRejectedEvenWhenTheEntryIsAbsent() {
+            HashMap<Integer, String> map = HashMap.of(1, "a", 2, "b");
+            for (Tuple2<Integer, String> current : List.of(Tuple.of(1, "a"), Tuple.of(1, "z"), Tuple.of(9, "a"))) {
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(null, "x")))
+                        .withMessage("HashMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replace(current, Tuple.of(3, null)))
+                        .withMessage("HashMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(null, "x")))
+                        .withMessage("HashMap: key is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, Tuple.of(3, null)))
+                        .withMessage("HashMap: value is null");
+                org.assertj.core.api.Assertions.assertThatNullPointerException()
+                        .isThrownBy(() -> map.replaceAll(current, null))
+                        .withMessage("newElement is null");
+            }
+            org.assertj.core.api.Assertions.assertThat(map.replaceAll(Tuple.of(9, "a"), Tuple.of(3, "x")))
+                    .isSameAs(map);
+            org.assertj.core.api.Assertions.assertThat(
+                            map.replaceAll(Tuple.of(1, "a"), Tuple.of(3, "x")).toList())
+                    .isEqualTo(map.replace(Tuple.of(1, "a"), Tuple.of(3, "x")).toList());
         }
     }
 }

@@ -1,8 +1,8 @@
 package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,7 +60,7 @@ public class Euler27Test {
     }
 
     private static int numberOfConsecutivePrimesProducedByFormulaWithCoefficients(int a, int b) {
-        return Stream.from(0L)
+        return LazyList.from(0L)
                 .map(n -> (long) Math.pow(n, 2) + a * n + b)
                 .takeWhile(Utils.MEMOIZED_IS_PRIME::apply)
                 .size();

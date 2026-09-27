@@ -1447,10 +1447,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
-     * @return the entries as a {@link Stream}, in the order of the keys
+     * @return the entries as a {@link LazyList}, in the order of the keys
      */
-    public Stream<Tuple2<K, V>> toStream() {
-        return map.toStream();
+    public LazyList<Tuple2<K, V>> toLazyList() {
+        return map.toLazyList();
     }
 
     /**

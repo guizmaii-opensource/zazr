@@ -375,7 +375,8 @@ class CheckTest {
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.evaluate(config(1), (Gen<Integer>) null, i -> true))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluate(config(1), Gen.constant(1), null))
+        assertThatThrownBy(() ->
+                        Check.evaluate(config(1), Gen.constant(1), (dev.zazr.CheckedFunction1<Integer, Boolean>) null))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Check.evaluateAll((CheckConfig) null, Gen.constant(1), i -> true))
                 .isInstanceOf(NullPointerException.class);

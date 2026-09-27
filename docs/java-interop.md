@@ -11,7 +11,7 @@ To pass one to Java code, `asJava()` (`asJavaMap()` for a map) gives a read-only
 
 | Receiver | Method | Returns |
 |---|---|---|
-| `Vector`, `List`, `Queue`, `Stream`, `NonEmptyVector` | `asJava()` | `java.util.List` |
+| `Vector`, `List`, `Queue`, `LazyList`, `NonEmptyVector` | `asJava()` | `java.util.List` |
 | `HashSet`, `NonEmptySet` | `asJava()` | `java.util.Set` |
 | `LinkedHashSet` | `asJava()` | `SequencedSet` |
 | `TreeSet`, `NonEmptySortedSet` | `asJava()` | `NavigableSet` |
@@ -50,10 +50,10 @@ var grace     = ages.get("Grace");                               // Integer
 // atLeast25 is 30, top is [20, 30, 40], grace is 85
 ```
 
-### Lazy `Stream`
+### Lazy `LazyList`
 
-The view of a `Stream` computes no element before a read needs it: `get(i)` computes the first `i + 1`, an iterator
-one per step. `size()`, `lastIndexOf` and `hashCode` compute the whole `Stream`, so avoid them on an infinite one.
+The view of a `LazyList` computes no element before a read needs it: `get(i)` computes the first `i + 1`, an iterator
+one per step. `size()`, `lastIndexOf` and `hashCode` compute the whole `LazyList`, so avoid them on an infinite one.
 
 ## Copies
 

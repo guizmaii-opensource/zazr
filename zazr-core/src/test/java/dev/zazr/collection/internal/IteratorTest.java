@@ -2,9 +2,9 @@ package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import java.math.BigDecimal;
@@ -1716,7 +1716,7 @@ class IteratorTest {
         assertThat(of(1).mkString("", "-", "")).isEqualTo("1");
     }
 
-    // -- toList, toVector, toQueue, toStream
+    // -- toList, toVector, toQueue, toLazyList
 
     @Test
     public void shouldConvertToList() {
@@ -1737,17 +1737,17 @@ class IteratorTest {
     }
 
     @Test
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThatIterator(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThatIterator(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     @Test
-    public void shouldConvertToStreamLazily() {
+    public void shouldConvertToLazyListLazily() {
         AtomicInteger pulled = new AtomicInteger();
-        Stream<Integer> stream = Iterator.continually(pulled::incrementAndGet).toStream();
+        LazyList<Integer> stream = Iterator.continually(pulled::incrementAndGet).toLazyList();
         assertThat(pulled.get()).isEqualTo(1);
-        assertThat(stream.take(3)).isEqualTo(Stream.of(1, 2, 3));
+        assertThat(stream.take(3)).isEqualTo(LazyList.of(1, 2, 3));
     }
 
     // -- Iterable

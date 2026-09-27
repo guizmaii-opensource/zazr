@@ -1263,6 +1263,30 @@ Decided as above: `Queue` survives; `Array`, `CharSeq`, `Tree`, `BitSet`, `Prior
 family are deleted from `zazr-core`. Nothing that survives depends on anything deleted, so any of them can
 come back later as a file or a module without touching the core.
 
+**Decided while implementing #28 (`Stream` renamed `LazyList`):**
+
+- **What is renamed.** The type and its cases (`LazyList`, `LazyList.Cons`, `LazyList.Empty`), its internals
+  (`LazyListModule` with `LazyListFactory` and `LazyListIterator`, `JavaConverters.LazyListListView`), the conversion
+  `toStream()` (now `toLazyList()`, on every collection, `Iterator` and the non-empty types), the tests
+  (`LazyListTest`, `LazyListLawsTest`), and zazr-test's generator (`Gen.stream` is `Gen.lazyList`). No behaviour
+  changes, except the text the type prints: `toString` gives `LazyList(1, 2, ?)` and the null-check messages name
+  `LazyList.of`, `LazyList.ofAll`, ..., since both spell the class name.
+- **The site page** moves to `collections/lazy-list.md`; the old address redirects to it (`mkdocs-redirects`). The
+  complexity page's section is `#lazylist`. The notes on the name clash with `java.util.stream.Stream` are gone from
+  the site and the skill; `List` is the one Zazr name left that clashes with a common JDK type.
+- **What keeps the word `stream`**: everything that is the JDK's, `java.util.stream.*` (`Stream`, `IntStream`,
+  `LongStream`, `DoubleStream`, `StreamSupport`, `Collector`), `stream()` and `parallelStream()` on every
+  collection, the `ofAll(java.util.stream.Stream)` factories and their `javaStream`/`stream` parameters,
+  `Maps.ofStream` (it reads a JDK stream), the tests whose names are about a JDK stream (`shouldConstructFromJavaStream`,
+  `shouldStreamSequentially`, ...), the local variables named `stream` in the internals and the tests, and a few
+  inherited test names outside `LazyListTest` that use the word loosely (`IteratorTest.shouldGenerateInfiniteStream...`,
+  `TreeSetTest.shouldConstructStreamFrom...JavaStream`, `AbstractTraversableTest.shouldCreateStreamFrom...JavaUtilStream`,
+  `LazyListTest.shouldGenerateIntStream`/`LongStream`). The entries of this log written before the rename keep `Stream`.
+- **How.** `scripts/rename-lazylist.scala` (scala-cli) does the `git mv`s and the replacements, and is idempotent, so
+  code written against `Stream` that lands later is renamed by running it again (then `make fmt`,
+  `make docs-complexity`, `make docs-align`). It leaves this log alone. It can be deleted once nothing in flight uses
+  the old name.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
@@ -1884,6 +1908,34 @@ unreleased).
   `assertIsSatisfied()` on a `Falsified` or `Erroneous` outcome; `Check.evaluate`/`evaluateN`/`evaluateAll` (same
   arities and overloads) return the `CheckResult`, for the laws, the docs that pattern match on it and the tests of
   the failure messages. `CheckResult.assertIsSatisfied()` stays.
+- **`Assertion`, after zio-test** (decided by the maintainer 2026-09-27, #111): a boolean property says only
+  "false"; an `Assertion<A>` (a final class, an immutable value with a name) tests a value and explains a failure
+  down its failing path (`Some(4) holds 4:` then, indented, `4 is not greater than 5`). `Assertion.assertThat(value,
+  assertions...)` returns a `TestResult` (`Success` or `Failure(explanation)`, combined with `and`/`or`/`label`);
+  several assertions are combined with `and` and a failure lists every failing one. The catalogue follows zio-test's
+  names (`equalTo`, `isGreaterThan`, `hasSize`, `forall`, `isSome`, `isLeft`, `isSuccess`, `isValid`, `throwsA`, ...);
+  collection assertions take any `Iterable`; `throwsA`/`throwsWith` test a `CheckedRunnable` through an
+  `assertThat(CheckedRunnable, ...)` overload, so `assertThat(() -> ..., throwsA(X.class))` needs no cast. zio-test's
+  `assertTrue(a, b, c)` is a macro that renders the source of each expression; Java cannot, so there is none: the
+  varargs `assertThat`/`check(gen, assertions...)` are the equivalent.
+  - **One body type for `boolean` and `TestResult`** (a decision to confirm): #111 asked for overloads whose body
+    returns a `TestResult` next to the `Boolean` ones. Java cannot tell two implicitly typed lambdas of the same arity
+    apart by what they return (JLS 15.12.2.2: an implicitly typed lambda is not pertinent to applicability; 15.12.2.5
+    compares return types for explicitly typed lambdas only), so `check(gen, x -> ...)` would be ambiguous for every
+    body. The body parameter is `CheckedFunctionN<? super T1, ..., ?>` instead: a `Boolean` is judged as before, a
+    `TestResult` with its explanation, and any other result passes when the body completes without throwing
+    (decided 2026-09-27 after the review of #187), so a body that ends with an AssertJ chain, which returns its
+    `Assert`, is checked by its assertions; a `null` result is `Erroneous`. Every boolean body keeps compiling. `Assertion` is a class, not a functional interface, so the
+    `check(gen, assertions...)` shortcut is not ambiguous with a lambda body either.
+  - The explanation travels in `Falsified.message`, the record keeps its shape; a report whose explanation spans
+    several lines puts it after the seed, indented, without the blank lines around it (AssertJ adds them).
+  - `or` tests its right side only when its left side fails; `and` and the varargs form test every side, so that a
+    failure lists every failing assertion, and a side that throws on a value an earlier side rejected makes the check
+    `Erroneous` (decided 2026-09-27). `and`/`or` return the narrower type of their argument, so an assertion on any
+    `Iterable` combines with one on a `List` in either order.
+  - Explanations do not depend on the run: arrays show their elements (and `equalTo` compares them by content, as
+    `Objects.deepEquals`), code under test shows as "the code", and `isSorted(Comparator)` is named
+    `isSorted(a comparator)`.
 - **Runner**: `Check.check`/`checkN`/`checkAll` and `evaluate`/`evaluateN`/`evaluateAll` at arities 1..8, generated by
   `Generator.scala`. The body is a
   `CheckedFunction` returning `Boolean`; an `AssertionError` (a JUnit or AssertJ failure) falsifies the sample and

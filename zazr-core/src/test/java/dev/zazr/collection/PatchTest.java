@@ -67,10 +67,10 @@ public class PatchTest {
                                         .asJava())
                                 .as("Queue with a rear." + call)
                                 .isEqualTo(expected);
-                        assertThat(Stream.ofAll(elements)
+                        assertThat(LazyList.ofAll(elements)
                                         .patch(from, that, replaced)
                                         .asJava())
-                                .as("Stream." + call)
+                                .as("LazyList." + call)
                                 .isEqualTo(expected);
                         assertThat(Vector.range(0, n)
                                         .patch(from, that, replaced)
@@ -98,7 +98,7 @@ public class PatchTest {
                         .patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE)
                         .asJava())
                 .isEqualTo(expected);
-        assertThat(Stream.of(1, 2)
+        assertThat(LazyList.of(1, 2)
                         .patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE)
                         .asJava())
                 .isEqualTo(expected);

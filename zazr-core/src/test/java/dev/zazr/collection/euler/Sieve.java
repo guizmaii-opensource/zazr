@@ -1,9 +1,9 @@
 package dev.zazr.collection.euler;
 
 import dev.zazr.Function3;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Set;
-import dev.zazr.collection.Stream;
 import dev.zazr.control.Option;
 import java.util.function.BiFunction;
 
@@ -17,7 +17,7 @@ final class Sieve {
             (x, y) -> Option.some((3 * x * x) - (y * y)).filter(n -> x > y && n % 12 == 11));
 
     private static final List<Function3<Set<Integer>, Integer, Integer, Set<Integer>>> STEPS = List.of(
-            (sieve, limit, root) -> Stream.rangeClosed(1, root)
+            (sieve, limit, root) -> LazyList.rangeClosed(1, root)
                     .crossProduct()
                     .foldLeft(
                             sieve,
@@ -27,11 +27,11 @@ final class Sieve {
                                             .filter(p -> p < limit)
                                             .map(p -> ss.contains(p) ? ss.remove(p) : ss.add(p))
                                             .getOrElse(ss))),
-            (sieve, limit, root) -> Stream.rangeClosed(5, root)
+            (sieve, limit, root) -> LazyList.rangeClosed(5, root)
                     .foldLeft(
                             sieve,
                             (xs, r) -> xs.contains(r)
-                                    ? Stream.rangeBy(r * r, limit, r * r).foldLeft(xs, Set::remove)
+                                    ? LazyList.rangeBy(r * r, limit, r * r).foldLeft(xs, Set::remove)
                                     : xs));
 
     static Set<Integer> fillSieve(int limit, Set<Integer> empty) {

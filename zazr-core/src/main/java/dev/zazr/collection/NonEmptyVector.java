@@ -2320,10 +2320,10 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Complexity: O(n).
      *
-     * @return the elements as a {@link Stream}, in order
+     * @return the elements as a {@link LazyList}, in order
      */
-    public Stream<A> toStream() {
-        return vector.toStream();
+    public LazyList<A> toLazyList() {
+        return vector.toLazyList();
     }
 
     /**

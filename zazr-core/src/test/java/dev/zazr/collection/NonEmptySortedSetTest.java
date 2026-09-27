@@ -424,7 +424,7 @@ public class NonEmptySortedSetTest {
             assertThat(ness.toVector()).isEqualTo(set.toVector());
             assertThat(ness.toList()).isEqualTo(set.toList());
             assertThat(ness.toQueue()).isEqualTo(set.toQueue());
-            assertThat(ness.toStream()).isEqualTo(set.toStream());
+            assertThat(ness.toLazyList()).isEqualTo(set.toLazyList());
             assertThat(ness.toSet()).isEqualTo(set.toSet());
             assertThat(ness.toLinkedSet()).isEqualTo(set.toLinkedSet());
             assertThat(ness.toSortedSet(Comparator.naturalOrder()).head()).isEqualTo(0);

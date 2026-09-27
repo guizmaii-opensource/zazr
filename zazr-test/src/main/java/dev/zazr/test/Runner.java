@@ -79,7 +79,7 @@ final class Runner {
      * one pass at the configured size when {@code all} is true.
      */
     static <T extends Tuple> CheckResult check(
-            CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, Boolean> body, boolean all) {
+            CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, ?> body, boolean all) {
         long seed = config.seed();
         State state = new State();
         Gen.Sink<T> sink = sample -> {
@@ -105,16 +105,26 @@ final class Runner {
         CheckResult failure;
     }
 
-    /// The failure of one sample, or null when it passed.
+    /// The failure of one sample, or null when it passed. A `Boolean` or a `TestResult` is judged; any other value
+    /// passes, since the body completed without throwing (an AssertJ chain returns its `Assert`); `null` is
+    /// erroneous.
     private static <T extends Tuple> CheckResult evaluate(
-            int sampleNumber, long seed, T sample, CheckedFunction1<? super T, Boolean> body) {
+            int sampleNumber, long seed, T sample, CheckedFunction1<? super T, ?> body) {
         try {
-            Boolean holds = body.apply(sample);
-            if (holds == null) {
-                return new CheckResult.Erroneous(
-                        sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
-            }
-            return holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
+            return switch (body.apply(sample)) {
+                case Boolean holds ->
+                    holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
+                case TestResult.Success ignored -> null;
+                case TestResult.Failure(var explanation) ->
+                    new CheckResult.Falsified(sampleNumber, seed, sample, Option.some(explanation));
+                case null ->
+                    new CheckResult.Erroneous(
+                            sampleNumber,
+                            seed,
+                            new NullPointerException("the check returned null"),
+                            Option.some(sample));
+                case Object completed -> null;
+            };
         } catch (AssertionError failure) {
             return new CheckResult.Falsified(sampleNumber, seed, sample, Option.ofNullable(failure.getMessage()));
         } catch (Throwable error) {

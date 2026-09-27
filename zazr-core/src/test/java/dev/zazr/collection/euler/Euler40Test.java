@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ public class Euler40Test {
     }
 
     private static int solution() {
-        return Stream.iterate(1, i -> i * 10)
+        return LazyList.iterate(1, i -> i * 10)
                 .takeWhile(i -> i <= 1_000_000)
                 .map(Euler40Test::decimalDigitAtPosition)
                 .map(c -> Character.digit(c, 10))
@@ -47,7 +47,7 @@ public class Euler40Test {
         return FIRST_1_000_000_DECIMALS.get(num - 1);
     }
 
-    private static final Stream<Character> FIRST_1_000_000_DECIMALS = Stream.from(1)
+    private static final LazyList<Character> FIRST_1_000_000_DECIMALS = LazyList.from(1)
             .map(i -> i.toString())
             .flatMap(s -> Vector.ofAll(s.toCharArray()))
             .take(1_000_000);

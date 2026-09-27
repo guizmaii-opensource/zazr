@@ -5,12 +5,12 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
@@ -37,7 +37,7 @@ final class Shapes {
     static final int VECTOR_LAYOUTS = 6;
     static final int LIST_LAYOUTS = 3;
     static final int QUEUE_LAYOUTS = 4;
-    static final int STREAM_LAYOUTS = 5;
+    static final int LAZY_LIST_LAYOUTS = 5;
     static final int NON_EMPTY_VECTOR_LAYOUTS = 3;
     static final int SET_LAYOUTS = 4;
     static final int MAP_LAYOUTS = 4;
@@ -172,22 +172,22 @@ final class Shapes {
         };
     }
 
-    static <T> Gen<Stream<T>> stream(Gen<T> gen) {
+    static <T> Gen<LazyList<T>> lazyList(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
             ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
-            return sink.accept(stream(sampling.draw().nextInt(STREAM_LAYOUTS), xs, gen, sampling, size));
+            return sink.accept(lazyList(sampling.draw().nextInt(LAZY_LIST_LAYOUTS), xs, gen, sampling, size));
         });
     }
 
     /// `ofAll`, a chain of lazy tails, the same chain with a prefix already evaluated, an eager prefix with a
     /// lazy suffix appended, and the rest of a longer lazy chain after `drop`. Always finite; every element is
-    /// drawn before the stream is built, so evaluating a tail later draws nothing.
-    static <T> Stream<T> stream(int layout, ArrayList<T> xs, Gen<T> gen, Sampling sampling, int size) {
+    /// drawn before the lazy list is built, so evaluating a tail later draws nothing.
+    static <T> LazyList<T> lazyList(int layout, ArrayList<T> xs, Gen<T> gen, Sampling sampling, int size) {
         return switch (layout) {
-            case 0 -> Stream.ofAll(xs);
-            case 1 -> lazyStream(xs, 0);
+            case 0 -> LazyList.ofAll(xs);
+            case 1 -> lazyChain(xs, 0);
             case 2 -> {
-                Stream<T> stream = lazyStream(xs, 0);
+                LazyList<T> stream = lazyChain(xs, 0);
                 int evaluated = sampling.draw().nextInt(xs.size() + 1);
                 // the first cells evaluated, and memoised
                 Vector.range(0, evaluated).foldLeft(stream, (cursor, i) -> cursor.isEmpty() ? cursor : cursor.tail());
@@ -195,17 +195,17 @@ final class Shapes {
             }
             case 3 -> {
                 int split = sampling.draw().nextInt(xs.size() + 1);
-                yield Stream.ofAll(xs.subList(0, split)).appendAll(lazyStream(xs, split));
+                yield LazyList.ofAll(xs.subList(0, split)).appendAll(lazyChain(xs, split));
             }
             default -> {
                 ArrayList<T> prefix = extra(gen, sampling, size);
-                yield lazyStream(concat(prefix, xs), 0).drop(prefix.size());
+                yield lazyChain(concat(prefix, xs), 0).drop(prefix.size());
             }
         };
     }
 
-    private static <T> Stream<T> lazyStream(java.util.List<T> xs, int from) {
-        return from == xs.size() ? Stream.empty() : Stream.cons(xs.get(from), () -> lazyStream(xs, from + 1));
+    private static <T> LazyList<T> lazyChain(java.util.List<T> xs, int from) {
+        return from == xs.size() ? LazyList.empty() : LazyList.cons(xs.get(from), () -> lazyChain(xs, from + 1));
     }
 
     static <T> Gen<NonEmptyVector<T>> nonEmptyVector(Gen<T> gen) {

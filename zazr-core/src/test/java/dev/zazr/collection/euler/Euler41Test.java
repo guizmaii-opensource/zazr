@@ -1,7 +1,7 @@
 package dev.zazr.collection.euler;
 
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import org.junit.jupiter.api.Test;
 
 import static dev.zazr.collection.euler.Utils.isPrime;
@@ -31,7 +31,7 @@ public class Euler41Test {
     }
 
     private static int largestNPandigitalPrime() {
-        return Stream.rangeClosedBy(9, 1, -1)
+        return LazyList.rangeClosedBy(9, 1, -1)
                 .flatMap(n -> nDigitPandigitalNumbers(n).filter(Utils::isPrime).sorted(reverseOrder()))
                 .head();
     }

@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -30,9 +30,10 @@ public class Euler34Test {
     }
 
     private static int sumOfOfAllNumbersWhichAreEqualToSumOfDigitFactorial() {
-        // 9! * 7 = 2 540 160 is a seven digit number, as is 9! * 8, therefore 9! * 7 is the definitive upper limit we
-        // have to investigate.
-        return Stream.rangeClosed(3, 2_540_160)
+        return LazyList.rangeClosed(
+                        3,
+                        2_540_160) // 9! * 7 = 2 540 160 is a seven digit number, as is 9! * 8, therefore 9! * 7 is the
+                // definitive upper limit we have to investigate.
                 .filter(i -> i == sumOfDigitFactorial(i))
                 .sum()
                 .intValue();

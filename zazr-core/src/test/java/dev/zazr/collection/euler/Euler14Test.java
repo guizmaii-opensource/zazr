@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ public class Euler14Test {
     @Test
     public void shouldSolveProblem14() {
         // equivalent to from(1L).take(1_000_000)
-        Assertions.assertThat(Stream.from(500_000L)
+        Assertions.assertThat(LazyList.from(500_000L)
                         .take(500_000)
                         .maxBy(collatzSequenceLength)
                         .get())

@@ -1,7 +1,7 @@
 package dev.zazr.collection.euler;
 
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ public class Euler45Test {
         assertThat(HEXAGONAL.filter(Euler45Test::isPentagonal).tail().head()).isEqualTo(1533776805L);
     }
 
-    private static final Stream<Long> HEXAGONAL = Stream.from(2L).map(i -> i * (2 * i - 1));
+    private static final LazyList<Long> HEXAGONAL = LazyList.from(2L).map(i -> i * (2 * i - 1));
 
     private static boolean isPentagonal(long i) {
         // If a number k is pentagonal then n(3n−1)/2 = k; for some integer n

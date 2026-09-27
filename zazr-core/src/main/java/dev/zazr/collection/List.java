@@ -69,7 +69,7 @@ import org.jspecify.annotations.Nullable;
  * List.empty()                        // = List.of() = Nil.instance()
  * List.of(x)                          // = new Cons<>(x, Nil.instance())
  * List.of(Object...)                  // e.g. List.of(1, 2, 3)
- * List.ofAll(Iterable)                // e.g. List.ofAll(Stream.of(1, 2, 3)) = 1, 2, 3
+ * List.ofAll(Iterable)                // e.g. List.ofAll(LazyList.of(1, 2, 3)) = 1, 2, 3
  * List.ofAll(<primitive array>) // e.g. List.ofAll(new int[] {1, 2, 3}) = 1, 2, 3
  *
  * // int sequences
@@ -120,7 +120,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Complexity: the methods without a note of their own (map, flatMap, the folds, groupBy, the conversions,
  * {@code equals}, {@code hashCode}, {@code toString}) walk the elements once: O(n); an {@code Option} variant costs
- * what the method it wraps costs, and {@code toStream()} is O(1), its elements being read as the Stream reaches them.
+ * what the method it wraps costs, and {@code toLazyList()} is O(1), its elements being read as the LazyList reaches them.
  * A List does not store its size, so {@code equals}, {@code toArray()}, {@code stream()} and {@code spliterator()}
  * count the elements before they start, and {@code containsAll} is O(n * m) for m elements: each one is looked for by
  * a walk.
@@ -279,7 +279,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Creates a List that contains the elements of the given {@link java.util.stream.Stream}.
      *
      * @param javaStream A {@link java.util.stream.Stream}
-     * @param <T>        Component type of the Stream.
+     * @param <T>        Component type of the LazyList.
      * @return A List containing the given elements in the same order.
      */
     static <T extends @Nullable Object> List<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
@@ -4067,11 +4067,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * The elements as a {@link Stream}, in this List's order.
+     * The elements as a {@link LazyList}, in this List's order.
      *
-     * @return a {@code Stream} of the elements
+     * @return a {@code LazyList} of the elements
      */
-    default Stream<T> toStream() {
-        return TraversableModule.toTraversable(this, Stream.empty(), Stream::ofAll);
+    default LazyList<T> toLazyList() {
+        return TraversableModule.toTraversable(this, LazyList.empty(), LazyList::ofAll);
     }
 }

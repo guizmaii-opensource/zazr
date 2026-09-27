@@ -2,7 +2,7 @@ package dev.zazr.collection.euler;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
@@ -44,8 +44,8 @@ public class Euler57Test {
                 .size();
     }
 
-    private static Stream<Tuple2<BigDecimal, BigDecimal>> fractions() {
-        return Stream.iterate(Tuple.of(BigDecimal.ONE, BigDecimal.ONE), Euler57Test::it);
+    private static LazyList<Tuple2<BigDecimal, BigDecimal>> fractions() {
+        return LazyList.iterate(Tuple.of(BigDecimal.ONE, BigDecimal.ONE), Euler57Test::it);
     }
 
     /**

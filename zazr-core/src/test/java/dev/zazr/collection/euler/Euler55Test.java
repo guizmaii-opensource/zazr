@@ -1,7 +1,7 @@
 package dev.zazr.collection.euler;
 
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
-import dev.zazr.collection.Stream;
 import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 
@@ -44,11 +44,11 @@ public class Euler55Test {
     }
 
     private static int solve() {
-        return Stream.range(1, 10_000).filter(Euler55Test::isLychrel).size();
+        return LazyList.range(1, 10_000).filter(Euler55Test::isLychrel).size();
     }
 
     private static boolean isLychrel(int n) {
-        return Stream.iterate(String.valueOf(n), Euler55Test::next)
+        return LazyList.iterate(String.valueOf(n), Euler55Test::next)
                 .tail() // Surprisingly, there are palindromic numbers that are themselves Lychrel numbers
                 .take(50)
                 .find(Utils::isPalindrome)

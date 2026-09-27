@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ public class Euler36Test {
     }
 
     private static int solve(int n) {
-        return Stream.range(1, n)
+        return LazyList.range(1, n)
                 .filter(Euler36Test::isDoubleBasePalindrome)
                 .sum()
                 .intValue();

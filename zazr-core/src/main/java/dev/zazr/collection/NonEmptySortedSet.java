@@ -1112,10 +1112,10 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * @return the elements as a {@link Stream}, in order
+     * @return the elements as a {@link LazyList}, in order
      */
-    public Stream<A> toStream() {
-        return set.toStream();
+    public LazyList<A> toLazyList() {
+        return set.toLazyList();
     }
 
     /**

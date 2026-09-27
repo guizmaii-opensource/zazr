@@ -190,7 +190,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * Creates a LinkedHashSet that contains the elements of the given {@link java.util.stream.Stream}.
      *
      * @param javaStream A {@link java.util.stream.Stream}
-     * @param <T>        Component type of the Stream.
+     * @param <T>        Component type of the LazyList.
      * @return A LinkedHashSet containing the given elements in the same order.
      */
     public static <T extends @Nullable Object> LinkedHashSet<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {

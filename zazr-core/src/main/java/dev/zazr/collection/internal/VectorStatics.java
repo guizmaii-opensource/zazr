@@ -209,7 +209,7 @@ final class VectorStatics {
     /**
      * The number of elements of {@code xs} when it is known without walking them, or -1. Only this package's vector and
      * {@code java.util.Collection} qualify: the size of a zazr {@code Traversable} may cost a walk (a {@code List}) or
-     * never end (a {@code Stream}).
+     * never end (a {@code LazyList}).
      */
     static int knownSize(Iterable<?> xs) {
         if (xs instanceof RadixVector<?> v) {

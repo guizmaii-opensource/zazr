@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 
-import static dev.zazr.collection.Stream.concat;
+import static dev.zazr.collection.LazyList.concat;
 import static java.util.Comparator.comparingInt;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -34,155 +34,155 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 
-public class StreamTest extends AbstractTraversableTest {
+public class LazyListTest extends AbstractTraversableTest {
 
     // -- construction
 
     @Override
-    protected <T> Collector<T, ArrayList<T>, Stream<T>> collector() {
-        return Stream.collector();
+    protected <T> Collector<T, ArrayList<T>, LazyList<T>> collector() {
+        return LazyList.collector();
     }
 
     @Override
-    protected <T> Stream<T> empty() {
-        return Stream.empty();
+    protected <T> LazyList<T> empty() {
+        return LazyList.empty();
     }
 
     @Override
-    protected <T> Stream<T> of(T element) {
-        return Stream.of(element);
+    protected <T> LazyList<T> of(T element) {
+        return LazyList.of(element);
     }
 
     @SuppressWarnings("varargs")
     @SafeVarargs
     @Override
-    protected final <T> Stream<T> of(T... elements) {
-        return Stream.of(elements);
+    protected final <T> LazyList<T> of(T... elements) {
+        return LazyList.of(elements);
     }
 
     @Override
-    protected <T> Stream<T> ofAll(Iterable<? extends T> elements) {
-        return Stream.ofAll(elements);
+    protected <T> LazyList<T> ofAll(Iterable<? extends T> elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected <T extends Comparable<? super T>> Stream<T> ofJavaStream(
+    protected <T extends Comparable<? super T>> LazyList<T> ofJavaStream(
             java.util.stream.Stream<? extends T> javaStream) {
-        return Stream.ofAll(javaStream);
+        return LazyList.ofAll(javaStream);
     }
 
     @Override
-    protected Stream<Boolean> ofAll(boolean... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Boolean> ofAll(boolean... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Byte> ofAll(byte... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Byte> ofAll(byte... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Character> ofAll(char... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Character> ofAll(char... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Double> ofAll(double... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Double> ofAll(double... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Float> ofAll(float... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Float> ofAll(float... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Integer> ofAll(int... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Integer> ofAll(int... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Long> ofAll(long... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Long> ofAll(long... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected Stream<Short> ofAll(short... elements) {
-        return Stream.ofAll(elements);
+    protected LazyList<Short> ofAll(short... elements) {
+        return LazyList.ofAll(elements);
     }
 
     @Override
-    protected <T> Stream<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
-        return Stream.tabulate(n, f);
+    protected <T> LazyList<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
+        return LazyList.tabulate(n, f);
     }
 
     @Override
-    protected <T> Stream<T> fill(int n, Supplier<? extends T> s) {
-        return Stream.fill(n, s);
+    protected <T> LazyList<T> fill(int n, Supplier<? extends T> s) {
+        return LazyList.fill(n, s);
     }
 
     protected <T> Traversable<T> fill(int n, T element) {
-        return Stream.fill(n, element);
+        return LazyList.fill(n, element);
     }
 
-    protected Stream<Character> range(char from, char toExclusive) {
-        return Stream.range(from, toExclusive);
+    protected LazyList<Character> range(char from, char toExclusive) {
+        return LazyList.range(from, toExclusive);
     }
 
-    protected Stream<Character> rangeBy(char from, char toExclusive, int step) {
-        return Stream.rangeBy(from, toExclusive, step);
+    protected LazyList<Character> rangeBy(char from, char toExclusive, int step) {
+        return LazyList.rangeBy(from, toExclusive, step);
     }
 
-    protected Stream<Double> rangeBy(double from, double toExclusive, double step) {
-        return Stream.rangeBy(from, toExclusive, step);
+    protected LazyList<Double> rangeBy(double from, double toExclusive, double step) {
+        return LazyList.rangeBy(from, toExclusive, step);
     }
 
-    protected Stream<Integer> range(int from, int toExclusive) {
-        return Stream.range(from, toExclusive);
+    protected LazyList<Integer> range(int from, int toExclusive) {
+        return LazyList.range(from, toExclusive);
     }
 
-    protected Stream<Integer> rangeBy(int from, int toExclusive, int step) {
-        return Stream.rangeBy(from, toExclusive, step);
+    protected LazyList<Integer> rangeBy(int from, int toExclusive, int step) {
+        return LazyList.rangeBy(from, toExclusive, step);
     }
 
-    protected Stream<Long> range(long from, long toExclusive) {
-        return Stream.range(from, toExclusive);
+    protected LazyList<Long> range(long from, long toExclusive) {
+        return LazyList.range(from, toExclusive);
     }
 
-    protected Stream<Long> rangeBy(long from, long toExclusive, long step) {
-        return Stream.rangeBy(from, toExclusive, step);
+    protected LazyList<Long> rangeBy(long from, long toExclusive, long step) {
+        return LazyList.rangeBy(from, toExclusive, step);
     }
 
-    protected Stream<Character> rangeClosed(char from, char toInclusive) {
-        return Stream.rangeClosed(from, toInclusive);
+    protected LazyList<Character> rangeClosed(char from, char toInclusive) {
+        return LazyList.rangeClosed(from, toInclusive);
     }
 
-    protected Stream<Character> rangeClosedBy(char from, char toInclusive, int step) {
-        return Stream.rangeClosedBy(from, toInclusive, step);
+    protected LazyList<Character> rangeClosedBy(char from, char toInclusive, int step) {
+        return LazyList.rangeClosedBy(from, toInclusive, step);
     }
 
-    protected Stream<Double> rangeClosedBy(double from, double toInclusive, double step) {
-        return Stream.rangeClosedBy(from, toInclusive, step);
+    protected LazyList<Double> rangeClosedBy(double from, double toInclusive, double step) {
+        return LazyList.rangeClosedBy(from, toInclusive, step);
     }
 
-    protected Stream<Integer> rangeClosed(int from, int toInclusive) {
-        return Stream.rangeClosed(from, toInclusive);
+    protected LazyList<Integer> rangeClosed(int from, int toInclusive) {
+        return LazyList.rangeClosed(from, toInclusive);
     }
 
-    protected Stream<Integer> rangeClosedBy(int from, int toInclusive, int step) {
-        return Stream.rangeClosedBy(from, toInclusive, step);
+    protected LazyList<Integer> rangeClosedBy(int from, int toInclusive, int step) {
+        return LazyList.rangeClosedBy(from, toInclusive, step);
     }
 
-    protected Stream<Long> rangeClosed(long from, long toInclusive) {
-        return Stream.rangeClosed(from, toInclusive);
+    protected LazyList<Long> rangeClosed(long from, long toInclusive) {
+        return LazyList.rangeClosed(from, toInclusive);
     }
 
-    protected Stream<Long> rangeClosedBy(long from, long toInclusive, long step) {
-        return Stream.rangeClosedBy(from, toInclusive, step);
+    protected LazyList<Long> rangeClosedBy(long from, long toInclusive, long step) {
+        return LazyList.rangeClosedBy(from, toInclusive, step);
     }
 
-    protected <T> Stream<Stream<T>> transpose(Stream<Stream<T>> rows) {
-        return Stream.transpose(rows);
+    protected <T> LazyList<LazyList<T>> transpose(LazyList<LazyList<T>> rows) {
+        return LazyList.transpose(rows);
     }
 
     protected boolean useIsEqualToInsteadOfIsSameAs() {
@@ -191,32 +191,32 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveNonExistingElement() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.remove(4)).isEqualTo(t).isNotSameAs(t);
     }
 
     @Test
     public void shouldRemoveFirstElementByPredicateNonExisting() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.removeFirst(v -> v == 4)).isEqualTo(t).isNotSameAs(t);
     }
 
     @Test
     public void shouldRemoveLastElementByPredicateNonExisting() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.removeLast(v -> v == 4)).isEqualTo(t).isNotSameAs(t);
     }
 
     @Test
     public void shouldNotRemoveAllNonExistingElementsFromNonNil() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.removeAll(of(4, 5))).isEqualTo(t).isNotSameAs(t);
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void shouldRemoveExistingElements() {
-        Stream<Integer> seq = of(1, 2, 3);
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(i -> i == 1)).isEqualTo(of(2, 3));
         assertThat(seq.removeAll(i -> i == 2)).isEqualTo(of(1, 3));
         assertThat(seq.removeAll(i -> i == 3)).isEqualTo(of(1, 2));
@@ -227,14 +227,14 @@ public class StreamTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldNotRemoveAllNonMatchedElementsFromNonNil() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         Predicate<Integer> isTooBig = i -> i >= 4;
         assertThat(t.removeAll(isTooBig)).isEqualTo(t).isNotSameAs(t);
     }
 
     @Test
     public void shouldNotRemoveAllNonObjectsElementsFromNonNil() {
-        Stream<Integer> seq = of(1, 2, 3);
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(4)).isEqualTo(seq).isNotSameAs(seq);
     }
 
@@ -264,17 +264,27 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Nested
+    class StaticOfAllJavaStreamTests {
+        @Test
+        public void shouldNameTheJavaStreamParameterWhenItIsNull() {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LazyList.ofAll((java.util.stream.Stream<Integer>) null))
+                    .withMessage("javaStream is null");
+        }
+    }
+
+    @Nested
     class StaticFromIntTests {
         @Test
         public void shouldGenerateIntStream() {
-            assertThat(Stream.from(-1).take(3)).isEqualTo(Stream.of(-1, 0, 1));
+            assertThat(LazyList.from(-1).take(3)).isEqualTo(LazyList.of(-1, 0, 1));
         }
 
         @Test
         public void shouldGenerateOverflowingIntStream() {
             //noinspection NumericOverflow
-            assertThat(Stream.from(Integer.MAX_VALUE).take(2))
-                    .isEqualTo(Stream.of(Integer.MAX_VALUE, Integer.MAX_VALUE + 1));
+            assertThat(LazyList.from(Integer.MAX_VALUE).take(2))
+                    .isEqualTo(LazyList.of(Integer.MAX_VALUE, Integer.MAX_VALUE + 1));
         }
     }
 
@@ -282,14 +292,14 @@ public class StreamTest extends AbstractTraversableTest {
     class StaticFromIntIntTests {
         @Test
         public void shouldGenerateIntStreamWithStep() {
-            assertThat(Stream.from(-1, 6).take(3)).isEqualTo(Stream.of(-1, 5, 11));
+            assertThat(LazyList.from(-1, 6).take(3)).isEqualTo(LazyList.of(-1, 5, 11));
         }
 
         @Test
         public void shouldGenerateOverflowingIntStreamWithStep() {
             //noinspection NumericOverflow
-            assertThat(Stream.from(Integer.MAX_VALUE, 2).take(2))
-                    .isEqualTo(Stream.of(Integer.MAX_VALUE, Integer.MAX_VALUE + 2));
+            assertThat(LazyList.from(Integer.MAX_VALUE, 2).take(2))
+                    .isEqualTo(LazyList.of(Integer.MAX_VALUE, Integer.MAX_VALUE + 2));
         }
     }
 
@@ -297,13 +307,14 @@ public class StreamTest extends AbstractTraversableTest {
     class StaticFromLongTests {
         @Test
         public void shouldGenerateLongStream() {
-            assertThat(Stream.from(-1L).take(3)).isEqualTo(Stream.of(-1L, 0L, 1L));
+            assertThat(LazyList.from(-1L).take(3)).isEqualTo(LazyList.of(-1L, 0L, 1L));
         }
 
         @Test
         public void shouldGenerateOverflowingLongStream() {
             //noinspection NumericOverflow
-            assertThat(Stream.from(Long.MAX_VALUE).take(2)).isEqualTo(Stream.of(Long.MAX_VALUE, Long.MAX_VALUE + 1));
+            assertThat(LazyList.from(Long.MAX_VALUE).take(2))
+                    .isEqualTo(LazyList.of(Long.MAX_VALUE, Long.MAX_VALUE + 1));
         }
     }
 
@@ -311,21 +322,22 @@ public class StreamTest extends AbstractTraversableTest {
     class StaticFromLongLongTests {
         @Test
         public void shouldGenerateLongStreamWithStep() {
-            assertThat(Stream.from(-1L, 5L).take(3)).isEqualTo(Stream.of(-1L, 4L, 9L));
+            assertThat(LazyList.from(-1L, 5L).take(3)).isEqualTo(LazyList.of(-1L, 4L, 9L));
         }
 
         @Test
         public void shouldGenerateOverflowingLongStreamWithStep() {
             //noinspection NumericOverflow
-            assertThat(Stream.from(Long.MAX_VALUE, 2).take(2)).isEqualTo(Stream.of(Long.MAX_VALUE, Long.MAX_VALUE + 2));
+            assertThat(LazyList.from(Long.MAX_VALUE, 2).take(2))
+                    .isEqualTo(LazyList.of(Long.MAX_VALUE, Long.MAX_VALUE + 2));
         }
     }
 
     @Nested
     class StaticContinuallySupplierTests {
         @Test
-        public void shouldGenerateInfiniteStreamBasedOnSupplier() {
-            assertThat(Stream.continually(() -> 1).take(13).reduce((i, j) -> i + j))
+        public void shouldGenerateInfiniteLazyListBasedOnSupplier() {
+            assertThat(LazyList.continually(() -> 1).take(13).reduce((i, j) -> i + j))
                     .isEqualTo(13);
         }
     }
@@ -333,8 +345,8 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class StaticIterateTFunctionTests {
         @Test
-        public void shouldGenerateInfiniteStreamBasedOnSupplierWithAccessToPreviousValue() {
-            assertThat(Stream.iterate(2, (i) -> i + 2).take(3).reduce((i, j) -> i + j))
+        public void shouldGenerateInfiniteLazyListBasedOnSupplierWithAccessToPreviousValue() {
+            assertThat(LazyList.iterate(2, (i) -> i + 2).take(3).reduce((i, j) -> i + j))
                     .isEqualTo(12);
         }
     }
@@ -342,8 +354,8 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class StaticIterateSupplierOptionTests {
         @Test
-        public void shouldGenerateInfiniteStreamBasedOnOptionSupplier() {
-            assertThat(Stream.iterate(() -> Option.some(1)).take(5).reduce((i, j) -> i + j))
+        public void shouldGenerateInfiniteLazyListBasedOnOptionSupplier() {
+            assertThat(LazyList.iterate(() -> Option.some(1)).take(5).reduce((i, j) -> i + j))
                     .isEqualTo(5);
         }
     }
@@ -351,25 +363,26 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class StaticContinuallyTTests {
         @Test
-        public void shouldGenerateInfiniteStreamBasedOnRepeatedElement() {
-            assertThat(Stream.continually(2).take(3).reduce((i, j) -> i + j)).isEqualTo(6);
+        public void shouldGenerateInfiniteLazyListBasedOnRepeatedElement() {
+            assertThat(LazyList.continually(2).take(3).reduce((i, j) -> i + j)).isEqualTo(6);
         }
     }
 
     @Nested
     class StaticConsTSupplierTests {
         @Test
-        public void shouldBuildStreamBasedOnHeadAndTailSupplierWithAccessToHead() {
-            assertThat(Stream.cons(1, () -> Stream.cons(2, Stream::empty))).isEqualTo(Stream.of(1, 2));
+        public void shouldBuildLazyListBasedOnHeadAndTailSupplierWithAccessToHead() {
+            assertThat(LazyList.cons(1, () -> LazyList.cons(2, LazyList::empty)))
+                    .isEqualTo(LazyList.of(1, 2));
         }
     }
 
     @Nested
-    class StreamStaticNarrowTests {
+    class LazyListStaticNarrowTests {
         @Test
-        public void shouldNarrowStream() {
-            Stream<Double> doubles = of(1.0d);
-            Stream<Number> numbers = Stream.narrow(doubles);
+        public void shouldNarrowLazyList() {
+            LazyList<Double> doubles = of(1.0d);
+            LazyList<Number> numbers = LazyList.narrow(doubles);
             int actual = numbers.append(new BigDecimal("2.0")).sum().intValue();
             assertThat(actual).isEqualTo(3);
         }
@@ -378,16 +391,16 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class StaticOfallTests {
         @Test
-        public void shouldReturnSelfWhenIterableIsInstanceOfStream() {
-            Stream<Integer> source = ofAll(1, 2, 3);
-            Stream<Integer> target = Stream.ofAll(source);
+        public void shouldReturnSelfWhenIterableIsInstanceOfLazyList() {
+            LazyList<Integer> source = ofAll(1, 2, 3);
+            LazyList<Integer> target = LazyList.ofAll(source);
             assertThat(target).isSameAs(source);
         }
 
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfListView() {
-            Stream<Integer> persistent = ofAll(1, 2, 3);
-            Stream<Integer> target = Stream.ofAll(persistent.asJava());
+            LazyList<Integer> persistent = ofAll(1, 2, 3);
+            LazyList<Integer> target = LazyList.ofAll(persistent.asJava());
             assertThat(target).isSameAs(persistent);
         }
     }
@@ -397,8 +410,8 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldAppendMillionTimes() {
             int bigNum = 1_000_000;
-            assertThat(Stream.range(0, bigNum)
-                            .foldLeft(Stream.empty(), Stream::append)
+            assertThat(LazyList.range(0, bigNum)
+                            .foldLeft(LazyList.empty(), LazyList::append)
                             .size())
                     .isEqualTo(bigNum);
         }
@@ -418,49 +431,51 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldAppendAllIfThatIsInfinite() {
-            assertThat(of(1, 2, 3).appendAll(Stream.from(4)).take(6)).isEqualTo(of(1, 2, 3, 4, 5, 6));
+            assertThat(of(1, 2, 3).appendAll(LazyList.from(4)).take(6)).isEqualTo(of(1, 2, 3, 4, 5, 6));
         }
 
         @Test
-        public void shouldAppendAllToInfiniteStream() {
-            assertThat(Stream.from(1).appendAll(Stream.continually(() -> -1)).take(6))
+        public void shouldAppendAllToInfiniteLazyList() {
+            assertThat(LazyList.from(1)
+                            .appendAll(LazyList.continually(() -> -1))
+                            .take(6))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6));
         }
     }
 
     @Nested
-    class StreamCombinationsTests {
+    class LazyListCombinationsTests {
         @Test
-        public void shouldComputeCombinationsOfEmptyStream() {
-            assertThat(Stream.empty().combinations()).isEqualTo(Stream.of(Stream.empty()));
+        public void shouldComputeCombinationsOfEmptyLazyList() {
+            assertThat(LazyList.empty().combinations()).isEqualTo(LazyList.of(LazyList.empty()));
         }
 
         @Test
-        public void shouldComputeCombinationsOfNonEmptyStream() {
-            assertThat(Stream.of(1, 2, 3).combinations())
-                    .isEqualTo(Stream.of(
-                            Stream.empty(),
-                            Stream.of(1),
-                            Stream.of(2),
-                            Stream.of(3),
-                            Stream.of(1, 2),
-                            Stream.of(1, 3),
-                            Stream.of(2, 3),
-                            Stream.of(1, 2, 3)));
+        public void shouldComputeCombinationsOfNonEmptyLazyList() {
+            assertThat(LazyList.of(1, 2, 3).combinations())
+                    .isEqualTo(LazyList.of(
+                            LazyList.empty(),
+                            LazyList.of(1),
+                            LazyList.of(2),
+                            LazyList.of(3),
+                            LazyList.of(1, 2),
+                            LazyList.of(1, 3),
+                            LazyList.of(2, 3),
+                            LazyList.of(1, 2, 3)));
         }
     }
 
     @Nested
-    class StreamCombinationsKTests {
+    class LazyListCombinationsKTests {
         @Test
-        public void shouldComputeKCombinationsOfEmptyStream() {
-            assertThat(Stream.empty().combinations(1)).isEqualTo(Stream.empty());
+        public void shouldComputeKCombinationsOfEmptyLazyList() {
+            assertThat(LazyList.empty().combinations(1)).isEqualTo(LazyList.empty());
         }
 
         @Test
-        public void shouldComputeKCombinationsOfNonEmptyStream() {
-            assertThat(Stream.of(1, 2, 3).combinations(2))
-                    .isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(1, 3), Stream.of(2, 3)));
+        public void shouldComputeKCombinationsOfNonEmptyLazyList() {
+            assertThat(LazyList.of(1, 2, 3).combinations(2))
+                    .isEqualTo(LazyList.of(LazyList.of(1, 2), LazyList.of(1, 3), LazyList.of(2, 3)));
         }
     }
 
@@ -468,10 +483,10 @@ public class StreamTest extends AbstractTraversableTest {
     class FlatmapTests {
         @Test
         public void shouldFlatMapInfiniteTraversable() {
-            assertThat(Stream.iterate(1, i -> i + 1)
+            assertThat(LazyList.iterate(1, i -> i + 1)
                             .flatMap(i -> List.of(i, 2 * i))
                             .take(7))
-                    .isEqualTo(Stream.of(1, 2, 2, 4, 3, 6, 4));
+                    .isEqualTo(LazyList.of(1, 2, 2, 4, 3, 6, 4));
         }
     }
 
@@ -480,7 +495,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionInTwoIterations() {
             AtomicInteger count = new AtomicInteger(0);
-            Tuple2<Stream<Integer>, Stream<Integer>> results = Stream.of(1, 2, 3)
+            Tuple2<LazyList<Integer>, LazyList<Integer>> results = LazyList.of(1, 2, 3)
                     .partition(i -> {
                         count.incrementAndGet();
                         return true;
@@ -494,10 +509,10 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldPartitionLazily() {
             java.util.Set<Integer> itemsCalled = new java.util.HashSet<>();
 
-            Stream<Integer> infiniteStream = Stream.iterate(0, i -> i + 1);
+            LazyList<Integer> infiniteLazyList = LazyList.iterate(0, i -> i + 1);
             assertThat(itemsCalled).isEmpty();
 
-            Tuple2<Stream<Integer>, Stream<Integer>> results = infiniteStream.partition(i -> {
+            Tuple2<LazyList<Integer>, LazyList<Integer>> results = infiniteLazyList.partition(i -> {
                 itemsCalled.add(i);
                 return i % 2 == 0;
             });
@@ -511,22 +526,22 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class StreamPermutationsTests {
+    class LazyListPermutationsTests {
         @Test
-        public void shouldComputePermutationsOfEmptyStream() {
-            assertThat(Stream.empty().permutations()).isEqualTo(Stream.empty());
+        public void shouldComputePermutationsOfEmptyLazyList() {
+            assertThat(LazyList.empty().permutations()).isEqualTo(LazyList.empty());
         }
 
         @Test
-        public void shouldComputePermutationsOfNonEmptyStream() {
-            assertThat(Stream.of(1, 2, 3).permutations())
-                    .isEqualTo(Stream.ofAll(Stream.of(
-                            Stream.of(1, 2, 3),
-                            Stream.of(1, 3, 2),
-                            Stream.of(2, 1, 3),
-                            Stream.of(2, 3, 1),
-                            Stream.of(3, 1, 2),
-                            Stream.of(3, 2, 1))));
+        public void shouldComputePermutationsOfNonEmptyLazyList() {
+            assertThat(LazyList.of(1, 2, 3).permutations())
+                    .isEqualTo(LazyList.ofAll(LazyList.of(
+                            LazyList.of(1, 2, 3),
+                            LazyList.of(1, 3, 2),
+                            LazyList.of(2, 1, 3),
+                            LazyList.of(2, 3, 1),
+                            LazyList.of(3, 1, 2),
+                            LazyList.of(3, 2, 1))));
         }
     }
 
@@ -534,44 +549,44 @@ public class StreamTest extends AbstractTraversableTest {
     class AppendselfTests {
         @Test
         public void shouldRecurrentlyCalculateFibonacci() {
-            assertThat(Stream.of(1, 1)
+            assertThat(LazyList.of(1, 1)
                             .appendSelf(self -> self.zip(self.tail()).map(t -> t._1() + t._2()))
                             .take(10))
-                    .isEqualTo(Stream.of(1, 1, 2, 3, 5, 8, 13, 21, 34, 55));
+                    .isEqualTo(LazyList.of(1, 1, 2, 3, 5, 8, 13, 21, 34, 55));
         }
 
         @Test
         public void shouldRecurrentlyCalculatePrimes() {
-            assertThat(Stream.of(2)
-                            .appendSelf(self -> Stream.iterate(3, i -> i + 2)
+            assertThat(LazyList.of(2)
+                            .appendSelf(self -> LazyList.iterate(3, i -> i + 2)
                                     .filter(i -> self.takeWhile(j -> j * j <= i).forAll(k -> i % k > 0)))
                             .take(10))
-                    .isEqualTo(Stream.of(2, 3, 5, 7, 11, 13, 17, 19, 23, 29));
+                    .isEqualTo(LazyList.of(2, 3, 5, 7, 11, 13, 17, 19, 23, 29));
         }
 
         @Test
         public void shouldDoNothingOnNil() {
-            assertThat(Stream.empty().appendSelf(self -> self)).isEqualTo(Stream.empty());
+            assertThat(LazyList.empty().appendSelf(self -> self)).isEqualTo(LazyList.empty());
         }
 
         @Test
         public void shouldRecurrentlyCalculateArithmeticProgression() {
-            assertThat(Stream.of(1).appendSelf(self -> self.map(t -> t + 1)).take(4))
-                    .isEqualTo(Stream.of(1, 2, 3, 4));
+            assertThat(LazyList.of(1).appendSelf(self -> self.map(t -> t + 1)).take(4))
+                    .isEqualTo(LazyList.of(1, 2, 3, 4));
         }
 
         @Test
         public void shouldRecurrentlyCalculateGeometricProgression() {
-            assertThat(Stream.of(1).appendSelf(self -> self.map(t -> t * 2)).take(4))
-                    .isEqualTo(Stream.of(1, 2, 4, 8));
+            assertThat(LazyList.of(1).appendSelf(self -> self.map(t -> t * 2)).take(4))
+                    .isEqualTo(LazyList.of(1, 2, 4, 8));
         }
     }
 
     @Nested
-    class StreamContainssliceTests {
+    class LazyListContainssliceTests {
         @Test
         public void shouldRecognizeInfiniteDoesContainSlice() {
-            boolean actual = Stream.iterate(1, i -> i + 1).containsSlice(of(12, 13, 14));
+            boolean actual = LazyList.iterate(1, i -> i + 1).containsSlice(of(12, 13, 14));
             assertThat(actual).isTrue();
         }
     }
@@ -579,12 +594,12 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class CycleTests {
         @Test
-        public void shouldCycleEmptyStream() {
+        public void shouldCycleEmptyLazyList() {
             assertThat(empty().cycle()).isEqualTo(empty());
         }
 
         @Test
-        public void shouldCycleNonEmptyStream() {
+        public void shouldCycleNonEmptyLazyList() {
             assertThat(of(1, 2, 3).cycle().take(9)).isEqualTo(of(1, 2, 3, 1, 2, 3, 1, 2, 3));
         }
     }
@@ -592,12 +607,12 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class CycleIntTests {
         @Test
-        public void shouldCycleTimesEmptyStream() {
+        public void shouldCycleTimesEmptyLazyList() {
             assertThat(empty().cycle(3)).isEqualTo(empty());
         }
 
         @Test
-        public void shouldCycleTimesNonEmptyStream() {
+        public void shouldCycleTimesNonEmptyLazyList() {
             assertThat(of(1, 2, 3).cycle(-1)).isEqualTo(empty());
             assertThat(of(1, 2, 3).cycle(0)).isEqualTo(empty());
             assertThat(of(1, 2, 3).cycle(1)).isEqualTo(of(1, 2, 3));
@@ -608,9 +623,9 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class DropuntilTests {
         @Test
-        public void shouldDropInfiniteStreamUntilPredicate() {
-            Stream<Integer> naturalNumbers = Stream.iterate(0, i -> i + 1);
-            Stream<Integer> naturalNumbersBiggerThanTen = naturalNumbers.dropUntil(i -> i > 10);
+        public void shouldDropInfiniteLazyListUntilPredicate() {
+            LazyList<Integer> naturalNumbers = LazyList.iterate(0, i -> i + 1);
+            LazyList<Integer> naturalNumbersBiggerThanTen = naturalNumbers.dropUntil(i -> i > 10);
             Integer firstNaturalNumberBiggerThanTen = naturalNumbersBiggerThanTen.head();
             assertThat(firstNaturalNumberBiggerThanTen).isEqualTo(11);
         }
@@ -620,55 +635,55 @@ public class StreamTest extends AbstractTraversableTest {
     class DroprightTests {
         @Test
         public void shouldLazyDropRight() {
-            assertThat(Stream.from(1).takeUntil(i -> i == 18).dropRight(7)).isEqualTo(Stream.range(1, 11));
+            assertThat(LazyList.from(1).takeUntil(i -> i == 18).dropRight(7)).isEqualTo(LazyList.range(1, 11));
         }
     }
 
     @Nested
     class ExtendTests {
         @Test
-        public void shouldExtendStreamWithConstantValue() {
-            assertThat(Stream.of(1, 2, 3).extend(42).take(6)).isEqualTo(of(1, 2, 3, 42, 42, 42));
+        public void shouldExtendLazyListWithConstantValue() {
+            assertThat(LazyList.of(1, 2, 3).extend(42).take(6)).isEqualTo(of(1, 2, 3, 42, 42, 42));
         }
 
         @Test
-        public void shouldExtendStreamWithSupplier() {
-            assertThat(Stream.of(1, 2, 3).extend(() -> 42).take(6)).isEqualTo(of(1, 2, 3, 42, 42, 42));
+        public void shouldExtendLazyListWithSupplier() {
+            assertThat(LazyList.of(1, 2, 3).extend(() -> 42).take(6)).isEqualTo(of(1, 2, 3, 42, 42, 42));
         }
 
         @Test
-        public void shouldExtendStreamWithFunction() {
-            assertThat(Stream.of(1, 2, 3).extend(i -> i + 1).take(6)).isEqualTo(of(1, 2, 3, 4, 5, 6));
+        public void shouldExtendLazyListWithFunction() {
+            assertThat(LazyList.of(1, 2, 3).extend(i -> i + 1).take(6)).isEqualTo(of(1, 2, 3, 4, 5, 6));
         }
 
         @Test
-        public void shouldExtendEmptyStreamWithConstantValue() {
-            assertThat(Stream.of().extend(42).take(6)).isEqualTo(of(42, 42, 42, 42, 42, 42));
+        public void shouldExtendEmptyLazyListWithConstantValue() {
+            assertThat(LazyList.of().extend(42).take(6)).isEqualTo(of(42, 42, 42, 42, 42, 42));
         }
 
         @Test
-        public void shouldExtendEmptyStreamWithSupplier() {
-            assertThat(Stream.of().extend(() -> 42).take(6)).isEqualTo(of(42, 42, 42, 42, 42, 42));
+        public void shouldExtendEmptyLazyListWithSupplier() {
+            assertThat(LazyList.of().extend(() -> 42).take(6)).isEqualTo(of(42, 42, 42, 42, 42, 42));
         }
 
         @Test
-        public void shouldReturnAnEmptyStreamWhenExtendingAnEmptyStreamWithFunction() {
-            assertThat(Stream.<Integer>of().extend(i -> i + 1)).isEqualTo(of());
+        public void shouldReturnAnEmptyLazyListWhenExtendingAnEmptyLazyListWithFunction() {
+            assertThat(LazyList.<Integer>of().extend(i -> i + 1)).isEqualTo(of());
         }
 
         @Test
-        public void shouldReturnTheOriginalStreamWhenTryingToExtendInfiniteStreamWithConstantValue() {
-            assertThat(Stream.continually(1).extend(42).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
+        public void shouldReturnTheOriginalLazyListWhenTryingToExtendInfiniteLazyListWithConstantValue() {
+            assertThat(LazyList.continually(1).extend(42).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
         }
 
         @Test
-        public void shouldReturnTheOriginalStreamWhenTryingToExtendInfiniteStreamWithSupplier() {
-            assertThat(Stream.continually(1).extend(() -> 42).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
+        public void shouldReturnTheOriginalLazyListWhenTryingToExtendInfiniteLazyListWithSupplier() {
+            assertThat(LazyList.continually(1).extend(() -> 42).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
         }
 
         @Test
-        public void shouldReturnTheOriginalStreamWhenTryingToExtendInfiniteStreamWithFunction() {
-            assertThat(Stream.continually(1).extend(i -> i + 1).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
+        public void shouldReturnTheOriginalLazyListWhenTryingToExtendInfiniteLazyListWithFunction() {
+            assertThat(LazyList.continually(1).extend(i -> i + 1).take(6)).isEqualTo(of(1, 1, 1, 1, 1, 1));
         }
     }
 
@@ -677,7 +692,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Disabled
     @Test
     public void shouldReturnSameInstanceIfSubSequenceStartsAtZeroAndEndsAtLastElement() {
-        // Stream is lazy
+        // LazyList is lazy
     }
 
     @Nested
@@ -685,9 +700,9 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldEvaluateTailAtMostOnce() {
             int[] counter = {0};
-            Stream<Integer> stream = Stream.continually(() -> counter[0]++);
+            LazyList<Integer> stream = LazyList.continually(() -> counter[0]++);
             // this test ensures that the `tail.append(100)` does not modify the tail elements
-            Stream<Integer> tail = stream.tail().append(100);
+            LazyList<Integer> tail = stream.tail().append(100);
             String expected = stream.drop(1).take(3).mkString(",");
             String actual = tail.take(3).mkString(",");
             assertThat(expected).isEqualTo("1,2,3");
@@ -696,9 +711,9 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldNotProduceStackOverflow() {
-            Stream.range(0, 1_000_000)
+            LazyList.range(0, 1_000_000)
                     .map(String::valueOf)
-                    .foldLeft(Stream.<String>empty(), Stream::append)
+                    .foldLeft(LazyList.<String>empty(), LazyList::append)
                     .mkString();
         }
 
@@ -718,7 +733,7 @@ public class StreamTest extends AbstractTraversableTest {
 
             StringBuilder actual = new StringBuilder();
             CheckedFunction1<Integer, Void> consumer1 = doStuff.apply(actual);
-            Stream.of(vals)
+            LazyList.of(vals)
                     .map(v -> Try.run(() -> consumer1.apply(v)))
                     .find(Try::isFailure)
                     .getOrElse(() -> Try.success(Tuple.empty()));
@@ -746,19 +761,23 @@ public class StreamTest extends AbstractTraversableTest {
                 throw new IllegalArgumentException();
             }
         };
-        assertThat(Stream.from(0).filter(hiddenThrow).take(1).sum().intValue()).isEqualTo(0);
+        assertThat(LazyList.from(0).filter(hiddenThrow).take(1).sum().intValue())
+                .isEqualTo(0);
     }
 
     @Disabled
     @Test
-    public void shouldTakeZeroOfEmptyFilteredInfiniteStream() {
-        assertThat(Stream.continually(1).filter(i -> false).take(0).isEmpty()).isTrue();
+    public void shouldTakeZeroOfEmptyFilteredInfiniteLazyList() {
+        assertThat(LazyList.continually(1).filter(i -> false).take(0).isEmpty()).isTrue();
     }
 
     @Disabled
     @Test
-    public void shouldTakeZeroOfEmptyFlatMappedInfiniteStream() {
-        assertThat(Stream.continually(1).flatMap(i -> Stream.empty()).take(0).isEmpty())
+    public void shouldTakeZeroOfEmptyFlatMappedInfiniteLazyList() {
+        assertThat(LazyList.continually(1)
+                        .flatMap(i -> LazyList.empty())
+                        .take(0)
+                        .isEmpty())
                 .isTrue();
     }
 
@@ -769,11 +788,11 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class TostreamTests {
+    class ToLazyListTests {
         @Test
-        public void shouldReturnSelfOnConvertToStream() {
-            Stream<Integer> value = of(1, 2, 3);
-            assertThat(value.toStream()).isSameAs(value);
+        public void shouldReturnSelfOnConvertToLazyList() {
+            LazyList<Integer> value = of(1, 2, 3);
+            assertThat(value.toLazyList()).isSameAs(value);
         }
     }
 
@@ -781,66 +800,66 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldStringifyNil() {
-        assertThat(empty().toString()).isEqualTo("Stream()");
+        assertThat(empty().toString()).isEqualTo("LazyList()");
     }
 
     @Test
     public void shouldStringifyNonNil() {
-        assertThat(of(1, 2, 3).toString()).isEqualTo("Stream(1, ?)");
+        assertThat(of(1, 2, 3).toString()).isEqualTo("LazyList(1, ?)");
     }
 
     @Test
     public void shouldStringifyNonNilEvaluatingFirstTail() {
-        Stream<Integer> stream = this.of(1, 2, 3);
+        LazyList<Integer> stream = this.of(1, 2, 3);
         stream.tail(); // evaluates second head element
-        assertThat(stream.toString()).isEqualTo("Stream(1, 2, ?)");
+        assertThat(stream.toString()).isEqualTo("LazyList(1, 2, ?)");
     }
 
     @Test
     public void shouldStringifyNonNilAndNilTail() {
-        Stream<Integer> stream = this.of(1);
+        LazyList<Integer> stream = this.of(1);
         stream.tail(); // evaluates empty tail
-        assertThat(stream.toString()).isEqualTo("Stream(1)");
+        assertThat(stream.toString()).isEqualTo("LazyList(1)");
     }
 
     @Nested
     class UnfoldTests {
         @Test
         public void shouldUnfoldRightToEmpty() {
-            assertThat(Stream.unfoldRight(0, x -> Option.none())).isEqualTo(empty());
+            assertThat(LazyList.unfoldRight(0, x -> Option.none())).isEqualTo(empty());
         }
 
         @Test
-        public void shouldUnfoldRightSimpleStream() {
-            assertThat(Stream.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))))
+        public void shouldUnfoldRightSimpleLazyList() {
+            assertThat(LazyList.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
         @Test
         public void shouldUnfoldLeftToEmpty() {
-            assertThat(Stream.unfoldLeft(0, x -> Option.none())).isEqualTo(empty());
+            assertThat(LazyList.unfoldLeft(0, x -> Option.none())).isEqualTo(empty());
         }
 
         @Test
-        public void shouldUnfoldLeftSimpleStream() {
-            assertThat(Stream.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
+        public void shouldUnfoldLeftSimpleLazyList() {
+            assertThat(LazyList.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
         @Test
         public void shouldUnfoldToEmpty() {
-            assertThat(Stream.unfold(0, x -> Option.none())).isEqualTo(empty());
+            assertThat(LazyList.unfold(0, x -> Option.none())).isEqualTo(empty());
         }
 
         @Test
-        public void shouldUnfoldSimpleStream() {
-            assertThat(Stream.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
+        public void shouldUnfoldSimpleLazyList() {
+            assertThat(LazyList.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }
 
     @Nested
-    class StreamSpliteratorTests {
+    class LazyListSpliteratorTests {
         @Test
         public void shouldNotHaveSizedSpliterator() {
             assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED))
@@ -856,7 +875,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class RemoveAtLazyBoundsTests {
         @Test
-        public void shouldThrowIndexOutOfBoundsWhenRemovingIndexZeroFromEmptyStream() {
+        public void shouldThrowIndexOutOfBoundsWhenRemovingIndexZeroFromEmptyLazyList() {
             assertThrows(IndexOutOfBoundsException.class, () -> empty().removeAt(0));
         }
 
@@ -870,7 +889,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class DistinctByFunctionNullCheckTests {
         @Test
-        public void shouldThrowWhenDistinctByKeyExtractorIsNullOnEmptyStream() {
+        public void shouldThrowWhenDistinctByKeyExtractorIsNullOnEmptyLazyList() {
             assertThrows(NullPointerException.class, () -> empty().distinctBy((Function<Object, Object>) null));
         }
     }
@@ -881,18 +900,18 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldCollectLazilyAfterTheFirstKeptElement() {
             AtomicInteger calls = new AtomicInteger();
-            Stream<Integer> actual = Stream.from(1).collect(i -> {
+            LazyList<Integer> actual = LazyList.from(1).collect(i -> {
                 calls.incrementAndGet();
                 return i % 2 == 0 ? Option.some(i) : Option.none();
             });
             assertThat(calls.get()).isEqualTo(2); // 1 dropped, 2 kept as the head; the rest waits
-            assertThat(actual.take(3)).isEqualTo(Stream.of(2, 4, 6));
+            assertThat(actual.take(3)).isEqualTo(LazyList.of(2, 4, 6));
         }
 
         @Test
         public void shouldCallTheCollectMapperOncePerElement() {
             AtomicInteger calls = new AtomicInteger();
-            Stream.of(1, 2, 3, 4)
+            LazyList.of(1, 2, 3, 4)
                     .collect(i -> {
                         calls.incrementAndGet();
                         return i % 2 == 0 ? Option.some(i) : Option.none();
@@ -902,8 +921,8 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldReturnTheEmptyStreamWhenNothingIsKept() {
-            assertThat(Stream.of(1, 2, 3).collect(i -> Option.none())).isEqualTo(Stream.empty());
+        public void shouldReturnTheEmptyLazyListWhenNothingIsKept() {
+            assertThat(LazyList.of(1, 2, 3).collect(i -> Option.none())).isEqualTo(LazyList.empty());
         }
     }
 
@@ -939,8 +958,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendElementToNil() {
-        Stream<Integer> actual = this.<Integer>empty().append(1);
-        Stream<Integer> expected = of(1);
+        LazyList<Integer> actual = this.<Integer>empty().append(1);
+        LazyList<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -951,8 +970,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendElementToNonNil() {
-        Stream<Integer> actual = of(1, 2).append(3);
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = of(1, 2).append(3);
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -970,36 +989,36 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendAllNilToNil() {
-        Stream<Object> actual = empty().appendAll(empty());
-        Stream<Object> expected = empty();
+        LazyList<Object> actual = empty().appendAll(empty());
+        LazyList<Object> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNonNilToNil() {
-        Stream<Integer> actual = this.<Integer>empty().appendAll(of(1, 2, 3));
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = this.<Integer>empty().appendAll(of(1, 2, 3));
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNilToNonNil() {
-        Stream<Integer> actual = of(1, 2, 3).appendAll(empty());
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = of(1, 2, 3).appendAll(empty());
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNonNilToNonNil() {
-        Stream<Integer> actual = of(1, 2, 3).appendAll(of(4, 5, 6));
-        Stream<Integer> expected = of(1, 2, 3, 4, 5, 6);
+        LazyList<Integer> actual = of(1, 2, 3).appendAll(of(4, 5, 6));
+        LazyList<Integer> expected = of(1, 2, 3, 4, 5, 6);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllWhenUsedWithTypeHierarchy() {
-        Stream<SomeInterface> empty = of();
-        Stream<SomeInterface> all = empty.appendAll(of(OneEnum.values())).appendAll(of(SecondEnum.values()));
+        LazyList<SomeInterface> empty = of();
+        LazyList<SomeInterface> all = empty.appendAll(of(OneEnum.values())).appendAll(of(SecondEnum.values()));
 
         assertThat(all)
                 .isEqualTo(this.<SomeInterface>of(
@@ -1007,20 +1026,20 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyAppendAllEmpty() {
-        Stream<Integer> empty = empty();
+    public void shouldReturnSameLazyListWhenEmptyAppendAllEmpty() {
+        LazyList<Integer> empty = empty();
         assertThat(empty.appendAll(empty())).isSameAs(empty);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyAppendAllNonEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenEmptyAppendAllNonEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(empty().appendAll(seq)).isSameAs(seq);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenNonEmptyAppendAllEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenNonEmptyAppendAllEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.appendAll(empty())).isEqualTo(seq);
     }
 
@@ -1093,7 +1112,7 @@ public class StreamTest extends AbstractTraversableTest {
     class CrossproductTests {
         @Test
         public void shouldCalculateCrossProductOfNil() {
-            Stream<Tuple2<Object, Object>> actual = empty().crossProduct();
+            LazyList<Tuple2<Object, Object>> actual = empty().crossProduct();
             assertThat(actual).isEmpty();
         }
 
@@ -1139,19 +1158,19 @@ public class StreamTest extends AbstractTraversableTest {
     class CrossproductIterableTests {
         @Test
         public void shouldCalculateCrossProductOfNilAndNil() {
-            Stream<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
+            LazyList<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNilAndNonNil() {
-            Stream<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
+            LazyList<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNil() {
-            Stream<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
+            LazyList<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
@@ -1194,7 +1213,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldDropRightUntilNoneIfPredicateIsTrue() {
-            Stream<Integer> values = of(1, 2, 3);
+            LazyList<Integer> values = of(1, 2, 3);
             assertThat(values.dropRightUntil(ignored -> true)).isEqualTo(values);
         }
 
@@ -1218,7 +1237,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldDropRightWhileNoneIfPredicateIsFalse() {
-        Stream<Integer> values = of(1, 2, 3);
+        LazyList<Integer> values = of(1, 2, 3);
         assertThat(values.dropRightWhile(ignored -> false)).isEqualTo(values);
     }
 
@@ -1273,7 +1292,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class IndexofTests {
         @Test
-        public void shouldNotFindIndexOfElementWhenStreamIsEmpty() {
+        public void shouldNotFindIndexOfElementWhenLazyListIsEmpty() {
             assertThat(empty().indexOf(1)).isEqualTo(-1);
 
             assertThat(empty().indexOfOption(1)).isEqualTo(Option.none());
@@ -1311,7 +1330,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class IndexofsliceTests {
         @Test
-        public void shouldNotFindIndexOfSliceWhenStreamIsEmpty() {
+        public void shouldNotFindIndexOfSliceWhenLazyListIsEmpty() {
             assertThat(empty().indexOfSlice(of(2, 3))).isEqualTo(-1);
 
             assertThat(empty().indexOfSliceOption(of(2, 3))).isEqualTo(Option.none());
@@ -1355,7 +1374,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class LastindexofTests {
         @Test
-        public void shouldNotFindLastIndexOfElementWhenStreamIsEmpty() {
+        public void shouldNotFindLastIndexOfElementWhenLazyListIsEmpty() {
             assertThat(empty().lastIndexOf(1)).isEqualTo(-1);
 
             assertThat(empty().lastIndexOfOption(1)).isEqualTo(Option.none());
@@ -1386,7 +1405,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class LastindexofsliceTests {
         @Test
-        public void shouldNotFindLastIndexOfSliceWhenStreamIsEmpty() {
+        public void shouldNotFindLastIndexOfSliceWhenLazyListIsEmpty() {
             assertThat(empty().lastIndexOfSlice(of(2, 3))).isEqualTo(-1);
 
             assertThat(empty().lastIndexOfSliceOption(of(2, 3))).isEqualTo(Option.none());
@@ -1575,29 +1594,29 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldInsertIntoNil() {
-        Stream<Integer> actual = this.<Integer>empty().insert(0, 1);
-        Stream<Integer> expected = of(1);
+        LazyList<Integer> actual = this.<Integer>empty().insert(0, 1);
+        LazyList<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertInFrontOfElement() {
-        Stream<Integer> actual = of(4).insert(0, 1);
-        Stream<Integer> expected = of(1, 4);
+        LazyList<Integer> actual = of(4).insert(0, 1);
+        LazyList<Integer> expected = of(1, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertBehindOfElement() {
-        Stream<Integer> actual = of(4).insert(1, 5);
-        Stream<Integer> expected = of(4, 5);
+        LazyList<Integer> actual = of(4).insert(1, 5);
+        LazyList<Integer> expected = of(4, 5);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    public void shouldInsertIntoStream() {
-        Stream<Integer> actual = of(1, 2, 3).insert(2, 4);
-        Stream<Integer> expected = of(1, 2, 4, 3);
+    public void shouldInsertIntoLazyList() {
+        LazyList<Integer> actual = of(1, 2, 3).insert(2, 4);
+        LazyList<Integer> expected = of(1, 2, 4, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1622,29 +1641,29 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldInsertAllIntoNil() {
-        Stream<Integer> actual = this.<Integer>empty().insertAll(0, of(1, 2, 3));
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = this.<Integer>empty().insertAll(0, of(1, 2, 3));
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllInFrontOfElement() {
-        Stream<Integer> actual = of(4).insertAll(0, of(1, 2, 3));
-        Stream<Integer> expected = of(1, 2, 3, 4);
+        LazyList<Integer> actual = of(4).insertAll(0, of(1, 2, 3));
+        LazyList<Integer> expected = of(1, 2, 3, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllBehindOfElement() {
-        Stream<Integer> actual = of(4).insertAll(1, of(1, 2, 3));
-        Stream<Integer> expected = of(4, 1, 2, 3);
+        LazyList<Integer> actual = of(4).insertAll(1, of(1, 2, 3));
+        LazyList<Integer> expected = of(4, 1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    public void shouldInsertAllIntoStream() {
-        Stream<Integer> actual = of(1, 2, 3).insertAll(2, of(4, 5));
-        Stream<Integer> expected = of(1, 2, 4, 5, 3);
+    public void shouldInsertAllIntoLazyList() {
+        LazyList<Integer> actual = of(1, 2, 3).insertAll(2, of(4, 5));
+        LazyList<Integer> expected = of(1, 2, 4, 5, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1669,20 +1688,20 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyInsertAllEmpty() {
-        Stream<Integer> empty = empty();
+    public void shouldReturnSameLazyListWhenEmptyInsertAllEmpty() {
+        LazyList<Integer> empty = empty();
         assertThat(empty.insertAll(0, empty())).isSameAs(empty);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyInsertAllNonEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenEmptyInsertAllNonEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(empty().insertAll(0, seq)).isSameAs(seq);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenNonEmptyInsertAllEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenNonEmptyInsertAllEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.insertAll(0, empty())).isSameAs(seq);
     }
 
@@ -1717,7 +1736,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPadNonEmptyZeroLen() {
-            Stream<Integer> seq = of(1);
+            LazyList<Integer> seq = of(1);
             assertThat(seq.padTo(0, 2)).isSameAs(seq);
         }
 
@@ -1743,7 +1762,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldLeftPadNonEmptyZeroLen() {
-            Stream<Integer> seq = of(1);
+            LazyList<Integer> seq = of(1);
             assertThat(seq.leftPadTo(0, 2)).isSameAs(seq);
         }
 
@@ -1768,7 +1787,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchEmptyByNonEmpty() {
-            Stream<Character> s = of('1', '2', '3');
+            LazyList<Character> s = of('1', '2', '3');
             assertThat(empty().patch(0, s, 0)).isEqualTo(s);
             assertThat(empty().patch(-1, s, -1)).isEqualTo(s);
             assertThat(empty().patch(-1, s, 1)).isEqualTo(s);
@@ -1778,7 +1797,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchNonEmptyByEmpty() {
-            Stream<Character> s = of('1', '2', '3');
+            LazyList<Character> s = of('1', '2', '3');
             assertThat(s.patch(-1, empty(), -1)).isEqualTo(of('1', '2', '3'));
             assertThat(s.patch(-1, empty(), 0)).isEqualTo(of('1', '2', '3'));
             assertThat(s.patch(-1, empty(), 1)).isEqualTo(of('2', '3'));
@@ -1799,8 +1818,8 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchNonEmptyByNonEmpty() {
-            Stream<Character> s = of('1', '2', '3');
-            Stream<Character> d = of('4', '5', '6');
+            LazyList<Character> s = of('1', '2', '3');
+            LazyList<Character> d = of('4', '5', '6');
             assertThat(s.patch(-1, d, -1)).isEqualTo(of('4', '5', '6', '1', '2', '3'));
             assertThat(s.patch(-1, d, 0)).isEqualTo(of('4', '5', '6', '1', '2', '3'));
             assertThat(s.patch(-1, d, 1)).isEqualTo(of('4', '5', '6', '2', '3'));
@@ -1823,7 +1842,7 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class PermutationsTests {
         @Test
-        public void shouldComputePermutationsOfEmptyStream() {
+        public void shouldComputePermutationsOfEmptyLazyList() {
             assertThat(empty().permutations()).isEmpty();
         }
 
@@ -1841,7 +1860,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @SuppressWarnings("unchecked")
         @Test
-        public void shouldComputePermutationsOfNonEmptyStream() {
+        public void shouldComputePermutationsOfNonEmptyLazyList() {
             assertThat(of(1, 2, 3).permutations())
                     .isEqualTo(of(of(1, 2, 3), of(1, 3, 2), of(2, 1, 3), of(2, 3, 1), of(3, 1, 2), of(3, 2, 1)));
         }
@@ -1850,7 +1869,7 @@ public class StreamTest extends AbstractTraversableTest {
     // -- map
 
     @Test
-    public void shouldMapTransformedStream() {
+    public void shouldMapTransformedLazyList() {
         Function<Integer, Integer> mapper = o -> o + 1;
         assertThat(this.<Integer>empty().map(mapper)).isEmpty();
         assertThat(of(3, 1, 4, 1, 5).map(mapper)).isEqualTo(of(4, 2, 5, 2, 6));
@@ -1909,15 +1928,15 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependElementToNil() {
-        Stream<Integer> actual = this.<Integer>empty().prepend(1);
-        Stream<Integer> expected = of(1);
+        LazyList<Integer> actual = this.<Integer>empty().prepend(1);
+        LazyList<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependElementToNonNil() {
-        Stream<Integer> actual = of(2, 3).prepend(1);
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = of(2, 3).prepend(1);
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1930,51 +1949,51 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependAllNilToNil() {
-        Stream<Integer> actual = this.<Integer>empty().prependAll(empty());
-        Stream<Integer> expected = empty();
+        LazyList<Integer> actual = this.<Integer>empty().prependAll(empty());
+        LazyList<Integer> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNilToNonNil() {
-        Stream<Integer> actual = of(1, 2, 3).prependAll(empty());
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = of(1, 2, 3).prependAll(empty());
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNonNilToNil() {
-        Stream<Integer> actual = this.<Integer>empty().prependAll(of(1, 2, 3));
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> actual = this.<Integer>empty().prependAll(of(1, 2, 3));
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNonNilToNonNil() {
-        Stream<Integer> expected = range(0, 100);
+        LazyList<Integer> expected = range(0, 100);
 
-        Stream<Integer> actualFirstPartLarger = range(90, 100).prependAll(range(0, 90));
+        LazyList<Integer> actualFirstPartLarger = range(90, 100).prependAll(range(0, 90));
         assertThat(actualFirstPartLarger).isEqualTo(expected);
 
-        Stream<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
+        LazyList<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
         assertThat(actualSecondPartLarger).isEqualTo(expected);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyPrependAllEmpty() {
-        Stream<Integer> empty = empty();
+    public void shouldReturnSameLazyListWhenEmptyPrependAllEmpty() {
+        LazyList<Integer> empty = empty();
         assertThat(empty.prependAll(empty())).isSameAs(empty);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyPrependAllNonEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenEmptyPrependAllNonEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(empty().prependAll(seq)).isSameAs(seq);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenNonEmptyPrependAllEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenNonEmptyPrependAllEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.prependAll(empty())).isSameAs(seq);
     }
 
@@ -2082,14 +2101,14 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Test
-    public void shouldReturnSameStreamWhenNonEmptyRemoveAllEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+    public void shouldReturnSameLazyListWhenNonEmptyRemoveAllEmpty() {
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(empty())).isSameAs(seq);
     }
 
     @Test
-    public void shouldReturnSameStreamWhenEmptyRemoveAllNonEmpty() {
-        Stream<Integer> empty = empty();
+    public void shouldReturnSameLazyListWhenEmptyRemoveAllNonEmpty() {
+        LazyList<Integer> empty = empty();
         assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
     }
 
@@ -2134,7 +2153,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNotRemoveAbsentNullFromNonEmpty() {
-        Stream<Integer> seq = of(1, 2, 3);
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll((Integer) null)).isEqualTo(seq);
     }
 
@@ -2236,30 +2255,30 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateLeftOnSingle() {
-            Stream<Integer> seq = of(1);
+            LazyList<Integer> seq = of(1);
             assertThat(seq.rotateLeft(1)).isSameAs(seq);
         }
 
         @Test
         public void shouldRotateLeftForZero() {
-            Stream<Integer> seq = of(1, 2, 3, 4, 5);
+            LazyList<Integer> seq = of(1, 2, 3, 4, 5);
             assertThat(seq.rotateLeft(0)).isSameAs(seq);
         }
 
         @Test
-        public void shouldRotateLeftByZeroOnAnInfiniteStream() {
-            // == on purpose: a failure must not make AssertJ format an infinite Stream
-            Stream<Integer> naturals = Stream.from(1);
+        public void shouldRotateLeftByZeroOnAnInfiniteLazyList() {
+            // == on purpose: a failure must not make AssertJ format an infinite LazyList
+            LazyList<Integer> naturals = LazyList.from(1);
             assertThat(naturals.rotateLeft(0) == naturals)
                     .as("rotateLeft(0) returns the receiver")
                     .isTrue();
-            assertThat(naturals.rotateLeft(0).take(3)).isEqualTo(Stream.of(1, 2, 3));
+            assertThat(naturals.rotateLeft(0).take(3)).isEqualTo(LazyList.of(1, 2, 3));
         }
 
         @Test
-        public void shouldNotForceTheStreamToRotateLeftByZero() {
+        public void shouldNotForceTheLazyListToRotateLeftByZero() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> counted = Stream.from(1).map(i -> {
+            LazyList<Integer> counted = LazyList.from(1).map(i -> {
                 forced.incrementAndGet();
                 return i;
             });
@@ -2285,7 +2304,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateLeftForPositiveModuloLen() {
-            Stream<Integer> seq = of(1, 2, 3, 4, 5);
+            LazyList<Integer> seq = of(1, 2, 3, 4, 5);
             assertThat(seq.rotateLeft(seq.size() * 3)).isSameAs(seq);
         }
     }
@@ -2310,30 +2329,30 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateRightOnSingle() {
-            Stream<Integer> seq = of(1);
+            LazyList<Integer> seq = of(1);
             assertThat(seq.rotateRight(1)).isSameAs(seq);
         }
 
         @Test
         public void shouldRotateRightForZero() {
-            Stream<Integer> seq = of(1, 2, 3, 4, 5);
+            LazyList<Integer> seq = of(1, 2, 3, 4, 5);
             assertThat(seq.rotateRight(0)).isSameAs(seq);
         }
 
         @Test
-        public void shouldRotateRightByZeroOnAnInfiniteStream() {
-            // == on purpose: a failure must not make AssertJ format an infinite Stream
-            Stream<Integer> naturals = Stream.from(1);
+        public void shouldRotateRightByZeroOnAnInfiniteLazyList() {
+            // == on purpose: a failure must not make AssertJ format an infinite LazyList
+            LazyList<Integer> naturals = LazyList.from(1);
             assertThat(naturals.rotateRight(0) == naturals)
                     .as("rotateRight(0) returns the receiver")
                     .isTrue();
-            assertThat(naturals.rotateRight(0).take(3)).isEqualTo(Stream.of(1, 2, 3));
+            assertThat(naturals.rotateRight(0).take(3)).isEqualTo(LazyList.of(1, 2, 3));
         }
 
         @Test
-        public void shouldNotForceTheStreamToRotateRightByZero() {
+        public void shouldNotForceTheLazyListToRotateRightByZero() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> counted = Stream.from(1).map(i -> {
+            LazyList<Integer> counted = LazyList.from(1).map(i -> {
                 forced.incrementAndGet();
                 return i;
             });
@@ -2359,7 +2378,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRotateRightForPositiveModuloLen() {
-            Stream<Integer> seq = of(1, 2, 3, 4, 5);
+            LazyList<Integer> seq = of(1, 2, 3, 4, 5);
             assertThat(seq.rotateRight(seq.size() * 3)).isSameAs(seq);
         }
     }
@@ -2378,7 +2397,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldShuffleHaveSameElements() {
-            Stream<Integer> shuffled = of(1, 2, 3).shuffle();
+            LazyList<Integer> shuffled = of(1, 2, 3).shuffle();
             assertThat(shuffled.indexOf(1)).isNotEqualTo(-1);
             assertThat(shuffled.indexOf(2)).isNotEqualTo(-1);
             assertThat(shuffled.indexOf(3)).isNotEqualTo(-1);
@@ -2474,8 +2493,8 @@ public class StreamTest extends AbstractTraversableTest {
     class HigherOrderUpdateTests {
         @Test
         public void shouldUpdateViaFunction() throws Exception {
-            Stream<Character> actual = ofAll("hello".toCharArray()).update(0, Character::toUpperCase);
-            Stream<Character> expected = ofAll("Hello".toCharArray());
+            LazyList<Character> actual = ofAll("hello".toCharArray()).update(0, Character::toUpperCase);
+            LazyList<Character> expected = ofAll("Hello".toCharArray());
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -2484,37 +2503,37 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNil() {
-        Stream<Integer> actual = this.<Integer>empty().slice(0, 0);
+        LazyList<Integer> actual = this.<Integer>empty().slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNonNil() {
-        Stream<Integer> actual = of(1).slice(0, 0);
+        LazyList<Integer> actual = of(1).slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
-    public void shouldReturnStreamWithFirstElementWhenSliceFrom0To1OnNonNil() {
-        Stream<Integer> actual = of(1).slice(0, 1);
+    public void shouldReturnLazyListWithFirstElementWhenSliceFrom0To1OnNonNil() {
+        LazyList<Integer> actual = of(1).slice(0, 1);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSliceFrom1To1OnNonNil() {
-        Stream<Integer> actual = of(1).slice(1, 1);
+        LazyList<Integer> actual = of(1).slice(1, 1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSliceWhenIndicesAreWithinRange() {
-        Stream<Integer> actual = of(1, 2, 3).slice(1, 3);
+        LazyList<Integer> actual = of(1, 2, 3).slice(1, 3);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilOnSliceWhenIndicesBothAreUpperBound() {
-        Stream<Integer> actual = of(1, 2, 3).slice(3, 3);
+        LazyList<Integer> actual = of(1, 2, 3).slice(3, 3);
         assertThat(actual).isEmpty();
     }
 
@@ -2592,20 +2611,20 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNonNilUsingFunction() {
-        Stream<String> testee = of("aaa", "b", "cc");
-        Stream<String> actual = testee.sortBy(String::length);
-        Stream<String> expected = of("b", "cc", "aaa");
+        LazyList<String> testee = of("aaa", "b", "cc");
+        LazyList<String> actual = testee.sortBy(String::length);
+        LazyList<String> expected = of("b", "cc", "aaa");
         assertThat(actual).isEqualTo(expected);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldSortByFunctionWhenElementsAreInfiniteStreams() {
-        Stream<Integer> stream1 = Stream.continually(1);
-        Stream<Integer> stream2 = Stream.continually(2);
-        Stream<Stream<Integer>> testee = of(stream2, stream1);
-        Stream<Stream<Integer>> actual = testee.sortBy(Stream::head);
-        Stream<Stream<Integer>> expected = of(stream1, stream2);
+    public void shouldSortByFunctionWhenElementsAreInfiniteLazyLists() {
+        LazyList<Integer> stream1 = LazyList.continually(1);
+        LazyList<Integer> stream2 = LazyList.continually(2);
+        LazyList<LazyList<Integer>> testee = of(stream2, stream1);
+        LazyList<LazyList<Integer>> actual = testee.sortBy(LazyList::head);
+        LazyList<LazyList<Integer>> expected = of(stream1, stream2);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2618,9 +2637,9 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNonNilUsingComparatorAndFunction() {
-        Stream<String> testee = of("aaa", "b", "cc");
-        Stream<String> actual = testee.sortBy((i1, i2) -> i2 - i1, String::length);
-        Stream<String> expected = of("aaa", "cc", "b");
+        LazyList<String> testee = of("aaa", "b", "cc");
+        LazyList<String> actual = testee.sortBy((i1, i2) -> i2 - i1, String::length);
+        LazyList<String> expected = of("aaa", "cc", "b");
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2810,31 +2829,31 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0OnNil() {
-        Stream<Integer> actual = this.<Integer>empty().subSequence(0);
+        LazyList<Integer> actual = this.<Integer>empty().subSequence(0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnIdentityWhenSubSequenceFrom0OnNonNil() {
-        Stream<Integer> actual = of(1).subSequence(0);
+        LazyList<Integer> actual = of(1).subSequence(0);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
-    public void shouldReturnNilWhenSubSequenceFrom1OnStreamOf1() {
-        Stream<Integer> actual = of(1).subSequence(1);
+    public void shouldReturnNilWhenSubSequenceFrom1OnLazyListOf1() {
+        LazyList<Integer> actual = of(1).subSequence(1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSubSequenceWhenIndexIsWithinRange() {
-        Stream<Integer> actual = of(1, 2, 3).subSequence(1);
+        LazyList<Integer> actual = of(1, 2, 3).subSequence(1);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceBeginningWithSize() {
-        Stream<Integer> actual = of(1, 2, 3).subSequence(3);
+        LazyList<Integer> actual = of(1, 2, 3).subSequence(3);
         assertThat(actual).isEmpty();
     }
 
@@ -2855,7 +2874,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameInstanceIfSubSequenceStartsAtZero() {
-        Stream<Integer> seq = of(1, 2, 3);
+        LazyList<Integer> seq = of(1, 2, 3);
         assertThat(seq.subSequence(0)).isSameAs(seq);
     }
 
@@ -2863,37 +2882,37 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0To0OnNil() {
-        Stream<Integer> actual = this.<Integer>empty().subSequence(0, 0);
+        LazyList<Integer> actual = this.<Integer>empty().subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0To0OnNonNil() {
-        Stream<Integer> actual = of(1).subSequence(0, 0);
+        LazyList<Integer> actual = of(1).subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
-    public void shouldReturnStreamWithFirstElementWhenSubSequenceFrom0To1OnNonNil() {
-        Stream<Integer> actual = of(1).subSequence(0, 1);
+    public void shouldReturnLazyListWithFirstElementWhenSubSequenceFrom0To1OnNonNil() {
+        LazyList<Integer> actual = of(1).subSequence(0, 1);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom1To1OnNonNil() {
-        Stream<Integer> actual = of(1).subSequence(1, 1);
+        LazyList<Integer> actual = of(1).subSequence(1, 1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSubSequenceWhenIndicesAreWithinRange() {
-        Stream<Integer> actual = of(1, 2, 3).subSequence(1, 3);
+        LazyList<Integer> actual = of(1, 2, 3).subSequence(1, 3);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilWhenOnSubSequenceIndicesBothAreUpperBound() {
-        Stream<Integer> actual = of(1, 2, 3).subSequence(3, 3);
+        LazyList<Integer> actual = of(1, 2, 3).subSequence(3, 3);
         assertThat(actual).isEmpty();
     }
 
@@ -2928,7 +2947,7 @@ public class StreamTest extends AbstractTraversableTest {
                 IndexOutOfBoundsException.class,
                 () -> of(1, 2, 3)
                         .subSequence(1, 4)
-                        .mkString()); // force computation of last element, e.g. because Stream is lazy
+                        .mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Test
@@ -2937,7 +2956,7 @@ public class StreamTest extends AbstractTraversableTest {
                 IllegalArgumentException.class,
                 () -> of(1, 2, 3)
                         .subSequence(2, 1)
-                        .mkString()); // force computation of last element, e.g. because Stream is lazy
+                        .mkString()); // force computation of last element, e.g. because LazyList is lazy
     }
 
     @Nested
@@ -2971,74 +2990,74 @@ public class StreamTest extends AbstractTraversableTest {
     class TransposeTests {
         @Test
         public void shouldTransposeIfEmpty() {
-            Stream<Stream<Integer>> actual = empty();
+            LazyList<LazyList<Integer>> actual = empty();
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfIs1x0() {
-            Stream<Stream<Integer>> actual = of(empty());
+            LazyList<LazyList<Integer>> actual = of(empty());
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfIs1x1() {
-            Stream<Stream<Integer>> actual = of(of(1));
+            LazyList<LazyList<Integer>> actual = of(of(1));
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfSingleValued() {
-            Stream<Stream<Integer>> actual = of(of(0));
-            Stream<Stream<Integer>> expected = of(of(0));
+            LazyList<LazyList<Integer>> actual = of(of(0));
+            LazyList<LazyList<Integer>> expected = of(of(0));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedColumn() {
-            Stream<Stream<Integer>> actual = of(of(0, 1, 2));
-            Stream<Stream<Integer>> expected = of(of(0), of(1), of(2));
+            LazyList<LazyList<Integer>> actual = of(of(0, 1, 2));
+            LazyList<LazyList<Integer>> expected = of(of(0), of(1), of(2));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedRow() {
-            Stream<Stream<Integer>> actual = of(of(0), of(1), of(2));
-            Stream<Stream<Integer>> expected = of(of(0, 1, 2));
+            LazyList<LazyList<Integer>> actual = of(of(0), of(1), of(2));
+            LazyList<LazyList<Integer>> expected = of(of(0, 1, 2));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedIfSymmetric() {
-            Stream<Stream<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9));
-            Stream<Stream<Integer>> expected = of(of(1, 4, 7), of(2, 5, 8), of(3, 6, 9));
+            LazyList<LazyList<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9));
+            LazyList<LazyList<Integer>> expected = of(of(1, 4, 7), of(2, 5, 8), of(3, 6, 9));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreColumnsThanRows() {
-            Stream<Stream<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
-            Stream<Stream<Integer>> expected = of(of(1, 4), of(2, 5), of(3, 6));
+            LazyList<LazyList<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            LazyList<LazyList<Integer>> expected = of(of(1, 4), of(2, 5), of(3, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreRowsThanColumns() {
-            Stream<Stream<Integer>> actual = of(of(1, 2), of(3, 4), of(5, 6));
-            Stream<Stream<Integer>> expected = of(of(1, 3, 5), of(2, 4, 6));
+            LazyList<LazyList<Integer>> actual = of(of(1, 2), of(3, 4), of(5, 6));
+            LazyList<LazyList<Integer>> expected = of(of(1, 3, 5), of(2, 4, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldBeEqualIfTransposedTwice() {
-            Stream<Stream<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
-            Stream<Stream<Integer>> transposed = transpose(actual);
+            LazyList<LazyList<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            LazyList<LazyList<Integer>> transposed = transpose(actual);
             assertThat(transpose(transposed)).isEqualTo(actual);
         }
 
@@ -3046,23 +3065,23 @@ public class StreamTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         public void shouldNotTransposeForMissingOrEmptyValues() {
             assertThrows(IllegalArgumentException.class, () -> {
-                Stream<Stream<Integer>> actual = of(of(), of(0, 1), of(2, 3, 4, 5), of(), of(6, 7, 8));
+                LazyList<LazyList<Integer>> actual = of(of(), of(0, 1), of(2, 3, 4, 5), of(), of(6, 7, 8));
                 transpose(actual);
             });
         }
     }
 
     @Nested
-    class NonStreamArgumentTests {
+    class NonLazyListArgumentTests {
         @Test
-        public void shouldStartWithANonStreamIterable() {
+        public void shouldStartWithANonLazyListIterable() {
             assertThat(of(1, 3, 4).startsWith(List.of(1, 3))).isTrue();
             assertThat(of(1, 2, 3, 4).startsWith(List.of(1, 2, 4))).isFalse();
             assertThat(of(1, 2).startsWith(List.of(1, 2, 4))).isFalse();
         }
 
         @Test
-        public void shouldEndWithANonStreamIterable() {
+        public void shouldEndWithANonLazyListIterable() {
             assertThat(of(1, 3, 4).endsWith(List.of(3, 4))).isTrue();
             assertThat(of(1, 2, 3, 4).endsWith(List.of(2, 3, 5))).isFalse();
         }
@@ -3071,7 +3090,7 @@ public class StreamTest extends AbstractTraversableTest {
     // -- distinctByKeepLast(Comparator)
 
     @TestTemplate
-    public void shouldComputeDistinctByKeepLastOfEmptyStreamUsingComparator() {
+    public void shouldComputeDistinctByKeepLastOfEmptyLazyListUsingComparator() {
         Comparator<Integer> comparator = comparingInt(i -> i);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(this.<Integer>empty().distinctByKeepLast(comparator)).isEqualTo(empty());
@@ -3081,22 +3100,22 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldComputeDistinctByKeepLastOfNonEmptyStreamUsingComparator() {
+    public void shouldComputeDistinctByKeepLastOfNonEmptyLazyListUsingComparator() {
         Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        Stream<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(comparator);
+        LazyList<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(comparator);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
     @TestTemplate
-    public void shouldReturnSameInstanceWhenDistinctByKeepLastComparatorEmptyStream() {
-        Stream<?> empty = empty();
+    public void shouldReturnSameInstanceWhenDistinctByKeepLastComparatorEmptyLazyList() {
+        LazyList<?> empty = empty();
         assertThat(empty.distinctByKeepLast(Comparators.naturalComparator())).isSameAs(empty);
     }
 
     // -- distinctByKeepLast(Function)
 
     @TestTemplate
-    public void shouldComputeDistinctByKeepLastOfEmptyStreamUsingKeyExtractor() {
+    public void shouldComputeDistinctByKeepLastOfEmptyLazyListUsingKeyExtractor() {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(empty().distinctByKeepLast(Function.identity())).isEqualTo(empty());
         } else {
@@ -3105,15 +3124,15 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldComputeDistinctByKeepLastOfNonEmptyStreamUsingKeyExtractor() {
+    public void shouldComputeDistinctByKeepLastOfNonEmptyLazyListUsingKeyExtractor() {
         Function<String, Character> function = c -> c.charAt(1);
-        Stream<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(function);
+        LazyList<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(function);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
     @TestTemplate
-    public void shouldReturnSameInstanceWhenDistinctByKeepLastFunctionEmptyStream() {
-        Stream<?> empty = empty();
+    public void shouldReturnSameInstanceWhenDistinctByKeepLastFunctionEmptyLazyList() {
+        LazyList<?> empty = empty();
         assertThat(empty.distinctByKeepLast(Function.identity())).isSameAs(empty);
     }
 
@@ -3138,12 +3157,12 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullOnOf() {
-            assertThatNullPointerException().isThrownBy(() -> StreamTest.this.<Integer>of((Integer) null));
+            assertThatNullPointerException().isThrownBy(() -> LazyListTest.this.<Integer>of((Integer) null));
         }
 
         @Test
         public void shouldRejectNullOnOfVarargs() {
-            assertThatNullPointerException().isThrownBy(() -> StreamTest.this.<Integer>of(1, null));
+            assertThatNullPointerException().isThrownBy(() -> LazyListTest.this.<Integer>of(1, null));
         }
     }
 
@@ -3151,18 +3170,18 @@ public class StreamTest extends AbstractTraversableTest {
     class TraversableOnlyTests {
         @Test
         public void shouldImplementTraversableOnly() {
-            assertThat(Traversable.class.isAssignableFrom(Stream.class)).isTrue();
-            assertThat(Stream.class.getInterfaces()).containsExactly(Traversable.class);
-            // no sequence interface above Traversable: a Stream reaches Traversable directly
-            assertThat(supertypeNames(Stream.class)).containsExactlyInAnyOrder("Traversable", "Iterable");
+            assertThat(Traversable.class.isAssignableFrom(LazyList.class)).isTrue();
+            assertThat(LazyList.class.getInterfaces()).containsExactly(Traversable.class);
+            // no sequence interface above Traversable: a LazyList reaches Traversable directly
+            assertThat(supertypeNames(LazyList.class)).containsExactlyInAnyOrder("Traversable", "Iterable");
         }
 
         @Test
         public void shouldHaveTheSameSupertypesOnBothCases() {
-            assertThat(supertypeNames(Stream.empty().getClass()))
-                    .containsExactlyInAnyOrder("Stream", "Traversable", "Iterable");
-            assertThat(supertypeNames(Stream.of(1).getClass()))
-                    .containsExactlyInAnyOrder("Stream", "Traversable", "Iterable");
+            assertThat(supertypeNames(LazyList.empty().getClass()))
+                    .containsExactlyInAnyOrder("LazyList", "Traversable", "Iterable");
+            assertThat(supertypeNames(LazyList.of(1).getClass()))
+                    .containsExactlyInAnyOrder("LazyList", "Traversable", "Iterable");
         }
 
         @Test
@@ -3178,8 +3197,8 @@ public class StreamTest extends AbstractTraversableTest {
     class LazySearchTests {
 
         @Test
-        public void shouldSearchAnInfiniteStreamWithoutForcingItWhole() {
-            Stream<Integer> naturals = Stream.from(1);
+        public void shouldSearchAnInfiniteLazyListWithoutForcingItWhole() {
+            LazyList<Integer> naturals = LazyList.from(1);
             assertThat(naturals.indexOf(5)).isEqualTo(4);
             assertThat(naturals.indexOf(5, 2)).isEqualTo(4);
             assertThat(naturals.indexOfOption(5)).isEqualTo(Option.some(4));
@@ -3196,7 +3215,7 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(naturals.search(4)).isEqualTo(3);
             assertThat(naturals.search(4, Comparator.naturalOrder())).isEqualTo(3);
             assertThat(naturals.drop(3).take(2).toList()).isEqualTo(List.of(4, 5));
-            assertThat(naturals.crossProduct(Stream.from(1))
+            assertThat(naturals.crossProduct(LazyList.from(1))
                             .take(3)
                             .map(Tuple2::_2)
                             .toList())
@@ -3206,7 +3225,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldForceEachCellAtMostOnce() {
             java.util.concurrent.atomic.AtomicInteger forced = new java.util.concurrent.atomic.AtomicInteger();
-            Stream<Integer> counted = Stream.from(1).map(i -> {
+            LazyList<Integer> counted = LazyList.from(1).map(i -> {
                 forced.incrementAndGet();
                 return i;
             });
@@ -3217,17 +3236,17 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldReturnAStream() {
-            Stream<Integer> stream = Stream.of(1, 2, 3);
-            assertThat(stream.rotateLeft(1)).isInstanceOf(Stream.class).isEqualTo(Stream.of(2, 3, 1));
-            assertThat(stream.rotateRight(1)).isInstanceOf(Stream.class).isEqualTo(Stream.of(3, 1, 2));
-            assertThat(stream.sortBy(i -> -i)).isInstanceOf(Stream.class).isEqualTo(Stream.of(3, 2, 1));
-            assertThat(stream.crossProduct(2).head()).isInstanceOf(Stream.class);
+        public void shouldReturnALazyList() {
+            LazyList<Integer> stream = LazyList.of(1, 2, 3);
+            assertThat(stream.rotateLeft(1)).isInstanceOf(LazyList.class).isEqualTo(LazyList.of(2, 3, 1));
+            assertThat(stream.rotateRight(1)).isInstanceOf(LazyList.class).isEqualTo(LazyList.of(3, 1, 2));
+            assertThat(stream.sortBy(i -> -i)).isInstanceOf(LazyList.class).isEqualTo(LazyList.of(3, 2, 1));
+            assertThat(stream.crossProduct(2).head()).isInstanceOf(LazyList.class);
         }
 
         @Test
         public void shouldHandleTheEmptyAndSingleCases() {
-            Stream<Integer> empty = Stream.empty();
+            LazyList<Integer> empty = LazyList.empty();
             assertThat(empty.reverse().iterator().hasNext()).isFalse();
             assertThat(empty.indexOf(1)).isEqualTo(-1);
             assertThat(empty.lastIndexOf(1)).isEqualTo(-1);
@@ -3235,22 +3254,22 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(empty.lastIndexWhere(i -> true)).isEqualTo(-1);
             assertThat(empty.prefixLength(i -> true)).isEqualTo(0);
             assertThat(empty.segmentLength(i -> true, 0)).isEqualTo(0);
-            assertThat(empty.containsSlice(Stream.empty())).isTrue();
-            assertThat(empty.startsWith(Stream.empty())).isTrue();
-            assertThat(empty.endsWith(Stream.empty())).isTrue();
+            assertThat(empty.containsSlice(LazyList.empty())).isTrue();
+            assertThat(empty.startsWith(LazyList.empty())).isTrue();
+            assertThat(empty.endsWith(LazyList.empty())).isTrue();
             assertThat(empty.search(1)).isEqualTo(-1);
             assertThat(empty.crossProduct().isEmpty()).isTrue();
-            Stream<Integer> one = Stream.of(1);
+            LazyList<Integer> one = LazyList.of(1);
             assertThat(one.reverse().toList()).isEqualTo(List.of(1));
             assertThat(one.crossProduct().toList().size()).isEqualTo(1);
-            assertThat(one.endsWith(Stream.of(1))).isTrue();
-            assertThat(one.endsWith(Stream.of(0, 1))).isFalse();
-            assertThat(one.lastIndexOfSlice(Stream.of(1))).isEqualTo(0);
+            assertThat(one.endsWith(LazyList.of(1))).isTrue();
+            assertThat(one.endsWith(LazyList.of(0, 1))).isFalse();
+            assertThat(one.lastIndexOfSlice(LazyList.of(1))).isEqualTo(0);
         }
 
         @Test
         public void shouldRejectNullArgumentsOfEveryNewlyDeclaredMethod() {
-            Stream<Integer> stream = Stream.of(1, 2, 3);
+            LazyList<Integer> stream = LazyList.of(1, 2, 3);
             assertThatNullPointerException()
                     .isThrownBy(() -> stream.containsSlice(null))
                     .withMessage("that is null");
@@ -3396,9 +3415,9 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctOfNonEmptyTraversable() {
-        Stream<Integer> testee = of(1, 1, 2, 2, 3, 3);
-        Stream<Integer> actual = testee.distinct();
-        Stream<Integer> expected = of(1, 2, 3);
+        LazyList<Integer> testee = of(1, 1, 2, 2, 3, 3);
+        LazyList<Integer> actual = testee.distinct();
+        LazyList<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
         if (isDistinct()) {
             assertThat(actual).isSameAs(testee);
@@ -3420,14 +3439,14 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingComparator() {
         Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        Stream<String> distinct =
+        LazyList<String> distinct =
                 of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByComparatorEmptyTraversable() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.distinctBy(Comparators.naturalComparator())).isSameAs(empty);
     }
 
@@ -3445,14 +3464,14 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingKeyExtractor() {
         Function<String, Character> function = c -> c.charAt(1);
-        Stream<String> distinct =
+        LazyList<String> distinct =
                 of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByFunctionEmptyTraversable() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.distinctBy(Function.identity())).isSameAs(empty);
     }
 
@@ -3488,19 +3507,19 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropZeroCount() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.drop(0)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropNegativeCount() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.drop(-1)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropOne() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.drop(1)).isSameAs(empty);
     }
 
@@ -3536,19 +3555,19 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropRightZeroCount() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.dropRight(0)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropRightNegativeCount() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         assertThat(t.dropRight(-1)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropRightOne() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.dropRight(1)).isSameAs(empty);
     }
 
@@ -3568,7 +3587,7 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).dropUntil(ignored -> true)).isEqualTo(of(1, 2, 3));
         } else {
-            Stream<Integer> t = of(1, 2, 3);
+            LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.dropUntil(ignored -> true)).isSameAs(t);
         }
     }
@@ -3589,7 +3608,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropUntil() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.dropUntil(ignored -> true)).isSameAs(empty);
     }
 
@@ -3597,8 +3616,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropWhileNoneOnNil() {
-        Stream<?> empty = empty();
-        Stream<?> actual = empty.dropWhile(ignored -> true);
+        LazyList<?> empty = empty();
+        LazyList<?> actual = empty.dropWhile(ignored -> true);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty);
         } else {
@@ -3611,14 +3630,14 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).dropWhile(ignored -> false)).isEqualTo(of(1, 2, 3));
         } else {
-            Stream<Integer> t = of(1, 2, 3);
+            LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.dropWhile(ignored -> false)).isSameAs(t);
         }
     }
 
     @TestTemplate
     public void shouldDropWhileAllIfPredicateIsTrue() {
-        Stream<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
+        LazyList<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty());
         } else {
@@ -3638,7 +3657,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropWhile() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.dropWhile(ignored -> true)).isSameAs(empty);
     }
 
@@ -3669,7 +3688,7 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).filter(ignore -> true)).isEqualTo(of(1, 2, 3));
         } else {
-            Stream<Integer> t = of(1, 2, 3);
+            LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.filter(ignore -> true)).isSameAs(t);
         }
     }
@@ -3687,7 +3706,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.filter(v -> true)).isSameAs(empty);
     }
 
@@ -3701,7 +3720,7 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).reject(ignore -> false)).isEqualTo(of(1, 2, 3));
         } else {
-            Stream<Integer> t = of(1, 2, 3);
+            LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.reject(ignore -> false)).isSameAs(t);
         }
     }
@@ -3719,7 +3738,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.reject(v -> true)).isSameAs(empty);
     }
 
@@ -3756,7 +3775,7 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldCollectNothingFromEmpty() {
         AtomicInteger calls = new AtomicInteger();
-        Stream<Integer> actual = this.<Integer>empty().collect(i -> {
+        LazyList<Integer> actual = this.<Integer>empty().collect(i -> {
             calls.incrementAndGet();
             return Option.some(i);
         });
@@ -3782,7 +3801,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithASwitchInsideTheLambda() {
-        Stream<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+        LazyList<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
             case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
             default -> Option.none();
         });
@@ -3937,22 +3956,22 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldGroupedTraversableWithEqualSizedBlocks() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(3, 4));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2), LazyList.of(3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedTraversableWithRemainder() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(3, 4), Stream.of(5));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2), LazyList.of(3, 4), LazyList.of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedWhenTraversableLengthIsSmallerThanBlockSize() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2, 3, 4));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4373,7 +4392,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseOther() {
-        Stream<Integer> src = of(42);
+        LazyList<Integer> src = of(42);
         assertThat(src.orElse(List.of(1))).isSameAs(src);
     }
 
@@ -4391,7 +4410,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseSupplier() {
-        Stream<Integer> src = of(42);
+        LazyList<Integer> src = of(42);
         assertThat(src.orElse(() -> List.of(1))).isSameAs(src);
     }
 
@@ -4590,9 +4609,9 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReplaceFirstOccurrenceOfNonNilUsingCurrNewWhenMultipleOccurrencesExist() {
-        Stream<Integer> testee = of(0, 1, 2, 1);
-        Stream<Integer> actual = testee.replace(1, 3);
-        Stream<Integer> expected = of(0, 3, 2, 1);
+        LazyList<Integer> testee = of(0, 1, 2, 1);
+        LazyList<Integer> actual = testee.replace(1, 3);
+        LazyList<Integer> expected = of(0, 3, 2, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4606,7 +4625,7 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2).replace(33, 3)).isEqualTo(of(0, 1, 2));
         } else {
-            Stream<Integer> src = of(0, 1, 2);
+            LazyList<Integer> src = of(0, 1, 2);
             assertThat(src.replace(33, 3)).isSameAs(src);
         }
     }
@@ -4627,7 +4646,7 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2, 1).replaceAll(33, 3)).isEqualTo(of(0, 1, 2, 1));
         } else {
-            Stream<Integer> src = of(0, 1, 2, 1);
+            LazyList<Integer> src = of(0, 1, 2, 1);
             assertThat(src.replaceAll(33, 3)).isSameAs(src);
         }
     }
@@ -4641,8 +4660,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllElementsFromNil() {
-        Stream<Object> empty = empty();
-        Stream<Object> actual = empty.retainAll(of(1, 2, 3));
+        LazyList<Object> empty = empty();
+        LazyList<Object> actual = empty.retainAll(of(1, 2, 3));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty);
         } else {
@@ -4652,17 +4671,17 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllExistingElementsFromNonNil() {
-        Stream<Integer> src = of(1, 2, 3, 2, 1, 3);
-        Stream<Integer> expected = of(1, 2, 2, 1);
-        Stream<Integer> actual = src.retainAll(of(1, 2));
+        LazyList<Integer> src = of(1, 2, 3, 2, 1, 3);
+        LazyList<Integer> expected = of(1, 2, 2, 1);
+        LazyList<Integer> actual = src.retainAll(of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldRetainAllElementsFromNonNil() {
-        Stream<Integer> src = of(1, 2, 1, 2, 2);
-        Stream<Integer> expected = of(1, 2, 1, 2, 2);
-        Stream<Integer> actual = src.retainAll(of(1, 2));
+        LazyList<Integer> src = of(1, 2, 1, 2, 2);
+        LazyList<Integer> expected = of(1, 2, 1, 2, 2);
+        LazyList<Integer> actual = src.retainAll(of(1, 2));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -4672,9 +4691,9 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNotRetainAllNonExistingElementsFromNonNil() {
-        Stream<Integer> src = of(1, 2, 3);
-        Stream<Object> expected = empty();
-        Stream<Integer> actual = src.retainAll(of(4, 5));
+        LazyList<Integer> src = of(1, 2, 3);
+        LazyList<Object> expected = empty();
+        LazyList<Integer> actual = src.retainAll(of(4, 5));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -4686,49 +4705,49 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanEmpty() {
-        Stream<Integer> testee = empty();
-        Stream<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
+        LazyList<Integer> testee = empty();
+        LazyList<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(this.of(0));
     }
 
     @TestTemplate
     public void shouldScanLeftEmpty() {
-        Stream<Integer> testee = empty();
-        Stream<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
+        LazyList<Integer> testee = empty();
+        LazyList<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(of(0));
     }
 
     @TestTemplate
     public void shouldScanRightEmpty() {
-        Stream<Integer> testee = empty();
-        Stream<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
+        LazyList<Integer> testee = empty();
+        LazyList<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(of(0));
     }
 
     @TestTemplate
     public void shouldScanNonEmpty() {
-        Stream<Integer> testee = of(1, 2, 3);
-        Stream<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
+        LazyList<Integer> testee = of(1, 2, 3);
+        LazyList<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
         assertThat(actual).isEqualTo(of(0, 1, 3, 6));
     }
 
     @TestTemplate
     public void shouldScanLeftNonEmpty() {
-        Stream<Integer> testee = of(1, 2, 3);
-        Stream<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
+        LazyList<Integer> testee = of(1, 2, 3);
+        LazyList<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
         assertThat(actual).isEqualTo(of("x", "x1", "x12", "x123"));
     }
 
     @TestTemplate
     public void shouldScanRightNonEmpty() {
-        Stream<Integer> testee = of(1, 2, 3);
-        Stream<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
+        LazyList<Integer> testee = of(1, 2, 3);
+        LazyList<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
         assertThat(actual).isEqualTo(of("x321", "x32", "x3", "x"));
     }
 
     @TestTemplate
     public void shouldScanWithNonComparable() {
-        Stream<NonComparable> testee = of(new NonComparable("a"));
+        LazyList<NonComparable> testee = of(new NonComparable("a"));
         List<NonComparable> actual =
                 List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
         List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
@@ -4739,7 +4758,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanLeftWithNonComparable() {
-        Stream<NonComparable> testee = of(new NonComparable("a"));
+        LazyList<NonComparable> testee = of(new NonComparable("a"));
         List<NonComparable> actual =
                 List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
         List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
@@ -4750,7 +4769,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanRightWithNonComparable() {
-        Stream<NonComparable> testee = of(new NonComparable("a"));
+        LazyList<NonComparable> testee = of(new NonComparable("a"));
         List<NonComparable> actual = List.ofAll(
                 testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
         List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
@@ -4781,38 +4800,39 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideSingularByClassifier() {
-        List<Stream<Integer>> actual = of(1).slideBy(Function.identity()).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1));
+        List<LazyList<Integer>> actual = of(1).slideBy(Function.identity()).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByIdentityClassifier() {
-        List<Stream<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1), Stream.of(2), Stream.of(3));
+        List<LazyList<Integer>> actual =
+                of(1, 2, 3).slideBy(Function.identity()).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1), LazyList.of(2), LazyList.of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByConstantClassifier() {
-        List<Stream<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2, 3));
+        List<LazyList<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySomeClassifier() {
-        List<Stream<Integer>> actual =
+        List<LazyList<Integer>> actual =
                 of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
-        List<Stream<Integer>> expected =
-                List.of(Stream.of(10, 20, 30), Stream.of(42, 52), Stream.of(60), Stream.of(72));
+        List<LazyList<Integer>> expected =
+                List.of(LazyList.of(10, 20, 30), LazyList.of(42, 52), LazyList.of(60), LazyList.of(72));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideByClassifierReturningNull() {
-        List<Stream<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2, 3));
+        List<LazyList<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4845,15 +4865,16 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideNonNilBySize1() {
-        List<Stream<Integer>> actual = of(1, 2, 3).sliding(1).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1), Stream.of(2), Stream.of(3));
+        List<LazyList<Integer>> actual = of(1, 2, 3).sliding(1).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1), LazyList.of(2), LazyList.of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySize2() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(2, 3), Stream.of(3, 4), Stream.of(4, 5));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
+        List<LazyList<Integer>> expected =
+                List.of(LazyList.of(1, 2), LazyList.of(2, 3), LazyList.of(3, 4), LazyList.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4881,43 +4902,43 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep3() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(4, 5));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2), LazyList.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep4() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(5));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2), LazyList.of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep5() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide4ElementsBySize5AndStep3() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2, 3, 4));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize1AndStep3() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1), Stream.of(4), Stream.of(7));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1), LazyList.of(4), LazyList.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize2AndStep3() {
-        List<Stream<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
-        List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(4, 5), Stream.of(7));
+        List<LazyList<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
+        List<LazyList<Integer>> expected = List.of(LazyList.of(1, 2), LazyList.of(4, 5), LazyList.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5022,7 +5043,7 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).take(4)).isEqualTo(of(1, 2, 3));
         } else {
-            Stream<Integer> t = of(1, 2, 3);
+            LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.take(4)).isSameAs(t);
         }
     }
@@ -5057,14 +5078,14 @@ public class StreamTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).takeRight(4)).isEqualTo(of(1, 2, 3));
         } else {
-            Stream<Integer> t = of(1, 2, 3);
+            LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.takeRight(4)).isSameAs(t);
         }
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceIfTakeRightAll() {
-        Stream<?> t = of(1, 2, 3);
+        LazyList<?> t = of(1, 2, 3);
         assertThat(t.takeRight(3)).isSameAs(t);
         assertThat(t.takeRight(4)).isSameAs(t);
     }
@@ -5082,7 +5103,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeUntilAllOnFalseCondition() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).takeUntil(x -> false)).isEqualTo(of(1, 2, 3));
         } else {
@@ -5106,7 +5127,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyTakeUntil() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.takeUntil(ignored -> false)).isSameAs(empty);
     }
 
@@ -5132,7 +5153,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeWhileAllOnTrueCondition() {
-        Stream<Integer> t = of(1, 2, 3);
+        LazyList<Integer> t = of(1, 2, 3);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).takeWhile(x -> true)).isEqualTo(of(1, 2, 3));
         } else {
@@ -5147,7 +5168,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyTakeWhile() {
-        Stream<?> empty = empty();
+        LazyList<?> empty = empty();
         assertThat(empty.takeWhile(ignored -> false)).isSameAs(empty);
     }
 
@@ -5205,51 +5226,51 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipNils() {
-        Stream<?> actual = empty().zip(empty());
+        LazyList<?> actual = empty().zip(empty());
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipEmptyAndNonNil() {
-        Stream<?> actual = empty().zip(of(1));
+        LazyList<?> actual = empty().zip(of(1));
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipNonEmptyAndNil() {
-        Stream<?> actual = of(1).zip(empty());
+        LazyList<?> actual = of(1).zip(empty());
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThisIsSmaller() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThatIsSmaller() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsOfSameSize() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     @SuppressWarnings("unchecked")
     public void shouldZipWithNonNilsOfSameSize() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5262,21 +5283,21 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipAllNils() {
-        Stream<?> actual = empty().zipAll(empty(), 0, 0);
+        LazyList<?> actual = empty().zipAll(empty(), 0, 0);
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipAllEmptyAndNonNil() {
-        Stream<?> actual = empty().zipAll(of(1), 0, 0);
-        Stream<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
+        LazyList<?> actual = empty().zipAll(of(1), 0, 0);
+        LazyList<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonEmptyAndNil() {
-        Stream<?> actual = of(1).zipAll(empty(), 0, 0);
-        Stream<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
+        LazyList<?> actual = of(1).zipAll(empty(), 0, 0);
+        LazyList<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5288,25 +5309,25 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThisIsSmaller() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThatIsSmaller() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsOfSameSize() {
-        Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
+        LazyList<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        LazyList<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5324,17 +5345,17 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipNonNilWithIndex() {
-        Stream<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
+        LazyList<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
         @SuppressWarnings("unchecked")
-        Stream<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        LazyList<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     @SuppressWarnings("unchecked")
     public void shouldZipNonNilWithIndexWithMapper() {
-        Stream<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
-        Stream<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        LazyList<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
+        LazyList<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5414,7 +5435,7 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldTapSingleValuePerformingAnAction() {
         int[] effect = {0};
-        Stream<Integer> actual = of(1).tap(i -> effect[0] = i);
+        LazyList<Integer> actual = of(1).tap(i -> effect[0] = i);
         assertThat(actual).isEqualTo(of(1));
         assertThat(effect[0]).isEqualTo(1);
     }
@@ -5422,14 +5443,14 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldTapEveryElement() {
         int[] sum = {0};
-        Stream<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        LazyList<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
         assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
         assertThat(sum[0]).isEqualTo(6);
     }
 
     @TestTemplate
     public void shouldReturnThisOnTapOfEagerCollection() {
-        Stream<Integer> testee = of(1, 2, 3);
+        LazyList<Integer> testee = of(1, 2, 3);
         if (hasDefiniteSize()) {
             assertThat(testee.tap(i -> {})).isSameAs(testee);
         }
@@ -5521,7 +5542,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedSet() {
-        Stream<Integer> value = of(3, 7, 1, 15, 0);
+        LazyList<Integer> value = of(3, 7, 1, 15, 0);
         Set<Integer> set = value.toLinkedSet();
         List<Integer> itemsInOrder = true ? value.toList() : List.of(3, 7, 1, 15, 0);
         assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
@@ -5547,9 +5568,9 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @TestTemplate
-    public void shouldConvertToStream() {
-        assertThat(of(1, 2, 3).toStream()).isEqualTo(Stream.of(1, 2, 3));
-        assertThat(empty().toStream()).isSameAs(Stream.empty());
+    public void shouldConvertToLazyList() {
+        assertThat(of(1, 2, 3).toLazyList()).isEqualTo(LazyList.of(1, 2, 3));
+        assertThat(empty().toLazyList()).isSameAs(LazyList.empty());
     }
 
     // -- the range factories
@@ -6159,49 +6180,50 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class LazyWindowsAndProductsTests {
 
-        /** An infinite Stream counting how many of its elements have been forced. */
-        private Stream<Integer> counted(AtomicInteger forced) {
-            return Stream.continually(forced::incrementAndGet);
+        /** An infinite LazyList counting how many of its elements have been forced. */
+        private LazyList<Integer> counted(AtomicInteger forced) {
+            return LazyList.continually(forced::incrementAndGet);
         }
 
         @Test
-        public void shouldGroupIntoStreamsOfStreams() {
-            Stream<Stream<Integer>> groups = of(1, 2, 3, 4, 5).grouped(2);
-            assertThat(groups).isInstanceOf(Stream.class);
-            assertThat(groups).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(3, 4), Stream.of(5)));
-            assertThat(groups.head()).isInstanceOf(Stream.class);
+        public void shouldGroupIntoLazyListsOfLazyLists() {
+            LazyList<LazyList<Integer>> groups = of(1, 2, 3, 4, 5).grouped(2);
+            assertThat(groups).isInstanceOf(LazyList.class);
+            assertThat(groups).isEqualTo(LazyList.of(LazyList.of(1, 2), LazyList.of(3, 4), LazyList.of(5)));
+            assertThat(groups.head()).isInstanceOf(LazyList.class);
         }
 
         @Test
-        public void shouldSlideIntoStreamsOfStreams() {
+        public void shouldSlideIntoLazyListsOfLazyLists() {
             assertThat(of(1, 2, 3, 4).sliding(3))
-                    .isInstanceOf(Stream.class)
-                    .isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(2, 3, 4)));
-            assertThat(of(1, 2, 3, 4, 5).sliding(2, 3)).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(4, 5)));
-            assertThat(of(1, 2, 3, 4, 5).sliding(2, 4)).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(5)));
-            assertThat(of(1, 2).sliding(5)).isEqualTo(Stream.of(Stream.of(1, 2)));
-            assertThat(of(1, 2, 3, 4).sliding(3).head()).isInstanceOf(Stream.class);
+                    .isInstanceOf(LazyList.class)
+                    .isEqualTo(LazyList.of(LazyList.of(1, 2, 3), LazyList.of(2, 3, 4)));
+            assertThat(of(1, 2, 3, 4, 5).sliding(2, 3)).isEqualTo(LazyList.of(LazyList.of(1, 2), LazyList.of(4, 5)));
+            assertThat(of(1, 2, 3, 4, 5).sliding(2, 4)).isEqualTo(LazyList.of(LazyList.of(1, 2), LazyList.of(5)));
+            assertThat(of(1, 2).sliding(5)).isEqualTo(LazyList.of(LazyList.of(1, 2)));
+            assertThat(of(1, 2, 3, 4).sliding(3).head()).isInstanceOf(LazyList.class);
         }
 
         @Test
-        public void shouldSlideByIntoStreamsOfStreams() {
-            Stream<Stream<Integer>> runs = of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10);
-            assertThat(runs).isInstanceOf(Stream.class);
+        public void shouldSlideByIntoLazyListsOfLazyLists() {
+            LazyList<LazyList<Integer>> runs = of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10);
+            assertThat(runs).isInstanceOf(LazyList.class);
             assertThat(runs)
-                    .isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(10, 12), Stream.of(5, 7), Stream.of(20, 29)));
-            assertThat(runs.head()).isInstanceOf(Stream.class);
+                    .isEqualTo(LazyList.of(
+                            LazyList.of(1, 2, 3), LazyList.of(10, 12), LazyList.of(5, 7), LazyList.of(20, 29)));
+            assertThat(runs.head()).isInstanceOf(LazyList.class);
         }
 
         @Test
-        public void shouldHaveNoWindowOnTheEmptyStream() {
-            assertThat(empty().grouped(1)).isEqualTo(Stream.empty());
-            assertThat(empty().sliding(1)).isEqualTo(Stream.empty());
-            assertThat(empty().sliding(1, 2)).isEqualTo(Stream.empty());
-            assertThat(empty().slideBy(Function.identity())).isEqualTo(Stream.empty());
-            assertThat(empty().crossProduct()).isEqualTo(Stream.empty());
-            assertThat(empty().crossProduct(2)).isEqualTo(Stream.empty());
-            assertThat(empty().crossProduct(of(1))).isEqualTo(Stream.empty());
-            assertThat(empty().crossProduct(0)).isEqualTo(Stream.of(Stream.empty()));
+        public void shouldHaveNoWindowOnTheEmptyLazyList() {
+            assertThat(empty().grouped(1)).isEqualTo(LazyList.empty());
+            assertThat(empty().sliding(1)).isEqualTo(LazyList.empty());
+            assertThat(empty().sliding(1, 2)).isEqualTo(LazyList.empty());
+            assertThat(empty().slideBy(Function.identity())).isEqualTo(LazyList.empty());
+            assertThat(empty().crossProduct()).isEqualTo(LazyList.empty());
+            assertThat(empty().crossProduct(2)).isEqualTo(LazyList.empty());
+            assertThat(empty().crossProduct(of(1))).isEqualTo(LazyList.empty());
+            assertThat(empty().crossProduct(0)).isEqualTo(LazyList.of(LazyList.empty()));
         }
 
         @Test
@@ -6214,93 +6236,95 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldGroupAnInfiniteStream() {
-            assertThat(Stream.from(1).grouped(3).take(2)).isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(4, 5, 6)));
-            assertThat(Stream.from(1).grouped(3).head()).isInstanceOf(Stream.class);
+        public void shouldGroupAnInfiniteLazyList() {
+            assertThat(LazyList.from(1).grouped(3).take(2))
+                    .isEqualTo(LazyList.of(LazyList.of(1, 2, 3), LazyList.of(4, 5, 6)));
+            assertThat(LazyList.from(1).grouped(3).head()).isInstanceOf(LazyList.class);
         }
 
         @Test
-        public void shouldSlideAnInfiniteStream() {
-            assertThat(Stream.from(1).sliding(2, 3).take(3))
-                    .isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(4, 5), Stream.of(7, 8)));
-            assertThat(Stream.from(1).sliding(3).take(2)).isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(2, 3, 4)));
-            assertThat(Stream.from(1).slideBy(i -> i / 3).take(2))
-                    .isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(3, 4, 5)));
+        public void shouldSlideAnInfiniteLazyList() {
+            assertThat(LazyList.from(1).sliding(2, 3).take(3))
+                    .isEqualTo(LazyList.of(LazyList.of(1, 2), LazyList.of(4, 5), LazyList.of(7, 8)));
+            assertThat(LazyList.from(1).sliding(3).take(2))
+                    .isEqualTo(LazyList.of(LazyList.of(1, 2, 3), LazyList.of(2, 3, 4)));
+            assertThat(LazyList.from(1).slideBy(i -> i / 3).take(2))
+                    .isEqualTo(LazyList.of(LazyList.of(1, 2), LazyList.of(3, 4, 5)));
         }
 
         @Test
         public void shouldForceOnlyTheFirstGroupsWhenGrouping() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> stream = counted(forced);
-            assertThat(forced.get()).isEqualTo(1); // the head of a Stream is evaluated when the Stream is created
-            Stream<Stream<Integer>> groups = stream.grouped(3);
+            LazyList<Integer> stream = counted(forced);
+            assertThat(forced.get()).isEqualTo(1); // the head of a LazyList is evaluated when the LazyList is created
+            LazyList<LazyList<Integer>> groups = stream.grouped(3);
             // the call forces nothing: the first group is a lazy view of the source
             assertThat(forced.get()).isEqualTo(1);
-            assertThat(groups.head()).isEqualTo(Stream.of(1, 2, 3)); // consuming the group forces its elements
+            assertThat(groups.head()).isEqualTo(LazyList.of(1, 2, 3)); // consuming the group forces its elements
             assertThat(forced.get()).isEqualTo(3);
             // reaching the tail forces one element past the group, to know whether another group follows
-            assertThat(groups.tail().head()).isEqualTo(Stream.of(4, 5, 6));
+            assertThat(groups.tail().head()).isEqualTo(LazyList.of(4, 5, 6));
             assertThat(forced.get()).isEqualTo(6);
-            assertThat(groups.take(4).last()).isEqualTo(Stream.of(10, 11, 12));
+            assertThat(groups.take(4).last()).isEqualTo(LazyList.of(10, 11, 12));
             assertThat(forced.get()).isEqualTo(12);
         }
 
         @Test
         public void shouldForceOnlyTheFirstWindowsWhenSliding() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Stream<Integer>> windows = counted(forced).sliding(2, 3);
+            LazyList<LazyList<Integer>> windows = counted(forced).sliding(2, 3);
             assertThat(forced.get()).isEqualTo(1); // the call forces nothing beyond the head
-            assertThat(windows.head()).isEqualTo(Stream.of(1, 2));
+            assertThat(windows.head()).isEqualTo(LazyList.of(1, 2));
             assertThat(forced.get()).isEqualTo(2);
             // reaching the tail forces the skipped element and the head of the next window
-            assertThat(windows.tail().head()).isEqualTo(Stream.of(4, 5));
+            assertThat(windows.tail().head()).isEqualTo(LazyList.of(4, 5));
             assertThat(forced.get()).isEqualTo(5);
         }
 
         @Test
         public void shouldForceOnlyTheFirstRunWhenSlidingBy() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Stream<Integer>> runs = counted(forced).slideBy(i -> (i - 1) / 3);
+            LazyList<LazyList<Integer>> runs = counted(forced).slideBy(i -> (i - 1) / 3);
             int forcedByTheCall = forced.get();
             assertThat(forcedByTheCall).isEqualTo(4); // the first run of three, and the element that ends it
-            assertThat(runs.head()).isEqualTo(Stream.of(1, 2, 3));
+            assertThat(runs.head()).isEqualTo(LazyList.of(1, 2, 3));
             assertThat(forced.get()).isEqualTo(4);
-            assertThat(runs.tail().head()).isEqualTo(Stream.of(4, 5, 6));
+            assertThat(runs.tail().head()).isEqualTo(LazyList.of(4, 5, 6));
             assertThat(forced.get()).isEqualTo(7);
         }
 
         @Test
         public void shouldBuildTheCrossProductLazily() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Tuple2<Integer, Integer>> pairs = counted(forced).crossProduct(Stream.from(1));
-            assertThat(forced.get()).isEqualTo(1); // one pair: the head of this Stream and the head of that
+            LazyList<Tuple2<Integer, Integer>> pairs = counted(forced).crossProduct(LazyList.from(1));
+            assertThat(forced.get()).isEqualTo(1); // one pair: the head of this LazyList and the head of that
             assertThat(pairs.head()).isEqualTo(Tuple.of(1, 1));
-            assertThat(pairs.take(3)).isEqualTo(Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3)));
+            assertThat(pairs.take(3)).isEqualTo(LazyList.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3)));
             assertThat(forced.get()).isEqualTo(1); // the right-hand side varies fastest, the left-hand head is reused
             AtomicInteger forcedForThePower = new AtomicInteger();
-            Stream<Stream<Integer>> power = counted(forcedForThePower).crossProduct(2);
+            LazyList<LazyList<Integer>> power = counted(forcedForThePower).crossProduct(2);
             assertThat(forcedForThePower.get()).isEqualTo(1);
-            assertThat(power.take(2)).isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2)));
+            assertThat(power.take(2)).isEqualTo(LazyList.of(LazyList.of(1, 1), LazyList.of(1, 2)));
             assertThat(forcedForThePower.get()).isEqualTo(2);
-            assertThat(Stream.from(1).crossProduct(Stream.from(1)).take(5))
-                    .isEqualTo(
-                            Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3), Tuple.of(1, 4), Tuple.of(1, 5)));
+            assertThat(LazyList.from(1).crossProduct(LazyList.from(1)).take(5))
+                    .isEqualTo(LazyList.of(
+                            Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3), Tuple.of(1, 4), Tuple.of(1, 5)));
         }
 
         @Test
         public void shouldBuildTheCrossProductSquareAndPowerLazily() {
-            assertThat(Stream.from(1).crossProduct().take(3))
-                    .isEqualTo(Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3)));
-            assertThat(Stream.from(1).crossProduct(2).take(3))
-                    .isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2), Stream.of(1, 3)));
-            assertThat(Stream.from(1).crossProduct(2).head()).isInstanceOf(Stream.class);
+            assertThat(LazyList.from(1).crossProduct().take(3))
+                    .isEqualTo(LazyList.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3)));
+            assertThat(LazyList.from(1).crossProduct(2).take(3))
+                    .isEqualTo(LazyList.of(LazyList.of(1, 1), LazyList.of(1, 2), LazyList.of(1, 3)));
+            assertThat(LazyList.from(1).crossProduct(2).head()).isInstanceOf(LazyList.class);
             assertThat(of(1, 2).crossProduct(2))
-                    .isInstanceOf(Stream.class)
-                    .isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2), Stream.of(2, 1), Stream.of(2, 2)));
-            assertThat(of(1, 2).crossProduct()).isInstanceOf(Stream.class);
+                    .isInstanceOf(LazyList.class)
+                    .isEqualTo(LazyList.of(LazyList.of(1, 1), LazyList.of(1, 2), LazyList.of(2, 1), LazyList.of(2, 2)));
+            assertThat(of(1, 2).crossProduct()).isInstanceOf(LazyList.class);
             assertThat(of(1, 2).crossProduct(List.of('a')))
-                    .isInstanceOf(Stream.class)
-                    .isEqualTo(Stream.of(Tuple.of(1, 'a'), Tuple.of(2, 'a')));
+                    .isInstanceOf(LazyList.class)
+                    .isEqualTo(LazyList.of(Tuple.of(1, 'a'), Tuple.of(2, 'a')));
         }
 
         @Test
@@ -6310,7 +6334,7 @@ public class StreamTest extends AbstractTraversableTest {
                 walks.incrementAndGet();
                 return java.util.List.of('a', 'b').iterator();
             };
-            Stream<Tuple2<Integer, Character>> product = of(1, 2, 3).crossProduct(that);
+            LazyList<Tuple2<Integer, Character>> product = of(1, 2, 3).crossProduct(that);
             assertThat(product.toList())
                     .isEqualTo(List.of(
                             Tuple.of(1, 'a'),
@@ -6372,16 +6396,16 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldConcatOneShotIterables() {
             Iterable<Iterable<Integer>> outer =
                     java.util.stream.Stream.<Iterable<Integer>>of(oneShot(1, 2), oneShot(3))::iterator;
-            assertThat(Stream.concat(outer)).isEqualTo(of(1, 2, 3));
-            assertThat(Stream.concat(java.util.stream.Stream.<Iterable<Integer>>empty()::iterator))
+            assertThat(LazyList.concat(outer)).isEqualTo(of(1, 2, 3));
+            assertThat(LazyList.concat(java.util.stream.Stream.<Iterable<Integer>>empty()::iterator))
                     .isSameAs(empty());
-            assertThat(Stream.concat(oneShot(1, 2), oneShot(3))).isEqualTo(of(1, 2, 3));
+            assertThat(LazyList.concat(oneShot(1, 2), oneShot(3))).isEqualTo(of(1, 2, 3));
         }
 
         @Test
-        public void shouldAppendAOneShotArgumentToAnInfiniteStream() {
+        public void shouldAppendAOneShotArgumentToAnInfiniteLazyList() {
             // the argument is not probed before the receiver is consumed: a memoised copy answers the emptiness
-            assertThat(Stream.from(1).appendAll(oneShot(0)).take(3)).isEqualTo(of(1, 2, 3));
+            assertThat(LazyList.from(1).appendAll(oneShot(0)).take(3)).isEqualTo(of(1, 2, 3));
         }
     }
 
@@ -6399,32 +6423,32 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                Stream<Integer> source = Stream.range(0, n);
-                Tuple2<Stream<String>, Stream<Integer>> actual =
+                LazyList<Integer> source = LazyList.range(0, n);
+                Tuple2<LazyList<String>, LazyList<Integer>> actual =
                         source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
-                Tuple2<Stream<Integer>, Stream<Integer>> expected = source.partition(i -> i % 3 == 0);
+                Tuple2<LazyList<Integer>, LazyList<Integer>> expected = source.partition(i -> i % 3 == 0);
                 assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                 assertThat(actual._2()).isEqualTo(expected._2());
                 assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
                 assertThat(source.partitionMap(i -> Either.<Integer, String>left(i)))
-                        .isEqualTo(Tuple.of(source, Stream.empty()));
+                        .isEqualTo(Tuple.of(source, LazyList.empty()));
                 assertThat(source.partitionMap(i -> Either.<String, Integer>right(i)))
-                        .isEqualTo(Tuple.of(Stream.empty(), source));
+                        .isEqualTo(Tuple.of(LazyList.empty(), source));
             }
         }
 
         @Test
         public void shouldKeepTheSourceOrderOnEachSide() {
-            Tuple2<Stream<Integer>, Stream<String>> actual =
-                    Stream.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
-            assertThat(actual).isEqualTo(Tuple.of(Stream.of(2, 8, 4), Stream.of("o5", "o1", "o9")));
+            Tuple2<LazyList<Integer>, LazyList<String>> actual = LazyList.of(5, 2, 8, 1, 9, 4)
+                    .partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
+            assertThat(actual).isEqualTo(Tuple.of(LazyList.of(2, 8, 4), LazyList.of("o5", "o1", "o9")));
         }
 
         @Test
         public void shouldCallTheFunctionOncePerElementInOrder() {
             for (int n : new int[] {0, 1, 32, 33}) {
                 java.util.List<Integer> seen = new ArrayList<>();
-                Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.range(0, n)
+                Tuple2<LazyList<Integer>, LazyList<Integer>> sides = LazyList.range(0, n)
                         .partitionMap(i -> {
                             seen.add(i);
                             return i % 2 == 0 ? Either.left(i) : Either.right(i);
@@ -6440,7 +6464,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldBeLazyAndMemoiseTheResultsOfTheFunction() {
             java.util.List<Integer> seen = new ArrayList<>();
-            Tuple2<Stream<Integer>, Stream<String>> sides = Stream.from(0).partitionMap(i -> {
+            Tuple2<LazyList<Integer>, LazyList<String>> sides = LazyList.from(0).partitionMap(i -> {
                 seen.add(i);
                 return i % 3 == 0 ? Either.left(i) : Either.right("r" + i);
             });
@@ -6456,51 +6480,51 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void shouldPartitionAnInfiniteStream() {
-            Tuple2<Stream<Integer>, Stream<Integer>> sides =
-                    Stream.from(0).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right(i));
+        public void shouldPartitionAnInfiniteLazyList() {
+            Tuple2<LazyList<Integer>, LazyList<Integer>> sides =
+                    LazyList.from(0).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right(i));
             assertThat(sides._1().take(33).toList()).isEqualTo(List.range(0, 66).filter(i -> i % 2 == 0));
             assertThat(sides._2().take(33).toList()).isEqualTo(List.range(0, 66).filter(i -> i % 2 != 0));
         }
 
         @Test
         public void shouldRejectANullEitherWhenASideReachesIt() {
-            Tuple2<Stream<Integer>, Stream<Integer>> sides =
-                    Stream.from(0).partitionMap(i -> i == 4 ? null : i % 2 == 0 ? Either.left(i) : Either.right(i));
+            Tuple2<LazyList<Integer>, LazyList<Integer>> sides =
+                    LazyList.from(0).partitionMap(i -> i == 4 ? null : i % 2 == 0 ? Either.left(i) : Either.right(i));
             assertThat(sides._1().take(2).toList()).isEqualTo(List.of(0, 2));
             assertThat(sides._2().take(2).toList()).isEqualTo(List.of(1, 3));
             assertThatNullPointerException()
                     .isThrownBy(() -> sides._1().take(3).toList())
-                    .withMessage("Stream.partitionMap: f returned null");
+                    .withMessage("LazyList.partitionMap: f returned null");
         }
 
         @Test
-        public void shouldReturnTheEmptyStreamForAnEmptySide() {
-            Tuple2<Stream<Integer>, Stream<Integer>> none =
-                    Stream.<Integer>empty().partitionMap(Either::left);
-            assertThat(none._1()).isSameAs(Stream.empty());
-            assertThat(none._2()).isSameAs(Stream.empty());
-            assertThat(Stream.of(1, 2)
+        public void shouldReturnTheEmptyLazyListForAnEmptySide() {
+            Tuple2<LazyList<Integer>, LazyList<Integer>> none =
+                    LazyList.<Integer>empty().partitionMap(Either::left);
+            assertThat(none._1()).isSameAs(LazyList.empty());
+            assertThat(none._2()).isSameAs(LazyList.empty());
+            assertThat(LazyList.of(1, 2)
                             .partitionMap(Either::<Integer, Integer>left)
                             ._2())
-                    .isSameAs(Stream.empty());
-            assertThat(Stream.of(1, 2)
+                    .isSameAs(LazyList.empty());
+            assertThat(LazyList.of(1, 2)
                             .partitionMap(Either::<Integer, Integer>right)
                             ._1())
-                    .isSameAs(Stream.empty());
+                    .isSameAs(LazyList.empty());
         }
 
         @Test
         public void shouldRejectNullFunctionAndNullEither() {
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.of(1).partitionMap(null))
+                    .isThrownBy(() -> LazyList.of(1).partitionMap(null))
                     .withMessage("f is null");
             for (int n : new int[] {1, 32, 33}) {
                 int last = n - 1;
                 assertThatNullPointerException()
-                        .isThrownBy(() -> Stream.range(0, n)
+                        .isThrownBy(() -> LazyList.range(0, n)
                                 .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
-                        .withMessage("Stream.partitionMap: f returned null");
+                        .withMessage("LazyList.partitionMap: f returned null");
             }
         }
     }
@@ -6511,59 +6535,59 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldFlattenAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                Stream<Integer> inner = Stream.range(0, n);
-                assertThat(Stream.flatten(Stream.of(inner))).isEqualTo(inner);
-                assertThat(Stream.flatten(Stream.of(inner, inner))).isEqualTo(inner.appendAll(inner));
-                assertThat(Stream.flatten(Stream.of(Stream.<Integer>empty(), inner, Stream.<Integer>empty())))
+                LazyList<Integer> inner = LazyList.range(0, n);
+                assertThat(LazyList.flatten(LazyList.of(inner))).isEqualTo(inner);
+                assertThat(LazyList.flatten(LazyList.of(inner, inner))).isEqualTo(inner.appendAll(inner));
+                assertThat(LazyList.flatten(LazyList.of(LazyList.<Integer>empty(), inner, LazyList.<Integer>empty())))
                         .isEqualTo(inner);
-                assertThat(Stream.flatten(
+                assertThat(LazyList.flatten(
                                 java.util.List.of(Vector.range(0, n), new java.util.ArrayList<>(inner.asJava()))))
                         .isEqualTo(inner.appendAll(inner));
                 // n inner iterables of one element each
-                assertThat(Stream.flatten(inner.map(Stream::of))).isEqualTo(inner);
+                assertThat(LazyList.flatten(inner.map(LazyList::of))).isEqualTo(inner);
             }
         }
 
         @Test
-        public void shouldFlattenEmptiesToTheEmptyStream() {
-            assertThat(Stream.flatten(Stream.<Stream<Integer>>empty())).isSameAs(Stream.empty());
-            assertThat(Stream.flatten(Stream.of(Stream.<Integer>empty()))).isSameAs(Stream.empty());
-            assertThat(Stream.flatten(
-                            Stream.of(Stream.<Integer>empty(), Vector.<Integer>empty(), java.util.List.<Integer>of())))
-                    .isSameAs(Stream.empty());
-            assertThat(Stream.flatten(java.util.List.<java.util.List<Integer>>of()))
-                    .isSameAs(Stream.empty());
+        public void shouldFlattenEmptiesToTheEmptyLazyList() {
+            assertThat(LazyList.flatten(LazyList.<LazyList<Integer>>empty())).isSameAs(LazyList.empty());
+            assertThat(LazyList.flatten(LazyList.of(LazyList.<Integer>empty()))).isSameAs(LazyList.empty());
+            assertThat(LazyList.flatten(LazyList.of(
+                            LazyList.<Integer>empty(), Vector.<Integer>empty(), java.util.List.<Integer>of())))
+                    .isSameAs(LazyList.empty());
+            assertThat(LazyList.flatten(java.util.List.<java.util.List<Integer>>of()))
+                    .isSameAs(LazyList.empty());
         }
 
         @Test
         public void shouldWidenTheElementType() {
-            Stream<Number> numbers = Stream.flatten(Stream.of(Stream.of(1), Stream.of(2.0)));
-            assertThat(numbers).isEqualTo(Stream.<Number>of(1, 2.0));
+            LazyList<Number> numbers = LazyList.flatten(LazyList.of(LazyList.of(1), LazyList.of(2.0)));
+            assertThat(numbers).isEqualTo(LazyList.<Number>of(1, 2.0));
         }
 
         @Test
         public void shouldReadOneShotIterablesOnce() {
-            assertThat(Stream.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3))))
-                    .isEqualTo(Stream.of(1, 2, 3));
-            assertThat(Stream.flatten(Stream.<Iterable<Integer>>empty())).isSameAs(Stream.empty());
-            assertThat(Stream.<Integer>flatten(oneShotOf())).isSameAs(Stream.empty());
+            assertThat(LazyList.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3))))
+                    .isEqualTo(LazyList.of(1, 2, 3));
+            assertThat(LazyList.flatten(LazyList.<Iterable<Integer>>empty())).isSameAs(LazyList.empty());
+            assertThat(LazyList.<Integer>flatten(oneShotOf())).isSameAs(LazyList.empty());
         }
 
         @Test
         public void shouldRejectNulls() {
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.flatten(null))
+                    .isThrownBy(() -> LazyList.flatten(null))
                     .withMessage("nested is null");
             // lazy: a null inner iterable or element fails when the result reaches it
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(null, Stream.of(1))));
+                    .isThrownBy(() -> LazyList.flatten(java.util.Arrays.asList(null, LazyList.of(1))));
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(Stream.of(1), null))
+                    .isThrownBy(() -> LazyList.flatten(java.util.Arrays.asList(LazyList.of(1), null))
                             .toList());
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.flatten(Stream.of(java.util.Arrays.asList(1, null)))
+                    .isThrownBy(() -> LazyList.flatten(LazyList.of(java.util.Arrays.asList(1, null)))
                             .toList())
-                    .withMessage("Stream: element is null");
+                    .withMessage("LazyList: element is null");
         }
     }
 
@@ -6572,52 +6596,52 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnDuplicatesInOrderOfFirstOccurrence() {
-            assertThat(Stream.of(3, 1, 3, 2, 1, 3).duplicates()).isEqualTo(Stream.of(3, 1));
-            assertThat(Stream.of(1, 2, 2, 1).duplicates()).isEqualTo(Stream.of(1, 2));
-            assertThat(Stream.of("a", "b", "c").duplicates()).isSameAs(Stream.empty());
-            assertThat(Stream.<Integer>empty().duplicates()).isSameAs(Stream.empty());
-            assertThat(Stream.of(1).duplicates()).isSameAs(Stream.empty());
+            assertThat(LazyList.of(3, 1, 3, 2, 1, 3).duplicates()).isEqualTo(LazyList.of(3, 1));
+            assertThat(LazyList.of(1, 2, 2, 1).duplicates()).isEqualTo(LazyList.of(1, 2));
+            assertThat(LazyList.of("a", "b", "c").duplicates()).isSameAs(LazyList.empty());
+            assertThat(LazyList.<Integer>empty().duplicates()).isSameAs(LazyList.empty());
+            assertThat(LazyList.of(1).duplicates()).isSameAs(LazyList.empty());
         }
 
         @Test
         public void shouldReturnTheFirstElementOfEachDuplicatedKey() {
-            assertThat(Stream.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length))
-                    .isEqualTo(Stream.of("aa", "b"));
-            assertThat(Stream.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length))
-                    .isEqualTo(Stream.of("aa"));
-            assertThat(Stream.of("b", "aa", "e", "cc").duplicatesBy(String::length))
-                    .isEqualTo(Stream.of("b", "aa"));
-            assertThat(Stream.of("a", "bb").duplicatesBy(String::length)).isSameAs(Stream.empty());
+            assertThat(LazyList.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length))
+                    .isEqualTo(LazyList.of("aa", "b"));
+            assertThat(LazyList.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length))
+                    .isEqualTo(LazyList.of("aa"));
+            assertThat(LazyList.of("b", "aa", "e", "cc").duplicatesBy(String::length))
+                    .isEqualTo(LazyList.of("b", "aa"));
+            assertThat(LazyList.of("a", "bb").duplicatesBy(String::length)).isSameAs(LazyList.empty());
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.of(1).duplicatesBy(null))
+                    .isThrownBy(() -> LazyList.of(1).duplicatesBy(null))
                     .withMessage("keyExtractor is null");
         }
 
         @Test
         public void shouldFindDuplicatesOfANullKey() {
-            // an Stream never holds a null element, but a key extractor may return null for several of them
-            assertThat(Stream.of("a", "b").duplicatesBy(s -> null)).isEqualTo(Stream.of("a"));
-            assertThat(Stream.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s))
-                    .isEqualTo(Stream.of("a"));
-            assertThat(Stream.of("a").duplicatesBy(s -> null)).isSameAs(Stream.empty());
+            // an LazyList never holds a null element, but a key extractor may return null for several of them
+            assertThat(LazyList.of("a", "b").duplicatesBy(s -> null)).isEqualTo(LazyList.of("a"));
+            assertThat(LazyList.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s))
+                    .isEqualTo(LazyList.of("a"));
+            assertThat(LazyList.of("a").duplicatesBy(s -> null)).isSameAs(LazyList.empty());
         }
 
         @Test
         public void shouldComputeTheKeyOncePerElementInOrder() {
             java.util.List<Integer> seen = new ArrayList<>();
-            assertThat(Stream.range(0, 33).duplicatesBy(i -> {
+            assertThat(LazyList.range(0, 33).duplicatesBy(i -> {
                         seen.add(i);
                         return i % 5;
                     }))
-                    .isEqualTo(Stream.of(0, 1, 2, 3, 4));
-            assertThat(Stream.ofAll(seen)).isEqualTo(Stream.range(0, 33));
+                    .isEqualTo(LazyList.of(0, 1, 2, 3, 4));
+            assertThat(LazyList.ofAll(seen)).isEqualTo(LazyList.range(0, 33));
         }
 
         @Test
         public void shouldFindDuplicatesAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                Stream<Integer> source = Stream.range(0, n);
-                assertThat(source.duplicates()).isSameAs(Stream.empty());
+                LazyList<Integer> source = LazyList.range(0, n);
+                assertThat(source.duplicates()).isSameAs(LazyList.empty());
                 assertThat(source.appendAll(source).duplicates()).isEqualTo(source);
                 assertThat(source.appendAll(source.reverse()).duplicates()).isEqualTo(source);
                 assertThat(source.duplicatesBy(i -> i % 5))
@@ -6640,7 +6664,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldFlattenAnInfiniteOuterIterableLazily() {
             AtomicInteger opened = new AtomicInteger();
-            Stream<Integer> flat = Stream.flatten(countingOuter(opened));
+            LazyList<Integer> flat = LazyList.flatten(countingOuter(opened));
             assertThat(opened.get()).isEqualTo(1);
             assertThat(flat.take(5).toList()).isEqualTo(List.of(0, 0, 1, 1, 2));
             assertThat(opened.get()).isEqualTo(3);
@@ -6651,12 +6675,13 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenAnInfiniteInnerIterable() {
-            assertThat(Stream.flatten(List.of(Stream.from(0))).take(3).toList()).isEqualTo(List.of(0, 1, 2));
-            assertThat(Stream.flatten(List.of(List.of(-1), Stream.from(0), List.of(-2)))
+            assertThat(LazyList.flatten(List.of(LazyList.from(0))).take(3).toList())
+                    .isEqualTo(List.of(0, 1, 2));
+            assertThat(LazyList.flatten(List.of(List.of(-1), LazyList.from(0), List.of(-2)))
                             .take(3)
                             .toList())
                     .isEqualTo(List.of(-1, 0, 1));
-            assertThat(Stream.flatten(Stream.from(0).map(i -> Stream.from(i)))
+            assertThat(LazyList.flatten(LazyList.from(0).map(i -> LazyList.from(i)))
                             .take(3)
                             .toList())
                     .isEqualTo(List.of(0, 1, 2));
@@ -6664,14 +6689,14 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSkipEmptyInnerIterablesOfAnInfiniteOuter() {
-            Stream<Integer> flat =
-                    Stream.flatten(Stream.from(0).map(i -> i % 3 == 0 ? List.of(i) : List.<Integer>empty()));
+            LazyList<Integer> flat =
+                    LazyList.flatten(LazyList.from(0).map(i -> i % 3 == 0 ? List.of(i) : List.<Integer>empty()));
             assertThat(flat.take(4).toList()).isEqualTo(List.of(0, 3, 6, 9));
         }
 
         @Test
         public void shouldRejectANullElementWhenTheResultReachesIt() {
-            Stream<Integer> flat = Stream.flatten(List.of(List.of(1), java.util.Arrays.asList(2, null)));
+            LazyList<Integer> flat = LazyList.flatten(List.of(List.of(1), java.util.Arrays.asList(2, null)));
             assertThat(flat.take(2).toList()).isEqualTo(List.of(1, 2));
             assertThatNullPointerException().isThrownBy(flat::toList);
         }
@@ -6681,56 +6706,57 @@ public class StreamTest extends AbstractTraversableTest {
     class InfiniteDuplicatesTests {
 
         @Test
-        public void shouldForceTheWholeStream() {
+        public void shouldForceTheWholeLazyList() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> source = Stream.range(0, 40).map(i -> {
+            LazyList<Integer> source = LazyList.range(0, 40).map(i -> {
                 forced.incrementAndGet();
                 return i % 7;
             });
-            assertThat(source.duplicates()).isEqualTo(Stream.range(0, 7));
+            assertThat(source.duplicates()).isEqualTo(LazyList.range(0, 7));
             assertThat(forced.get()).isEqualTo(40);
         }
     }
 
-    /// Walks to a start index close to the end of a long Stream: the walk is a loop, not one stack frame per element.
+    /// Walks to a start index close to the end of a long LazyList: the walk is a loop, not one stack frame per element.
     @Nested
     class DeepIndexTests {
         private static final int SIZE = 1_000_000;
         private static final int START = 999_000;
 
-        private Stream<Integer> longStream() {
-            return Stream.range(0, SIZE);
+        private LazyList<Integer> longLazyList() {
+            return LazyList.range(0, SIZE);
         }
 
         @Test
         public void sliceStartsDeepWithoutOverflow() {
-            assertThat(longStream().slice(START, START + 3)).isEqualTo(Stream.of(START, START + 1, START + 2));
-            assertThat(longStream().slice(START, SIZE + 10).size()).isEqualTo(SIZE - START);
+            assertThat(longLazyList().slice(START, START + 3)).isEqualTo(LazyList.of(START, START + 1, START + 2));
+            assertThat(longLazyList().slice(START, SIZE + 10).size()).isEqualTo(SIZE - START);
         }
 
         @Test
-        public void sliceStartsDeepInAnAppendedStreamWithoutOverflow() {
-            Stream<Integer> appended = Stream.range(0, SIZE - 1).append(SIZE - 1);
-            assertThat(appended.slice(START, START + 2)).isEqualTo(Stream.of(START, START + 1));
-            assertThat(appended.subSequence(SIZE - 2, SIZE)).isEqualTo(Stream.of(SIZE - 2, SIZE - 1));
+        public void sliceStartsDeepInAnAppendedLazyListWithoutOverflow() {
+            LazyList<Integer> appended = LazyList.range(0, SIZE - 1).append(SIZE - 1);
+            assertThat(appended.slice(START, START + 2)).isEqualTo(LazyList.of(START, START + 1));
+            assertThat(appended.subSequence(SIZE - 2, SIZE)).isEqualTo(LazyList.of(SIZE - 2, SIZE - 1));
         }
 
         @Test
         public void subSequenceFromStartsDeepWithoutOverflow() {
-            Stream<Integer> actual = longStream().subSequence(START);
+            LazyList<Integer> actual = longLazyList().subSequence(START);
             assertThat(actual.size()).isEqualTo(SIZE - START);
             assertThat(actual.head()).isEqualTo(START);
         }
 
         @Test
         public void subSequenceFromToStartsDeepWithoutOverflow() {
-            assertThat(longStream().subSequence(START, START + 3)).isEqualTo(Stream.of(START, START + 1, START + 2));
-            assertThat(longStream().subSequence(START, SIZE).size()).isEqualTo(SIZE - START);
+            assertThat(longLazyList().subSequence(START, START + 3))
+                    .isEqualTo(LazyList.of(START, START + 1, START + 2));
+            assertThat(longLazyList().subSequence(START, SIZE).size()).isEqualTo(SIZE - START);
         }
 
         @Test
         public void subSequenceFromToPastTheEndThrowsOnTraversalAfterADeepStart() {
-            Stream<Integer> actual = longStream().subSequence(START, SIZE + 1);
+            LazyList<Integer> actual = longLazyList().subSequence(START, SIZE + 1);
             assertThatThrownBy(actual::size)
                     .isInstanceOf(IndexOutOfBoundsException.class)
                     .hasMessage("subSequence of Nil");
@@ -6738,36 +6764,36 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void otherIndexedMethodsStartDeepWithoutOverflow() {
-            assertThat(longStream().drop(START).head()).isEqualTo(START);
-            assertThat(longStream().get(START)).isEqualTo(START);
-            assertThat(longStream().update(START, -1).drop(START).take(2)).isEqualTo(Stream.of(-1, START + 1));
-            assertThat(longStream().insert(START, -1).drop(START).take(2)).isEqualTo(Stream.of(-1, START));
-            assertThat(longStream()
+            assertThat(longLazyList().drop(START).head()).isEqualTo(START);
+            assertThat(longLazyList().get(START)).isEqualTo(START);
+            assertThat(longLazyList().update(START, -1).drop(START).take(2)).isEqualTo(LazyList.of(-1, START + 1));
+            assertThat(longLazyList().insert(START, -1).drop(START).take(2)).isEqualTo(LazyList.of(-1, START));
+            assertThat(longLazyList()
                             .insertAll(START, List.of(-1, -2))
                             .drop(START)
                             .take(3))
-                    .isEqualTo(Stream.of(-1, -2, START));
-            assertThat(longStream().removeAt(START).drop(START).head()).isEqualTo(START + 1);
-            assertThat(longStream().splitAt(START)._2().head()).isEqualTo(START);
-            assertThat(longStream().patch(START, List.of(-1), 2).drop(START).take(2))
-                    .isEqualTo(Stream.of(-1, START + 2));
-            assertThat(longStream().dropRight(START).size()).isEqualTo(SIZE - START);
-            assertThat(longStream().takeRight(SIZE - START).head()).isEqualTo(START);
+                    .isEqualTo(LazyList.of(-1, -2, START));
+            assertThat(longLazyList().removeAt(START).drop(START).head()).isEqualTo(START + 1);
+            assertThat(longLazyList().splitAt(START)._2().head()).isEqualTo(START);
+            assertThat(longLazyList().patch(START, List.of(-1), 2).drop(START).take(2))
+                    .isEqualTo(LazyList.of(-1, START + 2));
+            assertThat(longLazyList().dropRight(START).size()).isEqualTo(SIZE - START);
+            assertThat(longLazyList().takeRight(SIZE - START).head()).isEqualTo(START);
         }
     }
 
     /// The part of a slice after its start is forced only when the result reaches it, so a slice of an infinite
-    /// Stream works.
+    /// LazyList works.
     @Nested
     class SliceLazinessTests {
-        private Stream<Integer> counted(AtomicInteger forced) {
-            return Stream.continually(forced::getAndIncrement);
+        private LazyList<Integer> counted(AtomicInteger forced) {
+            return LazyList.continually(forced::getAndIncrement);
         }
 
         @Test
         public void sliceForcesTheStartOnlyAndTheRestOnDemand() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> actual = counted(forced).slice(5, 8);
+            LazyList<Integer> actual = counted(forced).slice(5, 8);
             assertThat(forced.get()).isEqualTo(6);
             assertThat(actual.toList()).isEqualTo(List.of(5, 6, 7));
             assertThat(forced.get()).isEqualTo(8);
@@ -6776,7 +6802,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void subSequenceForcesTheStartOnlyAndTheRestOnDemand() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> actual = counted(forced).subSequence(5, 8);
+            LazyList<Integer> actual = counted(forced).subSequence(5, 8);
             assertThat(forced.get()).isEqualTo(6);
             assertThat(actual.toList()).isEqualTo(List.of(5, 6, 7));
             assertThat(forced.get()).isEqualTo(8);
@@ -6785,49 +6811,51 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void subSequenceFromForcesTheStartOnly() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> actual = counted(forced).subSequence(5);
+            LazyList<Integer> actual = counted(forced).subSequence(5);
             assertThat(forced.get()).isEqualTo(6);
             assertThat(actual.take(3).toList()).isEqualTo(List.of(5, 6, 7));
             assertThat(forced.get()).isEqualTo(8);
         }
 
         @Test
-        public void sliceToTheLargestIndexOfAnInfiniteStream() {
-            assertThat(Stream.from(0).slice(5, Integer.MAX_VALUE).take(3)).isEqualTo(Stream.of(5, 6, 7));
-            assertThat(Stream.from(0).subSequence(5, Integer.MAX_VALUE).take(3)).isEqualTo(Stream.of(5, 6, 7));
+        public void sliceToTheLargestIndexOfAnInfiniteLazyList() {
+            assertThat(LazyList.from(0).slice(5, Integer.MAX_VALUE).take(3)).isEqualTo(LazyList.of(5, 6, 7));
+            assertThat(LazyList.from(0).subSequence(5, Integer.MAX_VALUE).take(3))
+                    .isEqualTo(LazyList.of(5, 6, 7));
         }
 
         @Test
         public void sliceClampsANegativeRangeToEmpty() {
-            assertThat(Stream.of(1, 2, 3).slice(-5, -1)).isEmpty();
-            assertThat(Stream.of(1, 2, 3).slice(-1, 0)).isEmpty();
-            assertThat(Stream.of(1, 2, 3).slice(-1, 1)).isEqualTo(Stream.of(1));
-            assertThat(Stream.of(1, 2, 3).slice(1, 10)).isEqualTo(Stream.of(2, 3));
-            assertThat(Stream.of(1, 2, 3).slice(3, 10)).isEmpty();
-            assertThat(Stream.of(1, 2, 3).slice(10, 20)).isEmpty();
-            assertThat(Stream.empty().slice(0, 1)).isEmpty();
-            assertThat(Stream.empty().slice(-1, 1)).isEmpty();
+            assertThat(LazyList.of(1, 2, 3).slice(-5, -1)).isEmpty();
+            assertThat(LazyList.of(1, 2, 3).slice(-1, 0)).isEmpty();
+            assertThat(LazyList.of(1, 2, 3).slice(-1, 1)).isEqualTo(LazyList.of(1));
+            assertThat(LazyList.of(1, 2, 3).slice(1, 10)).isEqualTo(LazyList.of(2, 3));
+            assertThat(LazyList.of(1, 2, 3).slice(3, 10)).isEmpty();
+            assertThat(LazyList.of(1, 2, 3).slice(10, 20)).isEmpty();
+            assertThat(LazyList.empty().slice(0, 1)).isEmpty();
+            assertThat(LazyList.empty().slice(-1, 1)).isEmpty();
         }
 
         @Test
         public void subSequenceBoundsAreCheckedAsBefore() {
-            assertThatThrownBy(() -> Stream.of(1).subSequence(5, 5))
+            assertThatThrownBy(() -> LazyList.of(1).subSequence(5, 5))
                     .isInstanceOf(IndexOutOfBoundsException.class)
                     .hasMessage("subSequence of Nil");
-            assertThat(Stream.of(1, 2).subSequence(2, 2)).isEmpty();
-            assertThat(Stream.of(1, 2).subSequence(1, 2)).isEqualTo(Stream.of(2));
-            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 3))
+            assertThat(LazyList.of(1, 2).subSequence(2, 2)).isEmpty();
+            assertThat(LazyList.of(1, 2).subSequence(1, 2)).isEqualTo(LazyList.of(2));
+            assertThatThrownBy(() -> LazyList.of(1, 2).subSequence(2, 3))
                     .isInstanceOf(IndexOutOfBoundsException.class)
                     .hasMessage("subSequence of Nil");
-            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(5, 6))
+            assertThatThrownBy(() -> LazyList.of(1, 2).subSequence(5, 6))
                     .isInstanceOf(IndexOutOfBoundsException.class)
                     .hasMessage("subSequence of Nil");
-            assertThatThrownBy(() -> Stream.empty().subSequence(0, 1))
+            assertThatThrownBy(() -> LazyList.empty().subSequence(0, 1))
                     .isInstanceOf(IndexOutOfBoundsException.class)
                     .hasMessage("subSequence of Nil");
-            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(-1, 1)).isInstanceOf(IndexOutOfBoundsException.class);
-            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 1)).isInstanceOf(IllegalArgumentException.class);
-            Stream<Integer> pastTheEnd = Stream.of(1, 2).subSequence(1, 3);
+            assertThatThrownBy(() -> LazyList.of(1, 2).subSequence(-1, 1))
+                    .isInstanceOf(IndexOutOfBoundsException.class);
+            assertThatThrownBy(() -> LazyList.of(1, 2).subSequence(2, 1)).isInstanceOf(IllegalArgumentException.class);
+            LazyList<Integer> pastTheEnd = LazyList.of(1, 2).subSequence(1, 3);
             assertThat(pastTheEnd.head()).isEqualTo(2);
             assertThatThrownBy(pastTheEnd::tail)
                     .isInstanceOf(IndexOutOfBoundsException.class)
@@ -6838,9 +6866,9 @@ public class StreamTest extends AbstractTraversableTest {
     @Nested
     class ForcedCellsTests {
 
-        /** An infinite Stream 1, 2, 3, ... counting how many of its elements have been forced. */
-        private Stream<Integer> counted(AtomicInteger forced) {
-            return Stream.continually(forced::incrementAndGet);
+        /** An infinite LazyList 1, 2, 3, ... counting how many of its elements have been forced. */
+        private LazyList<Integer> counted(AtomicInteger forced) {
+            return LazyList.continually(forced::incrementAndGet);
         }
 
         private int[] indices(int n) {
@@ -6850,7 +6878,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void patchForcesTheElementsAsTheResultReachesThem() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> patched = counted(forced).patch(10, List.of(-1, -2, -3), 5);
+            LazyList<Integer> patched = counted(forced).patch(10, List.of(-1, -2, -3), 5);
             assertThat(forced.get()).isEqualTo(1);
             assertThat(patched.take(15).toList()).isEqualTo(List.range(1, 11).appendAll(List.of(-1, -2, -3, 16, 17)));
             assertThat(forced.get()).isEqualTo(17);
@@ -6859,11 +6887,11 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void patchAtTheStartWithNothingForcesTheReplacedElementsForItsHead() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> patched = counted(forced).patch(0, List.empty(), 5);
+            LazyList<Integer> patched = counted(forced).patch(0, List.empty(), 5);
             assertThat(forced.get()).isEqualTo(6);
             assertThat(patched.head()).isEqualTo(6);
             AtomicInteger forcedToo = new AtomicInteger();
-            Stream<Integer> replaced = counted(forcedToo).patch(0, List.of(-1), 5);
+            LazyList<Integer> replaced = counted(forcedToo).patch(0, List.of(-1), 5);
             assertThat(forcedToo.get()).isEqualTo(1);
             assertThat(replaced.take(2).toList()).isEqualTo(List.of(-1, 6));
             assertThat(forcedToo.get()).isEqualTo(6);
@@ -6873,7 +6901,7 @@ public class StreamTest extends AbstractTraversableTest {
         public void patchAgreesWithVector() {
             List<List<Integer>> replacements = List.of(List.empty(), List.of(-1), List.of(-1, -2, -3));
             for (int n : new int[] {0, 1, 5}) {
-                Stream<Integer> stream = Stream.range(0, n);
+                LazyList<Integer> stream = LazyList.range(0, n);
                 Vector<Integer> vector = Vector.range(0, n);
                 for (int from : indices(n)) {
                     for (int replaced : indices(n)) {
@@ -6888,17 +6916,17 @@ public class StreamTest extends AbstractTraversableTest {
                     }
                 }
             }
-            assertThat(Stream.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE))
-                    .isEqualTo(Stream.of(1, 2, 9));
+            assertThat(LazyList.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE))
+                    .isEqualTo(LazyList.of(1, 2, 9));
             assertThatNullPointerException()
-                    .isThrownBy(() -> Stream.of(1).patch(0, null, 0))
+                    .isThrownBy(() -> LazyList.of(1).patch(0, null, 0))
                     .withMessage("that is null");
         }
 
         @Test
         public void dropRightForcesTheDroppedElementsAndOneMore() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> dropped = counted(forced).dropRight(10);
+            LazyList<Integer> dropped = counted(forced).dropRight(10);
             assertThat(forced.get()).isEqualTo(11);
             assertThat(dropped.take(3).toList()).isEqualTo(List.of(1, 2, 3));
             assertThat(forced.get()).isEqualTo(13);
@@ -6929,7 +6957,7 @@ public class StreamTest extends AbstractTraversableTest {
                     List.empty(), List.of(1), List.of(1, 2), List.of(2, 1, 2), List.of(3), List.of(1, 2, 1, 2, 1, 2));
             for (Vector<Integer> vector :
                     List.of(Vector.<Integer>empty(), Vector.of(1), Vector.of(1, 2, 1, 2, 1), Vector.of(2, 2, 2))) {
-                Stream<Integer> stream = Stream.ofAll(vector);
+                LazyList<Integer> stream = LazyList.ofAll(vector);
                 for (List<Integer> slice : slices) {
                     assertThat(stream.lastIndexOfSlice(slice))
                             .as("lastIndexOfSlice(%s) of %s", slice, vector)
@@ -6967,9 +6995,9 @@ public class StreamTest extends AbstractTraversableTest {
                 for (int from : indices(n)) {
                     int begin = from;
                     Object single = valueOrExceptionClass(() -> vector.subSequence(begin));
-                    Object singleStream = valueOrExceptionClass(
-                            () -> Stream.range(0, n).subSequence(begin).toVector());
-                    assertThat(singleStream)
+                    Object singleLazyList = valueOrExceptionClass(
+                            () -> LazyList.range(0, n).subSequence(begin).toVector());
+                    assertThat(singleLazyList)
                             .as("subSequence(%d) on %d", begin, n)
                             .isEqualTo(single);
                     for (int to : indices(n)) {
@@ -6978,8 +7006,8 @@ public class StreamTest extends AbstractTraversableTest {
                         Class<?> expected =
                                 expectedTry.isFailure() ? expectedTry.getCause().getClass() : null;
                         Vector<Integer> expectedResult = expectedTry.getOrNull();
-                        Stream<Integer> stream = Stream.range(0, n);
-                        Stream<Integer> result;
+                        LazyList<Integer> stream = LazyList.range(0, n);
+                        LazyList<Integer> result;
                         try {
                             result = stream.subSequence(from, to);
                         } catch (RuntimeException e) {
@@ -6987,7 +7015,7 @@ public class StreamTest extends AbstractTraversableTest {
                             continue;
                         }
                         if (expected == IndexOutOfBoundsException.class && from < to) {
-                            // an end past the end of a lazy Stream throws when the traversal reaches it
+                            // an end past the end of a lazy LazyList throws when the traversal reaches it
                             assertThatThrownBy(result::toVector).as(call).isInstanceOf(IndexOutOfBoundsException.class);
                         } else {
                             assertThat(expected).as(call).isNull();
@@ -7001,14 +7029,669 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void subSequenceChecksAnEmptyOrReversedRangeWithoutForcingPastIt() {
             AtomicInteger forced = new AtomicInteger();
-            Stream<Integer> stream = Stream.continually(forced::incrementAndGet);
+            LazyList<Integer> stream = LazyList.continually(forced::incrementAndGet);
             assertThat(stream.subSequence(10, 10)).isEmpty();
             assertThat(forced.get()).isEqualTo(10);
             assertThatThrownBy(() -> stream.subSequence(30, 20)).isInstanceOf(IllegalArgumentException.class);
             assertThat(forced.get()).isEqualTo(20);
-            assertThatThrownBy(() -> Stream.of(1, 2).subSequence(5, 3))
+            assertThatThrownBy(() -> LazyList.of(1, 2).subSequence(5, 3))
                     .isInstanceOf(IndexOutOfBoundsException.class)
                     .hasMessage("subSequence of Nil");
+        }
+    }
+
+    @Nested
+    class FailedForceTests {
+
+        /** A one-shot source of 0, 1, 2, ... whose next() call number `failAt` (from 1) throws, after consuming. */
+        private final class FailingSource implements java.util.Iterator<Integer> {
+
+            final int failAt;
+            int calls;
+
+            FailingSource(int failAt) {
+                this.failAt = failAt;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Integer next() {
+                calls++;
+                if (calls == failAt) {
+                    throw new IllegalStateException("source failed at call " + calls);
+                }
+                return calls - 1;
+            }
+        }
+
+        /** Reads the stream (and the streams in it) to the end: the elements read, then what stopped the walk. */
+        private Tuple2<Vector<Object>, Throwable> walk(LazyList<?> stream) {
+            java.util.List<Object> read = new ArrayList<>();
+            try {
+                for (LazyList<?> s = stream; !s.isEmpty(); s = s.tail()) {
+                    if (read.size() == 1_000) {
+                        throw new AssertionError("the walk went past the failure: "
+                                + Vector.ofAll(read).take(10));
+                    }
+                    Object head = s.head();
+                    read.add(head instanceof Traversable<?> nested ? nested.toVector() : head);
+                }
+            } catch (RuntimeException failure) {
+                return Tuple.of(Vector.ofAll(read), failure);
+            }
+            throw new AssertionError("the walk ended without a failure: " + Vector.ofAll(read));
+        }
+
+        /** Walks three times, through tail(), the iterator, get and toVector: the same elements and exception each time. */
+        private void assertFailsTheSameWay(String name, LazyList<?> result, FailingSource source) {
+            Tuple2<Vector<Object>, Throwable> first = walk(result);
+            int calls = source.calls;
+            for (int i = 0; i < 2; i++) {
+                Tuple2<Vector<Object>, Throwable> again = walk(result);
+                assertThat(again._1()).as(name).isEqualTo(first._1());
+                assertThat(again._2()).as(name).isSameAs(first._2());
+                assertThatThrownBy(result::toVector).as(name).isSameAs(first._2());
+                assertThatThrownBy(() -> result.iterator().forEachRemaining(x -> {}))
+                        .as(name)
+                        .isSameAs(first._2());
+                assertThatThrownBy(() -> result.get(1_000)).as(name).isSameAs(first._2());
+                assertThat(source.calls).as(name).isEqualTo(calls);
+            }
+        }
+
+        private <R> void check(String name, Function<LazyList<Integer>, LazyList<R>> operation) {
+            for (int failAt = 2; failAt <= 5; failAt++) {
+                FailingSource source = new FailingSource(failAt);
+                LazyList<Integer> stream = LazyList.ofAll(() -> source);
+                LazyList<R> result;
+                try {
+                    result = operation.apply(stream);
+                } catch (IllegalStateException failure) {
+                    // an operation that reads ahead met the failure now: calling it again meets the same one
+                    int calls = source.calls;
+                    for (int i = 0; i < 2; i++) {
+                        assertThatThrownBy(() -> operation.apply(stream))
+                                .as(name)
+                                .isSameAs(failure);
+                    }
+                    assertThat(source.calls).as(name).isEqualTo(calls);
+                    continue;
+                }
+                assertFailsTheSameWay(name + " failing at " + failAt, result, source);
+            }
+        }
+
+        @Test
+        public void everyLazyOperationKeepsTheFailureOfItsSource() {
+            check("ofAll", s -> s);
+            check("map", s -> s.map(x -> x * 10));
+            check("tap", s -> s.tap(x -> {}));
+            check("filter", s -> s.filter(x -> x % 2 == 0));
+            check("reject", s -> s.reject(x -> x % 2 == 1));
+            check("collect", s -> s.collect(x -> Option.some(x)));
+            check("flatMap", s -> s.flatMap(x -> List.of(x, x)));
+            check("distinct", LazyList::distinct);
+            check("distinctBy", s -> s.distinctBy(x -> x));
+            check("retainAll", s -> s.retainAll(LazyList.range(0, 100)));
+            check("removeAll", s -> s.removeAll(List.of(1)));
+            check("append", s -> s.append(-1));
+            check("appendAll", s -> s.appendAll(List.of(-1, -2)));
+            check("appendAll into", s -> LazyList.of(-1).append(-2).appendAll(s));
+            check("prependAll", s -> s.prependAll(List.of(-1, -2)));
+            check("prependAll into", s -> LazyList.of(-1).prependAll(s));
+            check("insert", s -> s.insert(1, -1));
+            check("insertAll", s -> s.insertAll(1, List.of(-1, -2)));
+            check("patch", s -> s.patch(1, List.of(-1, -2), 1));
+            check("intersperse", s -> s.intersperse(-1));
+            check("take", s -> s.take(100));
+            check("takeWhile", s -> s.takeWhile(x -> x < 100));
+            check("dropWhile", s -> s.dropWhile(x -> x < 1));
+            check("removeAt", s -> s.removeAt(1));
+            check("replace", s -> s.replace(1, -1));
+            check("zip", s -> s.zip(LazyList.from(0)));
+            check("zip into", s -> LazyList.from(0).zip(s));
+            check("zipWith", s -> s.zipWith(LazyList.from(0), Integer::sum));
+            check("zipAll", s -> s.zipAll(List.of(1), -1, -2));
+            check("zipWithIndex", LazyList::zipWithIndex);
+            check("scanLeft", s -> s.scanLeft(0, Integer::sum));
+            check("scan", s -> s.scan(0, Integer::sum));
+            check("sliding", s -> s.sliding(2));
+            check("grouped", s -> s.grouped(2));
+            check("slideBy", s -> s.slideBy(x -> x / 2));
+            check("cycle", LazyList::cycle);
+            check("init", LazyList::init);
+            check("extend", s -> s.extend(-1));
+            check("appendSelf", s -> s.appendSelf(self -> self.map(x -> -x)));
+        }
+
+        @Test
+        public void aFunctionThatFailsOnceKeepsFailing() {
+            AtomicInteger calls = new AtomicInteger();
+            LazyList<Integer> mapped = LazyList.range(0, 10).map(x -> {
+                calls.incrementAndGet();
+                if (x == 3 && calls.get() == 4) {
+                    throw new IllegalStateException("mapper failed once");
+                }
+                return x;
+            });
+            Throwable first = walk(mapped)._2();
+            assertThat(first.getMessage()).isEqualTo("mapper failed once");
+            assertThatThrownBy(mapped::toVector).isSameAs(first);
+            assertThatThrownBy(mapped::toVector).isSameAs(first);
+            assertThat(calls.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void scanLeftIsNeverTruncatedByAFailedForce() {
+            AtomicInteger calls = new AtomicInteger();
+            LazyList<Integer> sums = LazyList.range(0, 5).scanLeft(0, (acc, x) -> {
+                if (calls.incrementAndGet() == 2) {
+                    throw new IllegalStateException("operation failed");
+                }
+                return acc + x;
+            });
+            Tuple2<Vector<Object>, Throwable> first = walk(sums);
+            assertThat(first._1()).isEqualTo(Vector.of(0, 0));
+            for (int i = 0; i < 2; i++) {
+                assertThat(walk(sums)._1()).isEqualTo(first._1());
+                assertThatThrownBy(sums::toVector).isSameAs(first._2());
+            }
+            assertThat(calls.get()).isEqualTo(2);
+        }
+
+        @Test
+        public void aRejectedNullElementIsNeverDropped() {
+            java.util.Iterator<Integer> source =
+                    java.util.Arrays.asList(1, null, 3).iterator();
+            LazyList<Integer> stream = LazyList.ofAll(() -> source);
+            Throwable first = walk(stream)._2();
+            assertThat(first).isInstanceOf(NullPointerException.class);
+            for (int i = 0; i < 2; i++) {
+                assertThat(walk(stream)._1()).isEqualTo(Vector.of(1));
+                assertThatThrownBy(stream::toVector).isSameAs(first);
+                assertThatThrownBy(() -> stream.get(1)).isSameAs(first);
+            }
+            assertThat(source.next()).isEqualTo(3); // the element after the null was never read
+        }
+
+        @Test
+        public void aNullTailFromConsIsTheSameFailureEachTime() {
+            AtomicInteger calls = new AtomicInteger();
+            LazyList<Integer> stream = LazyList.cons(1, () -> {
+                calls.incrementAndGet();
+                return null;
+            });
+            Throwable first = walk(stream)._2();
+            assertThat(first.getMessage()).isEqualTo("LazyList.cons: tailSupplier returned null");
+            assertThatThrownBy(stream::tail).isSameAs(first);
+            assertThatThrownBy(stream::tail).isSameAs(first);
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void aTailThatNeedsItselfFailsInsteadOfOverflowing() {
+            LazyList<Integer>[] self = new LazyList[1];
+            self[0] = LazyList.cons(1, () -> self[0].tail());
+            assertThatThrownBy(self[0]::tail)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("LazyList: computing this tail needs the tail itself");
+            Throwable first = walk(self[0])._2();
+            assertThatThrownBy(self[0]::tail).isSameAs(first);
+        }
+
+        @Test
+        public void aVirtualMachineErrorIsNotKept() {
+            AtomicInteger calls = new AtomicInteger();
+            LazyList<Integer> stream = LazyList.cons(1, () -> {
+                if (calls.incrementAndGet() == 1) {
+                    throw new StackOverflowError("simulated");
+                }
+                return LazyList.of(2);
+            });
+            assertThatThrownBy(stream::tail).isInstanceOf(StackOverflowError.class);
+            assertThat(stream.toString()).isEqualTo("LazyList(1, ?)");
+            assertThat(stream.tail()).isEqualTo(LazyList.of(2));
+            assertThat(stream.tail()).isSameAs(stream.tail());
+            assertThat(calls.get()).isEqualTo(2);
+        }
+
+        @Test
+        public void aFailureMetWithNoMemoryLeftIsKept() throws Exception {
+            // a JVM of its own, with a small heap that the probe fills before the failure is met
+            String javaHome = System.getProperty("java.home");
+            String classPath = java.nio.file.Path.of(LazyList.class
+                            .getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI())
+                    + java.io.File.pathSeparator
+                    + java.nio.file.Path.of(FailedTailOutOfMemoryProbe.class
+                            .getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI());
+            Process process = new ProcessBuilder(
+                            java.nio.file.Path.of(javaHome, "bin", "java").toString(),
+                            "-Xmx64m",
+                            "-XX:+UseSerialGC",
+                            "-cp",
+                            classPath,
+                            FailedTailOutOfMemoryProbe.class.getName())
+                    .redirectErrorStream(true)
+                    .start();
+            String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
+                    .strip();
+            assertThat(process.waitFor()).as(output).isEqualTo(0);
+            assertThat(output).isEqualTo("RuntimeException: boom (same)");
+        }
+
+        @Test
+        public void toStringShowsAFailedTailAsNotComputed() {
+            LazyList<Integer> stream = LazyList.ofAll(() -> new FailingSource(3));
+            walk(stream);
+            assertThat(stream.toString()).isEqualTo("LazyList(0, 1, ?)");
+        }
+
+        @Test
+        public void aFailureIsKeptAcrossThreads() throws Exception {
+            FailingSource source = new FailingSource(2);
+            LazyList<Integer> stream = LazyList.ofAll(() -> source);
+            Throwable first = walk(stream)._2();
+            java.util.concurrent.atomic.AtomicReference<Throwable> seen =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            Thread thread = Thread.ofVirtual().start(() -> seen.set(walk(stream)._2()));
+            thread.join();
+            assertThat(seen.get()).isSameAs(first);
+            assertThat(source.calls).isEqualTo(2);
+        }
+    }
+
+    @Nested
+    class LazyConcatenationTests {
+
+        private static final int LOOP = 10_000;
+
+        /** An infinite LazyList counting how many of its elements have been computed. */
+        private LazyList<Integer> counted(AtomicInteger forced) {
+            return LazyList.continually(forced::incrementAndGet);
+        }
+
+        /** A one-shot Iterable counting the elements read from it. */
+        private Iterable<Integer> oneShot(AtomicInteger read, int size) {
+            java.util.Iterator<Integer> iterator = new java.util.Iterator<>() {
+                int next;
+
+                @Override
+                public boolean hasNext() {
+                    return next < size;
+                }
+
+                @Override
+                public Integer next() {
+                    read.incrementAndGet();
+                    return next++;
+                }
+            };
+            return () -> iterator;
+        }
+
+        private @org.jspecify.annotations.Nullable Object prefixOf(LazyList<?> cell) {
+            for (Class<?> type = cell.getClass(); type != Object.class; type = type.getSuperclass()) {
+                try {
+                    java.lang.reflect.Field field = type.getDeclaredField("prefix");
+                    field.setAccessible(true);
+                    return field.get(cell);
+                } catch (NoSuchFieldException e) {
+                    // not declared here
+                } catch (IllegalAccessException e) {
+                    throw new AssertionError(e);
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Walks the whole LazyList and counts the cells whose tail goes through more than one wrapper: a LazyList whose
+         * appends are layered one over the other would count one per layer and element, quadratic in a loop.
+         */
+        private int walkCountingNestedWrappers(LazyList<Integer> stream, Vector<Integer> expected) {
+            java.util.List<Object> nested = new ArrayList<>();
+            LazyList<Integer> end = Vector.range(0, expected.size()).foldLeft(stream, (s, index) -> {
+                assertThat(s.isEmpty())
+                        .as("ends at %d of %d", index, expected.size())
+                        .isFalse();
+                assertThat(s.head()).isEqualTo(expected.get(index));
+                assertThat(s.tail()).isSameAs(s.tail());
+                Object prefix = prefixOf(s);
+                if (prefix instanceof LazyList<?> inner && prefixOf(inner) != null) {
+                    nested.add(prefix);
+                }
+                return s.tail();
+            });
+            assertThat(end.isEmpty()).as("goes beyond %d", expected.size()).isTrue();
+            return nested.size();
+        }
+
+        // -- infinite and one-shot arguments
+
+        @Test
+        public void appendAllAfterAppendReturnsAtOnceOnAnInfiniteArgument() {
+            AtomicInteger forced = new AtomicInteger();
+            LazyList<Integer> result = LazyList.of(1).append(2).appendAll(counted(forced));
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(result.take(5)).isEqualTo(LazyList.of(1, 2, 1, 2, 3));
+            assertThat(forced.get()).isEqualTo(3);
+            assertThat(LazyList.of(1).append(2).appendAll(LazyList.from(0)).take(4))
+                    .isEqualTo(LazyList.of(1, 2, 0, 1));
+        }
+
+        @Test
+        public void appendAllReadsOnlyTheFirstElementOfItsArgumentNow() {
+            AtomicInteger read = new AtomicInteger();
+            LazyList<Integer> plain = LazyList.of(-1).appendAll(oneShot(read, 5));
+            assertThat(read.get()).isEqualTo(1);
+            AtomicInteger readAfterAppend = new AtomicInteger();
+            LazyList<Integer> appended = LazyList.of(-2).append(-1).appendAll(oneShot(readAfterAppend, 5));
+            assertThat(readAfterAppend.get()).isEqualTo(1);
+            assertThat(plain).isEqualTo(LazyList.of(-1, 0, 1, 2, 3, 4));
+            assertThat(appended).isEqualTo(LazyList.of(-2, -1, 0, 1, 2, 3, 4));
+            // the one-shot source is read once, however many LazyLists share it
+            assertThat(appended.append(9)).isEqualTo(LazyList.of(-2, -1, 0, 1, 2, 3, 4, 9));
+            assertThat(appended.appendAll(List.of(8, 9))).isEqualTo(LazyList.of(-2, -1, 0, 1, 2, 3, 4, 8, 9));
+            assertThat(read.get()).isEqualTo(5);
+            assertThat(readAfterAppend.get()).isEqualTo(5);
+        }
+
+        @Test
+        public void appendAllOfNothingReturnsThisLazyList() {
+            LazyList<Integer> plain = LazyList.of(1, 2);
+            LazyList<Integer> appended = plain.append(3);
+            assertThat(plain.appendAll(List.empty())).isSameAs(plain);
+            assertThat(appended.appendAll(List.empty())).isSameAs(appended);
+            assertThat(appended.appendAll(LazyList.empty())).isSameAs(appended);
+            LazyList<Integer> empty = LazyList.empty();
+            assertThat(empty.appendAll(plain)).isSameAs(plain);
+            assertThat(empty.appendAll(appended)).isSameAs(appended);
+            assertThatNullPointerException()
+                    .isThrownBy(() -> appended.appendAll(null))
+                    .withMessage("elements is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> plain.appendAll(null))
+                    .withMessage("elements is null");
+        }
+
+        @Test
+        public void prependAllOfAnAppendedLazyListReturnsAtOnceOnAnInfiniteLazyList() {
+            AtomicInteger forced = new AtomicInteger();
+            LazyList<Integer> result =
+                    counted(forced).prependAll(LazyList.of(-2).append(-1));
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(result.take(4)).isEqualTo(LazyList.of(-2, -1, 1, 2));
+            assertThat(forced.get()).isEqualTo(2);
+        }
+
+        @Test
+        public void insertAllOfAnAppendedLazyListReturnsAtOnceOnAnInfiniteLazyList() {
+            AtomicInteger forced = new AtomicInteger();
+            LazyList<Integer> atZero =
+                    counted(forced).insertAll(0, LazyList.of(-2).append(-1));
+            assertThat(forced.get()).isEqualTo(1);
+            assertThat(atZero.take(3)).isEqualTo(LazyList.of(-2, -1, 1));
+            LazyList<Integer> atTwo =
+                    LazyList.from(0).insertAll(2, LazyList.of(-2).append(-1));
+            assertThat(atTwo.take(6)).isEqualTo(LazyList.of(0, 1, -2, -1, 2, 3));
+            assertThat(LazyList.from(0).insertAll(1, LazyList.from(100)).take(3))
+                    .isEqualTo(LazyList.of(0, 100, 101));
+        }
+
+        @Test
+        public void patchReturnsAtOnceOnInfiniteLazyLists() {
+            assertThat(LazyList.from(0).patch(1, LazyList.from(100), 2).take(3)).isEqualTo(LazyList.of(0, 100, 101));
+            assertThat(LazyList.from(0).patch(1, LazyList.of(-2).append(-1), 2).take(5))
+                    .isEqualTo(LazyList.of(0, -2, -1, 3, 4));
+        }
+
+        @Test
+        public void extendAfterAppendReturnsAtOnce() {
+            assertThat(LazyList.of(1).append(2).extend(0).take(4)).isEqualTo(LazyList.of(1, 2, 0, 0));
+            AtomicInteger calls = new AtomicInteger();
+            assertThat(LazyList.of(1).append(2).extend(calls::incrementAndGet).take(4))
+                    .isEqualTo(LazyList.of(1, 2, 1, 2));
+        }
+
+        // -- memoised tails
+
+        @Test
+        public void theTailOfAnAppendedLazyListIsKept() {
+            LazyList<Integer> appended =
+                    LazyList.range(0, 3).append(3).append(4).appendAll(List.of(5, 6));
+            Vector<Integer> expected = Vector.range(0, 7);
+            assertThat(walkCountingNestedWrappers(appended, expected)).isZero();
+            // the same cells on a second walk
+            for (LazyList<Integer> first = appended, second = appended;
+                    !first.isEmpty();
+                    first = first.tail(), second = second.tail()) {
+                assertThat(second).isSameAs(first);
+            }
+            assertThat(appended.drop(4)).isSameAs(appended.drop(4));
+            assertThat(appended.tailOption().get()).isSameAs(appended.tail());
+            assertThat(appended.get(5)).isEqualTo(5);
+        }
+
+        @Test
+        public void anOlderVersionStaysValid() {
+            LazyList<Integer> base = LazyList.of(0).append(1);
+            LazyList<Integer> left = base.append(2);
+            LazyList<Integer> right = base.appendAll(List.of(3, 4));
+            assertThat(left.toVector()).isEqualTo(Vector.of(0, 1, 2));
+            assertThat(right.toVector()).isEqualTo(Vector.of(0, 1, 3, 4));
+            assertThat(base.toVector()).isEqualTo(Vector.of(0, 1));
+            LazyList<Integer> tail = left.tail();
+            assertThat(tail.append(5).toVector()).isEqualTo(Vector.of(1, 2, 5));
+            assertThat(left.toVector()).isEqualTo(Vector.of(0, 1, 2));
+        }
+
+        // -- loops
+
+        private int depth() {
+            return StackWalker.getInstance().walk(frames -> frames.count()).intValue();
+        }
+
+        /**
+         * The LazyList of the single element i, whose tail records how deep the stack is when a walk reaches its end: with
+         * appends layered one over the other, reaching it would go through one call per layer.
+         */
+        private LazyList<Integer> recording(int i, AtomicInteger deepest) {
+            return LazyList.cons(i, () -> {
+                deepest.accumulateAndGet(depth(), Math::max);
+                return LazyList.empty();
+            });
+        }
+
+        /** Walks the LazyList, checks it, and returns how much deeper than the walk the recorded tails were computed. */
+        private int walk(LazyList<Integer> stream, Vector<Integer> expected, AtomicInteger deepest) {
+            int walkDepth = depth();
+            assertThat(walkCountingNestedWrappers(stream, expected)).isZero();
+            return deepest.get() - walkDepth;
+        }
+
+        // a bound on the calls between the walk and a recorded tail, whatever the number of appends
+        private static final int FEW_CALLS = 40;
+
+        @Test
+        public void aLoopOfAppendsReadsBackOneStepPerElement() {
+            AtomicInteger deepest = new AtomicInteger();
+            LazyList<Integer> stream = Vector.range(1, LOOP)
+                    .foldLeft(
+                            LazyList.of(0),
+                            (acc, i) -> i % 2 == 0 ? acc.append(i) : acc.appendAll(recording(i, deepest)));
+            assertThat(walk(stream, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfAppendAllsReadsBackOneStepPerElement() {
+            AtomicInteger deepest = new AtomicInteger();
+            LazyList<Integer> plain = Vector.range(1, LOOP)
+                    .foldLeft(
+                            LazyList.of(0),
+                            (acc, i) -> i % 2 == 0 ? acc.appendAll(List.of(i)) : acc.appendAll(recording(i, deepest)));
+            assertThat(walk(plain, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+            AtomicInteger deepestNested = new AtomicInteger();
+            // each argument is itself a LazyList built by append
+            LazyList<Integer> appendedLazyLists = Vector.range(1, LOOP)
+                    .foldLeft(
+                            LazyList.of(0),
+                            (acc, i) ->
+                                    acc.appendAll(recording(i, deepestNested).append(-i)));
+            Vector<Integer> expected =
+                    Vector.of(0).appendAll(Vector.range(1, LOOP).flatMap(i -> List.of(i, -i)));
+            assertThat(walk(appendedLazyLists, expected, deepestNested)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfPrependAllsReadsBackOneStepPerElement() {
+            AtomicInteger deepest = new AtomicInteger();
+            LazyList<Integer> stream = Vector.rangeBy(LOOP - 2, -1, -1)
+                    .foldLeft(
+                            LazyList.of(LOOP - 1),
+                            (acc, i) ->
+                                    i % 2 == 0 ? acc.prependAll(List.of(i)) : acc.prependAll(recording(i, deepest)));
+            assertThat(walk(stream, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+            AtomicInteger deepestAppended = new AtomicInteger();
+            LazyList<Integer> appended = Vector.rangeBy(LOOP - 2, -1, -1)
+                    .foldLeft(
+                            LazyList.of(LOOP - 1),
+                            (acc, i) ->
+                                    acc.prependAll(recording(i, deepestAppended).append(-i)));
+            Vector<Integer> expected =
+                    Vector.range(0, LOOP - 1).flatMap(i -> List.of(i, -i)).append(LOOP - 1);
+            assertThat(walk(appended, expected, deepestAppended)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfInsertAllsReadsBackOneStepPerElement() {
+            AtomicInteger deepest = new AtomicInteger();
+            LazyList<Integer> stream = Vector.rangeBy(LOOP - 2, -1, -1)
+                    .foldLeft(LazyList.of(LOOP - 1), (acc, i) -> acc.insertAll(0, recording(i, deepest)));
+            assertThat(walk(stream, Vector.range(0, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfPrependsAndAppendsReadsBackOneStepPerElement() {
+            AtomicInteger deepest = new AtomicInteger();
+            LazyList<Integer> stream = Vector.range(1, LOOP)
+                    .foldLeft(LazyList.of(0), (acc, i) -> acc.prepend(-i).appendAll(recording(i, deepest)));
+            assertThat(walk(stream, Vector.range(-LOOP + 1, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfTailsAndAppendsReadsBackOneStepPerElement() {
+            AtomicInteger deepest = new AtomicInteger();
+            LazyList<Integer> stream = Vector.range(3, LOOP)
+                    .foldLeft(LazyList.range(0, 3), (acc, i) -> acc.tail().appendAll(recording(i, deepest)));
+            assertThat(walk(stream, Vector.range(LOOP - 3, LOOP), deepest)).isBetween(1, FEW_CALLS);
+        }
+
+        @Test
+        public void aLoopOfAppendsOfNestedAppendedLazyListsIsReadWithoutOverflowingTheStack() {
+            // a LazyList that starts with a plain cell whose tail is the previous result: nested one level deeper at
+            // each step
+            LazyList<Integer> stream = Vector.range(1, LOOP)
+                    .foldLeft(
+                            LazyList.of(0),
+                            (previous, i) -> LazyList.cons(i, () -> previous).append(-i));
+
+            Vector<Integer> read = stream.toVector();
+            assertThat(read.size()).isEqualTo(2 * LOOP - 1);
+            assertThat(read.take(3)).isEqualTo(Vector.of(LOOP - 1, LOOP - 2, LOOP - 3));
+            assertThat(read.takeRight(3)).isEqualTo(Vector.of(-(LOOP - 3), -(LOOP - 2), -(LOOP - 1)));
+        }
+    }
+
+    @Nested
+    class InfiniteEqualsTests {
+
+        private Vector<Traversable<Integer>> sequencesOf(Integer... elements) {
+            return Vector.of(
+                    List.of(elements),
+                    Vector.of(elements),
+                    Queue.of(elements),
+                    LazyList.of(elements),
+                    LazyList.of(elements).append(0).init());
+        }
+
+        @Test
+        public void anInfiniteLazyListIsNotEqualToAFiniteSequence() {
+            for (Traversable<Integer> finite :
+                    sequencesOf(0, 1, 2).appendAll(sequencesOf()).appendAll(sequencesOf(0))) {
+                LazyList<Integer> infinite = LazyList.from(0);
+                assertThat(infinite.equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(infinite)).as("%s", finite).isFalse();
+                LazyList<Integer> appended = LazyList.of(0).append(1).appendAll(LazyList.from(2));
+                assertThat(appended.equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(appended)).as("%s", finite).isFalse();
+            }
+        }
+
+        @Test
+        public void anInfiniteLazyListIsNotEqualToAFiniteSequenceThatDiffers() {
+            for (Traversable<Integer> finite : sequencesOf(1, 2)) {
+                assertThat(LazyList.from(0).equals(finite)).as("%s", finite).isFalse();
+                assertThat(finite.equals(LazyList.from(0))).as("%s", finite).isFalse();
+            }
+        }
+
+        @Test
+        public void equalsStopsAtTheFirstDifference() {
+            AtomicInteger forced = new AtomicInteger();
+            LazyList<Integer> stream = LazyList.continually(forced::incrementAndGet); // 1, 2, 3, ...
+            assertThat(stream.equals(List.of(1, 2, 9, 4))).isFalse();
+            assertThat(forced.get()).isEqualTo(3);
+            assertThat(Vector.of(1, 2, 3, 4, 9).equals(stream)).isFalse();
+            assertThat(forced.get()).isEqualTo(5);
+        }
+
+        @Test
+        public void equalsStopsOneElementAfterTheEndOfTheShorterSide() {
+            AtomicInteger forced = new AtomicInteger();
+            LazyList<Integer> stream = LazyList.continually(forced::incrementAndGet);
+            assertThat(stream.equals(Queue.of(1, 2, 3))).isFalse();
+            // the fourth element answers whether the LazyList goes on
+            assertThat(forced.get()).isEqualTo(4);
+        }
+
+        @Test
+        public void twoInfiniteLazyListsThatDifferAreNotEqual() {
+            assertThat(LazyList.from(0).equals(LazyList.from(0).update(1_000, -1)))
+                    .isFalse();
+            assertThat(LazyList.from(0).equals(LazyList.from(1))).isFalse();
+        }
+
+        @Test
+        public void finiteSequencesOfEveryTypeAreEqualToALazyListWithTheSameElements() {
+            for (Traversable<Integer> finite : sequencesOf(0, 1, 2)) {
+                for (Traversable<Integer> other : sequencesOf(0, 1, 2)) {
+                    assertThat(finite.equals(other)).as("%s %s", finite, other).isTrue();
+                }
+                for (Traversable<Integer> shorter : sequencesOf(0, 1)) {
+                    assertThat(finite.equals(shorter))
+                            .as("%s %s", finite, shorter)
+                            .isFalse();
+                    assertThat(shorter.equals(finite))
+                            .as("%s %s", shorter, finite)
+                            .isFalse();
+                }
+            }
+        }
+
+        @Test
+        public void aLazyListIsEqualToItself() {
+            LazyList<Integer> infinite = LazyList.from(0);
+            assertThat(infinite.equals(infinite)).isTrue();
         }
     }
 }

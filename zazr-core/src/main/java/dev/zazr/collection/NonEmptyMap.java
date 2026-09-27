@@ -1092,10 +1092,10 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * @return the entries as a {@link Stream}, in iteration order
+     * @return the entries as a {@link LazyList}, in iteration order
      */
-    public Stream<Tuple2<K, V>> toStream() {
-        return map.toStream();
+    public LazyList<Tuple2<K, V>> toLazyList() {
+        return map.toLazyList();
     }
 
     /**

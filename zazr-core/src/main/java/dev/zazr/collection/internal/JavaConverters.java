@@ -1,10 +1,10 @@
 package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple2;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Map;
 import dev.zazr.collection.Queue;
-import dev.zazr.collection.Stream;
 import dev.zazr.collection.Traversable;
 import dev.zazr.collection.Vector;
 import java.util.AbstractCollection;
@@ -73,8 +73,8 @@ public final class JavaConverters {
         return new QueueListView<>(queue, false);
     }
 
-    public static <T extends @Nullable Object> java.util.List<T> asJava(Stream<T> stream) {
-        return new StreamListView<>(stream, false);
+    public static <T extends @Nullable Object> java.util.List<T> asJava(LazyList<T> stream) {
+        return new LazyListListView<>(stream, false);
     }
 
     /**
@@ -197,12 +197,12 @@ public final class JavaConverters {
      * A {@link java.util.List} view over a persistent sequence, or over the same sequence in reverse order when
      * {@code reversed} is set (the view {@link #reversed()} returns). There is no shared sequence interface to call,
      * so the positional reads go through the abstract hooks below, implemented once per sequence type
-     * ({@link VectorListView}, {@link ListListView}, {@link QueueListView}, {@link StreamListView}).
+     * ({@link VectorListView}, {@link ListListView}, {@link QueueListView}, {@link LazyListListView}).
      * <p>
-     * Nothing is computed ahead of the operation that needs it, which matters for a {@link Stream}: the iterator,
+     * Nothing is computed ahead of the operation that needs it, which matters for a {@link LazyList}: the iterator,
      * the spliterator, {@code isEmpty}, {@code contains}, {@code indexOf}, {@code equals} and {@code get(i)} force no
      * more cells than they read; {@code size}, {@code lastIndexOf}, {@code hashCode}, {@code getLast} and
-     * everything on the reversed view force the whole Stream. The size is counted the first time it is needed and
+     * everything on the reversed view force the whole LazyList. The size is counted the first time it is needed and
      * kept, since the sequence never changes: an indexed loop over the view does not count it again at every step.
      *
      * @param <T> the element type
@@ -215,7 +215,7 @@ public final class JavaConverters {
         final boolean reversed;
 
         // the size of the delegate, counted the first time it is asked for: the delegate never changes, and the size
-        // of a List, a Queue or a Stream is a walk; -1 until then (a race only counts it twice)
+        // of a List, a Queue or a LazyList is a walk; -1 until then (a race only counts it twice)
         private int size = -1;
 
         ListView(C delegate, boolean reversed) {
@@ -252,7 +252,7 @@ public final class JavaConverters {
 
         abstract ListView<T, C> view(C delegate, boolean reversed);
 
-        /** Whether the sequence has at least {@code n} elements; forces at most {@code n} cells of a Stream. */
+        /** Whether the sequence has at least {@code n} elements; forces at most {@code n} cells of a LazyList. */
         boolean delegateHasAtLeast(C delegate, int n) {
             return delegateSize() >= n;
         }
@@ -274,8 +274,8 @@ public final class JavaConverters {
             return delegate.isEmpty();
         }
 
-        // the unchecked cast of a nullable argument; the delegate accepts null
-        @SuppressWarnings({"unchecked", "NullAway"})
+        @SuppressWarnings({"unchecked", "NullAway"
+        }) // the unchecked cast of a nullable argument; the delegate accepts null
         @Override
         public boolean contains(@Nullable Object element) {
             return delegate.contains((T) element);
@@ -309,8 +309,8 @@ public final class JavaConverters {
             return reversed ? delegateGet(delegate, 0) : delegateLast(delegate);
         }
 
-        // the unchecked cast of a nullable argument; the delegate accepts null
-        @SuppressWarnings({"unchecked", "NullAway"})
+        @SuppressWarnings({"unchecked", "NullAway"
+        }) // the unchecked cast of a nullable argument; the delegate accepts null
         @Override
         public int indexOf(@Nullable Object element) {
             if (reversed) {
@@ -320,8 +320,8 @@ public final class JavaConverters {
             return delegateIndexOf(delegate, (T) element);
         }
 
-        // the unchecked cast of a nullable argument; the delegate accepts null
-        @SuppressWarnings({"unchecked", "NullAway"})
+        @SuppressWarnings({"unchecked", "NullAway"
+        }) // the unchecked cast of a nullable argument; the delegate accepts null
         @Override
         public int lastIndexOf(@Nullable Object element) {
             if (reversed) {
@@ -729,58 +729,58 @@ public final class JavaConverters {
     }
 
     /**
-     * The view over a {@link Stream}. The bound checks of {@code listIterator(int)} and {@code subList} force as many
-     * cells as the index they check, never the whole Stream.
+     * The view over a {@link LazyList}. The bound checks of {@code listIterator(int)} and {@code subList} force as many
+     * cells as the index they check, never the whole LazyList.
      */
-    static final class StreamListView<T extends @Nullable Object> extends ListView<T, Stream<T>> {
+    static final class LazyListListView<T extends @Nullable Object> extends ListView<T, LazyList<T>> {
 
-        StreamListView(Stream<T> delegate, boolean reversed) {
+        LazyListListView(LazyList<T> delegate, boolean reversed) {
             super(delegate, reversed);
         }
 
         @Override
-        boolean delegateHasAtLeast(Stream<T> delegate, int n) {
+        boolean delegateHasAtLeast(LazyList<T> delegate, int n) {
             return n <= 0 || !delegate.drop(n - 1).isEmpty();
         }
 
         @Override
-        T delegateGet(Stream<T> delegate, int index) {
+        T delegateGet(LazyList<T> delegate, int index) {
             return delegate.get(index);
         }
 
         @Override
-        T delegateLast(Stream<T> delegate) {
+        T delegateLast(LazyList<T> delegate) {
             return delegate.last();
         }
 
         @Override
-        int delegateIndexOf(Stream<T> delegate, T element) {
+        int delegateIndexOf(LazyList<T> delegate, T element) {
             return delegate.indexOf(element);
         }
 
         @Override
-        int delegateLastIndexOf(Stream<T> delegate, T element) {
+        int delegateLastIndexOf(LazyList<T> delegate, T element) {
             return delegate.lastIndexOf(element);
         }
 
         @Override
-        Stream<T> delegateSubSequence(Stream<T> delegate, int beginIndex, int endIndex) {
+        LazyList<T> delegateSubSequence(LazyList<T> delegate, int beginIndex, int endIndex) {
             return delegate.subSequence(beginIndex, endIndex);
         }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(Stream<T> delegate, int index) {
+        java.util.Iterator<T> delegateIteratorFrom(LazyList<T> delegate, int index) {
             return delegate.drop(index).iterator();
         }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(Stream<T> delegate) {
+        java.util.Iterator<T> delegateReverseIterator(LazyList<T> delegate) {
             return delegate.reverse().iterator();
         }
 
         @Override
-        ListView<T, Stream<T>> view(Stream<T> delegate, boolean reversed) {
-            return new StreamListView<>(delegate, reversed);
+        ListView<T, LazyList<T>> view(LazyList<T> delegate, boolean reversed) {
+            return new LazyListListView<>(delegate, reversed);
         }
     }
 }

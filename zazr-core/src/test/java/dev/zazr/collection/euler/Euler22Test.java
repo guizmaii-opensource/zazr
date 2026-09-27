@@ -1,6 +1,6 @@
 package dev.zazr.collection.euler;
 
-import dev.zazr.collection.Stream;
+import dev.zazr.collection.LazyList;
 import dev.zazr.collection.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +41,7 @@ public class Euler22Test {
     private static long totalOfAllNameScores() {
         return readLines(file("p022_names.txt"))
                 .map(l -> l.replaceAll("\"", ""))
-                .flatMap(l -> Stream.of(l.split(",")))
+                .flatMap(l -> LazyList.of(l.split(",")))
                 .sorted()
                 .zipWithIndex()
                 .map(t -> nameScore(t._1(), t._2() + 1))

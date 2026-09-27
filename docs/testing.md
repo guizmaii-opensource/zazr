@@ -1,5 +1,5 @@
 ---
-description: Property-based testing with zazr-test - Gen generators, Check, CheckResult and CheckConfig in any JUnit test, a generator for every Zazr type, seeds that replay a failure, and ready-made laws.
+description: Property-based testing with zazr-test - Gen generators, Check, assertions that explain failures, CheckResult and CheckConfig in any JUnit test, a generator for every Zazr type, seeds that replay a failure, and ready-made laws.
 ---
 
 # Testing with `zazr-test`
@@ -39,7 +39,7 @@ class ListReverseTest {
     @Test
     void reversingTwiceGivesTheListBack() {
         var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
-        Check.check(lists, list -> list.reverse().reverse().equals(list));
+        Check.check(lists, list -> assertThat(list.reverse().reverse(), equalTo(list)));
     }
 }
 ```
@@ -65,43 +65,53 @@ framework reports the `AssertionError`.
 
 ## The types
 
-Four types, all in `dev.zazr.test`:
+Six types, all in `dev.zazr.test`:
 
 | Type | Role |
 |---|---|
 | `Gen<A>` | a generator of values of type `A`: scalars, combinators, and one generator per Zazr type |
 | `Check` | runs a property for 1 to 8 generators: `check`, `checkN` and `checkAll` fail the test when it breaks; `evaluate`, `evaluateN` and `evaluateAll` return the result |
-| `CheckResult` | the outcome: `Satisfied`, `Falsified` or `Erroneous` |
+| `Assertion<A>` | a condition on an `A` that explains why a value breaks it: `equalTo`, `isGreaterThan`, `hasSize`, `isSome`, ... |
+| `TestResult` | the outcome of `assertThat(value, assertions...)`: a success, or a failure with its explanation |
+| `CheckResult` | the outcome of a check: `Satisfied`, `Falsified` or `Erroneous` |
 | `CheckConfig` | the number of samples, the size, the seed and the discard budget |
 
 If your tests use Java modules, add `requires dev.zazr.test;` to their `module-info.java`: it reads `dev.zazr` too.
 
 ## A first property
 
-`Check.check` takes the generators and the property. The property returns `true` when it holds.
+`Check.check` takes the generators and the property. The property returns the result of `assertThat`, which says why a
+value breaks it.
 
 ```java
 var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
-Check.check(lists, list -> list.reverse().reverse().equals(list));
+Check.check(lists, list -> assertThat(list.reverse().reverse(), equalTo(list)));
 ```
 
 The check runs 200 samples. It returns when every sample passed, and throws an `AssertionError` otherwise, so the
 test fails.
 
+`assertThat` and the assertions are static methods of `Assertion` (`import static dev.zazr.test.Assertion.*;`). A
+property may also return a plain `boolean`: `true` when it holds.
+
 ## What a failure prints
 
-The error names the sample that broke the property, its number, and the seed of the run.
+The error names the sample that broke the property, its number, the seed of the run, and why the value breaks the
+assertion.
 
 ```java
-var config = CheckConfig.defaults().withSeed(42);                        // CheckConfig
-Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5);  // throws an AssertionError
+var config = CheckConfig.defaults().withSeed(42);                       // CheckConfig
+Check.check(config, Gen.list(Gen.integers()), hasSize(isLessThan(5)));  // throws an AssertionError
 ```
 
 ```text
-falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42)
+falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42):
+  List(1064429137, -1, 2147483646, -499641955, 2147483647) has size 5:
+    5 is not less than 5
 ```
 
-The sample is shown as a tuple, one value per generator.
+The sample is shown as a tuple, one value per generator. `check(gen, assertions...)` is the shortcut for a property
+that only asserts on the generated value.
 
 ## Small counterexamples, no shrinking
 
@@ -110,7 +120,7 @@ The sample is shown as a tuple, one value per generator.
 The size grows over a run, from 0 for the first sample to 100 for the last. Collections and strings are at most as
 long as the size, so the first samples are empty or short, and the first failure is usually a small one.
 
-In the example above, the first list that breaks `size() < 5` has exactly 5 elements.
+In the example above, the first list that breaks `hasSize(isLessThan(5))` has exactly 5 elements.
 
 ## Reading a result
 
@@ -118,8 +128,8 @@ In the example above, the first list that breaks `size() < 5` has exactly 5 elem
 three records, so pattern matching over it covers every outcome:
 
 - `Satisfied(samples)`: every sample passed.
-- `Falsified(sampleNumber, seed, counterexample, message)`: the property returned `false` or threw an
-  `AssertionError`.
+- `Falsified(sampleNumber, seed, counterexample, message)`: the property returned `false` or a failed
+  `TestResult`, or threw an `AssertionError`; `message` holds the explanation.
 - `Erroneous(sampleNumber, seed, cause, sample)`: a generator threw, or the property threw another exception.
 
 ```java
@@ -135,17 +145,86 @@ var summary = switch (result) {
 `isSatisfied()`, `isFalsified()` and `isErroneous()` answer the same question without pattern matching, and
 `assertIsSatisfied()` throws the `AssertionError` that `Check.check` would.
 
-## Assertions in the property
+## Assertions
 
-The property may use JUnit or AssertJ assertions. A failed assertion falsifies the sample, and its message is kept
-in the result. A block body still ends with `return true`.
+An `Assertion<A>` tests a value and, when the value breaks it, explains why. `assertThat(value, assertion)` returns a
+`TestResult`: a success, or a failure whose explanation follows the failing part of a nested assertion.
 
 ```java
-var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
-var result = Check.evaluate(CheckConfig.defaults().withSeed(42), digits, vector -> {
-    assertThat(vector.distinct()).isEqualTo(vector);
-    return true;
-}); // CheckResult
+var result = assertThat(Option.some(4), isSome(isGreaterThan(5))); // TestResult
+// Failure: "Some(4) holds 4:\n  4 is not greater than 5"
+```
+
+The assertions are static methods of `Assertion`. If your test also imports AssertJ's `assertThat`, import
+`Assertion.assertThat` by name too: Java then picks one by its arguments.
+
+### The catalogue
+
+| Values | Assertions |
+|---|---|
+| any value | `equalTo`, `anything`, `isTrue`, `isFalse` |
+| comparable values | `isGreaterThan`, `isGreaterThanOrEqualTo`, `isLessThan`, `isLessThanOrEqualTo`, `isWithin(min, max)` |
+| strings | `startsWithString`, `endsWithString`, `containsString`, `matchesRegex` |
+| any `Iterable` | `isEmpty`, `isNonEmpty`, `hasSize`, `contains`, `exists`, `forall`, `hasFirst`, `hasLast`, `hasAt`, `hasSameElements`, `isSorted` |
+| Zazr types | `isSome`, `isNone`, `isLeft`, `isRight`, `isSuccess`, `isFailure`, `isValid`, `isInvalid` |
+| code | `throwsA(type)`, `throwsWith(assertion)` |
+
+`Assertion.of(name, value -> ...)` builds an assertion of your own from a function that returns a `TestResult`.
+
+### Combining assertions
+
+`and`, `or` and `not` combine assertions, and `label` names one in its explanation. `or` tests its right side only when
+its left side fails.
+
+```java
+var digit  = isGreaterThanOrEqualTo(0).and(isLessThan(10)).label("a digit");  // Assertion<Integer>
+var result = assertThat(12, digit);                                           // TestResult
+// Failure: "a digit: 12 is not less than 10"
+```
+
+### Several assertions at once
+
+`assertThat` and `check` take several assertions. A failure lists every one that fails, not only the first.
+
+Every assertion is tested, even after one failed. So `isNonEmpty()` does not guard the assertions after it: one that
+throws on an empty list makes the check `Erroneous`. Put such an assertion behind `isEmpty().or(...)` instead.
+
+```java
+var result = assertThat(15, isLessThan(10), not(equalTo(15))); // TestResult
+// Failure: "15 is not less than 10\n15 satisfies equalTo(15), but must not"
+Check.check(Gen.integers(0, 9), isGreaterThanOrEqualTo(0), isLessThan(10));
+```
+
+zio-test's `assertTrue(a, b, c)` shows the source of each failing boolean expression, which Java cannot do, so there
+is no `assertTrue(boolean...)`: pass several assertions instead.
+
+With several generators, the results combine with `and` and `or`.
+
+```java
+var ints = Gen.integers(); // Gen<Integer>
+Check.check(ints, ints, (a, b) -> assertThat(a + b, equalTo(b + a)).and(assertThat(a * b, equalTo(b * a))));
+```
+
+### Code that must throw
+
+```java
+var result = assertThat(() -> Integer.parseInt("x"), throwsA(NumberFormatException.class)); // TestResult
+// Success
+```
+
+## JUnit and AssertJ assertions
+
+The property may also use JUnit or AssertJ assertions. A failed assertion falsifies the sample, and its message is kept
+in the result.
+
+A property that ends with an AssertJ chain works as it is: a body that returns something other than a `boolean` or a
+`TestResult` passes when it completes without throwing. A `null` result makes the check `Erroneous`.
+
+```java
+var digits = Gen.vector(Gen.integers(0, 9));       // Gen<Vector<Integer>>
+var config = CheckConfig.defaults().withSeed(42);  // CheckConfig
+// CheckResult
+var result  = Check.evaluate(config, digits, vector -> assertThat(vector.distinct()).isEqualTo(vector));
 var message = result.message(); // Option<String>
 // Some("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)"), AssertJ's message on three lines
 ```
@@ -180,7 +259,7 @@ var twoDice = dice.zipWith(dice, Integer::sum);  // Gen<Integer>
 var coin    = Gen.elements("heads", "tails");    // Gen<String>
 // Gen<String>
 var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0));
-Check.check(twoDice, sum -> sum >= 2 && sum <= 12);
+Check.check(twoDice, isWithin(2, 12));
 ```
 
 `Gen.zip(g1, ..., g8)` and `Gen.zipWith` combine up to eight generators at once.
@@ -258,7 +337,7 @@ argument.
 
 ```java
 var config = CheckConfig.defaults().withSamples(1_000).withSeed(42); // CheckConfig
-Check.check(config, Gen.integers(), n -> Integer.parseInt(Integer.toString(n)) == n);
+Check.check(config, Gen.integers(), n -> assertThat(Integer.parseInt(Integer.toString(n)), equalTo(n)));
 Check.checkN(50, Gen.alphaNumericStrings(), s -> s.strip().equals(s));
 ```
 
@@ -290,13 +369,13 @@ build passes it to the test JVM. Maven does; a Gradle build needs `systemPropert
 |---|---|
 | Control types | `option`, `some`, `none`, `either`, `tryOf`, `validation`, `lazy` |
 | Tuples | `tuple2` to `tuple8` |
-| Sequences | `vector`, `vectorN`, `nonEmptyVector`, `list`, `queue`, `stream` |
+| Sequences | `vector`, `vectorN`, `nonEmptyVector`, `list`, `queue`, `lazyList` |
 | Sets | `hashSet`, `linkedHashSet`, `treeSet` |
 | Maps | `hashMap`, `linkedHashMap`, `treeMap` |
 
 ```java
 var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
-Check.check(checks, checks, (a, b) -> a.zip(b).isValid() == (a.isValid() && b.isValid()));
+Check.check(checks, checks, (a, b) -> assertThat(a.zip(b).isValid(), equalTo(a.isValid() && b.isValid())));
 ```
 
 A collection has up to the current size elements (a non-empty vector has at least one). Half of the lengths are 0, 1, the size or the size minus one, so
@@ -309,7 +388,7 @@ collection generators build each value in several ways, so your properties meet 
 
 - a `Vector` built by dropping a prefix, by prepending, or as a slice, not only by `ofAll`;
 - a `Queue` whose elements sit in both of its internal lists;
-- a `Stream` whose tail is not evaluated yet;
+- a `LazyList` whose tail is not evaluated yet;
 - sets and maps that went through removals, or keys overwritten with new values.
 
 ## Laws

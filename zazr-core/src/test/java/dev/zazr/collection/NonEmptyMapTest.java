@@ -436,7 +436,7 @@ public class NonEmptyMapTest {
             assertThat(nem.toVector()).isEqualTo(map.toVector());
             assertThat(nem.toList()).isEqualTo(map.toList());
             assertThat(nem.toQueue()).isEqualTo(map.toQueue());
-            assertThat(nem.toStream()).isEqualTo(map.toStream());
+            assertThat(nem.toLazyList()).isEqualTo(map.toLazyList());
             assertThat(nem.toSet()).isEqualTo(map.toSet());
             assertThat(nem.toLinkedSet()).isEqualTo(map.toLinkedSet());
             assertThat(nem.toSortedSet()).isEqualTo(map.toSortedSet());

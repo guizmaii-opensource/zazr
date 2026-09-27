@@ -188,7 +188,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * Creates a HashSet that contains the elements of the given {@link java.util.stream.Stream}.
      *
      * @param javaStream A {@link java.util.stream.Stream}
-     * @param <T>        Component type of the Stream.
+     * @param <T>        Component type of the LazyList.
      * @return A HashSet containing the given elements.
      */
     public static <T extends @Nullable Object> HashSet<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {

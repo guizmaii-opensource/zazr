@@ -10,9 +10,16 @@ import java.util.Objects;
 /**
  * Checks a property against generated values, from 1 to 8 generators.
  * <p>
- * The property is a function of the generated values that returns {@code true} when it holds. It may also
- * throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies the sample
- * like {@code false} and keeps its message; any other exception makes the check {@link CheckResult.Erroneous}.
+ * The property is a function of the generated values. It returns {@code true} when it holds, or the
+ * {@link TestResult} of {@link Assertion#assertThat}, whose explanation the report of a failing sample keeps.
+ * It may also throw an {@link AssertionError}, such as a failed JUnit or AssertJ assertion, which falsifies
+ * the sample like {@code false} and keeps its message; any other exception, or a {@code null} result, makes
+ * the check {@link CheckResult.Erroneous}. Any other result passes, since the body completed without throwing:
+ * a body that ends with an AssertJ chain, which returns its {@code Assert}, is checked by its assertions. One
+ * body type takes every result, because Java cannot tell two implicitly typed lambdas apart by what they
+ * return.
+ * <p>
+ * With one generator, {@code check(gen, assertions...)} checks that every value satisfies the assertions.
  * <p>
  * {@code check} and {@code checkN} run {@link CheckConfig#samples()} samples, pass after pass of the
  * generators, with a size that grows from 0 for the first sample to {@link CheckConfig#size()} for the last:
@@ -32,13 +39,13 @@ public final class Check {
      * the test when a sample breaks it, as {@link #check(CheckConfig, Gen, CheckedFunction1)}.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void check(Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> void check(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluate(g1, body).assertIsSatisfied();
     }
 
@@ -49,14 +56,13 @@ public final class Check {
      *
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void check(
-            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> void check(CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluate(config, g1, body).assertIsSatisfied();
     }
 
@@ -66,14 +72,14 @@ public final class Check {
      *
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError           with the counterexample or the error, the sample number and the seed,
      *                                  when a sample breaks the property or something throws
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1> void checkN(int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> void checkN(int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluateN(samples, g1, body).assertIsSatisfied();
     }
 
@@ -82,13 +88,13 @@ public final class Check {
      * and fails the test when a value breaks it.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void checkAll(Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> void checkAll(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluateAll(g1, body).assertIsSatisfied();
     }
 
@@ -99,14 +105,13 @@ public final class Check {
      *
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void checkAll(
-            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> void checkAll(CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluateAll(config, g1, body).assertIsSatisfied();
     }
 
@@ -115,12 +120,12 @@ public final class Check {
      * {@link #evaluate(CheckConfig, Gen, CheckedFunction1)}.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> CheckResult evaluate(Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> CheckResult evaluate(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, body);
     }
 
@@ -131,13 +136,13 @@ public final class Check {
      *
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
     public static <T1> CheckResult evaluate(
-            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(body, "body is null");
@@ -150,14 +155,13 @@ public final class Check {
      *
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1> CheckResult evaluateN(
-            int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> CheckResult evaluateN(int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, body);
     }
 
@@ -166,12 +170,12 @@ public final class Check {
      * {@link CheckConfig#defaults()}.
      *
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> CheckResult evaluateAll(Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+    public static <T1> CheckResult evaluateAll(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, body);
     }
 
@@ -183,17 +187,184 @@ public final class Check {
      *
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
-     * @param body the property of a value: true when it holds
+     * @param body the property of a value: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
     public static <T1> CheckResult evaluateAll(
-            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, Boolean> body) {
+            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(body, "body is null");
         return Runner.check(config, g1.<Tuple1<T1>>map(Tuple::of), sample -> body.apply(sample._1()), true);
+    }
+    /**
+     * Checks that every value of {@code g1} satisfies the assertions, as {@link #check(Gen, CheckedFunction1)}.
+     *
+     *
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     *
+     * @throws AssertionError           with the counterexample, the explanation of every failing assertion, the
+     *                                  sample number and the seed, when a value does not satisfy them
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> void check(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        check(g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Checks that every value of {@code g1} satisfies the assertions, as {@link #check(CheckConfig, Gen, CheckedFunction1)}.
+     *
+     * @param config     the number of samples, the size and the seed
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     *
+     * @throws AssertionError           with the counterexample, the explanation of every failing assertion, the
+     *                                  sample number and the seed, when a value does not satisfy them
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> void check(CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        check(config, g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Checks that {@code samples} values of {@code g1} satisfy the assertions, as {@link #checkN(int, Gen, CheckedFunction1)}.
+     *
+     * @param samples    the number of samples
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     *
+     * @throws AssertionError           with the counterexample, the explanation of every failing assertion, the
+     *                                  sample number and the seed, when a value does not satisfy them
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> void checkN(int samples, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        checkN(samples, g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Checks that every value of one pass of {@code g1} satisfies the assertions, as {@link #checkAll(Gen, CheckedFunction1)}.
+     *
+     *
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     *
+     * @throws AssertionError           with the counterexample, the explanation of every failing assertion, the
+     *                                  sample number and the seed, when a value does not satisfy them
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> void checkAll(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        checkAll(g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Checks that every value of one pass of {@code g1} satisfies the assertions, as {@link #checkAll(CheckConfig, Gen, CheckedFunction1)}.
+     *
+     * @param config     the size and the seed
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     *
+     * @throws AssertionError           with the counterexample, the explanation of every failing assertion, the
+     *                                  sample number and the seed, when a value does not satisfy them
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> void checkAll(CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        checkAll(config, g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Evaluates the assertions against the values of {@code g1}, as {@link #evaluate(Gen, CheckedFunction1)}.
+     *
+     *
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     * @return the result of the check
+     *
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> CheckResult evaluate(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        return evaluate(g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Evaluates the assertions against the values of {@code g1}, as {@link #evaluate(CheckConfig, Gen, CheckedFunction1)}.
+     *
+     * @param config     the number of samples, the size and the seed
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     * @return the result of the check
+     *
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> CheckResult evaluate(
+            CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        return evaluate(config, g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Evaluates the assertions against {@code samples} values of {@code g1}, as {@link #evaluateN(int, Gen, CheckedFunction1)}.
+     *
+     * @param samples    the number of samples
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     * @return the result of the check
+     *
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> CheckResult evaluateN(int samples, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        return evaluateN(samples, g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Evaluates the assertions against every value of one pass of {@code g1}, as {@link #evaluateAll(Gen, CheckedFunction1)}.
+     *
+     *
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     * @return the result of the check
+     *
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> CheckResult evaluateAll(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        return evaluateAll(g1, Assertion.all(assertions)::test);
+    }
+    /**
+     * Evaluates the assertions against every value of one pass of {@code g1}, as {@link #evaluateAll(CheckConfig, Gen, CheckedFunction1)}.
+     *
+     * @param config     the size and the seed
+     * @param g1         the generator of the values
+     * @param assertions the assertions every value must satisfy, at least one
+     * @param <T1>       the type of the values
+     * @return the result of the check
+     *
+     * @throws NullPointerException     if an argument, or one of the assertions, is null
+     * @throws IllegalArgumentException if no assertion is given
+     */
+    @SafeVarargs
+    public static <T1> CheckResult evaluateAll(
+            CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+        return evaluateAll(config, g1, Assertion.all(assertions)::test);
     }
 
     /**
@@ -202,7 +373,7 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -210,7 +381,7 @@ public final class Check {
      * @throws NullPointerException if an argument is null
      */
     public static <T1, T2> void check(
-            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluate(g1, g2, body).assertIsSatisfied();
     }
 
@@ -222,7 +393,7 @@ public final class Check {
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -233,7 +404,7 @@ public final class Check {
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
-            CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluate(config, g1, g2, body).assertIsSatisfied();
     }
 
@@ -244,7 +415,7 @@ public final class Check {
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError           with the counterexample or the error, the sample number and the seed,
@@ -253,10 +424,7 @@ public final class Check {
      * @throws IllegalArgumentException if {@code samples} is negative
      */
     public static <T1, T2> void checkN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            int samples, Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluateN(samples, g1, g2, body).assertIsSatisfied();
     }
 
@@ -266,7 +434,7 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -274,7 +442,7 @@ public final class Check {
      * @throws NullPointerException if an argument is null
      */
     public static <T1, T2> void checkAll(
-            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluateAll(g1, g2, body).assertIsSatisfied();
     }
 
@@ -286,7 +454,7 @@ public final class Check {
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @throws AssertionError       with the counterexample or the error, the sample number and the seed, when a
@@ -297,7 +465,7 @@ public final class Check {
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
-            CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluateAll(config, g1, g2, body).assertIsSatisfied();
     }
 
@@ -307,14 +475,14 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
     public static <T1, T2> CheckResult evaluate(
-            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, body);
     }
 
@@ -326,7 +494,7 @@ public final class Check {
      * @param config the number of samples, the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -336,7 +504,7 @@ public final class Check {
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
-            CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            CheckedFunction2<? super T1, ? super T2, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -351,7 +519,7 @@ public final class Check {
      * @param samples the number of samples
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -359,10 +527,7 @@ public final class Check {
      * @throws IllegalArgumentException if {@code samples} is negative
      */
     public static <T1, T2> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            int samples, Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, body);
     }
 
@@ -372,14 +537,14 @@ public final class Check {
      *
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
     public static <T1, T2> CheckResult evaluateAll(
-            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, body);
     }
 
@@ -392,7 +557,7 @@ public final class Check {
      * @param config the size and the seed
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
-     * @param body the property of 2 values: true when it holds
+     * @param body the property of 2 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @return the result of the check
@@ -402,7 +567,7 @@ public final class Check {
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
-            CheckedFunction2<? super T1, ? super T2, Boolean> body) {
+            CheckedFunction2<? super T1, ? super T2, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -417,7 +582,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -429,7 +594,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         evaluate(g1, g2, g3, body).assertIsSatisfied();
     }
 
@@ -442,7 +607,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -455,7 +620,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         evaluate(config, g1, g2, g3, body).assertIsSatisfied();
     }
 
@@ -467,7 +632,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -481,7 +646,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         evaluateN(samples, g1, g2, g3, body).assertIsSatisfied();
     }
 
@@ -492,7 +657,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -504,7 +669,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         evaluateAll(g1, g2, g3, body).assertIsSatisfied();
     }
 
@@ -517,7 +682,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -530,7 +695,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         evaluateAll(config, g1, g2, g3, body).assertIsSatisfied();
     }
 
@@ -541,7 +706,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -552,7 +717,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, body);
     }
 
@@ -565,7 +730,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -577,7 +742,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -595,7 +760,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -608,7 +773,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, body);
     }
 
@@ -619,7 +784,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -630,7 +795,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, body);
     }
 
@@ -644,7 +809,7 @@ public final class Check {
      * @param g1   the generator of the 1st value
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
-     * @param body the property of 3 values: true when it holds
+     * @param body the property of 3 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -656,7 +821,7 @@ public final class Check {
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, Boolean> body) {
+            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -674,7 +839,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -688,7 +853,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluate(g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -702,7 +867,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -717,7 +882,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluate(config, g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -730,7 +895,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -746,7 +911,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluateN(samples, g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -758,7 +923,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -772,7 +937,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluateAll(g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -786,7 +951,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -801,7 +966,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluateAll(config, g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -813,7 +978,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -826,7 +991,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, body);
     }
 
@@ -840,7 +1005,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -854,7 +1019,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -877,7 +1042,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -892,7 +1057,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, body);
     }
 
@@ -904,7 +1069,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -917,7 +1082,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, body);
     }
 
@@ -932,7 +1097,7 @@ public final class Check {
      * @param g2   the generator of the 2nd value
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
-     * @param body the property of 4 values: true when it holds
+     * @param body the property of 4 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -946,7 +1111,7 @@ public final class Check {
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, Boolean> body) {
+            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -969,7 +1134,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -985,7 +1150,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluate(g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1000,7 +1165,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1017,7 +1182,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluate(config, g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1031,7 +1196,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1049,7 +1214,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluateN(samples, g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1062,7 +1227,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1078,7 +1243,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluateAll(g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1093,7 +1258,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1110,7 +1275,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluateAll(config, g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1123,7 +1288,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1138,7 +1303,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, body);
     }
 
@@ -1153,7 +1318,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1169,7 +1334,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1194,7 +1359,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1211,7 +1376,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, body);
     }
 
@@ -1224,7 +1389,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1239,7 +1404,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, body);
     }
 
@@ -1255,7 +1420,7 @@ public final class Check {
      * @param g3   the generator of the 3rd value
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
-     * @param body the property of 5 values: true when it holds
+     * @param body the property of 5 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1271,7 +1436,7 @@ public final class Check {
             Gen<? extends T3> g3,
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, Boolean> body) {
+            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1296,7 +1461,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1314,7 +1479,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluate(g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1330,7 +1495,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1349,7 +1514,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluate(config, g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1364,7 +1529,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1384,7 +1549,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluateN(samples, g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1398,7 +1563,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1416,7 +1581,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluateAll(g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1432,7 +1597,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1451,7 +1616,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluateAll(config, g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1465,7 +1630,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1482,7 +1647,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, body);
     }
 
@@ -1498,7 +1663,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1516,7 +1681,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1543,7 +1708,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1562,7 +1727,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, g6, body);
     }
 
@@ -1576,7 +1741,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1593,7 +1758,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, body);
     }
 
@@ -1610,7 +1775,7 @@ public final class Check {
      * @param g4   the generator of the 4th value
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
-     * @param body the property of 6 values: true when it holds
+     * @param body the property of 6 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1628,7 +1793,7 @@ public final class Check {
             Gen<? extends T4> g4,
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, Boolean> body) {
+            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1655,7 +1820,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1675,8 +1840,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         evaluate(g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
@@ -1694,7 +1858,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1715,8 +1879,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         evaluate(config, g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
@@ -1733,7 +1896,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1755,8 +1918,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         evaluateN(samples, g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
@@ -1772,7 +1934,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1792,8 +1954,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         evaluateAll(g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
@@ -1811,7 +1972,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1832,8 +1993,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         evaluateAll(config, g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
@@ -1849,7 +2009,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1868,8 +2028,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, body);
     }
@@ -1887,7 +2046,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1907,8 +2066,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
@@ -1939,7 +2097,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1960,8 +2118,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, g6, g7, body);
     }
@@ -1977,7 +2134,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -1996,8 +2153,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, body);
     }
@@ -2016,7 +2172,7 @@ public final class Check {
      * @param g5   the generator of the 5th value
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
-     * @param body the property of 7 values: true when it holds
+     * @param body the property of 7 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2036,8 +2192,7 @@ public final class Check {
             Gen<? extends T5> g5,
             Gen<? extends T6> g6,
             Gen<? extends T7> g7,
-            CheckedFunction7<
-                            ? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, Boolean>
+            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
                     body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
@@ -2068,7 +2223,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2099,7 +2254,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         evaluate(g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
@@ -2118,7 +2273,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2150,7 +2305,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         evaluate(config, g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
@@ -2168,7 +2323,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2201,7 +2356,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         evaluateN(samples, g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
@@ -2218,7 +2373,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2249,7 +2404,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         evaluateAll(g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
@@ -2268,7 +2423,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2300,7 +2455,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         evaluateAll(config, g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
@@ -2317,7 +2472,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2347,7 +2502,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, g8, body);
     }
@@ -2366,7 +2521,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2397,7 +2552,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
@@ -2437,7 +2592,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2469,7 +2624,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, g6, g7, g8, body);
     }
@@ -2486,7 +2641,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2516,7 +2671,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, g8, body);
     }
@@ -2536,7 +2691,7 @@ public final class Check {
      * @param g6   the generator of the 6th value
      * @param g7   the generator of the 7th value
      * @param g8   the generator of the 8th value
-     * @param body the property of 8 values: true when it holds
+     * @param body the property of 8 values: {@code true} or a successful {@link TestResult} when it holds; any other result passes when the body does not throw
      * @param <T1> the type of the 1st value
      * @param <T2> the type of the 2nd value
      * @param <T3> the type of the 3rd value
@@ -2567,7 +2722,7 @@ public final class Check {
                             ? super T6,
                             ? super T7,
                             ? super T8,
-                            Boolean>
+                            ?>
                     body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
